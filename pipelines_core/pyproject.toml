@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "pipelines-core"
+version = "0.1.0"
+description = "pipeline core"
+authors = ["mariushoegger <marius-hoegger@bbv.ch>"]
+license = "Proprietary"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11, <3.12"
+dagster-webserver = "^1.8.13"
+dagster-postgres = "^0.24.13"
+dagster-azure = "^0.24.13"
+llama-index-core = "0.11.22"
+llama-index-vector-stores-milvus = "^0.2.7"
+llama-index-storage-docstore-mongodb = "^0.2.1"
+llama-index-readers-file = "^0.2.2"
+llama-index-vector-stores-azureaisearch = "^0.2.8"
+mongoengine = "^0.29.1"
+adlfs = "^2024.7.0"
+matplotlib = "^3.9.2"
+azure-mgmt-resource = "^23.2.0"
+azure-mgmt-cognitiveservices = "^13.5.0"
+azure-mgmt-cosmosdb = "^9.6.0"
+llama-index-llms-azure-openai = "^0.2.2"
+llama-index-llms-openai-like = "^0.2.0"
+transformers = "^4.46.0"
+llama-index-embeddings-azure-openai = "^0.2.5"
+llama-index-embeddings-text-embeddings-inference = "^0.2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
