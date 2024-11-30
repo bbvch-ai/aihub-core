@@ -1,8 +1,8 @@
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 
-from lib_core.lib_core.handlers.LLMHandler import LLMHandler
-from pipelines_core.pipelines_core.resources.organization.NamespaceResource import NamespaceResource
-from pipelines_core.pipelines_core.util.connection_utils import connect_to_mongo_db
+from lib_core.handlers.LLMHandler import LLMHandler
+from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
+from pipelines_core.util.connection_utils import connect_to_mongo_db
 
 
 class LlmHandlerResource(ConfigurableResource[LLMHandler]):

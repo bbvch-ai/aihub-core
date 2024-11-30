@@ -9,6 +9,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
 lib_core = { git = "https://github.com/bbvch-ai/aihub-core.git", branch = "micro/github-actions", subdirectory = "lib_core" }
+dagster-webserver = "^1.8.13"
+dagster-postgres = "^0.24.13"
+dagster-azure = "^0.24.13"
+llama-index-readers-file = "^0.2.2"
+matplotlib = "^3.9.2"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -18,5 +23,3 @@ pytest-asyncio = "^0.24.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-

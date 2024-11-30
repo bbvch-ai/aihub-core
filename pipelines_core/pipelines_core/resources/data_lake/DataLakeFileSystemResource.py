@@ -1,7 +1,7 @@
 from adlfs import AzureBlobFileSystem
 from dagster import ConfigurableResource, InitResourceContext
 
-from lib_core.lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
+from lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
 
 
 class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):

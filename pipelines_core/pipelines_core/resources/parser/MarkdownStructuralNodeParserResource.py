@@ -1,8 +1,8 @@
 from dagster import ConfigurableResource
 from llama_index.core.node_parser import NodeParser
 
-from lib_core.lib_core.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
+from lib_core.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
+from pipelines_core.types.RefDocDocument import RefDocDocument
 
 
 class MarkdownStructuralNodeParserResource(ConfigurableResource):

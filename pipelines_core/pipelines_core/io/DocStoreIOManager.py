@@ -3,8 +3,8 @@ from typing import List
 from dagster import OutputContext, InputContext, ConfigurableIOManager, ResourceDependency
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
-from pipelines_core.pipelines_core.util.id_utils import uri_to_id
+from pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.util.id_utils import uri_to_id
 
 
 class DocStoreIOManager(ConfigurableIOManager):

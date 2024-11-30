@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, ResourceDependency, InitResourceContext
 from llama_index.core.llms import LLM
 
-from pipelines_core.pipelines_core.resources.llm.LlmHandlerResource import LlmHandlerResource
+from pipelines_core.resources.llm.LlmHandlerResource import LlmHandlerResource
 
 
 class LanguageModelResource(ConfigurableResource[LLM]):

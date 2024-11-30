@@ -9,25 +9,25 @@ from dagster import (
     Definitions,
 )
 
-from pipelines_core.pipelines_core.assets.factories.documents_factory import documents_factory
-from pipelines_core.pipelines_core.assets import nodes_factory
-from pipelines_core.pipelines_core.assets.factories.observable_data_lake_factory import observable_data_lake_factory
-from pipelines_core.pipelines_core.assets.factories.removed_documents_factory import removed_documents_factory
-from pipelines_core.pipelines_core.executors.factory import default_process_executor
-from pipelines_core.pipelines_core.jobs.factory import observe_source_job
-from pipelines_core.pipelines_core.resources.factory import (
+from pipelines_core.assets.factories.documents_factory import documents_factory
+from pipelines_core.assets.factories.nodes_factory import nodes_factory
+from pipelines_core.assets.factories.observable_data_lake_factory import observable_data_lake_factory
+from pipelines_core.assets.factories.removed_documents_factory import removed_documents_factory
+from pipelines_core.executors.factory import default_process_executor
+from pipelines_core.jobs.factory import observe_source_job
+from pipelines_core.resources.factory import (
     mongo_aisearch_storage_context_resources,
     default_io_manager_azure_datalake_resources,
     azure_data_lake_resources,
     namespace_resource,
     default_llm_resources,
 )
-from pipelines_core.pipelines_core.resources.parser.DocumentParserResource import DocumentParserResource
-from pipelines_core.pipelines_core.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
-from pipelines_core.pipelines_core.schedules.factory import default_daily_materialize_schedule
-from pipelines_core.pipelines_core.sensors.factory import default_automation_sensor
-from pipelines_core.pipelines_core.util.key_utils import asset_key_from_customer_and_namespace
-from pipelines_core.pipelines_core.util.partition_utils import create_dynamic_partition
+from pipelines_core.resources.parser.DocumentParserResource import DocumentParserResource
+from pipelines_core.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from pipelines_core.schedules.factory import default_daily_materialize_schedule
+from pipelines_core.sensors.factory import default_automation_sensor
+from pipelines_core.util.key_utils import asset_key_from_customer_and_namespace
+from pipelines_core.util.partition_utils import create_dynamic_partition
 
 
 def asset_definition_with_code_link(

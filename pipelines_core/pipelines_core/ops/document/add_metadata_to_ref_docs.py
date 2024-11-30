@@ -2,8 +2,8 @@ from typing import List
 
 from dagster import Output, op
 
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
-from pipelines_core.pipelines_core.util.meta_utils import ref_doc_metadata_table
+from pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.util.meta_utils import ref_doc_metadata_table
 
 
 @op(code_version="v1")

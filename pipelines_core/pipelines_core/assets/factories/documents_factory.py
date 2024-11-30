@@ -1,10 +1,10 @@
 from dagster import graph_asset, AutomationCondition, Output, AssetIn, DynamicPartitionsDefinition, AssetKey
 
-from pipelines_core.pipelines_core.ops.data_lake.data_lake_file_to_ref_doc import data_lake_file_to_ref_doc
-from pipelines_core.pipelines_core.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
-from pipelines_core.pipelines_core.util.key_utils import group_name_from_asset_key
+from pipelines_core.ops.data_lake.data_lake_file_to_ref_doc import data_lake_file_to_ref_doc
+from pipelines_core.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
+from pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.util.key_utils import group_name_from_asset_key
 
 
 def documents_factory(key: AssetKey, data_lake_key: str, partitions: DynamicPartitionsDefinition) -> graph_asset:

@@ -9,8 +9,8 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
-from lib_core.lib_core.constants.node_metadata import DOCUMENT_ID
-from pipelines_core.pipelines_core.util.id_utils import uri_to_id
+from lib_core.constants.node_metadata import DOCUMENT_ID
+from pipelines_core.util.id_utils import uri_to_id
 
 
 class VectorStoreIOManager(ConfigurableIOManager):

@@ -4,7 +4,7 @@ from typing import List
 from dagster import TableColumn, TableSchema, MetadataValue, TableRecord
 from llama_index.core.schema import TextNode
 
-from lib_core.lib_core.constants.node_metadata import (
+from lib_core.constants.node_metadata import (
     NAMESPACE,
     SOURCE,
     HASH,
@@ -24,8 +24,8 @@ from lib_core.lib_core.constants.node_metadata import (
     H5,
     H6,
 )
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.types.RefDocDocument import RefDocDocument
 
 
 def readable_date(timestamp: int):

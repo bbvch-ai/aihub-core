@@ -3,8 +3,8 @@ from typing import List
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ResourceParam, OpExecutionContext, op
 
-from pipelines_core.pipelines_core.resources.organization.NamespaceResource import NamespaceResource
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
+from pipelines_core.types.DataLakeFile import DataLakeFile
 
 
 def fetch_all_files_in_data_lake_no_op(

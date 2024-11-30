@@ -8,10 +8,10 @@ from dagster import (
     AssetKey,
 )
 
-from pipelines_core.pipelines_core.resources.organization.NamespaceResource import NamespaceResource
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
-from pipelines_core.pipelines_core.util.meta_utils import data_lake_metadata_table
-from pipelines_core.pipelines_core.util.partition_utils import replace_partition_keys
+from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
+from pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.util.meta_utils import data_lake_metadata_table
+from pipelines_core.util.partition_utils import replace_partition_keys
 
 
 def data_version_by_partition_for_data_lake_files_no_op(

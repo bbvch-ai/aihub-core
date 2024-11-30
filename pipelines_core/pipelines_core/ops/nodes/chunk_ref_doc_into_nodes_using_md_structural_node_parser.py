@@ -3,8 +3,8 @@ from typing import List
 from dagster import op, OpExecutionContext
 from llama_index.core.schema import TextNode
 
-from pipelines_core.pipelines_core.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from pipelines_core.types.RefDocDocument import RefDocDocument
 
 
 @op(code_version="v1")

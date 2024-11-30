@@ -1,7 +1,7 @@
 from dagster import Out, op, Output, DataVersion
 
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
-from pipelines_core.pipelines_core.util.meta_utils import ref_doc_metadata
+from pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.util.meta_utils import ref_doc_metadata
 
 
 @op(code_version="v1", out=Out(io_manager_key="doc_store_io_manager"))

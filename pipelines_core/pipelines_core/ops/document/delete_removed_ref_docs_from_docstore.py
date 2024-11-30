@@ -2,11 +2,11 @@ from typing import List
 
 from dagster import graph, Output
 
-from pipelines_core.pipelines_core.ops.data_lake.fetch_ref_docs_to_remove import fetch_ref_docs_to_remove
-from pipelines_core.pipelines_core.ops.document.delete_many_ref_doc_from_docstore import delete_many_ref_doc_from_docstore
-from pipelines_core.pipelines_core.ops.nodes.delete_many_nodes_from_vector_store import delete_many_nodes_from_vector_store
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.ops.data_lake.fetch_ref_docs_to_remove import fetch_ref_docs_to_remove
+from pipelines_core.ops.document.delete_many_ref_doc_from_docstore import delete_many_ref_doc_from_docstore
+from pipelines_core.ops.nodes.delete_many_nodes_from_vector_store import delete_many_nodes_from_vector_store
+from pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.types.RefDocDocument import RefDocDocument
 
 
 @graph

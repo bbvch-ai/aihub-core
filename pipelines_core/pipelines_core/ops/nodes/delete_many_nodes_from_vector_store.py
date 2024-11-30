@@ -3,7 +3,7 @@ from typing import List
 from dagster import op, ResourceParam, OpExecutionContext
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.types.RefDocDocument import RefDocDocument
 
 
 @op(code_version="v1")

@@ -6,7 +6,7 @@ from adlfs import AzureBlobFileSystem
 from azure.storage.filedatalake import FileSystemClient, ContentSettings
 from dagster import ConfigurableIOManager, OutputContext, InputContext, ResourceDependency
 
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.types.DataLakeFile import DataLakeFile
 
 
 class AzureDataLakeIOManager(ConfigurableIOManager):

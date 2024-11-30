@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from llama_index.core import Document
 from pydantic import computed_field
 
-from lib_core.lib_core.constants.node_metadata import (
+from lib_core.constants.node_metadata import (
     NAMESPACE,
     HASH,
     TYPE,
@@ -16,7 +16,7 @@ from lib_core.lib_core.constants.node_metadata import (
 )
 
 if TYPE_CHECKING:
-    from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
+    from pipelines_core.types.DataLakeFile import DataLakeFile
 
 
 class RefDocDocument(Document):

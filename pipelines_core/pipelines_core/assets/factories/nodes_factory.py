@@ -3,15 +3,15 @@ from typing import List
 from dagster import graph_asset, AutomationCondition, Output, DynamicPartitionsDefinition, AssetIn, AssetKey
 from llama_index.core.schema import TextNode
 
-from pipelines_core.pipelines_core.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_parser import (
+from pipelines_core.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_parser import (
     chunk_ref_doc_into_nodes_using_md_structural_node_parser,
 )
-from pipelines_core.pipelines_core.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
-from pipelines_core.pipelines_core.ops.nodes.embed_nodes import embed_nodes
+from pipelines_core.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
+from pipelines_core.ops.nodes.embed_nodes import embed_nodes
 
-from pipelines_core.pipelines_core.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
-from pipelines_core.pipelines_core.util.key_utils import group_name_from_asset_key
+from pipelines_core.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
+from pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.util.key_utils import group_name_from_asset_key
 
 
 def nodes_factory(key: AssetKey, document_key: str, partitions: DynamicPartitionsDefinition) -> graph_asset:

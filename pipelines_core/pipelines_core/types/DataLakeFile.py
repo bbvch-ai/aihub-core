@@ -8,7 +8,7 @@ from typing import Dict, Optional
 from azure.storage.filedatalake import FileSystemClient
 from pydantic import BaseModel, computed_field, Field
 
-from pipelines_core.pipelines_core.util.id_utils import uri_to_id
+from pipelines_core.util.id_utils import uri_to_id
 
 
 class DataLakeFile(BaseModel):

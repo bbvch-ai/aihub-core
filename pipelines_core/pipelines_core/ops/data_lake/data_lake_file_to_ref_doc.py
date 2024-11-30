@@ -1,9 +1,9 @@
 from dagster import op, ResourceParam, OpExecutionContext
 from fsspec import AbstractFileSystem
 
-from pipelines_core.pipelines_core.resources.parser.DocumentParserResource import DocumentParserResource
-from pipelines_core.pipelines_core.types.DataLakeFile import DataLakeFile
-from pipelines_core.pipelines_core.types.RefDocDocument import RefDocDocument
+from pipelines_core.resources.parser.DocumentParserResource import DocumentParserResource
+from pipelines_core.types.DataLakeFile import DataLakeFile
+from pipelines_core.types.RefDocDocument import RefDocDocument
 
 
 @op(code_version="v1")
