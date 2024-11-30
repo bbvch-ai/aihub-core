@@ -4,8 +4,8 @@ from azure.mgmt.resource import SubscriptionClient
 from azure.mgmt.search import SearchManagementClient
 from azure.search.documents.indexes import SearchIndexClient
 
-from aihub.config.BaseConfig import BaseConfig
-from aihub.config.CognitiveSearchConfig import CognitiveSearchConfig
+from lib_core.config.BaseConfig import BaseConfig
+from lib_core.config.CognitiveSearchConfig import CognitiveSearchConfig
 
 
 class SearchIndexClientSingleton:

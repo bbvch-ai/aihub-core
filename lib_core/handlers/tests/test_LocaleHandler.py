@@ -4,7 +4,7 @@ import pytest
 
 from lib_core.handlers.LocaleHandler import LocaleHandler
 from lib_core.conftest import SUPPORTED_LANGUAGES
-from lib_core.entities.Agents.AgentEntity import MultiLocale
+from lib_core.entities.MultiLocale import MultiLocale
 
 
 def test_all_languages_present(yaml_files: Dict[str, List[str]]):

@@ -4,7 +4,7 @@ from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
-from aihub.app.handlers.TracingHandler import trace_fn
+from lib_core.handlers.TracingHandler import trace_fn
 
 
 class RawLoader(BaseReader):

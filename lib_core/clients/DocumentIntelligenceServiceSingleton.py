@@ -1,8 +1,8 @@
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.core.credentials import AzureKeyCredential
 
-from aihub.app.clients.CognitiveServiceSingleton import CognitiveServiceSingleton
-from aihub.config.DocumentIntelligenceConfig import DocumentIntelligenceConfig
+from lib_core.clients.CognitiveServiceSingleton import CognitiveServiceSingleton
+from lib_core.config.DocumentIntelligenceConfig import DocumentIntelligenceConfig
 
 
 class DocumentIntelligenceServiceSingleton(CognitiveServiceSingleton):

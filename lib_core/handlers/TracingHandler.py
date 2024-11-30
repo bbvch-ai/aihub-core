@@ -15,9 +15,9 @@ from opentelemetry.trace import set_tracer_provider
 from phoenix.trace import using_project
 from pydantic import ValidationError
 
-from aihub.config.PhoenixConfig import PhoenixConfig
-from aihub.entities.Organization import Organization
-from aihub.records.User import User
+from lib_core.config.PhoenixConfig import PhoenixConfig
+from lib_core.entities.Organization import Organization
+from lib_core.records.User import User
 
 if TYPE_CHECKING:
     pass

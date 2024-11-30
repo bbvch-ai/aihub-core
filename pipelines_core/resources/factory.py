@@ -3,7 +3,7 @@ from typing import Dict
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_azure.adls2 import ADLS2Resource, ADLS2DefaultAzureCredential, ADLS2PickleIOManager
 
-from aihub.app.clients.DataLakeClientSingleton import DataLakeClientSingleton
+from lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
 from pipelines_core.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from pipelines_core.io.DocStoreIOManager import DocStoreIOManager
 from pipelines_core.io.VectorStoreIOManager import VectorStoreIOManager

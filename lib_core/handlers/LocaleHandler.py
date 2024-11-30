@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 import yaml
 
-from aihub.entities.Agents.AgentEntity import MultiLocale
+from lib_core.entities.MultiLocale import MultiLocale
 
 
 class LocaleHandler:

@@ -1,7 +1,7 @@
 from azure.cognitiveservices.speech import SpeechConfig
 
-from aihub.app.clients.CognitiveServiceSingleton import CognitiveServiceSingleton
-from aihub.config.SpeechServiceConfig import SpeechServiceConfig
+from lib_core.clients.CognitiveServiceSingleton import CognitiveServiceSingleton
+from lib_core.config.SpeechServiceConfig import SpeechServiceConfig
 
 
 class SpeechServiceSingleton(CognitiveServiceSingleton):

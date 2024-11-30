@@ -9,7 +9,7 @@ from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
 
-from aihub.app.constants.node_metadata import (
+from lib_core.constants.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
     INDEX,

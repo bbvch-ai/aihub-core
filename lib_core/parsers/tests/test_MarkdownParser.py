@@ -3,7 +3,7 @@ from time import time
 import pytest
 from llama_index.core.schema import Document, NodeRelationship
 
-from aihub.app.constants.node_metadata import (
+from lib_core.constants.node_metadata import (
     CREATED_AT,
     H1,
     H2,
@@ -17,7 +17,7 @@ from aihub.app.constants.node_metadata import (
     SOURCE,
     UPDATED_AT,
 )
-from aihub.app.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
+from lib_core.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 
 
 @pytest.fixture

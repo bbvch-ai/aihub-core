@@ -5,14 +5,14 @@ from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInfer
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.llms.openai_like import OpenAILike
 
-from aihub.app.handlers.CostTracker import CostTracker
-from aihub.entities.LLM.chat.AzureOpenAILLMEntity import AzureOpenAIParameter
-from aihub.entities.LLM.chat.ChatLLMEntity import ChatLLMModelParameter
-from aihub.entities.LLM.embedding.AzureOpenAIEmbeddingEntity import AzureOpenAIEmbeddingParameter
-from aihub.entities.LLM.embedding.EmbeddingLLMEntity import EmbeddingLLMModelParameter
-from aihub.entities.LLM.factory.LLMEntityFactory import LLMEntityFactory
-from aihub.entities.LLM.LLMEntity import ModelParameter
-from aihub.records.agent.Costs import Costs
+from lib_core.handlers.CostTracker import CostTracker
+from lib_core.entities.LLM.chat.AzureOpenAILLMEntity import AzureOpenAIParameter
+from lib_core.entities.LLM.chat.ChatLLMEntity import ChatLLMModelParameter
+from lib_core.entities.LLM.embedding.AzureOpenAIEmbeddingEntity import AzureOpenAIEmbeddingParameter
+from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import EmbeddingLLMModelParameter
+from lib_core.entities.LLM.factory.LLMEntityFactory import LLMEntityFactory
+from lib_core.entities.LLM.LLMEntity import ModelParameter
+from lib_core.records.agent.Costs import Costs
 
 
 class LLMHandler:

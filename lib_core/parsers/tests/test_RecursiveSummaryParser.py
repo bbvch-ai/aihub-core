@@ -5,8 +5,8 @@ import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.llms.azure_openai import AzureOpenAI
 
-from aihub.app.constants.node_metadata import HEADING_LEVEL, NODE_TYPE_SUMMARY, TYPE
-from aihub.app.parsers.RecursiveSummaryParser import RecursiveNodeSummarizer
+from lib_core.constants.node_metadata import HEADING_LEVEL, NODE_TYPE_SUMMARY, TYPE
+from lib_core.parsers.RecursiveSummaryParser import RecursiveNodeSummarizer
 
 
 @pytest.fixture
