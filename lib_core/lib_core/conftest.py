@@ -1,8 +1,6 @@
 import os
 
-import pytest_asyncio
-
-from lib_core.handlers.LocaleHandler import LocaleHandler
+from lib_core.handlers import LocaleHandler
 
 
 SIMILARITY_CUTOFF = 0.5

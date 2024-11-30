@@ -11,8 +11,8 @@ from mongoengine import (
 )
 from mongoengine.base import DocumentMetaclass
 
-from aihub.app.constants.features import FeatureFlag
-from aihub.records.organization.OrganizationResponse import OrganizationResponse
+from lib_core.constants.features import FeatureFlag
+from lib_core.records.organization.OrganizationResponse import OrganizationResponse
 
 
 class OrganizationLimits(EmbeddedDocument):

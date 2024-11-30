@@ -5,7 +5,7 @@ from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
-from lib_core.constants.node_metadata import HEADING_LEVEL, NODE_LANGUAGE_ENGLISH, NODE_TYPE_SUMMARY, TYPE
+from lib_core.constants import HEADING_LEVEL, NODE_LANGUAGE_ENGLISH, NODE_TYPE_SUMMARY, TYPE
 
 
 class LLMSummarizer:

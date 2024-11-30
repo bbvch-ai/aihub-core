@@ -2,7 +2,7 @@ from functools import cache
 
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
-from lib_core.clients.CosmosConnectionStringSingleton import CosmosConnectionStringSingleton
+from lib_core.clients import CosmosConnectionStringSingleton
 
 
 @cache

@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
-from lib_core.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from lib_core.lib_core.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 
 
 class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):

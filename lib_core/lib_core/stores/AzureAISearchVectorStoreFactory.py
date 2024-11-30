@@ -3,7 +3,7 @@ from typing import List
 
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement
 
-from lib_core.clients.SearchIndexClientSingleton import SearchIndexClientSingleton
+from lib_core.clients import SearchIndexClientSingleton
 from lib_core.constants.node_metadata import (
     DEFAULT_METADATA_FIELDS,
     DOCUMENT_ID,

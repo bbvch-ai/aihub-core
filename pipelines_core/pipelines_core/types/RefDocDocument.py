@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from llama_index.core import Document
 from pydantic import computed_field
 
-from lib_core.constants.node_metadata import (
+from lib_core.lib_core.constants.node_metadata import (
     NAMESPACE,
     HASH,
     TYPE,

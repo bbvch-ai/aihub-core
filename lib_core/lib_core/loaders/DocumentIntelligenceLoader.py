@@ -6,7 +6,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from lib_core.clients.DocumentIntelligenceServiceSingleton import DocumentIntelligenceServiceSingleton
+from lib_core.clients import DocumentIntelligenceServiceSingleton
 from lib_core.handlers.TracingHandler import trace_fn
 
 

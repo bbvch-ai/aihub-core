@@ -2,8 +2,8 @@ from dagster import ConfigurableResource
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 
-from lib_core.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
-from lib_core.loaders.RawLoader import RawLoader
+from lib_core.lib_core.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
+from lib_core.lib_core.loaders.RawLoader import RawLoader
 
 
 class DocumentParserResource(ConfigurableResource):

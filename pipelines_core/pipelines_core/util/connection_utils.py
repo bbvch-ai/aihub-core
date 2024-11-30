@@ -1,9 +1,9 @@
 from mongoengine import connect
 
-from lib_core.clients.CosmosConnectionStringSingleton import (
+from lib_core.lib_core.clients.CosmosConnectionStringSingleton import (
     CosmosConnectionStringSingleton,
 )
-from lib_core.config.BaseConfig import BaseConfig
+from lib_core.lib_core.config.BaseConfig import BaseConfig
 
 
 def connect_to_mongo_db(shortname: str = None):

@@ -1,7 +1,7 @@
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 
-from lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
+from lib_core.lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
 from pipelines_core.pipelines_core.resources.organization.NamespaceResource import NamespaceResource
 
 
