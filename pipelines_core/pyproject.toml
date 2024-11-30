@@ -1,11 +1,10 @@
 [tool.poetry]
-name = "pipelines-core"
+name = "pipelines_core"
 version = "0.1.0"
 description = "pipeline core"
 authors = ["mariushoegger <marius-hoegger@bbv.ch>"]
 license = "Proprietary"
 readme = "README.md"
-package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
