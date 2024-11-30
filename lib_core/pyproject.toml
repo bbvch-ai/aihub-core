@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "lib_core"
+version = "0.1.0"
+description = ""
+authors = ["mariushoegger <marius-hoegger@bbv.ch>"]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11, <3.12"
+adlfs = "^2024.7.0"
+arize-phoenix = "^5.5.2"
+azure-ai-documentintelligence = "^1.0.0b4"
+azure-cognitiveservices-speech = "^1.41.1"
+azure-identity = "^1.19.0"
+azure-mgmt-cognitiveservices = "^13.5.0"
+azure-mgmt-cosmosdb = "^9.6.0"
+azure-mgmt-resource = "^23.2.0"
+azure-mgmt-search = "^9.1.0"
+azure-storage-file-datalake = "^12.18.0"
+azure-search-documents = "^11.5.2"
+llama-index-embeddings-azure-openai = "^0.2.5"
+llama-index-embeddings-text-embeddings-inference = "^0.2.0"
+llama-index-llms-azure-openai = "^0.2.2"
+llama-index-llms-openai-like = "^0.2.0"
+llama-index-storage-docstore-mongodb = "^0.2.1"
+llama-index-vector-stores-azureaisearch = "^0.2.8"
+llama-index-vector-stores-milvus = "^0.2.7"
+mongoengine = "^0.29.1"
+openinference-instrumentation-llama-index = "^3.0.2"
+opentelemetry-sdk = "^1.27.0"
+opentelemetry-api = "^1.27.0"
+pydantic = "^2.10.2"
+pydantic-settings = "^2.6.1"
+python-i18n = "^0.3.9"
+transformers = "^4.46.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+pytest-asyncio = "^0.24.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
