@@ -46,8 +46,8 @@ runs:
             "github_token=
             ${{ inputs.github_token }}"
         tags: |
-          ${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
-          ${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
 
 
     - name: Create GitHub Release
@@ -59,6 +59,6 @@ runs:
         release_name: Release ${{ inputs.image_name }} ${{ inputs.release_version }}
         body: |
           Docker image '${{ inputs.image_name }}' for version ${{ inputs.release_version }} is available at:
-          `${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}`.
+          `ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}`.
         draft: false
         prerelease: false
