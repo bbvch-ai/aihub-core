@@ -42,8 +42,9 @@ runs:
       with:
         context: ${{ inputs.context }}
         push: true
-        build-args: |
-          GITHUB_TOKEN=${{ inputs.github_token }}
+        secrets: |
+            "github_token=
+            ${{ inputs.github_token }}"
         tags: |
           ${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
           ${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
