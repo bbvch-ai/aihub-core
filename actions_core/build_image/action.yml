@@ -16,6 +16,9 @@ inputs:
   context:
     description: 'context path'
     required: true
+  github_token:
+    description: 'GitHub token for authentication'
+    required: true
 
 runs:
   using: "composite"
@@ -32,7 +35,7 @@ runs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.github_token }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
@@ -40,7 +43,7 @@ runs:
         context: ${{ inputs.context }}
         push: true
         build-args: |
-          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN=${{ inputs.github_token }}
         tags: |
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
@@ -49,7 +52,7 @@ runs:
     - name: Create GitHub Release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       with:
         tag_name: ${{ inputs.image_name }}-${{ inputs.release_version }}
         release_name: Release ${{ inputs.image_name }} ${{ inputs.release_version }}
