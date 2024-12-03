@@ -42,9 +42,6 @@ runs:
       with:
         context: ${{ inputs.context }}
         push: true
-        secrets: |
-            "github_token=
-            ${{ inputs.github_token }}"
         tags: |
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
