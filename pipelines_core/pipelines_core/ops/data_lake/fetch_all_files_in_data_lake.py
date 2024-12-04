@@ -1,7 +1,7 @@
 from typing import List
 
 from azure.storage.filedatalake import FileSystemClient
-from dagster import ResourceParam, OpExecutionContext, op
+from dagster import OpExecutionContext, ResourceParam, op
 
 from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
 from pipelines_core.types.DataLakeFile import DataLakeFile
@@ -29,7 +29,9 @@ def fetch_all_files_in_data_lake_no_op(
 
         document_uri = f"{namespace.organization}/{path.name.lstrip('/')}"
         context.log.info(f"Found document with uri '{document_uri}'")
-        data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=data_lake_client)
+        data_lake_file = DataLakeFile.from_uri(
+            uri=document_uri, fs_client=data_lake_client
+        )
         data_lake_files.append(data_lake_file)
     return data_lake_files
 

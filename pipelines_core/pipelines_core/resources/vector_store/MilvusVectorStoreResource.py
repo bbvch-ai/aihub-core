@@ -1,7 +1,6 @@
 from dagster import ConfigurableResource, InitResourceContext
-from llama_index.vector_stores.milvus import MilvusVectorStore
-
 from lib_core.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from llama_index.vector_stores.milvus import MilvusVectorStore
 
 
 class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
@@ -10,4 +9,6 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     embedding_vector_dimension: int
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
-        return create_milvus_vector_store(self.uri, self.collection_name, self.embedding_vector_dimension)
+        return create_milvus_vector_store(
+            self.uri, self.collection_name, self.embedding_vector_dimension
+        )

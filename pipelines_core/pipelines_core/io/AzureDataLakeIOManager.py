@@ -3,8 +3,13 @@ from typing import List
 from urllib.parse import quote, unquote
 
 from adlfs import AzureBlobFileSystem
-from azure.storage.filedatalake import FileSystemClient, ContentSettings
-from dagster import ConfigurableIOManager, OutputContext, InputContext, ResourceDependency
+from azure.storage.filedatalake import ContentSettings, FileSystemClient
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    OutputContext,
+    ResourceDependency,
+)
 
 from pipelines_core.types.DataLakeFile import DataLakeFile
 
@@ -94,23 +99,33 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     data_lake_client: ResourceDependency[FileSystemClient]
     data_lake_file_system: ResourceDependency[AzureBlobFileSystem]
 
-    def handle_output(self, context: OutputContext, obj: DataLakeFile | List[DataLakeFile]) -> None:
+    def handle_output(
+        self, context: OutputContext, obj: DataLakeFile | List[DataLakeFile]
+    ) -> None:
         # Check if obj is a single DataLakeFile or a list of DataLakeFiles
         if isinstance(obj, DataLakeFile):
             data_lake_files = [obj]
-        elif isinstance(obj, list) and all(isinstance(item, DataLakeFile) for item in obj):
+        elif isinstance(obj, list) and all(
+            isinstance(item, DataLakeFile) for item in obj
+        ):
             data_lake_files = obj
         else:
-            context.log.error("Output is neither a DataLakeFile nor a list of DataLakeFiles.")
+            context.log.error(
+                "Output is neither a DataLakeFile nor a list of DataLakeFiles."
+            )
             raise ValueError("Expected a DataLakeFile or a list of DataLakeFiles.")
 
         for data_lake_file in data_lake_files:
             if data_lake_file.content is None:
-                context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to data lake.")
+                context.log.error(
+                    f"No content found for file {data_lake_file.uri}. Cannot write to data lake."
+                )
                 raise ValueError(f"No content to write for file {data_lake_file.uri}.")
 
             # Use the data_lake_file_system to write the content to the specified path
-            file_path = data_lake_file.uri.lstrip("/")  # Remove leading slash if present
+            file_path = data_lake_file.uri.lstrip(
+                "/"
+            )  # Remove leading slash if present
             context.log.info(f"Writing file to data lake at path: {file_path}")
 
             # Write the content to the data lake
@@ -121,24 +136,31 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
             # Set metadata
-            file_path_without_org = file_path.split("/", 1)[1]  # Remove the organization from the path
+            file_path_without_org = file_path.split("/", 1)[
+                1
+            ]  # Remove the organization from the path
             file_client = self.data_lake_client.get_file_client(file_path_without_org)
             file_client.set_metadata(encoded_metadata)
 
             # Set content settings (e.g., content type and MD5 hash)
             content_settings = ContentSettings(
-                content_type=data_lake_file.content_type, content_md5=base64.b64decode(data_lake_file.hash)
+                content_type=data_lake_file.content_type,
+                content_md5=base64.b64decode(data_lake_file.hash),
             )
             file_client.set_http_headers(content_settings=content_settings)
 
-            context.log.info(f"Successfully wrote file {data_lake_file.uri} to data lake.")
+            context.log.info(
+                f"Successfully wrote file {data_lake_file.uri} to data lake."
+            )
 
     def load_input(self, context: InputContext) -> DataLakeFile | List[DataLakeFile]:
         if context.has_partition_key:
             # If the context has a partition key, proceed as usual
             document_uri = context.partition_key
             context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-            data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+            data_lake_file = DataLakeFile.from_uri(
+                uri=document_uri, fs_client=self.data_lake_client
+            )
 
             # Decode metadata after retrieval
             decoded_metadata = self._decode_metadata(data_lake_file.metadata)
@@ -152,12 +174,16 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
             if partitions_def is not None:
                 # Pass the instance's dynamic partitions store
-                all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
+                all_partition_keys = partitions_def.get_partition_keys(
+                    dynamic_partitions_store=context.instance
+                )
                 data_lake_files = []
                 for partition_key in all_partition_keys:
                     document_uri = partition_key
                     context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-                    data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+                    data_lake_file = DataLakeFile.from_uri(
+                        uri=document_uri, fs_client=self.data_lake_client
+                    )
 
                     # Decode metadata after retrieval
                     decoded_metadata = self._decode_metadata(data_lake_file.metadata)
@@ -166,12 +192,17 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
                     data_lake_files.append(data_lake_file)
                 return data_lake_files  # Return the list or process it as needed
             else:
-                context.log.error("No partition definition found for the upstream asset.")
+                context.log.error(
+                    "No partition definition found for the upstream asset."
+                )
                 raise ValueError("Cannot load data without partition information.")
 
     @staticmethod
     def _encode_metadata(metadata: dict) -> dict:
-        return {quote(key, safe=""): quote(str(value), safe=":/?&=") for key, value in metadata.items()}
+        return {
+            quote(key, safe=""): quote(str(value), safe=":/?&=")
+            for key, value in metadata.items()
+        }
 
     @staticmethod
     def _decode_metadata(metadata: dict) -> dict:

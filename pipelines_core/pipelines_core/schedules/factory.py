@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition, DefaultScheduleStatus
+from dagster import DefaultScheduleStatus, ScheduleDefinition
 from dagster._core.definitions.target import ExecutableDefinition
 
 

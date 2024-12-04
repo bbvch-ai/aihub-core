@@ -1,4 +1,4 @@
-from dagster import op, ResourceParam
+from dagster import ResourceParam, op
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 from pipelines_core.types.RefDocDocument import RefDocDocument

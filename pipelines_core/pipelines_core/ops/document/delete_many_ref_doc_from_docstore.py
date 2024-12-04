@@ -1,6 +1,6 @@
 from typing import List
 
-from dagster import op, ResourceParam, OpExecutionContext
+from dagster import OpExecutionContext, ResourceParam, op
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
 from pipelines_core.types.RefDocDocument import RefDocDocument

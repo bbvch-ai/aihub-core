@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
+from lib_core.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
-from lib_core.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
 
 

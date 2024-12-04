@@ -1,4 +1,4 @@
-from dagster import ConfigurableResource, ResourceDependency, InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
 from pipelines_core.resources.llm.LlmHandlerResource import LlmHandlerResource

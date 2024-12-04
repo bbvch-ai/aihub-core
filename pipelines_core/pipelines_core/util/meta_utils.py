@@ -1,29 +1,29 @@
 from datetime import datetime
 from typing import List
 
-from dagster import TableColumn, TableSchema, MetadataValue, TableRecord
-from llama_index.core.schema import TextNode
-
+from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
 from lib_core.constants.node_metadata import (
-    NAMESPACE,
-    SOURCE,
-    HASH,
-    TYPE,
-    LANGUAGE,
-    VERSION,
-    INSERTED_AT,
     CREATED_AT,
-    UPDATED_AT,
-    INDEX,
-    SECTION_START_LINE,
-    SECTION_END_LINE,
     H1,
     H2,
     H3,
     H4,
     H5,
     H6,
+    HASH,
+    INDEX,
+    INSERTED_AT,
+    LANGUAGE,
+    NAMESPACE,
+    SECTION_END_LINE,
+    SECTION_START_LINE,
+    SOURCE,
+    TYPE,
+    UPDATED_AT,
+    VERSION,
 )
+from llama_index.core.schema import TextNode
+
 from pipelines_core.types.DataLakeFile import DataLakeFile
 from pipelines_core.types.RefDocDocument import RefDocDocument
 
@@ -150,7 +150,10 @@ def data_lake_metadata_table(data_lake_files: List[DataLakeFile]):
         TableColumn("id", "string"),
         TableColumn("hash", "string"),
     ]
-    records = [TableRecord(data_lake_file_table_row(data_lake_file)) for data_lake_file in data_lake_files]
+    records = [
+        TableRecord(data_lake_file_table_row(data_lake_file))
+        for data_lake_file in data_lake_files
+    ]
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=records, schema=table_schema)
 

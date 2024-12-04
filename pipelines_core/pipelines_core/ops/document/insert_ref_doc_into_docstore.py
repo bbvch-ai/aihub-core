@@ -1,4 +1,4 @@
-from dagster import Out, op, Output, DataVersion
+from dagster import DataVersion, Out, Output, op
 
 from pipelines_core.types.RefDocDocument import RefDocDocument
 from pipelines_core.util.meta_utils import ref_doc_metadata

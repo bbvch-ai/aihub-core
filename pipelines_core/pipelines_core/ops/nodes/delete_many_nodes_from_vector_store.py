@@ -1,6 +1,6 @@
 from typing import List
 
-from dagster import op, ResourceParam, OpExecutionContext
+from dagster import OpExecutionContext, ResourceParam, op
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 from pipelines_core.types.RefDocDocument import RefDocDocument

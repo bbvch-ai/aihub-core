@@ -1,11 +1,11 @@
 from typing import List
 
 from dagster import (
-    DataVersionsByPartition,
-    OpExecutionContext,
-    DynamicPartitionsDefinition,
-    AssetMaterialization,
     AssetKey,
+    AssetMaterialization,
+    DataVersionsByPartition,
+    DynamicPartitionsDefinition,
+    OpExecutionContext,
 )
 
 from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
@@ -39,7 +39,10 @@ def data_version_by_partition_for_data_lake_files_no_op(
                 "Organization": namespace.organization,
                 "Namespace": namespace.name,
                 "Number of Files": len(data_lake_files),
-                "Total File Size (MB)": sum([data_lake_file.size for data_lake_file in data_lake_files]) / 1e6,
+                "Total File Size (MB)": sum(
+                    [data_lake_file.size for data_lake_file in data_lake_files]
+                )
+                / 1e6,
                 "Table": data_lake_metadata_table(data_lake_files),
             },
         )
@@ -56,5 +59,8 @@ def data_version_by_partition_for_data_lake_files_no_op(
     # get rid of the need to incorporate the updated timestamp into the version key, as dagster will "forget"
     # that the asset ever existed and re-process it when it is encountered again.
     return DataVersionsByPartition(
-        {data_lake_file.uri: f"{data_lake_file.updated}-{data_lake_file.hash}" for data_lake_file in data_lake_files}
+        {
+            data_lake_file.uri: f"{data_lake_file.updated}-{data_lake_file.hash}"
+            for data_lake_file in data_lake_files
+        }
     )

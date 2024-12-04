@@ -1,14 +1,16 @@
 from typing import List
 
-from dagster import op, Out, Output, MetadataValue, DataVersion
+from dagster import DataVersion, MetadataValue, Out, Output, op
 from llama_index.core.schema import TextNode
 
 from pipelines_core.types.RefDocDocument import RefDocDocument
-from pipelines_core.util.meta_utils import ref_doc_metadata, nodes_metadata_table
+from pipelines_core.util.meta_utils import nodes_metadata_table, ref_doc_metadata
 
 
 @op(code_version="v1", out=Out(io_manager_key="vector_store_io_manager"))
-def insert_nodes_into_vector_store(nodes: List[TextNode], ref_doc: RefDocDocument) -> Output[List[TextNode]]:
+def insert_nodes_into_vector_store(
+    nodes: List[TextNode], ref_doc: RefDocDocument
+) -> Output[List[TextNode]]:
     """Inserts a list of nodes into the vector store by having the appropriate
     IO manager set as the output IO Manager"""
     return Output(

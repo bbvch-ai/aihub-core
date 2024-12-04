@@ -1,7 +1,9 @@
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
+from lib_core.stores.AzureAISearchVectorStoreFactory import (
+    create_azure_ai_search_vector_store,
+)
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 
-from lib_core.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
 
 
