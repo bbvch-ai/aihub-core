@@ -4,7 +4,7 @@ on:
     branches:
       - initiative/*
       - main
-      - micro/github-actions
+      - micro/agithub-actions
     types:
       - opened
       - edited
@@ -45,6 +45,11 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: | 
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
           poetry install --no-interaction --no-root --with dev
           rm -rf ~/.ssh
         working-directory: pipelines_core
