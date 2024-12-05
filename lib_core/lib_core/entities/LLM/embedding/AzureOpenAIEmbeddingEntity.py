@@ -6,8 +6,11 @@ from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from mongoengine import EmbeddedDocumentField, FloatField, IntField, StringField
 
+from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import (
+    EmbeddingLLMEntity,
+    EmbeddingLLMModelParameter,
+)
 from lib_core.handlers.CostTracker import CostTracker
-from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import EmbeddingLLMEntity, EmbeddingLLMModelParameter
 
 
 class AzureOpenAIEmbeddingParameter(EmbeddingLLMModelParameter):
@@ -20,7 +23,9 @@ class AzureOpenAIEmbeddingEntity(EmbeddingLLMEntity):
     api_endpoint = StringField(required=True)
     api_version = StringField(required=True)
 
-    default_parameter = EmbeddedDocumentField(AzureOpenAIEmbeddingParameter, required=True)
+    default_parameter = EmbeddedDocumentField(
+        AzureOpenAIEmbeddingParameter, required=True
+    )
 
     def to_llama_index(
         self, model_parameter: Optional[AzureOpenAIEmbeddingParameter] = None

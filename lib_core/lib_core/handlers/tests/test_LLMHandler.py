@@ -15,7 +15,9 @@ from lib_core.records.agent.Costs import Costs
 def llm_handler():
     with patch("llama_index.core.instrumentation.get_dispatcher") as mock_dispatcher:
         dispatcher_instance = MagicMock()
-        dispatcher_instance.event_handlers = [MagicMock(class_name="ObservationContext")]
+        dispatcher_instance.event_handlers = [
+            MagicMock(class_name="ObservationContext")
+        ]
         mock_dispatcher.return_value = dispatcher_instance
         return LLMHandler(organization="test_org")
 
@@ -53,7 +55,9 @@ def initial_costs(llm_handler):
 
 
 def test_get_total_costs_initial(llm_handler, initial_costs):
-    assert llm_handler.get_total_costs() == initial_costs, "Initial costs should be all zeros"
+    assert (
+        llm_handler.get_total_costs() == initial_costs
+    ), "Initial costs should be all zeros"
 
 
 def test_cost_tracking(cost_tracker, llm_handler):
@@ -85,9 +89,15 @@ def test_get_total_costs(llm_handler):
     assert total_costs.prompt_token_count == 2000
     assert total_costs.completion_token_count == 4000
     assert total_costs.embedding_token_count == 6000
-    assert math.isclose(total_costs.prompt_tokens_costs, 2.0, rel_tol=1e-09, abs_tol=1e-09)
-    assert math.isclose(total_costs.completion_tokens_costs, 8.0, rel_tol=1e-09, abs_tol=1e-09)
-    assert math.isclose(total_costs.embedding_tokens_costs, 3.0, rel_tol=1e-09, abs_tol=1e-09)
+    assert math.isclose(
+        total_costs.prompt_tokens_costs, 2.0, rel_tol=1e-09, abs_tol=1e-09
+    )
+    assert math.isclose(
+        total_costs.completion_tokens_costs, 8.0, rel_tol=1e-09, abs_tol=1e-09
+    )
+    assert math.isclose(
+        total_costs.embedding_tokens_costs, 3.0, rel_tol=1e-09, abs_tol=1e-09
+    )
 
 
 @pytest.mark.parametrize(
@@ -115,9 +125,13 @@ def test_model_by_name(mock_by_name, model_name, expected_class, model_param):
 
     if expected_class:
         result = handler.model_by_name(model_name, model_param)
-        assert isinstance(result, expected_class), f"Expected {expected_class}, but got {type(result)}"
+        assert isinstance(
+            result, expected_class
+        ), f"Expected {expected_class}, but got {type(result)}"
         mock_model_entity.to_llama_index.assert_called_once_with(model_param)
-        assert mock_cost_tracker in handler._cost_trackers, "Cost tracker should be added to the list"
+        assert (
+            mock_cost_tracker in handler._cost_trackers
+        ), "Cost tracker should be added to the list"
     else:
         with pytest.raises(ValueError, match="Invalid model"):
             handler.model_by_name(model_name, model_param)
@@ -130,6 +144,12 @@ def test_cost_calculation_accuracy(llm_handler, cost_tracker):
     expected_prompt_cost = (100 * 1.0 / 1000) * 2
     expected_completion_cost = (200 * 2.0 / 1000) * 2
     expected_embedding_cost = (50 * 0.5 / 1000) * 2
-    assert costs.prompt_tokens_costs == expected_prompt_cost, "Incorrect prompt tokens costs"
-    assert costs.completion_tokens_costs == expected_completion_cost, "Incorrect completion tokens costs"
-    assert costs.embedding_tokens_costs == expected_embedding_cost, "Incorrect embedding tokens costs"
+    assert (
+        costs.prompt_tokens_costs == expected_prompt_cost
+    ), "Incorrect prompt tokens costs"
+    assert (
+        costs.completion_tokens_costs == expected_completion_cost
+    ), "Incorrect completion tokens costs"
+    assert (
+        costs.embedding_tokens_costs == expected_embedding_cost
+    ), "Incorrect embedding tokens costs"

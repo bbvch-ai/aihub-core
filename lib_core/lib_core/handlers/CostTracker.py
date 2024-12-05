@@ -13,7 +13,9 @@ class CostTracker:
     ):
         self._token_counter = token_counter
         self._prompt_tokens_costs_per_thousand = prompt_tokens_costs_per_thousand
-        self._completion_tokens_costs_per_thousand = completion_tokens_costs_per_thousand
+        self._completion_tokens_costs_per_thousand = (
+            completion_tokens_costs_per_thousand
+        )
         self._embedding_tokens_costs_per_thousand = embedding_tokens_costs_per_thousand
 
     def get_total_costs(self) -> Costs:

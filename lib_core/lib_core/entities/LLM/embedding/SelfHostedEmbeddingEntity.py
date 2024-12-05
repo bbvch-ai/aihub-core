@@ -5,8 +5,11 @@ from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInfer
 from mongoengine import BooleanField, EmbeddedDocumentField, IntField, StringField
 from transformers import AutoTokenizer
 
+from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import (
+    EmbeddingLLMEntity,
+    EmbeddingLLMModelParameter,
+)
 from lib_core.handlers.CostTracker import CostTracker
-from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import EmbeddingLLMEntity, EmbeddingLLMModelParameter
 
 
 class SelfHostedEmbeddingParameter(EmbeddingLLMModelParameter):
@@ -20,7 +23,9 @@ class SelfHostedEmbeddingEntity(EmbeddingLLMEntity):
     timeout = IntField(required=False, default=60)
     embed_batch_size = IntField(required=False, default=32)
 
-    default_parameter = EmbeddedDocumentField(SelfHostedEmbeddingParameter, required=True)
+    default_parameter = EmbeddedDocumentField(
+        SelfHostedEmbeddingParameter, required=True
+    )
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedEmbeddingParameter]

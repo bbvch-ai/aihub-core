@@ -4,8 +4,8 @@ from typing import Optional, Tuple
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from mongoengine import EmbeddedDocumentField
 
-from lib_core.handlers.CostTracker import CostTracker
 from lib_core.entities.LLM.LLMEntity import LLMEntity, ModelParameter
+from lib_core.handlers.CostTracker import CostTracker
 
 
 class EmbeddingLLMModelParameter(ModelParameter):

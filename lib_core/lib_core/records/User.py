@@ -10,8 +10,12 @@ class User(BaseModel):
         description="The user's email address",
         example="john.doe@example.com",
     )
-    id: str = Field(..., description="Unique identifier for the user", example="12345678")
-    locale: str = Field(..., description="The user's preferred language setting", example="en")
+    id: str = Field(
+        ..., description="Unique identifier for the user", example="12345678"
+    )
+    locale: str = Field(
+        ..., description="The user's preferred language setting", example="en"
+    )
 
     @staticmethod
     def anonymous(locale: str) -> "User":

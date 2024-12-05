@@ -15,7 +15,9 @@ class LocaleHandler:
         self.locale = locale  # TODO: why do we set this and never use it?
 
     @staticmethod
-    def extract(locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None) -> Any:
+    def extract(
+        locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None
+    ) -> Any:
         """
         Some database properties are multi-lingual. This function returns the property in the user's locale.
         Example:
@@ -39,7 +41,9 @@ class LocaleHandler:
         return locale_data
 
     @staticmethod
-    def extract_dict(locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None):
+    def extract_dict(
+        locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None
+    ):
         value = locale_data.get(locale, None)
         if value:
             return value
@@ -52,7 +56,9 @@ class LocaleHandler:
         raise ValueError("No language keys available")
 
     @staticmethod
-    def extract_multi_locale(locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None):
+    def extract_multi_locale(
+        locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None
+    ):
         value = getattr(locale_data, locale, None)
         if value:
             return value
@@ -60,7 +66,9 @@ class LocaleHandler:
         if fallback_value:
             return fallback_value
         available_locales = [
-            field for field in LocaleHandler.LOCALE_WHITE_LIST if getattr(locale_data, field, None) is not None
+            field
+            for field in LocaleHandler.LOCALE_WHITE_LIST
+            if getattr(locale_data, field, None) is not None
         ]
         if available_locales:
             return getattr(locale_data, available_locales[0])

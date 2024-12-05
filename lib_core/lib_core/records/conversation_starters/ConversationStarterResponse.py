@@ -73,7 +73,9 @@ class ConversationStarterResponse(BaseModel):
         description="Title of the conversation",
         example="Customer Support Inquiry",
     )
-    messages: List[ConversationMessages] = Field(..., description="List of initial messages in the conversation")
+    messages: List[ConversationMessages] = Field(
+        ..., description="List of initial messages in the conversation"
+    )
 
     @field_validator("id", mode="before")
     def convert_objectid_to_str(cls, v):

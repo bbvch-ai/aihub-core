@@ -1,7 +1,10 @@
 from functools import cache
 from typing import List
 
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement
+from llama_index.vector_stores.azureaisearch import (
+    AzureAISearchVectorStore,
+    IndexManagement,
+)
 
 from lib_core.clients import SearchIndexClientSingleton
 from lib_core.constants.node_metadata import (
@@ -25,7 +28,9 @@ def create_azure_ai_search_vector_store(
 
     try:
         index = index_client.get_index(vector_store_name)
-        filterable_metadata_field_keys = [field.name for field in index.fields if field.filterable]
+        filterable_metadata_field_keys = [
+            field.name for field in index.fields if field.filterable
+        ]
     except Exception:
         filterable_metadata_field_keys = metadata_fields or DEFAULT_METADATA_FIELDS
 

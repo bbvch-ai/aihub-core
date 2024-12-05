@@ -1,7 +1,5 @@
-from mongoengine import (
-    EmbeddedDocument,
-    StringField,
-)
+from mongoengine import EmbeddedDocument, StringField
+
 
 class MultiLocale(EmbeddedDocument):
     de = StringField(required=False)

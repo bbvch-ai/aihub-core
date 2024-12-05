@@ -2,11 +2,20 @@ from typing import Optional, Tuple
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
-from mongoengine import BooleanField, DictField, EmbeddedDocumentField, IntField, StringField
+from mongoengine import (
+    BooleanField,
+    DictField,
+    EmbeddedDocumentField,
+    IntField,
+    StringField,
+)
 from transformers import AutoTokenizer
 
+from lib_core.entities.LLM.chat.ChatLLMEntity import (
+    ChatLLMEntity,
+    ChatLLMModelParameter,
+)
 from lib_core.handlers.CostTracker import CostTracker
-from lib_core.entities.LLM.chat.ChatLLMEntity import ChatLLMEntity, ChatLLMModelParameter
 
 
 class SelfHostedLLMParameter(ChatLLMModelParameter):

@@ -33,7 +33,11 @@ class LLM(Document):
 
     @staticmethod
     def by_names(organization_shortname: str, names: List[str]) -> List["LLM"]:
-        return list(LLM.objects.using(organization_shortname).filter(name__in=names).order_by("context_size"))
+        return list(
+            LLM.objects.using(organization_shortname)
+            .filter(name__in=names)
+            .order_by("context_size")
+        )
 
     @staticmethod
     def all(organization_shortname: str) -> List["LLM"]:

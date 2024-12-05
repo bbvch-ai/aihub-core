@@ -36,4 +36,6 @@ class OrganizationResponse(BaseModel):
         description="The URL to the organization's logo for dark backgrounds.",
         example="https://aiagentsstpublicblobs.blob.core.windows.net/logos/logo.png",
     )
-    features: Optional[FeaturesResponse] = Field(None, description="The features available to the organization.")
+    features: Optional[FeaturesResponse] = Field(
+        None, description="The features available to the organization."
+    )

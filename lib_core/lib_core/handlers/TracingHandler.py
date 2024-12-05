@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING, ContextManager, Optional
 
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation import Dispatcher
-from openinference.instrumentation import suppress_tracing, using_session, using_tags, using_user
+from openinference.instrumentation import (
+    suppress_tracing,
+    using_session,
+    using_tags,
+    using_user,
+)
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk import trace as trace_sdk
@@ -42,7 +47,9 @@ def setup_tracer() -> None:
     headers = {"Authorization": f"Basic {encoded_credentials}"}
     tracer_provider = trace_sdk.TracerProvider()
     set_tracer_provider(tracer_provider)
-    tracer_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint, headers=headers)))
+    tracer_provider.add_span_processor(
+        SimpleSpanProcessor(OTLPSpanExporter(endpoint, headers=headers))
+    )
 
     LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
 

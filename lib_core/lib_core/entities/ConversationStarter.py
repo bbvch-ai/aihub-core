@@ -1,8 +1,17 @@
 from typing import List
 
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, IntField, ListField, StringField
+from mongoengine import (
+    Document,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    IntField,
+    ListField,
+    StringField,
+)
 
-from lib_core.records.conversation_starters.ConversationStarterResponse import ConversationStarterResponse
+from lib_core.records.conversation_starters.ConversationStarterResponse import (
+    ConversationStarterResponse,
+)
 
 
 class ConversationStarterMessage(EmbeddedDocument):
@@ -27,7 +36,9 @@ class ConversationStarter(Document):
     messages = ListField(EmbeddedDocumentField(ConversationStarterMessage))
 
     @staticmethod
-    def for_user_and_agent(organization_shortname: str, email: str, agent_ids: List[str]):
+    def for_user_and_agent(
+        organization_shortname: str, email: str, agent_ids: List[str]
+    ):
         return ConversationStarter.objects.using(organization_shortname).filter(
             target_user_email=email, target_agent_id__in=agent_ids
         )

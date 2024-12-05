@@ -25,10 +25,15 @@ class SearchIndexClientSingleton:
         return cls._instance
 
     def _initialize(self):
-        if CognitiveSearchConfig().COGNITIVE_SEARCH_ENDPOINT and CognitiveSearchConfig().COGNITIVE_SEARCH_API_KEY:
+        if (
+            CognitiveSearchConfig().COGNITIVE_SEARCH_ENDPOINT
+            and CognitiveSearchConfig().COGNITIVE_SEARCH_API_KEY
+        ):
             self.index_client = SearchIndexClient(
                 endpoint=CognitiveSearchConfig().COGNITIVE_SEARCH_ENDPOINT,
-                credential=AzureKeyCredential(CognitiveSearchConfig().COGNITIVE_SEARCH_API_KEY),
+                credential=AzureKeyCredential(
+                    CognitiveSearchConfig().COGNITIVE_SEARCH_API_KEY
+                ),
             )
             return
 
@@ -37,12 +42,16 @@ class SearchIndexClientSingleton:
         self._region = BaseConfig().REGION_SHORT
         self._subscription_name = BaseConfig().AZURE_SUBSCRIPTION_NAME
         self._resource_group_name = (
-            CognitiveSearchConfig().COGNITIVE_SEARCH_RESOURCE_GROUP_NAME or f"{self._app}-{self._env}-rg-{self._region}"
+            CognitiveSearchConfig().COGNITIVE_SEARCH_RESOURCE_GROUP_NAME
+            or f"{self._app}-{self._env}-rg-{self._region}"
         )
         self._search_service_name = (
-            CognitiveSearchConfig().COGNITIVE_SEARCH_NAME or f"{self._app}-{self._env}-srch-{self._region}"
+            CognitiveSearchConfig().COGNITIVE_SEARCH_NAME
+            or f"{self._app}-{self._env}-srch-{self._region}"
         )
-        self._service_endpoint = f"https://{self._search_service_name}.search.windows.net"
+        self._service_endpoint = (
+            f"https://{self._search_service_name}.search.windows.net"
+        )
 
         credential = DefaultAzureCredential()
         subscription_client = SubscriptionClient(credential)
@@ -54,11 +63,15 @@ class SearchIndexClientSingleton:
                 break
 
         if subscription_id is None:
-            raise ValueError(f"Subscription with name '{self._subscription_name}' not found.")
+            raise ValueError(
+                f"Subscription with name '{self._subscription_name}' not found."
+            )
 
         search_client = SearchManagementClient(credential, subscription_id)
 
-        keys = search_client.admin_keys.get(self._resource_group_name, self._search_service_name)
+        keys = search_client.admin_keys.get(
+            self._resource_group_name, self._search_service_name
+        )
         self._primary_admin_key = keys.primary_key
 
         self.index_client = SearchIndexClient(

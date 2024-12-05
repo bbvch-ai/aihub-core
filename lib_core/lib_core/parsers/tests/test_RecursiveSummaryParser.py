@@ -42,7 +42,11 @@ def test_nodes_with_next_relationship(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Check that summaries are created
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) == 2  # One for each level
 
 
@@ -59,7 +63,11 @@ def test_no_level_zero_node(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Check that summaries are created even without level 0 nodes
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) > 0
 
 
@@ -67,8 +75,14 @@ def test_hierarchical_nodes(mock_llm):
     mock_llm.predict.return_value = "Summarized text"
 
     # Create a hierarchy of nodes with different header levels
-    node1 = TextNode(text="Introduction text", metadata={"h1": "Introduction"}, relationships={})
-    node2 = TextNode(text="Section 1 text", metadata={"h1": "Introduction", "h2": "Section 1"}, relationships={})
+    node1 = TextNode(
+        text="Introduction text", metadata={"h1": "Introduction"}, relationships={}
+    )
+    node2 = TextNode(
+        text="Section 1 text",
+        metadata={"h1": "Introduction", "h2": "Section 1"},
+        relationships={},
+    )
     node3 = TextNode(
         text="Subsection 1.1 text",
         metadata={"h1": "Introduction", "h2": "Section 1", "h3": "Subsection 1.1"},
@@ -81,7 +95,11 @@ def test_hierarchical_nodes(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Check that summaries are created for each level
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) == 4  # One summary per level and overall
 
     # Verify parent-child relationships
@@ -89,7 +107,8 @@ def test_hierarchical_nodes(mock_llm):
         child_nodes = [
             node
             for node in summarized_nodes
-            if node.relationships.get(NodeRelationship.PARENT, None) == RelatedNodeInfo(node_id=summary_node.node_id)
+            if node.relationships.get(NodeRelationship.PARENT, None)
+            == RelatedNodeInfo(node_id=summary_node.node_id)
         ]
         assert len(child_nodes) > 0
 
@@ -105,7 +124,11 @@ def test_text_under_min_summarization_length(mock_llm):
     summarizer = RecursiveNodeSummarizer(llm=mock_llm, min_summarization_length=200)
 
     summarized_nodes = summarizer.summarize_nodes(nodes)
-    summary_nodes = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summary_nodes = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
 
     assert len(summary_nodes) == 2
     assert summary_nodes[0].text == short_text
@@ -118,7 +141,9 @@ def test_recursive_splitting_and_summarization(mock_llm):
     # Create a node that requires recursive splitting
     very_long_text = "sentence. " * 5000  # Adjust to require multiple splits
 
-    node = TextNode(text=very_long_text, metadata={"h1": "Very Long Text"}, relationships={})
+    node = TextNode(
+        text=very_long_text, metadata={"h1": "Very Long Text"}, relationships={}
+    )
 
     nodes = [node]
 
@@ -126,7 +151,11 @@ def test_recursive_splitting_and_summarization(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Check that the summarizer handles multiple recursive splits
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) > 0
     # The summary should be significantly shorter
     assert len(summaries[0].text) < len(very_long_text)
@@ -136,10 +165,18 @@ def test_parent_child_relationships(mock_llm):
     mock_llm.predict.return_value = "Summarized text"
 
     # Create nodes with hierarchical relationships
-    node1 = TextNode(text="Parent node text", metadata={"h1": "Parent"}, relationships={})
-    node2 = TextNode(text="Child node text", metadata={"h1": "Parent", "h2": "Child"}, relationships={})
+    node1 = TextNode(
+        text="Parent node text", metadata={"h1": "Parent"}, relationships={}
+    )
+    node2 = TextNode(
+        text="Child node text",
+        metadata={"h1": "Parent", "h2": "Child"},
+        relationships={},
+    )
     node3 = TextNode(
-        text="Grandchild node text", metadata={"h1": "Parent", "h2": "Child", "h3": "Grandchild"}, relationships={}
+        text="Grandchild node text",
+        metadata={"h1": "Parent", "h2": "Child", "h3": "Grandchild"},
+        relationships={},
     )
 
     nodes = [node1, node2, node3]
@@ -148,15 +185,25 @@ def test_parent_child_relationships(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Verify that parent-child relationships are correctly set in summaries
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) == 4  # Summaries for each level
 
     # Map summaries by their level
     summaries_by_level = {node.metadata.get(HEADING_LEVEL): node for node in summaries}
 
     # Check that child summaries have correct parent relationships
-    assert summaries_by_level[3].relationships[NodeRelationship.PARENT].node_id == summaries_by_level[2].node_id
-    assert summaries_by_level[2].relationships[NodeRelationship.PARENT].node_id == summaries_by_level[1].node_id
+    assert (
+        summaries_by_level[3].relationships[NodeRelationship.PARENT].node_id
+        == summaries_by_level[2].node_id
+    )
+    assert (
+        summaries_by_level[2].relationships[NodeRelationship.PARENT].node_id
+        == summaries_by_level[1].node_id
+    )
     assert (
         RelatedNodeInfo(node_id=summaries_by_level[2].node_id)
         in summaries_by_level[1].relationships[NodeRelationship.CHILD]
@@ -183,20 +230,35 @@ def test_multiple_child_nodes(mock_llm):
         metadata={"h1": "Parent"},
         relationships={NodeRelationship.NEXT: RelatedNodeInfo(node_id="node3")},
     )
-    node3 = TextNode(id_="node3", text="Child 3 text", metadata={"h1": "Parent"}, relationships={})
+    node3 = TextNode(
+        id_="node3", text="Child 3 text", metadata={"h1": "Parent"}, relationships={}
+    )
 
     nodes = [node1, node2, node3]
 
     summarizer = RecursiveNodeSummarizer(llm=mock_llm)
     summarized_nodes = summarizer.summarize_nodes(nodes)
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) == 2  # One for each level
 
     # Verify parent-child relationships
     assert len(summaries[0].relationships[NodeRelationship.CHILD]) == 3
-    assert RelatedNodeInfo(node_id=node1.node_id) in summaries[0].relationships[NodeRelationship.CHILD]
-    assert RelatedNodeInfo(node_id=node2.node_id) in summaries[0].relationships[NodeRelationship.CHILD]
-    assert RelatedNodeInfo(node_id=node3.node_id) in summaries[0].relationships[NodeRelationship.CHILD]
+    assert (
+        RelatedNodeInfo(node_id=node1.node_id)
+        in summaries[0].relationships[NodeRelationship.CHILD]
+    )
+    assert (
+        RelatedNodeInfo(node_id=node2.node_id)
+        in summaries[0].relationships[NodeRelationship.CHILD]
+    )
+    assert (
+        RelatedNodeInfo(node_id=node3.node_id)
+        in summaries[0].relationships[NodeRelationship.CHILD]
+    )
 
 
 def test_no_nodes(mock_llm):
@@ -214,7 +276,9 @@ def test_single_node_summarization(mock_llm):
     mock_llm.predict.return_value = "Summarized single node text"
 
     # Test summarization with a single node
-    node = TextNode(text="This is a test node.", metadata={"h1": "Test Header"}, relationships={})
+    node = TextNode(
+        text="This is a test node.", metadata={"h1": "Test Header"}, relationships={}
+    )
 
     nodes = [node]
 
@@ -222,7 +286,9 @@ def test_single_node_summarization(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Check that a summary is created
-    summaries = [n for n in summarized_nodes if n.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        n for n in summarized_nodes if n.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) == 2
 
     # Verify the summary content
@@ -239,7 +305,9 @@ def test_nodes_with_missing_headers(mock_llm):
         metadata={},
         relationships={NodeRelationship.NEXT: RelatedNodeInfo(node_id="node2")},
     )
-    node2 = TextNode(id_="node2", text="Node 2 text without header", metadata={}, relationships={})
+    node2 = TextNode(
+        id_="node2", text="Node 2 text without header", metadata={}, relationships={}
+    )
 
     nodes = [node1, node2]
 
@@ -247,5 +315,9 @@ def test_nodes_with_missing_headers(mock_llm):
     summarized_nodes = summarizer.summarize_nodes(nodes)
 
     # Summaries should still be created
-    summaries = [node for node in summarized_nodes if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    summaries = [
+        node
+        for node in summarized_nodes
+        if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY
+    ]
     assert len(summaries) == 1

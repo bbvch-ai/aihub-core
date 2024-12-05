@@ -2,8 +2,8 @@ from typing import Dict, List
 
 import pytest
 
-from lib_core.handlers.LocaleHandler import LocaleHandler
 from lib_core.entities.MultiLocale import MultiLocale
+from lib_core.handlers.LocaleHandler import LocaleHandler
 
 
 def test_all_languages_present(yaml_files: Dict[str, List[str]]):
@@ -32,7 +32,9 @@ def test_extract_with_invalid_locale_uses_default_locale(dict_locale_data: dict)
 
 
 def test_extract_with_missing_locale_returns_first_available():
-    assert LocaleHandler.extract({"it": "Agente di ricerca"}, "de") == "Agente di ricerca"
+    assert (
+        LocaleHandler.extract({"it": "Agente di ricerca"}, "de") == "Agente di ricerca"
+    )
 
 
 def test_extract_from_multi_locale_with_valid_locale_returns_correct_translation(

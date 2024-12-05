@@ -1,6 +1,9 @@
 from typing import List
 
-from lib_core.entities.ConversationStarter import ConversationStarter, ConversationStarterMessage
+from lib_core.entities.ConversationStarter import (
+    ConversationStarter,
+    ConversationStarterMessage,
+)
 
 
 class ConversationStarterHandler:

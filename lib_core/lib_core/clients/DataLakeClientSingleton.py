@@ -24,10 +24,12 @@ class DataLakeClientSingleton:
         self._app = BaseConfig().APP_NAME
         self._region = BaseConfig().REGION_SHORT
         self._storage_service_name = (
-            DatalakeConfig().DATA_LAKE_NAME or f"{self._app}{self._env}st{self._region}datalake"
+            DatalakeConfig().DATA_LAKE_NAME
+            or f"{self._app}{self._env}st{self._region}datalake"
         )
         self._service_endpoint = (
-            DatalakeConfig().DATA_LAKE_ENDPOINT or f"https://{self._storage_service_name}.dfs.core.windows.net"
+            DatalakeConfig().DATA_LAKE_ENDPOINT
+            or f"https://{self._storage_service_name}.dfs.core.windows.net"
         )
 
         credential = DefaultAzureCredential()
@@ -35,7 +37,9 @@ class DataLakeClientSingleton:
             account_url=self._service_endpoint,
             credential=credential,
         )
-        self.file_system = AzureBlobFileSystem(account_name=self._storage_service_name, credential=credential)
+        self.file_system = AzureBlobFileSystem(
+            account_name=self._storage_service_name, credential=credential
+        )
 
     def get_client(self) -> DataLakeServiceClient:
         return self.datalake_client

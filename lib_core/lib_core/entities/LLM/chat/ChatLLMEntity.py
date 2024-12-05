@@ -3,9 +3,9 @@ from typing import Optional, Tuple
 
 from mongoengine import EmbeddedDocumentField, FloatField, IntField
 
-from lib_core.handlers.CostTracker import CostTracker
 from lib_core.entities import LLM
 from lib_core.entities.LLM.LLMEntity import LLMEntity, ModelParameter
+from lib_core.handlers.CostTracker import CostTracker
 
 
 class ChatLLMModelParameter(ModelParameter):
@@ -29,5 +29,7 @@ class ChatLLMEntity(LLMEntity):
     default_parameter = EmbeddedDocumentField(ChatLLMModelParameter, required=True)
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLM, CostTracker]:
+    def to_llama_index(
+        self, model_parameter: Optional[ChatLLMModelParameter]
+    ) -> Tuple[LLM, CostTracker]:
         pass

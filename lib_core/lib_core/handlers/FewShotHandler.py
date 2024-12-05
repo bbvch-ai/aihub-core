@@ -15,7 +15,9 @@ class ChatHistory(TypedDict):
 
 class FewShotHandler:
     @staticmethod
-    def chat_history_from_dict(few_shot_dict: ChatHistory, last_user_message: str) -> List[ChatMessage]:
+    def chat_history_from_dict(
+        few_shot_dict: ChatHistory, last_user_message: str
+    ) -> List[ChatMessage]:
         few_shot_messages = [
             ChatMessage(
                 role=MessageRole.SYSTEM,

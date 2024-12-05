@@ -10,5 +10,7 @@ class WhisperConfig(BaseSettings):
     WHISPER_API_ENDPOINT: str = Field(..., pattern=r"^https?://.*$")
 
     model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"), env_file_encoding="utf-8", extra="ignore"
+        env_file=str(Path(__file__).parent.parent.parent / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
     )

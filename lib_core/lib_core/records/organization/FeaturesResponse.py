@@ -15,7 +15,9 @@ class FeaturesResponseCheckMeta(ModelMetaclass):
             if feature.value not in attrs:
                 raise TypeError(f"Missing field for feature: {feature.value}")
         for attr in attrs:
-            if attr not in [feature.value for feature in FeatureFlag] and not attr.startswith("_"):
+            if attr not in [
+                feature.value for feature in FeatureFlag
+            ] and not attr.startswith("_"):
                 raise TypeError(f"Unexpected field: {attr}")
         return super().__new__(mcs, name, bases, attrs)
 

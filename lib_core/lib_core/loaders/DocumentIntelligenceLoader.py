@@ -14,7 +14,9 @@ class DocumentIntelligenceLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.document_intelligence_client = DocumentIntelligenceServiceSingleton().get_client()
+        self.document_intelligence_client = (
+            DocumentIntelligenceServiceSingleton().get_client()
+        )
 
     @trace_fn()
     def load_data(

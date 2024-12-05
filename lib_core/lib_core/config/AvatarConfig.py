@@ -9,5 +9,7 @@ class AvatarConfig(BaseSettings):
     DID_AGENT_ID: str = Field(..., description="Agent ID for D-ID")
 
     model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"), env_file_encoding="utf-8", extra="ignore"
+        env_file=str(Path(__file__).parent.parent.parent / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
     )

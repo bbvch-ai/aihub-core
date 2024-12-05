@@ -5,13 +5,17 @@ from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInfer
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.llms.openai_like import OpenAILike
 
-from lib_core.handlers.CostTracker import CostTracker
 from lib_core.entities.LLM.chat.AzureOpenAILLMEntity import AzureOpenAIParameter
 from lib_core.entities.LLM.chat.ChatLLMEntity import ChatLLMModelParameter
-from lib_core.entities.LLM.embedding.AzureOpenAIEmbeddingEntity import AzureOpenAIEmbeddingParameter
-from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import EmbeddingLLMModelParameter
+from lib_core.entities.LLM.embedding.AzureOpenAIEmbeddingEntity import (
+    AzureOpenAIEmbeddingParameter,
+)
+from lib_core.entities.LLM.embedding.EmbeddingLLMEntity import (
+    EmbeddingLLMModelParameter,
+)
 from lib_core.entities.LLM.factory.LLMEntityFactory import LLMEntityFactory
 from lib_core.entities.LLM.LLMEntity import ModelParameter
+from lib_core.handlers.CostTracker import CostTracker
 from lib_core.records.agent.Costs import Costs
 
 
@@ -30,7 +34,9 @@ class LLMHandler:
         self._cost_trackers.append(cost_tracker)
         return model
 
-    def chat_model(self, name, model_parameter: Optional[ChatLLMModelParameter] = None) -> OpenAILike | AzureOpenAI:
+    def chat_model(
+        self, name, model_parameter: Optional[ChatLLMModelParameter] = None
+    ) -> OpenAILike | AzureOpenAI:
         return self.model_by_name(name, model_parameter)
 
     def embedding_model(
@@ -38,25 +44,39 @@ class LLMHandler:
     ) -> AzureOpenAIEmbedding | TextEmbeddingsInference:
         return self.model_by_name(name, model_parameter)
 
-    def gpt3(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> AzureOpenAI:
+    def gpt3(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> AzureOpenAI:
         return self.chat_model("gpt-35-turbo", model_parameter)
 
-    def gpt3_16k(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> AzureOpenAI:
+    def gpt3_16k(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> AzureOpenAI:
         return self.chat_model("gpt-35-turbo-16k", model_parameter)
 
-    def gpt4(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> AzureOpenAI:
+    def gpt4(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> AzureOpenAI:
         return self.chat_model("gpt-4", model_parameter)
 
-    def gpt4_32k(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> AzureOpenAI:
+    def gpt4_32k(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> AzureOpenAI:
         return self.chat_model("gpt-4-32k", model_parameter)
 
-    def gpt4o(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> AzureOpenAI:
+    def gpt4o(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> AzureOpenAI:
         return self.chat_model("gpt-4o", model_parameter)
 
-    def gpt4o_mini(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> AzureOpenAI:
+    def gpt4o_mini(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> AzureOpenAI:
         return self.chat_model("gpt-4o-mini", model_parameter)
 
-    def ada2(self, model_parameter: Optional[AzureOpenAIEmbeddingParameter] = None) -> AzureOpenAIEmbedding:
+    def ada2(
+        self, model_parameter: Optional[AzureOpenAIEmbeddingParameter] = None
+    ) -> AzureOpenAIEmbedding:
         return self.embedding_model("text-embedding-ada-002", model_parameter)
 
     def get_total_costs(self) -> Costs:

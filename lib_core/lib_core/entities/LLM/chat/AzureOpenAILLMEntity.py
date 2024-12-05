@@ -4,10 +4,19 @@ import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.azure_openai import AzureOpenAI
-from mongoengine import DictField, EmbeddedDocumentField, FloatField, IntField, StringField
+from mongoengine import (
+    DictField,
+    EmbeddedDocumentField,
+    FloatField,
+    IntField,
+    StringField,
+)
 
+from lib_core.entities.LLM.chat.ChatLLMEntity import (
+    ChatLLMEntity,
+    ChatLLMModelParameter,
+)
 from lib_core.handlers.CostTracker import CostTracker
-from lib_core.entities.LLM.chat.ChatLLMEntity import ChatLLMEntity, ChatLLMModelParameter
 
 
 class AzureOpenAIParameter(ChatLLMModelParameter):
@@ -22,7 +31,9 @@ class AzureOpenAILLMEntity(ChatLLMEntity):
 
     default_parameter = EmbeddedDocumentField(AzureOpenAIParameter, required=True)
 
-    def to_llama_index(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> Tuple[AzureOpenAI, CostTracker]:
+    def to_llama_index(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> Tuple[AzureOpenAI, CostTracker]:
         tokenizer = tiktoken.encoding_for_model(self.name).encode
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 

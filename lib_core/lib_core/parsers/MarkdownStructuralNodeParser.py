@@ -6,7 +6,13 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
-from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.core.utils import get_tqdm_iterable
 
 from lib_core.constants.node_metadata import (
@@ -61,9 +67,13 @@ class MarkdownContentSplitter:
 
     def __init__(self):
         self.metadata = {}
-        self.current_headers: Dict[str, any] = {f"h{i}": None for i in range(1, 7)}  # Track current header levels
+        self.current_headers: Dict[str, any] = {
+            f"h{i}": None for i in range(1, 7)
+        }  # Track current header levels
 
-    def split_content(self, content: str, metadata: Dict[str, any] = None) -> List[Split]:
+    def split_content(
+        self, content: str, metadata: Dict[str, any] = None
+    ) -> List[Split]:
         if metadata:
             self.metadata = {**DEFAULT_METADATA, **metadata}
         else:
@@ -115,7 +125,8 @@ class MarkdownContentSplitter:
             self._update_metadata("", 0)
             return [
                 Split(
-                    metadata=self.metadata | {SECTION_START_LINE: 0, SECTION_END_LINE: len(lines) - 1},
+                    metadata=self.metadata
+                    | {SECTION_START_LINE: 0, SECTION_END_LINE: len(lines) - 1},
                     content=content,
                     level=0,
                 )
@@ -145,7 +156,9 @@ class NodeCreatorFromSplits:
     def __init__(self, chunk_size: int = 512, chunk_overlap: int = 20):
         self.include_metadata = True
         self.metadata = {}
-        self.sentence_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        self.sentence_splitter = SentenceSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
         self.id_func = None
         self.current_index = 0  # Initialize the index counter
 
@@ -158,19 +171,28 @@ class NodeCreatorFromSplits:
         id_func: Optional[Callable] = None,
     ) -> List[TextNode]:
         self.include_metadata = include_metadata
-        self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
+        self.metadata = (
+            {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
+        )
         self.id_func = id_func
         nodes = []
         last_nodes_stack = []
         for split in splits:
             split_texts = self.sentence_splitter.split_text(split.content)
-            split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
+            split_nodes = [
+                self._build_node_from_split(text, node, split.metadata)
+                for text in split_texts
+            ]
             self._set_relationships_within_split(split_nodes)
-            self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
+            self._set_relationships_between_splits(
+                split_nodes, split.level, last_nodes_stack
+            )
             nodes.extend(split_nodes)
         return nodes
 
-    def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
+    def _build_node_from_split(
+        self, text_split: str, node: BaseNode, metadata: dict
+    ) -> TextNode:
         node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
         if self.include_metadata:
             metadata[INDEX] = self.current_index  # Set the index in the metadata
@@ -194,8 +216,12 @@ class NodeCreatorFromSplits:
                     break
 
             if same_heading:
-                curr_node.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=prev_node.node_id)
-                prev_node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=curr_node.node_id)
+                curr_node.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(
+                    node_id=prev_node.node_id
+                )
+                prev_node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(
+                    node_id=curr_node.node_id
+                )
 
     def _set_relationships_between_splits(
         self, nodes: List[TextNode], header_level: int, last_nodes_stack: List
@@ -217,7 +243,9 @@ class NodeCreatorFromSplits:
 
         # Link the first node in the current section to the last node of the previous upper-level section
         if last_nodes_stack:
-            nodes[0].relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=last_nodes_stack[-1][1].node_id)
+            nodes[0].relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(
+                node_id=last_nodes_stack[-1][1].node_id
+            )
 
         # Update the stack with the last node of the current level
         last_nodes_stack.append((header_level, nodes[-1]))
@@ -254,9 +282,15 @@ class MarkdownStructuralNodeParser(NodeParser):
     Node H (Prev: G, Next: None)
     """
 
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata to include in the nodes.")
-    chunk_size: int = Field(default=512, description="Maximum number of tokens in a chunk.")
-    chunk_overlap: int = Field(default=20, description="Number of overlapping tokens between chunks.")
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Metadata to include in the nodes."
+    )
+    chunk_size: int = Field(
+        default=512, description="Maximum number of tokens in a chunk."
+    )
+    chunk_overlap: int = Field(
+        default=20, description="Number of overlapping tokens between chunks."
+    )
 
     markdown_splitter: MarkdownContentSplitter = Field(
         default_factory=MarkdownContentSplitter,
