@@ -64,7 +64,7 @@ jobs:
           sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' lib_core/pyproject.toml
 
       - name: Install dependencies in pipelines_core
-        working-directory: ./pipeline_core
+        working-directory: ./pipelines_core
         run: |
           pip install poetry --with dev
           poetry install
