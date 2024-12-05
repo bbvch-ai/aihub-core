@@ -1,0 +1,66 @@
+name: Build Image
+version: 1
+inputs:
+  release_version:
+    description: 'Docker image tag'
+    required: true
+  image_name:
+    description: 'Docker image name'
+    required: true
+  github_repository_owner:
+    description: 'github repository owner (github.repository_owner)'
+    required: true
+  github_event_repository_name:
+    description: 'github repository name (github.event.repository.name)'
+    required: true
+  context:
+    description: 'context path'
+    required: true
+  github_token:
+    description: 'GitHub token for authentication'
+    required: true
+  ssh_key:
+    description: 'ssh key to access private aihub core repository'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.github_token }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        push: true
+        secrets: |
+            "ssh_key=${{ inputs.ssh_key }}"
+        tags: |
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
+
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      with:
+        tag_name: ${{ inputs.image_name }}-${{ inputs.release_version }}
+        release_name: Release ${{ inputs.image_name }} ${{ inputs.release_version }}
+        body: |
+          Docker image '${{ inputs.image_name }}' for version ${{ inputs.release_version }} is available at:
+          `ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}`.
+        draft: false
+        prerelease: false
