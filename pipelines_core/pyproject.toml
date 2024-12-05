@@ -12,7 +12,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
-lib_core = { git = "https://github.com/bbvch-ai/aihub-core.git", branch = "main", subdirectory = "lib_core" }
+lib_core = { git = "https://github.com/bbvch-ai/aihub-core.git", branch = "micro/github-actions", subdirectory = "lib_core" }
 dagster-webserver = "^1.8.13"
 dagster-postgres = "^0.24.13"
 dagster-azure = "^0.24.13"
