@@ -56,10 +56,10 @@ jobs:
 
       - name: Increment version-tag in pyproject.toml
         run: |
-          echo "Update tag reference to lib_core in pipeline_core"
-          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' pipeline_core/pyproject.toml
-          echo "Update package version in pipeline_core/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' pipeline_core/pyproject.toml
+          echo "Update tag reference to lib_core in pipelines_core"
+          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' pipelines_core/pyproject.toml
+          echo "Update package version in pipelines_core/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' pipelines_core/pyproject.toml
           echo "Update package version in lib_core/pyproject.toml"
           sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' lib_core/pyproject.toml
 
@@ -80,8 +80,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pipeline_core/pyproject.toml
-          git add pipeline_core/poetry.lock
+          git add pipelines_core/pyproject.toml
+          git add pipelines_core/poetry.lock
           git add lib_core/pyproject.toml
           git commit -m "update tag number [skip ci]"
           git push
