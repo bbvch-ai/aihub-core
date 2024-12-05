@@ -20,7 +20,7 @@ inputs:
     description: 'GitHub token for authentication'
     required: true
   ssh_key:
-    description: 'GitHub token for authentication'
+    description: 'ssh key to access private aihub core repository'
     required: true
 
 runs:

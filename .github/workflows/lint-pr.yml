@@ -4,7 +4,6 @@ on:
     branches:
       - initiative/*
       - main
-      - micro/agithub-actions
     types:
       - opened
       - edited

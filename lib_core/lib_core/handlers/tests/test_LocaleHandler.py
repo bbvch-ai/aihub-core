@@ -3,7 +3,6 @@ from typing import Dict, List
 import pytest
 
 from lib_core.handlers.LocaleHandler import LocaleHandler
-from lib_core.conftest import SUPPORTED_LANGUAGES
 from lib_core.entities.MultiLocale import MultiLocale
 
 
@@ -11,8 +10,8 @@ def test_all_languages_present(yaml_files: Dict[str, List[str]]):
     missing_languages = {}
     for base_name, files in yaml_files.items():
         languages = set(file.split(".")[-2] for file in files)
-        if languages != set(SUPPORTED_LANGUAGES):
-            missing = set(SUPPORTED_LANGUAGES) - languages
+        if languages != set(LocaleHandler.LOCALE_WHITE_LIST):
+            missing = set(LocaleHandler.LOCALE_WHITE_LIST) - languages
             missing_languages[base_name] = missing
 
     if missing_languages:
