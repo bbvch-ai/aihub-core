@@ -3,7 +3,7 @@ name: Auto Tag on Push
 on:
   push:
     branches:
-      - main
+      - micro/core-tags
 
 permissions:
   contents: write
@@ -102,7 +102,7 @@ jobs:
           git add pipelines_core/pyproject.toml
           git add pipelines_core/poetry.lock
           git add lib_core/pyproject.toml
-          git commit -m "update tag number [skip ci]"
+          git commit -m "ops(bot): Update tag number to ${{ env.VERSION }} [skip ci]"
           git push origin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
