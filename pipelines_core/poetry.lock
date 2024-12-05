@@ -2318,8 +2318,8 @@ transformers = "^4.46.0"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "micro/github-actions"
-resolved_reference = "b2916afb2e638aa356dbb7c052db25bb26ce1a4c"
+reference = "v0.1.0"
+resolved_reference = "dcc5122eb602902089f83febc4a0d27e87503ea0"
 subdirectory = "lib_core"
 
 [[package]]
@@ -5990,4 +5990,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.12"
-content-hash = "111b67d18de96b587d659528e37e0de721f2fa3e5147ffb325e52d497fdd60b3"
+content-hash = "77b4fd32d000dccf7ed34cfceb72c81d3d1136aab3dc61f55e44745a473f820e"
