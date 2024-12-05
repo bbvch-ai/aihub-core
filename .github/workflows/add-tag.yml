@@ -66,8 +66,8 @@ jobs:
       - name: Install dependencies in pipelines_core
         working-directory: ./pipelines_core
         run: |
-          pip install poetry --with dev
-          poetry install
+          pip install poetry
+          poetry install --with dev
 
       - name: Delete existing tag
         run: |
