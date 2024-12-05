@@ -76,9 +76,15 @@ jobs:
       - name: Install dependencies in pipelines_core
         working-directory: ./pipelines_core
         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
           pip install poetry
           poetry lock --no-update
           poetry install --with dev
+          rm -rf ~/.ssh
 
       - name: Delete existing tag
         run: |
