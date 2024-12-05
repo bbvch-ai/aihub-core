@@ -85,7 +85,7 @@ jobs:
           poetry lock --no-update
           poetry install --with dev
           rm -rf ~/.ssh
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global --unset url."git@github.com:".insteadOf
 
 
       - name: Delete existing tag
