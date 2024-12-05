@@ -85,6 +85,8 @@ jobs:
           poetry lock --no-update
           poetry install --with dev
           rm -rf ~/.ssh
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+
 
       - name: Delete existing tag
         run: |
@@ -101,7 +103,7 @@ jobs:
           git add pipelines_core/poetry.lock
           git add lib_core/pyproject.toml
           git commit -m "update tag number [skip ci]"
-          git -c http.extraHeader="AUTHORIZATION: bearer ${{ secrets.GITHUB_TOKEN }}" push origin
+          git push origin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
