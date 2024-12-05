@@ -3,7 +3,7 @@ name: Auto Tag on Push
 on:
   push:
     branches:
-      - micro/core-tags
+      - main
 
 permissions:
   contents: write
