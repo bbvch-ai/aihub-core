@@ -77,6 +77,7 @@ jobs:
         working-directory: ./pipelines_core
         run: |
           pip install poetry
+          poetry lock --no-update
           poetry install --with dev
 
       - name: Delete existing tag
