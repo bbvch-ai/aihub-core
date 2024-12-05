@@ -46,7 +46,7 @@ jobs:
           new_minor=$(($minor + 1))
           new_tag="v$major.$new_minor.$patch"
           echo "New tag: $new_tag"
-          echo "VERSION=my_value" >> $GITHUB_ENV
+          echo "VERSION=$new_tag" >> $GITHUB_ENV
         
       - name: Tag the commit and push the tag
         run: |
