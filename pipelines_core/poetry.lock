@@ -2280,7 +2280,7 @@ files = [
 
 [[package]]
 name = "lib-core"
-version = "0.1.0"
+version = "v0.12.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -2318,8 +2318,8 @@ transformers = "^4.46.0"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.12.0"
-resolved_reference = "36f8b7424971832e0aec31e9a355a87b23e96044"
+reference = "v0.1.0"
+resolved_reference = "5937d3b53e20abac619ae8105650b6abc946384b"
 subdirectory = "lib_core"
 
 [[package]]
@@ -6011,4 +6011,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.12"
-content-hash = "06256072f73344e085012154f8a536470cbbad9b16fe4e6a4b511d4945cb59e9"
+content-hash = "77b4fd32d000dccf7ed34cfceb72c81d3d1136aab3dc61f55e44745a473f820e"
