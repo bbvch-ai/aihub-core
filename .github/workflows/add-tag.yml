@@ -18,6 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.3
+
       - name: Create new version number & tag for lib_core
         run: |
           # List all tags that match the pattern 'v*' and check if the list is empty
