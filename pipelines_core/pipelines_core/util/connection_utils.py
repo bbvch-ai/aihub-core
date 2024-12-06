@@ -1,7 +1,7 @@
-from lib_core.clients.CosmosConnectionStringSingleton import (
+from lib_core.infrastructure.azure import (
     CosmosConnectionStringSingleton,
 )
-from lib_core.config.BaseConfig import BaseConfig
+from lib_core.infrastructure.azure import BaseConfig
 from mongoengine import connect
 
 

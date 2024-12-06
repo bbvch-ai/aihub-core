@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from lib_core.constants.node_metadata import (
+from lib_core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DATA_LAKE_URI,
     HASH,

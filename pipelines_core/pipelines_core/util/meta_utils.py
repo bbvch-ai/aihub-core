@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
-from lib_core.constants.node_metadata import (
+from lib_core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
     H2,

@@ -1,6 +1,6 @@
 from dagster import ConfigurableResource
-from lib_core.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
-from lib_core.loaders.RawLoader import RawLoader
+from lib_core.generative_ai.document.loaders import DocumentIntelligenceLoader
+from lib_core.generative_ai.document.loaders.RawLoader import RawLoader
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 

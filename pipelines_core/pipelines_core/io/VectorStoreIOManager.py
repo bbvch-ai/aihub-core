@@ -6,7 +6,7 @@ from dagster import (
     OutputContext,
     ResourceDependency,
 )
-from lib_core.constants.node_metadata import DOCUMENT_ID
+from lib_core.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,

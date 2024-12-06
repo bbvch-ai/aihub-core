@@ -1,6 +1,6 @@
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
-from lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
+from lib_core.infrastructure.azure.data_lake import DataLakeAccess
 
 from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
 
@@ -105,7 +105,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
     namespace: ResourceDependency[NamespaceResource]
 
     def create_resource(self, context: InitResourceContext) -> FileSystemClient:
-        data_lake_client = DataLakeClientSingleton().get_client()
+        data_lake_client = DataLakeAccess().get_client()
         return data_lake_client.get_file_system_client(
             file_system=self.namespace.organization
         )

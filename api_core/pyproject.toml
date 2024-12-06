@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "api_core"
+version = "0.1.0"
+description = "api core"
+authors = [
+    "Joel Barmettler <joel.barmettler@bbv.ch>",
+    "Marius Högger <marius.hoegger@bbv.ch>",
+    "Michèle Fundneider <michele.fundneider@bbv.ch>",
+]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11, <3.12"
+pydantic = "^2.10.3"
+nats-py = "^2.9.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+pytest-asyncio = "^0.24.0"
+ruff = "^0.8.1"
+isort = "^5.13.2"
+mypy = "^1.13.0"
+toml-sort = "^0.24.2"
+black = {extras = ["jupyter"], version = "^24.10.0"}
+pytest-bdd = "^8.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,5 +1,5 @@
 from dagster import ConfigurableResource
-from lib_core.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
+from lib_core.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from llama_index.core.node_parser import NodeParser
 
 from pipelines_core.types.RefDocDocument import RefDocDocument

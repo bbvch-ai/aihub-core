@@ -1,7 +1,7 @@
 from typing import List
 
 from dagster import OpExecutionContext, op
-from lib_core.entities.RefDoc import RefDoc
+from lib_core.persistence.rag.documents.entities import RefDoc
 
 from pipelines_core.resources.organization.NamespaceResource import NamespaceResource
 from pipelines_core.types.DataLakeFile import DataLakeFile

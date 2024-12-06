@@ -6,7 +6,7 @@ from dagster_azure.adls2 import (
     ADLS2PickleIOManager,
     ADLS2Resource,
 )
-from lib_core.clients.DataLakeClientSingleton import DataLakeClientSingleton
+from lib_core.infrastructure.azure.data_lake import DataLakeAccess
 
 from pipelines_core.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from pipelines_core.io.DocStoreIOManager import DocStoreIOManager
@@ -70,7 +70,7 @@ def default_io_manager_azure_datalake_resources(
     namespace: NamespaceResource,
 ) -> Dict[str, ConfigurableResourceFactory]:
     adls2 = ADLS2Resource(
-        storage_account=DataLakeClientSingleton().get_storage_account_name(),
+        storage_account=DataLakeAccess().get_storage_account_name(),
         credential=ADLS2DefaultAzureCredential(kwargs={}),
     )
     adls2_pickle_io_manager = ADLS2PickleIOManager(
