@@ -4,20 +4,18 @@ from typing import Any, Dict
 
 import yaml
 
-from lib_core import MultiLocale
+from lib_core.MultiLocale import MultiLocale
 
 
 class LocaleHandler:
     DEFAULT_LOCALE = "de"
     LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]
 
-    def __init__(self, locale):
+    def __init__(self, locale: str):
         self.locale = locale  # TODO: why do we set this and never use it?
 
     @staticmethod
-    def extract(
-        locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None
-    ) -> Any:
+    def extract(locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None) -> Any:
         """
         Some database properties are multi-lingual. This function returns the property in the user's locale.
         Example:
@@ -41,9 +39,7 @@ class LocaleHandler:
         return locale_data
 
     @staticmethod
-    def extract_dict(
-        locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None
-    ):
+    def extract_dict(locale_data: Dict[str, Any] | MultiLocale, locale: str) -> Any:
         value = locale_data.get(locale, None)
         if value:
             return value
@@ -56,9 +52,7 @@ class LocaleHandler:
         raise ValueError("No language keys available")
 
     @staticmethod
-    def extract_multi_locale(
-        locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None
-    ):
+    def extract_multi_locale(locale_data: Dict[str, Any] | MultiLocale, locale: str) -> Any:
         value = getattr(locale_data, locale, None)
         if value:
             return value
@@ -66,9 +60,7 @@ class LocaleHandler:
         if fallback_value:
             return fallback_value
         available_locales = [
-            field
-            for field in LocaleHandler.LOCALE_WHITE_LIST
-            if getattr(locale_data, field, None) is not None
+            field for field in LocaleHandler.LOCALE_WHITE_LIST if getattr(locale_data, field, None) is not None
         ]
         if available_locales:
             return getattr(locale_data, available_locales[0])

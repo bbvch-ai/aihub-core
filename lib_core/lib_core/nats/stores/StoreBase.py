@@ -18,7 +18,7 @@ class StoreBase:
                         bucket=f"{self.prefix}_{run_id}",
                         history=1,
                         ttl=timedelta(hours=1).seconds,
-                        storage=StorageType.FILE
+                        storage=StorageType.FILE,
                     )
                 )
             except Exception:

@@ -33,6 +33,6 @@ class ApiRunner:
             allow_headers=["*"],
         )
 
-    def run(self):
+    def run(self) -> None:
         import uvicorn
         uvicorn.run(self.app, host="0.0.0.0", port=8000)

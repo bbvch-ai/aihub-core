@@ -32,9 +32,7 @@ def test_extract_with_invalid_locale_uses_default_locale(dict_locale_data: dict)
 
 
 def test_extract_with_missing_locale_returns_first_available():
-    assert (
-        LocaleHandler.extract({"it": "Agente di ricerca"}, "de") == "Agente di ricerca"
-    )
+    assert LocaleHandler.extract({"it": "Agente di ricerca"}, "de") == "Agente di ricerca"
 
 
 def test_extract_from_multi_locale_with_valid_locale_returns_correct_translation(

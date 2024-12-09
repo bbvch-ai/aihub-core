@@ -11,3 +11,4 @@ class PartialAgentTopic(BaseModel):
     display_id: Optional[str] = None
     event_type: Optional[str] = None
     event_name: Optional[str] = None
+    event_id: Optional[str] = None

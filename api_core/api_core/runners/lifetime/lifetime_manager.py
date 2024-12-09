@@ -15,7 +15,7 @@ from lib_core.nats.topic_managers.TopicManager import TopicManager
 
 
 @asynccontextmanager
-async def lifetime_manager(app: FastAPI):
+async def lifetime_manager(app: FastAPI) -> None:
     nc = NATS()
     connect(
         db="aihub",

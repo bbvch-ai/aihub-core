@@ -16,9 +16,7 @@ from lib_core.constants import (
 class LLMSummarizer:
     def __init__(self, llm: LLM, locale: str = NODE_LANGUAGE_ENGLISH):
         self._llm = llm
-        self._summarize_prompt_template = PromptTemplate(
-            t("agent.prompt.summarizer.summarize"), locale=locale
-        )
+        self._summarize_prompt_template = PromptTemplate(t("agent.prompt.summarizer.summarize"), locale=locale)
 
     def summarize(self, text: str) -> str:
         response = self._llm.predict(self._summarize_prompt_template, text=text)
@@ -48,9 +46,7 @@ class RecursiveNodeSummarizer:
 
         for level in range(max_level, -1, -1):
             level_nodes = grouped_nodes.get(level, [])
-            summarized_level_nodes = self._summarize_level(
-                level_nodes, summary_nodes, level
-            )
+            summarized_level_nodes = self._summarize_level(level_nodes, summary_nodes, level)
             summary_nodes.extend(summarized_level_nodes)
 
         return nodes.copy() + summary_nodes
@@ -75,15 +71,9 @@ class RecursiveNodeSummarizer:
         processed_nodes = set()
 
         if not level_nodes:
-            relevant_child_summaries = [
-                node
-                for node in child_summaries
-                if self._get_summary_level(node) == level + 1
-            ]
+            relevant_child_summaries = [node for node in child_summaries if self._get_summary_level(node) == level + 1]
             if relevant_child_summaries:
-                level_summary = self._summarize_summaries(
-                    relevant_child_summaries, level
-                )
+                level_summary = self._summarize_summaries(relevant_child_summaries, level)
                 return [level_summary]
             return []
 
@@ -92,12 +82,8 @@ class RecursiveNodeSummarizer:
                 continue
 
             next_nodes = self._get_next_nodes(node)
-            relevant_child_summaries = self._get_relevant_child_summaries(
-                node, child_summaries
-            )
-            combined_text = self._combine_texts(
-                node, next_nodes, relevant_child_summaries
-            )
+            relevant_child_summaries = self._get_relevant_child_summaries(node, child_summaries)
+            combined_text = self._combine_texts(node, next_nodes, relevant_child_summaries)
 
             if len(combined_text) < self.min_summarization_length and level > 0:
                 summary = combined_text
@@ -134,9 +120,7 @@ class RecursiveNodeSummarizer:
         return next_nodes
 
     @staticmethod
-    def _create_summary_node(
-        original_node: TextNode, summary: str, level: int = 0
-    ) -> TextNode:
+    def _create_summary_node(original_node: TextNode, summary: str, level: int = 0) -> TextNode:
         summary_node = TextNode(
             text=summary,
             metadata={
@@ -147,24 +131,16 @@ class RecursiveNodeSummarizer:
             relationships={},
         )
         if NodeRelationship.SOURCE in original_node.relationships:
-            summary_node.relationships[NodeRelationship.SOURCE] = (
-                original_node.relationships[NodeRelationship.SOURCE]
-            )
+            summary_node.relationships[NodeRelationship.SOURCE] = original_node.relationships[NodeRelationship.SOURCE]
         return summary_node
 
     @staticmethod
     def _set_parent_child(child_node: TextNode, parent_node: TextNode):
-        child_node.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(
-            node_id=parent_node.node_id
-        )
+        child_node.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=parent_node.node_id)
         if NodeRelationship.CHILD not in parent_node.relationships:
-            parent_node.relationships[NodeRelationship.CHILD] = [
-                RelatedNodeInfo(node_id=child_node.node_id)
-            ]
+            parent_node.relationships[NodeRelationship.CHILD] = [RelatedNodeInfo(node_id=child_node.node_id)]
         else:
-            parent_node.relationships[NodeRelationship.CHILD].append(
-                RelatedNodeInfo(node_id=child_node.node_id)
-            )
+            parent_node.relationships[NodeRelationship.CHILD].append(RelatedNodeInfo(node_id=child_node.node_id))
 
     @staticmethod
     def _combine_texts(
@@ -172,11 +148,7 @@ class RecursiveNodeSummarizer:
         next_nodes: List[TextNode],
         child_summaries: List[TextNode],
     ) -> str:
-        texts = (
-            [current_node.text]
-            + [node.text for node in next_nodes]
-            + [child.text for child in child_summaries]
-        )
+        texts = [current_node.text] + [node.text for node in next_nodes] + [child.text for child in child_summaries]
         return "\n\n".join(texts)
 
     @staticmethod
@@ -193,20 +165,13 @@ class RecursiveNodeSummarizer:
             grouped_nodes.setdefault(level, []).append(node)
         return grouped_nodes
 
-    def _get_relevant_child_summaries(
-        self, parent_node: TextNode, child_summaries: List[TextNode]
-    ) -> List[TextNode]:
-        return [
-            child for child in child_summaries if self._is_child_of(child, parent_node)
-        ]
+    def _get_relevant_child_summaries(self, parent_node: TextNode, child_summaries: List[TextNode]) -> List[TextNode]:
+        return [child for child in child_summaries if self._is_child_of(child, parent_node)]
 
     def _is_child_of(self, child_node: TextNode, parent_node: TextNode) -> bool:
         child_headers = self._get_header_hierarchy(child_node)
         parent_headers = self._get_header_hierarchy(parent_node)
-        return (
-            len(child_headers) == len(parent_headers) + 1
-            and child_headers[:-1] == parent_headers
-        )
+        return len(child_headers) == len(parent_headers) + 1 and child_headers[:-1] == parent_headers
 
     @staticmethod
     def _get_header_hierarchy(node: TextNode) -> List[str]:

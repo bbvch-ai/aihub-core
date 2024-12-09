@@ -12,45 +12,91 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
-adlfs = "^2024.7.0"
-arize-phoenix = "^5.5.2"
-azure-ai-documentintelligence = "^1.0.0b4"
+mongoengine = "^0.29.1"
 azure-cognitiveservices-speech = "^1.41.1"
-azure-identity = "^1.19.0"
-azure-mgmt-cognitiveservices = "^13.5.0"
-azure-mgmt-cosmosdb = "^9.6.0"
+azure-mgmt-cosmosdb = "^9.7.0"
 azure-mgmt-resource = "^23.2.0"
 azure-mgmt-search = "^9.1.0"
-azure-storage-file-datalake = "^12.18.0"
-azure-search-documents = "^11.5.2"
-llama-index-embeddings-azure-openai = "^0.2.5"
-llama-index-embeddings-text-embeddings-inference = "^0.2.0"
-llama-index-llms-azure-openai = "^0.2.2"
-llama-index-llms-openai-like = "^0.2.0"
-llama-index-storage-docstore-mongodb = "^0.2.1"
-llama-index-vector-stores-azureaisearch = "^0.2.8"
-llama-index-vector-stores-milvus = "^0.2.7"
-mongoengine = "^0.29.1"
-openinference-instrumentation-llama-index = "^3.0.2"
-opentelemetry-sdk = "^1.27.0"
-opentelemetry-api = "^1.27.0"
-pydantic = "^2.9.2"
+azure-mgmt-datalake-store = "^0.5.0"
+azure-mgmt-storage = "^21.2.1"
+llama-index-core = "^0.12.3"
+llama-index-vector-stores-azureaisearch = "^0.3.0"
+llama-index-storage-docstore-mongodb = "^0.3.0"
+networkx = "^3.4.2"
+flatdict = "^4.0.1"
+azure-ai-documentintelligence = "^1.0.0b4"
+openinference-instrumentation-llama-index = "^3.0.4"
+opentelemetry-sdk = "^1.28.2"
+opentelemetry-api = "^1.28.2"
 pydantic-settings = "^2.6.1"
 python-i18n = "^0.3.9"
-transformers = "^4.46.0"
 nats-py = "^2.9.0"
+pyyaml = "^6.0.2"
+llama-index-vector-stores-milvus = "^0.3.0"
+fsspec = "^2024.10.0"
+llama-index-readers-file = "^0.4.1"
+bson = "^0.5.10"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 isort = "^5.13.2"
-mypy = "^1.13.0"
 matplotlib = "^3.9.3"
 pytest-bdd = "^8.1.0"
 toml-sort = "^0.24.2"
 black = {extras = ["jupyter"], version = "^24.10.0"}
+mypy = "^1.13.0"
+types-pyyaml = "^6.0.12.20240917"
+types-networkx = "^3.4.2.20241115"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.tomlsort]
+all = true
+in_place = true
+spaces_before_inline_comment = 2
+spaces_indent_inline_array = 4
+trailing_comma_inline_array = true
+
+[tool.ruff]
+line-length = 120
+target-version = 'py311'
+
+[tool.ruff.lint]
+extend-ignore = ["E203"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+plugins = ['pydantic.mypy']
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''

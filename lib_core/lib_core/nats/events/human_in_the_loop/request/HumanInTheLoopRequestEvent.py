@@ -1,8 +1,8 @@
 from pydantic import Field
 
-from agents.Topic import AgentTopic
-from agents.Topic.AgentTopic import PartialAgentTopic
-from lib.Events import DisplayEvent
+from lib_core.nats.events.display.DisplayEvent import DisplayEvent
+from lib_core.nats.topics.agents.AgentTopic import AgentTopic
+from lib_core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
 class HumanInTheLoopRequestEvent(DisplayEvent):

@@ -22,7 +22,7 @@ class BaseContext:
         logger.debug(f"Serialized value for {key}: {serialized_value}")
         await self._kv.put(key, serialized_value.encode())
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
         await self._ensure_kv_store()
         try:
             entry = await self._kv.get(key)
@@ -31,7 +31,7 @@ class BaseContext:
             return val
         except Exception as e:
             logger.error(f"Error getting key '{key}': {e}")
-            return None
+            return default
 
     async def delete(self, key: str):
         await self._ensure_kv_store()

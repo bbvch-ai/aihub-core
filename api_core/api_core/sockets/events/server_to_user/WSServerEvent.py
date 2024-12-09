@@ -14,10 +14,11 @@ class WSServerEvent(BaseModel):
     run_id: Optional[str]
     event_type: Optional[str] = Field(TopicManager.DISPLAY_EVENT)
     event_name: str
+    event_id: str
     event_data: Dict
 
     @classmethod
-    def from_persisted_event(cls, persisted_event: PersistedEventEntity):
+    def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> 'WSServerEvent':
         return cls(
             agent_class=persisted_event.agent_class,
             agent_id=persisted_event.agent_id,
@@ -26,5 +27,6 @@ class WSServerEvent(BaseModel):
             run_id=persisted_event.run_id,
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
+            event_id=str(persisted_event.id),
             event_data=persisted_event.event_data,
         )

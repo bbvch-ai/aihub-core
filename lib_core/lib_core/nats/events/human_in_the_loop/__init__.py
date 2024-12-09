@@ -1,3 +1,9 @@
-from .request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
-from .response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
+from .request import HumanInTheLoopRequestEvent
+from .response import HumanInTheLoopResponseEvent
 from .HumanInTheLoop import HumanInTheLoop
+
+__all__ = [
+    "HumanInTheLoopRequestEvent",
+    "HumanInTheLoopResponseEvent",
+    "HumanInTheLoop",
+]

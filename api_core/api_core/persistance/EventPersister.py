@@ -17,7 +17,7 @@ class EventPersister:
             alias=self.db,
         )
 
-    async def persist_event(self, event: BaseEvent, topic: AgentTopic):
+    async def persist_event(self, event: BaseEvent, topic: AgentTopic) -> None:
         event = PersistedEventEntity(
             id=ObjectId(event.event_id),
             agent_class=topic.agent_class,

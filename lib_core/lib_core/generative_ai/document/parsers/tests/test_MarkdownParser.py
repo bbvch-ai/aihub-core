@@ -17,7 +17,9 @@ from lib_core.persistence.rag.vectors.node_metadata import (
     SOURCE,
     UPDATED_AT,
 )
-from lib_core.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
+from lib_core.generative_ai.document.parsers.MarkdownStructuralNodeParser import (
+    MarkdownStructuralNodeParser,
+)
 
 
 @pytest.fixture
@@ -41,9 +43,7 @@ def node_parser_with_chunk_size():
         UPDATED_AT: int(time()),
         INSERTED_AT: int(time()),
     }
-    return MarkdownStructuralNodeParser(
-        metadata=metadata, chunk_size=35, chunk_overlap=0
-    )
+    return MarkdownStructuralNodeParser(metadata=metadata, chunk_size=35, chunk_overlap=0)
 
 
 @pytest.fixture
@@ -305,9 +305,7 @@ def test_long_content(node_parser):
 
 
 def test_no_headers(node_parser):
-    text = (
-        "This is a document with no headers.\nIt should create one node with no header."
-    )
+    text = "This is a document with no headers.\nIt should create one node with no header."
     document = Document(text=text)
     nodes = node_parser.get_nodes_from_node(document)
 
@@ -356,24 +354,18 @@ def test_correct_relationships_between_sections(node_parser):
     document = Document(text=text)
     nodes = node_parser.get_nodes_from_node(document)
 
-    assert (
-        len(nodes) == 4
-    )  # Four nodes expected: Chapter 1, Section 1.1, Section 1.2, Chapter 2
+    assert len(nodes) == 4  # Four nodes expected: Chapter 1, Section 1.1, Section 1.2, Chapter 2
 
     # Check relationships
     assert nodes[0].metadata[H1] == "Chapter 1"
-    assert (
-        NodeRelationship.PREVIOUS not in nodes[0].relationships
-    )  # First node, no previous
+    assert NodeRelationship.PREVIOUS not in nodes[0].relationships  # First node, no previous
     assert (
         nodes[1].relationships[NodeRelationship.PREVIOUS].node_id == nodes[0].node_id
     )  # Section 1.1 points to Chapter 1
     assert (
         nodes[2].relationships[NodeRelationship.PREVIOUS].node_id == nodes[0].node_id
     )  # Section 1.2 also points to Chapter 1
-    assert (
-        NodeRelationship.PREVIOUS not in nodes[3].relationships
-    )  # Chapter 2 should not link back to Chapter 1
+    assert NodeRelationship.PREVIOUS not in nodes[3].relationships  # Chapter 2 should not link back to Chapter 1
 
 
 def test_correct_relationship_logic(node_parser):
@@ -398,21 +390,15 @@ def test_correct_relationship_logic(node_parser):
     nodes = node_parser.get_nodes_from_node(document)
 
     # Section 1.1 nodes (part 1 and part 2)
-    assert (
-        nodes[1].relationships[NodeRelationship.PREVIOUS].node_id == nodes[0].node_id
-    )  # Links back to Chapter 1
+    assert nodes[1].relationships[NodeRelationship.PREVIOUS].node_id == nodes[0].node_id  # Links back to Chapter 1
     assert NodeRelationship.NEXT not in nodes[1].relationships
 
     # Section 1.2 node
-    assert (
-        nodes[2].relationships[NodeRelationship.PREVIOUS].node_id == nodes[0].node_id
-    )  # Links back to Chapter 1
+    assert nodes[2].relationships[NodeRelationship.PREVIOUS].node_id == nodes[0].node_id  # Links back to Chapter 1
     assert NodeRelationship.NEXT not in nodes[2].relationships
 
     # Chapter 2 node
-    assert (
-        NodeRelationship.PREVIOUS not in nodes[3].relationships
-    )  # No previous relationship
+    assert NodeRelationship.PREVIOUS not in nodes[3].relationships  # No previous relationship
     assert NodeRelationship.NEXT not in nodes[3].relationships
 
 
@@ -454,49 +440,26 @@ def test_complex_text_correct_node_texts(node_parser_with_chunk_size, complex_te
         == "Content for Section 1.1, part 2. Lorem ipsum dolor sit amet, consetetur sadipscing elitr."
     )
     assert section_1_1_1.text == "### Section 1.1.1\nContent for Section 1.1.1"
-    assert (
-        section_1_1_2_part_1.text
-        == "### Section 1.1.2\nContent for Section 1.1.2, part 1."
-    )
+    assert section_1_1_2_part_1.text == "### Section 1.1.2\nContent for Section 1.1.2, part 1."
     assert (
         section_1_1_2_part_2.text
         == "Content for Section 1.1.2, part 2. Lorem ipsum dolor sit amet, consetetur sadipscing elitr."
     )
-    assert (
-        section_1_1_2_1_part_1.text
-        == "#### Section 1.1.2.1\nContent for Section 1.1.2.1, part 1."
-    )
-    assert (
-        section_1_1_2_1_part_2.text
-        == "Content for Section 1.1.2.1, part 2. Lorem ipsum dolor sit amet."
-    )
+    assert section_1_1_2_1_part_1.text == "#### Section 1.1.2.1\nContent for Section 1.1.2.1, part 1."
+    assert section_1_1_2_1_part_2.text == "Content for Section 1.1.2.1, part 2. Lorem ipsum dolor sit amet."
     assert section_1_1_3.text == "### Section 1.1.3\nContent for Section 1.1.3."
     assert section_1_2.text == "## Section 1.2\nContent for Section 1.2."
-    assert (
-        section_1_2_0_1_part_1.text
-        == "#### Section 1.2.0.1\nContent for Section 1.2.0.1, part 1."
-    )
-    assert (
-        section_1_2_0_1_part_2.text
-        == "Content for Section 1.2.0.1, part 2. Lorem ipsum dolor sit amet."
-    )
+    assert section_1_2_0_1_part_1.text == "#### Section 1.2.0.1\nContent for Section 1.2.0.1, part 1."
+    assert section_1_2_0_1_part_2.text == "Content for Section 1.2.0.1, part 2. Lorem ipsum dolor sit amet."
     assert section_1_3.text == "## Section 1.3"
     assert section_1_4.text == "## Section 1.4"
     assert section_1_4_1.text == "### Section 1.4.1\nContent for Section 1.4.1"
-    assert (
-        section_1_4_1_0_0_1_part_1.text
-        == "###### Section 1.4.1.0.0.1\nContent for Section 1.4.1.0.0.1, part 1."
-    )
-    assert (
-        section_1_4_1_0_0_1_part_2.text
-        == "Content for Section 1.4.1.0.0.1, part 2. Lorem ipsum dolor sit amet."
-    )
+    assert section_1_4_1_0_0_1_part_1.text == "###### Section 1.4.1.0.0.1\nContent for Section 1.4.1.0.0.1, part 1."
+    assert section_1_4_1_0_0_1_part_2.text == "Content for Section 1.4.1.0.0.1, part 2. Lorem ipsum dolor sit amet."
     assert chapter_2.text == "# Chapter 2\nContent for Chapter 2."
 
 
-def test_complex_text_correct_node_header_meta(
-    node_parser_with_chunk_size, complex_text
-):
+def test_complex_text_correct_node_header_meta(node_parser_with_chunk_size, complex_text):
     document = Document(text=complex_text)
     nodes = node_parser_with_chunk_size.get_nodes_from_node(document)
 
@@ -594,9 +557,7 @@ def test_complex_text_correct_node_header_meta(
     assert all([chapter_2.metadata[h] is None for h in [H2, H3, H4, H5, H6]])
 
 
-def test_complex_text_correct_node_prev_and_next(
-    node_parser_with_chunk_size, complex_text
-):
+def test_complex_text_correct_node_prev_and_next(node_parser_with_chunk_size, complex_text):
     document = Document(text=complex_text)
     nodes = node_parser_with_chunk_size.get_nodes_from_node(document)
 
@@ -631,9 +592,7 @@ def test_complex_text_correct_node_prev_and_next(
         return NodeRelationship.NEXT not in node.relationships
 
     def has_prev(node, prev_node):
-        return (
-            node.relationships[NodeRelationship.PREVIOUS].node_id == prev_node.node_id
-        )
+        return node.relationships[NodeRelationship.PREVIOUS].node_id == prev_node.node_id
 
     def has_no_prev(node):
         return NodeRelationship.PREVIOUS not in node.relationships
@@ -678,9 +637,7 @@ def test_complex_text_correct_node_prev_and_next(
     assert has_no_next(chapter_2)
 
 
-def test_complex_text_correct_node_lines_meta(
-    node_parser_with_chunk_size, complex_text
-):
+def test_complex_text_correct_node_lines_meta(node_parser_with_chunk_size, complex_text):
     document = Document(text=complex_text)
     nodes = node_parser_with_chunk_size.get_nodes_from_node(document)
 
@@ -747,9 +704,7 @@ def test_complex_text_correct_node_lines_meta(
     assert chapter_2.metadata["section_end_line"] == 63
 
 
-def test_complex_text_correct_node_index_meta(
-    node_parser_with_chunk_size, complex_text
-):
+def test_complex_text_correct_node_index_meta(node_parser_with_chunk_size, complex_text):
     document = Document(text=complex_text)
     nodes = node_parser_with_chunk_size.get_nodes_from_node(document)
 

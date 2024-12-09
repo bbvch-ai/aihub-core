@@ -57,7 +57,8 @@ class WebSocketReceiver:
                 run_id=run_id,
             )
             subject = topic_manager.get_subject_for_control_event_in_thread(
-                event_name=ws_event.event.__class__.__name__
+                event_name=ws_event.event.__class__.__name__,
+                event_id=ws_event.event.event_id,
             )
             await self.publisher.publish_event(ws_event.event, subject)
 
@@ -97,6 +98,7 @@ class WebSocketReceiver:
             run_id=topic.run_id,
         )
         subject = topic_manager.get_subject_for_control_event_in_thread(
-            event_name=ws_event.event.__class__.__name__
+            event_name=ws_event.event.__class__.__name__,
+            event_id=ws_event.event.event_id,
         )
         await self.publisher.publish_event(ws_event.event, subject)

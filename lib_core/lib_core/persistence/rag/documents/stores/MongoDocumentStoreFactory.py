@@ -2,12 +2,12 @@ from functools import cache
 
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
-from lib_core.infrastructure.azure.cosmos import CosmosConnectionStringSingleton
+from lib_core.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 
 
 @cache
 def create_mongo_document_store(document_store_name: str) -> MongoDocumentStore:
-    cosmos_conn_singleton = CosmosConnectionStringSingleton()
+    cosmos_conn_singleton = CosmosAccess()
     docstore = MongoDocumentStore.from_uri(
         uri=cosmos_conn_singleton.get_connection_string(),
         db_name=document_store_name,

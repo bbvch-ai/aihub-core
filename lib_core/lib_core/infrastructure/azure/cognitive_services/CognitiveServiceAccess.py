@@ -30,10 +30,6 @@ class CognitiveServiceAccess:
                 break
 
         if subscription_id is None:
-            raise ValueError(
-                f"Subscription with name '{self._subscription_name}' not found."
-            )
+            raise ValueError(f"Subscription with name '{self._subscription_name}' not found.")
 
-        self._client = CognitiveServicesManagementClient(
-            self._azure_credential, subscription_id
-        )
+        self._client = CognitiveServicesManagementClient(self._azure_credential, subscription_id)

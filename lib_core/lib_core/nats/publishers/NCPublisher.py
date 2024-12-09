@@ -7,11 +7,10 @@ from lib_core.nats.events import BaseEvent
 
 logger = logging.getLogger(__name__)
 
-TEvent = TypeVar('TEvent', bound=BaseEvent)
+TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class NCPublisher(Generic[TEvent]):
-
     def __init__(self, nc: NATS):
         self.nc = nc
 

@@ -11,15 +11,9 @@ class BaseConfig(BaseSettings):
         pattern=r"^sub-lz-[\w-]+-[\w-]+-\d{3}$",
         description="Azure subscription name",
     )
-    ENVIRONMENT: Literal["dev", "prod"] = Field(
-        ..., description="Environment: dev or prod"
-    )
-    APP_NAME: str = Field(
-        ..., pattern=r"^[a-z]+$", description="App name: lowercase, no whitespace"
-    )
-    REGION_SHORT: str = Field(
-        ..., min_length=2, max_length=3, description="ISO country code"
-    )
+    ENVIRONMENT: Literal["dev", "prod"] = Field(..., description="Environment: dev or prod")
+    APP_NAME: str = Field(..., pattern=r"^[a-z]+$", description="App name: lowercase, no whitespace")
+    REGION_SHORT: str = Field(..., min_length=2, max_length=3, description="ISO country code")
 
     SHARED_DB_NAME: str = Field(
         "SHARED",
@@ -30,9 +24,7 @@ class BaseConfig(BaseSettings):
     DEV_DEBUG: bool = Field(False, description="Debug mode for development")
     VERSION: Optional[str] = Field(None, description="Version of the app")
 
-    FRONTEND_ORIGIN: Optional[str] = Field(
-        None, description="Comma separated list of origins to allow CORS"
-    )
+    FRONTEND_ORIGIN: Optional[str] = Field(None, description="Comma separated list of origins to allow CORS")
 
     model_config = SettingsConfigDict(
         env_file=str(Path(__file__).parent.parent.parent / ".env"),

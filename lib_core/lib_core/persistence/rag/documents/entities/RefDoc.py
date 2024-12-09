@@ -44,24 +44,23 @@ class RefDoc(Document):
         "strict": False,
     }
     id = StringField(primary_key=True)
-    data = EmbeddedDocumentField(
-        DocumentData, db_field="__data__"
-    )  # Renamed for querying convenience
+    data = EmbeddedDocumentField(DocumentData, db_field="__data__")  # Renamed for querying convenience
     type_ = StringField(db_field="__type__")  # Renamed for consistency
 
     # Static methods for querying
-    @staticmethod
-    def by_id(organization_shortname: str, doc_id: str) -> "RefDoc":
-        return RefDoc.objects.using(organization_shortname).get(id=doc_id)
+    @classmethod
+    def by_id(cls, organization_shortname: str, doc_id: str) -> "RefDoc":
+        return cls.objects.using(organization_shortname).get(id=doc_id)
 
-    @staticmethod
+    @classmethod
     def by_namespace(
+        cls,
         organization_shortname: str,
         namespace: str,
         exclude_ids: Optional[List[str]] = None,
     ) -> List["RefDoc"]:
         return list(
-            RefDoc.objects.using(organization_shortname).filter(
+            cls.objects.using(organization_shortname).filter(
                 data__metadata__namespace=namespace, id__nin=(exclude_ids or [])
             )
         )

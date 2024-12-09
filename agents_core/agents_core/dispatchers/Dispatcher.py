@@ -82,7 +82,7 @@ class Dispatcher:
                 logger.debug(
                     f"Triggering step '{step_method.__name__}' due to '{event.__class__.__name__}'")
                 task = asyncio.create_task(
-                    self.execute_step(step_method, run_context, thread_context, topic)
+                    self.execute_step(event, step_method, run_context, thread_context, topic)
                 )
                 tasks.append(task)
         if tasks:
@@ -146,6 +146,7 @@ class Dispatcher:
         param: inspect.Parameter,
         step_method: Callable,
         events: Dict[str, List[ControlEvent]],
+        trigger_event: ControlEvent,
     ) -> Optional[Any]:
         """Retrieves the appropriate event value for a given parameter."""
         event_types = step_method._input_event_mapping.get(param.name, set())
@@ -176,10 +177,13 @@ class Dispatcher:
 
         # Handle single event
         else:
+            if trigger_event.event_id in [event.event_id for event in all_matching_events]:
+                return trigger_event
             return all_matching_events[-1]  # Return the latest event
 
     async def execute_step(
         self,
+        trigger_event: ControlEvent,
         step_method: Callable,
         run_context: RunContext,
         thread_context: ThreadContext,
@@ -199,30 +203,28 @@ class Dispatcher:
             if param.name == 'self':
                 continue
 
-            # Handle context parameters
-            if param.annotation == RunContext:
-                kwargs[param.name] = run_context
-                continue
-
-            if param.annotation == AgentConfig:
-                kwargs[param.name] = self.agent_config
-                continue
-
             if self.step_configs.get(param.annotation):
                 kwargs[param.name] = self.step_configs[param.annotation]
                 continue
 
-            elif param.annotation == ThreadContext:
+            if issubclass(param.annotation, AgentConfig):
+                kwargs[param.name] = self.agent_config
+                continue
+
+            if param.annotation == RunContext:
+                kwargs[param.name] = run_context
+                continue
+
+            if param.annotation == ThreadContext:
                 kwargs[param.name] = thread_context
                 continue
 
-            elif param.annotation == EventDisplayer:
-                kwargs[param.name] = EventDisplayer(self.publisher,
-                                                    topic_manager=self.get_topic_manager_for_thread(topic))
+            if param.annotation == EventDisplayer:
+                kwargs[param.name] = EventDisplayer(self.publisher, topic_manager=self.get_topic_manager_for_thread(topic))
                 continue
 
             # Handle event parameters
-            event_value = await self._get_event_value(param, step_method, events)
+            event_value = await self._get_event_value(param, step_method, events, trigger_event)
             if event_value is not None or parameter_optional_map.get(param.name, False):
                 kwargs[param.name] = event_value
             else:
@@ -259,6 +261,7 @@ class Dispatcher:
                             run_id=topic.run_id,
                             thread_id=topic.thread_id,
                             display_id=topic.display_id,
+                            event_id=event.event_id,
                         )
 
                     await self.event_store.store_event(topic.run_id, event)
@@ -278,8 +281,8 @@ class Dispatcher:
         """Publishes a control event to the appropriate subject."""
         topic_manager = self.get_topic_manager_for_thread(topic)
         if isinstance(event, ControlEvent):
-            subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__)
+            subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
             await self.publisher.publish_event(event, subject)
         if isinstance(event, DisplayEvent):
-            subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__)
+            subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
             await self.publisher.publish_event(event, subject)

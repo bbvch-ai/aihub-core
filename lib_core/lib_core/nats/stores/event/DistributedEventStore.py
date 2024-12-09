@@ -25,7 +25,7 @@ class DistributedEventStore(StoreBase):
         # Append new event data
         event_list_data.append(event.model_dump())
         # Remove duplicates based on 'event_id'
-        event_list_data = list({event['event_id']: event for event in event_list_data}.values())
+        event_list_data = list({event["event_id"]: event for event in event_list_data}.values())
 
         # Store updated list
         await kv.put(event_type, json.dumps(event_list_data).encode())

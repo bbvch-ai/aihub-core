@@ -6,8 +6,9 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from lib_core.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import \
-    DocumentIntelligenceAccess
+from lib_core.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
+    DocumentIntelligenceAccess,
+)
 from agents_core.tracing.decorators.tracing import tracing
 
 
@@ -15,9 +16,7 @@ class DocumentIntelligenceLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.document_intelligence_client = (
-            DocumentIntelligenceAccess().get_client()
-        )
+        self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
 
     @tracing()
     def load_data(

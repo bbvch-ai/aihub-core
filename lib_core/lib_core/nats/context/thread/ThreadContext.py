@@ -24,11 +24,11 @@ class ThreadContext(BaseContext):
                 bucket=f"thread_context_{thread_id}",
                 ttl=timedelta(days=30).seconds,
                 history=1,
-                storage=StorageType.FILE
+                storage=StorageType.FILE,
             )
             logger.debug(f"Created KV store 'thread_context_{thread_id}'")
         except Exception as e:
-            if 'already in use' in str(e).lower():
+            if "already in use" in str(e).lower():
                 # Bucket already exists, ignore
                 logger.debug(f"KV store 'thread_context_{thread_id}' already in use")
                 pass

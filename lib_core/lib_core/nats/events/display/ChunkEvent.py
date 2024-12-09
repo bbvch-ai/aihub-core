@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from lib.Events.DisplayEvent.DisplayEvent import DisplayEvent
+from lib_core.nats.events.display.DisplayEvent import DisplayEvent
 
 
 class ChunkEvent(DisplayEvent):

@@ -26,12 +26,12 @@ class RunContext(BaseContext):
                     bucket=f"run_context_{thread_id}_{run_id}",
                     ttl=timedelta(minutes=60).seconds,
                     history=1,
-                    storage=StorageType.FILE
+                    storage=StorageType.FILE,
                 )
             )
             logger.debug(f"Created KV store 'run_context_{thread_id}_{run_id}'")
         except Exception as e:
-            if 'already in use' in str(e).lower():
+            if "already in use" in str(e).lower():
                 # Bucket already exists, ignore
                 logger.debug(f"KV store 'run_context_{thread_id}_{run_id}' already in use")
                 pass

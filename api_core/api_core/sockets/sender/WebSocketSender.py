@@ -27,7 +27,8 @@ class WebSocketSender:
                 run_id=topic.run_id,
                 event_type=topic.event_type,
                 event_name=topic.event_name,
-                event_data=event.model_dump()
+                event_id=event.event_id,
+                event_data=event.model_dump(),
             )
         else:
             ws_event = WSServerEvent(
@@ -38,6 +39,7 @@ class WebSocketSender:
                 run_id="",
                 event_type="",
                 event_name=event.__class__.__name__,
+                event_id=event.event_id,
                 event_data=event.model_dump()
             )
         for user in users:

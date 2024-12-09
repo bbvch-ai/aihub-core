@@ -25,5 +25,5 @@ class AccessToken(Document):
     user = EmbeddedDocumentField(ApiUser)
 
     @staticmethod
-    def by_id(organization_shortname: str, token: str):
+    def by_id(organization_shortname: str, token: str) -> "AccessToken":
         return AccessToken.objects.using(organization_shortname).get(id=token)

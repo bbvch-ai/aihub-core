@@ -2,7 +2,9 @@ from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.core.credentials import AzureKeyCredential
 
 from lib_core.infrastructure.azure import CognitiveServiceAccess
-from lib_core.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceConfig import DocumentIntelligenceConfig
+from lib_core.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceConfig import (
+    DocumentIntelligenceConfig,
+)
 
 
 class DocumentIntelligenceAccess(CognitiveServiceAccess):
@@ -13,9 +15,7 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(DocumentIntelligenceAccess, cls).__new__(
-                cls
-            )
+            cls._instance = super(DocumentIntelligenceAccess, cls).__new__(cls)
             cls._instance._initialize()
         return cls._instance
 
@@ -28,9 +28,7 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
         ):
             self.di_client = DocumentIntelligenceClient(
                 endpoint=DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_ENDPOINT,
-                credential=AzureKeyCredential(
-                    DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_API_KEY
-                ),
+                credential=AzureKeyCredential(DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_API_KEY),
                 api_version=DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_API_VERSION,
             )
             return
@@ -42,19 +40,14 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
             or f"{self._app}-{self._env}-rg-{self._region}"
         )
         self._di_service_name = (
-            DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_NAME
-            or f"{self._app}-{self._env}-di-{self._region}"
+            DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_NAME or f"{self._app}-{self._env}-di-{self._region}"
         )
 
-        account = self._client.accounts.get(
-            self._resource_group_name, self._di_service_name
-        )
+        account = self._client.accounts.get(self._resource_group_name, self._di_service_name)
         self._location = account.location
         self._di_endpoint = account.properties.endpoint
 
-        keys = self._client.accounts.list_keys(
-            self._resource_group_name, self._di_service_name
-        )
+        keys = self._client.accounts.list_keys(self._resource_group_name, self._di_service_name)
         self._primary_admin_key = keys.primary_key
 
         self.di_client = DocumentIntelligenceClient(

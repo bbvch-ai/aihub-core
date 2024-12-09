@@ -21,7 +21,7 @@ class EventDisplayer:
         self.topic_manager = topic_manager
 
     async def display_event(self, event: DisplayEvent, content: Optional[str] = None):
-        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__)
+        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
         attributes = FlatterDict(event.model_dump(), delimiter=".").as_dict()
 
         current_span = trace.get_current_span()

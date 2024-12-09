@@ -8,7 +8,6 @@ from agents_core.tracing.decorators.tracing import tracing
 
 
 class RawLoader(BaseReader):
-
     @tracing()
     def load_data(
         self,

@@ -7,7 +7,7 @@ from lib_core.nats.events import BaseEvent
 
 logger = logging.getLogger(__name__)
 
-TEvent = TypeVar('TEvent', bound=BaseEvent)
+TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class JSPublisher(Generic[TEvent]):

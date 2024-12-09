@@ -8,12 +8,14 @@ from nats.js import JetStreamContext
 from lib_core.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from lib_core.nats.streams.StreamManager import StreamManager
 from lib_core.nats.topic_managers.TopicManager import TopicManager
-from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import (
+    AgentInstanceTopicManager,
+)
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
 logger = logging.getLogger(__name__)
 
-TEvent = TypeVar('TEvent', bound=BaseEvent)
+TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class JSSubscriber(Generic[TEvent]):
@@ -25,7 +27,8 @@ class JSSubscriber(Generic[TEvent]):
         stream_subject: str,
         queue_group: str,
         event_cls: Type[TEvent],
-        handler: Callable[[TEvent, AgentTopic], Awaitable[None]], js: Optional[JetStreamContext] = None,
+        handler: Callable[[TEvent, AgentTopic], Awaitable[None]],
+        js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
         self.nc = nc
@@ -40,13 +43,10 @@ class JSSubscriber(Generic[TEvent]):
 
     async def start(self):
         await self.stream_manager.ensure_agent_stream_exists()
-        self.js_subscription = await self.js.subscribe(
-            self.subject,
-            cb=self.message_handler,
-            queue=self.queue_group
-        )
+        self.js_subscription = await self.js.subscribe(self.subject, cb=self.message_handler, queue=self.queue_group)
         logger.debug(
-            f"Subscribed to '{self.subject}' with stream_manager '{self.stream_manager}' and queue group '{self.queue_group}'.")
+            f"Subscribed to '{self.subject}' with stream_manager '{self.stream_manager}' and queue group '{self.queue_group}'."
+        )
 
     async def stop(self):
         if self.js_subscription:
@@ -72,7 +72,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Coroutine[Any, Any, None]],
+        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -99,7 +99,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Coroutine[Any, Any, None]],
+        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -126,7 +126,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Coroutine[Any, Any, None]],
+        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -145,7 +145,7 @@ class JSSubscriber(Generic[TEvent]):
             event_cls=DisplayEvent,
             handler=handler,
             js=js,
-            ack_on_fail=ack_on_fail
+            ack_on_fail=ack_on_fail,
         )
 
     @classmethod
@@ -153,7 +153,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Coroutine[Any, Any, None]],
+        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -180,7 +180,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Coroutine[Any, Any, None]],
+        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):

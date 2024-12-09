@@ -31,10 +31,7 @@ class StreamManager:
             )
 
     async def ensure_agent_stream_exists(self):
-        return await self.ensure_stream_exists(
-            stream_name=self.stream_name,
-            subject=self.stream_subject
-        )
+        return await self.ensure_stream_exists(stream_name=self.stream_name, subject=self.stream_subject)
 
     def __repr__(self):
         return f"JSManager(stream_name={self.stream_name}, stream_subject={self.stream_subject})"
