@@ -1,0 +1,121 @@
+name: Auto Tag on Push
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.3
+
+      - name: Create new version number & tag for lib_core
+        run: |
+          # List all tags that match the pattern 'v*' and check if the list is empty
+          tags=$(git tag -l "v*")
+          if [ -z "$tags" ]; then
+            echo "No version tags found, starting with v0.0.0"
+            latest_tag="v0.0.0"
+          else
+            # Get the latest tag matching 'v*'
+            latest_tag=$(git describe --tags --match "v*" --abbrev=0)
+          fi
+          echo "Latest tag: $latest_tag"
+          
+          # Remove the 'v' prefix for version manipulation
+          version_number=${latest_tag#"v"}
+          
+          echo "Version number: $version_number"
+
+          
+          # Split into components
+          major=$(echo $version_number | cut -d. -f1)
+          minor=$(echo $version_number | cut -d. -f2)
+          patch=$(echo $version_number | cut -d. -f3)
+          
+          # Increment the minor version
+          new_minor=$(($minor + 1))
+          new_tag="v$major.$new_minor.$patch"
+          echo "New tag: $new_tag"
+          echo "VERSION=$new_tag" >> $GITHUB_ENV
+        
+      - name: Tag the commit and push the tag
+        run: |
+          # Tag the commit
+          git tag ${{ env.VERSION }}
+          git push origin ${{ env.VERSION }}
+
+      - name: Increment version-tag in pyproject.toml
+        run: |
+          echo "Update tag reference to lib_core in pipelines_core"
+          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' pipelines_core/pyproject.toml
+          echo "Update package version in pipelines_core/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' pipelines_core/pyproject.toml
+          echo "Update package version in lib_core/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' lib_core/pyproject.toml
+
+      - name: Install dependencies in pipelines_core
+        working-directory: ./pipelines_core
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          pip install poetry
+          poetry lock --no-update
+          poetry install --with dev
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf
+
+
+      - name: Delete existing tag
+        run: |
+          # Ensure the tag is not present locally
+          git tag -d ${{ env.VERSION }} || true
+          # Ensure the tag is not present remotely
+          git push origin --delete ${{ env.VERSION }} || true
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pipelines_core/pyproject.toml
+          git add pipelines_core/poetry.lock
+          git add lib_core/pyproject.toml
+          git commit -m "ops(bot): Update tag number to ${{ env.VERSION }} [skip ci]"
+          git push origin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Tag
+        run: |
+          # Tag the commit
+          git tag ${{ env.VERSION }}
+          
+          # Push the tags
+          git push origin ${{ env.VERSION }}
+        env:
+          GIT_COMMITTER_NAME: ${{ github.actor }}
+          GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          GIT_AUTHOR_NAME: ${{ github.actor }}
+          GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
