@@ -1,14 +1,13 @@
-import asyncio
-import functools
+
 import logging
 
-import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from agents_core.runners.AgentTestRunner import AgentTestRunner
 from lib_core.i18n.LocaleString import LocaleString
 from lib_core.nats.events import StartEvent
+from lib_core.testing.asyncio_utils.bdd import async_test
 from playground.SimpleAgent.Events.EventA import EventA
 from playground.SimpleAgent.SimpleAgent import SimpleAgent
 from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
@@ -16,15 +15,6 @@ from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
 logging.getLogger().setLevel(logging.DEBUG)
 
 scenarios("../tests/features/simple_agent.feature")
-
-def run_async_test(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            asyncio.run(func(*args, **kwargs))
-        except Exception as e:
-            pytest.fail(f"Failed due to exception: {str(e)}")
-    return wrapper
 
 
 @given("a SimpleAgent runner", target_fixture="agent_runner")
@@ -40,7 +30,7 @@ def _():
     )
 
 @when(parsers.parse('a the start event is sent with payload "{payload}"'))
-@run_async_test
+@async_test
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(

@@ -45,7 +45,7 @@ class AgentTestRunner(AgentRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(self, delay_before_stop: int = 5) -> AsyncGenerator[PartialAgentTopic, None]:
+    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[PartialAgentTopic, None]:
         await self.start()
 
         thread_id = str(ObjectId())
