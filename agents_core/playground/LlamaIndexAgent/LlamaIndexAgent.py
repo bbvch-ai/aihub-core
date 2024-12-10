@@ -10,9 +10,8 @@ class LlamaIndexAgent(Agent):
     @step()
     async def start_step(self, event: StartEvent, agent_config: LlamaIndexAgentConfig, displayer: EventDisplayer) -> StopEvent:
         print("[LlamaIndexAgent.start_step]")
-        llm, cost_tracker = agent_config.llm.to_llama_index()
 
-        await displayer.display_llm(llm.stream_chat(messages=event.messages))
-        await displayer.display_llm_costs(agent_config.llm.name, cost_tracker)
+        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+            await displayer.display_llm(llm.stream_chat(messages=event.messages))
 
         return StopEvent()

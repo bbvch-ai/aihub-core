@@ -45,8 +45,9 @@ class EventDisplayer:
         await self.display_event(event, content=thought)
 
     async def display_llm_costs(self, model_name: str, cost_tracker: LLMCostTracker):
+        print("Display costs")
         llm_cost_event = LLMCostEvent.from_llm_costs(
-            model_name=model_name,
+            llm_name=model_name,
             costs=cost_tracker.get_total_costs(),
         )
         await self.display_event(llm_cost_event)

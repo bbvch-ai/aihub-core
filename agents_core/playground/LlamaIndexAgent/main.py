@@ -56,7 +56,7 @@ async def main():
         display_id=str(ObjectId()),
         run_id=str(ObjectId()),
     )
-    await sleep(5)
+    await sleep(10)
     await runner.stop()
 
 if __name__ == "__main__":

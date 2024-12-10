@@ -3,15 +3,15 @@ from lib_core.nats.events.cost.CostEvent import CostEvent
 
 
 class LLMCostEvent(CostEvent, LLMCosts):
-    model_name: str
+    llm_name: str
 
     def get_total_costs(self) -> float:
         return self.prompt_tokens_costs + self.completion_tokens_costs + self.embedding_tokens_costs
 
     @classmethod
-    def from_llm_costs(cls, model_name: str, costs: LLMCosts):
+    def from_llm_costs(cls, llm_name: str, costs: LLMCosts):
         return cls(
-            model_name=model_name,
+            llm_name=llm_name,
             prompt_token_count=costs.prompt_token_count,
             completion_token_count=costs.completion_token_count,
             embedding_token_count=costs.embedding_token_count,

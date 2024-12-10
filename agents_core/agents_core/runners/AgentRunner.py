@@ -100,5 +100,5 @@ class AgentRunner:
             display_id,
             run_id,
         )
-        subject = thread_topic_manager.get_subject_for_control_event_in_thread(start_event.__class__.__name__)
+        subject = thread_topic_manager.get_subject_for_control_event_in_thread(start_event.__class__.__name__, event_id=start_event.event_id)
         await publisher.publish_event(start_event, subject)
