@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.LLMConfig import LLMConfig, ModelParameter
 
 
@@ -17,5 +17,5 @@ class EmbeddingLLMConfig(LLMConfig):
     @abstractmethod
     def to_llama_index(
         self, model_parameter: Optional[EmbeddingLLMModelParameter]
-    ) -> Tuple[BaseEmbedding, CostTracker]:
+    ) -> Tuple[BaseEmbedding, LLMCostTracker]:
         pass

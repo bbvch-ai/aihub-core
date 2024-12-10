@@ -4,7 +4,7 @@ from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
 from transformers import AutoTokenizer
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
 
 
@@ -23,11 +23,11 @@ class SelfHostedLLMConfig(ChatLLMConfig):
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedLLMParameter] = None
-    ) -> Tuple[OpenAILike, CostTracker]:
+    ) -> Tuple[OpenAILike, LLMCostTracker]:
         tokenizer = AutoTokenizer.from_pretrained(self.name)
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 
-        cost_tracker = CostTracker(token_counter)
+        cost_tracker = LLMCostTracker(token_counter)
         additional_kwargs = self.merge_model_params(model_parameter)
 
         open_ai_like = OpenAILike(

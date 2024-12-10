@@ -5,7 +5,7 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig, \
     EmbeddingLLMModelParameter
 
@@ -24,11 +24,11 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
 
     def to_llama_index(
         self, model_parameter: Optional[AzureOpenAIEmbeddingParameter] = None
-    ) -> Tuple[AzureOpenAIEmbedding, CostTracker]:
+    ) -> Tuple[AzureOpenAIEmbedding, LLMCostTracker]:
         tokenizer = tiktoken.encoding_for_model(self.name).encode
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 
-        cost_tracker = CostTracker(
+        cost_tracker = LLMCostTracker(
             token_counter,
             embedding_tokens_costs_per_thousand=self.embedding_tokens_costs_per_thousand,
         )

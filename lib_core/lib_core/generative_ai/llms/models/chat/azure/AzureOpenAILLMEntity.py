@@ -5,7 +5,7 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.azure_openai import AzureOpenAI
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
 
 
@@ -22,11 +22,11 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
 
     default_parameter: AzureOpenAIParameter
 
-    def to_llama_index(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> Tuple[AzureOpenAI, CostTracker]:
+    def to_llama_index(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> Tuple[AzureOpenAI, LLMCostTracker]:
         tokenizer = tiktoken.encoding_for_model(self.name).encode
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 
-        cost_tracker = CostTracker(
+        cost_tracker = LLMCostTracker(
             token_counter,
             prompt_tokens_costs_per_thousand=self.prompt_tokens_costs_per_thousand,
             completion_tokens_costs_per_thousand=self.completion_tokens_costs_per_thousand,

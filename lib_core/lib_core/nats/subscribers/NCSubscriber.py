@@ -108,3 +108,20 @@ class NCSubscriber(Generic[TEvent]):
             handler=handler,
             ack_on_fail=ack_on_fail,
         )
+
+    @classmethod
+    def for_thread_control_events(
+            cls,
+            nc: NATS,
+            topic_manager: AgentThreadTopicManager,
+            handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+            ack_on_fail=True,
+    ):
+        subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=DisplayEvent,
+            handler=handler,
+            ack_on_fail=ack_on_fail,
+        )

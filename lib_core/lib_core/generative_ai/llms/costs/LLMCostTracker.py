@@ -1,9 +1,9 @@
 from llama_index.core.callbacks import TokenCountingHandler
 
-from lib_core.generative_ai.llms.costs.Costs import Costs
+from lib_core.generative_ai.llms.costs.LLMCosts import LLMCosts
 
 
-class CostTracker:
+class LLMCostTracker:
     def __init__(
         self,
         token_counter: TokenCountingHandler,
@@ -16,8 +16,8 @@ class CostTracker:
         self._completion_tokens_costs_per_thousand = completion_tokens_costs_per_thousand
         self._embedding_tokens_costs_per_thousand = embedding_tokens_costs_per_thousand
 
-    def get_total_costs(self) -> Costs:
-        return Costs(
+    def get_total_costs(self) -> LLMCosts:
+        return LLMCosts(
             prompt_token_count=self._token_counter.prompt_llm_token_count,
             completion_token_count=self._token_counter.completion_llm_token_count,
             embedding_token_count=self._token_counter.total_embedding_token_count,

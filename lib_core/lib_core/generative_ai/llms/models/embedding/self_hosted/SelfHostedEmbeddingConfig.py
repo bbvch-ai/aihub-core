@@ -4,7 +4,7 @@ from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from transformers import AutoTokenizer
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig, \
     EmbeddingLLMModelParameter
 
@@ -24,11 +24,11 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedEmbeddingParameter]
-    ) -> Tuple[TextEmbeddingsInference, CostTracker]:
+    ) -> Tuple[TextEmbeddingsInference, LLMCostTracker]:
         tokenizer = AutoTokenizer.from_pretrained(self.name)
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 
-        cost_tracker = CostTracker(token_counter)
+        cost_tracker = LLMCostTracker(token_counter)
         additional_kwargs = self.merge_model_params(model_parameter)
 
         text_embedding_inference = TextEmbeddingsInference(

@@ -19,6 +19,17 @@ logging.basicConfig(
 )
 logging.getLogger().setLevel(logging.DEBUG)
 
+azure_loggers = [
+    'azure.identity',
+    'azure.core.pipeline',
+    'azure.core.pipeline.policies',
+    'azure.core.pipeline.transport',
+    'urllib3'
+]
+
+for logger_name in azure_loggers:
+    logging.getLogger(logger_name).setLevel(logging.WARNING)
+
 async def main():
     runner = AgentRunner(
         servers=["nats://localhost:4222"],

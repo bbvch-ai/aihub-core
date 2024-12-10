@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class Costs(BaseModel):
+class LLMCosts(BaseModel):
     """
     Represents the token usage and associated costs for different components of an API request.
     """

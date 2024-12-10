@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Optional, Tuple
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.LLMConfig import LLMConfig, ModelParameter
 
 
@@ -18,5 +18,5 @@ class ChatLLMConfig(LLMConfig):
     default_parameter: ChatLLMModelParameter
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLMConfig, CostTracker]:
+    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLMConfig, LLMCostTracker]:
         pass

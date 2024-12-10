@@ -6,7 +6,7 @@ from llama_index.core.llms import LLM
 
 from pydantic import BaseModel
 
-from lib_core.generative_ai.llms.costs.CostTracker import CostTracker
+from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 
 
 class ModelParameter(BaseModel):
@@ -19,7 +19,7 @@ class LLMConfig(BaseModel):
     default_parameter: ModelParameter
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ModelParameter]) -> Tuple[LLM | BaseEmbedding, CostTracker]:
+    def to_llama_index(self, model_parameter: Optional[ModelParameter]) -> Tuple[LLM | BaseEmbedding, LLMCostTracker]:
         pass
 
     def merge_model_params(self, model_parameter: Optional[ModelParameter]) -> Dict:
