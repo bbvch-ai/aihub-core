@@ -6,6 +6,6 @@ Feature: Simple Agent
     When a the start event is sent with payload "Hello"
     Then runner has start event
     And runner has stop event
-    And runner has event A with payload "Hell Nah"
+    And runner has event A with payload "Hello"
 
 
