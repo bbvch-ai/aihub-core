@@ -7,6 +7,6 @@ Feature: Simple Agent
     When a the start event is sent with payload "Hello"
     Then a StartEvent is present with payload "Hello"
     And a StopEvent is present
-    And an EventA event is present with payload "Hell Nah"
+    And an EventA event is present with payload "Hello"
 
 

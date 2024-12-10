@@ -27,7 +27,8 @@ def run_async_test(func):
     return wrapper
 
 
-@given("a SimpleAgent runner", target_fixture="agent_runner")def given_agent_config():
+@given("a SimpleAgent runner", target_fixture="agent_runner")
+def _():
     return AgentTestRunner(
         agent_class=SimpleAgent,
         agent_config=SimpleAgentConfig(
@@ -42,7 +43,6 @@ def run_async_test(func):
 @run_async_test
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
-        logging.debug("topic", topic)
         await agent_runner.send_event_from_topic(
             start_event=StartEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
             topic=topic,
@@ -50,7 +50,7 @@ async def _(agent_runner: AgentTestRunner, payload: str):
 
 
 @then(parsers.parse('a StartEvent is present with payload "{payload}"'))
-def _(agent_runner: AgentTestRunner):
+def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
 
 @then("a StopEvent is present")
