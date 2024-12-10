@@ -6,7 +6,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from agents_core.runners.AgentRunner import AgentRunner
-from lib_core.generative_ai.llms.models.chat.azure.AzureOpenAILLMEntity import AzureOpenAILLMConfig, \
+from lib_core.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, \
     AzureOpenAIParameter
 from lib_core.i18n.LocaleString import LocaleString
 from lib_core.nats.events import StartEvent
