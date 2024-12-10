@@ -3,6 +3,7 @@ from typing import Optional
 from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import (
     AgentInstanceTopicManager,
 )
+from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
 
 class AgentThreadTopicManager(AgentInstanceTopicManager):
@@ -18,6 +19,16 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         self.thread_id = thread_id
         self.display_id = display_id
         self.run_id = run_id
+
+    def get_subject_for_all_event_in_thread(self, event_name: str, event_id: Optional[str] = "*") -> str:
+        return self.get_subject_for_specific_event_in_agent_instance(
+            thread_id=self.thread_id,
+            display_id=self.display_id,
+            run_id=self.run_id,
+            event_type="*",
+            event_name=event_name,
+            event_id=event_id,
+        )
 
     def get_subject_for_control_event_in_thread(self, event_name: str, event_id: Optional[str] = "*") -> str:
         return self.get_subject_for_specific_event_in_agent_instance(
@@ -53,4 +64,14 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,
+        )
+
+    @classmethod
+    def from_agent_topic(cls, topic: AgentTopic):
+        return cls(
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            run_id=topic.run_id,
         )

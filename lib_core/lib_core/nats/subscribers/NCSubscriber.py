@@ -6,7 +6,7 @@ from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 
-from lib_core.nats.events import BaseEvent, DisplayEvent
+from lib_core.nats.events import BaseEvent, DisplayEvent, ControlEvent
 from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import (
     AgentThreadTopicManager,
@@ -114,7 +114,7 @@ class NCSubscriber(Generic[TEvent]):
             cls,
             nc: NATS,
             topic_manager: AgentThreadTopicManager,
-            handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+            handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
             ack_on_fail=True,
     ):
         subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
@@ -122,6 +122,23 @@ class NCSubscriber(Generic[TEvent]):
             nc=nc,
             subject=subject,
             event_cls=DisplayEvent,
+            handler=handler,
+            ack_on_fail=ack_on_fail,
+        )
+
+    @classmethod
+    def for_all_thread_events(
+            cls,
+            nc: NATS,
+            topic_manager: AgentThreadTopicManager,
+            handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+            ack_on_fail=True,
+    ):
+        subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
             handler=handler,
             ack_on_fail=ack_on_fail,
         )

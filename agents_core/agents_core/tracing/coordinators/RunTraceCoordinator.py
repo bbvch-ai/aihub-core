@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
@@ -14,14 +15,17 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.propagate import inject, extract
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.trace import Span, StatusCode, set_tracer_provider
+from opentelemetry.trace import Span, StatusCode, set_tracer_provider, get_current_span
 from pydantic import BaseModel
+from nats.aio.client import Client as NATS
 
 from agents_core.displayers.EventDisplayer import EventDisplayer
 from agents_core.tracing.phoenix.PhoenixConfig import PhoenixConfig
 from lib_core.nats.context.BaseContext import BaseContext
-from lib_core.nats.events import StartEvent, BaseEvent
+from lib_core.nats.events import StartEvent, BaseEvent, StopEvent, ExceptionEvent, ControlEvent, ChunkEvent
 from lib_core.nats.events.semantic import SemanticEvent
+from lib_core.nats.subscribers.NCSubscriber import NCSubscriber
+from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 from agents_core.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
@@ -29,7 +33,9 @@ logger = logging.getLogger(__name__)
 
 
 class RunTraceCoordinator:
-    def __init__(self):
+    def __init__(self, nc: NATS):
+        self.nc = nc
+
         endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
         tracer_provider = TracerProvider()
         set_tracer_provider(tracer_provider)
@@ -44,25 +50,62 @@ class RunTraceCoordinator:
             name=f"🤖 {topic.agent_class}",
             kind=trace.SpanKind.SERVER,
             attributes={
-                SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.AGENT.value,
-                SpanAttributes.SESSION_ID: topic.thread_id,
-                SpanAttributes.INPUT_VALUE: event.model_dump_json(),
-                SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
+                SpanAttributes.INPUT_VALUE: event.messages[-1].content,
+                SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
                 SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
-            }
+            },
+            end_on_exit=False,
         ) as span:
             logger.debug(f"Tracing run start for {topic.agent_class}")
             span_context = trace.set_span_in_context(span)
             telemetry_headers = {}
             inject(telemetry_headers, context=span_context)
             logger.debug(f"Tracing run start for {topic.agent_class} with headers {telemetry_headers}")
+            asyncio.create_task(self._end_span_on_event(topic, span))
             return telemetry_headers
+
+    async def _end_span_on_event(self, topic: AgentTopic, span: Span):
+        response_aggregate = ""
+
+        async def handler(event: BaseEvent, topic: AgentTopic):
+            if isinstance(event, ChunkEvent):
+                logger.debug(f"Received ChunkEvent in tracing coordinator")
+                nonlocal response_aggregate
+                response_aggregate += event.content
+            if isinstance(event, StopEvent) or isinstance(event, ExceptionEvent):
+                logger.debug(f"Received StopEvent in tracing coordinator")
+                self.trace_run_stop(span, event, content=response_aggregate)
+                await subscriber.stop()
+
+        subscriber = NCSubscriber.for_all_thread_events(
+            nc=self.nc,
+            topic_manager=AgentThreadTopicManager.from_agent_topic(topic),
+            handler=handler,
+        )
+        logger.debug(f"Starting subscriber for {topic.agent_class}")
+        await subscriber.start()
+
+    def trace_run_stop(self, span: Span, event: StopEvent | ExceptionEvent, content: str):
+        logger.debug(f"Stopping span due to StopEvent")
+
+        if isinstance(event, ExceptionEvent):
+            span.set_status(StatusCode.ERROR, event.message)
+        else:
+            span.set_status(StatusCode.OK)
+
+        span.set_attributes({
+            SpanAttributes.OUTPUT_VALUE: content,
+            SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
+        })
+        span.end()
 
     @asynccontextmanager
     async def trace_step_start(self, telemetry_headers: Dict, topic: AgentTopic, step_method: Callable,
                                kwargs: Dict[str, Any]) -> AsyncIterator[Span]:
         # Extract the parent context
         parent_context = extract(telemetry_headers)
+
         logger.debug(
             f"Tracing step start for {topic.agent_class}.{step_method.__name__} with headers {telemetry_headers}")
 

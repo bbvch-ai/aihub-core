@@ -47,7 +47,7 @@ class AgentRunner:
         self.js = self.nc.jetstream()
 
         # Initialize dispatcher
-        self.dispatcher = Dispatcher(self.agent_class, self.agent_config, self.js, self.topic_manager)
+        self.dispatcher = Dispatcher(self.agent_class, self.agent_config, self.nc, self.js, self.topic_manager)
 
         # Start subscriber
         self.subscriber = JSSubscriber.for_agent_instance_control_events(

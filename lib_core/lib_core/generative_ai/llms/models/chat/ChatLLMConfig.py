@@ -29,5 +29,4 @@ class ChatLLMConfig(LLMConfig):
     async def cost_reporting_llm(self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMModelParameter] = None):
         llm, cost_tracker = self.to_llama_index(model_parameter)
         yield llm
-        print("Finished with yield")
         await displayer.display_llm_costs(self.name, cost_tracker)

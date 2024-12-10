@@ -5,6 +5,7 @@ from typing import Type, Dict, Set, List, get_origin, Callable, Any, Optional
 import asyncio
 
 from nats.js import JetStreamContext
+from nats.aio.client import Client as NATS
 
 from agents_core.agents.abstract.Agent import Agent
 from agents_core.agents.abstract.AgentConfig import AgentConfig
@@ -30,17 +31,19 @@ class Dispatcher:
         self,
         agent: Type[Agent],
         agent_config: AgentConfig,
+        nc: NATS,
         js: JetStreamContext,
         topic_manager: AgentInstanceTopicManager,
     ):
         self.agent = agent
         self.agent_config = agent_config
+        self.nc = nc
         self.js = js
         self.topic_manager = topic_manager
         self.publisher = JSPublisher(self.js)
         self.event_store = DistributedEventStore(js)
         self.step_store = DistributedStepStore(js)
-        self.tracer = RunTraceCoordinator()
+        self.tracer = RunTraceCoordinator(self.nc)
         self.step_configs = agent_config.get_step_configs()
 
     async def handle_event(self, event: ControlEvent, topic: AgentTopic):
@@ -53,10 +56,11 @@ class Dispatcher:
         thread_context = await ThreadContext.create(self.js, topic.thread_id)
 
         if isinstance(event, StartEvent):
+            logger.debug("Handling StartEvent")
+
             telemetry_headers = self.tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
 
-            logger.debug("Handling StartEvent")
             event_data = event.to_context_dict()
             for key, value in event_data.items():
                 logger.debug(f"Setting key '{key}' to '{value}'")
@@ -70,6 +74,7 @@ class Dispatcher:
             return
 
         if isinstance(event, ExceptionEvent):
+            logger.debug("Handling ExceptionEvent")
             await self.step_store.mark_run_as_crashed(topic.run_id)
             return
 
