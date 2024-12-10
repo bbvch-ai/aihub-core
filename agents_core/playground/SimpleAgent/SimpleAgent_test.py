@@ -1,15 +1,12 @@
 import asyncio
 import logging
-from asyncio import sleep
 
-from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from agents_core.runners.AgentRunner import AgentRunner
+from agents_core.runners.AgentTestRunner import AgentTestRunner
 from lib_core.i18n.LocaleString import LocaleString
 from lib_core.nats.events import StartEvent
-from lib_core.nats.subscribers.NCSubscriber import NCSubscriber
-from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from playground.SimpleAgent.Events.EventA import EventA
 from playground.SimpleAgent.SimpleAgent import SimpleAgent
 from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
 
@@ -20,12 +17,7 @@ logging.basicConfig(
 logging.getLogger().setLevel(logging.DEBUG)
 
 async def main():
-    events = []
-    async def append_event(event, topic):
-        events.append(event)
-
-    runner = AgentRunner(
-        servers=["nats://localhost:4222"],
+    runner = AgentTestRunner(
         agent_class=SimpleAgent,
         agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
@@ -35,34 +27,18 @@ async def main():
         ),
     )
 
-    await runner.start()
+    async with runner.test_run() as topic:
+        await runner.send_event_from_topic(
+            start_event=StartEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
+            topic=topic,
+        )
 
-    thread_id = str(ObjectId())
-    display_id = str(ObjectId())
-    run_id = str(ObjectId())
+    assert runner.has_start_event, "Agent did not receive start event"
+    assert runner.has_stop_event, "Agent did not receive stop event"
+    assert runner.has_event_of_type(EventA), "Agent did not receive EventA"
+    assert not runner.has_exception_event, "Agent received an exception event"
+    assert runner.get_event_of_type(EventA).payload == "Hello", "Agent received incorrect data"
 
-    event_subscriber = NCSubscriber.for_thread_control_events(
-        nc=runner.nc,
-        topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
-            runner.topic_manager,
-            thread_id=thread_id,
-            display_id=display_id,
-            run_id=run_id,
-        ),
-        handler=append_event,
-    )
-    await event_subscriber.start()
-
-    await runner.send_event(
-        start_event=StartEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
-        thread_id=thread_id,
-        display_id=display_id,
-        run_id=run_id,
-    )
-    await sleep(5)
-    await runner.stop()
-
-    print(events)
 
 if __name__ == "__main__":
     asyncio.run(main())
