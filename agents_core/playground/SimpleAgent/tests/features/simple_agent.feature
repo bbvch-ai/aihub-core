@@ -2,10 +2,12 @@ Feature: Simple Agent
   test for SimpleAgent
 
   Scenario: Test Simple Agent
-    Given an test runner
+    Given a SimpleAgent runner
+
     When a the start event is sent with payload "Hello"
-    Then runner has start event
-    And runner has stop event
-    And runner has event A with payload "Hell Nah"
+
+    Then a StartEvent is present with payload "Hello"
+    And a StopEvent is present
+    And an EventA event is present with payload "Hell Nah"
 
 
