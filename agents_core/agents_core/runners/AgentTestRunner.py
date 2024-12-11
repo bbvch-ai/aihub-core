@@ -1,7 +1,7 @@
 import logging
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import List, Type, AsyncGenerator
+from typing import List, Type, AsyncGenerator, Optional
 
 from bson import ObjectId
 from openai import BaseModel
@@ -34,8 +34,8 @@ class ObservedEvent(BaseModel):
 
 class AgentTestRunner(AgentRunner):
 
-    def __init__(self, agent_class: Type[Agent], agent_config: AgentConfig):
-        super().__init__(servers=["nats://localhost:4222"], agent_class=agent_class, agent_config=agent_config)
+    def __init__(self, agent_class: Type[Agent], agent_config: AgentConfig, locale_paths: Optional[List[str]]=None):
+        super().__init__(servers=["nats://localhost:4222"], agent_class=agent_class, agent_config=agent_config, locale_paths=locale_paths)
         self.observed_events = []
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):

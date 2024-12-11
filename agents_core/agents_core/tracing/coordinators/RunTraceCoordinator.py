@@ -123,7 +123,11 @@ class RunTraceCoordinator:
             elif isinstance(arg, BaseModel):
                 input_values[name] = arg.model_dump()
             else:
-                input_values[name] = arg
+                try:
+                    json.dumps(arg)
+                    input_values[name] = arg
+                except TypeError:
+                    input_values[name] = str(arg)
 
         # Use start_as_current_span to create a child span
         span_name = f"{topic.agent_class}.{step_method.__name__}"

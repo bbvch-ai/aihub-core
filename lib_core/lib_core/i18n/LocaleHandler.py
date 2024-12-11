@@ -1,21 +1,42 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import yaml
+import i18n
+from typing_extensions import Optional
 
-from lib_core.MultiLocale import MultiLocale
+from lib_core.i18n.LocaleString import LocaleString
 
 
 class LocaleHandler:
     DEFAULT_LOCALE = "de"
     LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]
 
-    def __init__(self, locale: str):
-        self.locale = locale  # TODO: why do we set this and never use it?
+    def __init__(self, locale: Optional[str] = None):
+        self._locale = locale or self.DEFAULT_LOCALE
 
-    @staticmethod
-    def extract(locale_data: Dict[str, Any] | MultiLocale, locale: str | None = None) -> Any:
+    def configure(self, locale_paths: Optional[List[str]] = None) -> "LocaleHandler":
+        i18n.set("skip_locale_root_data", True)
+        i18n.set("enable_memoization", True)
+
+        locale_paths = locale_paths or []
+        for path in (locale_paths + self.get_locale_paths()):
+            i18n.load_path.append(path)
+
+        return self
+
+    def get_locale_paths(self) -> List[str]:
+        current_file_directory = os.path.dirname(os.path.abspath(__file__))
+        relative_path = os.path.join(current_file_directory, "translations")
+        return [relative_path]
+
+    def get_locale(self, locale: str):
+        if locale and locale in self.LOCALE_WHITE_LIST:
+            return locale
+        return self._locale or self.DEFAULT_LOCALE
+
+    def extract(self, locale_data: Dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
         """
         Some database properties are multi-lingual. This function returns the property in the user's locale.
         Example:
@@ -27,23 +48,21 @@ class LocaleHandler:
         }
         -> extract(agent_name) -> "Such-Agent" (if the user's locale is "de")
         """
-        if locale is None or locale not in LocaleHandler.LOCALE_WHITE_LIST:
-            locale = LocaleHandler.DEFAULT_LOCALE
-
+        locale = self.get_locale(locale)
         if isinstance(locale_data, dict):
             if len(locale_data) == 0:
                 return None
-            return LocaleHandler.extract_dict(locale_data, locale)
-        elif isinstance(locale_data, MultiLocale):
-            return LocaleHandler.extract_multi_locale(locale_data, locale)
+            return self.extract_dict(locale_data, locale)
+        elif isinstance(locale_data, LocaleString):
+            return self.extract_multi_locale(locale_data, locale)
         return locale_data
 
-    @staticmethod
-    def extract_dict(locale_data: Dict[str, Any] | MultiLocale, locale: str) -> Any:
+    def extract_dict(self, locale_data: Dict[str, Any] | LocaleString, locale: str) -> Any:
+        locale = self.get_locale(locale)
         value = locale_data.get(locale, None)
         if value:
             return value
-        fallback_value = locale_data.get(LocaleHandler.DEFAULT_LOCALE, None)
+        fallback_value = locale_data.get(self.DEFAULT_LOCALE, None)
         if fallback_value:
             return fallback_value
         available_locales = list(locale_data.keys())
@@ -51,23 +70,23 @@ class LocaleHandler:
             return locale_data[available_locales[0]]
         raise ValueError("No language keys available")
 
-    @staticmethod
-    def extract_multi_locale(locale_data: Dict[str, Any] | MultiLocale, locale: str) -> Any:
+    def extract_multi_locale(self, locale_data: Dict[str, Any] | LocaleString, locale: str) -> Any:
+        locale = self.get_locale(locale)
         value = getattr(locale_data, locale, None)
         if value:
             return value
-        fallback_value = getattr(locale_data, LocaleHandler.DEFAULT_LOCALE, None)
+        fallback_value = getattr(locale_data, self.DEFAULT_LOCALE, None)
         if fallback_value:
             return fallback_value
         available_locales = [
-            field for field in LocaleHandler.LOCALE_WHITE_LIST if getattr(locale_data, field, None) is not None
+            field for field in self.LOCALE_WHITE_LIST if getattr(locale_data, field, None) is not None
         ]
         if available_locales:
             return getattr(locale_data, available_locales[0])
         raise ValueError("No language keys available")
 
-    @staticmethod
-    def t_object(key: str, locale: str) -> Any:
+    def t_object(self, key: str, locale: str) -> Any:
+        locale = self.get_locale(locale)
         folder, filename, *path = key.split(".")
         current_file_directory = Path(__file__).resolve().parent
         app_directory = current_file_directory.parent
@@ -80,3 +99,11 @@ class LocaleHandler:
             for key in path:
                 data = data[key]
             return data
+
+    def in_locale(self, locale: str):
+        return self.__class__(
+            locale=locale,
+        )
+
+    def __call__(self, key: str, locale: Optional[str] = None) -> str:
+        return i18n.t(key, locale=self.get_locale(locale))

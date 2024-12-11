@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Type, List
+import os
+from typing import Type, List, Optional
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -8,6 +9,7 @@ from nats.js import JetStreamContext
 from agents_core.agents.abstract.Agent import Agent
 from agents_core.agents.abstract.AgentConfig import AgentConfig
 from agents_core.dispatchers.Dispatcher import Dispatcher
+from agents_core.i18n.AgentLocaleHandler import AgentLocaleHandler
 from lib_core.nats.events import StartEvent
 from lib_core.nats.publishers.JSPublisher import JSPublisher
 from lib_core.nats.subscribers.JSSubscriber import JSSubscriber
@@ -17,7 +19,7 @@ from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThr
 logger = logging.getLogger(__name__)
 
 class AgentRunner:
-    def __init__(self, servers: List[str], agent_class: Type[Agent], agent_config: AgentConfig):
+    def __init__(self, servers: List[str], agent_class: Type[Agent], agent_config: AgentConfig, locale_paths: Optional[List[str]]=None):
         self.servers = servers
         self.agent_class = agent_class
         self.agent_config = agent_config
@@ -33,6 +35,8 @@ class AgentRunner:
         self.dispatcher: Dispatcher | None = None
         self.subscriber: JSSubscriber | None = None
 
+        self.locale_handler = AgentLocaleHandler().configure(locale_paths)
+
     async def start(self):
         if self.running:
             logger.warning("AgentRunner is already running.")
@@ -47,7 +51,7 @@ class AgentRunner:
         self.js = self.nc.jetstream()
 
         # Initialize dispatcher
-        self.dispatcher = Dispatcher(self.agent_class, self.agent_config, self.nc, self.js, self.topic_manager)
+        self.dispatcher = Dispatcher(self.agent_class, self.agent_config, self.nc, self.js, self.topic_manager, self.locale_handler)
 
         # Start subscriber
         self.subscriber = JSSubscriber.for_agent_instance_control_events(

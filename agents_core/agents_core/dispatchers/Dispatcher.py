@@ -10,6 +10,8 @@ from nats.aio.client import Client as NATS
 from agents_core.agents.abstract.Agent import Agent
 from agents_core.agents.abstract.AgentConfig import AgentConfig
 from agents_core.displayers.EventDisplayer import EventDisplayer
+from agents_core.i18n.AgentLocaleHandler import AgentLocaleHandler
+from lib_core.i18n.LocaleHandler import LocaleHandler
 from lib_core.nats.context.run.RunContext import RunContext
 from lib_core.nats.context.thread.ThreadContext import ThreadContext
 from lib_core.nats.events import ControlEvent, StartEvent, StopEvent, ExceptionEvent, BaseEvent, DisplayEvent
@@ -34,12 +36,15 @@ class Dispatcher:
         nc: NATS,
         js: JetStreamContext,
         topic_manager: AgentInstanceTopicManager,
+        locale_handler: AgentLocaleHandler,
     ):
         self.agent = agent
         self.agent_config = agent_config
         self.nc = nc
         self.js = js
         self.topic_manager = topic_manager
+        self.locale_handler = locale_handler
+
         self.publisher = JSPublisher(self.js)
         self.event_store = DistributedEventStore(js)
         self.step_store = DistributedStepStore(js)
@@ -226,6 +231,11 @@ class Dispatcher:
 
             if param.annotation == EventDisplayer:
                 kwargs[param.name] = EventDisplayer(self.publisher, topic_manager=self.get_topic_manager_for_thread(topic))
+                continue
+
+            if param.annotation in [LocaleHandler, AgentLocaleHandler]:
+                locale = await run_context.get("locale")
+                kwargs[param.name] = self.locale_handler.in_locale(locale)
                 continue
 
             # Handle event parameters
