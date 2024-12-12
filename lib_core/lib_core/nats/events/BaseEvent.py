@@ -38,7 +38,7 @@ class BaseEvent(BaseModel):
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
         super().__pydantic_init_subclass__(**kwargs)
-        logging.debug("Registering", cls.__name__)
+        logger.debug("Registering", cls.__name__)
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod

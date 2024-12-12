@@ -217,7 +217,7 @@ class Dispatcher:
                 kwargs[param.name] = self.step_configs[param.annotation]
                 continue
 
-            if issubclass(param.annotation, AgentConfig):
+            if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
                 kwargs[param.name] = self.agent_config
                 continue
 

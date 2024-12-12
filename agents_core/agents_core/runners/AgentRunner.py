@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 from typing import Type, List, Optional
 
 from nats.aio.client import Client as NATS
@@ -19,15 +18,15 @@ from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThr
 logger = logging.getLogger(__name__)
 
 class AgentRunner:
-    def __init__(self, servers: List[str], agent_class: Type[Agent], agent_config: AgentConfig, locale_paths: Optional[List[str]]=None):
+    def __init__(self, servers: List[str], agent_type: Type[Agent], agent_config: AgentConfig, locale_paths: Optional[List[str]]=None):
         self.servers = servers
-        self.agent_class = agent_class
+        self.agent_type = agent_type
         self.agent_config = agent_config
         self.running = False
         self._stop_event = asyncio.Event()
 
-        self.agent_name = self.agent_class.__name__
-        self.topic_manager = AgentInstanceTopicManager(self.agent_name, self.agent_config.agent_id)
+        self.agent_class = self.agent_type.__name__
+        self.topic_manager = AgentInstanceTopicManager(self.agent_class, self.agent_config.agent_id)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
@@ -35,7 +34,7 @@ class AgentRunner:
         self.dispatcher: Dispatcher | None = None
         self.subscriber: JSSubscriber | None = None
 
-        self.locale_handler = AgentLocaleHandler().configure(locale_paths)
+        self.locale_handler = AgentLocaleHandler(locale_paths)
 
     async def start(self):
         if self.running:
@@ -51,7 +50,7 @@ class AgentRunner:
         self.js = self.nc.jetstream()
 
         # Initialize dispatcher
-        self.dispatcher = Dispatcher(self.agent_class, self.agent_config, self.nc, self.js, self.topic_manager, self.locale_handler)
+        self.dispatcher = Dispatcher(self.agent_type, self.agent_config, self.nc, self.js, self.topic_manager, self.locale_handler)
 
         # Start subscriber
         self.subscriber = JSSubscriber.for_agent_instance_control_events(
@@ -62,7 +61,7 @@ class AgentRunner:
         )
         await self.subscriber.start()
 
-        logger.debug(f"{self.agent_name} is now running and subscribed to incoming messages.")
+        logger.debug(f"{self.agent_class} is now running and subscribed to incoming messages.")
         asyncio.create_task(self._run_loop())
 
     async def stop(self):
@@ -70,7 +69,7 @@ class AgentRunner:
             logger.warning("AgentRunner is not running.")
             return
 
-        logger.debug(f"Shutting down {self.agent_name}...")
+        logger.debug(f"Shutting down {self.agent_class}...")
         self._stop_event.set()
         self.running = False
         await self.nc.close()

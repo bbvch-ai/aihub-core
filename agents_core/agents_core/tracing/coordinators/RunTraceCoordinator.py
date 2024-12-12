@@ -46,12 +46,13 @@ class RunTraceCoordinator:
 
     def trace_run_start(self, topic: AgentTopic, event: StartEvent) -> Dict:
         # Start a new run span and save it
+        user_input = event.messages[-1].content if len(event.messages) > 0 else ""
         with self.tracer.start_as_current_span(
             name=f"🤖 {topic.agent_class}",
             kind=trace.SpanKind.SERVER,
             attributes={
                 SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
-                SpanAttributes.INPUT_VALUE: event.messages[-1].content,
+                SpanAttributes.INPUT_VALUE: user_input,
                 SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
                 SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
             },

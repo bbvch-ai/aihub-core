@@ -32,21 +32,20 @@ class ThreadEntity(Document):
     @classmethod
     def create_thread(cls, name: str, users: List[User], agents: List[Agent]) -> 'ThreadEntity':
         thread = cls(name=name, users=users, agents=agents)
-        thread.switch_db("aihub")
         thread.save()
         return thread
 
     @classmethod
     def get_thread_by_id(cls, thread_id: str) -> 'ThreadEntity':
-        return cls.objects().using("aihub").get(id=ObjectId(thread_id))
+        return cls.objects().get(id=ObjectId(thread_id))
 
     @classmethod
     def get_threads_by_user(cls, user_id: str) -> List['ThreadEntity']:
-        return cls.objects().using("aihub").filter(users__user_id=user_id)
+        return cls.objects().filter(users__user_id=user_id)
 
     @classmethod
     def get_threads_by_users(cls, user_ids: List[str]) -> List['ThreadEntity']:
-        return cls.objects().using("aihub").filter(users__user_id__in=user_ids)
+        return cls.objects().filter(users__user_id__in=user_ids)
 
     @classmethod
     def add_user_to_thread(cls, thread_id: str, user: User) -> 'ThreadEntity':

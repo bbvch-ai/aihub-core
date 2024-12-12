@@ -13,10 +13,9 @@ class LocaleHandler:
     DEFAULT_LOCALE = "de"
     LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]
 
-    def __init__(self, locale: Optional[str] = None):
+    def __init__(self, locale: Optional[str] = None, locale_paths: Optional[List[str]] = None):
         self._locale = locale or self.DEFAULT_LOCALE
 
-    def configure(self, locale_paths: Optional[List[str]] = None) -> "LocaleHandler":
         i18n.set("skip_locale_root_data", True)
         i18n.set("enable_memoization", True)
 
@@ -24,7 +23,11 @@ class LocaleHandler:
         for path in (locale_paths + self.get_locale_paths()):
             i18n.load_path.append(path)
 
-        return self
+        i18n.load_path = list(set(i18n.load_path))
+
+    @property
+    def locale(self):
+        return self._locale
 
     def get_locale_paths(self) -> List[str]:
         current_file_directory = os.path.dirname(os.path.abspath(__file__))

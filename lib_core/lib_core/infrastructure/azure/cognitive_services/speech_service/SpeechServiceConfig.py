@@ -14,7 +14,7 @@ class SpeechServiceConfig(BaseSettings):
     SPEECH_SERVICE_NAME: Optional[str] = Field(None, description="Name of the Speech Service Resource")
 
     model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"),
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

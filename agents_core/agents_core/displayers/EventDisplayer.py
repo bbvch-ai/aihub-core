@@ -38,8 +38,8 @@ class EventDisplayer:
 
         await self.publisher.publish_event(event, subject)
 
-    async def display_chunk(self, content: str):
-        event = ChunkEvent(content=content)
+    async def display_chunk(self, content: str, model_name: str):
+        event = ChunkEvent(content=content, model_name=model_name)
         await self.display_event(event, content=content)
 
     async def display_thought(self, thought: str):
@@ -69,16 +69,16 @@ class EventDisplayer:
                 # Split at the first newline
                 section, buffer = buffer.split("\n", 1)
                 # Display the section + newline as a separate chunk
-                await self.display_chunk(section + "\n")
+                await self.display_chunk(section + "\n", model_name=llm_config.name)
 
             # If no newline but buffer is getting large, flush to avoid delay
             if len(buffer) > max_buffer_length:
-                await self.display_chunk(buffer)
+                await self.display_chunk(buffer, model_name=llm_config.name)
                 buffer = ""
 
         # After the loop, if there's any leftover in the buffer, flush it
         if buffer:
-            await self.display_chunk(buffer)
+            await self.display_chunk(buffer, model_name=llm_config.name)
 
         handlers = llm.callback_manager.handlers
         token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)

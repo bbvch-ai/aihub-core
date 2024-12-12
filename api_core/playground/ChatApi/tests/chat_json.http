@@ -1,0 +1,48 @@
+### Test: Post Chat Completion
+POST http://127.0.0.1:8000/chat/completions/my_agent_class/my_agent_id/json
+Content-Type: application/json
+Accept: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, how are you?"
+    }
+  ]
+}
+
+> {%
+client.test("Status is 200 OK", function() {
+    client.assert(response.status === 200, "Expected status code is 200");
+});
+
+client.test("Response content type is JSON", function() {
+    client.assert(response.headers.valueOf("content-type") ==="application/json", "Expected JSON response");
+});
+
+client.test("Check OpenAI-style completion structure", function() {
+    const body = response.body;
+
+    // Top-level fields
+    client.assert(typeof body.id === "string", "Expected 'id' field as a string");
+    client.assert(body.object === "chat.completion", "Expected object to be 'chat.completion'");
+    client.assert(typeof body.created === "number", "Expected 'created' field as a number");
+    client.assert(body.model === "gpt-4", "Expected model to be 'gpt-4o-mini'");
+
+    // Choices array
+    client.assert(Array.isArray(body.choices), "Expected 'choices' to be an array");
+    client.assert(body.choices.length > 0, "Expected at least one choice");
+    const firstChoice = body.choices[0];
+    client.assert(typeof firstChoice.index === "number", "Expected 'index' field as a number");
+    client.assert(firstChoice.message && firstChoice.message.role === "assistant", "Expected first choice message to have role 'assistant'");
+    client.assert(typeof firstChoice.message.content === "string" && firstChoice.message.content.length > 0, "Expected 'content' as a non-empty string");
+    client.assert(firstChoice.finish_reason === "stop", "Expected 'finish_reason' to be 'stop'");
+
+    // Usage object
+    client.assert(typeof body.usage === "object", "Expected 'usage' object");
+    client.assert(typeof body.usage.prompt_tokens === "number", "Expected 'prompt_tokens' as a number");
+    client.assert(typeof body.usage.completion_tokens === "number", "Expected 'completion_tokens' as a number");
+    client.assert(typeof body.usage.total_tokens === "number", "Expected 'total_tokens' as a number");
+});
+%}

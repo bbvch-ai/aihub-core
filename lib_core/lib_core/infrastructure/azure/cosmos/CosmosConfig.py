@@ -11,7 +11,7 @@ class CosmosConfig(BaseSettings):
     COSMOS_ACCOUNT_NAME: Optional[str] = Field(None, description="Overwrite the MongoDB account name")
 
     model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"),
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

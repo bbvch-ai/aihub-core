@@ -33,6 +33,15 @@ llama-index-vector-stores-milvus = "^0.3.0"
 fsspec = "^2024.10.0"
 llama-index-readers-file = "^0.4.1"
 bson = "^0.5.10"
+colorlog = "^6.9.0"
+openinference-instrumentation = "^0.1.19"
+openinference-instrumentation-llama-index = "^3.0.4"
+openinference-semantic-conventions = "^0.1.12"
+opentelemetry-api = "^1.29.0"
+opentelemetry-instrumentation = "^0.50b0"
+opentelemetry-sdk = "^1.29.0"
+opentelemetry-semantic-conventions = "^0.50b0"
+pydantic = "^2.10.3"
 
 
 [tool.poetry.group.dev.dependencies]

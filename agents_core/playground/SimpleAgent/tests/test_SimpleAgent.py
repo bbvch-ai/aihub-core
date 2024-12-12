@@ -12,7 +12,6 @@ from playground.SimpleAgent.Events.EventA import EventA
 from playground.SimpleAgent.SimpleAgent import SimpleAgent
 from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
 
-logging.getLogger().setLevel(logging.DEBUG)
 
 scenarios("../tests/features/simple_agent.feature")
 

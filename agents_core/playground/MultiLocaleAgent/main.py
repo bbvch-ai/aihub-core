@@ -10,15 +10,10 @@ from lib_core.nats.events import StartEvent
 from playground.MultiLocaleAgent.MultiLocaleAgent import MultiLocaleAgent
 from playground.MultiLocaleAgent.MultiLocaleAgentConfig import MultiLocaleAgentConfig
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(name)s.%(funcName)s] %(levelname)s: %(message)s'
-)
-logging.getLogger().setLevel(logging.DEBUG)
 
 async def main():
     runner = AgentTestRunner(
-        agent_class=MultiLocaleAgent,
+        agent_type=MultiLocaleAgent,
         agent_config=MultiLocaleAgentConfig(
             agent_id="multi_locale_agent",
             name=LocaleString(en="Multi Locale Agent"),

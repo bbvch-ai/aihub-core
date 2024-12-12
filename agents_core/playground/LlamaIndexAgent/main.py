@@ -6,6 +6,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from agents_core.runners.AgentRunner import AgentRunner
+from agents_core.runners.AgentTestRunner import AgentTestRunner
 from lib_core.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, \
     AzureOpenAIParameter
 from lib_core.i18n.LocaleString import LocaleString
@@ -13,27 +14,10 @@ from lib_core.nats.events import StartEvent
 from playground.LlamaIndexAgent.LlamaIndexAgent import LlamaIndexAgent
 from playground.LlamaIndexAgent.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(name)s.%(funcName)s] %(levelname)s: %(message)s'
-)
-logging.getLogger().setLevel(logging.DEBUG)
-
-azure_loggers = [
-    'azure.identity',
-    'azure.core.pipeline',
-    'azure.core.pipeline.policies',
-    'azure.core.pipeline.transport',
-    'urllib3'
-]
-
-for logger_name in azure_loggers:
-    logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 async def main():
-    runner = AgentRunner(
-        servers=["nats://localhost:4222"],
-        agent_class=LlamaIndexAgent,
+    runner = AgentTestRunner(
+        agent_type=LlamaIndexAgent,
         agent_config=LlamaIndexAgentConfig(
             agent_id="llama_index_agent",
             name=LocaleString(en="Llama Index Agent"),
@@ -49,15 +33,12 @@ async def main():
             )
         ),
     )
-    await runner.start()
-    await runner.send_event(
-        start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]),
-        thread_id=str(ObjectId()),
-        display_id=str(ObjectId()),
-        run_id=str(ObjectId()),
-    )
-    await sleep(10)
-    await runner.stop()
+
+    async with runner.test_run(delay_before_stop=5) as topic:
+        await runner.send_event_from_topic(
+            topic=topic,
+            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)])
+        )
 
 if __name__ == "__main__":
     asyncio.run(main())

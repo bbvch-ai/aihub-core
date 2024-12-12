@@ -20,14 +20,13 @@ async def lifetime_manager(app: FastAPI) -> None:
     connect(
         db="aihub",
         host=CosmosAccess().get_connection_string(),
-        alias="aihub",
     )
     try:
         await nc.connect(servers=["nats://localhost:4222"])
         js = nc.jetstream()
 
         topic_manager = TopicManager()
-        persister = EventPersister("aihub")
+        persister = EventPersister("default")
         persist_subscriber = JSSubscriber.for_all_agent_events(
             nc=nc,
             js=js,

@@ -10,7 +10,7 @@ class DataLakeConfig(BaseSettings):
     DATA_LAKE_ENDPOINT: Optional[str] = Field(None, description="Overwrite the datalake API endpoint")
 
     model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"),
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

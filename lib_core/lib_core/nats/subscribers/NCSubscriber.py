@@ -5,6 +5,7 @@ from typing import Optional, TypeVar, Generic, Type, Callable, Awaitable
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
+from nats.errors import BadSubscriptionError
 
 from lib_core.nats.events import BaseEvent, DisplayEvent, ControlEvent
 from lib_core.nats.topic_managers.TopicManager import TopicManager
@@ -40,8 +41,11 @@ class NCSubscriber(Generic[TEvent]):
 
     async def stop(self) -> None:
         if self.subscription:
-            await self.subscription.unsubscribe()
-            logger.debug(f"Unsubscribed from '{self.subject}'.")
+            try:
+                await self.subscription.unsubscribe()
+                logger.debug(f"Unsubscribed from '{self.subject}'.")
+            except BadSubscriptionError:
+                logger.debug(f"Subscription '{self.subject}' already unsubscribed.")
 
     async def message_handler(self, msg: Msg) -> None:
         try:

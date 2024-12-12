@@ -23,22 +23,21 @@ class PersistedEventEntity(Document):
 
     @classmethod
     def display_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
-        return cls.objects().using("aihub").filter(thread_id=thread_id, event_type=TopicManager.DISPLAY_EVENT)
+        return cls.objects().filter(thread_id=thread_id, event_type=TopicManager.DISPLAY_EVENT)
 
     @classmethod
     def display_events_for_threads(cls, thread_ids: List[str]) -> List["PersistedEventEntity"]:
-        return cls.objects().using("aihub").filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
+        return cls.objects().filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
 
     @classmethod
     def display_events_for_agent(cls, agent_id: str) -> List["PersistedEventEntity"]:
-        return cls.objects().using("aihub").filter(agent_id=agent_id, event_type=TopicManager.DISPLAY_EVENT)
+        return cls.objects().filter(agent_id=agent_id, event_type=TopicManager.DISPLAY_EVENT)
 
     @classmethod
     def to_message_history(cls, thread_id: str) -> List[UserChatMessage | AssistantChatMessage]:
         # Retrieve and filter events from the database
         events = (
             cls.objects()
-            .using("aihub")
             .filter(
                 thread_id=thread_id,
                 event_type=TopicManager.DISPLAY_EVENT,

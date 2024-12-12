@@ -5,7 +5,7 @@ from azure.mgmt.search import SearchManagementClient
 from azure.search.documents.indexes import SearchIndexClient
 
 from lib_core.infrastructure.azure.BaseConfig import BaseConfig
-from lib_core.config.CognitiveSearchConfig import AISearchConfig
+from lib_core.infrastructure.azure.ai_search.AISearchConfig import AISearchConfig
 
 
 class AISearchAccess:

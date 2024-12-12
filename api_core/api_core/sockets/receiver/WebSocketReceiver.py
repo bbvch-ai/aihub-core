@@ -73,6 +73,7 @@ class WebSocketReceiver:
             run_id=run_id,
             event_type=TopicManager.DISPLAY_EVENT,
             event_name=ws_event.event.__class__.__name__,
+            event_id=ws_event.event.event_id,
         )
         await self.publisher.publish_event(ws_event.event, subject)
 

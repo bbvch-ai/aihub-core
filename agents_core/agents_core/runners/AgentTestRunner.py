@@ -17,16 +17,7 @@ from lib_core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
 
-azure_loggers = [
-    'azure.identity',
-    'azure.core.pipeline',
-    'azure.core.pipeline.policies',
-    'azure.core.pipeline.transport',
-    'urllib3'
-]
 
-for logger_name in azure_loggers:
-    logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 class ObservedEvent(BaseModel):
     event: BaseEvent
@@ -34,8 +25,8 @@ class ObservedEvent(BaseModel):
 
 class AgentTestRunner(AgentRunner):
 
-    def __init__(self, agent_class: Type[Agent], agent_config: AgentConfig, locale_paths: Optional[List[str]]=None):
-        super().__init__(servers=["nats://localhost:4222"], agent_class=agent_class, agent_config=agent_config, locale_paths=locale_paths)
+    def __init__(self, agent_type: Type[Agent], agent_config: AgentConfig, locale_paths: Optional[List[str]]=None):
+        super().__init__(servers=["nats://localhost:4222"], agent_type=agent_type, agent_config=agent_config, locale_paths=locale_paths)
         self.observed_events = []
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
@@ -65,7 +56,7 @@ class AgentTestRunner(AgentRunner):
         await event_subscriber.start()
 
         yield PartialAgentTopic(
-            agent_class=self.agent_class.__name__,
+            agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
             run_id=run_id,
             thread_id=thread_id,
