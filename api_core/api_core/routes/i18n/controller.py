@@ -1,14 +1,14 @@
 from typing import Callable, Any
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Depends
 
 from api_core.i18n.dependencies.use_locale import use_locale
 from api_core.routes.i18n.dto.LocaleResponse import LocaleResponse
+from api_core.routes.i18n.service import get_user_locale
 from lib_core.i18n.LocaleHandler import LocaleHandler
 from lib_core.records.User import User
 
-
-def i18n_controller_factory(user_auth_strategy:  Callable[..., Any]):
+def i18n_controller_factory(user_auth_strategy: Callable[..., Any]):
     i18n_router = APIRouter()
 
     @i18n_router.get(
@@ -21,9 +21,10 @@ def i18n_controller_factory(user_auth_strategy:  Callable[..., Any]):
         },
     )
     async def get_locale(
-            user: User = Depends(user_auth_strategy),
-            t: LocaleHandler = Depends(use_locale)
+        user: User = Depends(user_auth_strategy),
+        t: LocaleHandler = Depends(use_locale),
     ) -> LocaleResponse:
-        return LocaleResponse(lang=t.locale, test=t("api.common.test"))
+        # Delegate logic to the service layer
+        return get_user_locale(user, t)
 
     return i18n_router

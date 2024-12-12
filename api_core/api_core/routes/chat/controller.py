@@ -180,8 +180,8 @@ def chat_controller_factory(user_auth_strategy:  Callable[..., Any]):
                 except asyncio.CancelledError:
                     # Handle cancellation if client disconnects or server shuts down
                     break
-                chat_completion_chunk = ChatCompletionChunk.from_string("", model="", finish_reason="stop")
-                yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
+            chat_completion_chunk = ChatCompletionChunk.from_string("", model="", finish_reason="stop")
+            yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
 
         # Return a streaming response that yields events as they arrive
         return StreamingResponse(sse_event_generator(), media_type="text/event-stream")

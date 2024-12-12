@@ -12,7 +12,7 @@ class ApiTestRuner(ApiRunner):
     async def run(self) -> None:
         from uvicorn import Config, Server
 
-        config = Config(app=self.app, host="0.0.0.0", port=8000, log_level="debug")
+        config = Config(app=self.app, host="localhost", port=8000, log_level="debug")
         server = Server(config)
         await server.serve()
 

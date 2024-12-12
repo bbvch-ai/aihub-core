@@ -1,3 +1,5 @@
+from typing import List
+
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -13,7 +15,7 @@ from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
 class SimulatedAgentApiTestRunner(ApiTestRuner):
 
-    def __init__(self, agent_class: str, agent_id: str):
+    def __init__(self, agent_class: str, agent_id: str, simulated_events: List[BaseEvent] = None):
         super().__init__()
         self.agent_class = agent_class
         self.agent_id = agent_id
@@ -25,30 +27,13 @@ class SimulatedAgentApiTestRunner(ApiTestRuner):
         self.subscriber: JSSubscriber[ControlEvent] | None = None
         self.publisher: JSPublisher | None = None
 
+        self.simulated_events: List[BaseEvent] = simulated_events or []
+
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
-        model_name = "gpt-4"
         if isinstance(event, StartEvent):
-            await self.publish_event(ChunkEvent(content="First chunk.\n", model_name=model_name), topic)
-            await self.publish_event(LLMCostEvent(
-                llm_name=model_name,
-                prompt_token_count=9,
-                completion_token_count=15,
-                embedding_token_count=0,
-                prompt_tokens_costs=0.1,
-                completion_tokens_costs=0.3,
-                embedding_tokens_costs=0.05,
-            ), topic)
-            await self.publish_event(ChunkEvent(content="Second chunk", model_name=model_name), topic)
-            await self.publish_event(LLMCostEvent(
-                llm_name=model_name,
-                prompt_token_count=7,
-                completion_token_count=16,
-                embedding_token_count=0,
-                prompt_tokens_costs=0.1,
-                completion_tokens_costs=0.3,
-                embedding_tokens_costs=0.05,
-            ), topic)
+            for event in self.simulated_events:
+                await self.publish_event(event, topic)
             await self.publish_event(StopEvent(), topic)
 
     async def publish_event(self, event: BaseEvent, topic: AgentTopic):
@@ -67,6 +52,8 @@ class SimulatedAgentApiTestRunner(ApiTestRuner):
             await self.publisher.publish_event(event, subject)
 
     async def run(self):
+        assert len(self.simulated_events) > 0, "No simulated events provided"
+
         self.nc = NATS()
         await self.nc.connect(servers=["nats://localhost:4222"])
 
@@ -81,3 +68,29 @@ class SimulatedAgentApiTestRunner(ApiTestRuner):
         await self.subscriber.start()
 
         await super().run()
+
+    def with_simple_chunk_events(self) -> 'SimulatedAgentApiTestRunner':
+        model_name = "gpt-4"
+        self.simulated_events = [
+            ChunkEvent(content="First chunk.\n", model_name=model_name),
+            LLMCostEvent(
+                llm_name=model_name,
+                prompt_token_count=9,
+                completion_token_count=15,
+                embedding_token_count=0,
+                prompt_tokens_costs=0.1,
+                completion_tokens_costs=0.3,
+                embedding_tokens_costs=0.05,
+            ),
+            ChunkEvent(content="Second chunk", model_name=model_name),
+            LLMCostEvent(
+                llm_name=model_name,
+                prompt_token_count=7,
+                completion_token_count=16,
+                embedding_token_count=0,
+                prompt_tokens_costs=0.1,
+                completion_tokens_costs=0.3,
+                embedding_tokens_costs=0.05,
+            ),
+        ]
+        return self
