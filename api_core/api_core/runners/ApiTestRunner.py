@@ -1,5 +1,6 @@
 import logging
 
+from api_core.routes.Controller import Controller
 from api_core.runners.ApiRunner import ApiRunner
 
 
@@ -16,3 +17,6 @@ class ApiTestRuner(ApiRunner):
         server = Server(config)
         await server.serve()
 
+    def mount(self, *controllers: Controller):
+        for controller in controllers:
+            self.app.include_router(controller.router, prefix=controller.base_route)

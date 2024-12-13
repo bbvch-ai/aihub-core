@@ -1,7 +1,6 @@
 import asyncio
 
-from api_core.auth.dependencies.no_auth.use_no_auth_user import use_no_auth_user
-from api_core.routes.chat.controller import chat_controller_factory
+from api_core.routes.event.EventController import EventController
 from api_core.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from lib_core.testing.logging.logger import enable_logging
 
@@ -13,9 +12,10 @@ async def main():
         agent_id="my_agent_id",
     ).with_simple_chunk_events()
 
-    runner.app.include_router(
-        chat_controller_factory(use_no_auth_user),
-        prefix="/chat"
+    runner.mount(
+        EventController()
+            .ws()
+            .get_events()
     )
 
     await runner.run()

@@ -1,5 +1,5 @@
 ### Test: Get Current User Information
-GET http://127.0.0.1:8000/user/me
+GET http://localhost:8000/user/me
 Accept: application/json
 
 > {%

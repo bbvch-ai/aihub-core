@@ -1,5 +1,5 @@
 ### Test: Get Locale Information
-GET http://127.0.0.1:8000/i18n/locale
+GET http://127.0.0.1:8000/i18n/my-locale
 Accept: application/json
 
 > {%

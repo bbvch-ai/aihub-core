@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import List, Type, AsyncGenerator, Optional
 
 from bson import ObjectId
-from openai import BaseModel
+from pydantic import BaseModel
 
 from agents_core.agents.abstract.Agent import Agent
 from agents_core.agents.abstract.AgentConfig import AgentConfig

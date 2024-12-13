@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from nats.aio.client import Client as NATS
@@ -12,6 +13,7 @@ from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentI
 from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
+logger = logging.getLogger(__name__)
 
 class SimulatedAgentApiTestRunner(ApiTestRuner):
 
@@ -45,10 +47,12 @@ class SimulatedAgentApiTestRunner(ApiTestRuner):
         )
         if isinstance(event, ControlEvent):
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
+            logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
             await self.publisher.publish_event(event, subject)
         if isinstance(event, DisplayEvent):
             subject = thread_topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__,
                                                                                    event.event_id)
+            logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
             await self.publisher.publish_event(event, subject)
 
     async def run(self):

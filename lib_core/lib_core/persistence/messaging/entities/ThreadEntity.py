@@ -64,14 +64,14 @@ class ThreadEntity(Document):
     @classmethod
     def remove_user_from_thread(cls, thread_id: str, user_id: str) -> 'ThreadEntity':
         thread = cls.get_thread_by_id(thread_id)
-        thread.users = [user for user in thread.users if user.id != user_id]
+        thread.users = [user for user in thread.users if user.user_id != user_id]
         thread.save()
         return thread
 
     @classmethod
     def remove_agent_from_thread(cls, thread_id: str, agent_id: str) -> 'ThreadEntity':
         thread = cls.get_thread_by_id(thread_id)
-        thread.agents = [agent for agent in thread.agents if agent.id != agent_id]
+        thread.agents = [agent for agent in thread.agents if agent.agent_id != agent_id]
         thread.save()
         return thread
 

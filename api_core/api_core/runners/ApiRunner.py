@@ -33,7 +33,7 @@ class ApiRunner:
             debug=debug,
         )
 
-        origins = origins or ["http://localhost"]
+        origins = origins or ["http://localhost:3000"]
         if BaseConfig().FRONTEND_ORIGIN:
             origins += [item.strip() for item in BaseConfig().FRONTEND_ORIGIN.split(",")]
 
@@ -47,3 +47,4 @@ class ApiRunner:
         )
 
         self.app.add_middleware(I18nMiddleware)
+
