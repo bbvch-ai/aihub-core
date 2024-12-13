@@ -120,7 +120,7 @@ cloud "Private SubNet" as SubNet {
     [API] as api
     [Frontend] as fapp
     database "Entity + Event store" as eventstore
-    api -> eventstore
+    api <-> eventstore
     fapp -> api : served by
 
   }
@@ -139,43 +139,52 @@ cloud "Private SubNet" as SubNet {
  
   }
   
+
+  
   node "AG1" as ag1
   node "AG2" as ag2
 
 
-   node "Phoenix" as PH {
-     database "PostGres" as pg_ph
-     [Phoenix] as phoenix
-     phoenix -left-> pg_ph
-   }
+
    
    node "Dagster" as DG {
      database "PostGres" as pg_dg
+     database "Datalake" as lake
      [Dagster] as dagster
      [OAuth2Proxy] as dagster_proxy
-     dagster -> pg_dg
+     dagster <-> pg_dg
+     dagster <-down-> lake
      dagster_proxy -> dagster : forward
+   }
+   
+        node "Phoenix" as PH {
+     database "PostGres" as pg_ph
+     [Phoenix] as phoenix
+     phoenix <-left-> pg_ph
    }
 }
 
 ' Example of relationships (adjust as per the drawing)
-api <--> nats : Publish/Subscribe
-dagster <--> nats : Publish/Subscribe
+dagster -down-> vectorDB
+dagster -down-> docstore
+api <-down-> nats : Publish/Subscribe
+dagster <-right-> nats : Publish/Subscribe
 ag1 <-up-> nats : Publish/Subscribe
 ag2 <-up-> nats : Publish/Subscribe
-ag1 -up-> phoenix : trace
-ag2 -up-> phoenix : trace
-ag1 -down-> docstore
-ag2 -down-> docstore
-ag2 -down-> vectorDB
-ag1 -down-> vectorDB
+ag1 -down-> phoenix : trace
+ag2 -right-> phoenix : trace
+ag1 -up-> docstore
+ag2 -up-> docstore
+ag2 -up-> vectorDB
+ag1 -up-> vectorDB
+
 
 circle "port-3000" as p3000
 circle "port-6006" as p6006
 circle "port-80" as p80
 
 p80 -down- api
-p6006 - phoenix
+p6006 -up- phoenix
 p3000 -down- dagster_proxy
 
 :Client User: as user
@@ -184,7 +193,7 @@ p3000 -down- dagster_proxy
 
 user --> p80 : [].ai-agents.ch
 dg_user --> p3000 : dagter.[].ai-agents.ch
-ph_user -down-> p6006 : phoenix.[].ai-agents.ch
+ph_user -up-> p6006 : phoenix.[].ai-agents.ch
 
 
 @enduml
