@@ -1,5 +1,6 @@
 from typing import Optional
 
+from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
@@ -14,31 +15,7 @@ class AgentTopic(PartialAgentTopic):
     event_id: str
 
     def __str__(self) -> str:
-        return f"agent.{self.agent_class}.{self.agent_id}.{self.thread_id}.{self.display_id}.{self.run_id}.{self.event_type}.{self.event_name}.{self.event_id}"
-
-    @classmethod
-    def from_subject(cls, subject: str) -> "AgentTopic":
-        (
-            _,
-            agent_class,
-            agent_id,
-            thread_id,
-            display_id,
-            run_id,
-            event_type,
-            event_name,
-            event_id,
-        ) = subject.split(".")
-        return cls(
-            agent_class=agent_class,
-            agent_id=agent_id,
-            thread_id=thread_id,
-            display_id=display_id,
-            run_id=run_id,
-            event_type=event_type,
-            event_name=event_name,
-            event_id=event_id,
-        )
+        return f"{TopicManager.AGENT_TOPIC}.{self.agent_class}.{self.agent_id}.{self.thread_id}.{self.display_id}.{self.run_id}.{self.event_type}.{self.event_name}.{self.event_id}"
 
     @classmethod
     def from_partial_topic(

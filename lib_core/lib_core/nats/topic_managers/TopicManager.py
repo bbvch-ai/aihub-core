@@ -1,6 +1,18 @@
+from typing import Optional
+
+
 class TopicManager:
+    AGENT_TOPIC = "agent"
+    DISCOVERY_TOPIC = "discovery"
+
     DISPLAY_EVENT = "display_event"
     CONTROL_EVENT = "control_event"
+
+    def get_agent_discovery_subject_request(self, call_id: str, agent_class: Optional[str] = "*", agent_id: Optional[str] = "*") -> str:
+        return f"{self.DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.request.{call_id}"
+
+    def get_agent_discovery_subject_response(self, call_id: str, agent_class: Optional[str] = "*", agent_id: Optional[str] = "*") -> str:
+        return f"{self.DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
 
     def get_subject_for_specific_event_in_agent(
         self,
@@ -13,7 +25,7 @@ class TopicManager:
         event_name: str,
         event_id: str,
     ) -> str:
-        return f"agent.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
+        return f"{self.AGENT_TOPIC}.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
 
     def get_subject_for_all_events_in_agent(self) -> str:
         return self.get_subject_for_specific_event_in_agent(
@@ -52,7 +64,7 @@ class TopicManager:
         )
 
     def get_stream_name_for_all_events_in_agent(self) -> str:
-        return "agent_stream"
+        return f"{self.AGENT_TOPIC}_stream"
 
     def get_stream_group_for_all_events_in_agent(self) -> str:
         return f"{self.get_stream_name_for_all_events_in_agent()}_queue_group"

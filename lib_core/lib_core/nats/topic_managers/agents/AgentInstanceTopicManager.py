@@ -1,3 +1,5 @@
+from typing import Optional
+
 from lib_core.nats.topic_managers.TopicManager import TopicManager
 
 
@@ -17,6 +19,20 @@ class AgentInstanceTopicManager(TopicManager):
             event_type="*",
             event_name="*",
             event_id="*",
+        )
+
+    def get_agent_discovery_subject_request(self, call_id: str, agent_class: Optional[str] = None, agent_id: Optional[str] = None) -> str:
+        return super().get_agent_discovery_subject_request(
+            agent_class=agent_class or self.agent_class,
+            agent_id=agent_id or self.agent_id,
+            call_id=call_id,
+        )
+
+    def get_agent_discovery_subject_response(self, call_id: str, agent_class: Optional[str] = None, agent_id: Optional[str] = None) -> str:
+        return super().get_agent_discovery_subject_response(
+            agent_class=agent_class or self.agent_class,
+            agent_id=agent_id or self.agent_id,
+            call_id=call_id,
         )
 
     def get_stream_name_for_all_events_within_agent(self) -> str:

@@ -18,29 +18,16 @@ class WebSocketSender:
         logger.debug(f"Sending event {event} to thread {topic.thread_id}")
         thread = ThreadEntity.get_thread_by_id(topic.thread_id)
         users = thread.users
-        if isinstance(topic, AgentTopic):
-            ws_event = WSServerEvent(
-                agent_class=topic.agent_class,
-                agent_id=topic.agent_id,
-                thread_id=topic.thread_id,
-                display_id=topic.display_id,
-                run_id=topic.run_id,
-                event_type=topic.event_type,
-                event_name=topic.event_name,
-                event_id=event.event_id,
-                event_data=event.model_dump(),
-            )
-        else:
-            ws_event = WSServerEvent(
-                agent_class="",
-                agent_id="",
-                thread_id=topic.thread_id,
-                display_id=topic.display_id,
-                run_id="",
-                event_type="",
-                event_name=event.__class__.__name__,
-                event_id=event.event_id,
-                event_data=event.model_dump()
-            )
+        ws_event = WSServerEvent(
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            run_id=topic.run_id,
+            event_type=topic.event_type,
+            event_name=topic.event_name,
+            event_id=event.event_id,
+            event_data=event.model_dump(),
+        )
         for user in users:
             await self.ws_manager.send_event(ws_event, user.user_id)

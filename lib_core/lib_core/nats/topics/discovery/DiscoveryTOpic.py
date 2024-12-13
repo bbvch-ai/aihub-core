@@ -1,0 +1,15 @@
+from lib_core.nats.topic_managers.TopicManager import TopicManager
+from lib_core.nats.topics.Topic import Topic
+
+
+class DiscoveryTopic(Topic):
+    discovery_topic: str
+    request_response: str
+    call_id: str
+
+    @classmethod
+    def from_subject(cls, subject: str) -> "DiscoveryTopic":
+        topic_type, discovery_topic, request_response, call_id = subject.split(".")
+        assert topic_type == TopicManager.DISCOVERY_TOPIC, f"Trying to parse a non-discovery topic: {subject}"
+        return cls(discovery_topic=discovery_topic, request_response=request_response, call_id=call_id)
+

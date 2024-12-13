@@ -1,4 +1,3 @@
-import logging
 from asyncio import sleep
 from contextlib import asynccontextmanager
 from typing import List, Type, AsyncGenerator, Optional
@@ -7,7 +6,7 @@ from bson import ObjectId
 from pydantic import BaseModel
 
 from agents_core.agents.abstract.Agent import Agent
-from agents_core.agents.abstract.AgentConfig import AgentConfig
+from lib_core.generative_ai.agent.AgentConfig import AgentConfig
 from agents_core.runners.AgentRunner import AgentRunner
 from lib_core.nats.events import StartEvent, BaseEvent, StopEvent, ExceptionEvent
 from lib_core.nats.subscribers.NCSubscriber import NCSubscriber

@@ -1,4 +1,4 @@
-from agents_core.agents.abstract.AgentConfig import AgentConfig, StepConfig
+from lib_core.generative_ai.agent.AgentConfig import AgentConfig, StepConfig
 
 
 class StartStepConfig(StepConfig):

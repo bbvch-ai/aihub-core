@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Optional, TypeVar, Generic, Type, Callable, Awaitable, Coroutine, Any
+from typing import Optional, TypeVar, Generic, Type, Callable, Awaitable
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -11,6 +11,7 @@ from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import (
     AgentInstanceTopicManager,
 )
+from lib_core.nats.topics import Topic
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ class JSSubscriber(Generic[TEvent]):
         stream_subject: str,
         queue_group: str,
         event_cls: Type[TEvent],
-        handler: Callable[[TEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[TEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -72,7 +73,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -99,7 +100,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[ControlEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -126,7 +127,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -153,7 +154,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[ControlEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -180,7 +181,7 @@ class JSSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):

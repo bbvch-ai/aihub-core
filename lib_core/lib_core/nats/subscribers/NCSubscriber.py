@@ -12,6 +12,7 @@ from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import (
     AgentThreadTopicManager,
 )
+from lib_core.nats.topics import Topic
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
 logger = logging.getLogger(__name__)
@@ -25,15 +26,13 @@ class NCSubscriber(Generic[TEvent]):
         nc: NATS,
         subject: str,
         event_cls: Type[TEvent],
-        handler: Callable[[TEvent, AgentTopic], Awaitable[None]],
-        ack_on_fail: bool = True,
+        handler: Callable[[TEvent, Topic], Awaitable[None]],
     ):
         self.nc = nc
         self.subject = subject
         self.subscription: Optional[Subscription] = None
         self.event_cls = event_cls
         self.handler = handler
-        self.ack_on_fail = ack_on_fail
 
     async def start(self) -> None:
         self.subscription = await self.nc.subscribe(self.subject, cb=self.message_handler)
@@ -50,25 +49,21 @@ class NCSubscriber(Generic[TEvent]):
     async def message_handler(self, msg: Msg) -> None:
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data!r}")
-            topic = AgentTopic.from_subject(msg.subject)
+            topic = Topic.from_subject(msg.subject)
             event_data = msg.data
             event = self.event_cls.deserialize_event(event_data)
             logger.debug(f"Deserialize event: {event}")
             await self.handler(event, topic)
-            await msg.ack()
         except Exception as e:
             logger.error(f"Error in message handler: {e}")
             traceback.print_exc()
-            if self.ack_on_fail:
-                await msg.ack()
 
     @classmethod
     def for_all_agent_control_events(
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
-        ack_on_fail=True,
+        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
     ):
         subject = topic_manager.get_subject_for_all_control_events_in_agent()
         return cls(
@@ -76,7 +71,6 @@ class NCSubscriber(Generic[TEvent]):
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
-            ack_on_fail=ack_on_fail,
         )
 
     @classmethod
@@ -84,8 +78,7 @@ class NCSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
-        ack_on_fail=True,
+        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
     ):
         subject = topic_manager.get_subject_for_all_display_events_in_agent()
         return cls(
@@ -93,7 +86,6 @@ class NCSubscriber(Generic[TEvent]):
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
-            ack_on_fail=ack_on_fail,
         )
 
     @classmethod
@@ -101,8 +93,7 @@ class NCSubscriber(Generic[TEvent]):
         cls,
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
-        ack_on_fail=True,
+        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
     ):
         subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
         return cls(
@@ -110,7 +101,6 @@ class NCSubscriber(Generic[TEvent]):
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
-            ack_on_fail=ack_on_fail,
         )
 
     @classmethod
@@ -118,8 +108,7 @@ class NCSubscriber(Generic[TEvent]):
             cls,
             nc: NATS,
             topic_manager: AgentThreadTopicManager,
-            handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
-            ack_on_fail=True,
+            handler: Callable[[ControlEvent, Topic], Awaitable[None]],
     ):
         subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
         return cls(
@@ -127,7 +116,6 @@ class NCSubscriber(Generic[TEvent]):
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
-            ack_on_fail=ack_on_fail,
         )
 
     @classmethod
@@ -135,8 +123,7 @@ class NCSubscriber(Generic[TEvent]):
             cls,
             nc: NATS,
             topic_manager: AgentThreadTopicManager,
-            handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
-            ack_on_fail=True,
+            handler: Callable[[ControlEvent, Topic], Awaitable[None]],
     ):
         subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
         return cls(
@@ -144,5 +131,36 @@ class NCSubscriber(Generic[TEvent]):
             subject=subject,
             event_cls=BaseEvent,
             handler=handler,
-            ack_on_fail=ack_on_fail,
+        )
+
+    @classmethod
+    def for_agent_discovery_request_events(
+            cls,
+            nc: NATS,
+            topic_manager: TopicManager,
+            handler: Callable[[BaseEvent, Topic], Awaitable[None]],
+            call_id: str = "*",
+    ):
+        subject = topic_manager.get_agent_discovery_subject_request(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_agent_discovery_response_events(
+            cls,
+            nc: NATS,
+            topic_manager: TopicManager,
+            handler: Callable[[BaseEvent, Topic], Awaitable[None]],
+            call_id: str = "*",
+    ):
+        subject = topic_manager.get_agent_discovery_subject_response(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
         )

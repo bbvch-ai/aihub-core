@@ -8,7 +8,7 @@ from nats.js import JetStreamContext
 from nats.aio.client import Client as NATS
 
 from agents_core.agents.abstract.Agent import Agent
-from agents_core.agents.abstract.AgentConfig import AgentConfig
+from lib_core.generative_ai.agent.AgentConfig import AgentConfig
 from agents_core.displayers.EventDisplayer import EventDisplayer
 from agents_core.i18n.AgentLocaleHandler import AgentLocaleHandler
 from lib_core.i18n.LocaleHandler import LocaleHandler
