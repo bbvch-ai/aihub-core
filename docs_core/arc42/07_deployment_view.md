@@ -126,13 +126,17 @@ cloud "Private SubNet" as SubNet {
   }
 
   ' Central messaging or event bus
-  node "NATS" as nats
+  node "NATS" as nat {
+    [NATS] as nats
+    database ""Nats-Blob" as nats_blob
+    nats <-> nats_blob : persist
+  }
 
   ' Store layer: Document store, caches, vector DB, aggregator services
   node "STORES" as stores {
     database "Doc-Store" as docstore
     database "Vector-Store" as vectorDB
-
+ 
   }
   
   node "AG1" as ag1
