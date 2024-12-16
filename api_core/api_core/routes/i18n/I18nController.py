@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from api_core.i18n.dependencies.use_locale import use_locale
 from api_core.routes.Controller import Controller
 from api_core.routes.i18n.dto.LocaleResponse import LocaleResponse
-from api_core.routes.i18n.service import I18nService
+from api_core.routes.i18n.I18nService import I18nService
 from lib_core.i18n.LocaleHandler import LocaleHandler
 from lib_core.records.User import User
 

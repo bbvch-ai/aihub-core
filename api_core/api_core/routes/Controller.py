@@ -1,7 +1,7 @@
 import abc
 from typing import Callable, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 
 from api_core.auth.dependencies.no_auth.use_no_auth_user import use_no_auth_user
 
@@ -13,3 +13,5 @@ class Controller(abc.ABC):
         self.user_auth_strategy = user_auth_strategy or use_no_auth_user
         self.router = APIRouter()
 
+    def mount(self, app: FastAPI):
+        app.include_router(self.router, prefix=self.base_route)

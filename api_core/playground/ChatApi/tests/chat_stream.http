@@ -1,5 +1,5 @@
 ### Test: Post Chat Completion with Streaming
-POST http://localhost:8000/chat/completions/my_agent_class/my_agent_id/stream
+POST http://localhost:8000/api/v1/chat/completions/my_agent_class/my_agent_id/stream
 Content-Type: application/json
 Accept: text/event-stream
 

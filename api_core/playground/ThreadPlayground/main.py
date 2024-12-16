@@ -1,7 +1,7 @@
 import asyncio
 
 from api_core.routes.chat.ChatController import ChatController
-from api_core.routes.thread.controller import ThreadController
+from api_core.routes.thread.ThreadController import ThreadController
 from api_core.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from lib_core.testing.logging.logger import enable_logging
 

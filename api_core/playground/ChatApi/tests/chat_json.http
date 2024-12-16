@@ -1,5 +1,5 @@
 ### Test: Post Chat Completion
-POST http://localhost:8000/chat/completions/my_agent_class/my_agent_id/json
+POST http://localhost:8000/api/v1/chat/completions/my_agent_class/my_agent_id/json
 Content-Type: application/json
 Accept: application/json
 

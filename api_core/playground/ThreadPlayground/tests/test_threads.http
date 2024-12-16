@@ -1,5 +1,5 @@
 ### Get User Threads
-GET http://localhost:8000/thread
+GET http://localhost:8000/api/v1/thread
 Accept: application/json
 
 > {%
@@ -19,7 +19,7 @@ client.test("Threads list has 'threads' property", () => {
 
 
 ### Create a New Thread
-POST http://localhost:8000/thread/1234
+POST http://localhost:8000/api/v1/thread/1234
 Content-Type: application/json
 Accept: application/json
 
@@ -50,7 +50,7 @@ client.test("Created thread returns correct structure", () => {
 
 
 ### Get a Specific Thread by ID
-GET http://localhost:8000/thread/675b291e687166c586322c08
+GET http://localhost:8000/api/v1/thread/675b291e687166c586322c08
 Accept: application/json
 
 > {%
@@ -69,7 +69,7 @@ client.test("Check thread structure", () => {
 
 
 ### Add an Agent to a Thread
-POST http://localhost:8000/thread/675b291e687166c586322c08/agents
+POST http://localhost:8000/api/v1/thread/675b291e687166c586322c08/agents
 Content-Type: application/json
 Accept: application/json
 
@@ -92,7 +92,7 @@ client.test("Agent was added", () => {
 
 
 ### Remove an Agent from a Thread
-DELETE http://localhost:8000/thread/675b291e687166c586322c08/agents/agent_456
+DELETE http://localhost:8000/api/v1/thread/675b291e687166c586322c08/agents/agent_456
 Accept: application/json
 
 > {%
@@ -109,7 +109,7 @@ client.test("Agent was removed", () => {
 
 
 ### Add a User to a Thread
-POST http://localhost:8000/thread/675b291e687166c586322c08/users
+POST http://localhost:8000/api/v1/thread/675b291e687166c586322c08/users
 Content-Type: application/json
 Accept: application/json
 
@@ -131,7 +131,7 @@ client.test("User was added", () => {
 
 
 ### Remove a User from a Thread
-DELETE http://localhost:8000/thread/675b291e687166c586322c08/users/new_user_id
+DELETE http://localhost:8000/api/v1/thread/675b291e687166c586322c08/users/new_user_id
 Accept: application/json
 
 > {%

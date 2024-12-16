@@ -1,6 +1,6 @@
 import asyncio
 
-from api_core.routes.i18n.controller import I18nController
+from api_core.routes.i18n.I18nController import I18nController
 from api_core.routes.user.UserController import UserController
 from api_core.runners.ApiTestRunner import ApiTestRuner
 

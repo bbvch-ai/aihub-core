@@ -1,0 +1,22 @@
+import asyncio
+from os.path import abspath, join, dirname
+
+from api_core.routes.health.HealthController import HealthController
+from api_core.runners.ApiTestRunner import ApiTestRuner
+
+
+
+async def main():
+    runner = ApiTestRuner()
+
+    runner.mount(
+        HealthController()
+            .get_health(),
+    )
+
+    runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
+
+    await runner.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
