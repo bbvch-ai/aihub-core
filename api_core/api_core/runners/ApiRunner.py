@@ -33,14 +33,15 @@ class ApiRunner:
         self.origins = origins
         self.debug = debug
 
-        self._base_app = self._get_app()
-        self._api_app = self._get_app()
+        self._base_app = self._get_base_app()
+        self._api_app = self._get_api_app()
+        self._api_app.state = self._base_app.state
 
         self._base_app.mount(api_path, self._api_app)
 
 
-    def _get_app(self):
-        app = FastAPI(
+    def _get_base_app(self):
+        return FastAPI(
             title=self.title,
             description=self.description,
             version=BaseConfig().VERSION or ".dev",
@@ -48,7 +49,15 @@ class ApiRunner:
             debug=self.debug,
         )
 
-        origins = self.origins or ["http://localhost:3000"]
+    def _get_api_app(self):
+        app = FastAPI(
+            title=self.title,
+            description=self.description,
+            version=BaseConfig().VERSION or ".dev",
+            debug=self.debug,
+        )
+
+        origins = self.origins or ["http://localhost:8080"]
         if BaseConfig().FRONTEND_ORIGIN:
             origins += [item.strip() for item in BaseConfig().FRONTEND_ORIGIN.split(",")]
 

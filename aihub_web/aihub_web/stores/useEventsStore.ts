@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useQuery } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import ObjectID from 'bson-objectid'
 import type { WSUserEvent } from '@core/types/Events/WSEvent/WSUserEvent'
@@ -7,8 +8,8 @@ import type { UserMessageEvent } from '@core/types/Events/UserEvents/UserMessage
 import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
 
 export const useEventsStore = defineStore('events', () => {
-  // Generate a random user ID
-  const userId = ref<string>('user1')
+  const { getHeaders } = useAuth()
+
   const newEvents = ref<WSServerEvent[]>([])
 
   const {
@@ -17,20 +18,18 @@ export const useEventsStore = defineStore('events', () => {
     refresh: refreshEvents,
     refetch: refetchEvents,
   } = useQuery<WSServerEvent[]>({
-    key: ['events', userId.value],
+    key: ['events'],
     query: () =>
-      fetch(`/api/v1/event`).then(res =>
-        res.json(),
-      ),
+      getHeaders()
+        .then(headers => fetch(`/api/v1/event/`, { headers: headers }))
+        .then(res => res.json()),
   })
-
-  console.log('Connecting user with ID: ', userId.value)
 
   const {
     data: newEvent,
     send,
     status: webSocketsStatus,
-  } = useWebSocket<string>(`ws://localhost:8000/event/ws`, {
+  } = useWebSocket<string>(`/api/v1/event/ws`, {
     autoReconnect: {
       retries: -1,
       delay: 1000,
@@ -119,7 +118,6 @@ export const useEventsStore = defineStore('events', () => {
     refreshEvents,
     refetchEvents,
     webSocketsStatus,
-    userId,
     events,
     sendUserMessageEvent,
     sendHumanInTheLoopResponse,

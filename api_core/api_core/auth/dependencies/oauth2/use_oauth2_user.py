@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import jwt
 from fastapi import Depends, HTTPException
 import httpx
@@ -9,7 +11,7 @@ from api_core.auth.AuthenticatedUser import AuthenticatedUser
 from api_core.auth.dependencies.oauth2.OAuth2Config import OAuth2Config
 
 
-async def use_oauth2_user(token: str = Depends(OAuth2Config().SCHEMA)) -> AuthenticatedUser:
+async def use_oauth2_user(token: Annotated[str, Depends(OAuth2Config().SCHEMA)]) -> AuthenticatedUser:
     try:
         async with httpx.AsyncClient() as client:
             jwks_response = await client.get(OAuth2Config().JWKS_URL)

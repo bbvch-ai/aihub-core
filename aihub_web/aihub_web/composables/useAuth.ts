@@ -17,7 +17,17 @@ export const useAuth = () => {
 
   const getBearer = async () => {
     const user = await getUser()
+    if (!user) {
+      throw new Error('User not logged in')
+    }
     return `Bearer ${user.access_token}`
+  }
+
+  const getHeaders = async (): Promise<Record<string, string>> => {
+    const bearer = await getBearer()
+    return {
+      Authorization: bearer,
+    }
   }
 
   return {
@@ -25,5 +35,6 @@ export const useAuth = () => {
     logout,
     getUser,
     getBearer,
+    getHeaders,
   }
 }

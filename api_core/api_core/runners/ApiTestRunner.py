@@ -2,7 +2,7 @@ from api_core.runners.ApiRunner import ApiRunner
 
 
 
-class ApiTestRuner(ApiRunner):
+class ApiTestRunner(ApiRunner):
 
     def __init__(self):
         super().__init__(title="Local AI Hub", description="Local version only", origins=[], debug=True)

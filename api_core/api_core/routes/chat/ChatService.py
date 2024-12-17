@@ -2,13 +2,15 @@ import asyncio
 import logging
 from typing import List
 from dataclasses import dataclass
-
+from nats.aio.client import Client as NATS
 from bson import ObjectId
+
 from api_core.auth.AuthenticatedUser import AuthenticatedUser
 from api_core.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
 from api_core.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
 from api_core.routes.chat.dto.stream.ChatCompletionChunk import ChatCompletionChunk
 from api_core.sockets.events.user_to_server.WSUserEvent import WSUserEvent
+from api_core.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from lib_core.generative_ai.llms.costs.LLMCosts import LLMCosts
 from lib_core.nats.events import ChunkEvent, DisplayEvent, StopEvent
 from lib_core.nats.events.cost.LLMCostEvent import LLMCostEvent
@@ -40,11 +42,12 @@ class ChatService:
 
     @staticmethod
     async def start_stream_chat_interaction(
-        request_app_state,
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
         chat_completions_request: ChatCompletionsRequest,
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
     ) -> StreamingResources:
         thread = ThreadEntity.create_thread(
             "chat",
@@ -86,7 +89,7 @@ class ChatService:
                 stop_event.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
-            nc=request_app_state.nc,
+            nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
         )
@@ -94,7 +97,6 @@ class ChatService:
         await subscriber.start()
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
-        ws_receiver = request_app_state.ws_receiver
         await ws_receiver.receive_event(event, user.oid)
 
         return StreamingResources(
@@ -105,11 +107,12 @@ class ChatService:
 
     @staticmethod
     async def start_json_chat_interaction(
-        request_app_state,
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
         chat_completions_request: ChatCompletionsRequest,
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
     ) -> JsonResources:
         # Create the thread
         thread = ThreadEntity.create_thread(
@@ -167,7 +170,7 @@ class ChatService:
                 resources.model_name = display_event.llm_name
 
         subscriber = NCSubscriber.for_thread_display_events(
-            nc=request_app_state.nc,
+            nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
         )
@@ -176,7 +179,6 @@ class ChatService:
         await subscriber.start()
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
-        ws_receiver = request_app_state.ws_receiver
         await ws_receiver.receive_event(event, user.oid)
 
         return resources

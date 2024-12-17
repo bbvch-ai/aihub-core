@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,6 +17,8 @@ from lib_core.nats.topic_managers.TopicManager import TopicManager
 
 @asynccontextmanager
 async def lifetime_manager(app: FastAPI) -> None:
+    logging.warning("Setting nc")
+
     nc = NATS()
     connect(
         db="aihub",

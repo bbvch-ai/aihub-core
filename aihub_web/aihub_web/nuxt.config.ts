@@ -12,20 +12,28 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     '@nuxtjs/robots',
     '@pinia/colada-nuxt',
-    '@nuxtjs/storybook',
+    // '@nuxtjs/storybook',
   ],
   ssr: false,
   devtools: { enabled: true },
-  nitro: {
-    devProxy: {
-      '/api': {
-        target: 'http://localhost:3000/api',
-        changeOrigin: true,
+  runtimeConfig: {
+    public: {
+      oidc: {
+        clientId: 'f1f4589c-9140-4dd2-921d-9c01245abf13',
+        tenantId: '279985bd-2077-4d9d-9797-42238cfc06e2',
       },
     },
   },
   alias: {
     '@core': fileURLToPath(new URL('./', import.meta.url)),
+  },
+  nitro: {
+    devProxy: {
+      '/api': {
+        target: 'http://localhost:8000/api',
+        changeOrigin: true,
+      },
+    },
   },
   eslint: {
     config: {

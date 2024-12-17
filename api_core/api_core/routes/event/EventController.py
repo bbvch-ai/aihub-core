@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 class EventController(Controller):
 
-    def __init__(self, route: str = "/event", user_auth_strategy: Callable[..., Any] = None):
-        super().__init__(route, user_auth_strategy)
+    def __init__(self, route: str = "/event", auth: Callable[..., Any] = None):
+        super().__init__(route, auth)
 
     def get_events(self, path: str = "/") -> "EventController":
 
         @self.router.get(path)
         async def get_all_events(
-                user: AuthenticatedUser = Depends(self.user_auth_strategy),
+                user: AuthenticatedUser = Depends(self.auth),
         ) -> List[WSServerEvent]:
             return EventService.get_user_events(user.oid)
 
@@ -34,7 +34,7 @@ class EventController(Controller):
         @self.router.websocket(path)
         async def websocket_endpoint(
                 websocket: WebSocket,
-                user: AuthenticatedUser = Depends(self.user_auth_strategy),
+                user: AuthenticatedUser = Depends(self.auth),
         ):
             ws_manager = websocket.app.state.ws_manager
             ws_sender = websocket.app.state.ws_sender

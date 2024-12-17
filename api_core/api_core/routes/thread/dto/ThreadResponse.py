@@ -1,22 +1,16 @@
 from typing import List
 from pydantic import BaseModel
+from nats.aio.client import Client as NATS
 
-from api_core.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
-from api_core.routes.thread.dto.ThreadUserDTO import ThreadUserDTO
+from api_core.routes.agent.AgentService import AgentService
+from api_core.routes.agent.dto.AgentDTO import AgentDTO
+from api_core.routes.user.UserService import UserService
+from api_core.routes.user.dto.UserDTO import UserDTO
 from lib_core.persistence.messaging.entities.ThreadEntity import ThreadEntity
 
 
 class ThreadResponse(BaseModel):
     id: str
     name: str
-    users: List[ThreadUserDTO]
-    agents: List[ThreadAgentDTO]
-
-    @classmethod
-    def from_thread_entity(cls, entity: ThreadEntity):
-        return cls(
-            id=str(entity.id),
-            name=entity.name,
-            users=[ThreadUserDTO.from_user_entity(user) for user in entity.users],
-            agents=[ThreadAgentDTO.from_agent_entity(agent) for agent in entity.agents]
-        )
+    users: List[UserDTO]
+    agents: List[AgentDTO]

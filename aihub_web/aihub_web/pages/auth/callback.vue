@@ -1,12 +1,10 @@
 <script setup lang="ts">
 const { $auth } = useNuxtApp()
 
-onMounted(async () => {
-  $auth.signinRedirectCallback()
-    .then(() => {
-      navigateTo('/')
-    })
-})
+$auth.signinRedirectCallback()
+  .then(() => {
+    navigateTo('/')
+  })
 </script>
 
 <template>

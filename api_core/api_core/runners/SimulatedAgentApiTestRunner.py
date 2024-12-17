@@ -4,7 +4,7 @@ from typing import List
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from api_core.runners.ApiTestRunner import ApiTestRuner
+from api_core.runners.ApiTestRunner import ApiTestRunner
 from lib_core.generative_ai.agent.AgentConfig import AgentConfig
 from lib_core.i18n.LocaleString import LocaleString
 from lib_core.nats.events import ControlEvent, StartEvent, BaseEvent, StopEvent, ChunkEvent, DisplayEvent
@@ -23,7 +23,7 @@ from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 
 logger = logging.getLogger(__name__)
 
-class SimulatedAgentApiTestRunner(ApiTestRuner):
+class SimulatedAgentApiTestRunner(ApiTestRunner):
 
     def __init__(self, agent_class: str, agent_id: str, simulated_events: List[BaseEvent] = None):
         super().__init__()

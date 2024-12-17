@@ -1,7 +1,7 @@
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.core.credentials import AzureKeyCredential
 
-from lib_core.infrastructure.azure import CognitiveServiceAccess
+from lib_core.infrastructure.azure.cognitive_services.CognitiveServiceAccess import CognitiveServiceAccess
 from lib_core.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceConfig import (
     DocumentIntelligenceConfig,
 )

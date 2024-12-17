@@ -34,11 +34,12 @@ async def main():
         ),
     )
 
-    async with runner.test_run(delay_before_stop=5) as topic:
-        await runner.send_event_from_topic(
-            topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)])
-        )
+    # async with runner.test_run(delay_before_stop=5) as topic:
+    #     await runner.send_event_from_topic(
+    #         topic=topic,
+    #         start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)])
+    #     )
+    await runner.run_forever()
 
 if __name__ == "__main__":
     asyncio.run(main())

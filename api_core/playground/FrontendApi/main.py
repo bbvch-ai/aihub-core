@@ -2,12 +2,12 @@ import asyncio
 from os.path import abspath, join, dirname
 
 from api_core.routes.health.HealthController import HealthController
-from api_core.runners.ApiTestRunner import ApiTestRuner
+from api_core.runners.ApiTestRunner import ApiTestRunner
 
 
 
 async def main():
-    runner = ApiTestRuner()
+    runner = ApiTestRunner()
 
     runner.mount(
         HealthController()

@@ -1,12 +1,14 @@
 import logging
-from typing import Callable, Any
+from typing import Callable, Any, Annotated
 
 from fastapi import Body, Path, Depends, Request
 from starlette.responses import StreamingResponse
+from nats.aio.client import Client as NATS
 
 from api_core.auth.AuthenticatedUser import AuthenticatedUser
 from api_core.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
 from api_core.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
+from api_core.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 from .ChatService import (
     ChatService,
@@ -14,13 +16,15 @@ from .ChatService import (
     JsonResources
 )
 from ..Controller import Controller
+from ...nats.dependencies.use_nats import use_nats
+from ...sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 
 logger = logging.getLogger(__name__)
 
 class ChatController(Controller):
 
-    def __init__(self, route: str = "/chat", user_auth_strategy: Callable[..., Any] = None):
-        super().__init__(route, user_auth_strategy)
+    def __init__(self, route: str = "/chat", auth: Callable[..., Any] = None):
+        super().__init__(route, auth)
 
     def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "ChatController":
         @self.router.post(
@@ -85,18 +89,20 @@ class ChatController(Controller):
             response_class=StreamingResponse,
         )
         async def stream_chat(
-            request: Request,
-            chat_completions_request: ChatCompletionsRequest = Body(...),
-            agent_class: str = Path(...),
-            agent_id: str = Path(...),
-            user: AuthenticatedUser = Depends(self.user_auth_strategy),
+            chat_completions_request: Annotated[ChatCompletionsRequest, Body],
+            agent_class: Annotated[str, Path(title="Agent class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> StreamingResponse:
             resources: StreamingResources = await ChatService.start_stream_chat_interaction(
-                request.app.state,
                 user,
                 agent_class,
                 agent_id,
                 chat_completions_request,
+                nc=nc,
+                ws_receiver=ws_receiver,
             )
             return StreamingResponse(
                 ChatService.create_sse_generator(resources.stop_event, resources.chunk_queue),
@@ -119,18 +125,20 @@ class ChatController(Controller):
             },
         )
         async def json_chat(
-            request: Request,
-            chat_completions_request: ChatCompletionsRequest = Body(...),
-            agent_class: str = Path(...),
-            agent_id: str = Path(...),
-            user: AuthenticatedUser = Depends(self.user_auth_strategy),
+            chat_completions_request: Annotated[ChatCompletionsRequest, Body],
+            agent_class: Annotated[str, Path(title="Agent class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> ChatCompletionsSuccessResponse:
             resources: JsonResources = await ChatService.start_json_chat_interaction(
-                request.app.state,
                 user,
                 agent_class,
                 agent_id,
                 chat_completions_request,
+                nc=nc,
+                ws_receiver=ws_receiver,
             )
 
             # Wait for the stop_event which signals that all events have been processed

@@ -69,9 +69,9 @@ class ThreadEntity(Document):
         return thread
 
     @classmethod
-    def remove_agent_from_thread(cls, thread_id: str, agent_id: str) -> 'ThreadEntity':
+    def remove_agent_from_thread(cls, thread_id: str, agent_class: str, agent_id: str) -> 'ThreadEntity':
         thread = cls.get_thread_by_id(thread_id)
-        thread.agents = [agent for agent in thread.agents if agent.agent_id != agent_id]
+        thread.agents = [agent for agent in thread.agents if agent.agent_id != agent_id and agent.agent_class != agent_class]
         thread.save()
         return thread
 

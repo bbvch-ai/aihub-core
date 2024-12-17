@@ -11,8 +11,8 @@ from lib_core.records.User import User
 
 class I18nController(Controller):
 
-    def __init__(self, route: str = "/i18n", user_auth_strategy: Callable[..., Any] = None):
-        super().__init__(route, user_auth_strategy)
+    def __init__(self, route: str = "/i18n", auth: Callable[..., Any] = None):
+        super().__init__(route, auth)
 
     def get_my_locale(self, route: str = "/my-locale") -> "I18nController":
         @self.router.get(
@@ -25,7 +25,7 @@ class I18nController(Controller):
             },
         )
         async def get_locale(
-                user: User = Depends(self.user_auth_strategy),
+                user: User = Depends(self.auth),
                 t: LocaleHandler = Depends(use_locale),
         ) -> LocaleResponse:
             return I18nService.get_user_locale(user, t)
