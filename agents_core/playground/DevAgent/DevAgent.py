@@ -5,7 +5,7 @@ from lib_core.nats.events import StartEvent, StopEvent, LLMEvent, UserMessageEve
 from playground.LlamaIndexAgent.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 
 
-class LlamaIndexAgent(Agent):
+class DevAgent(Agent):
 
     @step()
     async def start_step(self, event: StartEvent | UserMessageEvent, agent_config: LlamaIndexAgentConfig, displayer: EventDisplayer) -> LLMEvent:

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from lib_core.nats.events import DisplayEvent
+from ..display import DisplayEvent
 
 
 class CostEvent(DisplayEvent):

@@ -14,6 +14,8 @@ export const useAgentsStore = defineStore('agents', () => {
     refetch: refetchAgents,
   } = useQuery<Agent[]>({
     key: ['agents'],
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: true,
     query: async () => {
       const headers = await getHeaders()
       const res = await fetch(`/api/v1/agent/discover`, { headers })
@@ -65,13 +67,6 @@ export const useAgentsStore = defineStore('agents', () => {
       replaceAgent(agent)
     },
   })
-
-  // If you need periodic refresh, like the threads store, you can do:
-  window.setInterval(() => {
-    refreshAgents().catch(err =>
-      console.error('Failed to refresh agents periodically:', err),
-    )
-  }, 60 * 1000) // Refresh every 60s
 
   return {
     agents,

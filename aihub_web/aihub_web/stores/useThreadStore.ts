@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@pinia/colada'
 import { defineStore } from 'pinia'
-import type { ThreadResponse } from '@core/types/thread/ThreadResponse'
+import type { Thread } from '@core/types/thread/Thread'
 
 export const useThreadStore = defineStore('threads', () => {
   const { getHeaders } = useAuth()
@@ -11,8 +11,10 @@ export const useThreadStore = defineStore('threads', () => {
     state: threadsLoadingState,
     refresh: refreshThreads,
     refetch: refetchThreads,
-  } = useQuery<ThreadResponse[]>({
+  } = useQuery<Thread[]>({
     key: ['threads'],
+    staleTime: 1000 * 10, // 5 minutes
+    enabled: true,
     query: () =>
       getHeaders()
         .then(headers => fetch(`/api/v1/thread/`, { headers }))
@@ -21,7 +23,7 @@ export const useThreadStore = defineStore('threads', () => {
 
   // Compute a map for easy thread lookup
   const threadMap = computed(() => {
-    const map: Record<string, ThreadResponse> = {}
+    const map: Record<string, Thread> = {}
     threads.value?.forEach((t) => {
       map[t.id] = t
     })
@@ -29,7 +31,7 @@ export const useThreadStore = defineStore('threads', () => {
   })
 
   // Helper to replace a thread in `threads` array after mutation
-  function replaceThread(updatedThread: ThreadResponse) {
+  function replaceThread(updatedThread: Thread) {
     if (!threads.value) return
     const index = threads.value.findIndex(t => t.id === updatedThread.id)
     if (index !== -1) {
@@ -63,7 +65,7 @@ export const useThreadStore = defineStore('threads', () => {
       if (!res.ok) {
         throw new Error(`Failed to create thread: ${res.statusText}/`)
       }
-      return res.json() as Promise<ThreadResponse>
+      return res.json() as Promise<Thread>
     },
     onSuccess(thread) {
       replaceThread(thread)
@@ -79,7 +81,7 @@ export const useThreadStore = defineStore('threads', () => {
       if (!res.ok) {
         throw new Error(`Failed to fetch thread: ${res.statusText}`)
       }
-      return res.json() as Promise<ThreadResponse>
+      return res.json() as Promise<Thread>
     },
     onSuccess(thread) {
       replaceThread(thread)
@@ -105,7 +107,7 @@ export const useThreadStore = defineStore('threads', () => {
       if (!res.ok) {
         throw new Error(`Failed to add agent: ${res.statusText}`)
       }
-      return res.json() as Promise<ThreadResponse>
+      return res.json() as Promise<Thread>
     },
     onSuccess(thread) {
       replaceThread(thread)
@@ -126,7 +128,7 @@ export const useThreadStore = defineStore('threads', () => {
       if (!res.ok) {
         throw new Error(`Failed to remove agent: ${res.statusText}`)
       }
-      return res.json() as Promise<ThreadResponse>
+      return res.json() as Promise<Thread>
     },
     onSuccess(thread) {
       replaceThread(thread)
@@ -145,7 +147,7 @@ export const useThreadStore = defineStore('threads', () => {
       if (!res.ok) {
         throw new Error(`Failed to add user: ${res.statusText}`)
       }
-      return res.json() as Promise<ThreadResponse>
+      return res.json() as Promise<Thread>
     },
     onSuccess(thread) {
       replaceThread(thread)
@@ -166,18 +168,12 @@ export const useThreadStore = defineStore('threads', () => {
       if (!res.ok) {
         throw new Error(`Failed to remove user: ${res.statusText}`)
       }
-      return res.json() as Promise<ThreadResponse>
+      return res.json() as Promise<Thread>
     },
     onSuccess(thread) {
       replaceThread(thread)
     },
   })
-
-  window.setInterval(() => {
-    refreshThreads().catch(err =>
-      console.error('Failed to refresh threads periodically:', err),
-    )
-  }, 60 * 1000) // 60s
 
   return {
     threads,

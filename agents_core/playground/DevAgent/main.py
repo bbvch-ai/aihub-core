@@ -1,29 +1,22 @@
 import asyncio
-import logging
-from asyncio import sleep
 
-from bson import ObjectId
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from agents_core.runners.AgentRunner import AgentRunner
 from agents_core.runners.AgentTestRunner import AgentTestRunner
 from lib_core.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, \
     AzureOpenAIParameter
 from lib_core.i18n.LocaleString import LocaleString
-from lib_core.nats.events import StartEvent
 from lib_core.testing.logging.logger import enable_logging
-from playground.LlamaIndexAgent.LlamaIndexAgent import LlamaIndexAgent
-from playground.LlamaIndexAgent.LlamaIndexAgentConfig import LlamaIndexAgentConfig
+from playground.DevAgent.DevAgent import DevAgent
+from playground.DevAgent.DevAgentConfig import DevAgentConfig
 
 enable_logging()
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=LlamaIndexAgent,
-        agent_config=LlamaIndexAgentConfig(
-            agent_id="llama_index_agent",
-            name=LocaleString(en="Llama Index Agent"),
-            description=LocaleString(en="This is an agent that uses a llama index llm"),
+        agent_type=DevAgent,
+        agent_config=DevAgentConfig(
+            agent_id="dev_agent",
+            name=LocaleString(en="Dev Agent"),
+            description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             system_prompt=LocaleString(en="You are an agent"),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
@@ -36,11 +29,7 @@ async def main():
         ),
     )
 
-    async with runner.test_run(delay_before_stop=5) as topic:
-        await runner.send_event_from_topic(
-            topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)])
-        )
+    await runner.run_forever()
 
 if __name__ == "__main__":
     asyncio.run(main())

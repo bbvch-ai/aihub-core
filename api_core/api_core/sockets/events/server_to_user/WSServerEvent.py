@@ -27,6 +27,6 @@ class WSServerEvent(BaseModel):
             run_id=persisted_event.run_id,
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
-            event_id=str(persisted_event.id),
+            event_id=persisted_event.event_id,
             event_data=persisted_event.event_data,
         )

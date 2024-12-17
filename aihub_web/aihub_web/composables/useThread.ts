@@ -1,9 +1,13 @@
 import { computed } from 'vue'
 import { useEventsStore } from '@core/stores/useEventsStore'
 import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
+import { useThreadStore } from '@core/stores/useThreadStore'
 
 export const useThread = (thread_id: string) => {
   const eventsStore = useEventsStore()
+  const threadStore = useThreadStore()
+
+  const details = threadStore.threadMap[thread_id]
 
   const events = computed<WSServerEvent[]>(() => {
     return eventsStore.events.filter(
@@ -21,6 +25,7 @@ export const useThread = (thread_id: string) => {
 
   return {
     ...eventsStore,
+    details,
     events,
     sendUserMessageEvent,
     sendHumanInTheLoopResponse,

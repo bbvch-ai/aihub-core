@@ -11,6 +11,7 @@ from agents_core.runners.AgentRunner import AgentRunner
 from lib_core.nats.events import StartEvent, BaseEvent, StopEvent, ExceptionEvent
 from lib_core.nats.subscribers.NCSubscriber import NCSubscriber
 from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from lib_core.nats.topics import Topic
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
 from lib_core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
@@ -20,7 +21,7 @@ from lib_core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 class ObservedEvent(BaseModel):
     event: BaseEvent
-    topic: AgentTopic
+    topic: Topic
 
 class AgentTestRunner(AgentRunner):
 
@@ -31,7 +32,7 @@ class AgentTestRunner(AgentRunner):
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         await self.send_event(start_event, topic.thread_id, topic.display_id, topic.run_id)
 
-    async def observe_event(self, event: BaseEvent, topic: AgentTopic):
+    async def observe_event(self, event: BaseEvent, topic: Topic):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager

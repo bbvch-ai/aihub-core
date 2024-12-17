@@ -1,7 +1,12 @@
 ### Test: Send Events
-WEBSOCKET ws://localhost:8000/event/ws
+WEBSOCKET ws://localhost:8000/api/v1/event/ws
 Content-Type: application/json
 
+{
+    "type": "auth",
+    "token": "Bearer my_token"
+}
+===
 {
   "thread_id":"674efdcf0d610d191262a26c",
   "display_id":"675b1d2ef8c3388b25b4644e",

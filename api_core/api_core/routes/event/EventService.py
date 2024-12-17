@@ -3,6 +3,9 @@ import traceback
 from typing import List
 
 from bson import ObjectId
+
+from api_core.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from api_core.sockets.sender.WebSocketSender import WebSocketSender
 from lib_core.nats.events import ExceptionEvent
 from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
@@ -29,8 +32,8 @@ class EventService:
     async def handle_ws_event(
         event: WSUserEvent,
         user_oid: str,
-        ws_receiver,
-        ws_sender
+        ws_receiver: WebSocketReceiver,
+        ws_sender: WebSocketSender,
     ):
         """
         Handle incoming websocket user events. If there's an exception, 

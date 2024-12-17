@@ -16,7 +16,6 @@ class WebSocketManager:
 
     async def connect(self, websocket: WebSocket, user_id: str) -> None:
         logger.debug(f"Connecting user {user_id}")
-        await websocket.accept()
         self.active_connections[user_id] = websocket
 
     async def disconnect(self, user_id: str) -> None:

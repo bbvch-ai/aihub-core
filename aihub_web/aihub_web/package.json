@@ -54,9 +54,11 @@
     "lucide-vue-next": "^0.460.0",
     "pinia": "^2.2.6",
     "primevue": "^4.2.5",
+    "quill": "^2.0.3",
     "radix-vue": "^1.9.10",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tailwindcss-primeui": "^0.3.4"
   }
 }

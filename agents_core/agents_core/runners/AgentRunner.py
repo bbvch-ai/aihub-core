@@ -117,6 +117,7 @@ class AgentRunner:
 
     async def run_forever(self):
         """Convenience method to start and run indefinitely, waiting for manual stop."""
+        logger.debug(f"Starting {self.agent_class}.{self.agent_config.agent_id}")
         await self.start()
         try:
             await self._stop_event.wait()

@@ -1,13 +1,6 @@
 <template>
   <div>
-    <div>
-      <div
-        v-for="thread in threads"
-        :key="thread.id"
-      >
-        {{ thread.name }}
-      </div>
-    </div>
+    <ThreadList />
     <NuxtPage />
   </div>
 </template>

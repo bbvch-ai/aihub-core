@@ -17,6 +17,7 @@ class PersistedEventEntity(Document):
     thread_id = StringField(required=True)
     display_id = StringField(required=True)
     run_id = StringField(required=True)
+    event_id = StringField(required=True)
     event_type = StringField(required=True)
     event_name = StringField(required=True)
     event_data = DictField(required=True)

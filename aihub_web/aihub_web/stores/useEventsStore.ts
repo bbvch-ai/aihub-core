@@ -8,7 +8,7 @@ import type { UserMessageEvent } from '@core/types/Events/UserEvents/UserMessage
 import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
 
 export const useEventsStore = defineStore('events', () => {
-  const { getHeaders } = useAuth()
+  const { getHeaders, getBearer } = useAuth()
 
   const newEvents = ref<WSServerEvent[]>([])
 
@@ -29,10 +29,16 @@ export const useEventsStore = defineStore('events', () => {
     data: newEvent,
     send,
     status: webSocketsStatus,
-  } = useWebSocket<string>(`/api/v1/event/ws`, {
+  } = useWebSocket<string>(`ws://localhost:8000/api/v1/event/ws`, {
     autoReconnect: {
       retries: -1,
       delay: 1000,
+    },
+    onConnected(ws) {
+      getBearer()
+        .then((token) => {
+          ws.send(JSON.stringify({ type: 'auth', token }))
+        })
     },
   })
 
@@ -80,7 +86,12 @@ export const useEventsStore = defineStore('events', () => {
         _type: 'UserMessageEvent',
         event_id: (ObjectID()).toHexString(),
         created_at: Date.now() * 1_000_000,
-        content,
+        messages: [
+          {
+            role: 'user',
+            content,
+          },
+        ],
       } as UserMessageEvent,
     }
     sendEvent(userMessageEvent)
