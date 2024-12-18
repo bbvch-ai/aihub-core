@@ -51,18 +51,8 @@ dependencies:
     - '**/poetry.lock'
     - '**/pyproject.toml'
 
-
-feature:
- - head-branch: ['feat/*']
-
-fix:
- - head-branch: ['fix/*']
-
-chore:
- - head-branch: ['chore/*']
-
-patch:
- - base-branch: ['dev']
-
 minor:
  - base-branch: ['main']
+
+initiative:
+ - base-branch: ['initiative/*']
