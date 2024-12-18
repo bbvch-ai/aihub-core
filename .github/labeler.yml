@@ -1,0 +1,68 @@
+documentation:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'docs_core/*'
+    - '**/*.md'
+- head-branch: ['doc/*']
+
+ci-cd:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'iac_core/**/*'
+    - 'actions_core/**/*'
+    - '.github/**/*'
+
+test:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/test.*'
+    - '**/*.spec.*'
+    - '**/test_*'
+- head-branch: ['test/*']
+
+web:
+- changed-files:
+  - any-glob-to-any-file: 'web_core/**/*'
+
+pipeline:
+- changed-files:
+  - any-glob-to-any-file: 'pipeline_core/**/*'
+
+lib:
+- changed-files:
+  - any-glob-to-any-file: 'lib_core/**/*'
+
+api:
+- changed-files:
+  - any-glob-to-any-file: 'api_core/**/*'
+
+agents:
+- changed-files:
+  - any-glob-to-any-file: 'agents_core/**/*'
+
+make:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/Makefile'
+
+dependencies:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/poetry.lock'
+    - '**/pyproject.toml'
+
+
+feature:
+ - head-branch: ['feat/*']
+
+fix:
+ - head-branch: ['fix/*']
+
+chore:
+ - head-branch: ['chore/*']
+
+patch:
+ - base-branch: ['dev']
+
+minor:
+ - base-branch: ['main']
