@@ -1,0 +1,41 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    branches:
+      - main
+      - initiative/*
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+  issue_comment:
+
+jobs:
+  pr_agent_job:
+    name: Run pr agent on every pull request, respond to user comments
+    runs-on: ubuntu-latest
+    if: ${{ github.event.sender.type != 'Bot' }}
+
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: PR Agent action step
+        id: pragent
+        uses: Codium-ai/pr-agent@main
+        env:
+          GITHUB_ACTION.AUTO_REVIEW: true
+          GITHUB_ACTION.AUTO_DESCRIBE: true
+          GITHUB_ACTION.AUTO_IMPROVE: true
+          OPENAI_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONFIG.MODEL: "gpt-4"
+          OPENAI.API_TYPE: "azure"
+          OPENAI_API_VERSION: "2023-05-15"
+          AZURE_API_VERSION: "2023-05-15"
+          OPENAI.API_BASE: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          OPENAI.DEPLOYMENT_ID: "gpt-4"
