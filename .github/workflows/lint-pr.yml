@@ -51,11 +51,11 @@ jobs:
           git config --global url."git@github.com:".insteadOf "https://github.com/"
           poetry install --no-interaction --no-root --with dev
           rm -rf ~/.ssh
-        working-directory: pipelines_core
+        working-directory: aihub_pipeline
 
       - name: Lint backend
         uses: reviewdog/action-black@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          workdir: pipelines_core
+          workdir: aihub_pipeline

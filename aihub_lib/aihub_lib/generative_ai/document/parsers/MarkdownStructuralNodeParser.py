@@ -1,0 +1,331 @@
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Sequence
+
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.node_parser.interface import NodeParser
+from llama_index.core.node_parser.node_utils import build_nodes_from_splits
+from llama_index.core.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
+from llama_index.core.utils import get_tqdm_iterable
+
+from aihub_lib.persistence.rag.vectors.node_metadata import (
+    DEFAULT_METADATA,
+    HEADING_LEVEL,
+    INDEX,
+    SECTION_END_LINE,
+    SECTION_START_LINE,
+)
+
+
+@dataclass
+class Split:
+    content: str
+    metadata: Dict[str, str]
+    level: int
+
+
+@dataclass
+class MarkdownHeader:
+    line_number: int
+    hashes: str
+    header_text: str
+
+    @property
+    def level(self) -> int:
+        return len(self.hashes)
+
+
+def find_markdown_headers(content: str) -> List[MarkdownHeader]:
+    headers = []
+    for line_number, line in enumerate(content.splitlines(), 0):
+        stripped_line = line.lstrip()
+        if stripped_line.startswith("#"):
+            hashes = stripped_line.split()[0]
+            header_text = stripped_line[len(hashes) :].strip()
+            if set(hashes) == {"#"} and len(hashes) <= 6:
+                headers.append(
+                    MarkdownHeader(
+                        line_number=line_number,
+                        hashes=hashes,
+                        header_text=header_text,
+                    )
+                )
+    return headers
+
+
+class MarkdownContentSplitter:
+    """
+    Splits content into smaller parts based on Markdown headers.
+    """
+
+    def __init__(self):
+        self.metadata = {}
+        self.current_headers: Dict[str, any] = {f"h{i}": None for i in range(1, 7)}  # Track current header levels
+
+    def split_content(self, content: str, metadata: Dict[str, any] = None) -> List[Split]:
+        if metadata:
+            self.metadata = {**DEFAULT_METADATA, **metadata}
+        else:
+            self.metadata = DEFAULT_METADATA.copy()
+
+        content = content.strip()
+        splits = []
+        headers = find_markdown_headers(content)
+
+        lines = content.splitlines()
+
+        if headers and headers[0].line_number > 0:
+            first_header = headers[0]
+            self._update_metadata("", 0)
+            splits.append(
+                Split(
+                    metadata=self.metadata
+                    | {
+                        SECTION_START_LINE: 0,
+                        SECTION_END_LINE: first_header.line_number - 1,
+                    },
+                    content="\n".join(lines[: first_header.line_number]),
+                    level=0,
+                )
+            )
+
+        for i, header in enumerate(headers):
+            self._update_metadata(header.header_text, header.level)
+
+            if i + 1 < len(headers):
+                next_header_line = headers[i + 1].line_number
+            else:
+                next_header_line = len(lines)
+
+            header_content = "\n".join(lines[header.line_number : next_header_line])
+            splits.append(
+                Split(
+                    metadata=self.metadata
+                    | {
+                        SECTION_START_LINE: header.line_number,
+                        SECTION_END_LINE: next_header_line - 1,
+                    },
+                    content=header_content,
+                    level=header.level,
+                )
+            )
+
+        if not splits:
+            self._update_metadata("", 0)
+            return [
+                Split(
+                    metadata=self.metadata | {SECTION_START_LINE: 0, SECTION_END_LINE: len(lines) - 1},
+                    content=content,
+                    level=0,
+                )
+            ]
+
+        return splits
+
+    def _update_metadata(self, new_header: str, new_header_level: int) -> None:
+        # Update the current header levels
+        if new_header_level > 0:
+            self.current_headers[f"h{new_header_level}"] = new_header
+
+        # Clear lower-level headers if moving to a higher level
+        for i in range(new_header_level + 1, 7):
+            self.current_headers[f"h{i}"] = None
+
+        # Update the metadata with the current header levels
+        self.metadata.update(self.current_headers)
+        self.metadata[HEADING_LEVEL] = new_header_level or 0
+
+
+class NodeCreatorFromSplits:
+    """
+    Creates nodes from splits. Nodes are linked together using PREV and NEXT relationships based on the header levels.
+    """
+
+    def __init__(self, chunk_size: int = 512, chunk_overlap: int = 20):
+        self.include_metadata = True
+        self.metadata = {}
+        self.sentence_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        self.id_func = None
+        self.current_index = 0  # Initialize the index counter
+
+    def create_nodes_from_splits(
+        self,
+        splits: List[Split],
+        node: BaseNode,
+        include_metadata: bool = True,
+        metadata: Dict[str, any] = None,
+        id_func: Optional[Callable] = None,
+    ) -> List[TextNode]:
+        self.include_metadata = include_metadata
+        self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
+        self.id_func = id_func
+        nodes = []
+        last_nodes_stack = []
+        for split in splits:
+            split_texts = self.sentence_splitter.split_text(split.content)
+            split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
+            self._set_relationships_within_split(split_nodes)
+            self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
+            nodes.extend(split_nodes)
+        return nodes
+
+    def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
+        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+        if self.include_metadata:
+            metadata[INDEX] = self.current_index  # Set the index in the metadata
+            node.metadata = {**self.metadata, **metadata}
+        self.current_index += 1  # Increment the index counter
+        return node
+
+    @staticmethod
+    def _set_relationships_within_split(nodes: List[TextNode]) -> None:
+        """
+        Set relationships between the nodes within a split. The first node is linked to the second node and so on.
+        NEXT relationships are only set between nodes that share the same heading.
+        @param nodes: The nodes to set relationships for.
+        """
+        for prev_node, curr_node in zip(nodes, nodes[1:]):
+            # Check if the nodes share the same heading at each level (h1 to h6)
+            same_heading = True
+            for i in range(1, 7):
+                if prev_node.metadata.get(f"h{i}") != curr_node.metadata.get(f"h{i}"):
+                    same_heading = False
+                    break
+
+            if same_heading:
+                curr_node.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=prev_node.node_id)
+                prev_node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=curr_node.node_id)
+
+    def _set_relationships_between_splits(
+        self, nodes: List[TextNode], header_level: int, last_nodes_stack: List
+    ) -> None:
+        """
+        Set relationships between the nodes of the current split and the nodes of the previous split.
+        The first node of the current section links to the last node of the previous upper-level section.
+
+        @param nodes: The nodes of the current split.
+        @param header_level: The header level of the current split.
+        @param last_nodes_stack: Stack of last nodes of the previous splits, keeping track of nodes by header level.
+        """
+        if not nodes:
+            return
+
+        # Find the last node at the upper level
+        while last_nodes_stack and last_nodes_stack[-1][0] >= header_level:
+            last_nodes_stack.pop()
+
+        # Link the first node in the current section to the last node of the previous upper-level section
+        if last_nodes_stack:
+            nodes[0].relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=last_nodes_stack[-1][1].node_id)
+
+        # Update the stack with the last node of the current level
+        last_nodes_stack.append((header_level, nodes[-1]))
+
+
+class MarkdownStructuralNodeParser(NodeParser):
+    """
+    Markdown node parser. Splits a document into Nodes using custom Markdown splitting logic with header levels.
+    This is useful for documents with a hierarchical structure. It follows the logic of a reader's way of parsing a
+    document.
+
+    PREV and NEXT relationships are set based on header levels:
+    - Nodes in a lower level use PREV relationship to link to the previous node in the upper level
+    - Nodes inside a section are linked using NEXT and PREV relationships
+
+    If the section content is too large, a simple sentence splitter to split the content into smaller nodes is used.
+    All of these nodes are linked together using prev-next relationships.
+
+    The first node of a split links to the last node of the upper level split.
+
+    @example
+    Chapter 1:
+    Node A (Prev: None, Next: B)
+    Node B (Prev: A, Next: None)
+
+    Chapter 1.2
+    Node C (Prev: B, Next: D) <-- Here, Node B is the previous, because it is the last node in the upper chapter
+    Node D (Prev: C, Next: E)
+    Node E (Prev: D, Next: None)
+
+    Chapter 1.3
+    Node F (Prev: B, Next: G) <-- Here, Node B is the previous, because it is the last node in the upper chapter
+    Node G (Prev: F, Next: H)
+    Node H (Prev: G, Next: None)
+    """
+
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata to include in the nodes.")
+    chunk_size: int = Field(default=512, description="Maximum number of tokens in a chunk.")
+    chunk_overlap: int = Field(default=20, description="Number of overlapping tokens between chunks.")
+
+    markdown_splitter: MarkdownContentSplitter = Field(
+        default_factory=MarkdownContentSplitter,
+        description="Markdown content splitter to use for splitting content into smaller nodes.",
+    )
+
+    node_builder_from_splits: NodeCreatorFromSplits = Field(
+        default=None,
+        description="Node creator from splits.",
+    )
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data, include_prev_next_rel=False)
+        if self.node_builder_from_splits is None:
+            self.node_builder_from_splits = NodeCreatorFromSplits(
+                chunk_size=self.chunk_size,
+                chunk_overlap=self.chunk_overlap,
+            )
+
+    @classmethod
+    def from_defaults(
+        cls,
+        include_metadata: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
+        chunk_size: int = 512,
+        chunk_overlap: int = 0,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> "MarkdownStructuralNodeParser":
+        return cls(
+            include_metadata=include_metadata,
+            metadata=metadata or DEFAULT_METADATA.copy(),
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            callback_manager=callback_manager or CallbackManager([]),
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MarkdownStructuralNodeParser"
+
+    def _parse_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        result = []
+
+        for node in get_tqdm_iterable(nodes, show_progress, "Parsing nodes"):
+            text_nodes = self.get_nodes_from_node(node)
+            result.extend(text_nodes)
+
+        return result
+
+    def get_nodes_from_node(self, node: BaseNode) -> list[TextNode]:
+        """
+        Parse nodes from a markdown node. The node content is split into smaller nodes based on headers.
+        The relationships between the nodes are set based on the header levels.
+        @param node: The node to parse.
+        @return: List of TextNodes.
+        """
+        text = node.get_content(metadata_mode=MetadataMode.NONE)
+        splits = self.markdown_splitter.split_content(text, self.metadata)
+        return self.node_builder_from_splits.create_nodes_from_splits(
+            splits, node, self.include_metadata, self.metadata, self.id_func
+        )

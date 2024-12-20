@@ -28,7 +28,7 @@ jobs:
         with:
           version: 1.8.3
 
-      - name: Create new version number & tag for lib_core
+      - name: Create new version number & tag for aihub_lib
         run: |
           # List all tags that match the pattern 'v*' and check if the list is empty
           tags=$(git tag -l "v*")
@@ -66,15 +66,15 @@ jobs:
 
       - name: Increment version-tag in pyproject.toml
         run: |
-          echo "Update tag reference to lib_core in pipelines_core"
-          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' pipelines_core/pyproject.toml
-          echo "Update package version in pipelines_core/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' pipelines_core/pyproject.toml
-          echo "Update package version in lib_core/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' lib_core/pyproject.toml
+          echo "Update tag reference to aihub_lib in aihub_pipeline"
+          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
+          echo "Update package version in aihub_pipeline/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
+          echo "Update package version in aihub_lib/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_lib/pyproject.toml
 
-      - name: Install dependencies in pipelines_core
-        working-directory: ./pipelines_core
+      - name: Install dependencies in aihub_pipeline
+        working-directory: ./aihub_pipeline
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
@@ -99,9 +99,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pipelines_core/pyproject.toml
-          git add pipelines_core/poetry.lock
-          git add lib_core/pyproject.toml
+          git add aihub_pipeline/pyproject.toml
+          git add aihub_pipeline/poetry.lock
+          git add aihub_lib/pyproject.toml
           git commit -m "ops(bot): Update tag number to ${{ env.VERSION }} [skip ci]"
           git push origin
         env:
