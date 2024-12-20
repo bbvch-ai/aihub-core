@@ -1,17 +1,16 @@
 import asyncio
-import logging
-from asyncio import sleep
 
-from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from agents_core.runners.AgentTestRunner import AgentTestRunner
 from lib_core.i18n.LocaleString import LocaleString
 from lib_core.nats.events import StartEvent
+from lib_core.testing.logging.logger import enable_logging
 from playground.SimpleAgent.SimpleAgent import SimpleAgent
 from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
 
 
+enable_logging()
 
 async def main():
     runner = AgentTestRunner(
