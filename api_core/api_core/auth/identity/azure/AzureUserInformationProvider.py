@@ -2,34 +2,43 @@ import httpx
 from azure.identity import DefaultAzureCredential
 
 from api_core.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
-
-import msal
-
 from api_core.routes.user.dto.UserDTO import UserDTO
 
 
 class AzureUserInformationProvider(BaseUserInformationProvider):
     """
-    A Microsoft-specific implementation of the user information provider that uses
-    DefaultAzureCredential to obtain tokens for Microsoft Graph. This approach works well
-    when running in Azure with Managed Identities or in development environments supported by
-    the DefaultAzureCredential chain.
+    A user information provider that uses Microsoft Graph and Azure credentials.
+
+    ### Why This Class?
+    In Azure-based environments, user information often comes from Microsoft Graph.
+    `AzureUserInformationProvider` leverages `DefaultAzureCredential` to:
+    - Automatically handle token acquisition (using Managed Identity in Azure or developer credentials locally).
+    - Query Microsoft Graph's `/users/{oid}` endpoint to fetch user profile details.
+
+    ### How It Works
+    1. Initialize `DefaultAzureCredential`, which attempts multiple credentials (Managed Identity, VS Code auth,
+       Azure CLI, etc.) to find a suitable token.
+    2. Request a token for the Microsoft Graph scope (`https://graph.microsoft.com/.default`).
+    3. Use this token to call Microsoft Graph and retrieve the user's displayName, email, etc.
+
+    This prints the user's display name and email fetched from Microsoft Graph.
     """
 
     def __init__(self):
-        # Initialize the default credential. In Azure, this will use Managed Identity if available.
         self.credential = DefaultAzureCredential()
         self.scope = "https://graph.microsoft.com/.default"
 
-    def get_user_info_by_oid(self, oid: str) -> dict:
+    def get_user_info_by_oid(self, oid: str) -> UserDTO:
         """
-        Fetch user information (like name, email) from Microsoft Graph given a user OID.
-        Uses DefaultAzureCredential to obtain a token for Microsoft Graph.
+        Fetch user information from Microsoft Graph using an OID.
+
+        :param oid: The unique OID of the user in Azure AD.
+        :return: A `UserDTO` with user details like id, name, and email.
+        :raises Exception: If the request to Microsoft Graph fails.
         """
         # Acquire an access token from Azure Identity
         access_token = self.credential.get_token(self.scope).token
 
-        # Microsoft Graph endpoint for a specific user by their id (OID)
         url = f"https://graph.microsoft.com/v1.0/users/{oid}"
         headers = {
             "Authorization": f"Bearer {access_token}"

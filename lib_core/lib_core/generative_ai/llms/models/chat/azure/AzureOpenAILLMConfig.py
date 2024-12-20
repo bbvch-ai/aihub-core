@@ -4,25 +4,50 @@ import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.azure_openai import AzureOpenAI
+from pydantic import Field
 
 from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from lib_core.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
 
 
 class AzureOpenAIParameter(ChatLLMModelParameter):
-    logprobs: bool = False
-    top_logprobs: Optional[int] = None
-    logit_bias: Optional[Dict[str, float]] = None
+    """
+    Parameters for the Azure OpenAI chat model.
+
+    ### Why AzureOpenAIParameter?
+    Azure OpenAI supports additional parameters like `logprobs`, `top_logprobs`, and `logit_bias`
+    that may not be relevant for other providers. Defining them here keeps the configuration modular.
+    """
+
+    logprobs: bool = Field(False, description="If True, return log probabilities of tokens.")
+    top_logprobs: Optional[int] = Field(None, description="Number of top log probabilities to return.")
+    logit_bias: Optional[Dict[str, float]] = Field(None, description="Adjust probabilities of specific tokens.")
 
 
 class AzureOpenAILLMConfig(ChatLLMConfig):
-    prompt_tokens_costs_per_thousand: float
-    completion_tokens_costs_per_thousand: float
-    api_version: str
+    """
+    Configuration for an Azure OpenAI chat-based LLM.
 
-    default_parameter: AzureOpenAIParameter
+    ### Why AzureOpenAILLMConfig?
+    Azure OpenAI endpoints differ from standard OpenAI usage, requiring different auth flows and parameters.
+    This config handles Azure AD tokens, API versions, and cost tracking specific to Azure.
+
+    By providing `prompt_tokens_costs_per_thousand` and `completion_tokens_costs_per_thousand`,
+    we ensure cost calculations align with Azure's pricing model.
+    """
+
+    prompt_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand prompt tokens.")
+    completion_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand completion tokens.")
+    api_version: str = Field(..., description="Azure OpenAI API version.")
+
+    default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.")
 
     def to_llama_index(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> Tuple[AzureOpenAI, LLMCostTracker]:
+        """
+        Instantiate an AzureOpenAI LLM and a LLMCostTracker.
+
+        Uses Azure AD credentials and merges parameters from `default_parameter` and `model_parameter`.
+        """
         tokenizer = tiktoken.encoding_for_model(self.name).encode
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 

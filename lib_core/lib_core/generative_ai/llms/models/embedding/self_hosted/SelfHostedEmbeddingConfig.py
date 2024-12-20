@@ -1,30 +1,53 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Annotated
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from transformers import AutoTokenizer
+from pydantic import Field
 
 from lib_core.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from lib_core.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig, \
-    EmbeddingLLMModelParameter
+from lib_core.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig, EmbeddingLLMModelParameter
 
 
 class SelfHostedEmbeddingParameter(EmbeddingLLMModelParameter):
-    text_instruction: Optional[str] = ""
-    query_instruction: Optional[str] = ""
-    truncate_text: bool = False
+    """
+    Parameters for a self-hosted embedding model, possibly using text-embedding-inference or another local inference server.
+
+    ### Why SelfHostedEmbeddingParameter?
+    Self-hosted embedding services might allow instructions, truncation toggles, or other special parameters.
+    Storing them here keeps configuration unified and flexible.
+    """
+
+    text_instruction: Annotated[Optional[str], Field("", description="Instruction to apply when embedding text.")]
+    query_instruction: Annotated[Optional[str], Field("", description="Instruction to apply when embedding a query.")]
+    truncate_text: Annotated[bool, Field(False, description="If True, truncate text to model's max length." )]
 
 
 class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
-    api_key: Optional[str] = None
-    timeout: int = 60
-    embed_batch_size: int = 32
+    """
+    Configuration for a self-hosted embedding model using text-embedding-inference or similar backends.
 
-    default_parameter: SelfHostedEmbeddingParameter
+    ### Why SelfHostedEmbeddingConfig?
+    Self-hosted embeddings differ from cloud-provided ones. This config allows:
+    - Using local endpoints.
+    - Setting custom instructions or behaviors.
+    - Integrating with llama_index embeddings via the TextEmbeddingsInference wrapper.
+    """
+
+    api_key: Annotated[Optional[str], Field(None, description="API key if required by the local embedding endpoint.")]
+    timeout: Annotated[int, Field(60, description="HTTP request timeout in seconds.")]
+    embed_batch_size: Annotated[int, Field(32, description="Number of texts to embed in one batch.")]
+
+    default_parameter: Annotated[SelfHostedEmbeddingParameter, Field(..., description="Default parameters for the self-hosted embedding model.")]
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedEmbeddingParameter]
     ) -> Tuple[TextEmbeddingsInference, LLMCostTracker]:
+        """
+        Instantiate a TextEmbeddingsInference object and LLMCostTracker for self-hosted embeddings.
+
+        Parameters are merged to configure instructions and truncation options.
+        """
         tokenizer = AutoTokenizer.from_pretrained(self.name)
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 
