@@ -1,15 +1,44 @@
-from typing import Optional
+from typing import Optional, Annotated
 
 from lib_core.nats.topic_managers.TopicManager import TopicManager
 
 
 class AgentInstanceTopicManager(TopicManager):
-    def __init__(self, agent_class: str, agent_id: str):
+    """
+    The AgentInstanceTopicManager narrows down event subscription and publishing
+    to a specific agent instance—identified by its agent_class and agent_id.
+    Building on top of the more general TopicManager, it provides methods to:
+    - Request and receive discovery information filtered by a particular agent instance.
+    - Target all events, or selectively display or control events, coming from this one agent instance.
+    - Create subject patterns that include thread, display, and run IDs, but with the agent_class and agent_id
+      already fixed. This simplifies subscribing to and managing events for a single, identifiable agent.
+
+    ### Why This Class Exists
+
+    In a multi-agent environment, where various agents of different classes and IDs produce and consume events,
+    focusing on a single agent instance is often necessary. For instance, you might have multiple agents of the
+    same class (e.g., different chatbots or service bots), each identified by a unique agent_id. By using the
+    AgentInstanceTopicManager, you can:
+    - Query discovery info specifically for that instance.
+    - Listen to all or selected types of events from that one agent instance.
+    - Compose more specific topic managers, like AgentThreadTopicManager, that build on this base filtering.
+
+    ### Use Cases
+    - **Dedicated Monitoring:** A dashboard might show all events from a single critical agent instance.
+    - **Per-Agent Control:** An orchestrator that needs to send requests or receive responses only from a known agent instance.
+    """
+
+    def __init__(
+            self,
+            agent_class: Annotated[str, "Agent class identifier"],
+            agent_id: Annotated[str, "Unique agent instance ID"],
+    ):
         super().__init__()
         self.agent_class = agent_class
         self.agent_id = agent_id
 
     def get_subject_for_streaming_all_events_within_agent(self) -> str:
+        """Returns a subject pattern for all events originating from this agent instance."""
         return self.get_subject_for_specific_event_in_agent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -21,14 +50,32 @@ class AgentInstanceTopicManager(TopicManager):
             event_id="*",
         )
 
-    def get_agent_discovery_subject_request(self, call_id: str, agent_class: Optional[str] = None, agent_id: Optional[str] = None) -> str:
+    def get_agent_discovery_subject_request(
+            self,
+            call_id: Annotated[str, "Identifier linking request and response"],
+            agent_class: Optional[str] = None,
+            agent_id: Optional[str] = None
+    ) -> str:
+        """
+        Returns a subject for requesting discovery info about this agent instance (or a provided override).
+        If agent_class/agent_id are not specified, it uses the instance's own identifiers.
+        """
         return super().get_agent_discovery_subject_request(
             agent_class=agent_class or self.agent_class,
             agent_id=agent_id or self.agent_id,
             call_id=call_id,
         )
 
-    def get_agent_discovery_subject_response(self, call_id: str, agent_class: Optional[str] = None, agent_id: Optional[str] = None) -> str:
+    def get_agent_discovery_subject_response(
+            self,
+            call_id: Annotated[str, "Identifier linking request and response"],
+            agent_class: Optional[str] = None,
+            agent_id: Optional[str] = None
+    ) -> str:
+        """
+        Returns a subject for receiving agent discovery responses for this agent instance (or a provided override).
+        If agent_class/agent_id are not specified, it uses the instance's own identifiers.
+        """
         return super().get_agent_discovery_subject_response(
             agent_class=agent_class or self.agent_class,
             agent_id=agent_id or self.agent_id,
@@ -36,23 +83,27 @@ class AgentInstanceTopicManager(TopicManager):
         )
 
     def get_stream_name_for_all_events_within_agent(self) -> str:
+        """Returns a stream name dedicated to all events of this agent instance."""
         return f"agent_{self.agent_class}_{self.agent_id}_stream"
 
     def get_stream_group_for_all_control_events_within_agent(self) -> str:
+        """Returns a queue group name for consuming control events from this agent instance's stream."""
         return f"{self.get_stream_name_for_all_events_within_agent()}_{self.CONTROL_EVENT}_queue_group"
 
     def get_stream_group_for_all_display_events_within_agent(self) -> str:
+        """Returns a queue group name for consuming display events from this agent instance's stream."""
         return f"{self.get_stream_name_for_all_events_within_agent()}_{self.DISPLAY_EVENT}_queue_group"
 
     def get_subject_for_specific_event_in_agent_instance(
-        self,
-        thread_id: str,
-        display_id: str,
-        run_id: str,
-        event_type: str,
-        event_name: str,
-        event_id: str,
+            self,
+            thread_id: Annotated[str, "Thread ID within this agent instance"],
+            display_id: Annotated[str, "Display ID for UI/grouping"],
+            run_id: Annotated[str, "Run ID within the thread"],
+            event_type: Annotated[str, "Event type (e.g., display_event, control_event)"],
+            event_name: Annotated[str, "Specific event name"],
+            event_id: Annotated[str, "Event instance ID"]
     ) -> str:
+        """Returns a subject for a specific event from this agent instance, narrowed by thread, display, and run."""
         return self.get_subject_for_specific_event_in_agent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -65,6 +116,7 @@ class AgentInstanceTopicManager(TopicManager):
         )
 
     def get_subject_for_everything_within_agent_instance(self) -> str:
+        """Returns a subject pattern for all events in this agent instance, regardless of thread, display, or run."""
         return self.get_subject_for_specific_event_in_agent_instance(
             thread_id="*",
             display_id="*",
@@ -75,6 +127,7 @@ class AgentInstanceTopicManager(TopicManager):
         )
 
     def get_subject_for_all_display_events_within_agent_instance(self) -> str:
+        """Returns a subject pattern matching all display events within this agent instance."""
         return self.get_subject_for_specific_event_in_agent_instance(
             thread_id="*",
             display_id="*",
@@ -85,6 +138,7 @@ class AgentInstanceTopicManager(TopicManager):
         )
 
     def get_subject_for_all_control_events_within_agent_instance(self) -> str:
+        """Returns a subject pattern matching all control events within this agent instance."""
         return self.get_subject_for_specific_event_in_agent_instance(
             thread_id="*",
             display_id="*",

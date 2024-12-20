@@ -1,15 +1,34 @@
+from pydantic import Field
+
 from lib_core.generative_ai.llms.costs.LLMCosts import LLMCosts
 from lib_core.nats.events.cost.CostEvent import CostEvent
 
 
 class LLMCostEvent(CostEvent, LLMCosts):
-    llm_name: str
+    """
+    A concrete event representing the costs associated with Large Language Model operations,
+    including prompt, completion, and embedding token usage.
+
+    ### Why LLMCostEvent?
+    For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
+    breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
+    engineers, product managers, or finance teams clear insights into where tokens—and money—are
+    going.
+    """
+
+    llm_name: str = Field(..., description="The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.")
 
     def get_total_costs(self) -> float:
+        """Computes the sum of prompt, completion, and embedding costs, providing
+        a straightforward measure of the total expenditure for a given run."""
         return self.prompt_tokens_costs + self.completion_tokens_costs + self.embedding_tokens_costs
 
     @classmethod
     def from_llm_costs(cls, llm_name: str, costs: LLMCosts):
+        """
+        Constructs an LLMCostEvent from a given LLMCosts object and an LLM name.
+        This allows for easy conversion from generic cost tracking logic to a user-facing event.
+        """
         return cls(
             llm_name=llm_name,
             prompt_token_count=costs.prompt_token_count,

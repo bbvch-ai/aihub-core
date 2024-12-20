@@ -21,7 +21,35 @@ from ...sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 
 logger = logging.getLogger(__name__)
 
+
 class ChatController(Controller):
+    """
+    A controller exposing endpoints for initiating chat completions, both streaming and JSON-based.
+
+    ### Why ChatController?
+    In complex AI-driven workflows, users often need to:
+    - Send a sequence of messages to an agent.
+    - Receive responses in either streaming mode (Server-Sent Events) or JSON mode.
+
+    The `ChatController` defines these HTTP endpoints, ensuring authentication, parameter handling,
+    and integration with the underlying `ChatService`.
+
+    ### Endpoints
+    - `POST /completions/{agent_class}/{agent_id}/stream`:
+      Initiates a streaming chat interaction. The server returns SSE (Server-Sent Events) that stream chunks
+      of the agent’s response as they are ready.
+
+    - `POST /completions/{agent_class}/{agent_id}/json`:
+      Initiates a chat interaction and returns a JSON response after the entire conversation is processed.
+
+    ### Authentication & Authorization
+    Both endpoints require an authenticated user. The user’s permissions and spending limits are checked
+    to ensure they can interact with the specified agent.
+
+    ### File Uploads and Complex Requests
+    These endpoints are designed to handle not just simple text messages, but potentially file uploads
+    and other forms of user input. By integrating with `ChatService`, the logic remains clean and testable.
+    """
 
     def __init__(self, route: str = "/chat", auth: Callable[..., Any] = None):
         super().__init__(route, auth)
@@ -30,72 +58,30 @@ class ChatController(Controller):
         @self.router.post(
             route,
             summary="Stream Chat",
-            description="Initiates a streaming interaction with a specific agent. This endpoint requires authentication, checks user roles and spending limits, and supports file uploads.",
+            description=(
+                    "Initiates a streaming interaction with a specific agent. "
+                    "Requires authentication and role checks. Returns textual responses as SSE."
+            ),
             tags=["Agent"],
             responses={
-                200: {
-                    "description": "Successful streaming response",
-                    "content": {
-                        "text/event-stream": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "id": {"type": "string"},
-                                    "object": {
-                                        "type": "string",
-                                        "enum": ["chat.completion.chunk"],
-                                    },
-                                    "created": {"type": "integer"},
-                                    "model": {"type": "string"},
-                                    "choices": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "index": {"type": "integer"},
-                                                "finish_reason": {
-                                                    "type": "string",
-                                                    "nullable": True,
-                                                },
-                                                "delta": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "role": {
-                                                            "type": "string",
-                                                            "nullable": True,
-                                                        },
-                                                        "content": {"type": "string"},
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                    "usage": {"type": "object", "nullable": True},
-                                },
-                            },
-                            "example": """
-    data: {"id":"5511afde-7f5e-4892-bc7d-ed1bdf73830a","object":"chat.completion.chunk","created":1734012911,"model":"gpt-4","choices":[{"index":0,"finish_reason":null,"delta":{"role":"assistant","content":"First chunk.\n"}}],"usage":null}
-    data: {"id":"298742bb-7d1c-41a5-bbda-faaaa8100c9e","object":"chat.completion.chunk","created":1734012911,"model":"gpt-4","choices":[{"index":0,"finish_reason":null,"delta":{"role":"assistant","content":"Second chunk"}}],"usage":null}
-    data: {"id":"c577309c-7954-4dba-9de5-311a679e335b","object":"chat.completion.chunk","created":1734012912,"model":"","choices":[{"index":0,"finish_reason":"stop","delta":{"role":"assistant","content":""}}],"usage":null}
-            """,
-                            "description": "A stream of server-sent events. Each event is prefixed with 'data: ' and separated by two newline characters. The content of each event is a JSON object representing a chat completion chunk.",
-                        }
-                    },
-                },
+                200: {"description": "Successful streaming response (SSE)"},
                 401: {"description": "Unauthorized access"},
-                403: {"description": "Forbidden - user lacks appropriate access or has exceeded spending limits"},
-                404: {"description": "Organization or agent not found"},
+                403: {"description": "Forbidden - user lacks appropriate access or exceeded limits"},
+                404: {"description": "Agent not found"},
             },
             response_class=StreamingResponse,
         )
         async def stream_chat(
-            chat_completions_request: Annotated[ChatCompletionsRequest, Body],
-            agent_class: Annotated[str, Path(title="Agent class")],
-            agent_id: Annotated[str, Path(title="Agent ID")],
-            nc: Annotated[NATS, Depends(use_nats)],
-            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-            user: AuthenticatedUser = Depends(self.auth),
+                chat_completions_request: Annotated[ChatCompletionsRequest, Body],
+                agent_class: Annotated[str, Path(title="Agent class")],
+                agent_id: Annotated[str, Path(title="Agent ID")],
+                nc: Annotated[NATS, Depends(use_nats)],
+                ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+                user: AuthenticatedUser = Depends(self.auth),
         ) -> StreamingResponse:
+            """
+            Start a streaming chat interaction. Streams chunks of the agent's response as SSE.
+            """
             resources: StreamingResources = await ChatService.start_stream_chat_interaction(
                 user,
                 agent_class,
@@ -112,26 +98,31 @@ class ChatController(Controller):
         return self
 
     def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "ChatController":
-
         @self.router.post(
             route,
-            description="Initiates an interaction with a specific agent and returns a JSON response. This endpoint requires authentication, checks user roles and spending limits, and supports file uploads.",
+            description=(
+                    "Initiates a chat interaction with a specific agent and returns a full JSON response "
+                    "once all tokens are processed. Requires authentication and checks user limits."
+            ),
             tags=["Agent"],
             responses={
-                200: {"description": "Successful response with chat completion data"},
-                401: {"description": "Unauthorized access"},
-                403: {"description": "Forbidden - user lacks appropriate access or has exceeded spending limits"},
-                404: {"description": "Organization or agent not found"},
+                200: {"description": "Successful JSON response with chat completions"},
+                401: {"description": "Unauthorized"},
+                403: {"description": "Forbidden - insufficient permissions or exceeded limits"},
+                404: {"description": "Agent not found"},
             },
         )
         async def json_chat(
-            chat_completions_request: Annotated[ChatCompletionsRequest, Body],
-            agent_class: Annotated[str, Path(title="Agent class")],
-            agent_id: Annotated[str, Path(title="Agent ID")],
-            nc: Annotated[NATS, Depends(use_nats)],
-            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-            user: AuthenticatedUser = Depends(self.auth),
+                chat_completions_request: Annotated[ChatCompletionsRequest, Body],
+                agent_class: Annotated[str, Path(title="Agent class")],
+                agent_id: Annotated[str, Path(title="Agent ID")],
+                nc: Annotated[NATS, Depends(use_nats)],
+                ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+                user: AuthenticatedUser = Depends(self.auth),
         ) -> ChatCompletionsSuccessResponse:
+            """
+            Start a chat interaction and return a JSON response after all tokens have been processed.
+            """
             resources: JsonResources = await ChatService.start_json_chat_interaction(
                 user,
                 agent_class,
@@ -141,12 +132,11 @@ class ChatController(Controller):
                 ws_receiver=ws_receiver,
             )
 
-            # Wait for the stop_event which signals that all events have been processed
+            # Wait until all events are processed
             await resources.stop_event.wait()
             await resources.subscriber.stop()
 
-            # Now resources.costs and resources.model_name have been updated by the aggregator
+            # Construct final JSON response
             return ChatService.build_json_response(resources.chunk_events, resources.costs, resources.model_name)
 
         return self
-

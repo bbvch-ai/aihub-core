@@ -1,21 +1,50 @@
 from typing import Optional
+from pydantic import Field
 
 from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
 class AgentTopic(PartialAgentTopic):
-    agent_class: str
-    agent_id: str
-    run_id: str
-    thread_id: str
-    display_id: str
-    event_type: str
-    event_name: str
-    event_id: str
+    """
+    Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+    to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+
+    ### Why This Class Exists
+
+    In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+    AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+    This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+    routing or logging a complete event identifier.
+
+    ### Example:
+    If an event subject is something like:
+    "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+    then this AgentTopic can represent it, providing quick field-level access and serialization.
+    """
+
+    agent_class: str = Field(..., description="The agent's class identifier.")
+    agent_id: str = Field(..., description="Unique identifier for the specific agent instance.")
+    run_id: str = Field(..., description="The run ID within the thread.")
+    thread_id: str = Field(..., description="Unique identifier for the conversation or workflow thread.")
+    display_id: str = Field(..., description="UI-facing grouping ID, used to distinguish or group related runs.")
+    event_type: str = Field(..., description="Type of event (e.g., 'display_event', 'control_event').")
+    event_name: str = Field(..., description="Name of the event (e.g., 'start', 'stop', 'error').")
+    event_id: str = Field(..., description="Unique identifier for this particular event instance.")
 
     def __str__(self) -> str:
-        return f"{TopicManager.AGENT_TOPIC}.{self.agent_class}.{self.agent_id}.{self.thread_id}.{self.display_id}.{self.run_id}.{self.event_type}.{self.event_name}.{self.event_id}"
+        """Returns the full subject string for this agent topic."""
+        return (
+            f"{TopicManager.AGENT_TOPIC}."
+            f"{self.agent_class}."
+            f"{self.agent_id}."
+            f"{self.thread_id}."
+            f"{self.display_id}."
+            f"{self.run_id}."
+            f"{self.event_type}."
+            f"{self.event_name}."
+            f"{self.event_id}"
+        )
 
     @classmethod
     def from_partial_topic(
@@ -30,6 +59,13 @@ class AgentTopic(PartialAgentTopic):
         event_name: Optional[str] = None,
         event_id: Optional[str] = None,
     ) -> "AgentTopic":
+        """
+        Converts a PartialAgentTopic into a fully-defined AgentTopic, filling in any missing fields
+        from the provided optional parameters.
+
+        This allows turning a partial topic (where some fields may be None) into a complete one,
+        ensuring that all attributes have values.
+        """
         return cls(
             agent_class=partial_topic.agent_class or agent_class,
             agent_id=partial_topic.agent_id or agent_id,

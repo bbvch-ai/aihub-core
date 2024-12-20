@@ -1,12 +1,36 @@
-from typing import TypeVar, Generic, List, Type
+from typing import (
+    TypeVar,
+    Generic,
+    List,
+    Type,
+    Annotated,
+)
 
 T = TypeVar('T')
 
 
 class ListOfSize(Generic[T]):
-    def __init__(self, items: List[T], required_size: int):
+    """
+    A generic container that enforces a fixed size on a list of items.
+
+    ### Why This Class?
+    Some workflow steps or functions may require a fixed number of events or inputs.
+    `ListOfSize` ensures that the provided list has exactly the required length,
+    raising a ValueError otherwise. This makes the contract between code components explicit
+    and helps detect configuration errors early.
+
+    ### Features
+    - Fixed-size enforcement at instantiation.
+    - Behaves like a normal list afterward (indexing, iteration).
+    """
+
+    def __init__(
+        self,
+        items: Annotated[List[T], "The list of items to wrap"],
+        required_size: Annotated[int, "The exact size that the list must have"]
+    ):
         if len(items) != required_size:
-            raise ValueError(f"List must have exactly {required_size} items")
+            raise ValueError(f"List must have exactly {required_size} items (got {len(items)})")
         self.items = items
         self.required_size = required_size
 
@@ -16,17 +40,36 @@ class ListOfSize(Generic[T]):
     def __len__(self):
         return len(self.items)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> T:
         return self.items[index]
 
     def __repr__(self):
         return f"ListOfSize<{self.required_size}, {self.items}>"
 
 
-def FixedList(type_: Type, size: int):
-    """Factory function to create a fixed-size list type"""
+def FixedList(
+    type_: Annotated[Type[T], "The type of items in the fixed-size list"],
+    size: Annotated[int, "The fixed size of the list"]
+) -> Type[ListOfSize[T]]:
+    """
+    A factory function to create a specialized fixed-size list type.
 
-    class _FixedSizeList(ListOfSize[type_]):
+    ### Why This Factory?
+    Instead of manually defining each fixed-size list type,
+    `FixedList` allows you to programmatically produce a `ListOfSize` subclass
+    that includes a `_required_size` attribute. This can be used by the event extraction logic
+    (or any other type inspection tools) to understand that a parameter or return type expects
+    a fixed number of items.
+
+    ### Example
+    If you need a list of exactly 3 `SomeEvent` items:
+    ```python
+    My3EventList = FixedList(SomeEvent, 3)
+    ```
+    Now `My3EventList` is a type that, when instantiated, must have exactly three `SomeEvent`s.
+    """
+
+    class _FixedSizeList(ListOfSize[T]):
         _required_size = size
 
     return _FixedSizeList

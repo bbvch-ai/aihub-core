@@ -1,6 +1,7 @@
 import inspect
 import networkx as nx
 
+from agents_core.workflow.annotations.extractors.extract_return_events import extract_return_events
 from lib_core.i18n.LocaleString import LocaleString
 from lib_core.nats.events import ControlEvent, StartEvent, StopEvent
 
@@ -161,7 +162,3 @@ class WorkflowVisualizer:
         plt.axis('off')
         plt.show()
 
-
-# Example Usage:
-visualizer = WorkflowVisualizer(EndBossAgent, locale='de')
-visualizer.visualize()

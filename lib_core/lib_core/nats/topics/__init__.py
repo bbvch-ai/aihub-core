@@ -1,5 +1,5 @@
 from .Topic import Topic
-from .discovery.DiscoveryTOpic import DiscoveryTopic
+from .discovery.DiscoveryTopic import DiscoveryTopic
 from .discovery.AgentDiscoveryTopic import AgentDiscoveryTopic
 from .agents.AgentTopic import AgentTopic
 from .agents.PartialAgentTopic import PartialAgentTopic

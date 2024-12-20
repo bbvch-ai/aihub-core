@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+  phoenix:
+    image: arizephoenix/phoenix:version-7.0.1
+    ports:
+      - "6006:6006"  # Phoenix UI and OTLP HTTP collector
+      - "4317:4317"  # Phoenix OTLP gRPC collector
+    depends_on:
+      - mongo
+      - nats
+    restart: always
+
+  nats:
+    image: nats:latest
+    command: ["-js"]  # Enable JetStream
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring interface
+    restart: always
+
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - "27017:27017"
+    restart: always

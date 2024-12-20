@@ -16,20 +16,39 @@ from lib_core.nats.topic_managers.TopicManager import TopicManager
 from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from lib_core.nats.topics import DiscoveryTopic
 
-# Create two caches:
-# 1. A cache for the list of all agents discovered by `discover_agents`
-# 2. A cache for individual agents discovered by `get_agent`
-DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
-GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
+# In-memory caches to avoid repeatedly querying NATS for agent info
+DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)   # Cache the entire agent list for 60s
+GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)       # Cache individual agents for 60s
 
 
 class AgentService:
+    """
+    Provides functionality to discover and retrieve agent information via NATS-based discovery events.
+
+    ### Why AgentService?
+    `AgentService` acts as the business logic layer for agent operations,
+    isolating NATS-based discovery requests from the HTTP layer.
+
+    ### Key Operations
+    - `discover_agents`: Broadcasts a DiscoveryRequestEvent and collects all AgentDiscoveryResponseEvents,
+      returning a list of discovered agents.
+    - `get_agent`: Sends a targeted discovery request to identify a specific agent.
+
+    ### Caching
+    - Entire agent lists are cached for 60 seconds to reduce NATS load.
+    - Individual agent details are also cached for 60 seconds.
+
+    If the agent or agent list isn't found in cache, a new NATS discovery request is performed.
+    """
 
     @staticmethod
     async def discover_agents(nc: NATS) -> List[AgentDTO]:
+        """
+        Discovers all agents by broadcasting a discovery request and waiting for responses.
+        Returns a cached result if available.
+        """
         cache_key = "all_agents"
 
-        # If we have cached results and they haven't expired, return them
         if cache_key in DISCOVER_AGENTS_CACHE:
             return DISCOVER_AGENTS_CACHE[cache_key]
 
@@ -40,18 +59,19 @@ class AgentService:
             discovery_responses.append(event)
 
         topic_manager = TopicManager()
-
         nc_publisher = NCPublisher(nc)
         nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
 
+        # Broadcast the discovery request
         await nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),
             subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
         )
 
+        # Wait briefly for responses
         await sleep(1)
         await nc_subscriber.stop()
 
@@ -65,27 +85,27 @@ class AgentService:
             for response in discovery_responses
         ]
 
-        # Store the discovered agents in the cache
         DISCOVER_AGENTS_CACHE[cache_key] = agents
         return agents
 
     @staticmethod
     async def get_agent(nc: NATS, agent_class: str, agent_id: str) -> AgentDTO:
+        """
+        Retrieves details about a specific agent. If cached, returns immediately.
+        Otherwise, sends a targeted discovery request and waits for a response.
+        """
         cache_key = (agent_class, agent_id)
 
-        # If we have a cached agent and it hasn't expired, return it
         if cache_key in GET_AGENT_CACHE:
             return GET_AGENT_CACHE[cache_key]
 
         call_id = str(ObjectId())
         agent: Optional[AgentDTO] = None
-
-        # Create an event to signal when the agent is discovered
         agent_found_event = asyncio.Event()
 
         async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: DiscoveryTopic):
             nonlocal agent
-            # Stop the subscriber since we got our response
+            # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
             agent = AgentDTO(
                 agent_class=event.agent_class,
@@ -93,34 +113,29 @@ class AgentService:
                 agent_config=event.agent_config,
                 start_events=event.start_events,
             )
-            # Signal that we have found the agent
             agent_found_event.set()
 
         topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
-
         nc_publisher = NCPublisher(nc)
         nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
 
-        # Publish the discovery request
+        # Send discovery request for the specific agent
         await nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),
             subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
         )
 
-        # Await the agent_found_event with a timeout
+        # Wait up to 1 second for response
         try:
             await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
         except asyncio.TimeoutError:
-            # Stop the subscriber if still running
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
-        # If we're here, we have the agent
         if agent is not None:
-            # Store in the cache for 60 seconds
             GET_AGENT_CACHE[cache_key] = agent
             return agent
 

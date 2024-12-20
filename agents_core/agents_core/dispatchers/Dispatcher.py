@@ -1,7 +1,7 @@
 import inspect
 import logging
 import traceback
-from typing import Type, Dict, Set, List, get_origin, Callable, Any, Optional
+from typing import Type, Dict, Set, List, get_origin, Callable, Any, Optional, Annotated
 import asyncio
 
 from nats.js import JetStreamContext
@@ -14,11 +14,18 @@ from agents_core.i18n.AgentLocaleHandler import AgentLocaleHandler
 from lib_core.i18n.LocaleHandler import LocaleHandler
 from lib_core.nats.context.run.RunContext import RunContext
 from lib_core.nats.context.thread.ThreadContext import ThreadContext
-from lib_core.nats.events import ControlEvent, StartEvent, StopEvent, ExceptionEvent, BaseEvent, DisplayEvent
+from lib_core.nats.events import (
+    ControlEvent,
+    StartEvent,
+    StopEvent,
+    ExceptionEvent,
+    BaseEvent,
+    DisplayEvent,
+)
 from lib_core.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 from lib_core.nats.publishers.JSPublisher import JSPublisher
-from lib_core.nats.stores.event.DistributedEventStore import DistributedEventStore
-from lib_core.nats.stores.step.StepStore import DistributedStepStore
+from agents_core.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
+from agents_core.dispatchers.stores.step.StepStore import DistributedStepStore
 from lib_core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from lib_core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from lib_core.nats.topics.agents.AgentTopic import AgentTopic
@@ -29,14 +36,67 @@ logger = logging.getLogger(__name__)
 
 
 class Dispatcher:
+    """
+    The Dispatcher orchestrates the execution of workflow steps within an agent run. It acts as the
+    central coordinator that listens to events, determines which steps should fire, injects the right
+    parameters into those steps, and handles the lifecycle of runs (start, error, stop).
+
+    ### Why the Dispatcher?
+    A workflow often involves multiple steps that depend on certain events. The Dispatcher ties all these
+    concepts together:
+    - It receives events (like `StartEvent`, `StopEvent`, custom `ControlEvent`s).
+    - Finds which steps are "ready" to execute based on available events and step definitions.
+    - Fetches needed contextual data (thread/run contexts, previous events) and constructs the arguments
+      for the steps.
+    - Executes steps and publishes any resulting events, updating the run’s state as needed.
+
+    By centralizing these responsibilities, the Dispatcher ensures consistent, reliable orchestration of
+    complex multi-step workflows.
+
+    ### Key Responsibilities
+    1. **Event Handling:**
+       `handle_event` is called for each new event. It:
+       - Stores the event.
+       - Updates run/thread context as required.
+       - Determines which steps (if any) become executable due to the new event.
+       - Executes those steps asynchronously.
+
+    2. **Step Execution Logic:**
+       Steps might have constraints:
+       - Input events that must be present in certain quantities.
+       - Optional parameters.
+       - Maximum number of executions per run.
+       The Dispatcher enforces these rules in `is_step_ready` and `execute_step`.
+
+    3. **Context and State Management:**
+       The Dispatcher uses `RunContext` and `ThreadContext` for state persistence. It interacts with `DistributedEventStore`
+       and `DistributedStepStore` to track event histories and step execution counts across distributed environments.
+
+    4. **Tracing and Telemetry:**
+       Through `RunTraceCoordinator`, it logs start/end times of runs and steps, aiding observability.
+
+    ### Lifecycle
+    A typical flow might be:
+    - On a `StartEvent`, the run is initialized, contexts are set, tracing begins.
+    - Incoming events trigger checks for steps that can run.
+    - Steps run and produce new events, potentially enabling further steps.
+    - On completion (`StopEvent`), the Dispatcher cleans up run-level data.
+
+    ### Integration with Other Components
+    - **Agent & Steps:** The Dispatcher uses the agent’s defined steps and their annotated metadata (like required events).
+    - **Publishers & Stores:** It uses JSPublisher to publish resulting events, and distributed stores to fetch/update events or steps info.
+    - **Tracing & Localization:** Integrates with `RunTraceCoordinator` for metrics and `AgentLocaleHandler` for localized outputs.
+
+    """
+
     def __init__(
         self,
-        agent: Type[Agent],
-        agent_config: AgentConfig,
-        nc: NATS,
-        js: JetStreamContext,
-        topic_manager: AgentInstanceTopicManager,
-        locale_handler: AgentLocaleHandler,
+        agent: Annotated[Type[Agent], "The agent class defining steps and logic."],
+        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
+        nc: Annotated[NATS, "NATS client for messaging."],
+        js: Annotated[JetStreamContext, "JetStream context for persistent storage and event streams."],
+        topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
+        locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
         self.agent = agent
         self.agent_config = agent_config
@@ -51,28 +111,42 @@ class Dispatcher:
         self.tracer = RunTraceCoordinator(self.nc)
         self.step_configs = agent_config.get_step_configs()
 
-    async def handle_event(self, event: ControlEvent, topic: AgentTopic):
+    async def handle_event(
+        self,
+        event: Annotated[ControlEvent, "The incoming control event to handle."],
+        topic: Annotated[AgentTopic, "The parsed topic of the event."]
+    ):
+        """
+        Called whenever a new event arrives. This method:
+        - Stores the event.
+        - Updates run/thread contexts if necessary.
+        - If the event is Start/Stop/Exception, handles run lifecycle changes.
+        - Checks for steps that can now execute due to the event.
+
+        If steps are ready, it triggers their execution asynchronously.
+        """
         logger.debug(f"Handling event for subject {topic}")
-        # Store the event
+        # Store the event for future reference
         await self.event_store.store_event(topic.run_id, event)
 
-        # Retrieve contexts
+        # Retrieve contexts (run and thread)
         run_context = await RunContext.create(self.js, topic.thread_id, topic.run_id)
         thread_context = await ThreadContext.create(self.js, topic.thread_id)
 
         if isinstance(event, StartEvent):
             logger.debug("Handling StartEvent")
-
             telemetry_headers = self.tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
 
+            # Store any initial data from the StartEvent into run_context
             event_data = event.to_context_dict()
             for key, value in event_data.items():
-                logger.debug(f"Setting key '{key}' to '{value}'")
+                logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
         if isinstance(event, StopEvent):
             logger.debug("Handling StopEvent")
+            # Clean up run-specific data
             await run_context.delete_all()
             await self.event_store.delete_run_store(topic.run_id)
             await self.step_store.delete_run_store(topic.run_id)
@@ -80,28 +154,43 @@ class Dispatcher:
 
         if isinstance(event, ExceptionEvent):
             logger.debug("Handling ExceptionEvent")
+            # Mark run as crashed so no further steps are executed
             await self.step_store.mark_run_as_crashed(topic.run_id)
             return
 
-        # Check for steps that are ready to execute
+        # Determine which steps need to be executed due to this event
         steps = self.agent.get_steps_waiting_for_event(type(event))
         tasks = []
         for step_method in steps:
-            logger.debug(f"Checking step '{step_method.__name__}'")
+            logger.debug(f"Checking step '{step_method.__name__}' for readiness")
             if await self.is_step_ready(step_method, topic.run_id, event):
-                logger.debug(
-                    f"Triggering step '{step_method.__name__}' due to '{event.__class__.__name__}'")
+                logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
                 task = asyncio.create_task(
                     self.execute_step(event, step_method, run_context, thread_context, topic)
                 )
                 tasks.append(task)
+
         if tasks:
             await asyncio.gather(*tasks)
 
-    async def is_step_ready(self, step_method: Callable, run_id: str, event: ControlEvent) -> bool:
-        """Determines if a step is ready to execute based on available events."""
+    async def is_step_ready(
+        self,
+        step_method: Annotated[Callable, "The step method to check."],
+        run_id: Annotated[str, "The current run ID."],
+        event: Annotated[ControlEvent, "The triggering event."]
+    ) -> bool:
+        """
+        Checks if a step can be run given the current state (events available, max executions, etc.).
+
+        It verifies:
+        - The run hasn't crashed.
+        - The step hasn't exceeded its max execution count.
+        - All required input events are available in the needed quantities.
+
+        Returns True if the step can execute, False otherwise.
+        """
         if await self.step_store.is_run_crashed(run_id):
-            logger.warning(f"Run {run_id} is marked as crashed, skipping step execution.")
+            logger.warning(f"Run {run_id} is crashed; skipping step.")
             return False
 
         max_executions = getattr(step_method, '_max_executions_per_run', None)
@@ -109,61 +198,70 @@ class Dispatcher:
             execution_count = await self.step_store.get_execution_count(run_id, step_method.__name__)
             if execution_count >= max_executions:
                 logger.debug(
-                    f"[{step_method.__name__}] Max executions reached ({execution_count}/{max_executions}), skipping.")
+                    f"[{step_method.__name__}] Max executions reached ({execution_count}/{max_executions}), skipping."
+                )
                 return False
 
         input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = step_method._input_event_mapping
         parameter_optional_map: Dict[str, bool] = getattr(step_method, '_parameter_optional_map', {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, '_size_requirements', {})
+
         events = await self.event_store.get_all_events(run_id, before=event.created_at)
-
-        logger.debug(f"[{step_method.__name__}] Event map for {input_event_mapping}")
+        # For each parameter, check if we have enough events
         for argument_name, event_types in input_event_mapping.items():
-            logger.debug(f"[{step_method.__name__}] Step requires argument {argument_name}: {event_types}")
-            logger.debug(f"[{step_method.__name__}] Got events: {events}")
-
-            # Get the required size for this parameter (if any)
+            logger.debug(f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_types}")
             required_size = size_requirements.get(argument_name)
             is_optional = parameter_optional_map.get(argument_name, False)
 
-            # Count available events of the required types
             available_events_count = sum(
                 len(events.get(event_type.__name__, []))
                 for event_type in event_types
             )
 
-            # Check if we have enough events
-            if required_size is not None:
-                if available_events_count < required_size:
-                    logger.debug(
-                        f"[{step_method.__name__}] Insufficient events for '{argument_name}'. "
-                        f"Need {required_size}, have {available_events_count}")
-                    return False
-            elif not available_events_count and not is_optional:
+            # If a fixed size is required, verify count
+            if required_size is not None and available_events_count < required_size:
                 logger.debug(
-                    f"[{step_method.__name__}] Insufficient inputs due to missing required argument '{argument_name}'")
+                    f"[{step_method.__name__}] Not enough events for '{argument_name}'. "
+                    f"Needed {required_size}, got {available_events_count}."
+                )
+                return False
+            elif required_size is None and not available_events_count and not is_optional:
+                # Required events not found
+                logger.debug(
+                    f"[{step_method.__name__}] Missing required argument '{argument_name}' events."
+                )
                 return False
             elif not available_events_count and is_optional:
                 logger.debug(
-                    f"[{step_method.__name__}] Optional argument '{argument_name}' missing, but proceeding")
-                continue
+                    f"[{step_method.__name__}] Optional arg '{argument_name}' not provided, continuing anyway."
+                )
 
-        logger.debug(f"[{step_method.__name__}] Sufficient Inputs")
+        logger.debug(f"[{step_method.__name__}] All input requirements satisfied.")
         return True
 
     async def _get_event_value(
         self,
-        param: inspect.Parameter,
-        step_method: Callable,
-        events: Dict[str, List[ControlEvent]],
-        trigger_event: ControlEvent,
+        param: Annotated[inspect.Parameter, "A parameter of the step method."],
+        step_method: Annotated[Callable, "The step method we're preparing arguments for."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
+        trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."]
     ) -> Optional[Any]:
-        """Retrieves the appropriate event value for a given parameter."""
+        """
+        Finds the appropriate value for a given step parameter.
+
+        Logic:
+        - Gathers all events that match the parameter's required event types.
+        - If a fixed-size list is required, returns a `ListOfSize` if exact count matches.
+        - If a list is required (but not fixed-size), returns all matching events.
+        - If a single event is expected, returns the trigger event if it matches, else the latest matching event.
+
+        Returns None if no suitable event is found and the parameter is optional.
+        """
         event_types = step_method._input_event_mapping.get(param.name, set())
         size_requirements = getattr(step_method, '_size_requirements', {})
         required_size = size_requirements.get(param.name)
 
-        # Get all available events of the required types
+        # Gather all matching events
         all_matching_events: List[ControlEvent] = []
         for event_type in event_types:
             event_list = events.get(event_type.__name__, [])
@@ -172,67 +270,82 @@ class Dispatcher:
         if not all_matching_events:
             return None
 
-        # Sort events by creation time to ensure consistent ordering
+        # Sort events by creation time for deterministic ordering
         all_matching_events.sort(key=lambda x: x.created_at)
 
-        # Handle ListOfSize
+        # Handle fixed-size requirements
         if required_size is not None:
             if len(all_matching_events) == required_size:
                 return ListOfSize(all_matching_events[-required_size:], required_size)
             return None
 
-        # Handle regular List
+        # Handle lists
         elif get_origin(param.annotation) in (list, List):
             return all_matching_events
 
         # Handle single event
         else:
-            if trigger_event.event_id in [event.event_id for event in all_matching_events]:
+            # If the trigger event is among them, prefer it
+            if trigger_event.event_id in [evt.event_id for evt in all_matching_events]:
                 return trigger_event
-            return all_matching_events[-1]  # Return the latest event
+            # Else return the latest available event
+            return all_matching_events[-1]
 
     async def execute_step(
         self,
-        trigger_event: ControlEvent,
-        step_method: Callable,
-        run_context: RunContext,
-        thread_context: ThreadContext,
-        topic: AgentTopic,
+        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
+        step_method: Annotated[Callable, "The step method to execute."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentTopic, "Topic info for the current run and thread."]
     ):
-        """Executes a step method with the appropriate arguments."""
-        # Immediately mark run to ensure no other servers will start an execution for the same step
+        """
+        Executes a step method:
+        1. Increments step execution count to avoid race conditions in distributed environments.
+        2. Constructs kwargs by retrieving appropriate events and other dependencies.
+        3. Calls the step method on a new agent instance.
+        4. Publishes any output events from the step.
+
+        On errors:
+        - Logs the exception.
+        - Publishes an ExceptionEvent if `_stop_on_error` is True.
+        """
         await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
 
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(step_method)
         events = await self.event_store.get_all_events(topic.run_id)
-
         parameter_optional_map = getattr(step_method, '_parameter_optional_map', {})
 
+        # Prepare arguments
         for param in step_signature.parameters.values():
             if param.name == 'self':
                 continue
 
+            # Handle special configurations injected by agent_config.get_step_configs()
             if self.step_configs.get(param.annotation):
                 kwargs[param.name] = self.step_configs[param.annotation]
                 continue
 
+            # Handle AgentConfig if requested
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
                 kwargs[param.name] = self.agent_config
                 continue
 
+            # Handle RunContext / ThreadContext
             if param.annotation == RunContext:
                 kwargs[param.name] = run_context
                 continue
-
             if param.annotation == ThreadContext:
                 kwargs[param.name] = thread_context
                 continue
 
+            # Handle EventDisplayer
             if param.annotation == EventDisplayer:
                 kwargs[param.name] = EventDisplayer(self.publisher, topic_manager=self.get_topic_manager_for_thread(topic))
                 continue
 
+            # Handle LocaleHandler
             if param.annotation in [LocaleHandler, AgentLocaleHandler]:
                 locale = await run_context.get("locale")
                 kwargs[param.name] = self.locale_handler.in_locale(locale)
@@ -244,11 +357,10 @@ class Dispatcher:
                 kwargs[param.name] = event_value
             else:
                 raise ValueError(
-                    f"[{step_method.__name__}] Unable to find available event for required parameter "
-                    f"'{param.name}' in step '{step_method.__name__}'"
+                    f"[{step_method.__name__}] Missing required event for parameter '{param.name}'"
                 )
 
-        # Instantiate the agent and execute the step method
+        # Instantiate the agent and run the step
         agent_instance = self.agent()
         telemetry_headers = await run_context.get("telemetry_headers")
         async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
@@ -263,12 +375,13 @@ class Dispatcher:
                 traceback.print_exc()
                 return
 
-            # Handle output events
+            # If the step returns events, publish them
             if result:
                 if not isinstance(result, list):
                     result = [result]
                 for event in result:
                     if isinstance(event, HumanInTheLoopRequestEvent):
+                        # Complete the event's topic info
                         event.topic = AgentTopic.from_partial_topic(
                             partial_topic=event.topic,
                             agent_class=topic.agent_class,
@@ -284,7 +397,14 @@ class Dispatcher:
 
             await self.tracer.trace_step_stop(step_span, result)
 
-    def get_topic_manager_for_thread(self, topic: AgentTopic) -> AgentThreadTopicManager:
+    def get_topic_manager_for_thread(
+        self,
+        topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
+    ) -> AgentThreadTopicManager:
+        """
+        Returns a thread-specific topic manager derived from the agent's instance topic manager.
+        Useful for publishing thread-scoped events.
+        """
         return AgentThreadTopicManager.from_agent_instance_topic_manager(
             topic_manager=self.topic_manager,
             thread_id=topic.thread_id,
@@ -292,8 +412,15 @@ class Dispatcher:
             run_id=topic.run_id,
         )
 
-    async def publish_event(self, event: BaseEvent, topic: AgentTopic):
-        """Publishes a control event to the appropriate subject."""
+    async def publish_event(
+        self,
+        event: Annotated[BaseEvent, "The event to publish."],
+        topic: Annotated[AgentTopic, "Current run/thread topic context."]
+    ):
+        """
+        Publishes a given event (Control or Display) to the correct subject.
+        Uses the per-thread topic manager to form the right event subject and publishes via JSPublisher.
+        """
         topic_manager = self.get_topic_manager_for_thread(topic)
         if isinstance(event, ControlEvent):
             subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
