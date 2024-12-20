@@ -6,10 +6,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class NoAuthConfig(BaseSettings):
-    NAME: str = Field(..., description="User name")
-    EMAIL: str = Field(..., description="User email")
-    OID: str = Field(..., description="User OID", default_factory=lambda: str(uuid.uuid4()))
-    ROLES: List[str] = Field(..., description="User roles")
+    """
+    Configuration for the no-auth scenario, which provides a static user profile
+    without requiring any actual authentication.
+
+    ### Why This Config?
+    In development or testing environments, you might not have a fully configured
+    authentication system. `NoAuthConfig` allows you to proceed without authentication
+    by supplying a fake user identity, ensuring your code can run and be tested even
+    before the authentication integration is complete.
+    """
+
+    NAME: str = Field(..., description="The user's displayed name.")
+    EMAIL: str = Field(..., description="The user's email (often used as a login or unique identifier).")
+    OID: str = Field(..., description="A unique OID (Object ID) for the user. Defaults to a UUID.", default_factory=lambda: str(uuid.uuid4()))
+    ROLES: List[str] = Field(..., description="A list of roles this user possesses.")
 
     model_config = SettingsConfigDict(
         env_file=".env",
