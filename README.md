@@ -6,7 +6,134 @@ Welcome to the AI-Hub project! This document provides an overview of the AI-Hub 
 
 ## What is AI-Hub?
 
-AI-Hub is an innovative platform designed to simplify the integration and implementation of Generative AI in businesses. It offers a fast and cost-effective setup, allowing companies of all sizes to leverage the power of AI, regardless of their technical expertise.
+The AI-Hub is more than just a code repository; it is a carefully crafted and evolving platform that encapsulates 
+best practices, standardizes common functionalities, and allows bbv to deliver AI solutions with greater agility and 
+reliability. As you progress through the subsequent sections—for instance, understanding the deeper reasoning behind 
+AI agents in Section 1.2 or the foundational principles of how the AI-Hub approaches workflows and autonomy in Section 
+2—you will see how the core ideas introduced here form the bedrock of the entire AI-Hub ecosystem.
+
+For further information, please refer to the AI-Hub Documentation:
+1. [Introduction](aihub_doc/1_introduction.md)
+2. [Core Concepts and Philosophy](aihub_doc/2_core_concepts_and_philosophy.md)
+3. [Project Phases and Client Engagement](aihub_doc/3_project_phases_and_client_engagement.md)
+4. [Architectural Overview](aihub_doc/4_architectural_overview.md)
+5. [Agents in Detail](aihub_doc/5_agents_in_detail.md)
+6. [Pipelines](aihub_doc/6_pipelines.md)
+7. [Frontend](aihub_doc/7_frontend.md)
+8. [Backend / API](aihub_doc/8_backend_api.md)
+9. [Tooling, Testing, and CI/CD](aihub_doc/9_tooling_testing_ci_cd.md)
+10. [Extensibility and Licensing](aihub_doc/10_extensibility_and_licensing.md)
+11. [Best Practices and Guidelines](aihub_doc/11_best_practices_and_guidelines.md)
+12. [Roadmap and Initiatives](aihub_doc/12_roadmap_and_initiatives.md)
+
+## Repositories
+
+There are two types of repositories in the AI-Hub ecosystem:
+
+1. **Core repository**  
+   The core repository, named **`aihub-core`**, contains all shared functionality and code used across multiple projects. Under no circumstances should it contain any customer-specific information. This separation is critical to prevent information leakage because this repo is referenced by customer-specific repositories.
+
+2. **Customer repositories**  
+   Customer repositories are named **`aihub-<CUSTOMER>`**. These repositories build on the functionality provided by `aihub-core` while adding or overriding components for the specific customer context.
+
+### Repository Structure
+
+Regardless of whether you are working in the core repository or a customer repository, you will find the following top-level folders (or *scopes*). The main difference is that, in `aihub-core`, each folder is prefixed with `aihub_` (e.g., `aihub_agents`, `aihub_api`, etc.):
+
+- **`agents`**: Contains agent-specific code, such as workflow steps.
+
+- **`api`**: Contains API endpoint definitions.
+
+- **`doc`**: Contains documentation (for example, arc42 documentation).
+
+- **`lib`**: Provides shared functionality that can be reused across multiple scopes within the repository.
+
+- **`pipeline`**: Contains definitions for Dagster pipelines.
+
+- **`web`**: Contains frontend code.
+
+Within a customer repository (`aihub-<CUSTOMER>`), the corresponding scopes will typically import core functionalities from `aihub-core` as needed. The `lib` folder in each repo may also be consumed by other scopes within the same repo.
+
+#### Additional Scopes (Core Repository Only)
+
+In addition to the folders listed above, the core repository (`aihub-core`) includes the following additional scopes:
+
+- **`aihub_action`**  
+  Contains reusable code for GitHub Actions used in the CI/CD pipelines of customer repositories. Managing these actions in the core repo helps to avoid duplication and reduces maintenance overhead.
+
+  > ☝ **Note:** This is **not** the same as the `.github` folder.  
+  > The `.github` folder contains the actual GitHub Actions and workflows executed in the CI/CD flow for `aihub-core` itself.
+
+- **`aihub_iac`**  
+  Contains Infrastructure-as-Code (IaC) resources that can be reused by customer repositories.
+
+
+## Project and Work Management
+
+The **AI-Hub** ecosystem uses two main GitHub Projects to manage development and roadmap planning:
+
+1. **`aihub-roadmap`**  
+   Focuses on high-level planning, covering both customer projects and larger initiatives for the AI-Hub core.
+
+2. **`aihub`**  
+   Focuses on day-to-day development tasks that contribute to the overall initiatives and customer projects.
+
+### Types of Projects
+
+We distinguish between two primary types of projects:
+
+1. **Customer Projects**  
+   These are engagements specific to a customer. They are often tied to a particular `aihub-<CUSTOMER>` repository but may also require changes or enhancements in `aihub-core`.
+
+2. **Initiatives**  
+   These can be viewed as large features or focus areas targeted for improvement or creation within the AI-Hub core. They are broader in scope than most customer projects and generally aim to advance the platform as a whole.
+
+### Roadmap Overview ([aihub-roadmap](https://github.com/orgs/bbvch-ai/projects/7))
+
+In the [aihub-roadmap](https://github.com/orgs/bbvch-ai/projects/7) GitHub Project, we manage both **customer projects** and **initiatives**. Here, you will find:
+
+- **General Project Information**: Owner, Project Manager, Development Lead, etc.  
+- **Project Goal & Initial Setup**: Defined in the main issue describing the project or initiative.  
+- **Ongoing Documentation**: All major events, decisions, and outcomes are recorded in the issues.  
+- **Project Health States**:  
+  - **In Schedule**: Work is proceeding as planned.  
+  - **Tight Schedule**: There is a risk of falling behind schedule.  
+  - **Behind Schedule**: The project or initiative has already fallen behind planned milestones.  
+  - **Schedule Impossible**: The current timeline can no longer be met without major changes.
+
+At the end of a project or initiative, the main issue can also serve as a record of **learnings**, providing valuable insights for future work.
+
+### Daily Work Management ([aihub](https://github.com/orgs/bbvch-ai/projects/2))
+
+While the high-level status and context of projects or initiatives live in `aihub-roadmap`, the actual development tasks are tracked in the [aihub](https://github.com/orgs/bbvch-ai/projects/2) GitHub Project. Tasks in `aihub` may span multiple projects or initiatives but are always linked back to the corresponding item in `aihub-roadmap`. This ensures:
+
+- **Traceability**: Developers can see which larger project or initiative their tasks belong to.  
+- **Alignment**: Project Managers and Dev Leads can monitor progress on overarching goals by reviewing associated tasks.  
+
+In each task’s GitHub issue, you should see a reference or link to the main issue in `aihub-roadmap` that tracks the project or initiative. This linkage helps keep the broader context visible and maintains clarity on priorities.
+
+For day-to-day tasks managed in the `aihub` board, we use three primary status columns:
+
+- **To Do**  
+- **In Progress**  
+- **Done**
+
+#### Guidelines
+
+1. **Assigning Tasks**  
+   - If you start working on a task and it is unassigned, assign yourself to it.  
+   - Always keep the assignee field up to date to ensure transparency.
+
+2. **Moving Tasks**  
+   - When you begin work, move the task from **To Do** to **In Progress**.  
+   - Once you complete the task (and all necessary reviews and merges), move it to **Done**.
+
+This straightforward workflow helps maintain a clear overview of who is working on what, and the current status of 
+each task. Keeping the board updated is crucial for effective collaboration and progress tracking.
+
+
+---
+
 
 ## Key Features
 
