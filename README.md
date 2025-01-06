@@ -295,7 +295,7 @@ Each folder in the `aihub-core` repository represents a **microservice**.
 To ensure proper isolation and compatibility, follow these steps for each folder:
 
 
-Option 2: **Use a separate environment for each service** (safer and more isolated):
+Option 1: **Use a separate environment for each service** (safer and more isolated):
 1. **Open Each Folder in a Separate IDE**:
    - Recommendation: Use PyCharm for backend services and WebStorm for frontend services.
 
@@ -363,7 +363,7 @@ Navigate to the aihub_web folder
 - **Codebase**: Explore the codebase to understand the structure and the services provided.
 - **Playground**: Use the `playground` directories in the services to test and experiment with the code.
     Quickstart:
-    - Start Docker Desktop.
+    - Start Docker.
       - Navigate to the `aihub_agent` directory.
       - Run the following command:
         ```bash
@@ -372,39 +372,4 @@ Navigate to the aihub_web folder
         or simply click the green play button in PyCharm. This will start phoenix on localhost:6006, nats, and mongo DB.
 
 
-
-## **5. Advanced Resources**
-
-### **5.1 Dagster for Pipelines**
-The **aihub_pipeline** folder utilizes Dagster for data orchestration. Dagster enables structured and transparent workflows for:
-- **Data Ingestion**: Handling large volumes of data from sources like Azure Data Lake.
-- **Processing**: Converting raw data into usable formats (e.g., vector embeddings for AI models).
-- **Scheduling**: Automating regular updates to keep pipelines fresh.
-
-**Learning Resources**:
-- [Dagster Documentation](https://docs.dagster.io/)
-- [Dagster Tutorials](https://docs.dagster.io/getting-started)
-
-### **5.2 NATS for Event-Driven Architecture**
-The AI-Hub leverages NATS for high-performance, event-driven communication between components.
-- **Use Cases**:
-  - Facilitates asynchronous communication between the backend, agents, and pipelines.
-  - Provides message durability and persistence with JetStream.
-  - Enables scalability through topic-based routing.
-
-**Learning Resources**:
-- [NATS Documentation](https://nats.io/documentation/)
-- [NATS JetStream Guide](https://docs.nats.io/nats-concepts/jetstream)
-
----
-
-## **6. Further Resources**
-- **AIHub Documentation**: Refer to the `aihub_doc` folder in the `aihub-core` repository.
-- [Python Documentation](https://docs.python.org/3/)
-- [LlamaIndex Documentation](https://docs.llamaindex.ai/en/stable/)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Nuxt.js Documentation](https://nuxt.com/docs)
-- [pytest-bdd Documentation](https://pytest-bdd.readthedocs.io/en/latest/)
-
----
 
