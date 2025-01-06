@@ -200,3 +200,211 @@ Examples:
   stakeholders.
 - **Flexibility**: Allows for parallel development across different projects and initiatives without conflicts.
 - **Traceability**: Enhances the ability to track changes back to their origin, facilitating better project management.
+
+
+## 1. Install Required & Recommended Tools
+
+
+- **JetBrains Toolbox**: Download the [JetBrains Toolbox](https://www.jetbrains.com/toolbox-app/). Install and manage IDEs like PyCharm (backend) and WebStorm (frontend).
+  - bbv employees: Request a JetBrains license via [YouTrack](https://youtrack.bbv.ch/newIssue?project=issues) .
+- **Git**: You may install it in your IDE under Version Control and link your account (alternatively: download it [directly](https://git-scm.com/))). 
+JetBrain IDEs have built-in support for Git. You can use the Git integration to commit, push, and pull changes directly from the IDE.
+- **Python (3.11)** via Miniconda: Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html). Miniconda is a package manager for Python. It is a lightweight version of Anaconda, which is a distribution of Python for scientific computing. 
+    
+    Make sure to add Miniconda to the PATH during installation.
+    Test the installation by opening a command prompt and typing `conda --version`. If the installation was successful, you should see the version of Miniconda.
+
+    >   ☝ **Note: Miniconda for Virtual Environment Only**  
+    >   We use Miniconda to create virtual environments and install the initial Python version in it. For the package management inside the virtual environment, we use poetry. (see below)
+  
+- **Poetry**: Dependency management tool for Python ([Download Poetry](https://python-poetry.org/docs/)).
+  - Verify: `poetry --version`
+- **Docker**: Containerization tool ([Download Docker](https://www.docker.com/products/docker-desktop/)).
+  - Verify: `docker --version`
+- **Node.js (LTS)** through **NVM**: Download and install Node Version Manager (NVM) for [Windows](https://github.com/coreybutler/nvm-windows/releases) or [Linux](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating). NVM is a version manager for Node.js that allows you to install multiple versions of Node.js and switch between them easily. 
+
+  After installing NVM, open a new command prompt and type `nvm --version`. If the installation was successful, you should see the version of NVM.
+
+  Install the latest LTS version of Node.js by typing `nvm install --lts` in the command prompt. When successful, it will finish with a statement like
+  
+  ```
+  Installation complete. If you want to use this version, type
+  
+  nvm use 20.16.0
+  ```
+  Run the `nvm use` command with the version you get indicated. Alternatively, use `nvm list` to see, which versions you have installed.
+  
+  Test the installation by typing `node --version` and `npm --version`. If the installation was successful, you should see the versions of Node.js and npm. If not, type `nvm user --lts` and try again.
+
+- **MongoDB Compass**: GUI for managing MongoDB ([Download MongoDB Compass](https://www.mongodb.com/products/compass)).
+- **Azure CLI**: Manage Azure resources ([Download Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)).
+  - Verify: `az --version`
+- **Postman**: For API testing ([Download Postman](https://www.postman.com/)).
+
+### Optional JetBrains Tools
+Useful PyCharm Plugins & Settings
+
+Install the following plugins in PyCharm to make development easier:
+
+- [Github Copilot](https://plugins.jetbrains.com/plugin/17718-github-copilot) - AI coding assistant
+- [Database Tools and SQL](https://www.jetbrains.com/help/pycharm/database-tool-window.html) - Interact with MongoDB directly within PyCharm. This should be activated by default. To access the database from PyCharm, create a new MongoDB connection and paste the connection string from Microsoft Azure. Learn more about the setup [here](https://www.jetbrains.com/help/pycharm/mongodb.html).
+- [Docker](https://www.jetbrains.com/help/pycharm/docker-containers.html) - Interact with Docker containers within PyCharm. This should be activated by default if you have a docker development setup.
+- [SonarLint](https://www.sonarsource.com/products/sonarlint/features/jetbrains/) - Extension for checking code quality before commiting.
+
+Enable the following settings for optimal developer experience:
+- [Black](https://www.jetbrains.com/help/pycharm/2023.2/reformat-and-rearrange-code.html#format-python-code-with-black) - Code formatter for Python
+- [Code With Me](https://www.jetbrains.com/code-with-me/) - Collaborative development tool, use this to pair-code with other AI-Hub developers.
+
+Install the following software for convenience:
+
+- [Microsoft Azure Command Line Interface (CLI)](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli) - Run `az` commands from the command-line or Power Shell without using the dedicated Azure Cloud Shell.
+
+### (Optional) Useful WebStorm Plugins & Settings
+
+Install the following plugins to make development easier:
+- [Github Copilot](https://plugins.jetbrains.com/plugin/17718-github-copilot) - AI coding assistant
+- [Docker](https://www.jetbrains.com/help/pycharm/docker-containers.html) - Interact with Docker containers within WebStorm (only needed if you have a docker development setup).
+- [SonarLint](https://www.sonarsource.com/products/sonarlint/features/jetbrains/) extension for checking code quality before commiting.
+
+Enable the following settings for optimal developer experience:
+- [EsLint](https://www.jetbrains.com/help/webstorm/eslint.html#ws_eslint_configure_run_eslint_on_save) - Code linter for JavaScript / TypeScript
+
+---
+
+## 2. Set Up the Codebase
+
+### **2.1 Clone Repositories**
+Clone the following repositories:
+- **aihub-core**: Core services for the AI-Hub.
+    ```bash 
+    git clone https://github.com/bbvch-ai/aihub-core
+    ```
+- **aihub-bbv**: bbv customer repo (for bbv employees only)
+    ```bash
+    git clone https://github.com/bbvch-ai/aihub-bbv
+    ```
+- **ai-hub**: Legacy repository
+    ```bash
+    git clone https://github.com/bbvch-ai/ai-hub
+    ```
+
+### **2.2 Install Dependencies**
+
+#### Backend Services
+Each folder in the `aihub-core` repository represents a **microservice**. 
+To ensure proper isolation and compatibility, follow these steps for each folder:
+
+
+Option 2: **Use a separate environment for each service** (safer and more isolated):
+1. **Open Each Folder in a Separate IDE**:
+   - Recommendation: Use PyCharm for backend services and WebStorm for frontend services.
+
+2. **Set Up an Environment for Each Microservice**:
+   - Open the microservice folder e.g. `aihub_api` as a new project.
+   - Configure a poetry environment (https://www.jetbrains.com/help/pycharm/poetry.html)
+     - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
+     - Click on the gear icon and select **Add** > **Poetry Environment**.
+       - **Base interpreter**: Use miniconda python executable as interpreter (usually found under AppData/Local/minconda3).
+       - **Poetry executable**: Find and select the poetry.exe.
+     - Apply and set the environment.
+   - If you have not already done so, initialize Poetry within the environment:
+     ```bash
+     poetry install
+     ```
+
+3. **Repeat** this process for each folder containing a pyproject.toml file (e.g., `aihub_lib`, `aihub_agent`, `aihub_pipeline`).
+
+
+Option 2: **Use a single environment for all services** (simpler but may cause dependency conflicts):
+1. **Open the `aihub-core` folder in PyCharm**.
+2. **Set Up an Environment for the whole project**:
+   - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
+    - Click on the gear icon and select **Add** > **Poetry Environment**.
+       - **Base interpreter**: Use miniconda python executable as interpreter (usually found under AppData/Local/minconda3).
+       - **Poetry executable**: Find and select the poetry.exe.
+   - Apply and set the environment.
+   - If you have not already done so, initialize Poetry within the environment. Navigate to a directory e.g. aihub_agent with a pyproject.toml and run:
+     ```bash
+     poetry install
+     ```
+     This may lead to missing dependencies when using other services. In this case, you can run `poetry install`  in the other service's directory again.
+##### Poetry Commands
+
+- `poetry install` to install the dependencies
+- `poetry add <package> --group dev` to install the dev-dependencies
+- `poetry add <package>` to add a new package
+- `poetry remove <package>` to remove a package
+- `poetry update` to update the dependencies
+
+> ☝ **Note: Don't Edit Configuration Files**  
+> Poetry uses two configuration files: "pyproject.toml" and "poetry.lock".
+> Don't edit these files manually but use the `poetry` command instead.
+
+> Modify the "pyproject.toml" dependency configuration file with `poetry add` and `poetry remove`. 
+> The poetry.lock file is maintained by the `poetry update` command.
+
+#### Frontend Services
+Navigate to the aihub_web folder
+   - Follow the instructions in the `README.md` file to set up the frontend.
+
+### **2.3 Configure Environment Variables**
+- Request `.env` files from the team.
+- Place them in the root directories of backend and frontend projects.
+
+---
+
+## 3. Read Documentation
+- Read the whole documentation in the [aihub_doc](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_doc) folder in the `aihub-core` repository. 
+- Feel free to read up on any other resource used in the project e.g. AI Agents, LlamaIndex, FastAPI, Nuxt.js, etc.
+
+
+## 4. First Steps
+### 4.1. Explore the Codebase + Playground
+- **Codebase**: Explore the codebase to understand the structure and the services provided.
+- **Playground**: Use the `playground` directories in the services to test and experiment with the code.
+    Quickstart:
+    - Start Docker Desktop.
+      - Navigate to the `aihub_agent` directory.
+      - Run the following command:
+        ```bash
+        docker-compose up
+        ```
+        or simply click the green play button in PyCharm. This will start phoenix on localhost:6006, nats, and mongo DB.
+
+
+
+## **5. Advanced Resources**
+
+### **5.1 Dagster for Pipelines**
+The **aihub_pipeline** folder utilizes Dagster for data orchestration. Dagster enables structured and transparent workflows for:
+- **Data Ingestion**: Handling large volumes of data from sources like Azure Data Lake.
+- **Processing**: Converting raw data into usable formats (e.g., vector embeddings for AI models).
+- **Scheduling**: Automating regular updates to keep pipelines fresh.
+
+**Learning Resources**:
+- [Dagster Documentation](https://docs.dagster.io/)
+- [Dagster Tutorials](https://docs.dagster.io/getting-started)
+
+### **5.2 NATS for Event-Driven Architecture**
+The AI-Hub leverages NATS for high-performance, event-driven communication between components.
+- **Use Cases**:
+  - Facilitates asynchronous communication between the backend, agents, and pipelines.
+  - Provides message durability and persistence with JetStream.
+  - Enables scalability through topic-based routing.
+
+**Learning Resources**:
+- [NATS Documentation](https://nats.io/documentation/)
+- [NATS JetStream Guide](https://docs.nats.io/nats-concepts/jetstream)
+
+---
+
+## **6. Further Resources**
+- **AIHub Documentation**: Refer to the `aihub_doc` folder in the `aihub-core` repository.
+- [Python Documentation](https://docs.python.org/3/)
+- [LlamaIndex Documentation](https://docs.llamaindex.ai/en/stable/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Nuxt.js Documentation](https://nuxt.com/docs)
+- [pytest-bdd Documentation](https://pytest-bdd.readthedocs.io/en/latest/)
+
+---
+
