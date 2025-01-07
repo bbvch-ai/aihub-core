@@ -1,11 +1,9 @@
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.ConfiguredAgent.ConfiguredAgentConfig import (
-    StartStepConfig,
-    ConfiguredAgentAgentConfig,
-)
-from playground.minimal_workflow.ConfiguredAgent.Events.EventA import EventA
+from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import StartStepConfig, \
+    ConfiguredAgentAgentConfig
+from playground.minimal_workflow.configured_workflow.events.EventA import EventA
 
 
 class ConfiguredAgent(Agent):

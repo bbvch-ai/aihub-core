@@ -4,8 +4,8 @@ from typing import List, Optional
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.ContextAgent.Events.EventA import EventA
-from playground.minimal_workflow.OptionalAgent.Events.EventB import EventB
+from playground.minimal_workflow.optional_workflow.events.EventA import EventA
+from playground.minimal_workflow.optional_workflow.events.EventB import EventB
 
 
 class OptionalAgent(Agent):

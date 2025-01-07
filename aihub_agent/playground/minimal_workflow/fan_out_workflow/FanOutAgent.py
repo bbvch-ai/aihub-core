@@ -4,8 +4,8 @@ from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import FixedList
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.FanOutAgent.Events.EventA import EventA
-from playground.minimal_workflow.FanOutAgent.Events.EventB import EventB
+from playground.minimal_workflow.fan_out_workflow.events.EventA import EventA
+from playground.minimal_workflow.fan_out_workflow.events.EventB import EventB
 
 
 class FanOutAgent(Agent):

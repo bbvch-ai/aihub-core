@@ -1,7 +1,7 @@
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.SimpleAgent.Events.EventA import EventA
+from playground.minimal_workflow.simple_workflow.events.EventA import EventA
 
 
 class SimpleAgent(Agent):

@@ -3,8 +3,8 @@ import random
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.ConditionalAgent.Events.EventA import EventA
-from playground.minimal_workflow.ConditionalAgent.Events.EventB import EventB
+from playground.minimal_workflow.conditional_workflow.events.EventA import EventA
+from playground.minimal_workflow.conditional_workflow.events.EventB import EventB
 
 
 class ConditionalAgent(Agent):

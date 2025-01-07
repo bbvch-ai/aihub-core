@@ -3,9 +3,7 @@ from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, RerankerEvent, RetrieverEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.events.semantic.retriever import Document
-from playground.minimal_workflow.SemanticAgent.Events.LLMStopEvent import (
-    LLMStopEvent,
-)
+from playground.minimal_workflow.semantic_workflow.events.LLMStopEvent import LLMStopEvent
 
 
 class SemanticEventAgent(Agent):

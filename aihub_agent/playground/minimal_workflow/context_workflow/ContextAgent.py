@@ -3,10 +3,8 @@ from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import StopEvent
-from playground.minimal_workflow.ContextAgent.Events.CustomStartEvent import (
-    CustomStartEvent,
-)
-from playground.minimal_workflow.ContextAgent.Events.EventA import EventA
+from playground.minimal_workflow.context_workflow.events.CustomStartEvent import CustomStartEvent
+from playground.minimal_workflow.context_workflow.events.EventA import EventA
 
 
 class ContextAgent(Agent):

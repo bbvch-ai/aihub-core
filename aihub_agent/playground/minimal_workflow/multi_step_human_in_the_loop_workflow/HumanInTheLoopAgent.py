@@ -1,12 +1,10 @@
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.MultiStepHumanInTheLoopAgent.Events.FirstStepHumanInTheLoop import (
-    FirstStepHumanInTheLoop,
-)
-from playground.minimal_workflow.MultiStepHumanInTheLoopAgent.Events.SecondStepHumanInTheLoop import (
-    SecondStepHumanInTheLoop,
-)
+from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import \
+    FirstStepHumanInTheLoop
+from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import \
+    SecondStepHumanInTheLoop
 
 
 class MultiStepHumanInTheLoopAgent(Agent):
