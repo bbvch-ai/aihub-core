@@ -8,7 +8,6 @@ authors = [
     "Michèle Fundneider <michele.fundneider@bbv.ch>",
 ]
 license = "Proprietary"
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
@@ -28,6 +27,9 @@ pydantic-settings = "^2.7.0"
 colorlog = "^6.9.0"
 llama-index-llms-openai = "^0.3.12"
 llama-index-llms-azure-openai = "^0.3.0"
+
+[tool.poetry.dependencies.aihub_lib]
+path = "../aihub_lib"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
