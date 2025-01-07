@@ -1,14 +1,10 @@
 from typing import List
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.rag.StandaloneQuestionCondenserEvent import (
-    StandaloneQuestionCondenserEvent,
-)
-from aihub_agent.agents.rag.StandaloneQuestionCondenserStepConfig import (
-    StandaloneQuestionCondenserStepConfig,
-)
+from llama_index.core.llms import LLM
 
 
 def _messages_to_history_str(messages: List[ChatMessage]) -> str:
@@ -26,24 +22,24 @@ def _messages_to_history_str(messages: List[ChatMessage]) -> str:
     return "\n".join(string_messages)
 
 
-def condense_standalone_question_step(
-    config: StandaloneQuestionCondenserStepConfig,
+def condense_standalone_question(
     message: str,
     chat_history: List[ChatMessage],
-) -> StandaloneQuestionCondenserEvent:
-
+    t: LocaleHandler,
+    llm: LLM,
+    condense_prompt: LocaleString = None,
+) -> str:
     chat_history_str = _messages_to_history_str(chat_history)
-    condense_prompt = agent.t("agent.prompt.condenser.standalone_question")
-    if config.condense_prompt:
-        condense_prompt = LocaleHandler(agent.locale).extract(
-            config.condense_prompt, agent.locale
+    if condense_prompt:
+        condense_prompt_locale = LocaleHandler(t.locale).extract(
+            condense_prompt, t.locale
         )
+    else:
+        condense_prompt_locale = t("agent.prompt.condenser.standalone_question")
 
-    response = config.llm.predict(
-        prompt=PromptTemplate(condense_prompt),
+    response = llm.predict(
+        prompt=PromptTemplate(condense_prompt_locale),
         question=message,
         chat_history=chat_history_str,
     )
-    return StandaloneQuestionCondenserEvent(
-        condensed_chat_message=ChatMessage(role=MessageRole.USER, content=response)
-    )
+    return ChatMessage(role=MessageRole.USER, content=response)
