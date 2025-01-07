@@ -135,8 +135,6 @@ Additionally, the AI-Hub supports **Human-in-the-Loop (HITL)** steps, allowing a
 **Practical Implications of Context Handling:**
 - **Efficiency:**  
   Storing frequently accessed information in ThreadContext saves time and computation. An agent doesn’t have to re-fetch data from external sources for each new run if the data is already cached.
-- **Personalization & Customization:**  
-  ThreadContext can store user preferences, past decisions, or historical states, enabling more personalized interactions. For example, an agent assisting in a support scenario might remember the user’s department or role to tailor future responses.
 - **Controlled State Management:**  
   Both contexts enforce a structured approach to state handling. Developers explicitly decide what goes into RunContext and ThreadContext, maintaining clarity and avoiding uncontrolled data growth or leakage.
 
@@ -155,13 +153,13 @@ While AI agents can achieve impressive autonomy, certain decisions may still req
    A special event is emitted to indicate that a human decision is needed. This event is often displayed to a human operator via the frontend, or integrated with an external system like a ticketing tool.
    
 2. **Pause in Workflow:**  
-   The agent does not proceed until a corresponding human response event arrives. The agent effectively “waits” for the user’s input.
+   The agent does not proceed until a corresponding human response event arrives. The agent effectively “waits” for the user’s input. This pause in the workflow also means that the run is paused and therefore the RunContext stays open.
    
 3. **Continuation After Approval:**  
    Once the response is received (e.g., “Yes, proceed” or “No, revise”), the workflow resumes. Steps triggered by the human’s decision can now execute, confident that the path chosen aligns with organizational policies or domain expert insight.
 
 **Integration with Contexts:**
-- While waiting for human input, the agent can rely on ThreadContext to remember what was asked, or what’s at stake. When the human’s decision arrives, the agent retrieves any needed information from the context to pick up exactly where it left off.
+- While waiting for human input, the agent can rely on RunContext or ThreadContext to remember what was asked, or what’s at stake. When the human’s decision arrives, the agent retrieves any needed information from the context to pick up exactly where it left off.
 - This combination of human-in-the-loop steps and context memory allows agents to handle complex, multi-run workflows that span manual reviews, follow-up queries, and iterative refinements over time.
 
 ### Benefits of Context and HITL
