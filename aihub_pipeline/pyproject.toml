@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_pipeline"
-version = "v0.2.0"
+version = "v0.4.0"
 description = "pipeline core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -17,7 +17,7 @@ dagster-postgres = "^0.25.6"
 dagster-azure = "^0.25.6"
 llama-index-readers-file = "^0.4.1"
 matplotlib = "^3.9.2"
-aihub_lib = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.2.0", subdirectory = "aihub_lib" }
+aihub_lib = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.4.0", subdirectory = "aihub_lib" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
