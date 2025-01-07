@@ -5,19 +5,33 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_agent.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import BaseEvent, ControlEvent, StartEvent, StopEvent, ChunkEvent, DisplayEvent
+from aihub_lib.nats.events import (
+    BaseEvent,
+    ControlEvent,
+    StartEvent,
+    StopEvent,
+    ChunkEvent,
+    DisplayEvent,
+)
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
+from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import (
+    AgentDiscoveryResponseEvent,
+    StartEventSpecs,
+)
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import (
+    AgentInstanceTopicManager,
+)
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
+    AgentThreadTopicManager,
+)
 from aihub_lib.nats.topics import DiscoveryTopic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
@@ -61,10 +75,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
     """
 
     def __init__(
-        self,
-        agent_class: str,
-        agent_id: str,
-        simulated_events: Optional[List[BaseEvent]] = None,
+            self,
+            agent_class: str,
+            agent_id: str,
+            simulated_events: Optional[List[BaseEvent]] = None,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -95,14 +109,19 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
+    async def discovery_handler(
+            self, event: DiscoveryRequestEvent, topic: DiscoveryTopic
+    ):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
         start_events = [
-            StartEventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())
+            StartEventSpecs(
+                event_type=StartEvent.__name__,
+                event_schema=StartEvent.model_json_schema(),
+            )
         ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
@@ -126,24 +145,30 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         Control events are published to control_event subjects,
         and display events to display_event subjects.
         """
-        thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
-            self.topic_manager,
-            thread_id=topic.thread_id,
-            display_id=topic.display_id,
-            run_id=topic.run_id
+        thread_topic_manager = (
+            AgentThreadTopicManager.from_agent_instance_topic_manager(
+                self.topic_manager,
+                thread_id=topic.thread_id,
+                display_id=topic.display_id,
+                run_id=topic.run_id,
+            )
         )
         if isinstance(event, ControlEvent):
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
-            logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
+            logger.debug(
+                f"Publishing control event {event.__class__.__name__} to {subject}"
+            )
             await self.js_publisher.publish_event(event, subject)
 
         if isinstance(event, DisplayEvent):
             subject = thread_topic_manager.get_subject_for_display_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
-            logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
+            logger.debug(
+                f"Publishing display event {event.__class__.__name__} to {subject}"
+            )
             await self.js_publisher.publish_event(event, subject)
 
     async def run(self):
@@ -167,11 +192,13 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
-            self.nc,
-            self.topic_manager,
-            js=self.js,
-            handler=self.simulate_agent,
+        self.agent_control_event_subscriber = (
+            JSSubscriber.for_agent_instance_control_events(
+                self.nc,
+                self.topic_manager,
+                js=self.js,
+                handler=self.simulate_agent,
+            )
         )
         await self.agent_control_event_subscriber.start()
 
@@ -179,7 +206,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         await super().run()
 
-    def with_simple_chunk_events(self) -> 'SimulatedAgentApiTestRunner':
+    def with_simple_chunk_events(self) -> "SimulatedAgentApiTestRunner":
         """
         A convenience method to populate a standard sequence of chunk and cost events, simulating
         a typical LLM-based agent responding with textual chunks and cost metrics.

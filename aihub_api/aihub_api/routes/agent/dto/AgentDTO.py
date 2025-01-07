@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_agent.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import StartEventSpecs
 
 
@@ -18,7 +18,17 @@ class AgentDTO(BaseModel):
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
 
-    agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
-    agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
-    agent_config: AgentConfig = Field(..., description="Configuration details of the agent, including name, description, and prompts.")
-    start_events: List[StartEventSpecs] = Field(..., description="A list of `StartEventSpecs` representing events that can start this agent's workflow.")
+    agent_class: str = Field(
+        ..., description="The agent's class identifier (e.g., 'my_agent_class')."
+    )
+    agent_id: str = Field(
+        ..., description="Unique identifier for the agent instance (e.g., 'agent_123')."
+    )
+    agent_config: AgentConfig = Field(
+        ...,
+        description="Configuration details of the agent, including name, description, and prompts.",
+    )
+    start_events: List[StartEventSpecs] = Field(
+        ...,
+        description="A list of `StartEventSpecs` representing events that can start this agent's workflow.",
+    )
