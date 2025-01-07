@@ -3,6 +3,7 @@ from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+from llama_index.core.base.llms.types import MessageRole
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_lib.nats.events.control.start import StartEvent
@@ -13,6 +14,9 @@ from aihub_agent.agents.rag.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.LimitChatHistoryStepConfig import LimitChatHistoryStepConfig
 from aihub_agent.agents.rag.LimitChatHistoryWithContextEvent import (
     LimitChatHistoryWithContextEvent,
+)
+from aihub_agent.agents.rag.LimitChatHistoryWithContextStepConfig import (
+    LimitChatHistoryWithContextStepConfig,
 )
 from aihub_agent.agents.rag.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.RetrieveStepConfig import RetrieveStepConfig
@@ -33,28 +37,30 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
-
-    # @step()
-    # async def start_step(self, event: StartEvent | UserMessageEvent, run_context: RunContext):
-
     @step()
     async def limit_chat_history_step(
         self,
         event: StartEvent | UserMessageEvent,
-        limit_chat_history_config: LimitChatHistoryStepConfig,
+        limit_chat_history_step_config: LimitChatHistoryStepConfig,
         run_context: RunContext,
     ) -> LimitChatHistoryEvent:
+        user_messages = [msg for msg in event.messages if msg.role == MessageRole.USER]
+        if len(user_messages) > 0:
+            await run_context.set("user_query", user_messages[-1].content)
+        else:
+            await run_context.set("user_query", "")
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
-            number_of_input_tokens=limit_chat_history_config.number_of_input_tokens,
+            number_of_input_tokens=limit_chat_history_step_config.number_of_input_tokens,
         )
+        await run_context.set("chat_history", limited_chat_history)
         return LimitChatHistoryEvent(limited_history=limited_chat_history)
 
     @step()
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        condense_standalone_question_config,
+        condense_standalone_question_step_config,
         t: LocaleHandler,
         run_context: RunContext,
     ) -> StandaloneQuestionCondenserEvent:
@@ -62,8 +68,8 @@ class RAGAgent(Agent):
             chat_history=event.limited_history,
             message=event.limited_history[-1].content,
             t=t,
-            llm=condense_standalone_question_config.llm,
-            condense_prompt=condense_standalone_question_config.condense_prompt,
+            llm=condense_standalone_question_step_config.llm,
+            condense_prompt=condense_standalone_question_step_config.condense_prompt,
         )
         return StandaloneQuestionCondenserEvent(
             condensed_chat_message=condensed_question
@@ -73,19 +79,19 @@ class RAGAgent(Agent):
     async def retrieve_step(
         self,
         event: StandaloneQuestionCondenserEvent,
-        retrieve_config: RetrieveStepConfig,
+        retrieve_step_config: RetrieveStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         nodes = retrieve_nodes(
             message=event.condensed_chat_message.content,
-            index_name=retrieve_config.index_name,
-            index_namespaces=retrieve_config.index_namespaces,
-            query_mode=retrieve_config.query_mode,
-            node_types=retrieve_config.node_types,
-            retrieve_k=retrieve_config.retrieve_k,
-            embed_model=retrieve_config.embed_model,
+            index_name=retrieve_step_config.index_name,
+            index_namespaces=retrieve_step_config.index_namespaces,
+            query_mode=retrieve_step_config.query_mode,
+            node_types=retrieve_step_config.node_types,
+            retrieve_k=retrieve_step_config.retrieve_k,
+            embed_model=retrieve_step_config.embed_model,
         )
         return RetrieverEvent(documents=nodes)
 
@@ -102,13 +108,21 @@ class RAGAgent(Agent):
     async def limit_chat_history_with_context_step(
         self,
         event: InOrderNodeCombinerEvent,
+        limit_chat_history_with_context_step_config: LimitChatHistoryWithContextStepConfig,
         run_context: RunContext,
     ) -> LimitChatHistoryWithContextEvent:
         chat_history = await run_context.get("chat_history")
+        system_messages = [
+            msg for msg in chat_history if msg.role == MessageRole.SYSTEM
+        ]
+        last_user_message = await run_context.get("user_query")
         limited_chat_history = limit_chat_history_with_context(
             chat_history=chat_history,
             context_messages=[event.context_message],
-            number_of_input_tokens=limit_chat_history_config.number_of_input_tokens,
+            system_messages=system_messages,
+            last_user_message=last_user_message,
+            tokenizer_for_model=limit_chat_history_with_context_step_config.tokenizer_for_model,
+            number_of_input_tokens=limit_chat_history_with_context_step_config.number_of_input_tokens,
         )
         return LimitChatHistoryWithContextEvent(limited_history=limited_chat_history)
 
