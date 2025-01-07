@@ -4,7 +4,9 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from playground.minimal_workflow.optional_workflow.OptionalAgent import OptionalAgent
-from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import OptionalAgentConfig
+from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import (
+    OptionalAgentConfig,
+)
 
 
 async def main():

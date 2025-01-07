@@ -5,9 +5,13 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
-from playground.minimal_workflow.configured_workflow.ConfiguredAgent import ConfiguredAgent
-from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import ConfiguredAgentAgentConfig, \
-    StartStepConfig
+from playground.minimal_workflow.configured_workflow.ConfiguredAgent import (
+    ConfiguredAgent,
+)
+from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import (
+    ConfiguredAgentAgentConfig,
+    StartStepConfig,
+)
 
 
 async def main():

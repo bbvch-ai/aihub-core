@@ -3,8 +3,12 @@ import asyncio
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
-from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import SemanticEventAgent
-from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import SemanticEventAgentConfig
+from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import (
+    SemanticEventAgent,
+)
+from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import (
+    SemanticEventAgentConfig,
+)
 
 
 async def main():

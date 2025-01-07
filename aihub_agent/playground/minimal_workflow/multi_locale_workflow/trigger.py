@@ -6,8 +6,12 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
-from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import MultiLocaleAgent
-from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
+from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import (
+    MultiLocaleAgent,
+)
+from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import (
+    MultiLocaleAgentConfig,
+)
 
 
 async def main():

@@ -10,8 +10,12 @@ from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.logging.logger import enable_logging
-from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent
-from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import LlamaIndexAgentConfig
+from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import (
+    LlamaIndexAgent,
+)
+from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import (
+    LlamaIndexAgentConfig,
+)
 
 enable_logging()
 

@@ -7,7 +7,9 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
-from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
+from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import (
+    SimpleAgentConfig,
+)
 
 enable_logging()
 

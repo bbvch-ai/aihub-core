@@ -5,14 +5,18 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.HumanInTheLoopAgent import \
-    MultiStepHumanInTheLoopAgent
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.HumanInTheLoopAgentConfig import \
-    MultiStepHumanInTheLoopAgentConfig
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import \
-    FirstStepHumanInTheLoop
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import \
-    SecondStepHumanInTheLoop
+from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.HumanInTheLoopAgent import (
+    MultiStepHumanInTheLoopAgent,
+)
+from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.HumanInTheLoopAgentConfig import (
+    MultiStepHumanInTheLoopAgentConfig,
+)
+from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
+    FirstStepHumanInTheLoop,
+)
+from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
+    SecondStepHumanInTheLoop,
+)
 
 
 async def main():

@@ -3,8 +3,12 @@ import asyncio
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from playground.minimal_workflow.context_workflow.ContextAgent import ContextAgent
-from playground.minimal_workflow.context_workflow.ContextAgentConfig import ContextAgentConfig
-from playground.minimal_workflow.context_workflow.events.CustomStartEvent import CustomStartEvent
+from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
+    ContextAgentConfig,
+)
+from playground.minimal_workflow.context_workflow.events.CustomStartEvent import (
+    CustomStartEvent,
+)
 
 THREAD_ID = "6756ddb05c399b888009a559"
 

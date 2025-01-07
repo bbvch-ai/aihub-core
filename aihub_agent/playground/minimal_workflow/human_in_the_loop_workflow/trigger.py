@@ -6,8 +6,12 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoop
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import HumanInTheLoopAgent
-from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentConfig import HumanInTheLoopAgentConfig
+from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (
+    HumanInTheLoopAgent,
+)
+from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentConfig import (
+    HumanInTheLoopAgentConfig,
+)
 
 
 async def main():

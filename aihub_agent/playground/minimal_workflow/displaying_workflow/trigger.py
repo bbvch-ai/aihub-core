@@ -3,8 +3,12 @@ import asyncio
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
-from playground.minimal_workflow.displaying_workflow.DisplayingAgent import DisplayingAgent
-from playground.minimal_workflow.displaying_workflow.DisplayingAgentConfig import DisplayingAgentConfig
+from playground.minimal_workflow.displaying_workflow.DisplayingAgent import (
+    DisplayingAgent,
+)
+from playground.minimal_workflow.displaying_workflow.DisplayingAgentConfig import (
+    DisplayingAgentConfig,
+)
 
 
 async def main():
