@@ -26,3 +26,14 @@ pr-ready:
 	@echo "Running full check (format-pipelines, sort-imports)..."
 	@(cd aihub_pipeline &&  make pr-ready)
 	@(cd aihub_lib &&  make pr-ready)
+
+# Use local cores for development
+use-local-core:
+	@echo "Switching to local cores..."
+	python switch_dependency.py local
+
+TAG ?= v0.1.0
+
+use-remote-core:
+	@echo "Switching all microservices to remote with tag: $(TAG)"
+	python switch_dependency.py remote --tag "$(TAG)"
