@@ -1,5 +1,7 @@
 import json
 from typing import Optional, Dict, Any
+
+from llama_index.core.schema import NodeWithScore
 from pydantic import BaseModel, Field
 
 from openinference.semconv.trace import DocumentAttributes
@@ -21,3 +23,12 @@ class Document(BaseModel):
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_CONTENT}": self.content,
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_METADATA}": json.dumps(self.metadata),
         }
+
+    @classmethod
+    def from_node(cls, node: NodeWithScore) -> "Document":
+        return cls(
+            id=node.id_,
+            score=node.score,
+            content=node.text,
+            metadata=node.metadata,
+        )

@@ -38,7 +38,7 @@ def combine_nodes_in_order(
             nodes, key=lambda x: x.metadata.get(SECTION_START_LINE, 0)
         )
         for n in sorted_nodes:
-            text_parts.append(f"{n.text}\n\n")
+            text_parts.append(f"{n.content}\n\n")
         text_parts.append(f"<DOC END: {key}>\n")
         text_parts.append("\n---\n")
         documents.append("".join(text_parts))

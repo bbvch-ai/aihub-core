@@ -35,7 +35,6 @@ def retrieve_nodes(
         embed_model=embed_model,
         storage_context=storage_context,
     )
-
     filters = MetadataFilters(
         filters=[
             MetadataFilters(
@@ -50,16 +49,13 @@ def retrieve_nodes(
         ],
         condition="or",
     )
-
     retriever = VectorIndexRetriever(
         vector_store_query_mode=query_mode,
         index=index,
         similarity_top_k=retrieve_k,
         filters=filters,
     )
-
     nodes = retriever.retrieve(message)
-
     if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
         nodes = ScoreScalerPostprocessor(from_min=0, from_max=4).process(nodes)
     return nodes

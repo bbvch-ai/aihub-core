@@ -2,7 +2,7 @@
 
 ## Create a new agent
 In the `aihub_agent/aihub_agent/agents` folder (or if working on customer-specific agents do it under `agents` in the customer repo) create a new python file with the name of the Agent e.g. RAGAgent.
-Inherit from the `Agent` class - for more information please read the documentation in the Agent class.
+Inherit from the `Agent` (or a specific agent) class - for more information please read the documentation in the Agent class.
 ```python
 from aihub_agent.agents.abstract.Agent import Agent
 
@@ -24,6 +24,7 @@ class RAGAgentConfig(AgentConfig):
 
 ## Create a start and stop method
 Your agent class has at least a step which expects a `StartEvent` and a step which outputs a `StopEvent`. Each steps needs the step decorator.
+Each step should end with `_step`.
 For more information read the documentation in the `step` function and the `StartEvent` and `StopEvent` classes.
 ```python
 from aihub_agent.agents.abstract.Agent import Agent
@@ -53,7 +54,12 @@ class RAGAgent(Agent):
 ## Map out the workflow of the agent
 The agent is composed of multiple steps. Each step is a method in the agent class which expects one (or more) specific event(s) and outputs one (or more) specific event(s).
 Think about the steps your agent needs to take to achieve its goal. Start from the `start` method and work your way through the steps.
-
+E.g.:
+1. Agent receives a `StartEvent` with a chat history
+2. Agent limits the chat history to a specific number of tokens
+3. Agent generates a response based on the chat history
+4. Agent sends the response to the user
+5. Agent sends a `StopEvent` to the workflow manager
 
 ## Add logic to the steps
 Each step should contain the logic to achieve the goal of the step. You may use helper functions defined in the `aihub_lib`.
@@ -64,6 +70,8 @@ Each step should have one (or more) specific input and output event. The input e
 We can inherit from `ControlEvent`.
 ```python
 from aihub_lib.nats.events import ControlEvent
+from llama_index.core.base.llms.types import ChatMessage
+from typing import List
 
 class LimitChatHistoryEvent(ControlEvent):
     limited_history: List[ChatMessage]
@@ -74,12 +82,24 @@ class LimitChatHistoryEvent(ControlEvent):
 We can use use an existing helper function from the `aihub_lib` to limit the chat history. If needed, a new helper function can be created in the `aihub_lib` and used in the agent.
 
 ```python
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_lib.nats.events.control.start import StartEvent
+from aihub_lib.nats.events import ControlEvent
+from llama_index.core.base.llms.types import ChatMessage
+from typing import List
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_agent.workflow.decorators.step import step
+
+class LimitChatHistoryEvent(ControlEvent):
+    limited_history: List[ChatMessage]
+    
 class RAGAgent(Agent):
     @step()
     async def limit_chat_history_step(
         self,
         event: StartEvent,
     ) -> LimitChatHistoryEvent:
+        # Use the helper function to limit the chat history
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
             number_of_input_tokens=2048,
@@ -90,8 +110,20 @@ class RAGAgent(Agent):
 ### Use configs
 Use either step configs or directly define the values in the AgentConfig class.
 
-
+Step configs are useful to bundle config values needed for a step, especially if multiple values are required.
+Using a step config:
 ```python
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_lib.nats.events.control.start import StartEvent
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_agent.workflow.decorators.step import step
+
+class LimitChatHistoryStepConfig(StepConfig):
+    number_of_input_tokens: int = Field(..., description="The number of input tokens to limit the chat history to")
+
+class RAGAgentConfig(AgentConfig):
+    limit_chat_history_step_config: LimitChatHistoryStepConfig
+
 class RAGAgent(Agent):
     @step()
     async def limit_chat_history_step(
@@ -105,6 +137,32 @@ class RAGAgent(Agent):
         )
         return LimitChatHistoryEvent(limited_history=limited_chat_history)
 ````
+Using a direct value in the AgentConfig:
+```python
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_lib.nats.events.control.start import StartEvent
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_agent.workflow.decorators.step import step
 
 
+class RAGAgentConfig(AgentConfig):
+    number_of_input_tokens: int = Field(..., description="The number of input tokens to limit the chat history to")
+
+class RAGAgent(Agent):
+    @step()
+    async def limit_chat_history_step(
+        self,
+        event: StartEvent | UserMessageEvent,
+            agent_config: RAGAgentConfig,
+    ) -> LimitChatHistoryEvent:
+        limited_chat_history = limit_chat_history(
+            chat_history=event.messages,
+            number_of_input_tokens=agent_config.number_of_input_tokens,
+        )
+        return LimitChatHistoryEvent(limited_history=limited_chat_history)
+```
+
+
+## Test the agent
+To test the agent you may use the playground. The playground is a tool to test the agent in a controlled environment.
 

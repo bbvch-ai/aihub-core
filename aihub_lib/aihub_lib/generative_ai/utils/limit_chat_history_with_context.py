@@ -15,6 +15,7 @@ def limit_chat_history_with_context(
     number_of_input_tokens: int,
 ) -> List[ChatMessage]:
     tokenizer = tiktoken.encoding_for_model(tokenizer_for_model).encode
+
     minimum_tokens = TokenCounter(tokenizer).estimate_tokens_in_messages(
         [*system_messages, *context_messages, last_user_message]
     )
