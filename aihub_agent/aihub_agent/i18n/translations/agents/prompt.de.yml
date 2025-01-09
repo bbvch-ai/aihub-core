@@ -1,1 +1,19 @@
 test: Das ist ein test prompt auf deutsch
+condenser:
+  standalone_question: |
+    Gegeben ist die folgende Konversation zwischen einem Benutzer und einem KI-Assistenten und eine Folgefrage des Benutzers,
+    formuliere die Folgefrage um, so dass sie als eigenständige Frage gestellt werden kann.
+
+    Chatverlauf:
+    {chat_history}
+    Folgeeingabe: {question}
+    Eigenständige Frage:
+rag_agent:
+  context_prompt: |
+    Du erhältst zusätzliche Kontextinformationen in Form von strukturierten Dokumenten. Jedes Dokument ist durch <DOC_START [Dokumentname]>
+    und <DOC_END [Dokumentname]> gekennzeichnet.
+    Hier sind die für den Kontext relevanten Dokumente:
+
+    {context_str}
+
+    Aufgabe: Gib basierend auf den obigen Dokumenten eine detaillierte Antwort auf die folgende Benutzerfrage.

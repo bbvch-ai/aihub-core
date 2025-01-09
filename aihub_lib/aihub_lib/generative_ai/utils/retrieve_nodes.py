@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from aihub_lib.generative_ai.processors.ScoreScalerPostProcessor import ScoreScalerPostProcessor
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import (
     create_mongo_document_store,
@@ -57,5 +58,5 @@ def retrieve_nodes(
     )
     nodes = retriever.retrieve(message)
     if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
-        nodes = ScoreScalerPostprocessor(from_min=0, from_max=4).process(nodes)
+        nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).process(nodes)
     return nodes

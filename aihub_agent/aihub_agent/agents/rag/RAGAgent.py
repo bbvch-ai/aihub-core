@@ -9,16 +9,11 @@ from aihub_agent.agents.abstract.Agent import Agent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 
-from aihub_agent.agents.rag.Configs.CondenseStandaloneQuestionStepConfig import (
-    CondenseStandaloneQuestionStepConfig,
-)
 from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import (
     InOrderNodeCombinerEvent,
 )
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.rag.Configs.LimitChatHistoryStepConfig import (
-    LimitChatHistoryStepConfig,
-)
+
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import (
     LimitChatHistoryWithContextEvent,
 )
@@ -70,6 +65,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         displayer: EventDisplayer,
     ) -> StandaloneQuestionCondenserEvent:
+        await displayer.display_thought(t("agent.thought.condense_question"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
                 chat_history=event.limited_history,
@@ -105,8 +101,13 @@ class RAGAgent(Agent):
 
     @step()
     async def order_nodes_by_documents_step(
-        self, event: RetrieverEvent, t: LocaleHandler, agent_config: RAGAgentConfig
+        self,
+        event: RetrieverEvent,
+        t: LocaleHandler,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
     ) -> InOrderNodeCombinerEvent:
+        await displayer.display_thought(t("agent.thought.searching_knowledge"))
         ordered_nodes = combine_nodes_in_order(
             context_nodes=event.documents,
             locale_handler=t,
@@ -150,7 +151,11 @@ class RAGAgent(Agent):
         event: LimitChatHistoryWithContextEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
+        t: LocaleHandler,
     ) -> LLMEvent:
+        await displayer.display_thought(
+            t("agent.thought.write_answer_based_on_information")
+        )
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(
                 agent_config.llm, llm, event.limited_history_with_context
