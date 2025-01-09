@@ -1,6 +1,6 @@
+from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
-from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 
 from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 

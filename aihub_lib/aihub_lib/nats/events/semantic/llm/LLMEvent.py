@@ -1,10 +1,10 @@
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
-from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
-
-from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 from aihub_lib.nats.events.semantic.llm.Message import Message
+from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class LLMEvent(SemanticEvent):
@@ -12,7 +12,9 @@ class LLMEvent(SemanticEvent):
     output_messages: Optional[List[Message]] = Field(
         None, description="List of messages received from the LLM as output."
     )
-    invocation_parameters: Optional[Dict[str, Any]] = Field(None, description="Parameters used during the invocation of the LLM.")
+    invocation_parameters: Optional[Dict[str, Any]] = Field(
+        None, description="Parameters used during the invocation of the LLM."
+    )
     chat_model_name: Optional[str] = Field(None, description="The name of the language model being utilized.")
     provider: Optional[str] = Field(None, description="The hosting provider of the LLM, e.g., OpenAI, Azure.")
     system: Optional[str] = Field(None, description="The AI product as identified by the client or server.")

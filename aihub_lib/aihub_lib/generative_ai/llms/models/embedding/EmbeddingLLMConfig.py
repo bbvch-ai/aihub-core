@@ -31,7 +31,9 @@ class EmbeddingLLMConfig(LLMConfig):
     model can be integrated uniformly with llama_index and cost tracking.
     """
 
-    default_parameter: EmbeddingLLMModelParameter = Field(..., description="Default parameters for the embedding model.")
+    default_parameter: EmbeddingLLMModelParameter = Field(
+        ..., description="Default parameters for the embedding model."
+    )
 
     @abstractmethod
     def to_llama_index(

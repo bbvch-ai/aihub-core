@@ -1,15 +1,15 @@
 import logging
 import traceback
-from typing import Optional, TypeVar, Generic, Type, Callable, Awaitable
+from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError
 
-from aihub_lib.nats.events import BaseEvent, DisplayEvent, ControlEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import Topic
 
 logger = logging.getLogger(__name__)

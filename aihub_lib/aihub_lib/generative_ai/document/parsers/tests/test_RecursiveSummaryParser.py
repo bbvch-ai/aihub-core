@@ -5,14 +5,8 @@ import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.llms.azure_openai import AzureOpenAI
 
-from aihub_lib.persistence.rag.vectors.node_metadata import (
-    HEADING_LEVEL,
-    NODE_TYPE_SUMMARY,
-    TYPE,
-)
-from aihub_lib.generative_ai.document.parsers.RecursiveSummaryParser import (
-    RecursiveNodeSummarizer,
-)
+from aihub_lib.generative_ai.document.parsers.RecursiveSummaryParser import RecursiveNodeSummarizer
+from aihub_lib.persistence.rag.vectors.node_metadata import HEADING_LEVEL, NODE_TYPE_SUMMARY, TYPE
 
 
 @pytest.fixture

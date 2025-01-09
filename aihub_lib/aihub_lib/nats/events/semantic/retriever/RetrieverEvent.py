@@ -1,12 +1,11 @@
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 from llama_index.core.schema import NodeWithScore
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
-from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
-
-from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 from aihub_lib.nats.events.semantic.retriever.Document import Document
+from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class RetrieverEvent(SemanticEvent):

@@ -1,10 +1,9 @@
 import json
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from llama_index.core.schema import NodeWithScore
-from pydantic import BaseModel, Field
-
 from openinference.semconv.trace import DocumentAttributes
+from pydantic import BaseModel, Field
 
 
 class Document(BaseModel):

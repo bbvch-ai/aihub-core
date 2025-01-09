@@ -1,6 +1,6 @@
+from .HumanInTheLoop import HumanInTheLoop
 from .request import HumanInTheLoopRequestEvent
 from .response import HumanInTheLoopResponseEvent
-from .HumanInTheLoop import HumanInTheLoop
 
 __all__ = [
     "HumanInTheLoopRequestEvent",

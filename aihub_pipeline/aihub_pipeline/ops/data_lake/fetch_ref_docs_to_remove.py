@@ -1,7 +1,7 @@
 from typing import List
 
-from dagster import OpExecutionContext, op
 from aihub_lib.persistence.rag.documents.entities import RefDoc
+from dagster import OpExecutionContext, op
 
 from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile

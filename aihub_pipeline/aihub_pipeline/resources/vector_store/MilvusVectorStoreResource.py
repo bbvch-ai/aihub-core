@@ -1,5 +1,7 @@
+from aihub_lib.persistence.rag.vectors.vector_stores.MilvusVectorStoreFactory import (
+    create_milvus_vector_store,
+)
 from dagster import ConfigurableResource, InitResourceContext
-from aihub_lib.persistence.rag.vectors.vector_stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
 

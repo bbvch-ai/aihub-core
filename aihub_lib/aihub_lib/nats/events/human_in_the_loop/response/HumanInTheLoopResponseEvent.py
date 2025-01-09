@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 
 
@@ -16,4 +16,7 @@ class HumanInTheLoopResponseEvent(ControlEvent, DisplayEvent):
     """
 
     response: str = Field(..., description="The human operator's answer or decision.")
-    request_event: HumanInTheLoopRequestEvent = Field(..., description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.")
+    request_event: HumanInTheLoopRequestEvent = Field(
+        ...,
+        description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    )

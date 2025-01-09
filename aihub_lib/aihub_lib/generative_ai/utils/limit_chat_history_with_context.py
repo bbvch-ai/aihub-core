@@ -26,9 +26,7 @@ def limit_chat_history_with_context(
             f"{minimum_tokens} >= {number_of_input_tokens}"
         )
 
-    chat_history_without_system_messages = [
-        message for message in chat_history if message.role != MessageRole.SYSTEM
-    ]
+    chat_history_without_system_messages = [message for message in chat_history if message.role != MessageRole.SYSTEM]
 
     memory = ChatMemoryBuffer.from_defaults(
         chat_history=chat_history_without_system_messages[:-1],

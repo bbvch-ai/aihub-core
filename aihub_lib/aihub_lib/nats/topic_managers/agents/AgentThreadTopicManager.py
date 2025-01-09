@@ -1,8 +1,6 @@
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import (
-    AgentInstanceTopicManager,
-)
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
 
@@ -36,12 +34,12 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
     """
 
     def __init__(
-            self,
-            agent_class: Annotated[str, "Agent class identifier"],
-            agent_id: Annotated[str, "Specific agent ID"],
-            thread_id: Annotated[str, "Unique conversation/workflow identifier within the agent instance"],
-            display_id: Annotated[str, "UI-facing grouping ID for events within a thread and run"],
-            run_id: Annotated[str, "Unique run identifier within the thread"],
+        self,
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Specific agent ID"],
+        thread_id: Annotated[str, "Unique conversation/workflow identifier within the agent instance"],
+        display_id: Annotated[str, "UI-facing grouping ID for events within a thread and run"],
+        run_id: Annotated[str, "Unique run identifier within the thread"],
     ):
         super().__init__(agent_class=agent_class, agent_id=agent_id)
         self.thread_id = thread_id
@@ -49,9 +47,9 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         self.run_id = run_id
 
     def get_subject_for_all_event_in_thread(
-            self,
-            event_name: Annotated[str, "Name of the event type (e.g. 'start', 'stop', 'error')"],
-            event_id: Annotated[Optional[str], "Specific event instance ID or '*'"] = "*"
+        self,
+        event_name: Annotated[str, "Name of the event type (e.g. 'start', 'stop', 'error')"],
+        event_id: Annotated[Optional[str], "Specific event instance ID or '*'"] = "*",
     ) -> str:
         """Returns a subject pattern for all events of a given name within this thread."""
         return self.get_subject_for_specific_event_in_agent_instance(
@@ -64,9 +62,9 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         )
 
     def get_subject_for_control_event_in_thread(
-            self,
-            event_name: Annotated[str, "Name of the control event"],
-            event_id: Annotated[Optional[str], "Specific event instance ID or '*'"] = "*"
+        self,
+        event_name: Annotated[str, "Name of the control event"],
+        event_id: Annotated[Optional[str], "Specific event instance ID or '*'"] = "*",
     ) -> str:
         """Returns a subject pattern for control events of a given name within this thread."""
         return self.get_subject_for_specific_event_in_agent_instance(
@@ -79,9 +77,9 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         )
 
     def get_subject_for_display_event_in_thread(
-            self,
-            event_name: Annotated[str, "Name of the display event"],
-            event_id: Annotated[Optional[str], "Specific event instance ID or '*'"] = "*"
+        self,
+        event_name: Annotated[str, "Name of the display event"],
+        event_id: Annotated[Optional[str], "Specific event instance ID or '*'"] = "*",
     ) -> str:
         """Returns a subject pattern for display events of a given name within this thread."""
         return self.get_subject_for_specific_event_in_agent_instance(
@@ -95,11 +93,11 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
 
     @classmethod
     def from_agent_instance_topic_manager(
-            cls,
-            topic_manager: AgentInstanceTopicManager,
-            thread_id: Annotated[str, "Thread ID"],
-            display_id: Annotated[str, "Display ID for UI grouping"],
-            run_id: Annotated[str, "Run ID within the thread"],
+        cls,
+        topic_manager: AgentInstanceTopicManager,
+        thread_id: Annotated[str, "Thread ID"],
+        display_id: Annotated[str, "Display ID for UI grouping"],
+        run_id: Annotated[str, "Run ID within the thread"],
     ) -> "AgentThreadTopicManager":
         """Creates an AgentThreadTopicManager from an existing AgentInstanceTopicManager and additional thread details."""
         return cls(

@@ -1,7 +1,4 @@
-from aihub_lib.nats.events.human_in_the_loop import (
-    HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
-)
+from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 

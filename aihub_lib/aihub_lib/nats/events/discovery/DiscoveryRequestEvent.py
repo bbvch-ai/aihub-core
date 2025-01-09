@@ -23,4 +23,5 @@ class DiscoveryRequestEvent(BaseEvent):
     By subclassing `BaseEvent`, `DiscoveryRequestEvent` benefits from automatic registration,
     ensuring it can be easily deserialized and processed by any interested subscriber.
     """
+
     pass

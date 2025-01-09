@@ -1,10 +1,11 @@
 from typing import List
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
+
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
 def _messages_to_history_str(messages: List[ChatMessage]) -> str:
@@ -31,9 +32,7 @@ def condense_standalone_question(
 ) -> str:
     chat_history_str = _messages_to_history_str(chat_history)
     if condense_prompt:
-        condense_prompt_locale = LocaleHandler(t.locale).extract(
-            condense_prompt, t.locale
-        )
+        condense_prompt_locale = LocaleHandler(t.locale).extract(condense_prompt, t.locale)
     else:
         condense_prompt_locale = t("agent.prompt.condenser.standalone_question")
 

@@ -1,12 +1,12 @@
 from typing import Dict
 
+from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_azure.adls2 import (
     ADLS2DefaultAzureCredential,
     ADLS2PickleIOManager,
     ADLS2Resource,
 )
-from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 
 from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager

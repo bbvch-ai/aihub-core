@@ -1,6 +1,6 @@
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
-from openinference.semconv.trace import SpanAttributes, EmbeddingAttributes
+from openinference.semconv.trace import EmbeddingAttributes, SpanAttributes
 from pydantic import BaseModel, Field
 
 

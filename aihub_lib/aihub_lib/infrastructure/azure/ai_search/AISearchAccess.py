@@ -4,8 +4,8 @@ from azure.mgmt.resource import SubscriptionClient
 from azure.mgmt.search import SearchManagementClient
 from azure.search.documents.indexes import SearchIndexClient
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 from aihub_lib.infrastructure.azure.ai_search.AISearchConfig import AISearchConfig
+from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 
 
 class AISearchAccess:

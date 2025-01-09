@@ -30,14 +30,8 @@ class LLMCosts(BaseModel):
         ...,
         description="Number of tokens generated in the completion",
     )
-    embedding_token_count: int = Field(
-        ...,
-        description="Number of tokens used for embeddings"
-    )
-    prompt_tokens_costs: float = Field(
-        ...,
-        description="Cost associated with the prompt tokens"
-    )
+    embedding_token_count: int = Field(..., description="Number of tokens used for embeddings")
+    prompt_tokens_costs: float = Field(..., description="Cost associated with the prompt tokens")
     completion_tokens_costs: float = Field(
         ...,
         description="Cost associated with the completion tokens",
