@@ -4,7 +4,8 @@ Table of Content:
 
 - [AI-Hub Developer Introduction](#1-ai-hub-developer-introduction)
 - [Getting Started](#2-getting-started)
-- [Additional Infos](#3-additional-infos)
+- [Testing](#3-testing)
+- [Additional Infos](#4-additional-infos)
 
 # 1 AI-Hub Developer Introduction
 
@@ -487,7 +488,117 @@ Navigate to the `aihub_web` folder
 
 ---
 
-# 3 Additional Infos
+# 3 Testing
+
+## 3.1 pytest
+
+We are using `pytest` as the testing framework for the AI-Hub project. The tests are located in the `tests` directory
+at the location of the code that is being tested. The testfile itself should be prefixed with `test_` resulting in
+a filename like `test_<unit_beeing_tested>.py`.
+
+## 3.2 Behaviour-Driven Development (bdd) based testing
+
+This repository uses **Behavior-Driven Development (BDD)** with the [
+pytest-bdd plugin](https://pytest-bdd.readthedocs.io/). BDD provides a structured approach for writing tests that
+capture business requirements in a format understandable to both technical and non-technical team members.
+
+### 3.2.1 How It Works
+
+1. **Feature Files**: Written in Gherkin syntax (`.feature` files) that describe the feature, the scenarios, and the
+   expected behavior.
+2. **Step Definitions**: Python functions decorated with `pytest-bdd` decorators (e.g. `@given`, `@when`, `@then`) that
+   implement the steps defined in the feature files.
+3. **Test Execution**: `pytest` discovers the feature files and maps each Gherkin step to the matching Python step
+   definition.
+
+### 3.2.2 Project Structure
+
+The BDD tests are organized in the following structure:
+
+```plaintext
+.
+├── SystemUnderTest.py
+└── tests
+    ├── features
+    │   ├── system_under_test.feature
+    │   └── ...
+    └── test_SystemUnderTest.py
+```
+
+*As a general rule there is always one .feature file per system-under-test. There can be exceptions if
+the same class hase multiple purposes but this should be prevented*
+
+### 3.2.3 Gherkin Syntax
+
+The .feature files are located in the `tests/features` directory and contain the Gherkin scenarios and look like this:
+
+```gherkin
+Feature: Simple Agent
+  test for SimpleAgent
+
+  Scenario: Test Simple Agent
+    Given a SimpleAgent runner
+
+    When a the start event is sent with payload "Hello"
+    Then a StartEvent is present with payload "Hello"
+    And a StopEvent is present
+    And an EventA event is present with payload "Hello"
+```
+
+These scenarios can be written in a configurable way where input can be passed as variables to the test or the same test
+is executed with different values.
+For extensive list of possibilities see the [pytest-bdd documentation](https://pytest-bdd.readthedocs.io/en/stable/)
+
+Each line the scenario maps to a method in the `test_SystemUnderTest.py` file which might look like this:
+
+```python
+@given("a SimpleAgent runner", target_fixture="agent_runner")
+def _():
+    return AgentTestRunner(
+        agent_class=SimpleAgent,
+        agent_config=SimpleAgentConfig(
+            agent_id="simple_agent",
+            name=LocaleString(en="Simple Agent"),
+            description=LocaleString(en="This is a very simple agent"),
+            system_prompt=LocaleString(en="You are an agent"),
+        ),
+    )
+
+
+@when(parsers.parse('a the start event is sent with payload "{payload}"'))
+@async_test
+async def _(agent_runner: AgentTestRunner, payload: str):
+    async with agent_runner.test_run() as topic:
+        await agent_runner.send_event_from_topic(
+            start_event=StartEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
+            topic=topic,
+        )
+
+
+@then(parsers.parse('a StartEvent is present with payload "{payload}"'))
+def _(agent_runner: AgentTestRunner, payload: str):
+    assert agent_runner.has_start_event, "Agent did not receive start event"
+```
+
+We see that all tests are structured into three parts:
+
+- `given`: setup the test environment
+- `when`: execute behaviour that is tested
+- `then`: check if the behaviour was executed correctly
+
+  > ☝ **Note: Test can have multiple steps of the same type! **  
+  > It can occur or even is encouraged to have multiple steps of the same type (`given`, `when`, `then`) in the
+  > same scenario. This allows to have the steps as atomic as possible which makes it easier for the steps to be
+  > reused in different scenarios.
+
+### 3.2.4 Why we use bdd testing
+
+- **Readable Tests**: Scenarios in plain English let non-technical stakeholders validate requirements.
+- **Reusability**: Step definitions can be shared across multiple scenarios, reducing duplicate test code.
+- **Faster Iterations**: New test cases often require no new Python code—just add new scenarios in the feature file.
+- **Closer Collaboration**: Encourages collaboration between business, QA, and development.
+
+# 4 Additional Infos
 
 ## Key Features
 
