@@ -12,10 +12,11 @@ from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoop
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from playground.HumanInTheLoopAgent.HumanInTheLoopAgent import HumanInTheLoopAgent
-from playground.HumanInTheLoopAgent.HumanInTheLoopAgentConfig import HumanInTheLoopAgentConfig
+from playground.HumanInTheLoopAgent.HumanInTheLoopAgentConfig import (
+    HumanInTheLoopAgentConfig,
+)
 from playground.SimpleAgent.SimpleAgent import SimpleAgent
 from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
-
 
 
 async def main():
@@ -31,15 +32,19 @@ async def main():
 
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
-            topic=topic,
-            start_event=StartEvent(messages=[])
+            topic=topic, start_event=StartEvent(messages=[])
         )
         await sleep(1)
-        request_event = HumanInTheLoop.request(question="Shall I continue?", topic=PartialAgentTopic())
+        request_event = HumanInTheLoop.request(
+            question="Shall I continue?", topic=PartialAgentTopic()
+        )
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=HumanInTheLoop.response(response="Yes, Please!", request_event=request_event)
+            start_event=HumanInTheLoop.response(
+                response="Yes, Please!", request_event=request_event
+            ),
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -7,7 +7,6 @@ from playground.SemanticAgent.Events.LLMStopEvent import LLMStopEvent
 
 
 class SemanticEventAgent(Agent):
-
     @step()
     async def retriever_step(self, event: StartEvent) -> RetrieverEvent:
         return RetrieverEvent(
@@ -27,7 +26,6 @@ class SemanticEventAgent(Agent):
             ],
         )
 
-
     @step()
     async def rerank_step(self, event: RetrieverEvent) -> RerankerEvent:
         return RerankerEvent(
@@ -41,7 +39,12 @@ class SemanticEventAgent(Agent):
     @step()
     async def llm_step(self, event: RerankerEvent) -> LLMStopEvent:
         return LLMStopEvent(
-            input_messages=[Message(role="user", content="Given these documents, what do you want to tell me?")],
+            input_messages=[
+                Message(
+                    role="user",
+                    content="Given these documents, what do you want to tell me?",
+                )
+            ],
             output_messages=[Message(role="agent", content="Everything is important!")],
             invocation_parameters={"temperature": 0.7},
             chat_model_name="gpt-4o",

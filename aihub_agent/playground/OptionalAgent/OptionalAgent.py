@@ -9,7 +9,6 @@ from playground.OptionalAgent.Events.EventB import EventB
 
 
 class OptionalAgent(Agent):
-
     @step()
     async def start_step(self, event: StartEvent) -> List[EventA | EventB]:
         if random.random() > 0.5:
@@ -19,7 +18,9 @@ class OptionalAgent(Agent):
         return [EventA(), EventB()]
 
     @step(max_executions_per_run=1)
-    async def end_step(self, event: EventA, optional_event: Optional[EventB]) -> StopEvent:
+    async def end_step(
+        self, event: EventA, optional_event: Optional[EventB]
+    ) -> StopEvent:
         if optional_event:
             print("[OptionalAgent.end_step] Received Optional EventB")
         else:

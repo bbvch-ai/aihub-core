@@ -7,8 +7,10 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, \
-    AzureOpenAIParameter
+from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+    AzureOpenAIParameter,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.logging.logger import enable_logging
@@ -16,6 +18,7 @@ from playground.LlamaIndexAgent.LlamaIndexAgent import LlamaIndexAgent
 from playground.LlamaIndexAgent.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 
 enable_logging()
+
 
 async def main():
     runner = AgentTestRunner(
@@ -31,16 +34,19 @@ async def main():
                 api_version="2023-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,
-                default_parameter=AzureOpenAIParameter(temperature=0.0)
-            )
+                default_parameter=AzureOpenAIParameter(temperature=0.0),
+            ),
         ),
     )
 
     async with runner.test_run(delay_before_stop=5) as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)])
+            start_event=StartEvent(
+                messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]
+            ),
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

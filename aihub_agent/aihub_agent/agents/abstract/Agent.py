@@ -1,6 +1,6 @@
 import abc
-from typing import Type, Set, Any, Dict
 import inspect
+from typing import Any, Dict, Set, Type
 
 from aihub_lib.nats.events import ControlEvent, StartEvent
 
@@ -44,8 +44,9 @@ class Agent(abc.ABC):
         A step is identified by the `_is_step` attribute set by the `@step` decorator.
         """
         return [
-            method for name, method in inspect.getmembers(cls, predicate=inspect.isfunction)
-            if getattr(method, '_is_step', False)
+            method
+            for name, method in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if getattr(method, "_is_step", False)
         ]
 
     @classmethod
@@ -55,10 +56,7 @@ class Agent(abc.ABC):
         This helps the dispatcher decide which steps to execute when a certain event arrives.
         """
         steps = cls.get_steps()
-        return [
-            method for method in steps
-            if event_type in method._input_events
-        ]
+        return [method for method in steps if event_type in method._input_events]
 
     @classmethod
     def get_input_events(cls) -> Set[Type[ControlEvent]]:
@@ -68,9 +66,7 @@ class Agent(abc.ABC):
         """
         steps = cls.get_steps()
         return set(
-            event_type
-            for method in steps
-            for event_type in method._input_events
+            event_type for method in steps for event_type in method._input_events
         )
 
     @classmethod

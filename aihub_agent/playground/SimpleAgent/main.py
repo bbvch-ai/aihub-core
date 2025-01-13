@@ -12,6 +12,7 @@ from playground.SimpleAgent.SimpleAgentConfig import SimpleAgentConfig
 
 enable_logging()
 
+
 async def main():
     runner = AgentTestRunner(
         agent_type=SimpleAgent,
@@ -26,8 +27,11 @@ async def main():
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
+            start_event=StartEvent(
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)]
+            ),
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

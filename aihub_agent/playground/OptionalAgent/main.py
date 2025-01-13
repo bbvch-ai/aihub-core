@@ -13,7 +13,6 @@ from playground.OptionalAgent.OptionalAgent import OptionalAgent
 from playground.OptionalAgent.OptionalAgentConfig import OptionalAgentConfig
 
 
-
 async def main():
     runner = AgentTestRunner(
         agent_type=OptionalAgent,
@@ -27,9 +26,9 @@ async def main():
 
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
-            topic=topic,
-            start_event=StartEvent(messages=[])
+            topic=topic, start_event=StartEvent(messages=[])
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

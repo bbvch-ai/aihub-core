@@ -1,9 +1,9 @@
 import functools
 import inspect
 import json
-from typing import Any, Callable, Annotated
+from typing import Annotated, Any, Callable
 
-from openinference.semconv.trace import SpanAttributes, OpenInferenceMimeTypeValues
+from openinference.semconv.trace import OpenInferenceMimeTypeValues, SpanAttributes
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
@@ -54,18 +54,26 @@ def tracing() -> Callable:
             with tracer.start_as_current_span(span_name) as span:
                 # Record input
                 input_params = {"args": args, "kwargs": kwargs}
-                span.set_attributes({
-                    SpanAttributes.INPUT_VALUE: json.dumps(input_params, default=str),
-                    SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
-                })
+                span.set_attributes(
+                    {
+                        SpanAttributes.INPUT_VALUE: json.dumps(
+                            input_params, default=str
+                        ),
+                        SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                    }
+                )
 
                 try:
                     result = await func(*args, **kwargs)
                     # Record output
-                    span.set_attributes({
-                        SpanAttributes.OUTPUT_VALUE: json.dumps(result, default=str),
-                        SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
-                    })
+                    span.set_attributes(
+                        {
+                            SpanAttributes.OUTPUT_VALUE: json.dumps(
+                                result, default=str
+                            ),
+                            SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                        }
+                    )
                     return result
                 except Exception as e:
                     span.set_status(StatusCode.ERROR, str(e))
@@ -78,18 +86,26 @@ def tracing() -> Callable:
             with tracer.start_as_current_span(span_name) as span:
                 # Record input
                 input_params = {"args": args, "kwargs": kwargs}
-                span.set_attributes({
-                    SpanAttributes.INPUT_VALUE: json.dumps(input_params, default=str),
-                    SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
-                })
+                span.set_attributes(
+                    {
+                        SpanAttributes.INPUT_VALUE: json.dumps(
+                            input_params, default=str
+                        ),
+                        SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                    }
+                )
 
                 try:
                     result = func(*args, **kwargs)
                     # Record output
-                    span.set_attributes({
-                        SpanAttributes.OUTPUT_VALUE: json.dumps(result, default=str),
-                        SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
-                    })
+                    span.set_attributes(
+                        {
+                            SpanAttributes.OUTPUT_VALUE: json.dumps(
+                                result, default=str
+                            ),
+                            SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                        }
+                    )
                     return result
                 except Exception as e:
                     span.set_status(StatusCode.ERROR, str(e))

@@ -14,13 +14,16 @@ from playground.ContextAgent.Events.CustomStartEvent import CustomStartEvent
 
 THREAD_ID = "6756ddb05c399b888009a559"
 
+
 async def main():
     runner = AgentTestRunner(
         agent_type=ContextAgent,
         agent_config=ContextAgentConfig(
             agent_id="context_agent",
             name=LocaleString(en="Context Agent"),
-            description=LocaleString(en="This is an agent that accesses the run and thread context"),
+            description=LocaleString(
+                en="This is an agent that accesses the run and thread context"
+            ),
             system_prompt=LocaleString(en="You are an agent"),
         ),
     )

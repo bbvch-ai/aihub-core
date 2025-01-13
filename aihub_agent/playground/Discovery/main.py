@@ -12,6 +12,7 @@ from playground.Discovery.DiscoverableAgentConfig import DiscoverableAgentConfig
 
 enable_logging()
 
+
 async def main():
     runner = AgentTestRunner(
         agent_type=DiscoverableAgent,
@@ -27,8 +28,9 @@ async def main():
     async with runner.test_run() as topic:
         await runner.nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),
-            subject=TopicManager().get_agent_discovery_subject_request(call_id=call_id)
+            subject=TopicManager().get_agent_discovery_subject_request(call_id=call_id),
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

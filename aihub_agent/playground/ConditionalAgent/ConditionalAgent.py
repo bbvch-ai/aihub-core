@@ -8,7 +8,6 @@ from playground.ConditionalAgent.Events.EventB import EventB
 
 
 class ConditionalAgent(Agent):
-
     @step()
     async def start_step(self, event: StartEvent) -> EventA | EventB:
         if random.random() > 0.5:

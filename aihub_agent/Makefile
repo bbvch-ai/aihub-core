@@ -29,3 +29,6 @@ clean:
 	rm -f coverage.xml
 	rm -f .coverage
 	poetry run
+
+pr-ready: sort-imports format
+	@echo "Running full check (format, sort)..."
