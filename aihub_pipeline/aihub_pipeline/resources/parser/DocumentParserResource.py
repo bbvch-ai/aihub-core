@@ -62,11 +62,7 @@ class DocumentParserResource(ConfigurableResource):
     }
 
     # Inverted mapping from file extensions to reader classes
-    _extension_to_reader = {
-        ext: reader_cls
-        for reader_cls, extensions in _readers_map.items()
-        for ext in extensions
-    }
+    _extension_to_reader = {ext: reader_cls for reader_cls, extensions in _readers_map.items() for ext in extensions}
 
     def get_document_parser_for_filetype(self, filetype: str) -> BaseReader:
         filetype = filetype.lower()

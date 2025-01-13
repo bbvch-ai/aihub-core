@@ -1,11 +1,6 @@
 from typing import List
 
-from dagster import (
-    ConfigurableIOManager,
-    InputContext,
-    OutputContext,
-    ResourceDependency,
-)
+from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
@@ -74,17 +69,13 @@ class DocStoreIOManager(ConfigurableIOManager):
 
     doc_store: ResourceDependency[KVDocumentStore]
 
-    def handle_output(
-        self, context: OutputContext, obj: RefDocDocument | List[RefDocDocument]
-    ) -> None:
+    def handle_output(self, context: OutputContext, obj: RefDocDocument | List[RefDocDocument]) -> None:
         if isinstance(obj, RefDocDocument):
             documents = [obj]
         elif isinstance(obj, list):
             documents = obj
         else:
-            context.log.error(
-                "Output is neither a RefDocDocument nor a list of RefDocDocuments."
-            )
+            context.log.error("Output is neither a RefDocDocument nor a list of RefDocDocuments.")
             raise ValueError("Expected a RefDocDocument or a list of RefDocDocuments.")
 
         for document in documents:
@@ -98,9 +89,7 @@ class DocStoreIOManager(ConfigurableIOManager):
         document = self.doc_store.get_document(doc_id)
         return RefDocDocument(**document.to_dict())
 
-    def load_input(
-        self, context: InputContext
-    ) -> RefDocDocument | List[RefDocDocument]:
+    def load_input(self, context: InputContext) -> RefDocDocument | List[RefDocDocument]:
         # Check if a partition key is available
         if context.has_partition_key:
             # If partition key is present, use it to load the document
@@ -113,18 +102,14 @@ class DocStoreIOManager(ConfigurableIOManager):
 
             if partitions_def is not None:
                 # Get all partition keys from the upstream asset
-                all_partition_keys = partitions_def.get_partition_keys(
-                    dynamic_partitions_store=context.instance
-                )
+                all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
                 ref_docs = []
                 for partition_key in all_partition_keys:
                     ref_doc = self.get_ref_doc(partition_key, context)
                     ref_docs.append(ref_doc)
                 return ref_docs  # Return the list of loaded documents
             else:
-                context.log.error(
-                    "No partition definition found for the upstream asset."
-                )
+                context.log.error("No partition definition found for the upstream asset.")
                 raise ValueError("Cannot load documents without partition information.")
 
     def _convert_partition_key_to_doc_id(self, uri_or_id: str, context: InputContext):

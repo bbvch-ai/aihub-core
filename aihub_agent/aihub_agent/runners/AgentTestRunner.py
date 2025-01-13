@@ -5,9 +5,7 @@ from typing import AsyncGenerator, List, Optional, Type
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
-    AgentThreadTopicManager,
-)
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
@@ -73,16 +71,12 @@ class AgentTestRunner(AgentRunner):
         )
         self.observed_events: List[ObservedEvent] = []
 
-    async def send_event_from_topic(
-        self, start_event: StartEvent, topic: PartialAgentTopic
-    ):
+    async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
         Sends a StartEvent (or another initiating event) to the run identified by the PartialAgentTopic.
         This allows tests to inject their own events to drive the agent workflow.
         """
-        await self.send_event(
-            start_event, topic.thread_id, topic.display_id, topic.run_id
-        )
+        await self.send_event(start_event, topic.thread_id, topic.display_id, topic.run_id)
 
     async def observe_event(self, event: BaseEvent, topic: Topic):
         """
@@ -92,9 +86,7 @@ class AgentTestRunner(AgentRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(
-        self, delay_before_stop: int = 1
-    ) -> AsyncGenerator[PartialAgentTopic, None]:
+    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:
         1. Starts the agent runner.
@@ -141,9 +133,7 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_start_event(self) -> bool:
         """Check if a StartEvent was observed."""
-        return any(
-            isinstance(event.event, StartEvent) for event in self.observed_events
-        )
+        return any(isinstance(event.event, StartEvent) for event in self.observed_events)
 
     @property
     def has_stop_event(self) -> bool:
@@ -153,15 +143,11 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_exception_event(self) -> bool:
         """Check if an ExceptionEvent was observed."""
-        return any(
-            isinstance(event.event, ExceptionEvent) for event in self.observed_events
-        )
+        return any(isinstance(event.event, ExceptionEvent) for event in self.observed_events)
 
     def get_events(self, event_type: Type[BaseEvent]) -> List[BaseEvent]:
         """Returns all observed events of the specified type."""
-        return [
-            ev.event for ev in self.observed_events if isinstance(ev.event, event_type)
-        ]
+        return [ev.event for ev in self.observed_events if isinstance(ev.event, event_type)]
 
     def get_topics(self, event_type: Type[BaseEvent]) -> List[AgentTopic]:
         """Returns the topics of all observed events of the specified type, if any are AgentTopic."""
@@ -184,6 +170,4 @@ class AgentTestRunner(AgentRunner):
         Returns the first observed event of the specified type.
         Raises StopIteration if no such event is found.
         """
-        return next(
-            ev.event for ev in self.observed_events if isinstance(ev.event, event_type)
-        )
+        return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))

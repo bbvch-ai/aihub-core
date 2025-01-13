@@ -44,9 +44,7 @@ class StoreBase:
         self.prefix = prefix
         self._kv_stores: Dict[str, Any] = {}
 
-    async def _get_kv_store(
-        self, run_id: Annotated[str, "The run identifier for which we need a KV store."]
-    ) -> Any:
+    async def _get_kv_store(self, run_id: Annotated[str, "The run identifier for which we need a KV store."]) -> Any:
         """Retrieves (and if necessary, creates) the KV store for a given run_id."""
         if run_id not in self._kv_stores:
             try:
@@ -60,9 +58,7 @@ class StoreBase:
                 )
             except Exception:
                 # If the bucket already exists, we just retrieve it
-                self._kv_stores[run_id] = await self.js.key_value(
-                    f"{self.prefix}_{run_id}"
-                )
+                self._kv_stores[run_id] = await self.js.key_value(f"{self.prefix}_{run_id}")
         return self._kv_stores[run_id]
 
     async def delete_run_store(

@@ -19,9 +19,7 @@ async def main():
         agent_config=ContextAgentConfig(
             agent_id="context_agent",
             name=LocaleString(en="Context Agent"),
-            description=LocaleString(
-                en="This is an agent that accesses the run and thread context"
-            ),
+            description=LocaleString(en="This is an agent that accesses the run and thread context"),
             system_prompt=LocaleString(en="You are an agent"),
         ),
     )

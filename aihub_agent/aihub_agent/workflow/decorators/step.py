@@ -3,9 +3,7 @@ from typing import Annotated, Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
-from aihub_agent.workflow.annotations.extractors.extract_function_events import (
-    extract_function_events,
-)
+from aihub_agent.workflow.annotations.extractors.extract_function_events import extract_function_events
 
 
 def step(
@@ -14,15 +12,9 @@ def step(
         Optional[int],
         "Maximum number of times this step can be executed in a single run",
     ] = None,
-    stop_on_error: Annotated[
-        bool, "If True, the workflow stops on any error in this step"
-    ] = True,
-    name: Annotated[
-        Optional[LocaleString], "A localized name for the step, used in UI or logs"
-    ] = None,
-    description: Annotated[
-        Optional[LocaleString], "A localized description of what the step does"
-    ] = None,
+    stop_on_error: Annotated[bool, "If True, the workflow stops on any error in this step"] = True,
+    name: Annotated[Optional[LocaleString], "A localized name for the step, used in UI or logs"] = None,
+    description: Annotated[Optional[LocaleString], "A localized description of what the step does"] = None,
 ):
     """
     Decorator that marks a function as a workflow step, attaching metadata and analyzing its event inputs.
@@ -66,9 +58,7 @@ def step(
 
     def decorator(func):
         # Extract the event types and parameter requirements from the function signature
-        input_events, input_event_mapping, parameter_optional_map, size_requirements = (
-            extract_function_events(func)
-        )
+        input_events, input_event_mapping, parameter_optional_map, size_requirements = extract_function_events(func)
 
         # Mark the function as a step and store extracted metadata
         setattr(func, "_is_step", True)

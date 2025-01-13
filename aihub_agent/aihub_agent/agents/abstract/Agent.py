@@ -65,9 +65,7 @@ class Agent(abc.ABC):
         This provides a global view of which events can drive the agent’s workflow.
         """
         steps = cls.get_steps()
-        return set(
-            event_type for method in steps for event_type in method._input_events
-        )
+        return set(event_type for method in steps for event_type in method._input_events)
 
     @classmethod
     def get_start_events(cls) -> Set[Type[StartEvent]]:

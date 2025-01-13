@@ -8,9 +8,7 @@ from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, ThoughtEve
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
-    AgentThreadTopicManager,
-)
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from flatdict import FlatterDict
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import TokenCountingHandler
@@ -47,9 +45,7 @@ class EventDisplayer:
     def __init__(
         self,
         publisher: Annotated[JSPublisher, "Publisher for sending events to JetStream"],
-        topic_manager: Annotated[
-            AgentThreadTopicManager, "Manages event subjects for a thread"
-        ],
+        topic_manager: Annotated[AgentThreadTopicManager, "Manages event subjects for a thread"],
     ):
         self.publisher = publisher
         self.topic_manager = topic_manager
@@ -57,17 +53,13 @@ class EventDisplayer:
     async def display_event(
         self,
         event: Annotated[DisplayEvent, "The display event to publish."],
-        content: Annotated[
-            Optional[str], "Optional human-readable content for tracing."
-        ] = None,
+        content: Annotated[Optional[str], "Optional human-readable content for tracing."] = None,
     ):
         """
         Publish a display event, optionally logging its content to the current trace span.
         Useful for any displayable output that needs to be consumed downstream (UI, logs, etc.).
         """
-        subject = self.topic_manager.get_subject_for_display_event_in_thread(
-            event.__class__.__name__, event.event_id
-        )
+        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
         attributes = FlatterDict(event.model_dump(), delimiter=".").as_dict()
 
         current_span = trace.get_current_span()
@@ -90,9 +82,7 @@ class EventDisplayer:
         event = ChunkEvent(content=content, model_name=model_name)
         await self.display_event(event, content=content)
 
-    async def display_thought(
-        self, thought: Annotated[str, "The reasoning or thought content to display"]
-    ):
+    async def display_thought(self, thought: Annotated[str, "The reasoning or thought content to display"]):
         """
         Publish an internal reasoning thought as a ThoughtEvent.
         Provides transparency into agent's internal logic or decision-making steps.
@@ -103,9 +93,7 @@ class EventDisplayer:
     async def display_llm_costs(
         self,
         model_name: Annotated[str, "Model name for cost attribution"],
-        cost_tracker: Annotated[
-            LLMCostTracker, "Tracks token usage and associated costs"
-        ],
+        cost_tracker: Annotated[LLMCostTracker, "Tracks token usage and associated costs"],
     ):
         """
         Publish LLM cost metrics as an LLMCostEvent.
@@ -119,9 +107,7 @@ class EventDisplayer:
 
     async def display_llm_stream(
         self,
-        llm_config: Annotated[
-            LLMConfig, "Configuration for the LLM (model name, parameters)."
-        ],
+        llm_config: Annotated[LLMConfig, "Configuration for the LLM (model name, parameters)."],
         llm: Annotated[LLM, "The LLM instance providing stream_chat functionality."],
         messages: Annotated[
             List[ChatMessage],
@@ -169,9 +155,7 @@ class EventDisplayer:
 
         # Extract token counts from handler if present
         handlers = llm.callback_manager.handlers
-        token_count_handler = next(
-            (h for h in handlers if isinstance(h, TokenCountingHandler)), None
-        )
+        token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)
         if token_count_handler:
             token_count_prompt = token_count_handler.prompt_llm_token_count
             token_count_completion = token_count_handler.completion_llm_token_count
@@ -180,9 +164,7 @@ class EventDisplayer:
             token_count_completion = 0
 
         return LLMEvent(
-            input_messages=[
-                Message(role=msg.role, content=msg.content) for msg in messages
-            ],
+            input_messages=[Message(role=msg.role, content=msg.content) for msg in messages],
             output_messages=[Message(role="assistant", content=aggregate)],
             invocation_parameters=llm_config.model_dump(),
             chat_model_name=llm_config.name,

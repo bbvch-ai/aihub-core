@@ -4,9 +4,7 @@ import networkx as nx
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent, StartEvent, StopEvent
 
-from aihub_agent.workflow.annotations.extractors.extract_return_events import (
-    extract_return_events,
-)
+from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 
 def is_control_event(cls) -> bool:
@@ -41,12 +39,8 @@ class WorkflowVisualizer:
         G = nx.DiGraph()
 
         # Special nodes
-        START_NODE = LocaleString(
-            de="Start", en="Start", fr="Début", it="Inizio"
-        ).in_locale(self.locale)
-        END_NODE = LocaleString(de="Ende", en="End", fr="Fin", it="Fine").in_locale(
-            self.locale
-        )
+        START_NODE = LocaleString(de="Start", en="Start", fr="Début", it="Inizio").in_locale(self.locale)
+        END_NODE = LocaleString(de="Ende", en="End", fr="Fin", it="Fine").in_locale(self.locale)
         G.add_node(START_NODE)
         G.add_node(END_NODE)
 
@@ -61,9 +55,7 @@ class WorkflowVisualizer:
         for step_name, func in steps:
             step_name_localized = self._get_localized_step_name(func, step_name)
             step_description = self._get_localized_step_description(func)
-            G.add_node(
-                step_name, label=step_name_localized, description=step_description
-            )
+            G.add_node(step_name, label=step_name_localized, description=step_description)
 
         # Build mappings for event consumption and production
         event_consumers, step_outputs = self._map_events_to_steps(steps)
@@ -90,11 +82,7 @@ class WorkflowVisualizer:
         Get the localized description of a step.
         """
         step_description_locale_str = getattr(func, "_step_description", None)
-        return (
-            step_description_locale_str.in_locale(self.locale)
-            if step_description_locale_str
-            else None
-        )
+        return step_description_locale_str.in_locale(self.locale) if step_description_locale_str else None
 
     def _map_events_to_steps(self, steps):
         """
@@ -111,9 +99,7 @@ class WorkflowVisualizer:
                         event_consumers.setdefault(event_cls, set()).add(step_name)
 
             output_events = extract_return_events(func)
-            step_outputs[step_name] = {
-                evt for evt in output_events if is_control_event(evt)
-            }
+            step_outputs[step_name] = {evt for evt in output_events if is_control_event(evt)}
 
         return event_consumers, step_outputs
 
@@ -123,11 +109,7 @@ class WorkflowVisualizer:
         """
         for step_name, func in steps:
             input_mapping = getattr(func, "_input_event_mapping", {})
-            if any(
-                is_start_event(evt)
-                for event_set in input_mapping.values()
-                for evt in event_set
-            ):
+            if any(is_start_event(evt) for event_set in input_mapping.values() for evt in event_set):
                 G.add_edge(START_NODE, step_name)
 
     def _add_edges_to_end_node(self, G, step_outputs, END_NODE):
@@ -159,16 +141,12 @@ class WorkflowVisualizer:
         pos = nx.spring_layout(self.graph, seed=42)
 
         # Extract labels from node attributes
-        labels = {
-            node: data.get("label", node) for node, data in self.graph.nodes(data=True)
-        }
+        labels = {node: data.get("label", node) for node, data in self.graph.nodes(data=True)}
 
         plt.figure(figsize=(12, 8))
 
         # Draw nodes
-        nx.draw_networkx_nodes(
-            self.graph, pos, node_color="lightblue", node_size=3000, node_shape="o"
-        )
+        nx.draw_networkx_nodes(self.graph, pos, node_color="lightblue", node_size=3000, node_shape="o")
 
         # Draw edges with adjusted connection style
         nx.draw_networkx_edges(
@@ -181,9 +159,7 @@ class WorkflowVisualizer:
         )
 
         # Add custom labels
-        nx.draw_networkx_labels(
-            self.graph, pos, labels, font_size=9, font_family="sans-serif"
-        )
+        nx.draw_networkx_labels(self.graph, pos, labels, font_size=9, font_family="sans-serif")
 
         # Turn off axis
         plt.axis("off")

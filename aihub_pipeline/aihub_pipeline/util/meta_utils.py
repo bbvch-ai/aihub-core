@@ -150,10 +150,7 @@ def data_lake_metadata_table(data_lake_files: List[DataLakeFile]):
         TableColumn("id", "string"),
         TableColumn("hash", "string"),
     ]
-    records = [
-        TableRecord(data_lake_file_table_row(data_lake_file))
-        for data_lake_file in data_lake_files
-    ]
+    records = [TableRecord(data_lake_file_table_row(data_lake_file)) for data_lake_file in data_lake_files]
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=records, schema=table_schema)
 

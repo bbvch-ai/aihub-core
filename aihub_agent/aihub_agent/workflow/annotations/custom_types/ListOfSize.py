@@ -24,9 +24,7 @@ class ListOfSize(Generic[T]):
         required_size: Annotated[int, "The exact size that the list must have"],
     ):
         if len(items) != required_size:
-            raise ValueError(
-                f"List must have exactly {required_size} items (got {len(items)})"
-            )
+            raise ValueError(f"List must have exactly {required_size} items (got {len(items)})")
         self.items = items
         self.required_size = required_size
 

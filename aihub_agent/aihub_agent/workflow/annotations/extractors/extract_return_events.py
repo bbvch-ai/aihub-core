@@ -3,9 +3,7 @@ from typing import Annotated, Callable, Set, Type
 
 from aihub_lib.nats.events import BaseEvent
 
-from aihub_agent.workflow.annotations.extractors.extract_event_types import (
-    extract_event_types,
-)
+from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
 
 
 def extract_return_events(

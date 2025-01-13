@@ -1,25 +1,12 @@
 import inspect
 from types import UnionType
-from typing import (
-    Annotated,
-    Any,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Annotated, Any, List, Optional, Set, Tuple, Type, Union, get_args, get_origin
 
 from aihub_lib.nats.events import BaseEvent
 
 
 def extract_event_types(
-    annotation: Annotated[
-        Any, "A type annotation representing one or more event types."
-    ],
+    annotation: Annotated[Any, "A type annotation representing one or more event types."],
 ) -> Tuple[Set[Type[BaseEvent]], bool, Optional[int]]:
     """
     Analyze a type annotation related to events and extract:

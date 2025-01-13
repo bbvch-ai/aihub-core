@@ -27,9 +27,7 @@ async def main():
         agent_config=RAGAgentConfig(
             agent_id="rag_agent",
             name=LocaleString(en="RAG Agent"),
-            description=LocaleString(
-                en="This is an agent that can be used to answer user questions using RAG"
-            ),
+            description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
             system_prompt=LocaleString(
                 en="You're an agent answering user requests. Only use the context information provided."
             ),

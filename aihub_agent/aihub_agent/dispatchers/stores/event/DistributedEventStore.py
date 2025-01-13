@@ -87,9 +87,7 @@ class DistributedEventStore(StoreBase):
     async def get_all_events(
         self,
         run_id: Annotated[str, "The run identifier."],
-        before: Annotated[
-            Optional[int], "Filter timestamp; only include events created_at ≤ before."
-        ] = None,
+        before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves all events for a run, organized by event type name.

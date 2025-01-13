@@ -5,27 +5,14 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.nats.context.BaseContext import BaseContext
-from aihub_lib.nats.events import (
-    BaseEvent,
-    ChunkEvent,
-    ControlEvent,
-    ExceptionEvent,
-    StartEvent,
-    StopEvent,
-)
+from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
-    AgentThreadTopicManager,
-)
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from nats.aio.client import Client as NATS
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
-from openinference.semconv.trace import (
-    OpenInferenceMimeTypeValues,
-    OpenInferenceSpanKindValues,
-    SpanAttributes,
-)
+from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.propagate import extract, inject
@@ -84,9 +71,7 @@ class RunTraceCoordinator:
         endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
         tracer_provider = TracerProvider()
         set_tracer_provider(tracer_provider)
-        tracer_provider.add_span_processor(
-            SimpleSpanProcessor(OTLPSpanExporter(endpoint))
-        )
+        tracer_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint)))
 
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
@@ -121,9 +106,7 @@ class RunTraceCoordinator:
             span_context = trace.set_span_in_context(span)
             telemetry_headers: Dict[str, str] = {}
             inject(telemetry_headers, context=span_context)
-            logger.debug(
-                f"Tracing run start for {topic.agent_class} with headers {telemetry_headers}"
-            )
+            logger.debug(f"Tracing run start for {topic.agent_class} with headers {telemetry_headers}")
             asyncio.create_task(self._end_span_on_event(topic, span))
             return telemetry_headers
 
@@ -152,9 +135,7 @@ class RunTraceCoordinator:
         logger.debug(f"Starting subscriber for {topic.agent_class}")
         await subscriber.start()
 
-    def trace_run_stop(
-        self, span: Span, event: StopEvent | ExceptionEvent, content: str
-    ):
+    def trace_run_stop(self, span: Span, event: StopEvent | ExceptionEvent, content: str):
         """
         Ends the run-level span. If it’s an ExceptionEvent, sets the span status to ERROR.
         Otherwise, sets status OK and adds output content as a traced attribute.
@@ -203,9 +184,7 @@ class RunTraceCoordinator:
             elif isinstance(arg, BaseContext):
                 input_values[name] = await arg.to_serializable()
             elif isinstance(arg, ListOfSize):
-                input_values[name] = [
-                    ev.model_dump() for ev in arg
-                ]  # each event serialized
+                input_values[name] = [ev.model_dump() for ev in arg]  # each event serialized
             elif isinstance(arg, EventDisplayer):
                 # Displayers are side-effects, no serialization needed
                 pass
@@ -239,9 +218,7 @@ class RunTraceCoordinator:
             finally:
                 logger.debug(f"Finished tracing step: {span_name}")
 
-    async def trace_step_stop(
-        self, span: Span, output_events: Optional[List[BaseEvent]]
-    ):
+    async def trace_step_stop(self, span: Span, output_events: Optional[List[BaseEvent]]):
         """
         Ends the step span. If `output_events` are present, serializes them and attaches to the span.
         If there's a `SemanticEvent`, sets semantic conventions too.
@@ -250,15 +227,11 @@ class RunTraceCoordinator:
         if output_events:
             span.set_attributes(
                 {
-                    SpanAttributes.OUTPUT_VALUE: json.dumps(
-                        [ev.to_trace_dict() for ev in output_events]
-                    ),
+                    SpanAttributes.OUTPUT_VALUE: json.dumps([ev.to_trace_dict() for ev in output_events]),
                     SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                 }
             )
-            semantic_event = next(
-                (ev for ev in output_events if isinstance(ev, SemanticEvent)), None
-            )
+            semantic_event = next((ev for ev in output_events if isinstance(ev, SemanticEvent)), None)
             if semantic_event:
                 span.set_attributes(semantic_event.to_semantic_convention())
 

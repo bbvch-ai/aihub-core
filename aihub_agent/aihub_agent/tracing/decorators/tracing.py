@@ -56,9 +56,7 @@ def tracing() -> Callable:
                 input_params = {"args": args, "kwargs": kwargs}
                 span.set_attributes(
                     {
-                        SpanAttributes.INPUT_VALUE: json.dumps(
-                            input_params, default=str
-                        ),
+                        SpanAttributes.INPUT_VALUE: json.dumps(input_params, default=str),
                         SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                     }
                 )
@@ -68,9 +66,7 @@ def tracing() -> Callable:
                     # Record output
                     span.set_attributes(
                         {
-                            SpanAttributes.OUTPUT_VALUE: json.dumps(
-                                result, default=str
-                            ),
+                            SpanAttributes.OUTPUT_VALUE: json.dumps(result, default=str),
                             SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                         }
                     )
@@ -88,9 +84,7 @@ def tracing() -> Callable:
                 input_params = {"args": args, "kwargs": kwargs}
                 span.set_attributes(
                     {
-                        SpanAttributes.INPUT_VALUE: json.dumps(
-                            input_params, default=str
-                        ),
+                        SpanAttributes.INPUT_VALUE: json.dumps(input_params, default=str),
                         SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                     }
                 )
@@ -100,9 +94,7 @@ def tracing() -> Callable:
                     # Record output
                     span.set_attributes(
                         {
-                            SpanAttributes.OUTPUT_VALUE: json.dumps(
-                                result, default=str
-                            ),
+                            SpanAttributes.OUTPUT_VALUE: json.dumps(result, default=str),
                             SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                         }
                     )

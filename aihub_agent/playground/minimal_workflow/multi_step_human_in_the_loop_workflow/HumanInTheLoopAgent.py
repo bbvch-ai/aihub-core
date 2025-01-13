@@ -10,16 +10,13 @@ from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.Se
 
 
 class MultiStepHumanInTheLoopAgent(Agent):
-
     @step()
     async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
         print("[MultiStepHumanInTheLoopAgent.start_step]")
         return FirstStepHumanInTheLoop.invoke(question="Shall I continue?")
 
     @step()
-    async def second_hitl(
-            self, event: FirstStepHumanInTheLoop.response
-    ) -> SecondStepHumanInTheLoop.request:
+    async def second_hitl(self, event: FirstStepHumanInTheLoop.response) -> SecondStepHumanInTheLoop.request:
         print(
             "[FirstStepHumanInTheLoop.second_hitl]",
             event.request_event.question,

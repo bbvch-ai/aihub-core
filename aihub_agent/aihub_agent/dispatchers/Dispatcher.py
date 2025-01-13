@@ -8,30 +8,17 @@ from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
-from aihub_lib.nats.events import (
-    BaseEvent,
-    ControlEvent,
-    DisplayEvent,
-    ExceptionEvent,
-    StartEvent,
-    StopEvent,
-)
+from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import (
-    AgentInstanceTopicManager,
-)
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
-    AgentThreadTopicManager,
-)
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.dispatchers.stores.event.DistributedEventStore import (
-    DistributedEventStore,
-)
+from aihub_agent.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
 from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
@@ -98,20 +85,14 @@ class Dispatcher:
     def __init__(
         self,
         agent: Annotated[Type[Agent], "The agent class defining steps and logic."],
-        agent_config: Annotated[
-            AgentConfig, "Configuration object for the agent, including step configs."
-        ],
+        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
-        topic_manager: Annotated[
-            AgentInstanceTopicManager, "Manages event subjects for this agent instance."
-        ],
-        locale_handler: Annotated[
-            AgentLocaleHandler, "Manages localization for the agent."
-        ],
+        topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
+        locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
         self.agent = agent
         self.agent_config = agent_config
@@ -179,14 +160,8 @@ class Dispatcher:
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
             if await self.is_step_ready(step_method, topic.run_id, event):
-                logger.debug(
-                    f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'"
-                )
-                task = asyncio.create_task(
-                    self.execute_step(
-                        event, step_method, run_context, thread_context, topic
-                    )
-                )
+                logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
+                task = asyncio.create_task(self.execute_step(event, step_method, run_context, thread_context, topic))
                 tasks.append(task)
 
         if tasks:
@@ -214,37 +189,25 @@ class Dispatcher:
 
         max_executions = getattr(step_method, "_max_executions_per_run", None)
         if max_executions is not None:
-            execution_count = await self.step_store.get_execution_count(
-                run_id, step_method.__name__
-            )
+            execution_count = await self.step_store.get_execution_count(run_id, step_method.__name__)
             if execution_count >= max_executions:
                 logger.debug(
                     f"[{step_method.__name__}] Max executions reached ({execution_count}/{max_executions}), skipping."
                 )
                 return False
 
-        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = (
-            step_method._input_event_mapping
-        )
-        parameter_optional_map: Dict[str, bool] = getattr(
-            step_method, "_parameter_optional_map", {}
-        )
-        size_requirements: Dict[str, Optional[int]] = getattr(
-            step_method, "_size_requirements", {}
-        )
+        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = step_method._input_event_mapping
+        parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
+        size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
 
         events = await self.event_store.get_all_events(run_id, before=event.created_at)
         # For each parameter, check if we have enough events
         for argument_name, event_types in input_event_mapping.items():
-            logger.debug(
-                f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_types}"
-            )
+            logger.debug(f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_types}")
             required_size = size_requirements.get(argument_name)
             is_optional = parameter_optional_map.get(argument_name, False)
 
-            available_events_count = sum(
-                len(events.get(event_type.__name__, [])) for event_type in event_types
-            )
+            available_events_count = sum(len(events.get(event_type.__name__, [])) for event_type in event_types)
 
             # If a fixed size is required, verify count
             if required_size is not None and available_events_count < required_size:
@@ -253,13 +216,9 @@ class Dispatcher:
                     f"Needed {required_size}, got {available_events_count}."
                 )
                 return False
-            elif (
-                required_size is None and not available_events_count and not is_optional
-            ):
+            elif required_size is None and not available_events_count and not is_optional:
                 # Required events not found
-                logger.debug(
-                    f"[{step_method.__name__}] Missing required argument '{argument_name}' events."
-                )
+                logger.debug(f"[{step_method.__name__}] Missing required argument '{argument_name}' events.")
                 return False
             elif not available_events_count and is_optional:
                 logger.debug(
@@ -272,16 +231,12 @@ class Dispatcher:
     async def _get_event_value(
         self,
         param: Annotated[inspect.Parameter, "A parameter of the step method."],
-        step_method: Annotated[
-            Callable, "The step method we're preparing arguments for."
-        ],
+        step_method: Annotated[Callable, "The step method we're preparing arguments for."],
         events: Annotated[
             Dict[str, List[ControlEvent]],
             "All events for this run, keyed by event_type_name.",
         ],
-        trigger_event: Annotated[
-            ControlEvent, "The event that triggered this step execution."
-        ],
+        trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."],
     ) -> Optional[Any]:
         """
         Finds the appropriate value for a given step parameter.
@@ -330,16 +285,10 @@ class Dispatcher:
 
     async def execute_step(
         self,
-        trigger_event: Annotated[
-            ControlEvent, "The event that caused this step to trigger."
-        ],
+        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
-        run_context: Annotated[
-            RunContext, "Per-run context for state and configuration."
-        ],
-        thread_context: Annotated[
-            ThreadContext, "Per-thread context for longer-lived state."
-        ],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
     ):
         """
@@ -353,9 +302,7 @@ class Dispatcher:
         - Logs the exception.
         - Publishes an ExceptionEvent if `_stop_on_error` is True.
         """
-        await self.step_store.increment_execution_count(
-            topic.run_id, step_method.__name__
-        )
+        await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
 
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(step_method)
@@ -373,9 +320,7 @@ class Dispatcher:
                 continue
 
             # Handle AgentConfig if requested
-            if inspect.isclass(param.annotation) and issubclass(
-                param.annotation, AgentConfig
-            ):
+            if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
                 kwargs[param.name] = self.agent_config
                 continue
 
@@ -402,22 +347,16 @@ class Dispatcher:
                 continue
 
             # Handle event parameters
-            event_value = await self._get_event_value(
-                param, step_method, events, trigger_event
-            )
+            event_value = await self._get_event_value(param, step_method, events, trigger_event)
             if event_value is not None or parameter_optional_map.get(param.name, False):
                 kwargs[param.name] = event_value
             else:
-                raise ValueError(
-                    f"[{step_method.__name__}] Missing required event for parameter '{param.name}'"
-                )
+                raise ValueError(f"[{step_method.__name__}] Missing required event for parameter '{param.name}'")
 
         # Instantiate the agent and run the step
         agent_instance = self.agent()
         telemetry_headers = await run_context.get("telemetry_headers")
-        async with self.tracer.trace_step_start(
-            telemetry_headers, topic, step_method, kwargs
-        ) as step_span:
+        async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
             try:
                 result = await step_method(agent_instance, **kwargs)
             except Exception as e:
@@ -476,12 +415,8 @@ class Dispatcher:
         """
         topic_manager = self.get_topic_manager_for_thread(topic)
         if isinstance(event, ControlEvent):
-            subject = topic_manager.get_subject_for_control_event_in_thread(
-                event.__class__.__name__, event.event_id
-            )
+            subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
             await self.publisher.publish_event(event, subject)
         if isinstance(event, DisplayEvent):
-            subject = topic_manager.get_subject_for_display_event_in_thread(
-                event.__class__.__name__, event.event_id
-            )
+            subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
             await self.publisher.publish_event(event, subject)

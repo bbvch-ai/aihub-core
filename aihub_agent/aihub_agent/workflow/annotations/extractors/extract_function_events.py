@@ -5,9 +5,7 @@ from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent
 
-from aihub_agent.workflow.annotations.extractors.extract_event_types import (
-    extract_event_types,
-)
+from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
 
 
 def extract_function_events(
