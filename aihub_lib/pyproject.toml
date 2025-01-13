@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.2.0"
+version = "v0.4.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -55,7 +55,7 @@ toml-sort = "^0.24.2"
 mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
-black = {extras = ["jupyter"], version = "^24.10.0"}
+black = { extras = ["jupyter"], version = "^24.10.0" }
 
 [build-system]
 requires = ["poetry-core"]

@@ -6,13 +6,18 @@ from playground.LlamaIndexAgent.LlamaIndexAgentConfig import LlamaIndexAgentConf
 
 
 class LlamaIndexAgent(Agent):
-
     @step()
-    async def start_step(self, event: StartEvent | UserMessageEvent, agent_config: LlamaIndexAgentConfig, displayer: EventDisplayer) -> LLMEvent:
+    async def start_step(
+        self,
+        event: StartEvent | UserMessageEvent,
+        agent_config: LlamaIndexAgentConfig,
+        displayer: EventDisplayer,
+    ) -> LLMEvent:
         print("[LlamaIndexAgent.start_step]")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
-
+            return await displayer.display_llm_stream(
+                agent_config.llm, llm, event.messages
+            )
 
     @step()
     async def stop_step(self, event: LLMEvent) -> StopEvent:
