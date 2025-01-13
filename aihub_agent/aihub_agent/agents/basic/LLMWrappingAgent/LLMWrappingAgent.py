@@ -16,7 +16,6 @@ class LLMWrappingAgent(Agent):
             agent_config: LLMWrappingAgentConfig,
             displayer: EventDisplayer,
     ) -> LLMEvent:
-        print("[LlamaIndexAgent.start_step]")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(
                 agent_config.llm, llm, event.messages
