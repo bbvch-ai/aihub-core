@@ -1,8 +1,9 @@
 import abc
 import inspect
-from typing import Any, Dict, Set, Type
+from typing import Set, Type
 
-from aihub_lib.nats.events import ControlEvent, StartEvent
+from aihub_lib.nats.events.control import ControlEvent
+from aihub_lib.nats.events.control.start import StartEvent
 
 
 class Agent(abc.ABC):

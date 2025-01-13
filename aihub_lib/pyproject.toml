@@ -41,6 +41,8 @@ opentelemetry-instrumentation = "^0.50b0"
 opentelemetry-sdk = "^1.29.0"
 opentelemetry-semantic-conventions = "^0.50b0"
 pydantic = "^2.10.3"
+llama-index-embeddings-azure-openai = "^0.3.0"
+llama-index-storage-docstore-mongodb = "^0.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -51,7 +53,7 @@ isort = "^5.13.2"
 matplotlib = "^3.9.3"
 pytest-bdd = "^8.1.0"
 toml-sort = "^0.24.2"
-black = {extras = ["jupyter"], version = "v0.6.0"}
+black = { extras = ["jupyter"], version = "v24.10.0" }
 mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
