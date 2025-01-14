@@ -290,9 +290,12 @@ For the main branch, the following rules apply:
         - **Require Conversation Resolution Before Merging**
             - **Config:** All review discussions must be resolved this includes also comments by bots.
         - **Allowed Merge Methods**
-            - **Config:** Only `Rebase` is enabled. This means that into the main branch only rebased commits are
-              allowed.
-              Like this we can ensure that the commit history is linear.
+            - **Config:** Only `Merge` and `Squash` is enabled. This means that into the main branch only merge or
+              squash commits are allowed. `Squash` should be used if a feature Branch is merged directly into the main
+              branch.
+              `Merge` should be used if initiative branches are merged. Like this we don't ensure a linear history on
+              the main
+              but represent the truth of the branching of initiative branches most accurately.
 
 ### 1.5.1 Initiative Branch
 
