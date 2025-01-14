@@ -34,7 +34,7 @@ def _():
                 en="You're an agent answering user requests. Only use the context information provided."
             ),
             llm=AzureOpenAILLMConfig(
-                name="gpt-4o",
+                name="gpt-4o-mini",
                 api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
                 api_version="2023-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
