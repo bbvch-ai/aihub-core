@@ -29,7 +29,7 @@ def condense_standalone_question(
     t: LocaleHandler,
     llm: LLM,
     condense_prompt: LocaleString = None,
-) -> str:
+) -> ChatMessage:
     chat_history_str = _messages_to_history_str(chat_history)
     if condense_prompt:
         condense_prompt_locale = LocaleHandler(t.locale).extract(condense_prompt, t.locale)
