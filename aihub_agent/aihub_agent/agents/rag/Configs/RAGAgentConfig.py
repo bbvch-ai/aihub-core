@@ -10,15 +10,8 @@ class RAGAgentConfig(AgentConfig):
     """
     Describes the configuration for the RAG agent.
 
-    ### Why RAGAgentConfig?
     The RAGAgent needs to be configured with the LLM and retrieval step configuration to function.
     This allows us to customize the agent with which models to use and how to retrieve information.
-
-    ### Features
-    - `llm`: The LLM configuration for the agent.
-    - `retrieve_step_config`: The configuration for the retrieval step.
-    - `condense_question_prompt`: The prompt for condensing standalone questions.
-    - `context_prompt`: The prompt for the node ordering context step.
 
     ### Example
 
@@ -60,4 +53,4 @@ class RAGAgentConfig(AgentConfig):
     retrieve_step_config: RetrieveStepConfig = Field(..., description="The configuration for the retrieval step.")
     number_of_input_tokens: int = Field(..., description="Maximum number of input tokens to use for the LLM.")
     condense_question_prompt: LocaleString = Field(..., description="The prompt for condensing standalone questions.")
-    context_prompt: LocaleString = Field(..., description="The prompt for the node ordering context step.")
+    context_prompt: LocaleString = Field(..., description="The prompt around the context information (nodes).")

@@ -8,6 +8,6 @@ from llama_index.core.base.llms.types import ChatMessage
 
 class LimitChatHistoryWithContextEvent(ControlEvent):
     """
-    Event to limit the chat history with context.
+    Limits the chat messages based on number of input tokens with context information.
     """
     limited_history_with_context: List[ChatMessage] = Field(..., description="The limited chat history with context.")

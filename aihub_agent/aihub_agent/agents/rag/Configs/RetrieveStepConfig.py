@@ -7,6 +7,9 @@ from pydantic import Field
 
 
 class RetrieveStepConfig(StepConfig):
+    """
+    Configuration for the step retrieving documents from a vector store.
+    """
     embed_model: AzureOpenAIEmbeddingConfig = Field(..., description="The embedding model configuration.")
     index_name: str = Field(..., description="The name of the index to retrieve from.")
     index_namespaces: List[str] = Field(..., description="The namespaces to retrieve from.", min_length=1)
