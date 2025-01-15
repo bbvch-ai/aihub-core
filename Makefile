@@ -37,3 +37,28 @@ TAG ?= v0.1.0
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
 	python switch_dependency.py remote --tag "$(TAG)"
+
+# Absolute path to the start_service.sh script
+START_SERVICE := $(abspath start_service.sh)
+
+# -----------------------------------------------------------------------------
+# Service Commands
+# -----------------------------------------------------------------------------
+
+# Run the LLMWrappingAgent service
+run-llm-wrapping-agent:
+	@echo "Running LLMWrappingAgent..."
+	@(cd aihub_agent && \
+	  $(START_SERVICE) ./playground/agent/LLMWrappingAgent run.py)
+
+# Run the core-api service in development mode
+run-api-development:
+	@echo "Running aihub_api in development mode..."
+	@(cd aihub_api && \
+	  $(START_SERVICE) ./playground/development main.py)
+
+# Run the core-api service in testing mode
+run-api-testing:
+	@echo "Running aihub_api in testing mode..."
+	@(cd aihub_api && \
+	  $(START_SERVICE) ./playground/testing main.py)
