@@ -9,11 +9,13 @@ on:
       - edited
       - synchronize
       - reopened
+      - ready_for_review
 
 jobs:
   lint-pipelines:
     name: Lint Pipelines
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       checks: write
@@ -43,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: | 
+        run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa

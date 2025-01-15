@@ -1,9 +1,6 @@
 name: Analyze & Test
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -12,12 +9,13 @@ on:
       - edited
       - synchronize
       - reopened
+      - ready_for_review
 
 jobs:
   sonarcloud-agent:
     name: SonarCloud Agents Core
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
@@ -41,7 +39,7 @@ jobs:
   sonarcloud-api:
     name: SonarCloud API Core
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
@@ -65,7 +63,7 @@ jobs:
   sonarcloud-lib:
     name: SonarCloud Lib Core
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
@@ -89,7 +87,7 @@ jobs:
   sonarcloud-pipeline:
     name: SonarCloud Pipelines Core
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
@@ -113,7 +111,7 @@ jobs:
   sonarcloud-web:
     name: SonarCloud Web Core
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
