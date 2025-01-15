@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.6.0"
+version = "v0.7.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -50,7 +50,7 @@ isort = "^5.13.2"
 matplotlib = "^3.9.3"
 pytest-bdd = "^8.1.0"
 toml-sort = "^0.24.2"
-black = {extras = ["jupyter"], version = "v24.10.0"}
+black = {extras = ["jupyter"], version = "v0.7.0"}
 mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
@@ -78,7 +78,7 @@ profile = "black"
 line_length = 120
 
 [tool.mypy]
-python_version = "v0.6.0"
+python_version = "v0.7.0"
 strict = true
 warn_redundant_casts = true
 warn_unused_ignores = true
