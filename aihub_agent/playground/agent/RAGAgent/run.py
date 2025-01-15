@@ -50,8 +50,7 @@ async def main():
                 query_mode="hybrid",
                 node_types=["content"],
             ),
-            number_of_input_tokens=2048,
-            tokenizer_for_model="gpt-4o",
+            number_of_input_tokens=100000,
             condense_question_prompt=LocaleString(
                 en="""
                     Given the following conversation between a user and an AI assistant and a follow-up question from the user,

@@ -24,6 +24,21 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
+    """
+    Implements a Retrieval-Augmented Generation (RAG) Agent.
+
+    The RAGAgent orchestrates steps to process user input, retrieve relevant information,
+    condense questions, and generate responses using a configured language model and retrieval setup.
+
+    ### Features
+    - Limit chat history to fit input token limits.
+    - Condense follow-up questions into standalone questions.
+    - Retrieve relevant documents from a knowledge base.
+    - Order retrieved nodes for better contextual relevance.
+    - Generate responses using an LLM based on the context and retrieved information.
+
+    """
+
     @step()
     async def limit_chat_history_step(
         self,
@@ -31,11 +46,22 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         run_context: RunContext,
     ) -> LimitChatHistoryEvent:
+        """
+        Limits the chat history to the token limit defined in the agent configuration.
+
+        Args:
+            event (StartEvent | UserMessageEvent): Incoming event with user or system messages.
+            agent_config (RAGAgentConfig): Configuration for the RAG agent.
+            run_context (RunContext): Context to store intermediate values.
+
+        Returns:
+            LimitChatHistoryEvent: Event with the limited chat history.
+        """
         user_messages = [msg for msg in event.messages if msg.role == MessageRole.USER]
-        if len(user_messages) > 0:
+        try:
             await run_context.set("user_query", user_messages[-1].content)
-        else:
-            await run_context.set("user_query", "")
+        except IndexError:
+            raise ValueError("No user messages found in the event.")
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
             number_of_input_tokens=agent_config.number_of_input_tokens,
@@ -52,12 +78,27 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
+        run_context: RunContext,
     ) -> StandaloneQuestionCondenserEvent:
+        """
+        Condenses a follow-up question into a standalone question.
+
+        Args:
+            event (LimitChatHistoryEvent): Event with limited chat history.
+            agent_config (RAGAgentConfig): Configuration for the RAG agent.
+            t (LocaleHandler): Locale handler for translations.
+            displayer (EventDisplayer): Displayer for user-visible events.
+            run_context (RunContext): Context to store intermediate values.
+
+        Returns:
+            StandaloneQuestionCondenserEvent: Event with the condensed standalone question.
+        """
         await displayer.display_thought(t("agent.thought.condense_question"))
+        user_query = await run_context.get("user_query")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
                 chat_history=event.limited_history,
-                message=event.limited_history[-1].content,
+                message=user_query,
                 t=t,
                 llm=llm,
                 condense_prompt=agent_config.condense_question_prompt,
@@ -72,6 +113,18 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
+        """
+        Retrieves relevant nodes from the knowledge base.
+
+        Args:
+            event (StandaloneQuestionCondenserEvent): Event with the condensed question.
+            retrieve_step_config (RetrieveStepConfig): Configuration for the retrieval step.
+            displayer (EventDisplayer): Displayer for user-visible events.
+            t (LocaleHandler): Locale handler for translations.
+
+        Returns:
+            RetrieverEvent: Event containing the retrieved nodes.
+        """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         embedding, _ = retrieve_step_config.embed_model.to_llama_index()
         nodes = retrieve_nodes(
@@ -93,6 +146,18 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
     ) -> InOrderNodeCombinerEvent:
+        """
+        Orders the retrieved nodes based on the context provided.
+
+        Args:
+            event (RetrieverEvent): Event with retrieved nodes.
+            t (LocaleHandler): Locale handler for translations.
+            agent_config (RAGAgentConfig): Configuration for the RAG agent.
+            displayer (EventDisplayer): Displayer for user-visible events.
+
+        Returns:
+            InOrderNodeCombinerEvent: Event containing ordered nodes.
+        """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         ordered_nodes = combine_nodes_in_order(
             context_nodes=event.documents,
@@ -108,6 +173,17 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         run_context: RunContext,
     ) -> LimitChatHistoryWithContextEvent:
+        """
+        Limits chat history by including context messages.
+
+        Args:
+            event (InOrderNodeCombinerEvent): Event with ordered context nodes.
+            agent_config (RAGAgentConfig): Configuration for the RAG agent.
+            run_context (RunContext): Context to store intermediate values.
+
+        Returns:
+            LimitChatHistoryWithContextEvent: Event containing the limited chat history with context.
+        """
         serialized_chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage.model_validate(msg) for msg in serialized_chat_history]
 
@@ -118,7 +194,7 @@ class RAGAgent(Agent):
             context_messages=[event.context_message],
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=last_user_message),
-            tokenizer_for_model=agent_config.tokenizer_for_model,
+            tokenizer_for_model=agent_config.llm.name,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)
@@ -131,10 +207,31 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> LLMEvent:
+        """
+        Generates a response using the configured LLM based on the limited chat history with context.
+
+        Args:
+            event (LimitChatHistoryWithContextEvent): Event with limited chat history.
+            agent_config (RAGAgentConfig): Configuration for the RAG agent.
+            displayer (EventDisplayer): Displayer for user-visible events.
+            t (LocaleHandler): Locale handler for translations.
+
+        Returns:
+            LLMEvent: Event containing the response generated by the LLM.
+        """
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, event.limited_history_with_context)
 
     @step()
     async def stop_step(self, event: LLMEvent) -> StopEvent:
+        """
+        Signals the completion of the workflow.
+
+        Args:
+            event (LLMEvent): Event indicating the response generation completion.
+
+        Returns:
+            StopEvent: Event signaling the end of the process.
+        """
         return StopEvent()
