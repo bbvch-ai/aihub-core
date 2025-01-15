@@ -19,7 +19,7 @@ requests = ">=2.0.0,<3"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.7.0"
+version = "v0.8.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
