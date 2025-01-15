@@ -30,13 +30,6 @@ To create a new agent:
 from aihub_agent.agents.abstract.Agent import Agent
 
 class RAGAgent(Agent):
-    """
-    A Retrieval-Augmented Generation (RAG) agent that uses a retrieval step to 
-    enhance generation with context from external documents.
-
-    Use this agent when you want to answer user queries with factual context 
-    drawn from a vector database or knowledge base.
-    """
     pass
 ```
 </details>
@@ -49,8 +42,7 @@ Agents require a configuration file to define their settings:
 
 1. Create a Python file for your configuration (e.g., `RAGAgentConfig.py`).
 2. Inherit from the `AgentConfig` class.
-3. **Add docstrings** to describe why the configuration exists and how it is used.
-4. **Use `Field` with meaningful `description`** entries.
+3. **Use `Field` with meaningful `description`** entries.
 
 <details>
 <summary>Example</summary>
@@ -60,10 +52,6 @@ from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from pydantic import Field
 
 class RAGAgentConfig(AgentConfig):
-    """
-    Configuration for RAGAgent defining core hyperparameters like 
-    context retrieval limits and LLM settings.
-    """
     number_of_input_tokens: int = Field(
         ...,
         description="Limits the length of the conversation history to reduce costs or prevent context overflow."
@@ -93,31 +81,18 @@ from aihub_lib.nats.events import ControlEvent
 
 class SomeEvent(ControlEvent):
     """
-    Example custom event used to signal a transitional state 
-    in the agent's workflow.
+    Example custom event
     """
     pass
 
 class RAGAgent(Agent):
-    """
-    Retrieves relevant documents from a vector database, 
-    then generates a response using those documents for context.
-    """
 
     @step()
     async def start_step(self, event: StartEvent) -> SomeEvent:
-        """
-        Initiates the agent workflow, possibly by validating 
-        the incoming event or setting up the environment.
-        """
         return SomeEvent()
 
     @step()
     async def stop_step(self, event: SomeEvent) -> StopEvent:
-        """
-        Concludes the agent workflow after documents have been retrieved 
-        and a response is generated.
-        """
         return StopEvent()
 ```
 </details>
@@ -148,7 +123,7 @@ Design the agent's workflow by defining the sequence of steps it will execute:
 
 #### Define Custom Events
 
-When you need custom data structures to flow between steps, create **Pydantic-based events** with docstrings that
+Define custom events (or use general events) to flow between steps, create **Pydantic-based events** with docstrings that
 explain their purpose. Inherit from `ControlEvent`, or use specialized events like `LLMEvent` (avoid inheriting directly 
 from `SemanticEvent`).
 
@@ -198,7 +173,7 @@ async def limit_chat_history_step(self, event: StartEvent) -> LimitChatHistoryEv
 ```
 </details>
 
-#### Incorporate Configurations
+#### Incorporate Configs
 
 Use configurations to parameterize agent behavior. This can be done via dedicated step configuration objects or directly
 via the main `AgentConfig`. Always give your Pydantic fields **valuable** descriptions.
@@ -224,9 +199,6 @@ class LimitChatHistoryStepConfig(StepConfig):
     )
 
 class RAGAgentConfig(AgentConfig):
-    """
-    Configuration for the RAGAgent, defining step configs and other parameters.
-    """
     limit_chat_history_step_config: LimitChatHistoryStepConfig
 
 @step()
@@ -254,10 +226,6 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_agent.workflow.decorators.step import step
 
 class RAGAgentConfig(AgentConfig):
-    """
-    Defines RAGAgent-specific configurations, including the 
-    maximum token limit for chat history.
-    """
     number_of_input_tokens: int = Field(
         ...,
         description="Sets the maximum chat history token length to reduce costs or prevent overflow."
@@ -305,8 +273,9 @@ Agents can be tested using the **playground tool** (ensure Docker is running):
 - Leverage Phoenix (localhost:6006) to view traces of each step.
 
 <details>
-<summary>Example</summary>
+<summary>Example </summary>
 
+`trigger.py`:
 ```python
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -426,7 +395,6 @@ Feature: Simple Agent
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
 from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -500,8 +468,6 @@ class PersonaAgent(Agent):
 
     Example:
         >>> # Code usage example
-        >>> from aihub_lib.nats.events.control.start import StartEvent
-        >>> agent = PersonaAgent(config=PersonaAgentConfig(...))
         >>> ... 
     """
     pass

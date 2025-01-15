@@ -47,7 +47,7 @@ class RAGAgent(Agent):
         run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
-        Limits the chat history to the token limit defined in the agent configuration.
+        Truncates incoming chat messages to fit within the configured token limit
         """
         user_messages = [msg for msg in event.messages if msg.role == MessageRole.USER]
         try:
@@ -138,7 +138,7 @@ class RAGAgent(Agent):
         run_context: RunContext,
     ) -> LimitChatHistoryWithContextEvent:
         """
-        Limits chat history by including context messages.
+        Includes the combined context and truncates chat history again.
         """
         serialized_chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage.model_validate(msg) for msg in serialized_chat_history]

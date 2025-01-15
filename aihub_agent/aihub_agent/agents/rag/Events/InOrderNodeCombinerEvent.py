@@ -1,9 +1,11 @@
+from pydantic import Field
+
 from aihub_lib.nats.events import ControlEvent
 from llama_index.core.base.llms.types import ChatMessage
 
 
 class InOrderNodeCombinerEvent(ControlEvent):
     """
-    Event to combine chat messages in order.
+    Order the retrieved nodes by document source and combine them into a single chat message.
     """
-    context_message: ChatMessage
+    context_message: ChatMessage = Field(..., description="The message including the context nodes information in order.")
