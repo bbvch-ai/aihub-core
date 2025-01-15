@@ -45,7 +45,7 @@ jobs:
           version_number=${latest_tag#"v"}
           
           echo "Version number: $version_number"
-
+          
           
           # Split into components
           major=$(echo $version_number | cut -d. -f1)
@@ -57,7 +57,7 @@ jobs:
           new_tag="v$major.$new_minor.$patch"
           echo "New tag: $new_tag"
           echo "VERSION=$new_tag" >> $GITHUB_ENV
-        
+
       - name: Tag the commit and push the tag
         run: |
           # Tag the commit
@@ -70,11 +70,15 @@ jobs:
           sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
           echo "Update package version in aihub_pipeline/pyproject.toml"
           sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
+          echo "Update package version in aihub_agent/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_agent/pyproject.toml
+          echo "Update package version in aihub_api/pyproject.toml"
+          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_api/pyproject.toml
           echo "Update package version in aihub_lib/pyproject.toml"
           sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_lib/pyproject.toml
 
-      - name: Install dependencies in aihub_pipeline
-        working-directory: ./aihub_pipeline
+      - &install_dependencies
+        name: Install dependencies (anchor definition)
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
@@ -87,6 +91,17 @@ jobs:
           rm -rf ~/.ssh
           git config --global --unset url."git@github.com:".insteadOf
 
+      - name: Install dependencies in aihub_pipeline
+        working-directory: ./aihub_pipeline
+        run: *install_dependencies
+
+      - name: Install dependencies in aihub_agent
+        working-directory: ./aihub_agent
+        run: *install_dependencies
+
+      - name: Install dependencies in aihub_api
+        working-directory: ./aihub_api
+        run: *install_dependencies
 
       - name: Delete existing tag
         run: |
@@ -99,6 +114,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add aihub_pipeline/pyproject.toml
           git add aihub_pipeline/poetry.lock
           git add aihub_lib/pyproject.toml
