@@ -41,15 +41,30 @@ Agents require a configuration file to define their settings:
 
 1. Create a Python file for your configuration (e.g., `RAGAgentConfig.py`).
 2. Inherit from the `AgentConfig` class.
+3. **Document Configurations**: Add detailed docstrings explaining each field, purpose, and provide an example usage.
 
 Example:
 
 ```python
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-
+from pydantic import Field
 
 class RAGAgentConfig(AgentConfig):
-    pass
+    """
+    Configuration for the Retrieval-Augmented Generation (RAG) Agent.
+
+    ### Fields
+    - `number_of_input_tokens`: The maximum number of tokens allowed for input.
+
+    ### Example
+
+    ```python
+    RAGAgentConfig(
+        number_of_input_tokens=2048,
+    )
+    ```
+    """
+    number_of_input_tokens: int = Field(..., description="Maximum tokens for input processing.")
 ```
 
 ---
@@ -94,7 +109,7 @@ Design the agent's workflow by defining the sequence of steps it will execute:
 
 1. Identify all the steps required to achieve the agent’s goal.
 2. Use events to define the input and output of each step.
-3. Start with a step taking a `StartEvent` as input and end with a step outputting a `StopEvent`..
+3. Start with a step taking a `StartEvent` as input and end with a step outputting a `StopEvent`.
 
 Example Workflow:
 
@@ -111,8 +126,8 @@ Example Workflow:
 #### Define Custom Events
 
 Custom events should usually inherit from `ControlEvent` and define specific attributes for the event.
-There are other event types `DisplayEvent` and `SemanticEvent`. Generally you should not need to inherit
-from `SemanticEvent` directly but use e.g. `LLMEvent` inherting from it.
+There are other event types `DisplayEvent` and `SemanticEvent`. Generally, you should not need to inherit
+from `SemanticEvent` directly but use e.g. `LLMEvent` inheriting from it.
 
 Example:
 
@@ -123,6 +138,12 @@ from typing import List
 
 
 class LimitChatHistoryEvent(ControlEvent):
+    """
+    Event to represent limited chat history.
+
+    ### Attributes
+    - `limited_history`: The reduced chat history to fit within token limits.
+    """
     limited_history: List[ChatMessage]
 ```
 
@@ -138,6 +159,15 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 
 @step()
 async def limit_chat_history_step(self, event: StartEvent) -> LimitChatHistoryEvent:
+    """
+    Limits the chat history based on token count.
+
+    Args:
+        event (StartEvent): Incoming event with user messages.
+
+    Returns:
+        LimitChatHistoryEvent: Event containing the reduced chat history.
+    """
     limited_chat_history = limit_chat_history(
         chat_history=event.messages,
         number_of_input_tokens=2048,
@@ -160,6 +190,12 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class LimitChatHistoryStepConfig(StepConfig):
+    """
+    Configuration for the Limit Chat History step.
+
+    ### Fields
+    - `number_of_input_tokens`: Maximum token count for chat history.
+    """
     number_of_input_tokens: int = Field(..., description="Max tokens for chat history")
 
 
@@ -173,6 +209,16 @@ async def limit_chat_history_step(
         event: StartEvent,
         limit_chat_history_step_config: LimitChatHistoryStepConfig,
 ) -> LimitChatHistoryEvent:
+    """
+    Limits the chat history based on token count.
+
+    Args:
+        event (StartEvent): Incoming event with user messages.
+        limit_chat_history_step_config (LimitChatHistoryStepConfig): Step-specific configuration.
+
+    Returns:
+        LimitChatHistoryEvent: Event containing the reduced chat history.
+    """
     limited_chat_history = limit_chat_history(
         chat_history=event.messages,
         number_of_input_tokens=limit_chat_history_step_config.number_of_input_tokens,
@@ -188,6 +234,12 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgentConfig(AgentConfig):
+    """
+    Configuration for RAG Agent.
+
+    ### Fields
+    - `number_of_input_tokens`: Maximum token count for input chat history.
+    """
     number_of_input_tokens: int = Field(..., description="Max tokens for chat history")
 
 
@@ -197,6 +249,16 @@ async def limit_chat_history_step(
         event: StartEvent,
         agent_config: RAGAgentConfig,
 ) -> LimitChatHistoryEvent:
+    """
+    Limits the chat history based on token count.
+
+    Args:
+        event (StartEvent): Incoming event with user messages.
+        agent_config (RAGAgentConfig): Agent configuration.
+
+    Returns:
+        LimitChatHistoryEvent: Event containing the reduced chat history.
+    """
     limited_chat_history = limit_chat_history(
         chat_history=event.messages,
         number_of_input_tokens=agent_config.number_of_input_tokens,
@@ -260,6 +322,29 @@ if __name__ == "__main__":
     import asyncio
 
     asyncio.run(main())
-
 ```
 
+---
+
+### Documentation Standards
+
+#### Configurations
+- Every new configuration class must have a detailed docstring.
+  - **Purpose**: Explain what the configuration is for.
+  - **Fields**: Describe each field, including its type and purpose.
+  - **Examples**: Provide an example instantiation of the configuration.
+
+#### Steps
+- Each step method must have a docstring.
+  - **Purpose**: Briefly explain what the step does.
+  - **Args**: List all arguments and their types.
+  - **Returns**: Describe the return type and its purpose.
+  - **Example Usage**: If applicable, show how the step might be used in a workflow.
+
+#### Events
+- Custom event classes must have a docstring.
+  - **Purpose**: Describe the event's role in the workflow.
+  - **Attributes**: List and describe all attributes of the event.
+  - **Examples**: Show how the event can be created or used.
+
+By adhering to these documentation standards, the codebase will remain maintainable, extensible, and easier for others to understand and contribute to.
