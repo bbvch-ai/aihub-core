@@ -276,7 +276,10 @@ Examples:
 
 - **Poetry**: Dependency management tool for Python ([Download Poetry](https://python-poetry.org/docs/)).
     - Verify: `poetry --version`
-- **Docker**: Containerization tool ([Download Docker](https://www.docker.com/products/docker-desktop/)).
+- **Docker**: Containerization tool ([Download Docker](https://www.docker.com/products/docker-desktop/)). If problems
+  occur when trying to run Docker Desktop:
+  it says **wsl --update** but running this command doesn't resolve the issue. Refer
+  to [WSL Update Failed](https://stackoverflow.com/questions/78879806/docker-desktop-wsl-update-failed)
     - Verify: `docker --version`
 - **Node.js (LTS)** through **NVM**: Download and install Node Version Manager (NVM)
   for [Windows](https://github.com/coreybutler/nvm-windows/releases)
