@@ -70,11 +70,11 @@ jobs:
           sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
           echo "Update package version in aihub_pipeline/pyproject.toml"
           sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update tag reference to aihub_agent in aihub_pipeline"
+          echo "Update tag reference to aihub_lib in aihub_agent"
           sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_agent/pyproject.toml 
           echo "Update package version in aihub_agent/pyproject.toml"
           sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_agent/pyproject.toml
-          echo "Update tag reference to aihub_api in aihub_pipeline"
+          echo "Update tag reference to aihub_lib in aihub_api"
           sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_api/pyproject.toml 
           echo "Update package version in aihub_api/pyproject.toml"
           sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_api/pyproject.toml
