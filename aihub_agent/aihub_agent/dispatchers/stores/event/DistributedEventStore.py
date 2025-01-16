@@ -1,9 +1,9 @@
 import json
-from typing import Dict, List, Type, Optional, Annotated
-
-from nats.js import JetStreamContext
+from typing import Annotated, Dict, List, Optional, Type
 
 from aihub_lib.nats.events import ControlEvent
+from nats.js import JetStreamContext
+
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
 
@@ -45,7 +45,7 @@ class DistributedEventStore(StoreBase):
     async def store_event(
         self,
         run_id: Annotated[str, "The identifier for the run."],
-        event: Annotated[ControlEvent, "The event instance to store."]
+        event: Annotated[ControlEvent, "The event instance to store."],
     ):
         """
         Appends a new event to the run's event list for its type, ensuring no duplicates by `event_id`.
@@ -70,7 +70,7 @@ class DistributedEventStore(StoreBase):
     async def get_events_of_type(
         self,
         run_id: Annotated[str, "The run identifier."],
-        event_type: Annotated[Type[ControlEvent], "The event subclass to fetch."]
+        event_type: Annotated[Type[ControlEvent], "The event subclass to fetch."],
     ) -> List[ControlEvent]:
         """
         Returns all events of the specified type for the given run, reconstructed as event objects.
@@ -87,7 +87,7 @@ class DistributedEventStore(StoreBase):
     async def get_all_events(
         self,
         run_id: Annotated[str, "The run identifier."],
-        before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None
+        before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves all events for a run, organized by event type name.

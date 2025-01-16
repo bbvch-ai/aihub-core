@@ -1,10 +1,7 @@
 from functools import cache
 from typing import List
 
-from llama_index.vector_stores.azureaisearch import (
-    AzureAISearchVectorStore,
-    IndexManagement,
-)
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement
 
 from aihub_lib.infrastructure.azure.ai_search.AISearchAccess import AISearchAccess
 from aihub_lib.persistence.rag.vectors.node_metadata import (

@@ -1,10 +1,10 @@
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
+
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
-from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
-
-from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 from aihub_lib.nats.events.semantic.embedding.Embedding import Embedding
+from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class EmbeddingEvent(SemanticEvent):

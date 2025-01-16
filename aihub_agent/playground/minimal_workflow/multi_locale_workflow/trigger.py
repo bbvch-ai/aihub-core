@@ -20,14 +20,10 @@ async def main():
         agent_config=MultiLocaleAgentConfig(
             agent_id="multi_locale_agent",
             name=LocaleString(en="Multi Locale Agent"),
-            description=LocaleString(
-                en="This is an agent that knows multiple languages"
-            ),
+            description=LocaleString(en="This is an agent that knows multiple languages"),
             system_prompt=LocaleString(en="You are an agent"),
         ),
-        locale_paths=[
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "translations")
-        ],
+        locale_paths=[os.path.join(os.path.dirname(os.path.abspath(__file__)), "translations")],
     )
 
     async with runner.test_run() as topic:

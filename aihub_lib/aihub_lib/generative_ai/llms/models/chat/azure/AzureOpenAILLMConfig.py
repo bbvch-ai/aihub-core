@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple
 
 import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
@@ -42,7 +42,9 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
 
     default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.")
 
-    def to_llama_index(self, model_parameter: Optional[AzureOpenAIParameter] = None) -> Tuple[AzureOpenAI, LLMCostTracker]:
+    def to_llama_index(
+        self, model_parameter: Optional[AzureOpenAIParameter] = None
+    ) -> Tuple[AzureOpenAI, LLMCostTracker]:
         """
         Instantiate an AzureOpenAI LLM and a LLMCostTracker.
 

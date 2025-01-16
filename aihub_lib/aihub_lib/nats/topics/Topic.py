@@ -1,5 +1,5 @@
 import logging
-from typing import ClassVar, Dict, Type, Any
+from typing import Any, ClassVar, Dict, Type
 
 from pydantic import BaseModel
 
@@ -64,4 +64,3 @@ class Topic(BaseModel):
                 # This subclass couldn't parse the subject; try the next one
                 pass
         raise ValueError(f"Could not parse topic from subject: {subject}")
-

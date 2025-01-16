@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent

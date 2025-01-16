@@ -42,9 +42,7 @@ async def main():
     async with runner.test_run(delay_before_stop=5) as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(
-                messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]
-            ),
+            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]),
         )
 
 

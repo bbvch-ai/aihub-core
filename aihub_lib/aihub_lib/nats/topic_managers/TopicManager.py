@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
 
 class TopicManager:
@@ -48,10 +48,10 @@ class TopicManager:
     CONTROL_EVENT = "control_event"
 
     def get_agent_discovery_subject_request(
-            self,
-            call_id: Annotated[str, "Unique identifier linking request and response"],
-            agent_class: Annotated[Optional[str], "Agent class filter or '*'"] = "*",
-            agent_id: Annotated[Optional[str], "Agent ID filter or '*'"] = "*",
+        self,
+        call_id: Annotated[str, "Unique identifier linking request and response"],
+        agent_class: Annotated[Optional[str], "Agent class filter or '*'"] = "*",
+        agent_id: Annotated[Optional[str], "Agent ID filter or '*'"] = "*",
     ) -> str:
         """
         Returns a subject for requesting agent discovery information.
@@ -59,24 +59,24 @@ class TopicManager:
         return f"{self.DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.request.{call_id}"
 
     def get_agent_discovery_subject_response(
-            self,
-            call_id: str,
-            agent_class: Optional[str] = "*",
-            agent_id: Optional[str] = "*",
+        self,
+        call_id: str,
+        agent_class: Optional[str] = "*",
+        agent_id: Optional[str] = "*",
     ) -> str:
         """Returns a subject for receiving agent discovery responses."""
         return f"{self.DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
 
     def get_subject_for_specific_event_in_agent(
-            self,
-            agent_class: str,
-            agent_id: str,
-            thread_id: str,
-            display_id: str,
-            run_id: str,
-            event_type: str,
-            event_name: str,
-            event_id: str,
+        self,
+        agent_class: str,
+        agent_id: str,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
+        event_type: str,
+        event_name: str,
+        event_id: str,
     ) -> str:
         """Returns a subject pinpointing a specific event in a given agent run."""
         return f"{self.AGENT_TOPIC}.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"

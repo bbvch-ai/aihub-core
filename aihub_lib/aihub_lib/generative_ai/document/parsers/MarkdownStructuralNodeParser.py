@@ -6,13 +6,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
-from llama_index.core.schema import (
-    BaseNode,
-    MetadataMode,
-    NodeRelationship,
-    RelatedNodeInfo,
-    TextNode,
-)
+from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (

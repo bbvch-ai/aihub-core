@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Type
+from typing import Dict, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +18,7 @@ class StepConfig(BaseModel):
     The `AgentConfig` can then hold instances of these step configurations,
     keyed by step type, allowing easy retrieval and management of step-specific settings.
     """
+
     pass
 
 

@@ -5,7 +5,6 @@ from aihub_lib.nats.events import StopEvent, StartEvent
 
 
 class MultiLocaleAgent(Agent):
-
     @step()
     async def start_step(self, event: StartEvent, t: LocaleHandler) -> StopEvent:
         print(f"[MultiLocaleAgent.start_step] Start step in locale {event.locale}.")

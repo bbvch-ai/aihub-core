@@ -1,5 +1,5 @@
 import logging
-from typing import TypeVar, Generic
+from typing import Generic, TypeVar
 
 from nats.js import JetStreamContext
 

@@ -1,13 +1,6 @@
 from typing import List
 
-from dagster import (
-    AssetIn,
-    AssetKey,
-    AutomationCondition,
-    DynamicPartitionsDefinition,
-    Output,
-    graph_asset,
-)
+from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 from llama_index.core.schema import TextNode
 
 from aihub_pipeline.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_parser import (
@@ -15,16 +8,12 @@ from aihub_pipeline.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_
 )
 from aihub_pipeline.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
 from aihub_pipeline.ops.nodes.embed_nodes import embed_nodes
-from aihub_pipeline.ops.nodes.insert_nodes_into_vector_store import (
-    insert_nodes_into_vector_store,
-)
+from aihub_pipeline.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 
-def nodes_factory(
-    key: AssetKey, document_key: str, partitions: DynamicPartitionsDefinition
-) -> graph_asset:
+def nodes_factory(key: AssetKey, document_key: str, partitions: DynamicPartitionsDefinition) -> graph_asset:
     """Creates a nodes asset that represents nodes from a chunked up Ref Doc in the Vector Store.
     This asset takes a Ref Doc as input, splits it into nodes, and saves the nodes in the Vector Store as
     well as providing the nodes as an output for downstream assets.
@@ -42,11 +31,7 @@ def nodes_factory(
         document: RefDocDocument,
     ) -> Output[List[TextNode]]:
         return insert_nodes_into_vector_store(
-            embed_nodes(
-                chunk_ref_doc_into_nodes_using_md_structural_node_parser(
-                    delete_nodes_for_ref_doc(document)
-                )
-            ),
+            embed_nodes(chunk_ref_doc_into_nodes_using_md_structural_node_parser(delete_nodes_for_ref_doc(document))),
             document,
         )
 

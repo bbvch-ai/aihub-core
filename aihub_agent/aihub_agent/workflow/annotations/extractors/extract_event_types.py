@@ -1,23 +1,12 @@
-from types import UnionType
-from typing import (
-    Any,
-    Type,
-    Set,
-    Union,
-    get_origin,
-    get_args,
-    Tuple,
-    List,
-    Optional,
-    Annotated,
-)
 import inspect
+from types import UnionType
+from typing import Annotated, Any, List, Optional, Set, Tuple, Type, Union, get_args, get_origin
 
 from aihub_lib.nats.events import BaseEvent
 
 
 def extract_event_types(
-        annotation: Annotated[Any, "A type annotation representing one or more event types."]
+    annotation: Annotated[Any, "A type annotation representing one or more event types."],
 ) -> Tuple[Set[Type[BaseEvent]], bool, Optional[int]]:
     """
     Analyze a type annotation related to events and extract:
@@ -69,7 +58,7 @@ def extract_event_types(
     args = get_args(annotation)
 
     # Check if annotation has a _required_size attribute indicating a fixed-size container.
-    if hasattr(annotation, '_required_size'):
+    if hasattr(annotation, "_required_size"):
         required_size = annotation._required_size
         # Extract the event type from the generic base of this annotation
         base_type = annotation.__orig_bases__[0].__args__[0]  # type: ignore

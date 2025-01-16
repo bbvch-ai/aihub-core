@@ -1,5 +1,6 @@
 from datetime import timedelta
-from typing import Dict, Any, Annotated
+from typing import Annotated, Any, Dict
+
 from nats.js import JetStreamContext
 from nats.js.api import KeyValueConfig, StorageType
 
@@ -37,16 +38,13 @@ class StoreBase:
     def __init__(
         self,
         js: Annotated[JetStreamContext, "JetStream context for KV store operations."],
-        prefix: Annotated[str, "A prefix for bucket naming, ensuring uniqueness."]
+        prefix: Annotated[str, "A prefix for bucket naming, ensuring uniqueness."],
     ):
         self.js = js
         self.prefix = prefix
         self._kv_stores: Dict[str, Any] = {}
 
-    async def _get_kv_store(
-        self,
-        run_id: Annotated[str, "The run identifier for which we need a KV store."]
-    ) -> Any:
+    async def _get_kv_store(self, run_id: Annotated[str, "The run identifier for which we need a KV store."]) -> Any:
         """Retrieves (and if necessary, creates) the KV store for a given run_id."""
         if run_id not in self._kv_stores:
             try:
@@ -65,7 +63,7 @@ class StoreBase:
 
     async def delete_run_store(
         self,
-        run_id: Annotated[str, "The run identifier whose store should be deleted."]
+        run_id: Annotated[str, "The run identifier whose store should be deleted."],
     ):
         """
         Deletes the KV store for a specific run, removing all associated data.

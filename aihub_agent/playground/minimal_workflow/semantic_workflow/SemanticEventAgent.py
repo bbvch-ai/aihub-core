@@ -9,7 +9,6 @@ from playground.minimal_workflow.semantic_workflow.events.LLMStopEvent import (
 
 
 class SemanticEventAgent(Agent):
-
     @step()
     async def retriever_step(self, event: StartEvent) -> RetrieverEvent:
         return RetrieverEvent(

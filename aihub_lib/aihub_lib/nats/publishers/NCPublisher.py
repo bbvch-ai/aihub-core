@@ -1,4 +1,3 @@
-
 import logging
 from typing import Generic, TypeVar
 
@@ -53,4 +52,3 @@ class NCPublisher(Generic[TEvent]):
             )
 
         await self.nc.publish(subject, event.model_dump_json().encode())
-

@@ -1,12 +1,6 @@
-from typing import (
-    TypeVar,
-    Generic,
-    List,
-    Type,
-    Annotated,
-)
+from typing import Annotated, Generic, List, Type, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ListOfSize(Generic[T]):
@@ -27,7 +21,7 @@ class ListOfSize(Generic[T]):
     def __init__(
         self,
         items: Annotated[List[T], "The list of items to wrap"],
-        required_size: Annotated[int, "The exact size that the list must have"]
+        required_size: Annotated[int, "The exact size that the list must have"],
     ):
         if len(items) != required_size:
             raise ValueError(f"List must have exactly {required_size} items (got {len(items)})")
@@ -49,7 +43,7 @@ class ListOfSize(Generic[T]):
 
 def FixedList(
     type_: Annotated[Type[T], "The type of items in the fixed-size list"],
-    size: Annotated[int, "The fixed size of the list"]
+    size: Annotated[int, "The fixed size of the list"],
 ) -> Type[ListOfSize[T]]:
     """
     A factory function to create a specialized fixed-size list type.

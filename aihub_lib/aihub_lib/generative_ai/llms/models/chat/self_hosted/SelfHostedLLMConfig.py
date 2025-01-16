@@ -1,9 +1,9 @@
-from typing import Optional, Tuple, Dict, Annotated
+from typing import Annotated, Dict, Optional, Tuple
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
-from transformers import AutoTokenizer
 from pydantic import Field
+from transformers import AutoTokenizer
 
 from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
@@ -20,7 +20,9 @@ class SelfHostedLLMParameter(ChatLLMModelParameter):
     """
 
     logprobs: Annotated[Optional[int], Field(None, description="Number of top tokens to return log probs for.")]
-    logit_bias: Annotated[Optional[Dict[str, float]], Field(None, description="Adjust probabilities of specific tokens.")]
+    logit_bias: Annotated[
+        Optional[Dict[str, float]], Field(None, description="Adjust probabilities of specific tokens.")
+    ]
 
 
 class SelfHostedLLMConfig(ChatLLMConfig):
@@ -41,7 +43,9 @@ class SelfHostedLLMConfig(ChatLLMConfig):
     is_chat_model: Annotated[bool, Field(..., description="True if the model uses a chat-based interface.")]
     is_function_calling_model: Annotated[bool, Field(..., description="True if the model supports function calling.")]
 
-    default_parameter: Annotated[SelfHostedLLMParameter, Field(..., description="Default parameters for the self-hosted LLM.")]
+    default_parameter: Annotated[
+        SelfHostedLLMParameter, Field(..., description="Default parameters for the self-hosted LLM.")
+    ]
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedLLMParameter] = None

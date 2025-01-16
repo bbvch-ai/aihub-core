@@ -5,7 +5,6 @@ from playground.minimal_workflow.simple_workflow.events.EventA import EventA
 
 
 class SimpleAgent(Agent):
-
     @step()
     async def start_step(self, event: StartEvent) -> EventA:
         print("[SimpleAgent.start_step]", event)
