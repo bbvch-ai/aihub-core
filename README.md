@@ -290,22 +290,23 @@ For the main branch, the following rules apply:
         - **Require Conversation Resolution Before Merging**
             - **Config:** All review discussions must be resolved this includes also comments by bots.
         - **Allowed Merge Methods**
-            - **Config:** Only `Merge` and `Squash` is enabled. This means that into the main branch only merge or
-              squash commits are allowed. `Squash` should be used if a feature Branch is merged directly into the main
-              branch.
-              `Merge` should be used if initiative branches are merged. Like this we don't ensure a linear history on
-              the main
-              but represent the truth of the branching of initiative branches most accurately.
+            - **Config:** Only `Squash` is enabled. This means that into the main branch only squash commits are
+              allowed.
+              This means that each pull request is merged as a single commit to the main branch. As a result,
+              the commit history remains linear—avoiding merge commits—and each merge is captured as one
+              commit representing all changes in that pull request.
+              Like this we will later not bloat the main branches' history. There might be the case where we have
+              long-running initiative which only should be merged to the main once all features of the initiative are
+              done.
+              In that case we use the initiative branch and then merge it into main. Since this is considered an
+              exception we have to temporarily change the rule for this.
 
 ### 1.5.1 Initiative Branch
 
 For the `initiative/*` branches, the same rules apply as for the main branch with the following exceptions:
 
-- **Allowed Merge Methods**
-    - **Config:** Only `Squash` is enabled. This means that each pull request is merged as a single commit to
-      the `initiative/*` branch. As a result, the commit history remains linear—avoiding merge commits—and each merge is
-      captured as one commit representing all changes in that pull request. Like this we will later not bloat the main
-      branches history
+**Important**: Initiative branches should only be used if the features of an initiative can only be merged
+once all features are done.
 
 ---
 
