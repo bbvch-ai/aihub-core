@@ -68,23 +68,21 @@ jobs:
         run: |
           update_version() {
             echo "Update package version in $1"
-            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' $1
+            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
           }
-          update_lib_tag() {
-            echo "Update tag reference to aihub_lib in $1"
-            sed -i sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' $1
+          update_makefile_tag() {
+            echo "Update TAG in $1"
+            sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
           
-          update_lib_tag aihub_pipeline/pyproject.toml
           update_version aihub_pipeline/pyproject.toml
-          
-          update_lib_tag aihub_agent/pyproject.toml 
           update_version aihub_agent/pyproject.toml
-          
-          update_lib_tag aihub_api/pyproject.toml 
           update_version aihub_api/pyproject.toml
           
           update_version aihub_lib/pyproject.toml
+          update_makefile_tag Makefile
+        env:
+          VERSION: ${{ env.VERSION }}
 
       - &install_dependencies
         name: Install dependencies (anchor definition)

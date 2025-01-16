@@ -598,7 +598,36 @@ We see that all tests are structured into three parts:
 - **Faster Iterations**: New test cases often require no new Python code—just add new scenarios in the feature file.
 - **Closer Collaboration**: Encourages collaboration between business, QA, and development.
 
-# 4 Additional Infos
+# 4 Package Management
+
+## 4.1 Package structure
+
+The AI hub consists of multiple packages:
+
+- `aihub_agents`: Contains common code for agent development
+- `aihub_api`: Contains common code for API implementation
+- `aihub_pipeline`: Contains common code pipeline development
+- `aihub_lib`: Contains code relevant for multiple packages of above
+
+This means that the `aihub_lib` package is used by all other packages.
+
+All our packages have versions which are increased in sync with the tags in the repository.
+This means that the version is increased with every merge into the main branch.
+
+### 4.2 Referencing
+
+By default, the referencing is done by relative local referencing to the `aihub_lib` package in the `pyproject.toml`
+file.
+This is done to allow for a good local development process where changes in the `aihub_lib` package are immediately
+available
+as we expect that changes in the `aihub_lib` package are done in sync with the other packages.
+
+#### 4.2.1 Deployment
+
+For deployment (of customer projects) the referencing is adjusted to reference the package from the github repo
+and specifying the version by the tag.
+
+# 5 Additional Infos
 
 ## Key Features
 
