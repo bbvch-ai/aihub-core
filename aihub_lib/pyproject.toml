@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.8.0"
+version = "v0.10.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -80,7 +80,7 @@ profile = "black"
 line_length = 120
 
 [tool.mypy]
-python_version = "v0.8.0"
+python_version = "v0.10.0"
 strict = true
 warn_redundant_casts = true
 warn_unused_ignores = true

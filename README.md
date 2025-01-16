@@ -249,6 +249,65 @@ Examples:
 - **Flexibility**: Allows for parallel development across different projects and initiatives without conflicts.
 - **Traceability**: Enhances the ability to track changes back to their origin, facilitating better project management.
 
+## 1.5 Branch Protection
+
+To ensure the stability and integrity of our codebase, we have implemented branch protection rules for our branches.
+
+### 1.5.1 Main Branch
+
+For the main branch, the following rules apply:
+
+- **Restrict Updates**
+    - **Description:** Only users with bypass can push directly.
+    - **Reason:** This rule ensures that most contributors can’t directly push to certain critical branches.
+      They have to go through a pull request, which requires reviews or checks to pass before merging.
+      By limiting who can push directly, we reduce the chance of accidental or unreviewed changes.
+
+- **Restrict Deletions**
+    - **Description:** Only users with bypass can delete `main`.
+    - **Reason:** Preserves the integrity of the primary branch.
+
+- **Block Force Pushes**
+    - **Description:** Denies force-pushes to `main`.
+    - **Reason:** Preserves commit history from destructive rewrites. By limiting who can push directly,
+      we reduce the chance of accidental or unreviewed changes.
+
+- **Require Linear History**
+    - **Description:** Disallows merge commits, enforcing a linear commit history.
+    - **Reason:** Keeps the repository history clean and traceable. A linear history is easier to read and navigate,
+      since you don’t have merge commits branching off in different directions.
+
+- **Require a Pull Request Before Merging**
+    - **Description:** All changes must be introduced via pull requests.
+    - **Reason:** Encourages peer review and prevents unauthorized merges.
+    - **Approvals**:
+        - **Required Approvals**
+            - **Config:** At least 1 approving review is needed.
+        - **Dismiss Stale Pull Request Approvals**
+            - **Config:** New commits dismiss previous approvals which means after new commits are pushed to the branch,
+              the
+              previous approvals are removed.
+        - **Require Conversation Resolution Before Merging**
+            - **Config:** All review discussions must be resolved this includes also comments by bots.
+        - **Allowed Merge Methods**
+            - **Config:** Only `Squash` is enabled. This means that into the main branch only squash commits are
+              allowed.
+              This means that each pull request is merged as a single commit to the main branch. As a result,
+              the commit history remains linear—avoiding merge commits—and each merge is captured as one
+              commit representing all changes in that pull request.
+              Like this we will later not bloat the main branches' history. There might be the case where we have
+              long-running initiative which only should be merged to the main once all features of the initiative are
+              done.
+              In that case we use the initiative branch and then merge it into main. Since this is considered an
+              exception we have to temporarily change the rule for this.
+
+### 1.5.1 Initiative Branch
+
+For the `initiative/*` branches, the same rules apply as for the main branch.
+
+**Important**: Initiative branches should only be used if the features of an initiative can only be merged
+once all features are done.
+
 ---
 
 # 2 Getting Started
@@ -273,6 +332,12 @@ Examples:
   > ☝ **Note: Miniconda for Virtual Environment Only**  
   > We use Miniconda to create virtual environments and install the initial Python version in it. For the package
   management inside the virtual environment, we use poetry. (see below)
+
+- **make (Windows only)**
+  You can download `make`
+  from [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm). Make sure to add the `bin` directory of the `make`
+  installation to the PATH.
+    - Verify: `make --version`
 
 - **Poetry**: Dependency management tool for Python ([Download Poetry](https://python-poetry.org/docs/)).
     - Verify: `poetry --version`
