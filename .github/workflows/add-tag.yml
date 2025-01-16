@@ -66,16 +66,23 @@ jobs:
 
       - name: Increment version-tag in pyproject.toml
         run: |
-          echo "Update tag reference to aihub_lib in aihub_pipeline"
-          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update package version in aihub_pipeline/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update package version in aihub_agent/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_agent/pyproject.toml
-          echo "Update package version in aihub_api/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_api/pyproject.toml
-          echo "Update package version in aihub_lib/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_lib/pyproject.toml
+          update_version() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
+          }
+          update_makefile_tag() {
+            echo "Update TAG in $1"
+            sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
+          }
+          
+          update_version aihub_pipeline/pyproject.toml
+          update_version aihub_agent/pyproject.toml
+          update_version aihub_api/pyproject.toml
+          
+          update_version aihub_lib/pyproject.toml
+          update_makefile_tag Makefile
+        env:
+          VERSION: ${{ env.VERSION }}
 
       - &install_dependencies
         name: Install dependencies (anchor definition)
