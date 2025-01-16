@@ -66,20 +66,25 @@ jobs:
 
       - name: Increment version-tag in pyproject.toml
         run: |
-          echo "Update tag reference to aihub_lib in aihub_pipeline"
-          sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update package version in aihub_pipeline/pyproject.toml"
-          sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update tag reference to aihub_lib in aihub_agent"
-          sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_agent/pyproject.toml 
-          echo "Update package version in aihub_agent/pyproject.toml"
-          sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_agent/pyproject.toml
-          echo "Update tag reference to aihub_lib in aihub_api"
-          sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_api/pyproject.toml 
-          echo "Update package version in aihub_api/pyproject.toml"
-          sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_api/pyproject.toml
-          echo "Update package version in aihub_lib/pyproject.toml"
-          sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_lib/pyproject.toml
+          update_version() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' $1
+          }
+          update_lib_tag() {
+            echo "Update tag reference to aihub_lib in $1"
+            sed -i sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' $1
+          }
+          
+          update_lib_tag aihub_pipeline/pyproject.toml
+          update_version aihub_pipeline/pyproject.toml
+          
+          update_lib_tag aihub_agent/pyproject.toml 
+          update_version aihub_agent/pyproject.toml
+          
+          update_lib_tag aihub_api/pyproject.toml 
+          update_version aihub_api/pyproject.toml
+          
+          update_version aihub_lib/pyproject.toml
 
       - &install_dependencies
         name: Install dependencies (anchor definition)
