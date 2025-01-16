@@ -9,7 +9,7 @@ from playground.minimal_workflow.configured_workflow.ConfiguredAgent import (
     ConfiguredAgent,
 )
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import (
-    ConfiguredAgentAgentConfig,
+    ConfiguredAgentConfig,
     StartStepConfig,
 )
 
@@ -17,7 +17,7 @@ from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig impor
 async def main():
     runner = AgentTestRunner(
         agent_type=ConfiguredAgent,
-        agent_config=ConfiguredAgentAgentConfig(
+        agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a configured agent"),
