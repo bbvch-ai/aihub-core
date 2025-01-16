@@ -394,38 +394,39 @@ Clone the following repositories:
 
 #### 2.2.2.1 Backend Services
 
-Each folder in the `aihub-core` repository represents a **microservice**.
+Each folder in the `aihub-core` repository represents a **microservice**.  
 To ensure proper isolation and compatibility, follow these steps for each folder:
 
 1. **Open each folder as a separate project**:
-    - Recommendation: Use PyCharm for backend services and WebStorm for frontend services.
+    - **Recommendation**: Use PyCharm for backend services and WebStorm for frontend services.
 
-2. **Set up an Environment for each microservice**:
-    - Open the microservice folder e.g. `aihub_api` as a new project.
-    - Configure a poetry environment (https://www.jetbrains.com/help/pycharm/poetry.html)
-        - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-        - Click on the gear icon and select **Add** > **Poetry Environment**.
-            - **Base interpreter**: Use miniconda python executable as interpreter (usually found under
-              AppData/Local/minconda3).
-            - **Poetry executable**: Find and select the poetry.exe.
-        - Apply and set the environment.
-    - If you have not already done so, initialize Poetry within the environment:
+2. **Set up an environment for each microservice**:
+    - Open the microservice folder (e.g., `aihub_api`) as a new project.
+    - Configure a Poetry environment:  
+      [Refer to the official guide](https://www.jetbrains.com/help/pycharm/poetry.html).
+        - Navigate to **File > Settings > Project: <ProjectName> > Python Interpreter**.
+        - Click the gear icon, then select **Add** > **Poetry Environment**.
+            - **Base interpreter**: Use the Miniconda Python executable (typically located under
+              `AppData/Local/miniconda3`).
+            - **Poetry executable**: Locate and select `poetry.exe`.
+        - Apply the settings to complete the configuration.
+    - If you haven't already initialized Poetry within the environment, run:
       ```bash
       poetry install
       ```
 
-3. **Repeat** this process for each folder containing a pyproject.toml file (e.g., `aihub_lib`, `aihub_agent`,
+3. **Repeat** the process for each folder containing a `pyproject.toml` file (e.g., `aihub_lib`, `aihub_agent`,
    `aihub_api`, `aihub_pipeline`).
 
-4. (optional) **Open all microservice in a single project**:
-    - Open the `aihub-core` or any parent folder in PyCharm
-    - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-    - Click on the Python Interpreter and then on **Show All...**.
-    - Click on the Filter icon to remove the project filter.
-    - You should see all the Poetry interpreters you created in the previous steps.
+4. (Optional) **Open all microservices in a single project**:
+    - Open the `aihub-core` folder (or any parent folder) in PyCharm.
+    - Navigate to **File > Settings > Project: <ProjectName> > Python Interpreter**.
+    - Click on the Python Interpreter, then select **Show All...**.
+    - Use the filter icon to remove the project filter.
+    - Locate all the Poetry interpreters created earlier.
     - Remove the project association for each interpreter.
-    - Apply changes and close settings.
-    - You can switch between interpreters in the bottom right corner of your PyCharm Window.
+    - Apply changes and close the settings.
+    - You can now switch between interpreters using the menu in the bottom-right corner of the PyCharm window.
 
 ##### 2.2.2.1.1 Poetry Commands
 
