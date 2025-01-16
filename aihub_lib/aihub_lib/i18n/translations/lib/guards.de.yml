@@ -4,10 +4,27 @@ agent_description_guard:
     <Agentenbeschreibung>
     {agent_description}
     </Agentenbeschreibung>
-    Der Agent hat eventuell zugrif auf weitere Informationsquellen, die ihm bei der Beantwortung der Frage helfen könnten.
-    Entscheide, ob die vom Benutzer gestellte Frage diesem Agenten gestellt werden soll. Lasse alle Fragen zu, die
+    Der Agent hat eventuell Zugriff auf weitere Informationsquellen, die ihm bei der Beantwortung der Frage helfen könnten.
+    Entscheide, ob die vom Benutzer gestellte Frage im Kontext des Gespräches diesem Agenten gestellt werden soll. Lasse alle Fragen zu, die
     möglicherweise in den Themenbereich des Agenten fallen. Blockiere alle Fragen, die ganz offensichtlich
     überhaupt nichts mit dem Agenten zu tun haben. Im zweifelsfall entscheide dich für das Zulassen der Frage.
+    <Benutzer Anfrage>
+    {user_query}
+    </Benutzer Anfrage>
+    
+    <vergangener Gesprächsverlauf>
+    {history}
+    </vergangener Gesprächsverlauf>
+  user_message: |
+    ---------------------
+    <Benutzer>
+    {user}
+    </Benutzer>
+  agent_message: |
+    ---------------------
+    <Agent>
+    {agent}
+    </Agent>
   reason: |
     Begründung der getroffenen Entscheidung.
   success: |
