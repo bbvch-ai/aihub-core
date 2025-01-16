@@ -274,6 +274,12 @@ Examples:
   > We use Miniconda to create virtual environments and install the initial Python version in it. For the package
   management inside the virtual environment, we use poetry. (see below)
 
+- **make (Windows only)**
+  You can download `make`
+  from [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm). Make sure to add the `bin` directory of the `make`
+  installation to the PATH.
+    - Verify: `make --version`
+
 - **Poetry**: Dependency management tool for Python ([Download Poetry](https://python-poetry.org/docs/)).
     - Verify: `poetry --version`
 - **Docker**: Containerization tool ([Download Docker](https://www.docker.com/products/docker-desktop/)). If problems
