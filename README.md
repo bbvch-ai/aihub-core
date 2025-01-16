@@ -303,7 +303,7 @@ For the main branch, the following rules apply:
 
 ### 1.5.1 Initiative Branch
 
-For the `initiative/*` branches, the same rules apply as for the main branch with the following exceptions:
+For the `initiative/*` branches, the same rules apply as for the main branch.
 
 **Important**: Initiative branches should only be used if the features of an initiative can only be merged
 once all features are done.
