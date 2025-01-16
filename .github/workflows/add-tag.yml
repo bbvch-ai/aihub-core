@@ -67,7 +67,7 @@ jobs:
       - name: Increment version-tag in pyproject.toml
         run: |
           echo "Update tag reference to aihub_lib in aihub_pipeline"
-          sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
+          sed -i '/aihub_lib = {.*tag = "[^"]*"/s/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
           echo "Update package version in aihub_pipeline/pyproject.toml"
           sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
           echo "Update package version in aihub_lib/pyproject.toml"
