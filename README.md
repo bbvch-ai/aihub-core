@@ -397,12 +397,10 @@ Clone the following repositories:
 Each folder in the `aihub-core` repository represents a **microservice**.
 To ensure proper isolation and compatibility, follow these steps for each folder:
 
-Option 1: **Use a separate environment for each service** (safer and more isolated):
-
-1. **Open Each Folder in a Separate IDE**:
+1. **Open each folder as a separate project**:
     - Recommendation: Use PyCharm for backend services and WebStorm for frontend services.
 
-2. **Set Up an Environment for Each Microservice**:
+2. **Set up an Environment for each microservice**:
     - Open the microservice folder e.g. `aihub_api` as a new project.
     - Configure a poetry environment (https://www.jetbrains.com/help/pycharm/poetry.html)
         - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
@@ -417,25 +415,17 @@ Option 1: **Use a separate environment for each service** (safer and more isolat
       ```
 
 3. **Repeat** this process for each folder containing a pyproject.toml file (e.g., `aihub_lib`, `aihub_agent`,
-   `aihub_pipeline`).
+   `aihub_api`, `aihub_pipeline`).
 
-Option 2: **Use a single environment for all services** (simpler but may cause dependency conflicts):
-
-1. **Open the `aihub-core` folder in PyCharm**.
-2. **Set Up an Environment for the whole project**:
+4. (optional) **Open all microservice in a single project**:
+    - Open the `aihub-core` or any parent folder in PyCharm
     - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-    - Click on the gear icon and select **Add** > **Poetry Environment**.
-        - **Base interpreter**: Use miniconda python executable as interpreter (usually found under
-          AppData/Local/minconda3).
-        - **Poetry executable**: Find and select the poetry.exe.
-    - Apply and set the environment.
-    - If you have not already done so, initialize Poetry within the environment. Navigate to a directory e.g.
-      aihub_agent with a pyproject.toml and run:
-      ```bash
-      poetry install
-      ```
-      This may lead to missing dependencies when using other services. In this case, you can run `poetry install`  in
-      the other service's directory again.
+    - Click on the Python Interpreter and then on **Show All...**.
+    - Click on the Filter icon to remove the project filter.
+    - You should see all the Poetry interpreters you created in the previous steps.
+    - Remove the project association for each interpreter.
+    - Apply changes and close settings.
+    - You can switch between interpreters in the bottom right corner of your PyCharm Window.
 
 ##### 2.2.2.1.1 Poetry Commands
 
