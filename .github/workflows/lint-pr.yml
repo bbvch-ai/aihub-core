@@ -9,13 +9,13 @@ on:
       - edited
       - synchronize
       - reopened
+      - ready_for_review
 
 jobs:
   lint:
-    # One runner for all lint tasks
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
 
-    # Matrix covers each folder (agent, api, lib, pipeline)
     strategy:
       matrix:
         folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline ]
