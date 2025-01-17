@@ -61,6 +61,18 @@ jobs:
           workdir: ${{ matrix.folder }}
 
 
+
+  GitHub Action with pnpm
+  Thought for 4m 13s
+  Below is an example workflow updated to use pnpm instead of yarn. In particular:
+
+  We install pnpm globally (via npm).
+  We retrieve and cache the pnpm store path (using pnpm store path).
+  We update the key and restore-keys to reflect pnpm instead of yarn.
+  We install dependencies with pnpm install in the appropriate directory.
+  We reference the appropriate lock file (pnpm-lock.yaml) when generating the cache key.
+  yaml
+  Copy
   lint-frontend:
     name: Lint Web
     runs-on: ubuntu-latest
@@ -74,21 +86,24 @@ jobs:
         with:
           node-version: 22.x
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Get pnpm store path
+        id: pnpm-store-dir-path
+        run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Cache Node Modules
         uses: actions/cache@v4
-        id: yarn-cache
+        id: pnpm-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('client/**/yarn.lock') }}
+          path: ${{ steps.pnpm-store-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('aihub_web/aihub_web/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-pnpm-
 
       - name: Install frontend dependencies
-        run: yarn
+        run: pnpm install --frozen-lockfile
         working-directory: aihub_web/aihub_web
 
       - name: Lint frontend
