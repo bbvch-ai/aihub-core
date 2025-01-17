@@ -33,6 +33,7 @@ jobs:
         run: |
           gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
           gh pr create \
+            --repo ${{ github.repository }} \
             --base ${{ steps.prepare.outputs.BASE_BRANCH }} \
             --head ${{ steps.prepare.outputs.BRANCH_NAME }} \
             --title "[WIP] ${{ github.ref_name }}" \
