@@ -101,20 +101,10 @@ jobs:
           make test-cov || echo "TEST_FAIL=true" >> $GITHUB_ENV
         working-directory: ${{ matrix.module }}
         env:
-          ORIGINAL_COGNITIVE_SEARCH_ENDPOINT: ${{ vars.COGNITIVE_SEARCH_ENDPOINT }}
-          ORIGINAL_SHARED_DB_NAME: ${{ vars.SHARED_DB_NAME }}
-          ORIGINAL_SPEECH_SERVICE_REGION: ${{ vars.SPEECH_SERVICE_REGION }}
-          ORIGINAL_WHISPER_API_ENDPOINT: ${{ vars.WHISPER_API_ENDPOINT }}
-          ORIGINAL_WHISPER_API_VERSION: ${{ vars.WHISPER_API_VERSION }}
           ORIGINAL_AZURE_SUBSCRIPTION_NAME: ${{ vars.AZURE_SUBSCRIPTION_NAME }}
           ORIGINAL_ENVIRONMENT: ${{ vars.ENV_SHORT }}
           ORIGINAL_APP_NAME: ${{ vars.APP_NAME }}
           ORIGINAL_REGION_SHORT: ${{ vars.REGION_SHORT }}
-          ORIGINAL_COGNITIVE_SEARCH_KEY: ${{ secrets.COGNITIVE_SEARCH_KEY }}
-          ORIGINAL_MONGO_CONNECTION_STRING: ${{ secrets.MONGO_CONNECTION_STRING }}
-          ORIGINAL_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ORIGINAL_SPEECH_SERVICE_KEY: ${{ secrets.SPEECH_SERVICE_KEY }}
-          ORIGINAL_WHISPER_API_KEY: ${{ secrets.WHISPER_API_KEY }}
 
       # Stop Docker services after tests
       - name: Stop Docker services
@@ -124,17 +114,18 @@ jobs:
         working-directory: aihub_agent
 
       - name: Upload coverage report
+        if: success() && steps.test-cov.outputs.success == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}-coverage-report
           path: ${{ matrix.module }}/coverage.xml
 
       - name: Upload pytest report
+        if: success() && steps.test-cov.outputs.success == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}-pytest-report
           path: ${{ matrix.module }}/pytest.xml
-
 
   pytest-coverage-comment:
     name: Pytest Coverage Comment
@@ -147,6 +138,13 @@ jobs:
       issues: read
       pull-requests: write
       checks: write
+
+    strategy:
+      matrix:
+        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline ]
+
+      outputs:
+        modules_with_tests: ${{ steps.collect-modules.outputs.modules_with_tests }}
 
     steps:
       - name: Checkout repository
