@@ -2,29 +2,28 @@ name: Analyze & Test
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
+    branches: [ main ]
+    types: [ opened, edited, synchronize, reopened ]
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
-  sonarcloud-agent:
-    name: SonarCloud Agents Core
+  sonarcloud-scan:
+    name: SonarCloud Scan
     runs-on: ubuntu-latest
     if: always()
 
-    permissions:
-      contents: read
-      security-events: write
+    strategy:
+      matrix:
+        folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline, aihub_web ]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -34,102 +33,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: aihub_agent
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-api:
-    name: SonarCloud API Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_api
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-lib:
-    name: SonarCloud Lib Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_lib
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-pipeline:
-    name: SonarCloud Pipelines Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_pipeline
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-web:
-    name: SonarCloud Web Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_web
+          projectBaseDir: ${{ matrix.folder }}
           args: >
             -Dsonar.python.coverage.reportPaths=coverage.xml
