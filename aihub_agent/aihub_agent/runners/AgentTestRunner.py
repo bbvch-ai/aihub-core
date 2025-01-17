@@ -3,13 +3,15 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-from aihub_lib.nats.events import BaseEvent
+from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+
 from bson import ObjectId
 from pydantic import BaseModel
 
@@ -59,10 +61,10 @@ class AgentTestRunner(AgentRunner):
     """
 
     def __init__(
-        self,
-        agent_type: Type[Agent],
-        agent_config: AgentConfig,
-        locale_paths: Optional[List[str]] = None,
+            self,
+            agent_type: Type[Agent],
+            agent_config: AgentConfig,
+            locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=["nats://localhost:4222"],
@@ -118,6 +120,20 @@ class AgentTestRunner(AgentRunner):
         )
         await event_subscriber.start()
 
+        self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+            nc=self.nc,
+            topic_manager=TopicManager(),
+            handler=self.observe_event,
+        )
+        await self.observe_discovery_event_subscriber.start()
+
+        self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
+            nc=self.nc,
+            topic_manager=TopicManager(),
+            handler=self.observe_event,
+        )
+        await self.observe_discovery_response_event_subscriber.start()
+
         yield PartialAgentTopic(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
@@ -145,6 +161,21 @@ class AgentTestRunner(AgentRunner):
     def has_exception_event(self) -> bool:
         """Check if an ExceptionEvent was observed."""
         return any(isinstance(event.event, ExceptionEvent) for event in self.observed_events)
+
+    @property
+    def has_discovery_request_event(self) -> bool:
+        """Check if a DiscoveryRequestEvent was observed."""
+        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+
+    @property
+    def has_own_agent_discovery_response_event(self) -> bool:
+        """Check if an AgentDiscoveryResponseEvent with the agent's class and ID was observed."""
+        return any(
+            isinstance(event.event, AgentDiscoveryResponseEvent)
+            and event.event.agent_class == self.agent_class
+            and event.event.agent_id == self.agent_config.agent_id
+            for event in self.observed_events
+        )
 
     def get_events(self, event_type: Type[BaseEvent]) -> List[BaseEvent]:
         """Returns all observed events of the specified type."""
