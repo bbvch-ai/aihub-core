@@ -2,7 +2,7 @@ from unittest.mock import patch
 from pytest_bdd import scenarios, given, when, then
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import StartEvent, StopEvent, BaseEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.conditional_workflow.events.EventA import EventA
 from playground.minimal_workflow.conditional_workflow.events.EventB import EventB
@@ -13,7 +13,7 @@ from playground.minimal_workflow.conditional_workflow.ConditionalAgentConfig imp
     ConditionalAgentConfig,
 )
 
-scenarios("../tests/features/configured_agent.feature")
+scenarios("../tests/features/conditional_agent.feature")
 
 
 @given("a ConditionalAgent runner", target_fixture="agent_runner")
@@ -55,12 +55,14 @@ async def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     event = agent_runner.get_event_of_type(EventA)
     assert event is not None, "EventA was not received"
+    assert not isinstance(agent_runner.get_events(BaseEvent)[0], EventB)
 
 
 @then("an EventB event is present")
 def _(agent_runner: AgentTestRunner):
     event = agent_runner.get_event_of_type(EventB)
     assert event is not None, "EventB was not received"
+    assert not isinstance(agent_runner.get_events(BaseEvent)[0], EventA)
 
 
 @then("a StopEvent is present")
