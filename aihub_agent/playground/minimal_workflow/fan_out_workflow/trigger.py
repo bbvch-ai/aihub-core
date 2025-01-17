@@ -21,7 +21,7 @@ async def main():
             system_prompt=LocaleString(en="You are an agent"),
         ),
     )
-    async with runner.test_run() as topic:
+    async with runner.test_run(delay_before_stop=5) as topic:
         await runner.send_event_from_topic(
             topic=topic, start_event=StartEvent(messages=[])
         )
