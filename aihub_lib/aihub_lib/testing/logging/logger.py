@@ -1,16 +1,17 @@
 import logging
+
 import colorlog
 
 
 def enable_logging(level=logging.DEBUG):
     azure_loggers = [
-        'azure.identity',
-        'azure.core.pipeline',
-        'azure.core.pipeline.policies',
-        'azure.core.pipeline.transport',
-        'urllib3',
-        'pymongo',
-        'httpx'
+        "azure.identity",
+        "azure.core.pipeline",
+        "azure.core.pipeline.policies",
+        "azure.core.pipeline.transport",
+        "urllib3",
+        "pymongo",
+        "httpx",
     ]
 
     for logger_name in azure_loggers:
@@ -21,12 +22,12 @@ def enable_logging(level=logging.DEBUG):
         colorlog.ColoredFormatter(
             "%(log_color)s[%(name)s.%(funcName)s] %(levelname)s: %(message)s",
             log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'bold_red',
-            }
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
+            },
         )
     )
 

@@ -1,9 +1,9 @@
 from typing import List
 
 from llama_index.core.base.llms.types import MessageRole
-from mongoengine import Document, StringField, DictField
+from mongoengine import DictField, Document, StringField
 
-from aihub_lib.nats.events.control import UserChatMessage, AssistantChatMessage
+from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 

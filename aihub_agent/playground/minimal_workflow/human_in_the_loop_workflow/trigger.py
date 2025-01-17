@@ -26,18 +26,12 @@ async def main():
     )
 
     async with runner.test_run() as topic:
-        await runner.send_event_from_topic(
-            topic=topic, start_event=StartEvent(messages=[])
-        )
+        await runner.send_event_from_topic(topic=topic, start_event=StartEvent(messages=[]))
         await sleep(1)
-        request_event = HumanInTheLoop.request(
-            question="Shall I continue?", topic=PartialAgentTopic()
-        )
+        request_event = HumanInTheLoop.request(question="Shall I continue?", topic=PartialAgentTopic())
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=HumanInTheLoop.response(
-                response="Yes, Please!", request_event=request_event
-            ),
+            start_event=HumanInTheLoop.response(response="Yes, Please!", request_event=request_event),
         )
 
 

@@ -1,4 +1,3 @@
-
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
@@ -28,4 +27,5 @@ class UserMessageEvent(DisplayEvent, StartEvent):
     This flexible design allows mixing and matching start events to adapt how and when workflows
     are triggered, depending on the source of the event.
     """
+
     pass

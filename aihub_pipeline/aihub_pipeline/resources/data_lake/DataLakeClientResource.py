@@ -1,6 +1,6 @@
+from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
-from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 
 from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
@@ -106,6 +106,4 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
 
     def create_resource(self, context: InitResourceContext) -> FileSystemClient:
         data_lake_client = DataLakeAccess().get_client()
-        return data_lake_client.get_file_system_client(
-            file_system=self.namespace.organization
-        )
+        return data_lake_client.get_file_system_client(file_system=self.namespace.organization)

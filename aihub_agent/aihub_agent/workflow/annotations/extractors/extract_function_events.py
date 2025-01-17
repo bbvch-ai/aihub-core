@@ -1,27 +1,23 @@
 import inspect
-from typing import (
-    Type,
-    Set,
-    Dict,
-    Callable,
-    Tuple,
-    Optional,
-    Annotated,
-)
+from typing import Annotated, Callable, Dict, Optional, Set, Tuple, Type
 
-from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent
 
+from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
+
 
 def extract_function_events(
-    func: Annotated[Callable, "A function or method whose parameters are to be analyzed for event types."]
+    func: Annotated[
+        Callable,
+        "A function or method whose parameters are to be analyzed for event types.",
+    ],
 ) -> Tuple[
     Set[Type[BaseEvent]],
     Dict[str, Set[Type[BaseEvent]]],
     Dict[str, bool],
-    Dict[str, Optional[int]]
+    Dict[str, Optional[int]],
 ]:
     """
     Analyze a function’s parameters to determine which event types it consumes, as well as optionality
@@ -66,7 +62,7 @@ def extract_function_events(
     size_requirements: Dict[str, Optional[int]] = {}
 
     for param in signature.parameters.values():
-        if param.name == 'self':
+        if param.name == "self":
             continue
         annotation = param.annotation
         # Skip run/thread context params, not considered event inputs

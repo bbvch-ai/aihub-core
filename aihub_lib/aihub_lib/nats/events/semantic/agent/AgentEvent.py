@@ -1,6 +1,6 @@
 from typing import Dict
 
-from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 

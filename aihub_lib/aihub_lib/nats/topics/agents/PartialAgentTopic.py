@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager

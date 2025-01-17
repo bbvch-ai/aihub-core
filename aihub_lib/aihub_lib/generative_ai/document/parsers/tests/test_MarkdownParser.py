@@ -3,6 +3,7 @@ from time import time
 import pytest
 from llama_index.core.schema import Document, NodeRelationship
 
+from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -16,9 +17,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NAMESPACE,
     SOURCE,
     UPDATED_AT,
-)
-from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import (
-    MarkdownStructuralNodeParser,
 )
 
 

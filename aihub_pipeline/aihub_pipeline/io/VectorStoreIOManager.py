@@ -1,18 +1,9 @@
 from typing import List, Sequence, Union
 
-from dagster import (
-    ConfigurableIOManager,
-    InputContext,
-    OutputContext,
-    ResourceDependency,
-)
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
+from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores.types import (
-    BasePydanticVectorStore,
-    MetadataFilter,
-    MetadataFilters,
-)
+from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
 from aihub_pipeline.util.id_utils import uri_to_id
@@ -85,26 +76,18 @@ class VectorStoreIOManager(ConfigurableIOManager):
     vector_store: ResourceDependency[BasePydanticVectorStore]
     document_id_key: str = DOCUMENT_ID
 
-    def handle_output(
-        self, context: OutputContext, obj: Union[List[TextNode], List[List[TextNode]]]
-    ) -> None:
+    def handle_output(self, context: OutputContext, obj: Union[List[TextNode], List[List[TextNode]]]) -> None:
         # Check if obj is a list of TextNodes (single document)
         if isinstance(obj, list) and all(isinstance(node, TextNode) for node in obj):
             nodes = obj
-            context.log.info(
-                f"Adding {len(nodes)} nodes from a single document to vector store"
-            )
+            context.log.info(f"Adding {len(nodes)} nodes from a single document to vector store")
         # Check if obj is a list of lists of TextNodes (multiple documents)
         elif isinstance(obj, list) and all(
-            isinstance(sublist, list)
-            and all(isinstance(node, TextNode) for node in sublist)
-            for sublist in obj
+            isinstance(sublist, list) and all(isinstance(node, TextNode) for node in sublist) for sublist in obj
         ):
             # Flatten the list of lists
             nodes = [node for sublist in obj for node in sublist]
-            context.log.info(
-                f"Adding {len(nodes)} nodes from multiple documents to vector store"
-            )
+            context.log.info(f"Adding {len(nodes)} nodes from multiple documents to vector store")
         else:
             context.log.error("Output must be a List[TextNode] or List[List[TextNode]]")
             raise ValueError("Expected a List[TextNode] or List[List[TextNode]]")
@@ -123,15 +106,11 @@ class VectorStoreIOManager(ConfigurableIOManager):
         self.vector_store.add(nodes)
         context.log.info("Successfully added nodes to vector store")
 
-    def load_input(
-        self, context: InputContext
-    ) -> Union[List[TextNode], List[List[TextNode]]]:
+    def load_input(self, context: InputContext) -> Union[List[TextNode], List[List[TextNode]]]:
         # Check if a partition key is available
         if context.has_partition_key:
             # Single partition key; load nodes for a single document
-            doc_id = self._convert_partition_key_to_doc_id(
-                context.partition_key, context
-            )
+            doc_id = self._convert_partition_key_to_doc_id(context.partition_key, context)
             nodes = self._query_vector_store_for_single_doc(doc_id, context)
             return nodes  # Return List[TextNode]
         else:
@@ -141,25 +120,15 @@ class VectorStoreIOManager(ConfigurableIOManager):
 
             if partitions_def is not None:
                 # Get all partition keys from the upstream asset
-                all_partition_keys = partitions_def.get_partition_keys(
-                    dynamic_partitions_store=context.instance
-                )
-                doc_ids = self._get_doc_ids_from_partition_keys(
-                    all_partition_keys, context
-                )
-                nodes_per_doc = self._query_vector_store_for_multiple_docs(
-                    doc_ids, context
-                )
+                all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
+                doc_ids = self._get_doc_ids_from_partition_keys(all_partition_keys, context)
+                nodes_per_doc = self._query_vector_store_for_multiple_docs(doc_ids, context)
                 return nodes_per_doc  # Return List[List[TextNode]]
             else:
-                context.log.error(
-                    "No partition definition found for the upstream asset."
-                )
+                context.log.error("No partition definition found for the upstream asset.")
                 raise ValueError("Cannot load nodes without partition information.")
 
-    def _convert_partition_key_to_doc_id(
-        self, uri_or_id: str, context: InputContext
-    ) -> str:
+    def _convert_partition_key_to_doc_id(self, uri_or_id: str, context: InputContext) -> str:
         if "/" in uri_or_id:
             doc_id = uri_to_id(uri_or_id)
             context.log.debug(f"Converted URI {uri_or_id} to ID {doc_id}")
@@ -167,21 +136,15 @@ class VectorStoreIOManager(ConfigurableIOManager):
             doc_id = uri_or_id
         return doc_id
 
-    def _get_doc_ids_from_partition_keys(
-        self, partition_keys: Sequence[str], context: InputContext
-    ) -> List[str]:
+    def _get_doc_ids_from_partition_keys(self, partition_keys: Sequence[str], context: InputContext) -> List[str]:
         doc_ids = []
         for uri_or_id in partition_keys:
             doc_id = self._convert_partition_key_to_doc_id(uri_or_id, context)
             doc_ids.append(doc_id)
         return doc_ids
 
-    def _query_vector_store_for_single_doc(
-        self, doc_id: str, context: InputContext
-    ) -> List[TextNode]:
-        filters = MetadataFilters(
-            filters=[MetadataFilter(key=self.document_id_key, value=doc_id)]
-        )
+    def _query_vector_store_for_single_doc(self, doc_id: str, context: InputContext) -> List[TextNode]:
+        filters = MetadataFilters(filters=[MetadataFilter(key=self.document_id_key, value=doc_id)])
 
         context.log.info(f"Querying vector store for document ID: {doc_id}")
 
@@ -194,9 +157,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
 
         return nodes
 
-    def _query_vector_store_for_multiple_docs(
-        self, doc_ids: List[str], context: InputContext
-    ) -> List[List[TextNode]]:
+    def _query_vector_store_for_multiple_docs(self, doc_ids: List[str], context: InputContext) -> List[List[TextNode]]:
         nodes_per_doc = []
         for doc_id in doc_ids:
             nodes = self._query_vector_store_for_single_doc(doc_id, context)

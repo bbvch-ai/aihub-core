@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "0.1.0"
+version = "v0.6.0"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -27,6 +27,7 @@ pydantic-settings = "^2.7.0"
 colorlog = "^6.9.0"
 llama-index-llms-openai = "^0.3.12"
 llama-index-llms-azure-openai = "^0.3.0"
+pytest-mock = "^3.14.0"
 
 [tool.poetry.dependencies.aihub_lib]
 path = "../aihub_lib"
@@ -38,9 +39,38 @@ ruff = "^0.8.1"
 isort = "^5.13.2"
 mypy = "^1.13.0"
 toml-sort = "^0.24.2"
-black = {extras = ["jupyter"], version = "^24.10.0"}
+black = { extras = ["jupyter"], version = "^24.10.0" }
 pytest-bdd = "^8.1.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+target-version = 'py311'
+
+[tool.ruff.lint]
+extend-ignore = ["E203"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''

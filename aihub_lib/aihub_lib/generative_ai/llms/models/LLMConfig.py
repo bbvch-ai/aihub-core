@@ -20,6 +20,7 @@ class ModelParameter(BaseModel):
 
     Subclasses should define fields relevant to their respective models.
     """
+
     pass
 
 
@@ -46,7 +47,7 @@ class LLMConfig(BaseModel):
 
     @abstractmethod
     def to_llama_index(
-            self, model_parameter: Optional[ModelParameter]
+        self, model_parameter: Optional[ModelParameter]
     ) -> Tuple[Union[LLM, BaseEmbedding], LLMCostTracker]:
         """
         Instantiate an LLM or embedding along with a cost tracker for llama_index.

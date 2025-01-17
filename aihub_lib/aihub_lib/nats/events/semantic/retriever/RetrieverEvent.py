@@ -1,10 +1,11 @@
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
+
+from llama_index.core.schema import NodeWithScore
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
-from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
-
-from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 from aihub_lib.nats.events.semantic.retriever.Document import Document
+from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class RetrieverEvent(SemanticEvent):
@@ -13,7 +14,7 @@ class RetrieverEvent(SemanticEvent):
         description="List of documents retrieved by the retriever, including document IDs, scores, and content.",
     )
 
-    def to_semantic_convention(self) -> Dict[str,str]:
+    def to_semantic_convention(self) -> Dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.RETRIEVER.value,
         }
@@ -27,3 +28,8 @@ class RetrieverEvent(SemanticEvent):
                 }
 
         return attributes
+
+    @classmethod
+    def from_nodes(cls, nodes: List[NodeWithScore]) -> "RetrieverEvent":
+        documents = [Document.from_node(node) for node in nodes]
+        return cls(documents=documents)

@@ -1,7 +1,4 @@
-from aihub_lib.infrastructure.azure import (
-    CosmosConnectionStringSingleton,
-)
-from aihub_lib.infrastructure.azure import BaseConfig
+from aihub_lib.infrastructure.azure import BaseConfig, CosmosConnectionStringSingleton
 from mongoengine import connect
 
 

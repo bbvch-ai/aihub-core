@@ -1,0 +1,40 @@
+name: Auto Draft PR for New Branch
+
+on:
+  create:
+    branches: [ '*' ]
+    tags: [ ]
+
+jobs:
+  create-draft-pr:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_type, 'branch')
+    steps:
+      - name: Determine base branch from new branch name
+        id: prepare
+        run: |
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+
+          if [[ "$BRANCH_NAME" == *"/"* ]]; then
+            BASE_BRANCH="${BRANCH_NAME%%/*}"   # everything before the first '/'
+          else
+            BASE_BRANCH="main"
+          fi
+
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Create draft PR with GitHub CLI
+        run: |
+          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          gh pr create \
+            --base ${{ steps.prepare.outputs.BASE_BRANCH }} \
+            --head ${{ steps.prepare.outputs.BRANCH_NAME }} \
+            --title "[WIP] ${{ github.ref_name }}" \
+            --body "This draft PR was automatically created from branch ${{ steps.prepare.outputs.BRANCH_NAME }}.\nBase branch: ${{ steps.prepare.outputs.BASE_BRANCH }}" \
+            --draft

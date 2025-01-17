@@ -13,10 +13,10 @@ class ContextAgent(Agent):
 
     @step()
     async def start_step(
-        self,
-        event: CustomStartEvent,
-        thread_context: ThreadContext,
-        run_context: RunContext,
+            self,
+            event: CustomStartEvent,
+            thread_context: ThreadContext,
+            run_context: RunContext,
     ) -> EventA:
         thread_count = await thread_context.get("count", 0)
         run_count = await run_context.get("count", 0)
@@ -30,7 +30,7 @@ class ContextAgent(Agent):
 
     @step()
     async def end_step(
-        self, event: EventA, thread_context: ThreadContext, run_context: RunContext
+            self, event: EventA, thread_context: ThreadContext, run_context: RunContext
     ) -> StopEvent:
         payload = await run_context.get("payload", [])
         print(f"[SimpleAgent.end_step] Payload is '{payload}'")

@@ -24,9 +24,7 @@ async def main():
         agent_config=LLMWrappingAgentConfig(
             agent_id="dev_agent",
             name=LocaleString(en="Dev Agent"),
-            description=LocaleString(
-                en="This is an agent that can be used to develop the frontend"
-            ),
+            description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             system_prompt=LocaleString(en="You are an agent"),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
@@ -42,9 +40,7 @@ async def main():
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)]
-            ),
+            start_event=StartEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
         )
 
 

@@ -14,7 +14,6 @@ enable_logging()
 
 
 class FanOutAgent(Agent):
-
     @step()
     async def start_step(self, event: StartEvent) -> List[EventA]:
         print(f"[FanOutAgent.start_step]", event)

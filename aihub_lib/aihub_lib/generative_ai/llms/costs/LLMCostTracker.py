@@ -64,18 +64,12 @@ class LLMCostTracker:
             completion_token_count=self._token_counter.completion_llm_token_count,
             embedding_token_count=self._token_counter.total_embedding_token_count,
             prompt_tokens_costs=(
-                self._token_counter.prompt_llm_token_count
-                * self._prompt_tokens_costs_per_thousand
-                / 1000
+                self._token_counter.prompt_llm_token_count * self._prompt_tokens_costs_per_thousand / 1000
             ),
             completion_tokens_costs=(
-                self._token_counter.completion_llm_token_count
-                * self._completion_tokens_costs_per_thousand
-                / 1000
+                self._token_counter.completion_llm_token_count * self._completion_tokens_costs_per_thousand / 1000
             ),
             embedding_tokens_costs=(
-                self._token_counter.total_embedding_token_count
-                * self._embedding_tokens_costs_per_thousand
-                / 1000
+                self._token_counter.total_embedding_token_count * self._embedding_tokens_costs_per_thousand / 1000
             ),
         )

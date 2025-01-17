@@ -15,4 +15,5 @@ class ControlEvent(BaseEvent):
     By subclassing `BaseEvent`, `ControlEvent` benefits from automatic type registration and
     serialization, ensuring that control signals are as easy to produce and consume as any other event.
     """
+
     pass
