@@ -43,14 +43,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Azure CLI
-        if: matrix.module == 'aihub_agent'
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -106,11 +98,6 @@ jobs:
         run: |
           make test-cov || echo "TEST_FAIL=true" >> $GITHUB_ENV
         working-directory: ${{ matrix.module }}
-        env:
-          ORIGINAL_AZURE_SUBSCRIPTION_NAME: ${{ vars.AZURE_SUBSCRIPTION_NAME }}
-          ORIGINAL_ENVIRONMENT: ${{ vars.ENV_SHORT }}
-          ORIGINAL_APP_NAME: ${{ vars.APP_NAME }}
-          ORIGINAL_REGION_SHORT: ${{ vars.REGION_SHORT }}
 
       # Stop Docker services after tests
       - name: Stop Docker services
