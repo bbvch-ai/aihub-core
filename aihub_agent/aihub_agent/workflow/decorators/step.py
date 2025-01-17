@@ -1,10 +1,12 @@
 import inspect
+import logging
 from typing import Annotated, Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
 from aihub_agent.workflow.annotations.extractors.extract_function_events import extract_function_events
 
+logger = logging.getLogger(__name__)
 
 def step(
     *,
@@ -71,6 +73,15 @@ def step(
         setattr(func, "_step_name", name)
         setattr(func, "_step_description", description)
         setattr(func, "__signature__", inspect.signature(func))
+
+        logger.debug(f"Decorated step: {func.__name__} with input events: {input_events}")
+        logger.debug(f"Decorated step: {func.__name__} with input event mapping: {input_event_mapping}")
+        logger.debug(f"Decorated step: {func.__name__} with parameter optional map: {parameter_optional_map}")
+        logger.debug(f"Decorated step: {func.__name__} with size requirements: {size_requirements}")
+        logger.debug(f"Decorated step: {func.__name__} with max executions per run: {max_executions_per_run}")
+        logger.debug(f"Decorated step: {func.__name__} with stop on error: {stop_on_error}")
+        logger.debug(f"Decorated step: {func.__name__} with step name: {name}")
+        logger.debug(f"Decorated step: {func.__name__} with step description: {description}")
 
         return func
 
