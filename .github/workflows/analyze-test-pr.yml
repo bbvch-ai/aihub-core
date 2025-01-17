@@ -83,6 +83,10 @@ jobs:
           path: ${{ matrix.module }}/.venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('${{ matrix.module }}/poetry.lock') }}
 
+      - name: Validate poetry.lock
+        run: poetry lock --check
+        working-directory: ${{ matrix.module }}
+
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
