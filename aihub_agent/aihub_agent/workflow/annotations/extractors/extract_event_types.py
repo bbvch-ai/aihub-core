@@ -61,7 +61,7 @@ def extract_event_types(
     if hasattr(annotation, "_required_size"):
         required_size = annotation._required_size
         # Extract the event type from the generic base of this annotation
-        base_type = annotation.__orig_bases__[0].__args__[0]  # type: ignore
+        base_type = annotation._item_type  # type: ignore
         if inspect.isclass(base_type) and issubclass(base_type, BaseEvent):
             event_types.add(base_type)
 
