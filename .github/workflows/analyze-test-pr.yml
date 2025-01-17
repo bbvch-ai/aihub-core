@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [aihub_lib, aihub_core, aihub_agent, aihub_pipeline]
+        module: [aihub_lib, aihub_api, aihub_agent, aihub_pipeline]
 
     environment:
       name: Development
