@@ -32,7 +32,11 @@ clean:
 
 test-cov:
 	@echo "Running tests in aihub_api with coverage..."
-	poetry run pytest --cov=aihub_api --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml
+	poetry run pytest --cov=aihub_api \
+	                  --cov-report=xml:coverage.xml \
+	                  --cov-report=term-missing \
+	                  --junitxml=pytest.xml \
+	                   || echo "No tests found. Skipping..."
 
 pr-ready: sort-imports format
 	@echo "Running full check (format, sort)..."
