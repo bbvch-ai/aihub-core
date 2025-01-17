@@ -5,6 +5,6 @@ class StartStepConfig(StepConfig):
     some_step_value: str
 
 
-class ConfiguredAgentAgentConfig(AgentConfig):
+class ConfiguredAgentConfig(AgentConfig):
     some_agent_value: str
     start_step_config: StartStepConfig
