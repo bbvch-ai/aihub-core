@@ -20,7 +20,7 @@ requests = ">=2.0.0,<3"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.10.0"
+version = "v0.11.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -1982,6 +1982,7 @@ markers = "sys_platform != \"win32\""
 files = [
     {file = "milvus_lite-2.4.11-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:9e563ae0dca1b41bfd76b90f06b2bcc474460fe4eba142c9bab18d2747ff843b"},
     {file = "milvus_lite-2.4.11-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d21472bd24eb327542817829ce7cb51878318e6173c4d62353c77421aecf98d6"},
+    {file = "milvus_lite-2.4.11-py3-none-manylinux2014_aarch64.whl", hash = "sha256:8e6ef27f7f84976f9fd0047b675ede746db2e0cc581c44a916ac9e71e0cef05d"},
     {file = "milvus_lite-2.4.11-py3-none-manylinux2014_x86_64.whl", hash = "sha256:551f56b49fcfbb330b658b4a3c56ed29ba9b692ec201edd1f2dade7f5e39957d"},
 ]
 
