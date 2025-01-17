@@ -63,7 +63,8 @@ def FixedList(
     Now `My3EventList` is a type that, when instantiated, must have exactly three `SomeEvent`s.
     """
 
-    class _FixedSizeList(ListOfSize[T]):
+    class _FixedSizeList(ListOfSize[type_]):
         _required_size = size
+        _item_type = type_
 
     return _FixedSizeList
