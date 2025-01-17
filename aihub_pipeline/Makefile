@@ -20,3 +20,7 @@ sort-imports:
 # Run format, sort-imports, type-check, and test in sequence
 pr-ready: sort-imports format
 	@echo "Running full check (format, sort)..."
+
+test-cov:
+	@echo "Running tests in aihub_pipeline with coverage..."
+	poetry run pytest --cov=aihub_pipeline --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml

@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - initiative/*
     types:
       - opened
       - edited
@@ -14,6 +15,161 @@ on:
       - reopened
 
 jobs:
+  test-modules:
+    name: Test Modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [aihub_lib, aihub_core, aihub_agent, aihub_pipeline]
+
+    environment:
+      name: Development
+
+    permissions:
+      id-token: write
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+
+    outputs:
+      test_report_passed: ${{ steps.test_report.outputs.passed }}
+      test_report_failed: ${{ steps.test_report.outputs.failed }}
+      test_report_skipped: ${{ steps.test_report.outputs.skipped }}
+      test_report_time: ${{ steps.test_report.outputs.time }}
+      test_report_url_html: ${{ steps.test_report.outputs.url_html }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Docker Compose
+        run: sudo apt-get install -y docker-compose
+
+      # Start Docker services for aihub_agent only
+      - name: Start Docker services
+        if: matrix.module == 'aihub_agent'
+        run: |
+          docker-compose -f playground/docker-compose.yml up -d
+        working-directory: aihub_agent
+
+      # Wait for services to initialize
+      - name: Wait for Docker services
+        if: matrix.module == 'aihub_agent'
+        run: |
+          until nc -z localhost 4222; do
+            echo "Waiting for NATS service to be ready..."
+            sleep 3
+          done
+          until nc -z localhost 27017; do
+            echo "Waiting for MongoDB service to be ready..."
+            sleep 3
+          done
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.3
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.module }}/.venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('${{ matrix.module }}/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+        working-directory: ${{ matrix.module }}
+
+      - name: Install project
+        run: poetry install --no-interaction
+        working-directory: ${{ matrix.module }}
+
+      - name: Run tests with coverage and generate report
+        run: |
+          make test-cov || echo "TEST_FAIL=true" >> $GITHUB_ENV
+        working-directory: ${{ matrix.module }}
+        env:
+          ORIGINAL_COGNITIVE_SEARCH_ENDPOINT: ${{ vars.COGNITIVE_SEARCH_ENDPOINT }}
+          ORIGINAL_SHARED_DB_NAME: ${{ vars.SHARED_DB_NAME }}
+          ORIGINAL_SPEECH_SERVICE_REGION: ${{ vars.SPEECH_SERVICE_REGION }}
+          ORIGINAL_WHISPER_API_ENDPOINT: ${{ vars.WHISPER_API_ENDPOINT }}
+          ORIGINAL_WHISPER_API_VERSION: ${{ vars.WHISPER_API_VERSION }}
+          ORIGINAL_AZURE_SUBSCRIPTION_NAME: ${{ vars.AZURE_SUBSCRIPTION_NAME }}
+          ORIGINAL_ENVIRONMENT: ${{ vars.ENV_SHORT }}
+          ORIGINAL_APP_NAME: ${{ vars.APP_NAME }}
+          ORIGINAL_REGION_SHORT: ${{ vars.REGION_SHORT }}
+          ORIGINAL_COGNITIVE_SEARCH_KEY: ${{ secrets.COGNITIVE_SEARCH_KEY }}
+          ORIGINAL_MONGO_CONNECTION_STRING: ${{ secrets.MONGO_CONNECTION_STRING }}
+          ORIGINAL_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ORIGINAL_SPEECH_SERVICE_KEY: ${{ secrets.SPEECH_SERVICE_KEY }}
+          ORIGINAL_WHISPER_API_KEY: ${{ secrets.WHISPER_API_KEY }}
+
+      # Stop Docker services after tests
+      - name: Stop Docker services
+        if: matrix.module == 'aihub_agent'
+        run: |
+          docker-compose -f playground/docker-compose.yml down
+        working-directory: aihub_agent
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.module }}-coverage-report
+          path: ${{ matrix.module }}/coverage.xml
+
+      - name: Upload pytest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.module }}-pytest-report
+          path: ${{ matrix.module }}/pytest.xml
+
+
+  pytest-coverage-comment:
+    name: Pytest Coverage Comment
+    needs: test-modules
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download pytest reports
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.module }}-pytest-report
+          path: ${{ matrix.module }}
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.module }}-coverage-report
+          path: ${{ matrix.module }}
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          junitxml-path: ${{ matrix.module }}/pytest.xml
+          pytest-xml-coverage-path: ${{ matrix.module }}/coverage.xml
+          coverage-path-prefix: ${{ matrix.module }}
+          title: Tests for ${{ matrix.module }}
+          default-branch: dev
+          report-only-changed-files: true
+
   sonarcloud-agent:
     name: SonarCloud Agents Core
     runs-on: ubuntu-latest

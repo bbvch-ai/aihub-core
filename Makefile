@@ -47,3 +47,11 @@ TAG ?= v0.1.0
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
 	python switch_dependency.py remote --tag "$(TAG)"
+
+test-cov:
+	@echo "Running tests with coverage..."
+	@(cd aihub_lib && make test-cov)
+	@(cd aihub_api && make test-cov)
+	@(cd aihub_pipeline && make test-cov)
+	@(cd aihub_agent && make test-cov)
+
