@@ -143,9 +143,6 @@ jobs:
       matrix:
         module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline ]
 
-      outputs:
-        modules_with_tests: ${{ steps.collect-modules.outputs.modules_with_tests }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
