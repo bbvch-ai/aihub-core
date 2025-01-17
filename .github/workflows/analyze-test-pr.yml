@@ -114,24 +114,34 @@ jobs:
         working-directory: aihub_agent
 
       - name: Upload coverage report
-        if: success() && steps.test-cov.outputs.success == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}-coverage-report
           path: ${{ matrix.module }}/coverage.xml
 
       - name: Upload pytest report
-        if: success() && steps.test-cov.outputs.success == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}-pytest-report
           path: ${{ matrix.module }}/pytest.xml
 
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            ./server/pytest.xml
+
+      - name: Check if tests failed
+        if: env.TEST_FAIL == 'true'
+        run: |
+          echo "Tests have failed!"
+          exit 1
+
   pytest-coverage-comment:
     name: Pytest Coverage Comment
     needs: test-modules
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
 
     permissions:
       contents: read
