@@ -130,7 +130,7 @@ jobs:
         if: always()
         with:
           files: |
-            ./server/pytest.xml
+            ${{ matrix.module }}/pytest.xml
 
       - name: Check if tests failed
         if: env.TEST_FAIL == 'true'
