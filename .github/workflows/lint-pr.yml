@@ -1,15 +1,14 @@
 name: Lint Code
+
 on:
   pull_request:
-    branches:
-      - initiative/*
-      - main
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
-      - ready_for_review
+    branches: [ main, initiative/* ]
+    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
 
 jobs:
   lint:
@@ -65,11 +64,6 @@ jobs:
   lint-frontend:
     name: Lint Web
     runs-on: ubuntu-latest
-
-    permissions:
-      checks: write
-      contents: read
-      pull-requests: write
 
     steps:
       - name: Checkout Repository

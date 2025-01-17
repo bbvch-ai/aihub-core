@@ -17,10 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
 
-    permissions:
-      contents: read
-      security-events: write
-
     strategy:
       matrix:
         folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline, aihub_web ]
