@@ -7,10 +7,10 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.testing.logging.logger import enable_logging
-from playground.minimal_workflow.discovery_workflow.DiscoverableAgent import (
+from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import (
     DiscoverableAgent,
 )
-from playground.minimal_workflow.discovery_workflow.DiscoverableAgentConfig import (
+from playground.minimal_workflow.discoverable_workflow.DiscoverableAgentConfig import (
     DiscoverableAgentConfig,
 )
 
