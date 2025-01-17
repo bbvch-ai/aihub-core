@@ -459,48 +459,48 @@ Clone the following repositories:
 
 #### 2.2.2.1 Backend Services
 
-Each folder in the `aihub-core` repository represents a **microservice**.
-To ensure proper isolation and compatibility, follow these steps for each folder:
+Each folder in the `aihub-core` repository represents a **microservice**, which is an independent, self-contained module
+designed to handle a specific functionality within the broader system. This modular approach enhances scalability and
+maintainability.
 
-Option 1: **Use a separate environment for each service** (safer and more isolated):
+1. **Open the `aihub-core` Project (or a Parent Directory)**:
 
-1. **Open Each Folder in a Separate IDE**:
-    - Recommendation: Use PyCharm for backend services and WebStorm for frontend services.
+    - Open PyCharm.
+    - Navigate to the `aihub-core` directory or any parent directory containing `aihub-core` and open it as the main
+      project. Opening a parent directory can help manage additional related projects, such as customer projects, in the
+      same workspace.
 
-2. **Set Up an Environment for Each Microservice**:
-    - Open the microservice folder e.g. `aihub_api` as a new project.
-    - Configure a poetry environment (https://www.jetbrains.com/help/pycharm/poetry.html)
-        - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-        - Click on the gear icon and select **Add** > **Poetry Environment**.
-            - **Base interpreter**: Use miniconda python executable as interpreter (usually found under
-              AppData/Local/minconda3).
-            - **Poetry executable**: Find and select the poetry.exe.
-        - Apply and set the environment.
-    - If you have not already done so, initialize Poetry within the environment:
+2. **Attach Microservices as Additional Projects**:
+
+    - For each folder in `aihub-core` containing a `pyproject.toml` file (e.g., `aihub_api`, `aihub_lib`, `aihub_agent`,
+      `aihub_pipeline`):
+        - Go to **File > Open...**.
+        - Select the microservice folder.
+        - In the popup, select the **Attach** option to keep all microservices accessible within the same PyCharm
+          workspace.
+
+3. **Set Up Poetry Environments for Each Microservice**:
+
+    - For each attached project:
+        - Go to **File > Settings > Project:\*\*\*\* > Python Interpreter**.
+        - Select the microservice in the left column (e.g., `aihub_agent`).
+        - Click on **Add Interpreter > Add Local Interpreter**.
+            - **Type**: Poetry
+            - **Base interpreter**: Use the Miniconda Python executable (usually found under
+              `AppData/Local/miniconda3`).
+            - **Poetry executable**: Locate and select the `poetry.exe` file.
+        - Apply the settings.
+    - Navigate to the microservice directory and run:
       ```bash
       poetry install
       ```
+    - *Alternatively*, you can just open any Python file in the microservice, and PyCharm should prompt you to configure
+      the Poetry environment based on the project's `pyproject.toml` file.
 
-3. **Repeat** this process for each folder containing a pyproject.toml file (e.g., `aihub_lib`, `aihub_agent`,
-   `aihub_pipeline`).
+4. **Repeat for Each Microservice**:
 
-Option 2: **Use a single environment for all services** (simpler but may cause dependency conflicts):
-
-1. **Open the `aihub-core` folder in PyCharm**.
-2. **Set Up an Environment for the whole project**:
-    - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-    - Click on the gear icon and select **Add** > **Poetry Environment**.
-        - **Base interpreter**: Use miniconda python executable as interpreter (usually found under
-          AppData/Local/minconda3).
-        - **Poetry executable**: Find and select the poetry.exe.
-    - Apply and set the environment.
-    - If you have not already done so, initialize Poetry within the environment. Navigate to a directory e.g.
-      aihub_agent with a pyproject.toml and run:
-      ```bash
-      poetry install
-      ```
-      This may lead to missing dependencies when using other services. In this case, you can run `poetry install`  in
-      the other service's directory again.
+    - Ensure every microservice folder is configured with its own Poetry environment to avoid dependency conflicts. For
+      example, if one microservice uses a specific version of a library, it won't interfere with others.
 
 ##### 2.2.2.1.1 Poetry Commands
 
