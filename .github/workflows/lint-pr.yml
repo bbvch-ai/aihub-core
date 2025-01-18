@@ -60,19 +60,6 @@ jobs:
           reporter: github-pr-review
           workdir: ${{ matrix.folder }}
 
-
-
-  GitHub Action with pnpm
-  Thought for 4m 13s
-  Below is an example workflow updated to use pnpm instead of yarn. In particular:
-
-  We install pnpm globally (via npm).
-  We retrieve and cache the pnpm store path (using pnpm store path).
-  We update the key and restore-keys to reflect pnpm instead of yarn.
-  We install dependencies with pnpm install in the appropriate directory.
-  We reference the appropriate lock file (pnpm-lock.yaml) when generating the cache key.
-  yaml
-  Copy
   lint-frontend:
     name: Lint Web
     runs-on: ubuntu-latest
