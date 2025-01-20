@@ -73,6 +73,11 @@ jobs:
         with:
           version: 1.8.3
 
+      - name: Configure GitHub Token for Poetry
+        run: |
+          poetry config http-basic.github ${{ secrets.GITHUB_ACTOR }} ${{ secrets.GITHUB_TOKEN }}
+          echo "Poetry configured with GitHub token."
+
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v4
