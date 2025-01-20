@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "0.1.0"
+version = "v0.6.0"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",

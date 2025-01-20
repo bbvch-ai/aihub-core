@@ -1,5 +1,5 @@
-const animate = require('tailwindcss-animate')
-const primevue = require('tailwindcss-primeui')
+import animate from 'tailwindcss-animate'
+import primevue from 'tailwindcss-primeui'
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
