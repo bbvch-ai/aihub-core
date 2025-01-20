@@ -151,6 +151,13 @@ class AgentTestRunner(AgentRunner):
         """Check if a StartEvent was observed."""
         return any(isinstance(event.event, StartEvent) for event in self.observed_events)
 
+    def get_start_event(self) -> StartEvent:
+        """
+        Returns the first observed StartEvent.
+        Raises StopIteration if no StartEvent was observed.
+        """
+        return next(event.event for event in self.observed_events if isinstance(event.event, StartEvent))
+
     @property
     def has_stop_event(self) -> bool:
         """Check if a StopEvent was observed."""

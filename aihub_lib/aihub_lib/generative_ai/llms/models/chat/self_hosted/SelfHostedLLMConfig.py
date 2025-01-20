@@ -51,7 +51,7 @@ class SelfHostedLLMConfig(ChatLLMConfig):
     ]
 
     def to_llama_index(
-            self, model_parameter: Optional[SelfHostedLLMParameter] = None
+        self, model_parameter: Optional[SelfHostedLLMParameter] = None
     ) -> Tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
