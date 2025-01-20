@@ -90,6 +90,8 @@ jobs:
         working-directory: ${{ matrix.module }}
 
       - name: Install dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
         working-directory: ${{ matrix.module }}
