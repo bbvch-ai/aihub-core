@@ -38,3 +38,18 @@ async def test_start(agent_runner: AgentTestRunner):
 @then("a StartEvent is present")
 def test_start_present(agent_runner: AgentTestRunner):
     assert agent_runner.has_start_event, "Agent did not receive start event"
+
+
+@then("a RetrieverEvent is present")
+def test_retrieve_present(agent_runner: AgentTestRunner):
+    assert agent_runner.has_start_event, "Agent did not receive retriever event"
+
+
+@then("a RerankerEvent is present")
+def test_rerank_present(agent_runner: AgentTestRunner):
+    assert agent_runner.has_start_event, "Agent did not receive reranker event"
+
+
+@then("a LLMStopEvent is present")
+def test_retrieve_present(agent_runner: AgentTestRunner):
+    assert agent_runner.has_stop_event, "Agent did not stop start event"
