@@ -18,6 +18,7 @@ jobs:
   test-modules:
     name: Test Modules
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     strategy:
       matrix:
         module: [aihub_lib, aihub_api, aihub_agent, aihub_pipeline]
@@ -49,6 +50,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Docker Compose
+        if: matrix.module == 'aihub_agent'
         run: sudo apt-get install -y docker-compose
 
       - name: Start Docker services
@@ -135,6 +137,7 @@ jobs:
     name: Pytest Coverage Comment
     needs: test-modules
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
@@ -172,11 +175,12 @@ jobs:
           default-branch: main
           report-only-changed-files: true
 
+
   sonarcloud-scan:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
     needs: test-modules
-    if: always()
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       contents: read
@@ -186,13 +190,13 @@ jobs:
       matrix:
         include:
           - folder: aihub_agent
-            sonar_project_key: aihub-core_agents_core
+            sonar_project_key: aihub-core_agents-core
           - folder: aihub_api
-            sonar_project_key: aihub-core_api_core
+            sonar_project_key: aihub-core_api-core
           - folder: aihub_lib
-            sonar_project_key: aihub-core_lib_core
+            sonar_project_key: aihub-core_lib-core
           - folder: aihub_pipeline
-            sonar_project_key: aihub-core_pipeline_core
+            sonar_project_key: aihub-core_pipelines-core
 
     steps:
       - name: Checkout
@@ -216,4 +220,5 @@ jobs:
           args: >
             -Dsonar.python.coverage.reportPaths=${{ matrix.folder }}/coverage.xml
             -Dsonar.projectKey=${{ matrix.sonar_project_key }}
-  
+
+
