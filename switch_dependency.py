@@ -47,7 +47,7 @@ MICROSERVICE_DIRS = [
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Toggle 'aihub_lib' between local and remote references "
-        "for specified microservice folders (using tomlkit)."
+                    "for specified microservice folders (using tomlkit)."
     )
     parser.add_argument(
         "mode",
@@ -55,7 +55,9 @@ def parse_args():
         help="Use 'local' for a local path reference, or 'remote' for a Git reference.",
     )
     parser.add_argument(
-        "--tag", help="Git tag (or branch) to use when in 'remote' mode."
+        "--tag",
+        default="v0.1.0",
+        help="Git tag (or branch) to use when in 'remote' mode. (Default: v0.1.0)",
     )
     parser.add_argument(
         "--local-path",
@@ -95,7 +97,7 @@ def process_file(pyproject_path: Path, mode: str, local_path: str, remote_tag: s
 
 
 def update_aihub_lib(
-    doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str
+        doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str
 ):
     if "tool" not in doc or "poetry" not in doc["tool"]:
         return
@@ -109,7 +111,10 @@ def update_aihub_lib(
         return
 
     if mode == "local":
-        new_dep = {"path": local_path}
+        new_dep = {
+            "path": local_path,
+            "develop": True,
+        }
     else:
         new_dep = {
             "git": "https://github.com/bbvch-ai/aihub-core.git",

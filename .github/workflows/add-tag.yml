@@ -65,6 +65,7 @@ jobs:
         run: |
           git tag ${{ steps.create-tag.outputs.version }}
           git push origin ${{ steps.create-tag.outputs.version }}
+          git pull --rebase origin main
 
       - name: Increment version-tag in pyproject.toml
         run: |
@@ -73,14 +74,21 @@ jobs:
             echo "Update package version in $1"
             sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
           }
+          update_lib_tag() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry.dependencies.aihub_lib\]/,/^tag =/ s/tag = "[^"]*"/tag = "'"$VERSION"'"/' $1
+          }
           update_makefile_tag() {
             echo "Update TAG in $1"
             sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
 
           update_version aihub_pipeline/pyproject.toml
+          update_lib_tag aihub_pipeline/pyproject.toml
           update_version aihub_agent/pyproject.toml
+          update_lib_tag aihub_agent/pyproject.toml
           update_version aihub_api/pyproject.toml
+          update_lib_tag aihub_api/pyproject.toml
           update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
 
@@ -91,14 +99,24 @@ jobs:
           # Remove remote tag
           git push origin --delete ${{ steps.create-tag.outputs.version }} || true
 
+      - name: Install Make
+        run: sudo apt-get update && sudo apt-get install -y make
+
+      - name: Install tomlkit
+        run: pip install tomlkit
+
       - name: Commit and push changes
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
+          make use-remote-core
           git add aihub_pipeline/pyproject.toml
           git add aihub_pipeline/poetry.lock
+          git add aihub_agent/pyproject.toml
+          git add aihub_agent/poetry.lock
+          git add aihub_api/pyproject.toml
+          git add aihub_api/poetry.lock
           git add aihub_lib/pyproject.toml
           git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
           git push origin --force
