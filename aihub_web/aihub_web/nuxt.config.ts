@@ -1,5 +1,4 @@
 import { fileURLToPath } from 'url'
-import Aura from '@primevue/themes/aura'
 
 export default defineNuxtConfig({
   modules: [
@@ -13,14 +12,18 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     '@nuxtjs/robots',
     '@pinia/colada-nuxt',
-    '@primevue/nuxt-module',
     // '@nuxtjs/storybook',
+    '@primevue/nuxt-module',
+    '@nuxt/eslint',
   ],
+
   ssr: false,
   devtools: { enabled: true },
+
   css: [
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
   ],
+
   runtimeConfig: {
     public: {
       oidc: {
@@ -29,9 +32,13 @@ export default defineNuxtConfig({
       },
     },
   },
+
   alias: {
     '@core': fileURLToPath(new URL('./', import.meta.url)),
   },
+
+  compatibilityDate: '2025-01-18',
+
   nitro: {
     devProxy: {
       '/api/v1': {
@@ -42,11 +49,13 @@ export default defineNuxtConfig({
       },
     },
   },
+
   eslint: {
     config: {
       stylistic: true,
     },
   },
+
   i18n: {
     strategy: 'prefix',
     detectBrowserLanguage: {
@@ -67,11 +76,13 @@ export default defineNuxtConfig({
     lazy: true,
     defaultLocale: 'en',
   },
+
   primevue: {
     importTheme: {
       from: fileURLToPath(new URL('./themes/aihub-theme.ts', import.meta.url)),
     },
   },
+
   shadcn: {
     componentDir: fileURLToPath(new URL('./components/ui', import.meta.url)),
   },

@@ -2,15 +2,8 @@ name: AI Code Review
 
 on:
   pull_request:
-    branches:
-      - main
-      - initiative/*
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
-      - ready_for_review
+    branches: [ main, initiative/* ]
+    types: [ opened, edited, synchronize, reopened, ready_for_review ]
   issue_comment:
 
 jobs:
