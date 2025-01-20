@@ -11,4 +11,4 @@ class MultiLocaleAgent(Agent):
         print(f"[MultiLocaleAgent.start_step] Lib Core says: {t('lib.common.test')}.")
         print(f"[MultiLocaleAgent.start_step] Agents Core says: {t('agents.prompt.test')}.")
         print(f"[MultiLocaleAgent.start_step] Local Agent says: {t('myagent.myscope.test')}.")
-        pass
+        return StopEvent()
