@@ -1,9 +1,7 @@
 Feature: Context Agent with Thread and Run Contexts
 
   Scenario: Multiple runs in the same thread with distinct RunContexts
-    Given a mock thread context
-    And a mock run context
-    And a ContextAgent test runner
+    Given a ContextAgent test runner
 
     When '3' runs are executed with distinct RunContexts
 
