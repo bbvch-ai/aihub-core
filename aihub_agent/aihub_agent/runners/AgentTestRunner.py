@@ -1,17 +1,18 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, List, Optional, Type
+from typing import AsyncGenerator, List, Optional, Type, Dict
 
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-
 from bson import ObjectId
 from pydantic import BaseModel
 
@@ -73,6 +74,8 @@ class AgentTestRunner(AgentRunner):
             locale_paths=locale_paths,
         )
         self.observed_events: List[ObservedEvent] = []
+        self.thread_context: Optional[ThreadContext] = None
+        self.run_contexts: Dict[str, RunContext] = {}
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -89,7 +92,9 @@ class AgentTestRunner(AgentRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[PartialAgentTopic, None]:
+    async def test_run(
+            self, delay_before_stop: int = 1, thread_id: Optional[str] = None
+    ) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:
         1. Starts the agent runner.
@@ -104,7 +109,7 @@ class AgentTestRunner(AgentRunner):
         """
         await self.start()
 
-        thread_id = str(ObjectId())
+        thread_id: str = thread_id or str(ObjectId())
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
@@ -145,6 +150,7 @@ class AgentTestRunner(AgentRunner):
         # After leaving the context, wait a bit before stopping to allow
         # the agent to finish processing any last events.
         await sleep(delay_before_stop)
+
         await self.stop()
 
     @property

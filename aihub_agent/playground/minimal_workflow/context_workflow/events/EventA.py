@@ -2,4 +2,5 @@ from aihub_lib.nats.events import ControlEvent
 
 
 class EventA(ControlEvent):
-    pass
+    thread_count: int
+    run_count: int
