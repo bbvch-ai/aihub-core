@@ -169,125 +169,51 @@ jobs:
           pytest-xml-coverage-path: ${{ matrix.module }}/coverage.xml
           coverage-path-prefix: ${{ matrix.module }}
           title: Tests for ${{ matrix.module }}
-          default-branch: dev
+          default-branch: main
           report-only-changed-files: true
 
-  sonarcloud-agent:
-    name: SonarCloud Agents Core
+  sonarcloud-scan:
+    name: SonarCloud Scan
     runs-on: ubuntu-latest
+    needs: test-modules
     if: always()
 
     permissions:
       contents: read
       security-events: write
 
+    strategy:
+      matrix:
+        include:
+          - folder: aihub_agent
+            sonar_project_key: aihub-core_agents_core
+          - folder: aihub_api
+            sonar_project_key: aihub-core_api_core
+          - folder: aihub_lib
+            sonar_project_key: aihub-core_lib_core
+          - folder: aihub_pipeline
+            sonar_project_key: aihub-core_pipeline_core
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: SonarCloud Scan
+      - name: Download Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.folder }}-coverage-report
+          path: ${{ matrix.folder }}
+
+      - name: Run SonarCloud
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: aihub_agent
+          projectBaseDir: ${{ matrix.folder }}
           args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-api:
-    name: SonarCloud API Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_api
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-lib:
-    name: SonarCloud Lib Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_lib
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-pipeline:
-    name: SonarCloud Pipelines Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_pipeline
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-  sonarcloud-web:
-    name: SonarCloud Web Core
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_web
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.python.coverage.reportPaths=${{ matrix.folder }}/coverage.xml
+            -Dsonar.projectKey=${{ matrix.sonar_project_key }}
+  
