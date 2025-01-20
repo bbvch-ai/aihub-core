@@ -8,6 +8,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import MultiLocaleAgent
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
+from playground.minimal_workflow.multi_locale_workflow.events.EventA import EventA
 
 scenarios("../tests/features/multi_locale_agent.feature")
 
@@ -42,6 +43,12 @@ async def _(agent_runner: AgentTestRunner, locale: str):
 def _(agent_runner: AgentTestRunner, locale: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
     assert agent_runner.get_event_of_type(StartEvent).locale == locale, "Agent did not receive start event"
+
+
+@then(parsers.parse('a EventA is present with payload "{payload}"'))
+def _(agent_runner: AgentTestRunner, payload: str):
+    assert agent_runner.has_start_event, "Agent did not receive start event"
+    assert agent_runner.get_event_of_type(EventA).payload == payload, "Agent has wrong payload"
 
 
 @then("a StopEvent is present")

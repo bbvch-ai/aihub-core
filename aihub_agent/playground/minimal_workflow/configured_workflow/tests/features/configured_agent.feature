@@ -9,4 +9,3 @@ Feature: Configured Agent
     Then an EventA event is present with payload "Step Config"
     Then an EventB event is present with payload "Agent Config"
     Then a StopEvent is present
-
