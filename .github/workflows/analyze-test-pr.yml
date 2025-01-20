@@ -2,17 +2,14 @@ name: Analyze & Test
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-      - initiative/*
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
+    branches: [ main ]
+    pull_request:
+      branches: [ main, initiative/* ]
+      types: [ opened, edited, synchronize, reopened, ready_for_review ]
+
+  permissions:
+    contents: read
+    security-events: write
 
 jobs:
   test-modules:
