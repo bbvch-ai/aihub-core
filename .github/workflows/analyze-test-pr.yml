@@ -161,7 +161,6 @@ jobs:
           default-branch: main
           report-only-changed-files: true
 
-
   sonarcloud-scan:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
@@ -191,7 +190,6 @@ jobs:
           fetch-depth: 0
 
       - name: Download Coverage
-        if: ${{ matrix.folder != 'aihub_web' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.folder }}-coverage-report
@@ -205,7 +203,32 @@ jobs:
         with:
           projectBaseDir: ${{ matrix.folder }}
           args: >
+            -Dsonar.python.coverage.reportPaths=${{ matrix.folder }}/coverage.xml
             -Dsonar.projectKey=${{ matrix.sonar_project_key }}
-            ${{ matrix.folder != 'aihub_web' && format('-Dsonar.python.coverage.reportPaths=%s/coverage.xml', matrix.folder) || '' }}
+
+  aihub_web-scan:
+    name: SonarCloud Scan for aihub_web
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run SonarCloud
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: aihub_web
+          args: >
+            -Dsonar.projectKey=aihub-core_web-core
 
 
