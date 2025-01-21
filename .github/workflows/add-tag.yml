@@ -64,6 +64,11 @@ jobs:
           git push origin ${{ steps.create-tag.outputs.version }}
           git pull --rebase origin main
 
+      - name: Define directories
+        id: define-directories
+        run: |
+          echo "directories=(aihub_pipeline aihub_agent aihub_api)" >> $GITHUB_OUTPUT
+
       - name: Increment version-tag in pyproject.toml
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
@@ -80,12 +85,11 @@ jobs:
             sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
 
-          update_version aihub_pipeline/pyproject.toml
-          update_lib_tag aihub_pipeline/pyproject.toml
-          update_version aihub_agent/pyproject.toml
-          update_lib_tag aihub_agent/pyproject.toml
-          update_version aihub_api/pyproject.toml
-          update_lib_tag aihub_api/pyproject.toml
+          directories="${{ steps.define-directories.outputs.directories }}"
+          for dir in $directories; do
+            update_version "$dir/pyproject.toml"
+            update_lib_tag "$dir/pyproject.toml"
+          done
           update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
 
@@ -115,7 +119,7 @@ jobs:
 
       - name: Install Poetry in different directories
         run: |
-          directories=("aihub_pipeline" "aihub_agent" "aihub_api")
+          directories="${{ steps.define-directories.outputs.directories }}"
           for dir in "${directories[@]}"; do
             cd "$dir"
             pip install poetry
@@ -135,12 +139,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add aihub_pipeline/pyproject.toml
-          git add aihub_pipeline/poetry.lock
-          git add aihub_agent/pyproject.toml
-          git add aihub_agent/poetry.lock
-          git add aihub_api/pyproject.toml
-          git add aihub_api/poetry.lock
+          directories="${{ steps.define-directories.outputs.directories }}"
+          for dir in $directories; do
+            git add "$dir/pyproject.toml"
+            git add "$dir/poetry.lock"
+          done
           git add aihub_lib/pyproject.toml
           git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
           git push origin --force
