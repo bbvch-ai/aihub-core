@@ -1,4 +1,4 @@
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig, StepConfig
+from aihub_agent.agents.AgentConfig import StepConfig, AgentConfig
 
 
 class StartStepConfig(StepConfig):

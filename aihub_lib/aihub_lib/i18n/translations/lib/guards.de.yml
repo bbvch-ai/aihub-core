@@ -11,17 +11,14 @@ agent_description_guard:
     <Benutzer Anfrage>
     {user_query}
     </Benutzer Anfrage>
-    
     <vergangener Gesprächsverlauf>
     {history}
     </vergangener Gesprächsverlauf>
   user_message: |
-    ---------------------
     <Benutzer>
     {user}
     </Benutzer>
   agent_message: |
-    ---------------------
     <Agent>
     {agent}
     </Agent>

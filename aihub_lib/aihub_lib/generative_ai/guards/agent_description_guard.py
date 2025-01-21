@@ -23,7 +23,7 @@ def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
     return LocalizedGuardResult
 
 
-def agent_description_guard(
+async def agent_description_guard(
         agent_description: str,
         llm_config: LLM,
         displayer: EventDisplayer,
@@ -32,14 +32,16 @@ def agent_description_guard(
         messages: List[ChatMessage],
 ) -> GuardResult:
     prompt = PromptTemplate(t("lib.guards.agent_description_guard"))
-    history = [
-        (
-            PromptTemplate(t("lib.guards.message")).format(user=message.content)
-            if message.role == MessageRole.USER
-            else PromptTemplate(t("lib.guards.agent")).format(user=message.content)
-        )
-        for message in messages
-    ]
+    history = "".join(
+        [
+            (
+                PromptTemplate(t("lib.guards.agent_description_guard.user_message")).format(user=message.content)
+                if message.role == MessageRole.USER
+                else PromptTemplate(t("lib.guards.agent_description_guard.agent_message")).format(agent=message.content)
+            )
+            for message in messages
+        ]
+    )
     async with llm_config.cost_reporting_llm(displayer) as llm:
         return llm.structured_predict(
             guard_result_factory(t), prompt, agent_description=agent_description, user_query=user_query, history=history

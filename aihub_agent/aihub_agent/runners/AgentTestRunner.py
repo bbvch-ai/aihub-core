@@ -2,7 +2,7 @@ from asyncio import sleep
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_agent.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber

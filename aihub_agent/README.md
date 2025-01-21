@@ -29,9 +29,11 @@ To create a new agent:
 ```python
 from aihub_agent.agents.abstract.Agent import Agent
 
+
 class RAGAgent(Agent):
     pass
 ```
+
 </details>
 
 ---
@@ -48,8 +50,9 @@ Agents require a configuration file to define their settings:
 <summary>Example</summary>
 
 ```python
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_agent.agents.AgentConfig import AgentConfig
 from pydantic import Field
+
 
 class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: int = Field(
@@ -57,6 +60,7 @@ class RAGAgentConfig(AgentConfig):
         description="Limits the length of the conversation history to reduce costs or prevent context overflow."
     )
 ```
+
 </details>
 
 ---
@@ -79,11 +83,13 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import ControlEvent
 
+
 class SomeEvent(ControlEvent):
     """
     Example custom event
     """
     pass
+
 
 class RAGAgent(Agent):
 
@@ -95,6 +101,7 @@ class RAGAgent(Agent):
     async def stop_step(self, event: SomeEvent) -> StopEvent:
         return StopEvent()
 ```
+
 </details>
 
 ---
@@ -110,11 +117,12 @@ Design the agent's workflow by defining the sequence of steps it will execute:
 <details>
 <summary>Example Workflow</summary>
 
-1. Receive a `StartEvent` with chat history.  
-2. Limit the chat history to a specific token count.  
-3. Generate a response based on the chat history.  
-4. Send the response to the user.  
+1. Receive a `StartEvent` with chat history.
+2. Limit the chat history to a specific token count.
+3. Generate a response based on the chat history.
+4. Send the response to the user.
 5. Trigger a `StopEvent`.
+
 </details>
 
 ---
@@ -123,8 +131,9 @@ Design the agent's workflow by defining the sequence of steps it will execute:
 
 #### Define Custom Events
 
-Define custom events (or use general events) to flow between steps, create **Pydantic-based events** with docstrings that
-explain their purpose. Inherit from `ControlEvent`, or use specialized events like `LLMEvent` (avoid inheriting directly 
+Define custom events (or use general events) to flow between steps, create **Pydantic-based events** with docstrings
+that
+explain their purpose. Inherit from `ControlEvent`, or use specialized events like `LLMEvent` (avoid inheriting directly
 from `SemanticEvent`).
 
 <details>
@@ -136,6 +145,7 @@ from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 from typing import List
 
+
 class LimitChatHistoryEvent(ControlEvent):
     """
     Represents the result of limiting a user's chat history to a specified 
@@ -146,6 +156,7 @@ class LimitChatHistoryEvent(ControlEvent):
         description="A trimmed list of messages that fit within the token limit."
     )
 ```
+
 </details>
 
 #### Use Helper Functions
@@ -160,6 +171,7 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events.control.start import StartEvent
 
+
 @step()
 async def limit_chat_history_step(self, event: StartEvent) -> LimitChatHistoryEvent:
     """
@@ -171,6 +183,7 @@ async def limit_chat_history_step(self, event: StartEvent) -> LimitChatHistoryEv
     )
     return LimitChatHistoryEvent(limited_history=limited_chat_history)
 ```
+
 </details>
 
 #### Incorporate Configs
@@ -184,8 +197,8 @@ via the main `AgentConfig`. Always give your Pydantic fields **valuable** descri
 ```python
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig, StepConfig
-from pydantic import  Field
+from aihub_agent.agents.AgentConfig import AgentConfig, StepConfig
+from pydantic import Field
 
 
 class LimitChatHistoryStepConfig(StepConfig):
@@ -198,14 +211,16 @@ class LimitChatHistoryStepConfig(StepConfig):
         description="Specifies the maximum number of tokens permitted in the chat history."
     )
 
+
 class RAGAgentConfig(AgentConfig):
     limit_chat_history_step_config: LimitChatHistoryStepConfig
 
+
 @step()
 async def limit_chat_history_step(
-    self,
-    event: StartEvent,
-    limit_chat_history_step_config: LimitChatHistoryStepConfig,
+        self,
+        event: StartEvent,
+        limit_chat_history_step_config: LimitChatHistoryStepConfig,
 ) -> LimitChatHistoryEvent:
     """
     Reduces the chat history to a token limit defined in the step config.
@@ -216,6 +231,7 @@ async def limit_chat_history_step(
     )
     return LimitChatHistoryEvent(limited_history=limited_chat_history)
 ```
+
 </details>
 
 <details>
@@ -225,17 +241,19 @@ async def limit_chat_history_step(
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_agent.workflow.decorators.step import step
 
+
 class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: int = Field(
         ...,
         description="Sets the maximum chat history token length to reduce costs or prevent overflow."
     )
 
+
 @step()
 async def limit_chat_history_step(
-    self,
-    event: StartEvent,
-    agent_config: RAGAgentConfig,
+        self,
+        event: StartEvent,
+        agent_config: RAGAgentConfig,
 ) -> LimitChatHistoryEvent:
     """
     Reduces the chat history to a token limit specified in the agent configuration.
@@ -246,6 +264,7 @@ async def limit_chat_history_step(
     )
     return LimitChatHistoryEvent(limited_history=limited_chat_history)
 ```
+
 </details>
 
 ---
@@ -262,24 +281,26 @@ Agents can be tested using the **playground tool** (ensure Docker is running):
 
 #### Using `AgentTestRunner`
 
-- The `AgentTestRunner` provides a controlled test environment. 
-- Capture events to ensure the agent behaves as expected. 
+- The `AgentTestRunner` provides a controlled test environment.
+- Capture events to ensure the agent behaves as expected.
 - To test a production-like scenario with the frontend:
-  - Create a `run.py` file.
-  - Use `run_forever` to keep the agent running.
+    - Create a `run.py` file.
+    - Use `run_forever` to keep the agent running.
 - To test a limited runtime scenario:
-  - Create a `trigger.py` file.
-  - Use `test_run` with a specified delay before stopping.
+    - Create a `trigger.py` file.
+    - Use `test_run` with a specified delay before stopping.
 - Leverage Phoenix (localhost:6006) to view traces of each step.
 
 <details>
 <summary>Example </summary>
 
 `trigger.py`:
+
 ```python
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
 
 async def main():
     runner = AgentTestRunner(
@@ -308,10 +329,13 @@ async def main():
             ),
         )
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
+
 </details>
 
 ---
@@ -321,6 +345,7 @@ if __name__ == "__main__":
 Agents (and their supporting utility functions) can be tested at two levels using **BDD**:
 
 ##### 1. Unit-Like BDD Tests (Helper Functions or Single Steps)
+
 A simplified BDD approach to testing **individual functions** (e.g., helper functions or single steps).  
 We want to write a BDD test for a single function or step in isolation.
 
@@ -328,6 +353,7 @@ We want to write a BDD test for a single function or step in isolation.
 <summary>Example</summary> 
 
 `.feature` file: `limit_chat_history.feature`
+
 ```gherkin
 Feature: limit_chat_history Utility Function
   Tests the limit_chat_history function in isolation.
@@ -337,6 +363,7 @@ Feature: limit_chat_history Utility Function
     When limit_chat_history is called with max tokens that only allow for 2 messages
     Then only 2 messages remain
 ```
+
 In your `test_limit_chat_history.py`, you might have:
 
 ```python
@@ -347,6 +374,7 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 
 scenarios("./features/limit_chat_history.feature")
 
+
 @pytest.fixture
 def messages():
     return [
@@ -355,23 +383,28 @@ def messages():
         ChatMessage(content="Message 3", role=MessageRole.USER, token_length=100),
     ]
 
+
 @given("a list of 3 chat messages", target_fixture="chat_messages")
 def _(messages):
     return messages
+
 
 @when("limit_chat_history is called with max tokens that only allow for 2 messages", target_fixture="result")
 def _(chat_messages):
     # Suppose each message is roughly 100 tokens, so we allow for 200 tokens total
     return limit_chat_history(chat_messages, number_of_input_tokens=200)
 
+
 @then("only 2 messages remain")
 def _(result):
     assert len(result) == 2, f"Expected 2 messages, got {len(result)}"
 ```
+
 </details>
 ---
 
 ##### 2. Full Agent BDD Tests
+
 Validating the **complete workflow** of the agent from start to stop.
 We want to write a BDD test for the full workflow of the agent, from start to stop.
 
@@ -379,6 +412,7 @@ We want to write a BDD test for the full workflow of the agent, from start to st
 <summary>Example</summary>
 
 **`.feature` file: `simple_agent.feature`**
+
 ```gherkin
 Feature: Simple Agent
   A minimal agent workflow demonstrating start and stop steps.
@@ -391,6 +425,7 @@ Feature: Simple Agent
 ```
 
 **Test file: `test_simple_agent.py`**
+
 ```python
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
@@ -401,6 +436,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from .simple_agent import SimpleAgent, SimpleAgentConfig  # Example imports
 
 scenarios("./features/simple_agent.feature")
+
 
 @given("a SimpleAgent runner with a basic configuration", target_fixture="agent_runner")
 def _():
@@ -413,6 +449,7 @@ def _():
         ),
     )
 
+
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @pytest.mark.asyncio
 async def _(agent_runner: AgentTestRunner, query: str):
@@ -422,11 +459,13 @@ async def _(agent_runner: AgentTestRunner, query: str):
             start_event=StartEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)])
         )
 
+
 @then(parsers.parse('a StartEvent is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive a StartEvent"
     start_event = agent_runner.get_start_event
     assert start_event.messages[0].content == payload, f"Expected {payload}, got {start_event.messages[0].content}"
+
 
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
@@ -435,9 +474,10 @@ def _(agent_runner: AgentTestRunner):
 
 Here’s what’s happening:
 
-1. **`@given`** sets up a `SimpleAgent` with a minimal config.  
-2. **`@when`** sends a `StartEvent` with the query `"Hello world"`.  
-3. **`@then`** checks that a `StartEvent` with the correct payload was received and that the agent produced a `StopEvent`.  
+1. **`@given`** sets up a `SimpleAgent` with a minimal config.
+2. **`@when`** sends a `StartEvent` with the query `"Hello world"`.
+3. **`@then`** checks that a `StartEvent` with the correct payload was received and that the agent produced a
+   `StopEvent`.
 
 </details>
 
@@ -472,6 +512,7 @@ class PersonaAgent(Agent):
     """
     pass
 ```
+
 </details>
 
 ---
@@ -493,19 +534,20 @@ async def retrieve_documents_step(self, event: SomeEvent) -> RetrieveEvent:
     # Step logic ...
     return RetrieveEvent(documents=similar_docs)
 ```
+
 </details>
 
 ---
 
 ### 3. Docstrings and Field Descriptions for Pydantic Objects
 
-1. **Fields**: Always provide a meaningful `description` that adds value. Avoid trivial descriptions like 
-   `"Number of input tokens"` if you can provide more context, e.g. 
+1. **Fields**: Always provide a meaningful `description` that adds value. Avoid trivial descriptions like
+   `"Number of input tokens"` if you can provide more context, e.g.
    `"Limits the length of the conversation history to reduce costs or prevent context overflow."`
 
 2. **Class-Level Docstring**: For non-trivial classes, add a docstring that explains:
-   - **Why** this Pydantic model exists (its purpose).
-   - **How** it can be used within the agent or events workflow.
+    - **Why** this Pydantic model exists (its purpose).
+    - **How** it can be used within the agent or events workflow.
 
 <details>
 <summary>Examples</summary>
@@ -513,6 +555,7 @@ async def retrieve_documents_step(self, event: SomeEvent) -> RetrieveEvent:
 ```python
 from pydantic import BaseModel, Field
 from typing import List
+
 
 class RetrieveEvent(BaseModel):
     """
@@ -545,4 +588,5 @@ class RAGAgentConfig(AgentConfig):
         description="Defines how many documents should be retrieved for context augmentation."
     )
 ```
+
 </details>
