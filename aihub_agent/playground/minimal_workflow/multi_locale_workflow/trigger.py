@@ -2,7 +2,6 @@ import asyncio
 import os
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from aihub_lib.nats.events import BaseEvent
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString

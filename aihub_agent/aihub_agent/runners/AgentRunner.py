@@ -88,7 +88,7 @@ class AgentRunner:
         self.control_event_subscriber: Optional[JSSubscriber] = None
         self.nc_publisher: Optional[NCPublisher[AgentDiscoveryResponseEvent]] = None
 
-        self.locale_handler = AgentLocaleHandler(locale_paths)
+        self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
     async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
         """

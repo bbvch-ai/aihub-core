@@ -7,7 +7,7 @@ Feature: Multi Locale Agent
     When a StartEvent is sent with locale "en"
 
     Then a StartEvent is present with locale "en"
-    And a EventA is present with payload "This is an english test"
+    And an event is present with payload "This is a prompt in english"
     And a StopEvent is present
 
   Scenario: Test de
@@ -16,5 +16,5 @@ Feature: Multi Locale Agent
     When a StartEvent is sent with locale "de"
 
     Then a StartEvent is present with locale "de"
-    And a EventA is present with payload "Das ist ein deutscher Test"
+    And an event is present with payload "Das ist ein test prompt auf deutsch"
     And a StopEvent is present

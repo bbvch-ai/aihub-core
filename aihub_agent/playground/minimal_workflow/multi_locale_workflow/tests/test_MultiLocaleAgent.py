@@ -1,3 +1,5 @@
+import os
+
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
@@ -8,7 +10,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import MultiLocaleAgent
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
-from playground.minimal_workflow.multi_locale_workflow.events.EventA import EventA
+from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent
 
 scenarios("../tests/features/multi_locale_agent.feature")
 
@@ -23,6 +25,7 @@ def _():
             description=LocaleString(en="This is a very simple agent"),
             system_prompt=LocaleString(en="You are an agent"),
         ),
+        locale_paths=[os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../translations"))],
     )
 
 
@@ -47,10 +50,10 @@ def _(agent_runner: AgentTestRunner, locale: str):
     ), "Start event locale does not match expected locale"
 
 
-@then(parsers.parse('a EventA is present with payload "{payload}"'))
+@then(parsers.parse('an event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
-    assert agent_runner.get_event_of_type(EventA).payload == payload, "Agent has wrong payload"
+    assert agent_runner.get_event_of_type(MultiLocaleEvent).payload == payload, "Agent has wrong payload"
 
 
 @then("a StopEvent is present")
