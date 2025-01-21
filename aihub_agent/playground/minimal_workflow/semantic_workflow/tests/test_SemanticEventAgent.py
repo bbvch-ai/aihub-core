@@ -1,4 +1,4 @@
-import pytest
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -12,9 +12,8 @@ from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig impo
 scenarios("../tests/features/semantic_event_agent.feature")
 
 
-@pytest.fixture()
-@given("a SemanticEventAgent runner")
-def agent_runner():
+@given("a SemanticEventAgent runner", target_fixture="agent_runner")
+def _():
     return AgentTestRunner(
         agent_type=SemanticEventAgent,
         agent_config=SemanticEventAgentConfig(
@@ -30,12 +29,14 @@ def agent_runner():
 @async_test
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
-        await agent_runner.send_event_from_topic(topic=topic, start_event=StartEvent(messages=[]))
+        await agent_runner.send_event_from_topic(
+            topic=topic, start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER)])
+        )
 
 
 @then("a StartEvent is present")
 def test_start_present(agent_runner: AgentTestRunner):
-    assert agent_runner.has_start_event == True, "Agent did not receive start event"
+    assert agent_runner.has_start_event, "Agent did not receive start event"
 
 
 @then("a RetrieverEvent is present")
