@@ -1,7 +1,7 @@
-Feature: Simple Agent
-  test for SimpleAgent
+Feature: Semantic Event Agent
+  test for SemanticEventAgent
 
-  Scenario: Test Simple Agent
+  Scenario: Test Semantic Event Agent
     Given a SemanticEventAgent runner
 
     When a the start event is sent
