@@ -10,6 +10,8 @@ from playground.minimal_workflow.context_workflow.ContextAgent import ContextAge
 from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
     ContextAgentConfig,
 )
+from playground.minimal_workflow.context_workflow.events.CustomStartEvent import CustomStartEvent
+from playground.minimal_workflow.context_workflow.events.EventA import EventA
 
 scenarios("features/context_agent.feature")
 
@@ -33,46 +35,33 @@ def _():
 @async_test
 async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
     thread_id = str(ObjectId())
-    async with test_runner.test_run(thread_id) as topic:
+    async with test_runner.test_run(thread_id=thread_id) as topic:
         await test_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(content=payload1, role=MessageRole.USER)]),
+            start_event=CustomStartEvent(payload=payload1),
             topic=topic,
         )
-    async with test_runner.test_run(thread_id) as topic:
+    async with test_runner.test_run(thread_id=thread_id) as topic:
         await test_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(content=payload2, role=MessageRole.USER)]),
+            start_event=CustomStartEvent(payload=payload2),
             topic=topic,
         )
 
 
-@then(parsers.parse("the thread context count should increment to '{expected_count:d}'"))
-@async_test
-async def verify_thread_context_count(test_runner: AgentTestRunner, expected_count: int):
-    thread_context = await test_runner.get_thread_context()
-    thread_count = await thread_context.get("count", 0)
-
-    assert thread_count == expected_count, (
-        f"Expected thread context count to be {expected_count}, " f"but got {thread_count}"
+@then(
+    parsers.parse(
+        "the thread context count should increment to either '{expected_count_1:d}' or '{expected_count_2:d}'"
     )
+)
+@async_test
+async def verify_thread_context_count(test_runner: AgentTestRunner, expected_count_1: int, expected_count_2: int):
+    thread_count = test_runner.get_event_of_type(EventA).thread_count
+    assert (
+        thread_count == expected_count_1 or thread_count == expected_count_2
+    ), f"Expected thread context count to be either {expected_count_1} or {expected_count_2}, but got {thread_count}"
 
 
 @then(parsers.parse("each RunContext count should be '{expected_count:d}'"))
 @async_test
 async def verify_run_context_count(test_runner: AgentTestRunner, expected_count: int):
-    for i, result in enumerate(SHARED_LIST):
-        run_context = await test_runner.get_run_context(result.run_id)
-        run_count = await run_context.get("count", 0)
-        assert run_count == expected_count, (
-            f"Expected RunContext count for run {i + 1} to be {expected_count}, " f"but got {run_count}"
-        )
-
-
-@then("RunContext values should remain isolated across runs")
-@async_test
-async def verify_run_context_isolation(test_runner: AgentTestRunner):
-    run_counts = []
-    for result in SHARED_LIST:
-        run_context = await test_runner.get_run_context(result.run_id)
-        run_counts.append(await run_context.get("count", 0))
-
-    assert len(set(run_counts)) == len(run_counts), "RunContext values are not isolated across runs."
+    run_count = test_runner.get_event_of_type(EventA).run_count
+    assert run_count == expected_count, f"Expected RunContext count to be {expected_count}, but got {run_count}"

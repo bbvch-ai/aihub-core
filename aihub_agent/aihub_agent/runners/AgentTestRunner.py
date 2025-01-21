@@ -62,10 +62,10 @@ class AgentTestRunner(AgentRunner):
     """
 
     def __init__(
-            self,
-            agent_type: Type[Agent],
-            agent_config: AgentConfig,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        agent_type: Type[Agent],
+        agent_config: AgentConfig,
+        locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=["nats://localhost:4222"],
@@ -74,8 +74,6 @@ class AgentTestRunner(AgentRunner):
             locale_paths=locale_paths,
         )
         self.observed_events: List[ObservedEvent] = []
-        self.thread_context: Optional[ThreadContext] = None
-        self.run_contexts: Dict[str, RunContext] = {}
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -93,7 +91,7 @@ class AgentTestRunner(AgentRunner):
 
     @asynccontextmanager
     async def test_run(
-            self, delay_before_stop: int = 1, thread_id: Optional[str] = None
+        self, delay_before_stop: int = 1, thread_id: Optional[str] = None
     ) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:

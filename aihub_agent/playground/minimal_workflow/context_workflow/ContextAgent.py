@@ -14,10 +14,10 @@ class ContextAgent(Agent):
 
     @step()
     async def start_step(
-            self,
-            event: CustomStartEvent,
-            thread_context: ThreadContext,
-            run_context: RunContext,
+        self,
+        event: CustomStartEvent,
+        thread_context: ThreadContext,
+        run_context: RunContext,
     ) -> EventA:
         thread_count = await thread_context.get("count", 0)
         run_count = await run_context.get("count", 0)
@@ -25,7 +25,7 @@ class ContextAgent(Agent):
         print(f"[SimpleAgent.start_step] Called {thread_count} times in thread, {run_count} times in run")
         await thread_context.set("count", thread_count + 1)
         await run_context.set("count", run_count + 1)
-        return EventA(thread_count=thread_count, run_count=run_count)
+        return EventA(thread_count=thread_count + 1, run_count=run_count + 1)
 
     @step()
     async def end_step(self, event: EventA, thread_context: ThreadContext, run_context: RunContext) -> StopEvent:
