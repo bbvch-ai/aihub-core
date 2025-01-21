@@ -1,6 +1,6 @@
 from adlfs import AzureBlobFileSystem
-from dagster import ConfigurableResource, InitResourceContext
 from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
+from dagster import ConfigurableResource, InitResourceContext
 
 
 class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):

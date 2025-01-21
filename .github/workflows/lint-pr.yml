@@ -1,30 +1,30 @@
 name: Lint Code
+
 on:
   pull_request:
-    branches:
-      - initiative/*
-      - main
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
+    branches: [ main, initiative/* ]
+    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
 
 jobs:
-  lint-pipelines:
-    name: Lint Pipelines
+  lint:
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
 
-    permissions:
-      checks: write
-      contents: read
-      pull-requests: write
+    strategy:
+      matrix:
+        folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline ]
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python 3.11
+        id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -32,7 +32,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.3
+          version: '1.8.3'
 
       - name: Load cached venv
         id: cached-poetry-dependencies
@@ -43,7 +43,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: | 
+        run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
@@ -51,11 +51,55 @@ jobs:
           git config --global url."git@github.com:".insteadOf "https://github.com/"
           poetry install --no-interaction --no-root --with dev
           rm -rf ~/.ssh
-        working-directory: aihub_pipeline
+        working-directory: ${{ matrix.folder }}
 
-      - name: Lint backend
+      - name: Lint
         uses: reviewdog/action-black@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          workdir: aihub_pipeline
+          workdir: ${{ matrix.folder }}
+
+  lint-frontend:
+    name: Lint Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Get pnpm store path
+        id: pnpm-store-dir-path
+        run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache Node Modules
+        uses: actions/cache@v4
+        id: pnpm-cache
+        with:
+          path: ${{ steps.pnpm-store-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('aihub_web/aihub_web/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: aihub_web/aihub_web
+
+      - name: Prepare nuxt
+        run: pnpm exec nuxi prepare
+        working-directory: aihub_web/aihub_web
+
+      - name: Lint frontend
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          workdir: aihub_web/aihub_web

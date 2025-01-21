@@ -1,5 +1,6 @@
-from pydantic import Field
 from typing import Union
+
+from pydantic import Field
 
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -17,4 +18,7 @@ class HumanInTheLoopRequestEvent(DisplayEvent):
     """
 
     question: str = Field(..., description="The query or prompt presented to the human operator.")
-    topic: Union[PartialAgentTopic, AgentTopic] = Field(..., description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.")
+    topic: Union[PartialAgentTopic, AgentTopic] = Field(
+        ...,
+        description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    )

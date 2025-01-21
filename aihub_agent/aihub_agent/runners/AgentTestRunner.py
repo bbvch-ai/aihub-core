@@ -1,21 +1,21 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import List, Type, AsyncGenerator, Optional
+from typing import AsyncGenerator, List, Optional, Type
 
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
+from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from bson import ObjectId
 from pydantic import BaseModel
 
 from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.AgentConfig import AgentConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
-from aihub_lib.nats.events import StartEvent, BaseEvent, StopEvent, ExceptionEvent
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
-    AgentThreadTopicManager,
-)
-from aihub_lib.nats.topics import Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
 class ObservedEvent(BaseModel):
@@ -73,16 +73,12 @@ class AgentTestRunner(AgentRunner):
         )
         self.observed_events: List[ObservedEvent] = []
 
-    async def send_event_from_topic(
-            self, start_event: StartEvent, topic: PartialAgentTopic
-    ):
+    async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
         Sends a StartEvent (or another initiating event) to the run identified by the PartialAgentTopic.
         This allows tests to inject their own events to drive the agent workflow.
         """
-        await self.send_event(
-            start_event, topic.thread_id, topic.display_id, topic.run_id
-        )
+        await self.send_event(start_event, topic.thread_id, topic.display_id, topic.run_id)
 
     async def observe_event(self, event: BaseEvent, topic: Topic):
         """
@@ -92,9 +88,7 @@ class AgentTestRunner(AgentRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(
-            self, delay_before_stop: int = 1
-    ) -> AsyncGenerator[PartialAgentTopic, None]:
+    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:
         1. Starts the agent runner.
@@ -125,6 +119,20 @@ class AgentTestRunner(AgentRunner):
         )
         await event_subscriber.start()
 
+        self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+            nc=self.nc,
+            topic_manager=TopicManager(),
+            handler=self.observe_event,
+        )
+        await self.observe_discovery_event_subscriber.start()
+
+        self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
+            nc=self.nc,
+            topic_manager=TopicManager(),
+            handler=self.observe_event,
+        )
+        await self.observe_discovery_response_event_subscriber.start()
+
         yield PartialAgentTopic(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
@@ -141,9 +149,7 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_start_event(self) -> bool:
         """Check if a StartEvent was observed."""
-        return any(
-            isinstance(event.event, StartEvent) for event in self.observed_events
-        )
+        return any(isinstance(event.event, StartEvent) for event in self.observed_events)
 
     @property
     def has_stop_event(self) -> bool:
@@ -153,15 +159,26 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_exception_event(self) -> bool:
         """Check if an ExceptionEvent was observed."""
+        return any(isinstance(event.event, ExceptionEvent) for event in self.observed_events)
+
+    @property
+    def has_discovery_request_event(self) -> bool:
+        """Check if a DiscoveryRequestEvent was observed."""
+        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+
+    @property
+    def has_own_agent_discovery_response_event(self) -> bool:
+        """Check if an AgentDiscoveryResponseEvent with the agent's class and ID was observed."""
         return any(
-            isinstance(event.event, ExceptionEvent) for event in self.observed_events
+            isinstance(event.event, AgentDiscoveryResponseEvent)
+            and event.event.agent_class == self.agent_class
+            and event.event.agent_id == self.agent_config.agent_id
+            for event in self.observed_events
         )
 
     def get_events(self, event_type: Type[BaseEvent]) -> List[BaseEvent]:
         """Returns all observed events of the specified type."""
-        return [
-            ev.event for ev in self.observed_events if isinstance(ev.event, event_type)
-        ]
+        return [ev.event for ev in self.observed_events if isinstance(ev.event, event_type)]
 
     def get_topics(self, event_type: Type[BaseEvent]) -> List[AgentTopic]:
         """Returns the topics of all observed events of the specified type, if any are AgentTopic."""
@@ -184,6 +201,24 @@ class AgentTestRunner(AgentRunner):
         Returns the first observed event of the specified type.
         Raises StopIteration if no such event is found.
         """
-        return next(
-            ev.event for ev in self.observed_events if isinstance(ev.event, event_type)
-        )
+        return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+
+    async def wait_for_event(
+            self,
+            event_type: Type[BaseEvent],
+            timeout: float = 60.0,
+            interval: float = 0.1,
+    ) -> BaseEvent:
+        """
+        Wait until an event of the specified type is observed or until the timeout is reached.
+        """
+        max_attempts = int(timeout / interval)  # Maximum number of attempts based on the timeout
+        attempts = 0
+
+        while not self.has_event_of_type(event_type):
+            if attempts >= max_attempts:
+                raise TimeoutError(f"Timeout waiting for event of type {event_type.__name__}")
+            attempts += 1
+            await sleep(interval)
+
+        return self.get_event_of_type(event_type)

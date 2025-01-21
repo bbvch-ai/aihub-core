@@ -1,11 +1,7 @@
 from azure.cognitiveservices.speech import SpeechConfig
 
-from aihub_lib.infrastructure.azure.cognitive_services.CognitiveServiceAccess import (
-    CognitiveServiceAccess,
-)
-from aihub_lib.infrastructure.azure.cognitive_services.speech_service.SpeechServiceConfig import (
-    SpeechServiceConfig,
-)
+from aihub_lib.infrastructure.azure.cognitive_services.CognitiveServiceAccess import CognitiveServiceAccess
+from aihub_lib.infrastructure.azure.cognitive_services.speech_service.SpeechServiceConfig import SpeechServiceConfig
 
 
 class SpeechServiceAccess(CognitiveServiceAccess):

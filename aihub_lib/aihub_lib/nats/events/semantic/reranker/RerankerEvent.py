@@ -1,14 +1,10 @@
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
+
+from openinference.semconv.trace import OpenInferenceSpanKindValues, RerankerAttributes, SpanAttributes
 from pydantic import Field
 
-from openinference.semconv.trace import (
-    RerankerAttributes,
-    SpanAttributes,
-    OpenInferenceSpanKindValues,
-)
-
-from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 from aihub_lib.nats.events.semantic.retriever.RetrieverEvent import Document
+from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class RerankerEvent(SemanticEvent):

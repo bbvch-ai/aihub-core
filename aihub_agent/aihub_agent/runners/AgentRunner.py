@@ -1,32 +1,25 @@
 import asyncio
 import logging
-from typing import Type, List, Optional
+from typing import List, Optional, Type
 
-from nats.aio.client import Client as NATS
-from nats.js import JetStreamContext
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.AgentConfig import AgentConfig
-from aihub_agent.dispatchers.Dispatcher import Dispatcher
-from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import (
-    AgentDiscoveryResponseEvent,
-    StartEventSpecs,
-)
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import (
-    AgentInstanceTopicManager,
-)
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import (
-    AgentThreadTopicManager,
-)
 from aihub_lib.nats.topics import DiscoveryTopic
+from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.dispatchers.Dispatcher import Dispatcher
+from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +64,11 @@ class AgentRunner:
     """
 
     def __init__(
-            self,
-            servers: List[str],
-            agent_type: Type[Agent],
-            agent_config: AgentConfig,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        servers: List[str],
+        agent_type: Type[Agent],
+        agent_config: AgentConfig,
+        locale_paths: Optional[List[str]] = None,
     ):
         self.servers = servers
         self.agent_type = agent_type
@@ -84,26 +77,20 @@ class AgentRunner:
         self._stop_event = asyncio.Event()
 
         self.agent_class = self.agent_type.__name__
-        self.topic_manager = AgentInstanceTopicManager(
-            self.agent_class, self.agent_config.agent_id
-        )
+        self.topic_manager = AgentInstanceTopicManager(self.agent_class, self.agent_config.agent_id)
 
         self.nc: Optional[NATS] = None
         self.js: Optional[JetStreamContext] = None
 
         self.dispatcher: Optional[Dispatcher] = None
 
-        self.discovery_event_subscriber: Optional[
-            NCSubscriber[DiscoveryRequestEvent]
-        ] = None
+        self.discovery_event_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
         self.control_event_subscriber: Optional[JSSubscriber] = None
         self.nc_publisher: Optional[NCPublisher[AgentDiscoveryResponseEvent]] = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths)
 
-    async def discovery_handler(
-            self, event: DiscoveryRequestEvent, topic: DiscoveryTopic
-    ):
+    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
         """
         Handles discovery requests by returning an `AgentDiscoveryResponseEvent` that includes:
         - Agent class, ID
@@ -121,9 +108,7 @@ class AgentRunner:
             )
             return
 
-        logger.debug(
-            f"Received discovery request for {topic.agent_class} with id {topic.agent_id}."
-        )
+        logger.debug(f"Received discovery request for {topic.agent_class} with id {topic.agent_id}.")
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
 
         start_events = [
@@ -169,10 +154,8 @@ class AgentRunner:
         )
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = (
-            NCSubscriber.for_agent_discovery_request_events(
-                self.nc, TopicManager(), self.discovery_handler
-            )
+        self.discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+            self.nc, TopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
@@ -185,9 +168,7 @@ class AgentRunner:
         )
         await self.control_event_subscriber.start()
 
-        logger.debug(
-            f"{self.agent_class} is now running and subscribed to incoming messages."
-        )
+        logger.debug(f"{self.agent_class} is now running and subscribed to incoming messages.")
         asyncio.create_task(self._run_loop())
 
     async def stop(self):
@@ -226,11 +207,11 @@ class AgentRunner:
             await self.stop()
 
     async def send_event(
-            self,
-            start_event: StartEvent,
-            thread_id: str,
-            display_id: str,
-            run_id: str,
+        self,
+        start_event: StartEvent,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
     ):
         """
         Sends an initial event (like a StartEvent) to initiate a run.
@@ -238,13 +219,11 @@ class AgentRunner:
         This allows external code to trigger a new run by injecting a start event.
         """
         publisher = JSPublisher(self.js)
-        thread_topic_manager = (
-            AgentThreadTopicManager.from_agent_instance_topic_manager(
-                self.topic_manager,
-                thread_id,
-                display_id,
-                run_id,
-            )
+        thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
+            self.topic_manager,
+            thread_id,
+            display_id,
+            run_id,
         )
         subject = thread_topic_manager.get_subject_for_control_event_in_thread(
             start_event.__class__.__name__, event_id=start_event.event_id

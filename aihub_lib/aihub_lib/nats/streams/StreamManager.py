@@ -1,8 +1,6 @@
-
 import logging
 
-from nats.js import JetStreamContext
-from nats.js import api
+from nats.js import JetStreamContext, api
 from nats.js.errors import NotFoundError
 
 logger = logging.getLogger(__name__)

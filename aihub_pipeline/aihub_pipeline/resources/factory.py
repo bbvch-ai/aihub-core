@@ -1,32 +1,20 @@
 from typing import Dict
 
-from dagster._config.pythonic_config import ConfigurableResourceFactory
-from dagster_azure.adls2 import (
-    ADLS2DefaultAzureCredential,
-    ADLS2PickleIOManager,
-    ADLS2Resource,
-)
 from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
+from dagster._config.pythonic_config import ConfigurableResourceFactory
+from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
 
 from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
 from aihub_pipeline.io.VectorStoreIOManager import VectorStoreIOManager
-from aihub_pipeline.resources.data_lake.DataLakeClientResource import (
-    DataLakeClientResource,
-)
-from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import (
-    DataLakeFileSystemResource,
-)
-from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import (
-    MongoDocumentStoreResource,
-)
+from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
+from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
+from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import MongoDocumentStoreResource
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
 from aihub_pipeline.resources.llm.LlmHandlerResource import LlmHandlerResource
 from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
-from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import (
-    AzureAISearchVectorStoreResource,
-)
+from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import AzureAISearchVectorStoreResource
 
 
 def namespace_resource(customer_name: str, namespace_name: str) -> NamespaceResource:

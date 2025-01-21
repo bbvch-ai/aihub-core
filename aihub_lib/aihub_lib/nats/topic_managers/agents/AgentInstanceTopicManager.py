@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
@@ -29,9 +29,9 @@ class AgentInstanceTopicManager(TopicManager):
     """
 
     def __init__(
-            self,
-            agent_class: Annotated[str, "Agent class identifier"],
-            agent_id: Annotated[str, "Unique agent instance ID"],
+        self,
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Unique agent instance ID"],
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -51,10 +51,10 @@ class AgentInstanceTopicManager(TopicManager):
         )
 
     def get_agent_discovery_subject_request(
-            self,
-            call_id: Annotated[str, "Identifier linking request and response"],
-            agent_class: Optional[str] = None,
-            agent_id: Optional[str] = None
+        self,
+        call_id: Annotated[str, "Identifier linking request and response"],
+        agent_class: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> str:
         """
         Returns a subject for requesting discovery info about this agent instance (or a provided override).
@@ -67,10 +67,10 @@ class AgentInstanceTopicManager(TopicManager):
         )
 
     def get_agent_discovery_subject_response(
-            self,
-            call_id: Annotated[str, "Identifier linking request and response"],
-            agent_class: Optional[str] = None,
-            agent_id: Optional[str] = None
+        self,
+        call_id: Annotated[str, "Identifier linking request and response"],
+        agent_class: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> str:
         """
         Returns a subject for receiving agent discovery responses for this agent instance (or a provided override).
@@ -95,13 +95,13 @@ class AgentInstanceTopicManager(TopicManager):
         return f"{self.get_stream_name_for_all_events_within_agent()}_{self.DISPLAY_EVENT}_queue_group"
 
     def get_subject_for_specific_event_in_agent_instance(
-            self,
-            thread_id: Annotated[str, "Thread ID within this agent instance"],
-            display_id: Annotated[str, "Display ID for UI/grouping"],
-            run_id: Annotated[str, "Run ID within the thread"],
-            event_type: Annotated[str, "Event type (e.g., display_event, control_event)"],
-            event_name: Annotated[str, "Specific event name"],
-            event_id: Annotated[str, "Event instance ID"]
+        self,
+        thread_id: Annotated[str, "Thread ID within this agent instance"],
+        display_id: Annotated[str, "Display ID for UI/grouping"],
+        run_id: Annotated[str, "Run ID within the thread"],
+        event_type: Annotated[str, "Event type (e.g., display_event, control_event)"],
+        event_name: Annotated[str, "Specific event name"],
+        event_id: Annotated[str, "Event instance ID"],
     ) -> str:
         """Returns a subject for a specific event from this agent instance, narrowed by thread, display, and run."""
         return self.get_subject_for_specific_event_in_agent(

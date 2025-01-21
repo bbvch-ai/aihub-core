@@ -1,6 +1,6 @@
-from dagster import ConfigurableResource
 from aihub_lib.generative_ai.document.loaders import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
+from dagster import ConfigurableResource
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 
@@ -62,11 +62,7 @@ class DocumentParserResource(ConfigurableResource):
     }
 
     # Inverted mapping from file extensions to reader classes
-    _extension_to_reader = {
-        ext: reader_cls
-        for reader_cls, extensions in _readers_map.items()
-        for ext in extensions
-    }
+    _extension_to_reader = {ext: reader_cls for reader_cls, extensions in _readers_map.items() for ext in extensions}
 
     def get_document_parser_for_filetype(self, filetype: str) -> BaseReader:
         filetype = filetype.lower()

@@ -14,7 +14,7 @@
     "build-storybook": "storybook build"
   },
   "devDependencies": {
-    "@nuxt/eslint": "latest",
+    "@nuxt/eslint": "^0.7.1",
     "@nuxt/fonts": "^0.10.2",
     "@nuxt/icon": "^1.8.2",
     "@nuxtjs/i18n": "9.0.0-rc.2",

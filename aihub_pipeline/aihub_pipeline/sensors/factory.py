@@ -1,10 +1,6 @@
 from typing import Sequence
 
-from dagster import (
-    AssetsDefinition,
-    AutomationConditionSensorDefinition,
-    DefaultSensorStatus,
-)
+from dagster import AssetsDefinition, AutomationConditionSensorDefinition, DefaultSensorStatus
 
 
 def default_automation_sensor(

@@ -14,9 +14,7 @@ def embed_nodes(
     embedding_model: ResourceParam[BaseEmbedding],
 ) -> List[TextNode]:
     """Adds vector embeddings to a list of TextNodes using the provided embedding model."""
-    embeddings = embedding_model.get_text_embedding_batch(
-        [node.get_text() for node in nodes]
-    )
+    embeddings = embedding_model.get_text_embedding_batch([node.get_text() for node in nodes])
     for node, embedding in zip(nodes, embeddings):
         node.embedding = embedding
 

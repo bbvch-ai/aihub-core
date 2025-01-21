@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from aihub_agent.tracing.decorators.tracing import tracing
 from azure.ai.documentintelligence.models import AnalyzeResult, ContentFormat
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
@@ -9,7 +10,6 @@ from llama_index.core.schema import Document
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
-from aihub_agent.tracing.decorators.tracing import tracing
 
 
 class DocumentIntelligenceLoader(BaseReader):

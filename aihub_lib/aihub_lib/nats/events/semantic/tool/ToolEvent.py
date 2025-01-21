@@ -1,11 +1,7 @@
 import json
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from openinference.semconv.trace import (
-    SpanAttributes,
-    ToolAttributes,
-    OpenInferenceSpanKindValues,
-)
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes, ToolAttributes
 from pydantic import Field
 
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent

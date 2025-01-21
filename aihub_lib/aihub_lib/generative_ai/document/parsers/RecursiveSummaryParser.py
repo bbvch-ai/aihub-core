@@ -5,11 +5,11 @@ from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
-from aihub_lib.constants import (
-    HEADING_LEVEL,
+from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
     TYPE,
+    HEADING_LEVEL,
 )
 
 

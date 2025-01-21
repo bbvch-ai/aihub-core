@@ -7,7 +7,10 @@ from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from pydantic import Field
 
 from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig, EmbeddingLLMModelParameter
+from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import (
+    EmbeddingLLMConfig,
+    EmbeddingLLMModelParameter,
+)
 
 
 class AzureOpenAIEmbeddingParameter(EmbeddingLLMModelParameter):
@@ -37,7 +40,9 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
     api_endpoint: str = Field(..., description="Azure OpenAI API endpoint for embeddings.")
     api_version: str = Field(..., description="Azure OpenAI API version for embeddings.")
 
-    default_parameter: AzureOpenAIEmbeddingParameter = Field(..., description="Default parameters for Azure OpenAI embeddings.")
+    default_parameter: AzureOpenAIEmbeddingParameter = Field(
+        ..., description="Default parameters for Azure OpenAI embeddings."
+    )
 
     def to_llama_index(
         self, model_parameter: Optional[AzureOpenAIEmbeddingParameter] = None
