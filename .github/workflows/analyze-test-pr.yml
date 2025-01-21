@@ -229,6 +229,6 @@ jobs:
         with:
           projectBaseDir: aihub_web
           args: >
-            -Dsonar.projectKey=aihub-core_web-core
+            -Dsonar.projectKey=aihub-core_aihub-web
 
 
