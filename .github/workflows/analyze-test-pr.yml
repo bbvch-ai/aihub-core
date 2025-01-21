@@ -207,7 +207,11 @@ jobs:
         with:
           projectBaseDir: ${{ matrix.folder }}
           args: >
-            -${{ matrix.folder != 'aihub_web' && format('-Dsonar.python.coverage.reportPaths=%s/coverage.xml', matrix.folder) || '' }}
             -Dsonar.projectKey=${{ matrix.sonar_project_key }}
+            ${{ 
+                matrix.folder != 'aihub_web' 
+                ? '-Dsonar.python.coverage.reportPaths=' + matrix.folder + '/coverage.xml' 
+                : '' 
+            }}
 
 
