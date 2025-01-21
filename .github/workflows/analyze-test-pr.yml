@@ -78,6 +78,15 @@ jobs:
         with:
           version: 1.8.3
 
+      - name: Validate global poetry.lock
+        run: poetry lock --no-update
+
+      - name: Install global dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Use local core
+        run: poetry run make use-local-core
+
       - name: Validate poetry.lock
         run: poetry lock --no-update
         working-directory: ${{ matrix.module }}
