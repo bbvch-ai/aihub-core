@@ -42,6 +42,7 @@ opentelemetry-semantic-conventions = "^0.50b0"
 pydantic = "^2.10.3"
 llama-index-embeddings-azure-openai = "^0.3.0"
 llama-index-storage-docstore-mongodb = "^0.3.0"
+pytest-mock = "^3.14.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -56,6 +57,7 @@ black = { extras = ["jupyter"], version = "24.10.0" }
 mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
+pytest-cov = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]

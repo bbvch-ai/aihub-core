@@ -47,3 +47,4 @@ TAG ?= v0.13.0
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
 	python switch_dependency.py remote --tag "$(TAG)"
+

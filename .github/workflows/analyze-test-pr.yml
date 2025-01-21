@@ -4,22 +4,184 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, initiative/* ]
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
 
 permissions:
-  contents: read
+  contents: write
   security-events: write
 
 jobs:
-  sonarcloud-scan:
-    name: SonarCloud Scan
+  test-modules:
+    name: Test Modules
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    strategy:
+      matrix:
+        module: [aihub_lib, aihub_api, aihub_agent, aihub_pipeline]
+
+    permissions:
+      id-token: write
+      contents: write
+      issues: read
+      checks: write
+      pull-requests: write
+
+    outputs:
+      test_report_passed: ${{ steps.test_report.outputs.passed }}
+      test_report_failed: ${{ steps.test_report.outputs.failed }}
+      test_report_skipped: ${{ steps.test_report.outputs.skipped }}
+      test_report_time: ${{ steps.test_report.outputs.time }}
+      test_report_url_html: ${{ steps.test_report.outputs.url_html }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Docker Compose
+        if: matrix.module == 'aihub_agent'
+        run: sudo apt-get install -y docker-compose
+
+      - name: Start Docker services
+        if: matrix.module == 'aihub_agent'
+        run: |
+          docker-compose -f playground/docker-compose.yml up -d
+        working-directory: aihub_agent
+
+      - name: Wait for Docker services
+        if: matrix.module == 'aihub_agent'
+        run: |
+          until nc -z localhost 4222; do
+            echo "Waiting for NATS service to be ready..."
+            sleep 3
+          done
+          until nc -z localhost 27017; do
+            echo "Waiting for MongoDB service to be ready..."
+            sleep 3
+          done
+
+      - name: Configure Git to use GitHub Token
+        run: |
+           git config --global url."https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.3
+
+      - name: Validate poetry.lock
+        run: poetry lock --no-update
+        working-directory: ${{ matrix.module }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+        working-directory: ${{ matrix.module }}
+
+      - name: Run tests with coverage and generate report
+        run: |
+          make test-cov || echo "TEST_FAIL=true" >> $GITHUB_ENV
+        working-directory: ${{ matrix.module }}
+
+      # Stop Docker services after tests
+      - name: Stop Docker services
+        if: matrix.module == 'aihub_agent'
+        run: |
+          docker-compose -f playground/docker-compose.yml down
+        working-directory: aihub_agent
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.module }}-coverage-report
+          path: ${{ matrix.module }}/coverage.xml
+
+      - name: Upload pytest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.module }}-pytest-report
+          path: ${{ matrix.module }}/pytest.xml
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            ${{ matrix.module }}/pytest.xml
+
+      - name: Check if tests failed
+        if: env.TEST_FAIL == 'true'
+        run: |
+          echo "Tests have failed!"
+          exit 1
+
+  pytest-coverage-comment:
+    name: Pytest Coverage Comment
+    needs: test-modules
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
 
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+      checks: write
+
     strategy:
       matrix:
-        folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline, aihub_web ]
+        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download pytest reports
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.module }}-pytest-report
+          path: ${{ matrix.module }}
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.module }}-coverage-report
+          path: ${{ matrix.module }}
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          junitxml-path: ${{ matrix.module }}/pytest.xml
+          pytest-xml-coverage-path: ${{ matrix.module }}/coverage.xml
+          coverage-path-prefix: ${{ matrix.module }}
+          title: Tests for ${{ matrix.module }}
+          default-branch: main
+          report-only-changed-files: true
+
+  sonarcloud-scan:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    needs: test-modules
+    if: ${{ !github.event.pull_request.draft }}
+
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      matrix:
+        include:
+          - folder: aihub_agent
+            sonar_project_key: aihub-core_agents-core
+          - folder: aihub_api
+            sonar_project_key: aihub-core_api-core
+          - folder: aihub_lib
+            sonar_project_key: aihub-core_lib-core
+          - folder: aihub_pipeline
+            sonar_project_key: aihub-core_pipelines-core
 
     steps:
       - name: Checkout
@@ -27,7 +189,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: SonarCloud Scan
+      - name: Download Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.folder }}-coverage-report
+          path: ${{ matrix.folder }}
+
+      - name: Run SonarCloud
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,4 +203,32 @@ jobs:
         with:
           projectBaseDir: ${{ matrix.folder }}
           args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.python.coverage.reportPaths=${{ matrix.folder }}/coverage.xml
+            -Dsonar.projectKey=${{ matrix.sonar_project_key }}
+
+  aihub_web-scan:
+    name: SonarCloud Scan for aihub_web
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run SonarCloud
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: aihub_web
+          args: >
+            -Dsonar.projectKey=aihub-core_aihub-web
+
+
