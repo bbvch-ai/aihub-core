@@ -35,8 +35,6 @@ async def main():
             ),
             topic=topic,
         )
-    events = runner.get_events(BaseEvent)
-    print(events)
 
 
 if __name__ == "__main__":

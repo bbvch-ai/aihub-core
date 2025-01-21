@@ -42,7 +42,9 @@ async def _(agent_runner: AgentTestRunner, locale: str):
 @then(parsers.parse('a StartEvent is present with locale "{locale}"'))
 def _(agent_runner: AgentTestRunner, locale: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
-    assert agent_runner.get_event_of_type(StartEvent).locale == locale, "Agent did not receive start event"
+    assert (
+        agent_runner.get_event_of_type(StartEvent).locale == locale
+    ), "Start event locale does not match expected locale"
 
 
 @then(parsers.parse('a EventA is present with payload "{payload}"'))
