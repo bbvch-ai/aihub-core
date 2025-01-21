@@ -19,13 +19,17 @@ llama-index-readers-file = "^0.4.1"
 matplotlib = "^3.9.2"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.13.0"
+subdirectory = "aihub_lib"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 mypy = "^1.13.0"
 isort = "^5.13.2"
+pytest-cov = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -6,12 +6,11 @@ from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-
 from bson import ObjectId
 from pydantic import BaseModel
 
@@ -203,3 +202,23 @@ class AgentTestRunner(AgentRunner):
         Raises StopIteration if no such event is found.
         """
         return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+
+    async def wait_for_event(
+            self,
+            event_type: Type[BaseEvent],
+            timeout: float = 60.0,
+            interval: float = 0.1,
+    ) -> BaseEvent:
+        """
+        Wait until an event of the specified type is observed or until the timeout is reached.
+        """
+        max_attempts = int(timeout / interval)  # Maximum number of attempts based on the timeout
+        attempts = 0
+
+        while not self.has_event_of_type(event_type):
+            if attempts >= max_attempts:
+                raise TimeoutError(f"Timeout waiting for event of type {event_type.__name__}")
+            attempts += 1
+            await sleep(interval)
+
+        return self.get_event_of_type(event_type)

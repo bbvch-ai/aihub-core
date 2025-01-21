@@ -684,11 +684,12 @@ This means that the version is increased with every merge into the main branch.
 
 ### 4.2 Referencing
 
-By default, the referencing is done by relative local referencing to the `aihub_lib` package in the `pyproject.toml`
+By default, the referencing is done by referencing to the `aihub_lib` package by the git url in the `pyproject.toml`
 file.
-This is done to allow for a good local development process where changes in the `aihub_lib` package are immediately
-available
-as we expect that changes in the `aihub_lib` package are done in sync with the other packages.
+This is done to allow to tag git commits as versions of the package using tags.
+As we expect that changes in the `aihub_lib` package are done in sync with the other packages we are aware
+that for local development one might want to reference the local package instead of the git repository.
+This can be done by using `make use-local-core` which switches the reference to the local package.
 
 #### 4.2.1 Deployment
 
