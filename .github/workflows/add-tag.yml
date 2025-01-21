@@ -9,9 +9,6 @@ permissions:
   actions: read
 
 jobs:
-  # ----------------------------------------------
-  # 1) Version & Tag (runs exactly once)
-  # ----------------------------------------------
   version-and-tag:
     name: Bump Version & Push Tag
     runs-on: ubuntu-latest
@@ -67,6 +64,11 @@ jobs:
           git push origin ${{ steps.create-tag.outputs.version }}
           git pull --rebase origin main
 
+      - name: Define directories
+        id: define-directories
+        run: |
+          echo "directories=(aihub_pipeline aihub_agent aihub_api)" >> $GITHUB_OUTPUT
+
       - name: Increment version-tag in pyproject.toml
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
@@ -83,12 +85,11 @@ jobs:
             sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
 
-          update_version aihub_pipeline/pyproject.toml
-          update_lib_tag aihub_pipeline/pyproject.toml
-          update_version aihub_agent/pyproject.toml
-          update_lib_tag aihub_agent/pyproject.toml
-          update_version aihub_api/pyproject.toml
-          update_lib_tag aihub_api/pyproject.toml
+          directories="${{ steps.define-directories.outputs.directories }}"
+          for dir in $directories; do
+            update_version "$dir/pyproject.toml"
+            update_lib_tag "$dir/pyproject.toml"
+          done
           update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
 
@@ -99,24 +100,50 @@ jobs:
           # Remove remote tag
           git push origin --delete ${{ steps.create-tag.outputs.version }} || true
 
-      - name: Install Make
-        run: sudo apt-get update && sudo apt-get install -y make
+      - name: Install Make & tomlkit
+        run: |
+          sudo apt-get update && sudo apt-get install -y make
+          pip install tomlkit
 
-      - name: Install tomlkit
-        run: pip install tomlkit
+      - name: Set up SSH for GitHub
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Use Remote Core
+        run: |
+          make use-remote-core
+
+      - name: Install Poetry in different directories
+        run: |
+          directories="${{ steps.define-directories.outputs.directories }}"
+          for dir in "${directories[@]}"; do
+            cd "$dir"
+            pip install poetry
+            poetry lock --no-update
+            poetry install --with dev
+            cd -
+          done
+
+      - name: Clean up SSH keys
+        run: |
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf
 
       - name: Commit and push changes
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          make use-remote-core
-          git add aihub_pipeline/pyproject.toml
-          git add aihub_pipeline/poetry.lock
-          git add aihub_agent/pyproject.toml
-          git add aihub_agent/poetry.lock
-          git add aihub_api/pyproject.toml
-          git add aihub_api/poetry.lock
+          
+          directories="${{ steps.define-directories.outputs.directories }}"
+          for dir in $directories; do
+            git add "$dir/pyproject.toml"
+            git add "$dir/poetry.lock"
+          done
           git add aihub_lib/pyproject.toml
           git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
           git push origin --force
@@ -126,44 +153,3 @@ jobs:
           VERSION="${{ steps.create-tag.outputs.version }}"
           git tag $VERSION
           git push origin $VERSION
-
-  # ----------------------------------------------
-  # 2) Install Dependencies (runs for each folder)
-  # ----------------------------------------------
-  install-deps:
-    name: Install Deps in Each Module
-    runs-on: ubuntu-latest
-    needs: [ version-and-tag ]
-    strategy:
-      matrix:
-        folder: [ aihub_pipeline, aihub_agent, aihub_api ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '1.8.3'
-
-      - name: Install dependencies
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
-          pip install poetry
-          poetry lock --no-update
-          poetry install --with dev
-          rm -rf ~/.ssh
-          # Cleanup any override config
-          git config --global --unset url."git@github.com:"
-        working-directory: ${{ matrix.folder }}
