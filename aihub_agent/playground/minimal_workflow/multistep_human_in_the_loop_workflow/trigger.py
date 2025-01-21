@@ -5,26 +5,26 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.HumanInTheLoopAgent import (
-    MultiStepHumanInTheLoopAgent,
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgent import (
+    MultistepHumanInTheLoopAgent,
 )
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.HumanInTheLoopAgentConfig import (
-    MultiStepHumanInTheLoopAgentConfig,
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgentConfig import (
+    MultistepHumanInTheLoopAgentConfig,
 )
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
     FirstStepHumanInTheLoop,
 )
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
     SecondStepHumanInTheLoop,
 )
 
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=MultiStepHumanInTheLoopAgent,
-        agent_config=MultiStepHumanInTheLoopAgentConfig(
-            agent_id="multi_step_human_in_the_loop_agent",
-            name=LocaleString(en="Multi Step Human in the Loop Agent"),
+        agent_type=MultistepHumanInTheLoopAgent,
+        agent_config=MultistepHumanInTheLoopAgentConfig(
+            agent_id="multistep_human_in_the_loop_agent",
+            name=LocaleString(en="Multistep Human in the Loop Agent"),
             description=LocaleString(en="This is an agent with the Human in the Loop over multiple steps"),
             system_prompt=LocaleString(en="You are an agent"),
         ),
