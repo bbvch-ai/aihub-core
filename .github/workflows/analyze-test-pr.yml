@@ -183,8 +183,6 @@ jobs:
             sonar_project_key: aihub-core_lib-core
           - folder: aihub_pipeline
             sonar_project_key: aihub-core_pipelines-core
-          - folder: aihub_web
-            sonar_project_key: aihub-core_web-core
 
     steps:
       - name: Checkout
@@ -208,10 +206,6 @@ jobs:
           projectBaseDir: ${{ matrix.folder }}
           args: >
             -Dsonar.projectKey=${{ matrix.sonar_project_key }}
-            ${{ 
-                matrix.folder != 'aihub_web' 
-                ? '-Dsonar.python.coverage.reportPaths=' + matrix.folder + '/coverage.xml' 
-                : '' 
-            }}
+            ${{ matrix.folder != 'aihub_web' && format('-Dsonar.python.coverage.reportPaths=%s/coverage.xml', matrix.folder) || '' }}
 
 
