@@ -15,16 +15,12 @@ async def main():
         agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
             name=LocaleString(en="Fan Out Agent"),
-            description=LocaleString(
-                en="This is an agent that fans out multiple steps"
-            ),
+            description=LocaleString(en="This is an agent that fans out multiple steps"),
             system_prompt=LocaleString(en="You are an agent"),
         ),
     )
     async with runner.test_run() as topic:
-        await runner.send_event_from_topic(
-            topic=topic, start_event=StartEvent(messages=[])
-        )
+        await runner.send_event_from_topic(topic=topic, start_event=StartEvent(messages=[]))
 
 
 if __name__ == "__main__":
