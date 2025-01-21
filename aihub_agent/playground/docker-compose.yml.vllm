@@ -1,0 +1,46 @@
+version: '3.9'
+services:
+  phoenix:
+    image: arizephoenix/phoenix:version-7.0.1
+    ports:
+      - "6006:6006"  # Phoenix UI and OTLP HTTP collector
+      - "4317:4317"  # Phoenix OTLP gRPC collector
+    depends_on:
+      - mongo
+      - nats
+    restart: always
+
+  nats:
+    image: nats:latest
+    command: [ "-js" ]  # Enable JetStream
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring interface
+    restart: always
+
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - "27017:27017"
+    restart: always
+
+  vllm:
+    build:
+      context: .  # Path to the directory containing the Dockerfile
+      dockerfile: Dockerfile.vllm-cpu-env  # Name of the Dockerfile (if it's not the default `Dockerfile`)
+      args:
+        VLLM_CPU_DISABLE_AVX512: "true"  # Pass build arguments to the Dockerfile
+    image: vllm-cpu-env  # Name of the image to check or create
+    ports:
+      - "8182:8000"  # Maps port 8000 in the container to port 8182 on the host
+    environment:
+      - VLLM_CPU_DISABLE_AVX512=true  # Pass environment variables to the container
+      - VLLM_LOG_LEVEL=debug
+    shm_size: "4g"  # Set shared memory size for PyTorch or other memory-intensive tasks
+    command: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model Qwen/Qwen2.5-0.5B-Instruct
+      --max-model-len 64
