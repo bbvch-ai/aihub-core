@@ -123,7 +123,7 @@ jobs:
     name: Pytest Coverage Comment
     needs: test-modules
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
 
     permissions:
       contents: read
