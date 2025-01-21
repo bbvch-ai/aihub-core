@@ -30,8 +30,6 @@ def _():
 @async_test
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
-        global TOPIC
-        TOPIC = topic
 
         await agent_runner.send_event_from_topic(
             start_event=StartEvent(),
