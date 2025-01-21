@@ -7,6 +7,6 @@ Feature: Displaying Agent
     When the start event is sent
 
     Then a StartEvent is present
-    And a ThoughtEvent is present
-    And a ChunkEvent is present
+    And a ThoughtEvent with content "Let me think...." is present
+    And a ChunkEvent with content "This is some chunk that is sent to the user" is present
     And a StopEvent is present
