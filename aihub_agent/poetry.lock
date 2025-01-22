@@ -19,7 +19,7 @@ requests = ">=2.0.0,<3"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.13.0"
+version = "v0.16.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -65,7 +65,7 @@ transformers = "^4.48.1"
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
 reference = "v0.16.0"
-resolved_reference = "09b4e5a945b4883f3e5ae94c9cf97357d571911f"
+resolved_reference = "7aaa944f4b7f8180f5bf80aad8d4a53108a9cda8"
 subdirectory = "aihub_lib"
 
 [[package]]
