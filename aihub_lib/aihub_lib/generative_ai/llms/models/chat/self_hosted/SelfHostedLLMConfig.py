@@ -42,6 +42,9 @@ class SelfHostedLLMConfig(ChatLLMConfig):
     context_size: Annotated[int, Field(..., description="Context window size (max tokens) supported by the model.")]
     is_chat_model: Annotated[bool, Field(..., description="True if the model uses a chat-based interface.")]
     is_function_calling_model: Annotated[bool, Field(..., description="True if the model supports function calling.")]
+    tokenizer_name: Annotated[
+        Optional[str], Field(None, description="Tokenizer name for the model. Defaults to model name.")
+    ]
 
     default_parameter: Annotated[
         SelfHostedLLMParameter, Field(..., description="Default parameters for the self-hosted LLM.")
@@ -56,7 +59,7 @@ class SelfHostedLLMConfig(ChatLLMConfig):
         This uses the OpenAILike wrapper since it mimics OpenAI-like APIs. The tokenizer is retrieved
         from the local model, and parameters are merged to configure the model's behavior.
         """
-        tokenizer = AutoTokenizer.from_pretrained(self.name)
+        tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name if self.tokenizer_name else self.name)
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
 
         cost_tracker = LLMCostTracker(token_counter)
