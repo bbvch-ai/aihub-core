@@ -18,7 +18,7 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       matrix:
-        module: [aihub_lib, aihub_api, aihub_agent, aihub_pipeline]
+        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline ]
 
     permissions:
       id-token: write
@@ -64,15 +64,28 @@ jobs:
             echo "Waiting for MongoDB service to be ready..."
             sleep 3
           done
+          until nc -z localhost 8182; do
+            echo "Waiting for ollama service to be ready..."
+            sleep 3
+          done
 
       - name: Configure Git to use GitHub Token
         run: |
-           git config --global url."https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: 1.8.3
+
+      - name: Validate global poetry.lock
+        run: poetry lock --no-update
+
+      - name: Install global dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Use local core
+        run: poetry run make use-local-core
 
       - name: Validate poetry.lock
         run: poetry lock --no-update
@@ -81,6 +94,11 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
         working-directory: ${{ matrix.module }}
+
+      - name: Pull Qwen2.5 to ollama
+        if: matrix.module == 'aihub_agent'
+        run: |
+          curl -X POST http://localhost:8182/api/pull -H "Content-Type: application/json" -d '{"model": "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF"}'
 
       - name: Run tests with coverage and generate report
         run: |
