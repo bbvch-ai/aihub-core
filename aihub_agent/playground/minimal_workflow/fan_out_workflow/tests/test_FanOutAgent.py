@@ -36,10 +36,15 @@ async def _(agent_runner: AgentTestRunner):
         )
 
 
-@then("5 EventA events are present")
-def _(agent_runner: AgentTestRunner):
+@then(parsers.parse('5 EventA events with payloads "{payloads}" are present'))
+def verify_event_a_payloads(agent_runner: AgentTestRunner, payloads: str):
+    expected_payloads = payloads.split(",")
     events = agent_runner.get_events_of_type(EventA)
+    actual_payloads = [event.payload for event in events]
     assert len(events) == 5, f"Expected 5 EventA events but found {len(events)}"
+    assert sorted(actual_payloads) == sorted(expected_payloads), (
+        f"Expected EventA payloads {expected_payloads} but found {actual_payloads}"
+    )
 
 
 @then("5 EventB events are present")
