@@ -30,7 +30,7 @@ def _():
                 api_key="fake",
                 is_chat_model=True,
                 is_function_calling_model=False,
-                context_size=1024,
+                context_size=512,
                 default_parameter=SelfHostedLLMParameter(
                     logprobs=None,
                     logit_bias=None,
