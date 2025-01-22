@@ -60,6 +60,8 @@ jobs:
 
       - name: Tag the commit and push the tag
         run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.create-tag.outputs.version }}
           git push origin ${{ steps.create-tag.outputs.version }}
           git pull --rebase origin main
@@ -86,19 +88,14 @@ jobs:
           }
 
           directories="${{ steps.define-directories.outputs.directories }}"
-          for dir in $directories; do
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
             update_version "$dir/pyproject.toml"
             update_lib_tag "$dir/pyproject.toml"
           done
           update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
 
-      - name: Delete existing tag (in case we re-tag)
-        run: |
-          # Remove local tag if exists
-          git tag -d ${{ steps.create-tag.outputs.version }} || true
-          # Remove remote tag
-          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
 
       - name: Install Make & tomlkit
         run: |
@@ -120,7 +117,8 @@ jobs:
       - name: Install Poetry in different directories
         run: |
           directories="${{ steps.define-directories.outputs.directories }}"
-          for dir in "${directories[@]}"; do
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
             cd "$dir"
             pip install poetry
             poetry lock --no-update
@@ -133,6 +131,13 @@ jobs:
           rm -rf ~/.ssh
           git config --global --unset url."git@github.com:".insteadOf
 
+      - name: Delete existing tag (in case we re-tag)
+        run: |
+          # Remove local tag if exists
+          git tag -d ${{ steps.create-tag.outputs.version }} || true
+          # Remove remote tag
+          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
+
       - name: Commit and push changes
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
@@ -140,16 +145,27 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           directories="${{ steps.define-directories.outputs.directories }}"
-          for dir in $directories; do
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
             git add "$dir/pyproject.toml"
             git add "$dir/poetry.lock"
           done
           git add aihub_lib/pyproject.toml
           git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
           git push origin --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Tag (final)
+      - name: Create Tag
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
-          git tag $VERSION
-          git push origin $VERSION
+          # Tag the commit
+          git tag ${VERSION}
+          
+          # Push the tags
+          git push origin ${VERSION}
+        env:
+          GIT_COMMITTER_NAME: ${{ github.actor }}
+          GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          GIT_AUTHOR_NAME: ${{ github.actor }}
+          GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
