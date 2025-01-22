@@ -1,5 +1,8 @@
 import asyncio
 
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
@@ -7,9 +10,6 @@ from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig im
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.logging.logger import enable_logging
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import (
     LlamaIndexAgent,
 )
@@ -29,8 +29,7 @@ async def main():
             description=LocaleString(en="This is an agent that uses a llama index llm"),
             system_prompt=LocaleString(en="You are an agent"),
             llm=SelfHostedLLMConfig(
-                name="hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:latest",
-                tokenizer_name="Qwen/Qwen2.5-0.5B-Instruct",
+                name="unsloth/Llama-3.2-1B-Instruct",
                 api_endpoint="http://localhost:8182/v1",
                 api_key="fake",
                 is_chat_model=True,
