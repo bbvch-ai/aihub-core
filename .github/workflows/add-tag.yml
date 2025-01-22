@@ -95,12 +95,6 @@ jobs:
           update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
 
-      - name: Delete existing tag (in case we re-tag)
-        run: |
-          # Remove local tag if exists
-          git tag -d ${{ steps.create-tag.outputs.version }} || true
-          # Remove remote tag
-          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
 
       - name: Install Make & tomlkit
         run: |
@@ -136,6 +130,13 @@ jobs:
           rm -rf ~/.ssh
           git config --global --unset url."git@github.com:".insteadOf
 
+      - name: Delete existing tag (in case we re-tag)
+        run: |
+          # Remove local tag if exists
+          git tag -d ${{ steps.create-tag.outputs.version }} || true
+          # Remove remote tag
+          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
+
       - name: Commit and push changes
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
@@ -151,9 +152,18 @@ jobs:
           git add aihub_lib/pyproject.toml
           git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
           git push origin --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Tag (final)
+      - name: Create Tag
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
-          git tag $VERSION
-          git push origin $VERSION
+          # Tag the commit
+          git tag ${{ env.VERSION }}
+          
+          # Push the tags
+          git push origin ${{ env.VERSION }}
+        env:
+          GIT_COMMITTER_NAME: ${{ github.actor }}
+          GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          GIT_AUTHOR_NAME: ${{ github.actor }}
+          GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
