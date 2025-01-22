@@ -1,21 +1,17 @@
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 from bson import ObjectId
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.context_workflow.ContextAgent import ContextAgent
 from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
     ContextAgentConfig,
 )
 from playground.minimal_workflow.context_workflow.events.CustomStartEvent import CustomStartEvent
-from playground.minimal_workflow.context_workflow.events.EventA import EventA
+from playground.minimal_workflow.context_workflow.events.ContextEvent import ContextEvent
 
 scenarios("features/context_agent.feature")
-
-SHARED_LIST = []
 
 
 @given("a ContextAgent test runner", target_fixture="test_runner")
@@ -54,7 +50,7 @@ async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
 )
 @async_test
 async def verify_thread_context_count(test_runner: AgentTestRunner, expected_count_1: int, expected_count_2: int):
-    thread_counts = [event.thread_count for event in test_runner.get_events_of_type(EventA)]
+    thread_counts = [event.thread_count for event in test_runner.get_events_of_type(ContextEvent)]
     assert expected_count_1 in thread_counts, f"Expected {expected_count_1} was not found in {thread_counts}"
     assert expected_count_2 in thread_counts, f"Expected {expected_count_2} was not found in {thread_counts}"
     assert len(thread_counts) == 2, f"Expected {thread_counts} to contain 2 values"
@@ -63,7 +59,7 @@ async def verify_thread_context_count(test_runner: AgentTestRunner, expected_cou
 @then(parsers.parse("each RunContext count should be '{expected_count:d}'"))
 @async_test
 async def verify_run_context_count(test_runner: AgentTestRunner, expected_count: int):
-    run_counts = [event.run_count for event in test_runner.get_events_of_type(EventA)]
+    run_counts = [event.run_count for event in test_runner.get_events_of_type(ContextEvent)]
     for count in run_counts:
         assert count == expected_count, f"Expected {expected_count} was not found in {run_counts}"
     assert len(run_counts) == 2, f"Expected {run_counts} to contain 2 values"

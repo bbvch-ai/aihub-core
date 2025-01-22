@@ -1,10 +1,13 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, List, Optional, Type, Dict
+from typing import AsyncGenerator, List, Optional, Type
 
+from bson import ObjectId
+from pydantic import BaseModel
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -13,11 +16,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from bson import ObjectId
-from pydantic import BaseModel
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.runners.AgentRunner import AgentRunner
 
 
 class ObservedEvent(BaseModel):
