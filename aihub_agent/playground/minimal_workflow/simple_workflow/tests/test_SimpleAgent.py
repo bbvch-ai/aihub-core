@@ -15,7 +15,7 @@ scenarios("../tests/features/simple_agent.feature")
 @given("a SimpleAgent runner", target_fixture="agent_runner")
 def _():
     return AgentTestRunner(
-        agent_class=SimpleAgent,
+        agent_type=SimpleAgent,
         agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
             name=LocaleString(en="Simple Agent"),
