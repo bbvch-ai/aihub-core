@@ -157,11 +157,12 @@ jobs:
 
       - name: Create Tag
         run: |
+          VERSION="${{ steps.create-tag.outputs.version }}"
           # Tag the commit
-          git tag ${{ env.VERSION }}
+          git tag ${VERSION}
           
           # Push the tags
-          git push origin ${{ env.VERSION }}
+          git push origin ${VERSION}
         env:
           GIT_COMMITTER_NAME: ${{ github.actor }}
           GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com
