@@ -2,6 +2,11 @@ from asyncio import sleep
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
+from bson import ObjectId
+from pydantic import BaseModel
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
@@ -11,11 +16,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from bson import ObjectId
-from pydantic import BaseModel
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.runners.AgentRunner import AgentRunner
 
 
 class ObservedEvent(BaseModel):
@@ -60,10 +60,10 @@ class AgentTestRunner(AgentRunner):
     """
 
     def __init__(
-            self,
-            agent_type: Type[Agent],
-            agent_config: AgentConfig,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        agent_type: Type[Agent],
+        agent_config: AgentConfig,
+        locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=["nats://localhost:4222"],
@@ -72,6 +72,7 @@ class AgentTestRunner(AgentRunner):
             locale_paths=locale_paths,
         )
         self.observed_events: List[ObservedEvent] = []
+        self.topic: Optional[PartialAgentTopic] = None
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -101,6 +102,13 @@ class AgentTestRunner(AgentRunner):
         - Want to observe all events produced during the test scenario.
         - Want automatic teardown after tests complete.
         """
+        yield await self.test_run_start()
+        # After leaving the context, wait a bit before stopping to allow
+        # the agent to finish processing any last events.
+        await sleep(delay_before_stop)
+        await self.test_run_stop()
+
+    async def test_run_start(self) -> PartialAgentTopic:
         await self.start()
 
         thread_id = str(ObjectId())
@@ -133,17 +141,16 @@ class AgentTestRunner(AgentRunner):
         )
         await self.observe_discovery_response_event_subscriber.start()
 
-        yield PartialAgentTopic(
+        self.topic = PartialAgentTopic(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
             run_id=run_id,
             thread_id=thread_id,
             display_id=display_id,
         )
+        return self.topic
 
-        # After leaving the context, wait a bit before stopping to allow
-        # the agent to finish processing any last events.
-        await sleep(delay_before_stop)
+    async def test_run_stop(self):
         await self.stop()
 
     @property
@@ -211,10 +218,10 @@ class AgentTestRunner(AgentRunner):
         return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
 
     async def wait_for_event(
-            self,
-            event_type: Type[BaseEvent],
-            timeout: float = 60.0,
-            interval: float = 0.1,
+        self,
+        event_type: Type[BaseEvent],
+        timeout: float = 60.0,
+        interval: float = 0.1,
     ) -> BaseEvent:
         """
         Wait until an event of the specified type is observed or until the timeout is reached.
