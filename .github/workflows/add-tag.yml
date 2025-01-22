@@ -3,6 +3,7 @@ name: Auto Tag on Push
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -86,7 +87,8 @@ jobs:
           }
 
           directories="${{ steps.define-directories.outputs.directories }}"
-          for dir in $directories; do
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
             update_version "$dir/pyproject.toml"
             update_lib_tag "$dir/pyproject.toml"
           done
@@ -120,7 +122,8 @@ jobs:
       - name: Install Poetry in different directories
         run: |
           directories="${{ steps.define-directories.outputs.directories }}"
-          for dir in "${directories[@]}"; do
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
             cd "$dir"
             pip install poetry
             poetry lock --no-update
@@ -140,7 +143,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           directories="${{ steps.define-directories.outputs.directories }}"
-          for dir in $directories; do
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
             git add "$dir/pyproject.toml"
             git add "$dir/poetry.lock"
           done
