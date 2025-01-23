@@ -15,7 +15,7 @@ decompose_chat_history:
 
   decompose_result:
     questions: |
-      A list of {hops} questions that are decomposed from the conversation.
+      A list of 5 questions that are decomposed from the conversation.
     
     docstring: |
       Decompose the following conversation between a user and an AI assistant into multiple questions, which

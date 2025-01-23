@@ -18,8 +18,9 @@ class DecomposeResult(BaseModel):
 def decompose_result_factory(t: LocaleHandler, hops: int) -> Type[DecomposeResult]:
     class LocalizedDecomposeResult(DecomposeResult):
         questions: List[str] = Field(
-            description=t("lib.utils.decompose_chat_history.decompose_result.questions")
-        ).format(hops=hops)
+            description=t("lib.utils.decompose_chat_history.decompose_result.questions"))
+#            description=str(PromptTemplate(t("lib.utils.decompose_chat_history.decompose_result.questions")
+#        )).format(hops=hops))
 
     LocalizedDecomposeResult.__doc__ = t("lib.utils.decompose_chat_history.decompose_result.doc_string")
 

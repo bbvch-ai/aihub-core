@@ -3,20 +3,16 @@ from typing import List
 from llama_index.core.base.llms.types import MessageRole, ChatMessage
 
 from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.rag.Configs import MultiHopRAGAgentConfig
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.Configs.MultiHopRAGAgentConfig import MultiHopRAGAgentConfig
 from aihub_agent.agents.rag.Events.ConcatenationEvent import ConcatenationEvent
 from aihub_agent.agents.rag.Events.DecomposeQueryEvent import DecomposeQueryEvent
 from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import FixedList
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.decompose_chat_history import decompose_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
@@ -92,7 +88,7 @@ class MultiHopRAGAgent(Agent):
                 t=t,
                 llm=llm,
                 hops=agent_config.hops,
-                decompose_prompt=agent_config.decompose_condense_prompt,
+                decompose_prompt=agent_config.decompose_chat_history_prompt,
             )
             return [
                 DecomposeQueryEvent(decomposed_chat_history=decomposed_chat)
