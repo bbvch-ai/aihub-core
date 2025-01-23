@@ -2,10 +2,10 @@ from typing import List
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 
 
-def create_few_shot_messages(few_shot_examples: List[LocaleString], locale: str) -> List[ChatMessage]:
+def create_few_shot_messages(few_shot_examples: List[FewShotExample], locale: str) -> List[ChatMessage]:
     example_messages = []
 
     for example in few_shot_examples:

@@ -5,8 +5,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 from pydantic import BaseModel, Field
 
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
 class GuardResult(BaseModel):
@@ -24,9 +24,8 @@ def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
 
 
 async def agent_description_guard(
-        agent_description: str,
-        llm_config: LLM,
-        displayer: EventDisplayer,
+        agent_description: LocaleString,
+        llm: LLM,
         t: LocaleHandler,
         user_query: str,
         messages: List[ChatMessage],
@@ -42,7 +41,14 @@ async def agent_description_guard(
             for message in messages
         ]
     )
-    async with llm_config.cost_reporting_llm(displayer) as llm:
-        return llm.structured_predict(
-            guard_result_factory(t), prompt, agent_description=agent_description, user_query=user_query, history=history
-        )
+
+    result = await llm.structured_predict(
+        guard_result_factory(t),
+        prompt,
+        agent_description=agent_description.in_locale(t.locale),
+        user_query=user_query,
+        history=history,
+    )
+
+    guard_result_class = guard_result_factory(t)
+    return guard_result_class.model_validate(result)
