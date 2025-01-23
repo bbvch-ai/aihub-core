@@ -53,9 +53,7 @@ async def _(agent_runner: AgentTestRunner):
 
 @then("an EventA event is present")
 def _(agent_runner: AgentTestRunner):
-    event = agent_runner.get_event_of_type(EventA)
-    assert event is not None, "EventA was not received"
-    assert not isinstance(agent_runner.get_events(BaseEvent)[0], EventB)
+    assert agent_runner.has_event_of_type(EventA), "EventA was not received"
 
 
 @then("an EventB event is present")
