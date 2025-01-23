@@ -1,8 +1,13 @@
+import pytest
+import pytest_asyncio
 from bson import ObjectId
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.workflow import StartEvent
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import StopEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.context_workflow.ContextAgent import ContextAgent
 from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
@@ -14,9 +19,10 @@ from playground.minimal_workflow.context_workflow.events.ContextEvent import Con
 scenarios("features/context_agent.feature")
 
 
-@given("a ContextAgent test runner", target_fixture="test_runner")
-def _():
-    return AgentTestRunner(
+@pytest_asyncio.fixture
+async def test_runner():
+    """Returns an AgentTestRunner configured for the MultistepHumanInTheLoopAgent."""
+    test_runner = AgentTestRunner(
         agent_type=ContextAgent,
         agent_config=ContextAgentConfig(
             agent_id="context_agent",
@@ -25,41 +31,55 @@ def _():
             system_prompt=LocaleString(en="You are an agent"),
         ),
     )
+    await test_runner.test_run_start()
+    yield test_runner
+    await test_runner.test_run_stop()
 
 
-@when(parsers.parse('two start events are sent with payload "{payload1}" and "{payload2}" for the same thread'))
-@async_test
-async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
-    thread_id = str(ObjectId())
-    async with test_runner.test_run(thread_id=thread_id) as topic:
-        await test_runner.send_event_from_topic(
-            start_event=CustomStartEvent(payload=payload1),
-            topic=topic,
-        )
-    async with test_runner.test_run(thread_id=thread_id) as topic:
-        await test_runner.send_event_from_topic(
-            start_event=CustomStartEvent(payload=payload2),
-            topic=topic,
-        )
+@given(parsers.parse('a ContextAgent is started with the payload "{payload}"'))
+@pytest.mark.asyncio
+async def start_agent(test_runner: AgentTestRunner, payload: str):
+    await test_runner.send_event_from_topic(start_event=CustomStartEvent(payload=payload), topic=test_runner.topic)
 
 
-@then(
-    parsers.parse(
-        "the thread context count should increment to either '{expected_count_1:d}' or '{expected_count_2:d}'"
-    )
-)
-@async_test
-async def verify_thread_context_count(test_runner: AgentTestRunner, expected_count_1: int, expected_count_2: int):
-    thread_counts = [event.thread_count for event in test_runner.get_events_of_type(ContextEvent)]
-    assert expected_count_1 in thread_counts, f"Expected {expected_count_1} was not found in {thread_counts}"
-    assert expected_count_2 in thread_counts, f"Expected {expected_count_2} was not found in {thread_counts}"
-    assert len(thread_counts) == 2, f"Expected {thread_counts} to contain 2 values"
+@given(parsers.parse('another ContextAgent is started with the payload "{payload}"'))
+@pytest.mark.asyncio
+async def start_agent(test_runner: AgentTestRunner, payload: str):
+    topic = test_runner.topic.model_copy()
+    topic.run_id = str(ObjectId())
+    await test_runner.send_event_from_topic(start_event=CustomStartEvent(payload=payload), topic=topic)
 
 
-@then(parsers.parse("each RunContext count should be '{expected_count:d}'"))
-@async_test
-async def verify_run_context_count(test_runner: AgentTestRunner, expected_count: int):
-    run_counts = [event.run_count for event in test_runner.get_events_of_type(ContextEvent)]
-    for count in run_counts:
-        assert count == expected_count, f"Expected {expected_count} was not found in {run_counts}"
-    assert len(run_counts) == 2, f"Expected {run_counts} to contain 2 values"
+@when("the agent successfully started")
+@pytest.mark.asyncio
+async def start_agent(test_runner: AgentTestRunner):
+    await test_runner.wait_for_event(CustomStartEvent)
+
+
+@when(parsers.parse('the thread context count is "{count:d}"'))
+@pytest.mark.asyncio
+async def thread_count(test_runner: AgentTestRunner, count: int):
+    event = await test_runner.wait_for_event(ContextEvent)
+    assert event.thread_count == count
+
+
+@when(parsers.parse('the run context count is "{count:d}"'))
+@pytest.mark.asyncio
+async def run_count(test_runner: AgentTestRunner, count: int):
+    event = await test_runner.wait_for_event(ContextEvent)
+    assert event.run_count == count
+
+
+@then(parsers.parse('a ContextEvent is returned with thread count "{thread_count:d}" and run count "{run_count:d}"'))
+@pytest.mark.asyncio
+async def event_returned(test_runner: AgentTestRunner, thread_count: int, run_count: int):
+    event = await test_runner.wait_for_event(ContextEvent)
+    assert event.thread_count == thread_count
+    assert event.run_count == run_count
+
+
+@then("the agent stopped")
+@pytest.mark.asyncio
+async def assert_agent_stopped(test_runner: AgentTestRunner):
+    await test_runner.wait_for_event(StopEvent)
+    assert test_runner.has_stop_event

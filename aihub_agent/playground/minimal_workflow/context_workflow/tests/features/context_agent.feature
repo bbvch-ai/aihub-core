@@ -1,9 +1,28 @@
-Feature: Context Agent with Thread and Run Contexts
+Feature: Context Agent
+  test for ContextAgent
 
-  Scenario: Multiple runs in the same thread with distinct RunContexts
-    Given a ContextAgent test runner
+  Scenario: The agent starts with a single run context in a thread
+    Given a ContextAgent is started with the payload "InitialRun"
 
-    When two start events are sent with payload "Run 1" and "Run 2" for the same thread
+    When the agent successfully started
+    And the thread context count is "1"
+    And the run context count is "1"
 
-    Then the thread context count should increment to either '1' or '2'
-    And each RunContext count should be '1'
+    Then a ContextEvent is returned with thread count "1" and run count "1"
+
+  Scenario: The agent starts a second run context in the same thread
+    Given another ContextAgent is started with the payload "SecondRun"
+
+    When the agent successfully started
+    And the thread context count is "1"
+
+    Then a ContextEvent is returned with thread count "2" and run count "1"
+
+  Scenario: The agent has 2 runs in the same thread
+    Given another ContextAgent is started with the payload "SecondRun"
+
+    When the agent successfully started
+    And the thread context count is "2"
+
+    Then the agent stopped
+
