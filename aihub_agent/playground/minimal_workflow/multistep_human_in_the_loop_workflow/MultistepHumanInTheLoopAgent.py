@@ -1,18 +1,18 @@
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
     FirstStepHumanInTheLoop,
 )
-from playground.minimal_workflow.multi_step_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
     SecondStepHumanInTheLoop,
 )
 
 
-class MultiStepHumanInTheLoopAgent(Agent):
+class MultistepHumanInTheLoopAgent(Agent):
     @step()
     async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
-        print("[MultiStepHumanInTheLoopAgent.start_step]")
+        print("[MultistepHumanInTheLoopAgent.start_step]")
         return FirstStepHumanInTheLoop.invoke(question="Shall I continue?")
 
     @step()
@@ -27,7 +27,7 @@ class MultiStepHumanInTheLoopAgent(Agent):
     @step()
     async def end_step(self, event: SecondStepHumanInTheLoop.response) -> StopEvent:
         print(
-            "[MultiStepHumanInTheLoopAgent.end_step]",
+            "[MultistepHumanInTheLoopAgent.end_step]",
             event.request_event.question,
             event.response,
         )

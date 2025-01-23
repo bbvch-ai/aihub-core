@@ -25,8 +25,7 @@ def _():
             description=LocaleString(en="This is an agent that uses a llama index llm"),
             system_prompt=LocaleString(en="You are an agent"),
             llm=SelfHostedLLMConfig(
-                name="hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:latest",
-                tokenizer_name="Qwen/Qwen2.5-0.5B-Instruct",
+                name="unsloth/Llama-3.2-1B-Instruct",
                 api_endpoint="http://localhost:8182/v1",
                 api_key="fake",
                 is_chat_model=True,

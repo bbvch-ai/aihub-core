@@ -1,8 +1,8 @@
 from aihub_lib.nats.events.human_in_the_loop import (
-    HumanInTheLoop,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
 )
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
 
 
 class FirstStepHumanInTheLoopRequestEvent(HumanInTheLoopRequestEvent):
