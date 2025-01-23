@@ -1,10 +1,12 @@
 Feature: Configured Agent
-  Test for ConfiguredAgent
+  test for ConfiguredAgent
 
-  Scenario: Test Configured Agent with StartStepConfig and AgentConfig
-    Given a ConfiguredAgent runner with agent value "test_agent_value" and step value "test_step_value"
-    When the start event is sent
-    Then an EventA event is present
-    And the agent configuration value "test_agent_value" is processed
-    And the step configuration value "test_step_value" is processed
-    And a StopEvent is present
+  Scenario: Test Configured Agent
+    Given a ConfiguredAgent runner with a start step value "Step Config" and an agent value "Agent Config"
+
+    When a the start event is sent
+    Then a StartEvent is present
+    Then an EventA event is present with payload "Step Config"
+    Then an EventB event is present with payload "Agent Config"
+    Then a StopEvent is present
+

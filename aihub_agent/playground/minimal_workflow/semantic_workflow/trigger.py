@@ -23,9 +23,7 @@ async def main():
     )
 
     async with runner.test_run() as topic:
-        await runner.send_event_from_topic(
-            topic=topic, start_event=StartEvent(messages=[])
-        )
+        await runner.send_event_from_topic(topic=topic, start_event=StartEvent(messages=[]))
 
 
 if __name__ == "__main__":

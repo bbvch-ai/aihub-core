@@ -15,4 +15,6 @@ class ThoughtEvent(DisplayEvent):
     explaining the agent’s behavior to end-users (e.g., "chain-of-thought" explanations).
     """
 
-    content: str = Field(..., description="The textual representation of the agent’s internal reasoning at a particular point in time.")
+    content: str = Field(
+        ..., description="The textual representation of the agent’s internal reasoning at a particular point in time."
+    )

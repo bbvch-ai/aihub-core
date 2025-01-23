@@ -1,12 +1,15 @@
-from typing import Optional, Tuple, Annotated
+from typing import Annotated, Optional, Tuple
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
-from transformers import AutoTokenizer
 from pydantic import Field
+from transformers import AutoTokenizer
 
 from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig, EmbeddingLLMModelParameter
+from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import (
+    EmbeddingLLMConfig,
+    EmbeddingLLMModelParameter,
+)
 
 
 class SelfHostedEmbeddingParameter(EmbeddingLLMModelParameter):
@@ -20,7 +23,7 @@ class SelfHostedEmbeddingParameter(EmbeddingLLMModelParameter):
 
     text_instruction: Annotated[Optional[str], Field("", description="Instruction to apply when embedding text.")]
     query_instruction: Annotated[Optional[str], Field("", description="Instruction to apply when embedding a query.")]
-    truncate_text: Annotated[bool, Field(False, description="If True, truncate text to model's max length." )]
+    truncate_text: Annotated[bool, Field(False, description="If True, truncate text to model's max length.")]
 
 
 class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
@@ -38,7 +41,9 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
     timeout: Annotated[int, Field(60, description="HTTP request timeout in seconds.")]
     embed_batch_size: Annotated[int, Field(32, description="Number of texts to embed in one batch.")]
 
-    default_parameter: Annotated[SelfHostedEmbeddingParameter, Field(..., description="Default parameters for the self-hosted embedding model.")]
+    default_parameter: Annotated[
+        SelfHostedEmbeddingParameter, Field(..., description="Default parameters for the self-hosted embedding model.")
+    ]
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedEmbeddingParameter]

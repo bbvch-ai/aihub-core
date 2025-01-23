@@ -249,6 +249,65 @@ Examples:
 - **Flexibility**: Allows for parallel development across different projects and initiatives without conflicts.
 - **Traceability**: Enhances the ability to track changes back to their origin, facilitating better project management.
 
+## 1.5 Branch Protection
+
+To ensure the stability and integrity of our codebase, we have implemented branch protection rules for our branches.
+
+### 1.5.1 Main Branch
+
+For the main branch, the following rules apply:
+
+- **Restrict Updates**
+    - **Description:** Only users with bypass can push directly.
+    - **Reason:** This rule ensures that most contributors can’t directly push to certain critical branches.
+      They have to go through a pull request, which requires reviews or checks to pass before merging.
+      By limiting who can push directly, we reduce the chance of accidental or unreviewed changes.
+
+- **Restrict Deletions**
+    - **Description:** Only users with bypass can delete `main`.
+    - **Reason:** Preserves the integrity of the primary branch.
+
+- **Block Force Pushes**
+    - **Description:** Denies force-pushes to `main`.
+    - **Reason:** Preserves commit history from destructive rewrites. By limiting who can push directly,
+      we reduce the chance of accidental or unreviewed changes.
+
+- **Require Linear History**
+    - **Description:** Disallows merge commits, enforcing a linear commit history.
+    - **Reason:** Keeps the repository history clean and traceable. A linear history is easier to read and navigate,
+      since you don’t have merge commits branching off in different directions.
+
+- **Require a Pull Request Before Merging**
+    - **Description:** All changes must be introduced via pull requests.
+    - **Reason:** Encourages peer review and prevents unauthorized merges.
+    - **Approvals**:
+        - **Required Approvals**
+            - **Config:** At least 1 approving review is needed.
+        - **Dismiss Stale Pull Request Approvals**
+            - **Config:** New commits dismiss previous approvals which means after new commits are pushed to the branch,
+              the
+              previous approvals are removed.
+        - **Require Conversation Resolution Before Merging**
+            - **Config:** All review discussions must be resolved this includes also comments by bots.
+        - **Allowed Merge Methods**
+            - **Config:** Only `Squash` is enabled. This means that into the main branch only squash commits are
+              allowed.
+              This means that each pull request is merged as a single commit to the main branch. As a result,
+              the commit history remains linear—avoiding merge commits—and each merge is captured as one
+              commit representing all changes in that pull request.
+              Like this we will later not bloat the main branches' history. There might be the case where we have
+              long-running initiative which only should be merged to the main once all features of the initiative are
+              done.
+              In that case we use the initiative branch and then merge it into main. Since this is considered an
+              exception we have to temporarily change the rule for this.
+
+### 1.5.1 Initiative Branch
+
+For the `initiative/*` branches, the same rules apply as for the main branch.
+
+**Important**: Initiative branches should only be used if the features of an initiative can only be merged
+once all features are done.
+
 ---
 
 # 2 Getting Started
@@ -273,6 +332,12 @@ Examples:
   > ☝ **Note: Miniconda for Virtual Environment Only**  
   > We use Miniconda to create virtual environments and install the initial Python version in it. For the package
   management inside the virtual environment, we use poetry. (see below)
+
+- **make (Windows only)**
+  You can download `make`
+  from [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm). Make sure to add the `bin` directory of the `make`
+  installation to the PATH.
+    - Verify: `make --version`
 
 - **Poetry**: Dependency management tool for Python ([Download Poetry](https://python-poetry.org/docs/)).
     - Verify: `poetry --version`
@@ -394,48 +459,48 @@ Clone the following repositories:
 
 #### 2.2.2.1 Backend Services
 
-Each folder in the `aihub-core` repository represents a **microservice**.
-To ensure proper isolation and compatibility, follow these steps for each folder:
+Each folder in the `aihub-core` repository represents a **microservice**, which is an independent, self-contained module
+designed to handle a specific functionality within the broader system. This modular approach enhances scalability and
+maintainability.
 
-Option 1: **Use a separate environment for each service** (safer and more isolated):
+1. **Open the `aihub-core` Project (or a Parent Directory)**:
 
-1. **Open Each Folder in a Separate IDE**:
-    - Recommendation: Use PyCharm for backend services and WebStorm for frontend services.
+    - Open PyCharm.
+    - Navigate to the `aihub-core` directory or any parent directory containing `aihub-core` and open it as the main
+      project. Opening a parent directory can help manage additional related projects, such as customer projects, in the
+      same workspace.
 
-2. **Set Up an Environment for Each Microservice**:
-    - Open the microservice folder e.g. `aihub_api` as a new project.
-    - Configure a poetry environment (https://www.jetbrains.com/help/pycharm/poetry.html)
-        - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-        - Click on the gear icon and select **Add** > **Poetry Environment**.
-            - **Base interpreter**: Use miniconda python executable as interpreter (usually found under
-              AppData/Local/minconda3).
-            - **Poetry executable**: Find and select the poetry.exe.
-        - Apply and set the environment.
-    - If you have not already done so, initialize Poetry within the environment:
+2. **Attach Microservices as Additional Projects**:
+
+    - For each folder in `aihub-core` containing a `pyproject.toml` file (e.g., `aihub_api`, `aihub_lib`, `aihub_agent`,
+      `aihub_pipeline`):
+        - Go to **File > Open...**.
+        - Select the microservice folder.
+        - In the popup, select the **Attach** option to keep all microservices accessible within the same PyCharm
+          workspace.
+
+3. **Set Up Poetry Environments for Each Microservice**:
+
+    - For each attached project:
+        - Go to **File > Settings > Project:\*\*\*\* > Python Interpreter**.
+        - Select the microservice in the left column (e.g., `aihub_agent`).
+        - Click on **Add Interpreter > Add Local Interpreter**.
+            - **Type**: Poetry
+            - **Base interpreter**: Use the Miniconda Python executable (usually found under
+              `AppData/Local/miniconda3`).
+            - **Poetry executable**: Locate and select the `poetry.exe` file.
+        - Apply the settings.
+    - Navigate to the microservice directory and run:
       ```bash
       poetry install
       ```
+    - *Alternatively*, you can just open any Python file in the microservice, and PyCharm should prompt you to configure
+      the Poetry environment based on the project's `pyproject.toml` file.
 
-3. **Repeat** this process for each folder containing a pyproject.toml file (e.g., `aihub_lib`, `aihub_agent`,
-   `aihub_pipeline`).
+4. **Repeat for Each Microservice**:
 
-Option 2: **Use a single environment for all services** (simpler but may cause dependency conflicts):
-
-1. **Open the `aihub-core` folder in PyCharm**.
-2. **Set Up an Environment for the whole project**:
-    - Go to **File > Settings > Project: <ProjectName> > Python Interpreter**.
-    - Click on the gear icon and select **Add** > **Poetry Environment**.
-        - **Base interpreter**: Use miniconda python executable as interpreter (usually found under
-          AppData/Local/minconda3).
-        - **Poetry executable**: Find and select the poetry.exe.
-    - Apply and set the environment.
-    - If you have not already done so, initialize Poetry within the environment. Navigate to a directory e.g.
-      aihub_agent with a pyproject.toml and run:
-      ```bash
-      poetry install
-      ```
-      This may lead to missing dependencies when using other services. In this case, you can run `poetry install`  in
-      the other service's directory again.
+    - Ensure every microservice folder is configured with its own Poetry environment to avoid dependency conflicts. For
+      example, if one microservice uses a specific version of a library, it won't interfere with others.
 
 ##### 2.2.2.1.1 Poetry Commands
 
@@ -601,7 +666,37 @@ We see that all tests are structured into three parts:
 - **Faster Iterations**: New test cases often require no new Python code—just add new scenarios in the feature file.
 - **Closer Collaboration**: Encourages collaboration between business, QA, and development.
 
-# 4 Additional Infos
+# 4 Package Management
+
+## 4.1 Package structure
+
+The AI hub consists of multiple packages:
+
+- `aihub_agents`: Contains common code for agent development
+- `aihub_api`: Contains common code for API implementation
+- `aihub_pipeline`: Contains common code pipeline development
+- `aihub_lib`: Contains code relevant for multiple packages of above
+
+This means that the `aihub_lib` package is used by all other packages.
+
+All our packages have versions which are increased in sync with the tags in the repository.
+This means that the version is increased with every merge into the main branch.
+
+### 4.2 Referencing
+
+By default, the referencing is done by referencing to the `aihub_lib` package by the git url in the `pyproject.toml`
+file.
+This is done to allow to tag git commits as versions of the package using tags.
+As we expect that changes in the `aihub_lib` package are done in sync with the other packages we are aware
+that for local development one might want to reference the local package instead of the git repository.
+This can be done by using `make use-local-core` which switches the reference to the local package.
+
+#### 4.2.1 Deployment
+
+For deployment (of customer projects) the referencing is adjusted to reference the package from the github repo
+and specifying the version by the tag.
+
+# 5 Additional Infos
 
 ## Key Features
 

@@ -1,6 +1,7 @@
+import json
 import logging
 from typing import Any, Optional
-import json
+
 from nats.js.client import JetStreamContext
 
 logger = logging.getLogger(__name__)

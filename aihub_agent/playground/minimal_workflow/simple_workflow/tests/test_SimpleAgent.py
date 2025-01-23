@@ -5,11 +5,9 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from playground.minimal_workflow.SimpleAgent.Events.EventA import EventA
-from playground.minimal_workflow.SimpleAgent.SimpleAgent import SimpleAgent
-from playground.minimal_workflow.SimpleAgent.SimpleAgentConfig import (
-    SimpleAgentConfig,
-)
+from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
+from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
+from playground.minimal_workflow.simple_workflow.events.EventA import EventA
 
 scenarios("../tests/features/simple_agent.feature")
 
@@ -17,7 +15,7 @@ scenarios("../tests/features/simple_agent.feature")
 @given("a SimpleAgent runner", target_fixture="agent_runner")
 def _():
     return AgentTestRunner(
-        agent_class=SimpleAgent,
+        agent_type=SimpleAgent,
         agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
             name=LocaleString(en="Simple Agent"),
@@ -32,9 +30,7 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(
-                messages=[ChatMessage(content=payload, role=MessageRole.USER)]
-            ),
+            start_event=StartEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
             topic=topic,
         )
 
@@ -51,6 +47,4 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('an EventA event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert (
-            agent_runner.get_event_of_type(EventA).payload == payload
-    ), "Agent received incorrect data"
+    assert agent_runner.get_event_of_type(EventA).payload == payload, "Agent received incorrect data"

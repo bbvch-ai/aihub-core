@@ -17,4 +17,5 @@ class DisplayEvent(BaseEvent):
     registration, serialization, and deserialization mechanisms, making it simple to integrate
     into a user interface or logging pipeline.
     """
+
     pass

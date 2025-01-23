@@ -1,5 +1,5 @@
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
 
 class StopEvent(ControlEvent, DisplayEvent):
@@ -22,4 +22,5 @@ class StopEvent(ControlEvent, DisplayEvent):
     - Signaling that a response is ready, and no more actions are needed.
     - Informing the user interface that the conversation or task has concluded.
     """
+
     pass

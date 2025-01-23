@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 
 from nats.js import JetStreamContext
-from nats.js.api import StorageType, KeyValueConfig
+from nats.js.api import KeyValueConfig, StorageType
 
 from aihub_lib.nats.context.BaseContext import BaseContext
 

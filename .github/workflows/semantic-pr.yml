@@ -2,19 +2,14 @@ name: Semantic PR
 
 on:
   pull_request:
-    branches:
-      - initiative/*
-      - main
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
+    branches: [ main, initiative/* ]
+    types: [ opened, edited, synchronize, reopened, ready_for_review ]
 
 jobs:
   lint-pr-title:
     name: Lint PR Title
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       checks: write
@@ -62,6 +57,7 @@ jobs:
   lint-branch-name:
     name: Lint Branch Name
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
 
     permissions:
       checks: write

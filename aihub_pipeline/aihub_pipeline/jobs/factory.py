@@ -3,18 +3,14 @@ from typing import Optional
 from dagster import JobDefinition, RunConfig, define_asset_job, observable_source_asset
 
 
-def materialize_all_job(
-    customer_name: str, namespace_name: str, config: Optional[RunConfig] = None
-) -> JobDefinition:
+def materialize_all_job(customer_name: str, namespace_name: str, config: Optional[RunConfig] = None) -> JobDefinition:
     """Job that materializes all assets. This is useful when you have no partitioning. When you
     have partitions, starting this job will prompt you to specify the partition to materialize.
     However, in most cases, we use dynamic partitioning and let an op decide on which partitions even exist, hence,
     in many cases, you can't name the partitions a-priori.
     If you see yourself in that situation, you should use the `observe_source_job` instead.
     """
-    return define_asset_job(
-        name=f"{customer_name}_{namespace_name}_materialize_all", config=config
-    )
+    return define_asset_job(name=f"{customer_name}_{namespace_name}_materialize_all", config=config)
 
 
 def observe_source_job(

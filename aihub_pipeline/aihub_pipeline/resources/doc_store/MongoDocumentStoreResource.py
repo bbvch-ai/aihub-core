@@ -1,5 +1,5 @@
-from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from aihub_lib.persistence.rag.documents.document_stores.MongoDocumentStoreFactory import create_mongo_document_store
+from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
 from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource

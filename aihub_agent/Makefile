@@ -29,3 +29,14 @@ clean:
 	rm -f coverage.xml
 	rm -f .coverage
 	poetry run
+
+test-cov:
+	@echo "Running tests in aihub_agent with coverage..."
+	poetry run pytest --cov=aihub_agent \
+	                  --cov-report=xml:coverage.xml \
+	                  --cov-report=term-missing \
+	                  --junitxml=pytest.xml \
+	                  --ignore=playground/agent/RAGAgent/tests
+
+pr-ready: sort-imports format
+	@echo "Running full check (format, sort)..."

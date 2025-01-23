@@ -2,15 +2,15 @@ name: Auto Tag on Push
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 permissions:
   contents: write
   actions: read
 
 jobs:
-  tag:
+  version-and-tag:
+    name: Bump Version & Push Tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
@@ -26,9 +26,10 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.3
+          version: '1.8.3'
 
       - name: Create new version number & tag for aihub_lib
+        id: create-tag
         run: |
           # List all tags that match the pattern 'v*' and check if the list is empty
           tags=$(git tag -l "v*")
@@ -40,80 +41,129 @@ jobs:
             latest_tag=$(git describe --tags --match "v*" --abbrev=0)
           fi
           echo "Latest tag: $latest_tag"
-          
+
           # Remove the 'v' prefix for version manipulation
           version_number=${latest_tag#"v"}
-          
-          echo "Version number: $version_number"
 
-          
           # Split into components
-          major=$(echo $version_number | cut -d. -f1)
-          minor=$(echo $version_number | cut -d. -f2)
-          patch=$(echo $version_number | cut -d. -f3)
-          
+          major=$(echo "$version_number" | cut -d. -f1)
+          minor=$(echo "$version_number" | cut -d. -f2)
+          patch=$(echo "$version_number" | cut -d. -f3)
+
           # Increment the minor version
-          new_minor=$(($minor + 1))
+          new_minor=$((minor + 1))
           new_tag="v$major.$new_minor.$patch"
           echo "New tag: $new_tag"
-          echo "VERSION=$new_tag" >> $GITHUB_ENV
-        
+
+          # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
+          echo "version=$new_tag" >> $GITHUB_OUTPUT
+
       - name: Tag the commit and push the tag
         run: |
-          # Tag the commit
-          git tag ${{ env.VERSION }}
-          git push origin ${{ env.VERSION }}
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.create-tag.outputs.version }}
+          git push origin ${{ steps.create-tag.outputs.version }}
+          git pull --rebase origin main
+
+      - name: Define directories
+        id: define-directories
+        run: |
+          echo "directories=aihub_pipeline aihub_agent aihub_api" >> $GITHUB_OUTPUT
 
       - name: Increment version-tag in pyproject.toml
         run: |
-          echo "Update tag reference to aihub_lib in aihub_pipeline"
-          sed -i 's/tag = "[^"]*"/tag = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update package version in aihub_pipeline/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_pipeline/pyproject.toml
-          echo "Update package version in aihub_lib/pyproject.toml"
-          sed -i 's/version = "[^"]*"/version = "${{ env.VERSION }}"/' aihub_lib/pyproject.toml
+          VERSION="${{ steps.create-tag.outputs.version }}"
+          update_version() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
+          }
+          update_lib_tag() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry.dependencies.aihub_lib\]/,/^tag =/ s/tag = "[^"]*"/tag = "'"$VERSION"'"/' $1
+          }
+          update_makefile_tag() {
+            echo "Update TAG in $1"
+            sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
+          }
 
-      - name: Install dependencies in aihub_pipeline
-        working-directory: ./aihub_pipeline
+          directories="${{ steps.define-directories.outputs.directories }}"
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+            update_version "$dir/pyproject.toml"
+            update_lib_tag "$dir/pyproject.toml"
+          done
+          update_version aihub_lib/pyproject.toml
+          update_makefile_tag Makefile
+
+
+      - name: Install Make & tomlkit
+        run: |
+          sudo apt-get update && sudo apt-get install -y make
+          pip install tomlkit
+
+      - name: Set up SSH for GitHub
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf "https://github.com/"
-          pip install poetry
-          poetry lock --no-update
-          poetry install --with dev
+
+      - name: Use Remote Core
+        run: |
+          make use-remote-core
+
+      - name: Install Poetry in different directories
+        run: |
+          directories="${{ steps.define-directories.outputs.directories }}"
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+            cd "$dir"
+            pip install poetry
+            poetry lock --no-update
+            poetry install --with dev
+            cd -
+          done
+
+      - name: Clean up SSH keys
+        run: |
           rm -rf ~/.ssh
           git config --global --unset url."git@github.com:".insteadOf
 
-
-      - name: Delete existing tag
+      - name: Delete existing tag (in case we re-tag)
         run: |
-          # Ensure the tag is not present locally
-          git tag -d ${{ env.VERSION }} || true
-          # Ensure the tag is not present remotely
-          git push origin --delete ${{ env.VERSION }} || true
+          # Remove local tag if exists
+          git tag -d ${{ steps.create-tag.outputs.version }} || true
+          # Remove remote tag
+          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
 
       - name: Commit and push changes
         run: |
+          VERSION="${{ steps.create-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add aihub_pipeline/pyproject.toml
-          git add aihub_pipeline/poetry.lock
+          
+          directories="${{ steps.define-directories.outputs.directories }}"
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+            git add "$dir/pyproject.toml"
+            git add "$dir/poetry.lock"
+          done
           git add aihub_lib/pyproject.toml
-          git commit -m "ops(bot): Update tag number to ${{ env.VERSION }} [skip ci]"
-          git push origin
+          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
+          git push origin --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Tag
         run: |
+          VERSION="${{ steps.create-tag.outputs.version }}"
           # Tag the commit
-          git tag ${{ env.VERSION }}
+          git tag ${VERSION}
           
           # Push the tags
-          git push origin ${{ env.VERSION }}
+          git push origin ${VERSION}
         env:
           GIT_COMMITTER_NAME: ${{ github.actor }}
           GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com

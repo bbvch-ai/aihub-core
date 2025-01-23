@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
@@ -25,7 +25,10 @@ class StartEvent(ControlEvent):
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
     """
 
-    locale: Optional[str] = Field(LocaleHandler.DEFAULT_LOCALE, description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.")
+    locale: Optional[str] = Field(
+        LocaleHandler.DEFAULT_LOCALE,
+        description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.",
+    )
     messages: List[ChatMessage | UserChatMessage | AssistantChatMessage] = Field(
         description="A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
         default_factory=list,

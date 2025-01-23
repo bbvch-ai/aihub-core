@@ -3,9 +3,9 @@ import asyncio
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
+from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
+    SelfHostedLLMConfig,
+    SelfHostedLLMParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
@@ -28,13 +28,17 @@ async def main():
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
             system_prompt=LocaleString(en="You are an agent"),
-            llm=AzureOpenAILLMConfig(
-                name="gpt-4o",
-                api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
-                api_version="2023-12-01-preview",
-                prompt_tokens_costs_per_thousand=0.0045,
-                completion_tokens_costs_per_thousand=0.0133,
-                default_parameter=AzureOpenAIParameter(temperature=0.0),
+            llm=SelfHostedLLMConfig(
+                name="unsloth/Llama-3.2-1B-Instruct",
+                api_endpoint="http://localhost:8182/v1",
+                api_key="fake",
+                is_chat_model=True,
+                is_function_calling_model=False,
+                context_size=1024,
+                default_parameter=SelfHostedLLMParameter(
+                    logprobs=None,
+                    logit_bias=None,
+                ),
             ),
         ),
     )
@@ -42,9 +46,7 @@ async def main():
     async with runner.test_run(delay_before_stop=5) as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(
-                messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]
-            ),
+            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]),
         )
 
 

@@ -18,31 +18,19 @@ class DataLakeFile(BaseModel):
 
     name: str = Field(..., description="The name of the file.")
     namespace: str = Field(..., description="The namespace to which the file belongs.")
-    filetype: str = Field(
-        ..., description="The type of the file, derived from its extension."
-    )
+    filetype: str = Field(..., description="The type of the file, derived from its extension.")
     uri: str = Field(..., description="The URI of the file in the data lake.")
     size: int = Field(..., description="The size of the file in bytes.")
     content_type: str = Field(..., description="The MIME type of the file content.")
     owner: str = Field(..., description="The owner of the file.")
-    hash: str = Field(
-        ..., description="The MD5 hash of the file content, base64-encoded."
-    )
+    hash: str = Field(..., description="The MD5 hash of the file content, base64-encoded.")
 
-    created: int = Field(
-        ..., description="The UNIX timestamp when the file was created."
-    )
-    updated: int = Field(
-        ..., description="The UNIX timestamp when the file was last updated."
-    )
+    created: int = Field(..., description="The UNIX timestamp when the file was created.")
+    updated: int = Field(..., description="The UNIX timestamp when the file was last updated.")
 
-    metadata: Dict = Field(
-        ..., description="A dictionary of metadata associated with the file."
-    )
+    metadata: Dict = Field(..., description="A dictionary of metadata associated with the file.")
 
-    content: Optional[bytes] = Field(
-        default=None, description="The binary content of the file."
-    )
+    content: Optional[bytes] = Field(default=None, description="The binary content of the file.")
 
     @computed_field
     @property
@@ -122,8 +110,7 @@ class DataLakeFile(BaseModel):
             filetype=file_type,
             uri=uri,
             size=size,
-            content_type=mimetypes.guess_type(filename)[0]
-            or "application/octet-stream",
+            content_type=mimetypes.guess_type(filename)[0] or "application/octet-stream",
             owner=os.getlogin(),
             hash=md5_hash_str,
             created=current_timestamp,

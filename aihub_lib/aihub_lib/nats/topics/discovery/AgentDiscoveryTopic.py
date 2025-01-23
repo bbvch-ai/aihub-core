@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
 
 
 class AgentDiscoveryTopic(DiscoveryTopic):

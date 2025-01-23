@@ -8,7 +8,5 @@ def group_name_from_asset_key(key: AssetKey, subgroup: str = "") -> str:
     return group_name
 
 
-def asset_key_from_customer_and_namespace(
-    customer_name: str, namespace_name: str, key: str
-) -> AssetKey:
+def asset_key_from_customer_and_namespace(customer_name: str, namespace_name: str, key: str) -> AssetKey:
     return AssetKey([customer_name, namespace_name, key])

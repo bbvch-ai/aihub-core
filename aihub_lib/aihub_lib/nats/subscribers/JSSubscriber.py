@@ -1,15 +1,14 @@
-
 import logging
 import traceback
-from typing import Optional, TypeVar, Generic, Type, Callable, Awaitable
+from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
@@ -69,14 +68,8 @@ class JSSubscriber(Generic[TEvent]):
         Once started, the subscriber begins consuming messages from JetStream.
         """
         await self.stream_manager.ensure_agent_stream_exists()
-        self.js_subscription = await self.js.subscribe(
-            self.subject,
-            cb=self.message_handler,
-            queue=self.queue_group
-        )
-        logger.debug(
-            f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
-        )
+        self.js_subscription = await self.js.subscribe(self.subject, cb=self.message_handler, queue=self.queue_group)
+        logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
 
     async def stop(self):
         """Unsubscribes from the JetStream subject, stopping the flow of messages."""
