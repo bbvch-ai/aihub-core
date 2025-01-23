@@ -125,14 +125,14 @@ class MultiHopRAGAgent(Agent):
 
     # TODO: how do I make the fixed list size dynamic?
     @step()
-    async def concatenation_step(self, events: FixedList(ConcatenationEvent, 5)) -> RetrieverEvent:
+    async def concatenation_step(self, events: FixedList(RetrieverEvent, 5)) -> ConcatenationEvent:
         """
         Concatenates the nodes from 5 retrieval steps into one list of nodes.
         """
         nodes = []
         [nodes.extend(event.nodes) for event in events]
 
-        return RetrieverEvent.from_nodes(nodes)
+        return ConcatenationEvent.from_nodes(nodes)
 
     @step()
     async def order_nodes_by_documents_step(
