@@ -1,14 +1,15 @@
 Feature: Conditional Agent
-  Test for ConditionalAgent
+  Validates the behavior of the ConditionalAgent, ensuring it processes inputs conditionally and completes the workflow.
 
-  Scenario: Test Conditional Agent with EventA
+  Scenario: Process input with a random value greater than 0.5
     Given a ConditionalAgent runner
-    When the start event is sent and random is forced to produce EventA
-    Then an EventA event is present
-    And a StopEvent is present
+    When the start event is sent and the random value is 0.6
+    Then the agent processes the branch for values greater than 0.5
+    And the workflow completes successfully
 
-  Scenario: Test Conditional Agent with EventB
+  Scenario: Process input with a random value less than or equal to 0.5
     Given a ConditionalAgent runner
-    When the start event is sent and random is forced to produce EventB
-    Then an EventB event is present
-    And a StopEvent is present
+    When the start event is sent and the random value is 0.4
+    Then the agent processes the branch for values less than or equal to 0.5
+    And the workflow completes successfully
+

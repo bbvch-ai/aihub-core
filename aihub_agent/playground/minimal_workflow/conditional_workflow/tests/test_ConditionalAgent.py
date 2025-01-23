@@ -1,11 +1,11 @@
 from unittest.mock import patch
-from pytest_bdd import scenarios, given, when, then
+from pytest_bdd import scenarios, given, when, then, parsers
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, StopEvent, BaseEvent
+from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from playground.minimal_workflow.conditional_workflow.events.EventA import EventA
-from playground.minimal_workflow.conditional_workflow.events.EventB import EventB
+from playground.minimal_workflow.conditional_workflow.events.AboveThresholdEvent import AboveThresholdEvent
+from playground.minimal_workflow.conditional_workflow.events.BelowThresholdEvent import BelowThresholdEvent
 from playground.minimal_workflow.conditional_workflow.ConditionalAgent import (
     ConditionalAgent,
 )
@@ -13,7 +13,7 @@ from playground.minimal_workflow.conditional_workflow.ConditionalAgentConfig imp
     ConditionalAgentConfig,
 )
 
-scenarios("../tests/features/conditional_agent.feature")
+scenarios("features/conditional_agent.feature")
 
 
 @given("a ConditionalAgent runner", target_fixture="agent_runner")
@@ -29,10 +29,10 @@ def _():
     )
 
 
-@when("the start event is sent and random is forced to produce EventA")
+@when(parsers.parse("the start event is sent and the random value is {value}"), converters={"value": float})
 @async_test
-async def _(agent_runner: AgentTestRunner):
-    with patch("random.random", return_value=0.6):  # Force EventA (random > 0.5)
+async def _(value: float, agent_runner: AgentTestRunner):
+    with patch("random.random", return_value=value):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(
                 start_event=StartEvent(),
@@ -40,29 +40,18 @@ async def _(agent_runner: AgentTestRunner):
             )
 
 
-@when("the start event is sent and random is forced to produce EventB")
-@async_test
-async def _(agent_runner: AgentTestRunner):
-    with patch("random.random", return_value=0.4):  # Force EventB (random <= 0.5)
-        async with agent_runner.test_run() as topic:
-            await agent_runner.send_event_from_topic(
-                start_event=StartEvent(),
-                topic=topic,
-            )
-
-
-@then("an EventA event is present")
+@then("the agent processes the branch for values greater than 0.5")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventA), "EventA was not received"
+    assert agent_runner.has_event_of_type(AboveThresholdEvent), "AboveThresholdEvent was not received"
+    assert not agent_runner.has_event_of_type(BelowThresholdEvent), "BelowThresholdEvent was received"
 
 
-@then("an EventB event is present")
+@then("the agent processes the branch for values less than or equal to 0.5")
 def _(agent_runner: AgentTestRunner):
-    event = agent_runner.get_event_of_type(EventB)
-    assert event is not None, "EventB was not received"
-    assert not isinstance(agent_runner.get_events(BaseEvent)[0], EventA)
+    assert agent_runner.has_event_of_type(BelowThresholdEvent), "BelowThresholdEvent was not received"
+    assert not agent_runner.has_event_of_type(AboveThresholdEvent), "AboveThresholdEvent was received"
 
 
-@then("a StopEvent is present")
+@then("the workflow completes successfully")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "StopEvent was not received"
