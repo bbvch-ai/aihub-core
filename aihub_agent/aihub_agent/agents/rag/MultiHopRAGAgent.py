@@ -90,10 +90,11 @@ class MultiHopRAGAgent(Agent):
                 hops=agent_config.hops,
                 decompose_prompt=agent_config.decompose_chat_history_prompt,
             )
-            return [
+            events = [
                 DecomposeQueryEvent(decomposed_chat_history=decomposed_chat)
                 for decomposed_chat in decomposed_chat_history
             ]
+            return events
 
     @step()
     async def retrieve_step(
@@ -109,7 +110,7 @@ class MultiHopRAGAgent(Agent):
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         embedding, _ = agent_config.retrieve_step_config.embed_model.to_llama_index()
         nodes = retrieve_nodes(
-            message=event.condensed_chat_message.content,
+            message=event.decomposed_chat_history.content,
             index_name=agent_config.retrieve_step_config.index_name,
             index_namespaces=agent_config.retrieve_step_config.index_namespaces,
             query_mode=agent_config.retrieve_step_config.query_mode,
@@ -119,16 +120,16 @@ class MultiHopRAGAgent(Agent):
         )
         return RetrieverEvent.from_nodes(nodes)
 
-    # TODO: how do I make the fixed list size dynamic?
+    # TODO: how do I make the fixed list size dynamic? How do I handle duplicates?
     @step()
     async def concatenation_step(self, events: FixedList(RetrieverEvent, 5)) -> ConcatenationEvent:
         """
         Concatenates the nodes from 5 retrieval steps into one list of nodes.
         """
-        nodes = []
-        [nodes.extend(event.nodes) for event in events]
+        documents = []
+        [documents.extend(event.documents) for event in events]
 
-        return ConcatenationEvent.from_nodes(nodes)
+        return ConcatenationEvent.from_nodes(documents)
 
     @step()
     async def order_nodes_by_documents_step(

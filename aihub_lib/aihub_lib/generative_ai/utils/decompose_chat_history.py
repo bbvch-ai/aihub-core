@@ -40,11 +40,12 @@ def decompose_chat_history(
         decompose_prompt_locale = LocaleHandler(t.locale).extract(decompose_prompt, t.locale)
     else:
         decompose_prompt_locale = t("lib.utils.decompose_chat_history.decompose_prompt")
-
+    prompt = PromptTemplate(decompose_prompt_locale)
     response = llm.structured_predict(
-        decompose_result_factory(t, hops=hops),
-        prompt=PromptTemplate(decompose_prompt_locale),
-        question=message,
+        output_cls=decompose_result_factory(t, hops=hops),
+        prompt=prompt,
+        llm_kwargs=None,
         chat_history=chat_history_str,
+        question=message,
     )
-    return [ChatMessage(role=MessageRole.USER, content=question) for question in response]
+    return [ChatMessage(role=MessageRole.USER, content=question) for question in response.questions]

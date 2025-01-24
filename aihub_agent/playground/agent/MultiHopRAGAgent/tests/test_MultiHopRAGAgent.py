@@ -10,9 +10,9 @@ from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistory
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.rag.MultiHopRAGAgent import MultiHopRAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
-    SelfHostedLLMConfig,
-    SelfHostedLLMParameter,
+from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+    AzureOpenAIParameter,
 )
 from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -40,23 +40,19 @@ def _():
             system_prompt=LocaleString(
                 en="You're an agent answering user requests. Only use the context information provided."
             ),
-            llm=SelfHostedLLMConfig(
-                name="unsloth/Llama-3.2-1B-Instruct",
-                api_endpoint="http://localhost:8182/v1",
-                api_key="fake",
-                is_chat_model=True,
-                is_function_calling_model=False,
-                context_size=1024,
-                default_parameter=SelfHostedLLMParameter(
-                    logprobs=None,
-                    logit_bias=None,
-                ),
+            llm=AzureOpenAILLMConfig(
+                name="gpt-4o-mini",
+                api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
+                api_version="2024-08-01-preview",
+                prompt_tokens_costs_per_thousand=0.0045,
+                completion_tokens_costs_per_thousand=0.0133,
+                default_parameter=AzureOpenAIParameter(temperature=0.0),
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=AzureOpenAIEmbeddingConfig(
                     name="text-embedding-ada-002",
                     api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
-                    api_version="2023-12-01-preview",
+                    api_version="2023-05-15",
                     embedding_tokens_costs_per_thousand=0.0,
                     default_parameter=AzureOpenAIEmbeddingParameter(),
                 ),
@@ -97,7 +93,7 @@ def _():
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=30) as topic:
+    async with agent_runner.test_run(delay_before_stop=60) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=StartEvent(
@@ -119,7 +115,7 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner, count: int):
     decompose_events = agent_runner.get_events_of_type(DecomposeQueryEvent)
     assert len(decompose_events) == count, f"Expected {count} decomposed questions found {len(decompose_events)}"
-    assert decompose_events[0].condensed_chat_message.content, "No decomposed questions found"
+    assert decompose_events[0].decomposed_chat_history.content, "No decomposed questions found"
 
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
