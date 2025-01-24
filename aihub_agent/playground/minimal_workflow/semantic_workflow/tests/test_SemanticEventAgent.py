@@ -8,6 +8,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import SemanticEventAgent
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import SemanticEventAgentConfig
+from playground.minimal_workflow.semantic_workflow.events.LLMStopEvent import LLMStopEvent
 
 scenarios("../tests/features/semantic_event_agent.feature")
 
@@ -53,4 +54,4 @@ def rerank_present(agent_runner: AgentTestRunner):
 
 @then("a LLMStopEvent is present")
 def stop_present(agent_runner: AgentTestRunner):
-    assert agent_runner.has_stop_event, "Agent did not receive stop event"
+    assert agent_runner.has_event_of_type(LLMStopEvent), "Agent did not receive stop event"
