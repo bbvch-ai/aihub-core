@@ -12,10 +12,10 @@ from playground.minimal_workflow.optional_workflow.OptionalAgent import Optional
 from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import (
     OptionalAgentConfig,
 )
-from playground.minimal_workflow.optional_workflow.events.EventA import EventA
-from playground.minimal_workflow.optional_workflow.events.EventB import EventB
-from playground.minimal_workflow.optional_workflow.events.EventC import EventC
-from playground.minimal_workflow.optional_workflow.events.EventD import EventD
+from playground.minimal_workflow.optional_workflow.events.EventOptionalA import EventOptionalA
+from playground.minimal_workflow.optional_workflow.events.EventOptionalB import EventOptionalB
+from playground.minimal_workflow.optional_workflow.events.EventOptionalC import EventOptionalC
+from playground.minimal_workflow.optional_workflow.events.EventOptionalD import EventOptionalD
 
 # Load scenarios from your feature file
 scenarios("../tests/features/optional_agent.feature")
@@ -64,37 +64,37 @@ async def _(agent_runner: AgentTestRunner):
 
 @then("an EventA event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventA), "EventA was not received"
+    assert agent_runner.has_event_of_type(EventOptionalA), "EventA was not received"
 
 
 @then("an EventB event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventB), "EventB was not received"
+    assert agent_runner.has_event_of_type(EventOptionalB), "EventB was not received"
 
 
 @then("no EventB event is present")
 def _(agent_runner: AgentTestRunner):
-    assert not agent_runner.has_event_of_type(EventB), "EventB was received"
+    assert not agent_runner.has_event_of_type(EventOptionalB), "EventB was received"
 
 
 @then("an EventC event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventC), "EventC was not received"
+    assert agent_runner.has_event_of_type(EventOptionalC), "EventC was not received"
 
 
 @then("no EventC event is present")
 def _(agent_runner: AgentTestRunner):
-    assert not agent_runner.has_event_of_type(EventC), "EventC was received"
+    assert not agent_runner.has_event_of_type(EventOptionalC), "EventC was received"
 
 
 @then("an EventD event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventD), "EventD was not received"
+    assert agent_runner.has_event_of_type(EventOptionalD), "EventD was not received"
 
 
 @then("no EventD event is present")
 def _(agent_runner: AgentTestRunner):
-    assert not agent_runner.has_event_of_type(EventD), "EventD was received"
+    assert not agent_runner.has_event_of_type(EventOptionalD), "EventD was received"
 
 
 @then("a StopEvent is present")

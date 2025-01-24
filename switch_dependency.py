@@ -30,9 +30,11 @@ from pathlib import Path
 try:
     import tomlkit
 except ImportError:
-    print("ERROR: Missing 'tomlkit' library.\n"
-          "Install it with:\n  poetry add --group dev tomlkit\n"
-          "or:\n  pip install tomlkit\n")
+    print(
+        "ERROR: Missing 'tomlkit' library.\n"
+        "Install it with:\n  poetry add --group dev tomlkit\n"
+        "or:\n  pip install tomlkit\n"
+    )
     sys.exit(1)
 
 MICROSERVICE_DIRS = [
@@ -50,17 +52,17 @@ def parse_args():
     parser.add_argument(
         "mode",
         choices=["local", "remote"],
-        help="Use 'local' for a local path reference, or 'remote' for a Git reference."
+        help="Use 'local' for a local path reference, or 'remote' for a Git reference.",
     )
     parser.add_argument(
         "--tag",
         default="v0.1.0",
-        help="Git tag (or branch) to use when in 'remote' mode. (Default: v0.1.0)"
+        help="Git tag (or branch) to use when in 'remote' mode. (Default: v0.1.0)",
     )
     parser.add_argument(
         "--local-path",
         default="../aihub_lib",
-        help="Local path to the aihub_lib for 'local' mode. (Default: ../aihub_lib)"
+        help="Local path to the aihub_lib for 'local' mode. (Default: ../aihub_lib)",
     )
     return parser.parse_args()
 
@@ -80,9 +82,8 @@ def main():
             pyproject_path=pyproject_path,
             mode=args.mode,
             local_path=args.local_path,
-            remote_tag=args.tag
+            remote_tag=args.tag,
         )
-
 
 
 def process_file(pyproject_path: Path, mode: str, local_path: str, remote_tag: str):
@@ -95,7 +96,9 @@ def process_file(pyproject_path: Path, mode: str, local_path: str, remote_tag: s
     subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent)
 
 
-def update_aihub_lib(doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str):
+def update_aihub_lib(
+        doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str
+):
     if "tool" not in doc or "poetry" not in doc["tool"]:
         return
 
@@ -108,7 +111,10 @@ def update_aihub_lib(doc: tomlkit.container.Container, mode: str, local_path: st
         return
 
     if mode == "local":
-        new_dep = {"path": local_path}
+        new_dep = {
+            "path": local_path,
+            "develop": True,
+        }
     else:
         new_dep = {
             "git": "https://github.com/bbvch-ai/aihub-core.git",
