@@ -65,5 +65,8 @@ def drop_collection(
     token: str = "root:Milvus",
     collection_name: str = "development",
 ):
-    client = MilvusClient(uri=uri, token=token)
-    client.drop_collection(collection_name=collection_name)
+    try:
+        client = MilvusClient(uri=uri, token=token)
+        client.drop_collection(collection_name=collection_name)
+    except Exception as e:
+        print(f"Failed to drop collection: {e}")

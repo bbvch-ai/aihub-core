@@ -18,6 +18,9 @@ def retrieve_nodes(
     node_types: List[str],
     vector_store: BasePydanticVectorStore,
 ) -> Optional[List[NodeWithScore]]:
+    if retrieve_k <= 0:
+        raise ValueError("retrieve_k must be a positive integer")
+
     filters = MetadataFilters(
         filters=[
             MetadataFilters(
