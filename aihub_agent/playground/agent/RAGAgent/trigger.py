@@ -1,21 +1,23 @@
 import asyncio
 
-from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from aihub_lib.nats.events import StartEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
-from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
+from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
+    AzureOpenAIEmbeddingParameter,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import StartEvent
+from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
@@ -33,7 +35,7 @@ async def main():
             ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
-                api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
+                base_url="https://aihub-dev-openai-che.openai.azure.com/",
                 api_version="2023-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,
@@ -42,16 +44,16 @@ async def main():
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=AzureOpenAIEmbeddingConfig(
                     name="text-embedding-ada-002",
-                    api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
+                    base_url="https://aihub-dev-openai-che.openai.azure.com/",
                     api_version="2023-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                     default_parameter=AzureOpenAIEmbeddingParameter(),
                 ),
-                index_name="development",
                 index_namespaces=["ai_knowledge"],
                 retrieve_k=5,
-                query_mode="hybrid",
+                query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content"],
+                vector_store=create_azure_ai_search_vector_store("development"),
             ),
             number_of_input_tokens=100000,
             condense_question_prompt=LocaleString(

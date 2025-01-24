@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, Optional, Tuple
+from typing import Annotated, Dict, Optional, Tuple, Callable, List
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
@@ -47,6 +47,10 @@ class SelfHostedLLMConfig(ChatLLMConfig):
         SelfHostedLLMParameter, Field(..., description="Default parameters for the self-hosted LLM.")
     ]
 
+    @property
+    def tokenizer(self) -> Callable[[str], List[int]]:
+        return AutoTokenizer.from_pretrained(self.name)
+
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedLLMParameter] = None
     ) -> Tuple[OpenAILike, LLMCostTracker]:
@@ -56,16 +60,15 @@ class SelfHostedLLMConfig(ChatLLMConfig):
         This uses the OpenAILike wrapper since it mimics OpenAI-like APIs. The tokenizer is retrieved
         from the local model, and parameters are merged to configure the model's behavior.
         """
-        tokenizer = AutoTokenizer.from_pretrained(self.name)
-        token_counter = TokenCountingHandler(tokenizer=tokenizer)
+        token_counter = TokenCountingHandler(tokenizer=self.tokenizer)
 
         cost_tracker = LLMCostTracker(token_counter)
         additional_kwargs = self.merge_model_params(model_parameter)
 
         open_ai_like = OpenAILike(
             model=self.name,
-            api_base=self.api_endpoint,
-            api_key=self.api_key,
+            api_base=self.base_url,
+            api_key=self.api_key or "fake",
             context_window=self.context_size,
             temperature=additional_kwargs.pop("temperature"),
             additional_kwargs=additional_kwargs,

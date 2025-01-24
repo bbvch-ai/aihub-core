@@ -1,3 +1,14 @@
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_agent.displayers.EventDisplayer import EventDisplayer
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
@@ -10,17 +21,6 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
-from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
@@ -99,15 +99,15 @@ class RAGAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
+        embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
         nodes = retrieve_nodes(
             message=event.condensed_chat_message.content,
-            index_name=retrieve_step_config.index_name,
+            retrieve_k=retrieve_step_config.retrieve_k,
+            embed_model=embedding,
             index_namespaces=retrieve_step_config.index_namespaces,
             query_mode=retrieve_step_config.query_mode,
             node_types=retrieve_step_config.node_types,
-            retrieve_k=retrieve_step_config.retrieve_k,
-            embed_model=embedding,
+            vector_store=retrieve_step_config.vector_store,
         )
         return RetrieverEvent.from_nodes(nodes)
 
@@ -150,7 +150,7 @@ class RAGAgent(Agent):
             context_messages=[event.context_message],
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=last_user_message),
-            tokenizer_for_model=agent_config.llm.name,
+            tokenizer=agent_config.llm.tokenizer,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)

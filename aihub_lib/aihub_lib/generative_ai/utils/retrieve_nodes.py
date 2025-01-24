@@ -1,35 +1,23 @@
 from typing import List, Optional
 
-from llama_index.core import StorageContext, VectorStoreIndex
-from llama_index.core.indices.vector_store import VectorIndexRetriever
-from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.schema import NodeWithScore
+from llama_index.core.vector_stores import MetadataFilter
+from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery, MetadataFilters
+from llama_index.core.vector_stores.types import VectorStoreQueryMode, FilterCondition
 
-from aihub_lib.generative_ai.processors.ScoreScalerPostProcessor import ScoreScalerPostProcessor
-from aihub_lib.nats.events.semantic.retriever import Document
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 
 
 def retrieve_nodes(
     message: str,
-    embed_model,
-    index_name: str,
+    embed_model: BaseEmbedding,
+    retrieve_k: int,
     index_namespaces: List[str],
     query_mode: VectorStoreQueryMode,
     node_types: List[str],
-    retrieve_k: int,
-) -> Optional[List[Document]]:
-    storage_context = StorageContext.from_defaults(
-        vector_store=create_azure_ai_search_vector_store(index_name),
-        docstore=create_mongo_document_store(index_name),
-    )
-    index = VectorStoreIndex.from_vector_store(
-        storage_context.vector_store,
-        embed_model=embed_model,
-        storage_context=storage_context,
-    )
+    vector_store: BasePydanticVectorStore,
+) -> Optional[List[NodeWithScore]]:
     filters = MetadataFilters(
         filters=[
             MetadataFilters(
@@ -37,20 +25,21 @@ def retrieve_nodes(
                     MetadataFilter(key=NAMESPACE, value=ns),
                     MetadataFilter(key=TYPE, value=nt),
                 ],
-                condition="and",
+                condition=FilterCondition.AND,
             )
             for ns in index_namespaces
             for nt in node_types
         ],
-        condition="or",
+        condition=FilterCondition.OR,
     )
-    retriever = VectorIndexRetriever(
-        vector_store_query_mode=query_mode,
-        index=index,
-        similarity_top_k=retrieve_k,
-        filters=filters,
+
+    embedding = embed_model.get_text_embedding(message)
+
+    question_query = vector_store.query(
+        VectorStoreQuery(
+            query_embedding=embedding, similarity_top_k=retrieve_k, filters=filters, mode=query_mode, query_str=message
+        )
     )
-    nodes = retriever.retrieve(message)
-    if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
-        nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).process(nodes)
-    return nodes
+    return [
+        NodeWithScore(node=node, score=score) for node, score in zip(question_query.nodes, question_query.similarities)
+    ]

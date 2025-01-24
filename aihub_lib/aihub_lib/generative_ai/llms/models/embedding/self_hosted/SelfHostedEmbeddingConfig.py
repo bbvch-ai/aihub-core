@@ -61,7 +61,7 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
 
         text_embedding_inference = TextEmbeddingsInference(
             model_name=self.name,
-            base_url=self.api_endpoint,
+            base_url=self.base_url,
             text_instruction=additional_kwargs.get("text_instruction"),
             query_instruction=additional_kwargs.get("query_instruction"),
             truncate_text=additional_kwargs.get("truncate_text"),

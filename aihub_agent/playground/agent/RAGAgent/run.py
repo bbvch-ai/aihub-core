@@ -30,7 +30,7 @@ async def main():
             ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
-                api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
+                base_url="https://aihub-dev-openai-che.openai.azure.com/",
                 api_version="2023-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,
