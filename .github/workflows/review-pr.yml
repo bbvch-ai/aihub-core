@@ -25,11 +25,11 @@ jobs:
           GITHUB_ACTION.AUTO_REVIEW: true
           GITHUB_ACTION.AUTO_DESCRIBE: true
           GITHUB_ACTION.AUTO_IMPROVE: true
-          OPENAI_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG.MODEL: "gpt-4"
+          CONFIG.MODEL: "gpt-4o"
           OPENAI.API_TYPE: "azure"
-          OPENAI_API_VERSION: "2023-05-15"
-          AZURE_API_VERSION: "2023-05-15"
-          OPENAI.API_BASE: ${{ vars.AZURE_OPENAI_ENDPOINT }}
-          OPENAI.DEPLOYMENT_ID: "gpt-4"
+          OPENAI_API_VERSION: "2024-08-01-preview"
+          AZURE_API_VERSION: "2024-08-01-preview"
+          OPENAI.API_BASE: ${{ vars.AZURE_OPENAI_API_BASE }}
+          OPENAI.DEPLOYMENT_ID: "gpt-4o"
