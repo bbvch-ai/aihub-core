@@ -33,6 +33,14 @@ services:
     command: >
       -hf unsloth/Llama-3.2-1B-Instruct-GGUF
       --port 8182
-      --host 0.0.0.0
-      -n 512
+      -c 512
+    restart: always
+
+  hf-TEI:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.6
+    ports:
+      - "8183:8183"
+    command: >
+      --port 8183
+      --model-id Alibaba-NLP/gte-base-en-v1.5
     restart: always
