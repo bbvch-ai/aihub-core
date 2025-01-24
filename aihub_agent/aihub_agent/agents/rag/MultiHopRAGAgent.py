@@ -129,12 +129,12 @@ class MultiHopRAGAgent(Agent):
         documents = []
         [documents.extend(event.documents) for event in events]
 
-        return ConcatenationEvent.from_nodes(documents)
+        return ConcatenationEvent(documents=documents)
 
     @step()
     async def order_nodes_by_documents_step(
         self,
-        event: RetrieverEvent,
+        event: ConcatenationEvent,
         t: LocaleHandler,
         agent_config: MultiHopRAGAgentConfig,
         displayer: EventDisplayer,
