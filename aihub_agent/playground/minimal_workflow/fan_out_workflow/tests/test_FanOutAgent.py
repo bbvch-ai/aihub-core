@@ -1,10 +1,10 @@
 from pytest_bdd import scenarios, given, when, then, parsers
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from playground.minimal_workflow.fan_out_workflow.events.EventA import EventA
-from playground.minimal_workflow.fan_out_workflow.events.EventB import EventB
+from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
+from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 from playground.minimal_workflow.fan_out_workflow.FanOutAgent import FanOutAgent
 from playground.minimal_workflow.fan_out_workflow.FanOutAgentConfig import (
     FanOutAgentConfig,
@@ -39,7 +39,7 @@ async def _(agent_runner: AgentTestRunner):
 @then(parsers.parse('5 EventA events with payloads "{payloads}" are present'))
 def verify_event_a_payloads(agent_runner: AgentTestRunner, payloads: str):
     expected_payloads = payloads.split(",")
-    events = agent_runner.get_events_of_type(EventA)
+    events = agent_runner.get_events_of_type(FanOutA)
     actual_payloads = [event.payload for event in events]
     assert len(events) == 5, f"Expected 5 EventA events but found {len(events)}"
     assert sorted(actual_payloads) == sorted(expected_payloads), (
@@ -50,7 +50,7 @@ def verify_event_a_payloads(agent_runner: AgentTestRunner, payloads: str):
 @then(parsers.parse('5 EventB events with matching payloads "{payloads}" are present'))
 def verify_event_b_payloads(agent_runner: AgentTestRunner, payloads: str):
     expected_payloads = payloads.split(",")
-    events_b = agent_runner.get_events_of_type(EventB)
+    events_b = agent_runner.get_events_of_type(FanOutB)
     actual_payloads = [event.payload for event in events_b]
     assert len(events_b) == 5, f"Expected 5 EventB events but found {len(events_b)}"
     assert sorted(actual_payloads) == sorted(expected_payloads), (
