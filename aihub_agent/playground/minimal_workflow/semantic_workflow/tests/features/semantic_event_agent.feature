@@ -7,7 +7,7 @@ Feature: Semantic Event Agent
     When a the start event is sent
 
     Then a StartEvent is present
-    And a RetrieverEvent is present
+    And a RetrieverEvent is present that retrieved "2" documents
     And a RerankerEvent is present
     And a LLMStopEvent is present
 

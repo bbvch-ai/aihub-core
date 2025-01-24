@@ -1,5 +1,5 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import scenarios, given, when, then
+from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -39,9 +39,11 @@ def start_present(agent_runner: AgentTestRunner):
     assert agent_runner.has_start_event, "Agent did not receive start event"
 
 
-@then("a RetrieverEvent is present")
-def retrieve_present(agent_runner: AgentTestRunner):
+@then(parsers.parse('a RetrieverEvent is present that retrieved "{count:d}" documents'))
+def retrieve_present(agent_runner: AgentTestRunner, count: int):
     assert agent_runner.has_event_of_type(RetrieverEvent), "Agent did not receive retriever event"
+    num_documents = len(agent_runner.get_event_of_type(RetrieverEvent).documents)
+    assert num_documents == count, f"Expected {count} documents, got {num_documents}"
 
 
 @then("a RerankerEvent is present")
