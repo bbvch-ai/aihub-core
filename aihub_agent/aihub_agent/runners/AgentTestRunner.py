@@ -89,7 +89,9 @@ class AgentTestRunner(AgentRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[PartialAgentTopic, None]:
+    async def test_run(
+        self, delay_before_stop: int = 1, thread_id: Optional[str] = None
+    ) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:
         1. Starts the agent runner.
@@ -102,16 +104,16 @@ class AgentTestRunner(AgentRunner):
         - Want to observe all events produced during the test scenario.
         - Want automatic teardown after tests complete.
         """
-        yield await self.test_run_start()
+        yield await self.test_run_start(thread_id)
         # After leaving the context, wait a bit before stopping to allow
         # the agent to finish processing any last events.
         await sleep(delay_before_stop)
         await self.test_run_stop()
 
-    async def test_run_start(self) -> PartialAgentTopic:
+    async def test_run_start(self, thread_id: Optional[str] = None) -> PartialAgentTopic:
         await self.start()
-
-        thread_id = str(ObjectId())
+        if thread_id is None:
+            thread_id = str(ObjectId())
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
