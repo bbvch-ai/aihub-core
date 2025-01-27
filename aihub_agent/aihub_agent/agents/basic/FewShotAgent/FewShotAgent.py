@@ -1,12 +1,12 @@
 from aihub_agent.agents.basic.FewShotAgent.events.FewShotEvent import FewShotEvent
 from aihub_agent.agents.basic.FewShotAgent.events.RightAgentEvent import RightAgentEvent
 from aihub_agent.agents.basic.FewShotAgent.events.StandaloneQuestionCondenserEvent import (
-    StandaloneQuestionCondenserEvent,
+    FewShotStandaloneQuestionCondenserEvent,
 )
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.i18n import LocaleHandler
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from llama_index.core.base.llms.types import MessageRole, ChatMessage
 
 from aihub_agent.agents.abstract.Agent import Agent
@@ -61,16 +61,16 @@ class FewShotAgent(Agent):
 
         return LimitChatHistoryEvent(limited_history=limited_chat_history)
 
-    @step
+    @step()
     async def right_agent_guard(
             self,
             event: LimitChatHistoryEvent,
+            t: LocaleHandler,
             agent_config: FewShotAgentConfig,
             displayer: EventDisplayer,
-            t: LocaleHandler,
             run_context: RunContext,
-    ) -> RightAgentEvent | StopEvent:
-        messages = event.limited_history_with_context
+    ) -> RightAgentEvent | GuardRejectionEvent:
+        messages = event.limited_history
         user_query = await run_context.get("user_query")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await agent_description_guard(
@@ -95,7 +95,7 @@ class FewShotAgent(Agent):
             t: LocaleHandler,
             displayer: EventDisplayer,
             run_context: RunContext,
-    ) -> StandaloneQuestionCondenserEvent:
+    ) -> FewShotStandaloneQuestionCondenserEvent:
         """
         Condenses the chat history and user query into a standalone question.
         """
@@ -113,12 +113,12 @@ class FewShotAgent(Agent):
                 llm=llm,
                 condense_prompt=agent_config.condense_question_prompt,
             )
-            return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
+            return FewShotStandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 
     @step()
     async def create_few_shot_examples(
             self,
-            event: StandaloneQuestionCondenserEvent,
+            event: FewShotStandaloneQuestionCondenserEvent,
             agent_config: FewShotAgentConfig,
             run_context: RunContext,
     ) -> FewShotEvent:
@@ -133,18 +133,22 @@ class FewShotAgent(Agent):
         serialized_chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage.model_validate(msg) for msg in serialized_chat_history]
         system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
+        few_shot_system_prompt = ChatMessage(
+            role=MessageRole.SYSTEM, content=agent_config.few_shot.few_shot_system_prompt.in_locale(locale)
+        )
         context = [
             *system_messages,
+            few_shot_system_prompt,
             *few_shot_messages,
             event.condensed_chat_message,
         ]
         return FewShotEvent(
             few_shot_examples=few_shot_messages,
-            few_shot_system_prompt=agent_config.few_shot.few_shot_system_prompt,
+            few_shot_system_prompt=few_shot_system_prompt,
             full_context=context,
         )
 
-    @step
+    @step()
     async def respond_with_llm_step(
             self,
             event: FewShotEvent,

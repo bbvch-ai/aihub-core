@@ -1,0 +1,28 @@
+agent_description_guard:
+  prompt: |
+    The description of an agent is as follows:
+    <Agent Description>
+    {agent_description}
+    </Agent Description>
+    The agent may have access to additional sources of information to help answer the question.
+    Decide whether the question asked by the user should be directed to this agent in the context of the conversation. Allow all questions that might fall within the agent's area of expertise. Block all questions that are obviously unrelated to the agent. In case of doubt, choose to allow the question.
+    <User Query>
+    {user_query}
+    </User Query>
+    <Past Conversation Context>
+    {history}
+    </Past Conversation Context>
+  user_message: |
+    <User>
+    {user}
+    </User>
+  agent_message: |
+    <Agent>
+    {agent}
+    </Agent>
+  reason: |
+    Justification for the decision made.
+  success: |
+    true if the answer can be provided, false otherwise.
+  docstring: |
+    Data model for the decision on whether an answer can be provided.

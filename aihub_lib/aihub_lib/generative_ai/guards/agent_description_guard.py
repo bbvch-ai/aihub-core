@@ -42,7 +42,7 @@ async def agent_description_guard(
         ]
     )
 
-    result = await llm.structured_predict(
+    result = llm.structured_predict(
         guard_result_factory(t),
         prompt,
         agent_description=agent_description.in_locale(t.locale),
