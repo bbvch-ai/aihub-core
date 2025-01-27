@@ -8,36 +8,34 @@ from pymilvus import MilvusClient
 from aihub_lib.generative_ai.llms.models.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, TYPE, NAMESPACE, SOURCE, NODE_TYPE_CONTENT
 
 DEFAULT_DOCUMENTS: List[Document] = [
     Document(
         text="AI is crazy. It stands for artificial insanity.",
         metadata={
-            "title": "Document 1",
-            "author": "Alice",
-            "source": "ai_knowledge",
-            "namespace": "ai_knowledge",
-            "type": "content",
+            DOCUMENT_TITLE: "Document 1",
+            SOURCE: "ai_knowledge",
+            NAMESPACE: "ai_knowledge",
+            TYPE: NODE_TYPE_CONTENT,
         },
     ),
     Document(
         text="AI is terrible. It stands for artificial ignorance.",
         metadata={
-            "title": "Document 2",
-            "author": "Bob",
-            "source": "ai_knowledge",
-            "namespace": "ai_knowledge",
-            "type": "content",
+            DOCUMENT_TITLE: "Document 2",
+            SOURCE: "ai_knowledge",
+            NAMESPACE: "ai_knowledge",
+            TYPE: NODE_TYPE_CONTENT,
         },
     ),
     Document(
         text="AI is amazing. It stands for artificial imagination.",
         metadata={
-            "title": "Document 3",
-            "author": "Carol",
-            "source": "ai_knowledge",
-            "namespace": "ai_knowledge",
-            "type": "content",
+            DOCUMENT_TITLE: "Document 3",
+            SOURCE: "ai_knowledge",
+            NAMESPACE: "ai_knowledge",
+            TYPE: NODE_TYPE_CONTENT,
         },
     ),
 ]
