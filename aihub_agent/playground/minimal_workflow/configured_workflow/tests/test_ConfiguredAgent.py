@@ -8,8 +8,8 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.configured_workflow.ConfiguredAgent import ConfiguredAgent
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import ConfiguredAgentConfig
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import StartStepConfig
-from playground.minimal_workflow.configured_workflow.events.EventA import EventA
-from playground.minimal_workflow.configured_workflow.events.EventB import EventB
+from playground.minimal_workflow.configured_workflow.events.ConfiguredEventA import ConfiguredEventA
+from playground.minimal_workflow.configured_workflow.events.ConfiguredEventB import ConfiguredEventB
 
 scenarios("../tests/features/configured_agent.feature")
 
@@ -51,12 +51,16 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('an EventA event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.get_event_of_type(EventA).payload == payload, "Agent received incorrect start step config data"
+    assert (
+            agent_runner.get_event_of_type(ConfiguredEventA).payload == payload
+    ), "Agent received incorrect start step config data"
 
 
 @then(parsers.parse('an EventB event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.get_event_of_type(EventB).payload == payload, "Agent received incorrect agent config data"
+    assert (
+            agent_runner.get_event_of_type(ConfiguredEventB).payload == payload
+    ), "Agent received incorrect agent config data"
 
 
 @then("a StopEvent is present")

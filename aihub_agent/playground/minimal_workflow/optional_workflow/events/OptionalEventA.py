@@ -1,5 +1,5 @@
 from aihub_lib.nats.events import ControlEvent
 
 
-class EventB(ControlEvent):
+class OptionalEventA(ControlEvent):
     pass

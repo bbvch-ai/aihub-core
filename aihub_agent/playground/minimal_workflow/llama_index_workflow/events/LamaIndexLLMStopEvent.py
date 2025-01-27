@@ -1,5 +1,5 @@
 from aihub_lib.nats.events import LLMEvent, StopEvent
 
 
-class LLMStopEvent(LLMEvent, StopEvent):
+class LamaIndexLLMStopEvent(LLMEvent, StopEvent):
     pass
