@@ -8,8 +8,8 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.configured_workflow.ConfiguredAgent import ConfiguredAgent
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import ConfiguredAgentConfig
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import StartStepConfig
-from playground.minimal_workflow.configured_workflow.events.ConfiguredEventA import ConfiguredEventA
-from playground.minimal_workflow.configured_workflow.events.ConfiguredEventB import ConfiguredEventB
+from playground.minimal_workflow.configured_workflow.events.EventConfiguredA import EventConfiguredA
+from playground.minimal_workflow.configured_workflow.events.EventConfiguredB import EventConfiguredB
 
 scenarios("../tests/features/configured_agent.feature")
 
@@ -21,6 +21,7 @@ scenarios("../tests/features/configured_agent.feature")
     target_fixture="agent_runner",
 )
 def _(start_step_value: str, agent_value: str):
+
     return AgentTestRunner(
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(
@@ -39,7 +40,7 @@ def _(start_step_value: str, agent_value: str):
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER)]),
+            start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER, content="")]),
             topic=topic,
         )
 
@@ -52,14 +53,14 @@ def _(agent_runner: AgentTestRunner):
 @then(parsers.parse('an EventA event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert (
-        agent_runner.get_event_of_type(ConfiguredEventA).payload == payload
+        agent_runner.get_event_of_type(EventConfiguredA).payload == payload
     ), "Agent received incorrect start step config data"
 
 
 @then(parsers.parse('an EventB event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert (
-        agent_runner.get_event_of_type(ConfiguredEventB).payload == payload
+        agent_runner.get_event_of_type(EventConfiguredB).payload == payload
     ), "Agent received incorrect agent config data"
 
 

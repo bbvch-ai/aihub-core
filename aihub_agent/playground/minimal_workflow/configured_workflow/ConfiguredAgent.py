@@ -5,21 +5,21 @@ from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig impor
     StartStepConfig,
     ConfiguredAgentConfig,
 )
-from playground.minimal_workflow.configured_workflow.events.ConfiguredEventA import ConfiguredEventA
-from playground.minimal_workflow.configured_workflow.events.ConfiguredEventB import ConfiguredEventB
+from playground.minimal_workflow.configured_workflow.events.EventConfiguredA import EventConfiguredA
+from playground.minimal_workflow.configured_workflow.events.EventConfiguredB import EventConfiguredB
 
 
 class ConfiguredAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent, start_config: StartStepConfig) -> ConfiguredEventA:
+    async def start_step(self, event: StartEvent, start_config: StartStepConfig) -> EventConfiguredA:
         print(f"[ConfiguredAgent.start_step] Step config value: '{start_config.some_step_value}'")
-        return ConfiguredEventA(payload=start_config.some_step_value)
+        return EventConfiguredA(payload=start_config.some_step_value)
 
     @step()
-    async def middle_step(self, event: ConfiguredEventA, agent_config: ConfiguredAgentConfig) -> ConfiguredEventB:
+    async def middle_step(self, event: EventConfiguredA, agent_config: ConfiguredAgentConfig) -> EventConfiguredB:
         print(f"[ConfiguredAgent.middle_step] Agent config value: '{agent_config.some_agent_value}'")
-        return ConfiguredEventB(payload=agent_config.some_agent_value)
+        return EventConfiguredB(payload=agent_config.some_agent_value)
 
     @step()
-    async def end_step(self, event: ConfiguredEventB) -> StopEvent:
+    async def end_step(self, event: EventConfiguredB) -> StopEvent:
         return StopEvent()

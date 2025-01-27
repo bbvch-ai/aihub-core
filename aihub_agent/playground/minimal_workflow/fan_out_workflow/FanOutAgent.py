@@ -4,28 +4,28 @@ from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import FixedList
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.fan_out_workflow.events.FanOutEventA import FanOutEventA
-from playground.minimal_workflow.fan_out_workflow.events.FanOutEventB import FanOutEventB
+from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
+from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 
 
 class FanOutAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent) -> List[FanOutEventA]:
+    async def start_step(self, event: StartEvent) -> List[FanOutA]:
         print("[FanOutAgent.start_step]", event)
         return [
-            FanOutEventA(payload="1"),
-            FanOutEventA(payload="2"),
-            FanOutEventA(payload="3"),
-            FanOutEventA(payload="4"),
-            FanOutEventA(payload="5"),
+            FanOutA(payload="1"),
+            FanOutA(payload="2"),
+            FanOutA(payload="3"),
+            FanOutA(payload="4"),
+            FanOutA(payload="5"),
         ]
 
     @step()
-    async def process_a(self, event: FanOutEventA) -> FanOutEventB:
+    async def process_a(self, event: FanOutA) -> FanOutB:
         print("[FanOutAgent.process_a]", event)
-        return FanOutEventB(payload=event.payload)
+        return FanOutB(payload=event.payload)
 
     @step()
-    async def stop_step(self, events: FixedList(FanOutEventB, 5)) -> StopEvent:
+    async def stop_step(self, events: FixedList(FanOutB, 5)) -> StopEvent:
         print("[FanOutAgent.stop_step]", events)
         return StopEvent()
