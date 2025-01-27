@@ -62,7 +62,7 @@ def _():
                 query_mode="hybrid",
                 node_types=["content"],
             ),
-            number_of_input_tokens=2048,
+            number_of_input_tokens=8000,
             tokenizer_for_model="gpt-4o-mini",
             hops=5,
             decompose_chat_history_prompt=LocaleString(
@@ -114,10 +114,11 @@ def _(agent_runner: AgentTestRunner):
 @then(parsers.parse('"{count:d}" DecomposeQueryEvent are present'))
 def _(agent_runner: AgentTestRunner, count: int):
     decompose_events = agent_runner.get_events_of_type(DecomposeQueryEvent)
+
     assert len(decompose_events) == count, f"Expected {count} decomposed questions found {len(decompose_events)}"
     assert decompose_events[0].decomposed_chat_history.content, "No decomposed questions found"
 
-
+# TODO: semantic events created twice, control event and display event, is this intended?
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
 def _(agent_runner: AgentTestRunner, count: int):
     retriever_events = agent_runner.get_events_of_type(RetrieverEvent)

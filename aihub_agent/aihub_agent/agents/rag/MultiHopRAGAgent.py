@@ -21,7 +21,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events import StopEvent, LLMEvent
 from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent, Document
 from aihub_lib.nats.events.user import UserMessageEvent
 
 
@@ -129,7 +129,14 @@ class MultiHopRAGAgent(Agent):
         documents = []
         [documents.extend(event.documents) for event in events]
 
-        return ConcatenationEvent(documents=documents)
+        seen_ids = set()
+        unique_documents = []
+        for doc in documents:
+            if doc.id not in seen_ids:
+                unique_documents.append(doc)
+                seen_ids.add(doc.id)
+
+        return ConcatenationEvent(documents=unique_documents)
 
     @step()
     async def order_nodes_by_documents_step(

@@ -7,7 +7,7 @@ Feature: Multi Hop RAG Agent
     Then a StartEvent is present with payload "What is AI?"
     And a LimitChatHistoryEvent is present
     And "5" DecomposeQueryEvent are present
-    And "5" RetrieverEvent are present
+    And "10" RetrieverEvent are present
     And a ConcatenationEvent is present with concatenated documents
     And an InOrderNodeCombinerEvent is present with ordered context message
     And a LimitChatHistoryWithContextEvent is present with limited history and context
