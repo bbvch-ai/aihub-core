@@ -27,7 +27,8 @@ services:
     restart: always
 
   llama.cpp:
-    image: ghcr.io/ggerganov/llama.cpp:server
+    image: ghcr.io/ggerganov/llama.cpp:server-b4524
+    platform: linux/amd64
     ports:
       - "8182:8182"
     command: >
