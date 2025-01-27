@@ -40,7 +40,7 @@ class UserController(Controller):
     def get_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route)
         async def get_user(
-                user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> UserDTO:
             """
             Returns a `UserDTO` representing the currently logged-in user.

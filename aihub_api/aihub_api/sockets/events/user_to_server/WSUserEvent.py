@@ -44,7 +44,7 @@ class WSUserEvent(BaseModel):
     event: UserMessageEvent | HumanInTheLoopResponseEvent = Field(..., description="The user-originated event.")
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict) -> 'WSUserEvent':
+    def deserialize_event(cls, data: bytes | str | dict) -> "WSUserEvent":
         """
         Deserialize incoming raw data (JSON string, bytes, or dict) into a WSUserEvent.
 

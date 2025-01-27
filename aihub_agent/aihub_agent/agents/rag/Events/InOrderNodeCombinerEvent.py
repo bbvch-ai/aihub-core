@@ -8,4 +8,7 @@ class InOrderNodeCombinerEvent(ControlEvent):
     """
     Order the retrieved nodes by document source and combine them into a single chat message.
     """
-    context_message: ChatMessage = Field(..., description="The message including the context nodes information in order.")
+
+    context_message: ChatMessage = Field(
+        ..., description="The message including the context nodes information in order."
+    )

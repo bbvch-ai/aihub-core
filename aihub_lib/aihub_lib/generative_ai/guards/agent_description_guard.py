@@ -24,11 +24,11 @@ def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
 
 
 async def agent_description_guard(
-        agent_description: LocaleString,
-        llm: LLM,
-        t: LocaleHandler,
-        user_query: str,
-        messages: List[ChatMessage],
+    agent_description: LocaleString,
+    llm: LLM,
+    t: LocaleHandler,
+    user_query: str,
+    messages: List[ChatMessage],
 ) -> GuardResult:
     prompt = PromptTemplate(t("lib.guards.agent_description_guard"))
     history = "".join(

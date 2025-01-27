@@ -30,7 +30,9 @@ class ThreadService:
     """
 
     @staticmethod
-    async def create_thread(nc: NATS, name: str, user_ids: List[str], agent_dtos: Optional[List[ThreadAgentDTO]] = None) -> ThreadResponse:
+    async def create_thread(
+        nc: NATS, name: str, user_ids: List[str], agent_dtos: Optional[List[ThreadAgentDTO]] = None
+    ) -> ThreadResponse:
         users = [User(user_id=uid) for uid in user_ids]
         agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
         created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
@@ -91,5 +93,5 @@ class ThreadService:
             id=str(entity.id),
             name=entity.name,
             users=[UserService.get_user_by_oid(user.user_id) for user in entity.users],
-            agents=agents
+            agents=agents,
         )

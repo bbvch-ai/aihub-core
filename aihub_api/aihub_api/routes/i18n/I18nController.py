@@ -9,6 +9,7 @@ from aihub_api.routes.i18n.I18nService import I18nService
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.records.User import User
 
+
 class I18nController(Controller):
     """
     A controller for handling internationalization (i18n) operations, such as retrieving the user's current locale.
@@ -56,8 +57,8 @@ class I18nController(Controller):
             },
         )
         async def get_locale(
-                user: User = Depends(self.auth),
-                t: LocaleHandler = Depends(use_locale),
+            user: User = Depends(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> LocaleResponse:
             """
             Return the user's current locale and a localized test string.

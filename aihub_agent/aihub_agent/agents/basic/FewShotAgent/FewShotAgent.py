@@ -39,10 +39,10 @@ class FewShotAgent(Agent):
 
     @step()
     async def limit_chat_history_step(
-            self,
-            event: StartEvent | UserMessageEvent,
-            agent_config: FewShotAgentConfig,
-            run_context: RunContext,
+        self,
+        event: StartEvent | UserMessageEvent,
+        agent_config: FewShotAgentConfig,
+        run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit
@@ -63,12 +63,12 @@ class FewShotAgent(Agent):
 
     @step()
     async def right_agent_guard(
-            self,
-            event: LimitChatHistoryEvent,
-            t: LocaleHandler,
-            agent_config: FewShotAgentConfig,
-            displayer: EventDisplayer,
-            run_context: RunContext,
+        self,
+        event: LimitChatHistoryEvent,
+        t: LocaleHandler,
+        agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        run_context: RunContext,
     ) -> RightAgentEvent | GuardRejectionEvent:
         messages = event.limited_history
         user_query = await run_context.get("user_query")
@@ -89,12 +89,12 @@ class FewShotAgent(Agent):
 
     @step()
     async def condense_standalone_question_step(
-            self,
-            _: RightAgentEvent,
-            agent_config: FewShotAgentConfig,
-            t: LocaleHandler,
-            displayer: EventDisplayer,
-            run_context: RunContext,
+        self,
+        _: RightAgentEvent,
+        agent_config: FewShotAgentConfig,
+        t: LocaleHandler,
+        displayer: EventDisplayer,
+        run_context: RunContext,
     ) -> FewShotStandaloneQuestionCondenserEvent:
         """
         Condenses the chat history and user query into a standalone question.
@@ -117,10 +117,10 @@ class FewShotAgent(Agent):
 
     @step()
     async def create_few_shot_examples(
-            self,
-            event: FewShotStandaloneQuestionCondenserEvent,
-            agent_config: FewShotAgentConfig,
-            run_context: RunContext,
+        self,
+        event: FewShotStandaloneQuestionCondenserEvent,
+        agent_config: FewShotAgentConfig,
+        run_context: RunContext,
     ) -> FewShotEvent:
         """
         Creates a few shot examples from the agent configuration and creates the context for the llm call
@@ -150,11 +150,11 @@ class FewShotAgent(Agent):
 
     @step()
     async def respond_with_llm_step(
-            self,
-            event: FewShotEvent,
-            agent_config: FewShotAgentConfig,
-            displayer: EventDisplayer,
-            t: LocaleHandler,
+        self,
+        event: FewShotEvent,
+        agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
     ) -> LLMEvent:
         """
         Generates a response using the configured LLM.

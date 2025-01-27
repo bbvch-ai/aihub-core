@@ -40,9 +40,7 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         access_token = self.credential.get_token(self.scope).token
 
         url = f"https://graph.microsoft.com/v1.0/users/{oid}"
-        headers = {
-            "Authorization": f"Bearer {access_token}"
-        }
+        headers = {"Authorization": f"Bearer {access_token}"}
 
         with httpx.Client() as client:
             response = client.get(url, headers=headers)
@@ -55,6 +53,4 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
                 email=user_data.get("mail") or user_data.get("userPrincipalName"),
             )
         else:
-            raise Exception(
-                f"Failed to fetch user info. Status: {response.status_code}, Response: {response.text}"
-            )
+            raise Exception(f"Failed to fetch user info. Status: {response.status_code}, Response: {response.text}")

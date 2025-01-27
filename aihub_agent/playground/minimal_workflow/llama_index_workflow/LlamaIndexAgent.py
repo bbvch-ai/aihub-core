@@ -10,10 +10,10 @@ from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig impo
 class LlamaIndexAgent(Agent):
     @step()
     async def start_step(
-            self,
-            event: StartEvent | UserMessageEvent,
-            agent_config: LlamaIndexAgentConfig,
-            displayer: EventDisplayer,
+        self,
+        event: StartEvent | UserMessageEvent,
+        agent_config: LlamaIndexAgentConfig,
+        displayer: EventDisplayer,
     ) -> LLMEvent:
         print("[LlamaIndexAgent.start_step]")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:

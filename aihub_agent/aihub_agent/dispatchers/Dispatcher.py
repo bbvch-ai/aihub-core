@@ -83,16 +83,16 @@ class Dispatcher:
     """
 
     def __init__(
-            self,
-            agent: Annotated[Type[Agent], "The agent class defining steps and logic."],
-            agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
-            nc: Annotated[NATS, "NATS client for messaging."],
-            js: Annotated[
-                JetStreamContext,
-                "JetStream context for persistent storage and event streams.",
-            ],
-            topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
-            locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
+        self,
+        agent: Annotated[Type[Agent], "The agent class defining steps and logic."],
+        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
+        nc: Annotated[NATS, "NATS client for messaging."],
+        js: Annotated[
+            JetStreamContext,
+            "JetStream context for persistent storage and event streams.",
+        ],
+        topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
+        locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
         self.agent = agent
         self.agent_config = agent_config
@@ -108,9 +108,9 @@ class Dispatcher:
         self.step_configs = agent_config.get_step_configs()
 
     async def handle_event(
-            self,
-            event: Annotated[ControlEvent, "The incoming control event to handle."],
-            topic: Annotated[AgentTopic, "The parsed topic of the event."],
+        self,
+        event: Annotated[ControlEvent, "The incoming control event to handle."],
+        topic: Annotated[AgentTopic, "The parsed topic of the event."],
     ):
         """
         Called whenever a new event arrives. This method:
@@ -168,10 +168,10 @@ class Dispatcher:
             await asyncio.gather(*tasks)
 
     async def is_step_ready(
-            self,
-            step_method: Annotated[Callable, "The step method to check."],
-            run_id: Annotated[str, "The current run ID."],
-            event: Annotated[ControlEvent, "The triggering event."],
+        self,
+        step_method: Annotated[Callable, "The step method to check."],
+        run_id: Annotated[str, "The current run ID."],
+        event: Annotated[ControlEvent, "The triggering event."],
     ) -> bool:
         """
         Checks if a step can be run given the current state (events available, max executions, etc.).
@@ -229,14 +229,14 @@ class Dispatcher:
         return True
 
     async def _get_event_value(
-            self,
-            param: Annotated[inspect.Parameter, "A parameter of the step method."],
-            step_method: Annotated[Callable, "The step method we're preparing arguments for."],
-            events: Annotated[
-                Dict[str, List[ControlEvent]],
-                "All events for this run, keyed by event_type_name.",
-            ],
-            trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."],
+        self,
+        param: Annotated[inspect.Parameter, "A parameter of the step method."],
+        step_method: Annotated[Callable, "The step method we're preparing arguments for."],
+        events: Annotated[
+            Dict[str, List[ControlEvent]],
+            "All events for this run, keyed by event_type_name.",
+        ],
+        trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."],
     ) -> Optional[Any]:
         """
         Finds the appropriate value for a given step parameter.
@@ -284,12 +284,12 @@ class Dispatcher:
             return all_matching_events[-1]
 
     async def execute_step(
-            self,
-            trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
-            step_method: Annotated[Callable, "The step method to execute."],
-            run_context: Annotated[RunContext, "Per-run context for state and configuration."],
-            thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-            topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        self,
+        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
+        step_method: Annotated[Callable, "The step method to execute."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
     ):
         """
         Executes a step method:
@@ -391,7 +391,7 @@ class Dispatcher:
             await self.tracer.trace_step_stop(step_span, result)
 
     def get_topic_manager_for_thread(
-            self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
+        self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
     ) -> AgentThreadTopicManager:
         """
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
@@ -405,9 +405,9 @@ class Dispatcher:
         )
 
     async def publish_event(
-            self,
-            event: Annotated[BaseEvent, "The event to publish."],
-            topic: Annotated[AgentTopic, "Current run/thread topic context."],
+        self,
+        event: Annotated[BaseEvent, "The event to publish."],
+        topic: Annotated[AgentTopic, "Current run/thread topic context."],
     ):
         """
         Publishes a given event (Control or Display) to the correct subject.

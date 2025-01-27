@@ -60,10 +60,10 @@ class AgentTestRunner(AgentRunner):
     """
 
     def __init__(
-            self,
-            agent_type: Type[Agent],
-            agent_config: AgentConfig,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        agent_type: Type[Agent],
+        agent_config: AgentConfig,
+        locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=["nats://localhost:4222"],
@@ -204,10 +204,10 @@ class AgentTestRunner(AgentRunner):
         return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
 
     async def wait_for_event(
-            self,
-            event_type: Type[BaseEvent],
-            timeout: float = 60.0,
-            interval: float = 0.1,
+        self,
+        event_type: Type[BaseEvent],
+        timeout: float = 60.0,
+        interval: float = 0.1,
     ) -> BaseEvent:
         """
         Wait until an event of the specified type is observed or until the timeout is reached.

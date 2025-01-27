@@ -64,11 +64,11 @@ class AgentRunner:
     """
 
     def __init__(
-            self,
-            servers: List[str],
-            agent_type: Type[Agent],
-            agent_config: AgentConfig,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        servers: List[str],
+        agent_type: Type[Agent],
+        agent_config: AgentConfig,
+        locale_paths: Optional[List[str]] = None,
     ):
         self.servers = servers
         self.agent_type = agent_type
@@ -207,11 +207,11 @@ class AgentRunner:
             await self.stop()
 
     async def send_event(
-            self,
-            start_event: StartEvent,
-            thread_id: str,
-            display_id: str,
-            run_id: str,
+        self,
+        start_event: StartEvent,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
     ):
         """
         Sends an initial event (like a StartEvent) to initiate a run.

@@ -49,23 +49,24 @@ class AgentController(Controller):
     def discover_agents(self, route: str = "/discover") -> "AgentController":
         @self.router.get(route)
         async def discover_agents(
-                nc: Annotated[NATS, Depends(use_nats)],
-                user: AuthenticatedUser = Depends(self.auth),
+            nc: Annotated[NATS, Depends(use_nats)],
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all discovered agents. Filters out agents the user cannot access.
             """
             agents = await AgentService.discover_agents(nc)
             return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
+
         return self
 
     def get_agent(self, route: str = "/{agent_class}/{agent_id}") -> "AgentController":
         @self.router.get(route)
         async def get_agent(
-                nc: Annotated[NATS, Depends(use_nats)],
-                agent_class: str,
-                agent_id: str,
-                user: AuthenticatedUser = Depends(self.auth),
+            nc: Annotated[NATS, Depends(use_nats)],
+            agent_class: str,
+            agent_id: str,
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> AgentDTO:
             """
             Retrieve details for a specific agent. Raises 403 if the user lacks access.
@@ -73,4 +74,5 @@ class AgentController(Controller):
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             return await AgentService.get_agent(nc, agent_class, agent_id)
+
         return self

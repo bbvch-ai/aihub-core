@@ -75,10 +75,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
     """
 
     def __init__(
-            self,
-            agent_class: str,
-            agent_id: str,
-            simulated_events: Optional[List[BaseEvent]] = None,
+        self,
+        agent_class: str,
+        agent_id: str,
+        simulated_events: Optional[List[BaseEvent]] = None,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -109,9 +109,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(
-            self, event: DiscoveryRequestEvent, topic: DiscoveryTopic
-    ):
+    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
@@ -145,30 +143,24 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         Control events are published to control_event subjects,
         and display events to display_event subjects.
         """
-        thread_topic_manager = (
-            AgentThreadTopicManager.from_agent_instance_topic_manager(
-                self.topic_manager,
-                thread_id=topic.thread_id,
-                display_id=topic.display_id,
-                run_id=topic.run_id,
-            )
+        thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
+            self.topic_manager,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            run_id=topic.run_id,
         )
         if isinstance(event, ControlEvent):
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
-            logger.debug(
-                f"Publishing control event {event.__class__.__name__} to {subject}"
-            )
+            logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
         if isinstance(event, DisplayEvent):
             subject = thread_topic_manager.get_subject_for_display_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
-            logger.debug(
-                f"Publishing display event {event.__class__.__name__} to {subject}"
-            )
+            logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
     async def run(self):
@@ -192,13 +184,11 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = (
-            JSSubscriber.for_agent_instance_control_events(
-                self.nc,
-                self.topic_manager,
-                js=self.js,
-                handler=self.simulate_agent,
-            )
+        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
+            self.nc,
+            self.topic_manager,
+            js=self.js,
+            handler=self.simulate_agent,
         )
         await self.agent_control_event_subscriber.start()
 

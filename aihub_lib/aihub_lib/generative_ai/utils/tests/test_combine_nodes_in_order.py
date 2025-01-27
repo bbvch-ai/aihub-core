@@ -17,6 +17,7 @@ def locale_handler():
             if key == "agent.prompt.rag_agent.context_prompt":
                 return "Default prompt: {context_str}"
             return super().__call__(key)
+
     return MockLocaleHandler(locale="en")
 
 
@@ -58,12 +59,7 @@ def _(datatable):
             metadata[SOURCE] = src
         metadata[SECTION_START_LINE] = start_line
         context_nodes.append(
-            Document(
-                id=f"{src or 'missing'}-{start_line}",
-                score=score,
-                content=text,
-                metadata=metadata
-            )
+            Document(id=f"{src or 'missing'}-{start_line}", score=score, content=text, metadata=metadata)
         )
     return context_nodes
 
@@ -77,9 +73,7 @@ def _():
 def _(the_context_nodes, the_locale_handler, the_context_prompt):
     try:
         return combine_nodes_in_order(
-            context_nodes=the_context_nodes,
-            locale_handler=the_locale_handler,
-            context_prompt=the_context_prompt
+            context_nodes=the_context_nodes, locale_handler=the_locale_handler, context_prompt=the_context_prompt
         )
     except ValueError as e:
         return e
@@ -97,7 +91,5 @@ def _(the_result, docstring):
 def _(the_context_nodes, the_locale_handler, the_context_prompt):
     with pytest.raises(ValueError, match=r".*metadata.*source"):
         combine_nodes_in_order(
-            context_nodes=the_context_nodes,
-            locale_handler=the_locale_handler,
-            context_prompt=the_context_prompt
+            context_nodes=the_context_nodes, locale_handler=the_locale_handler, context_prompt=the_context_prompt
         )

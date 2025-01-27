@@ -45,7 +45,7 @@ class ChatLLMConfig(LLMConfig):
 
     @asynccontextmanager
     async def cost_reporting_llm(
-            self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMModelParameter] = None
+        self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMModelParameter] = None
     ):
         """
         Async context manager that yields an LLM configured with merged parameters.

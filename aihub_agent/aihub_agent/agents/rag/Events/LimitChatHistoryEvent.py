@@ -10,4 +10,5 @@ class LimitChatHistoryEvent(ControlEvent):
     """
     Limits the chat messages based on number of input tokens.
     """
+
     limited_history: List[ChatMessage] = Field(..., description="Limited chat history based on number of input tokens.")
