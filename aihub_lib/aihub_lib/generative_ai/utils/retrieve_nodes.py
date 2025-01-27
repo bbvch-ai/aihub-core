@@ -6,6 +6,7 @@ from llama_index.core.vector_stores import MetadataFilter
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery, MetadataFilters
 from llama_index.core.vector_stores.types import VectorStoreQueryMode, FilterCondition
 
+from aihub_lib.generative_ai.processors.ScoreScalerPostProcessor import ScoreScalerPostProcessor
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
 
 
@@ -43,6 +44,12 @@ def retrieve_nodes(
             query_embedding=embedding, similarity_top_k=retrieve_k, filters=filters, mode=query_mode, query_str=message
         )
     )
-    return [
+
+    nodes = [
         NodeWithScore(node=node, score=score) for node, score in zip(question_query.nodes, question_query.similarities)
     ]
+
+    if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+        nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).process(nodes)
+
+    return nodes
