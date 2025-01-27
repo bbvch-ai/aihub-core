@@ -1,5 +1,5 @@
 from aihub_lib.nats.events import ControlEvent
 
 
-class OptionalEventA(ControlEvent):
+class AboveThresholdEvent(ControlEvent):
     pass
