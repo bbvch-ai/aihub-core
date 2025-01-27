@@ -4,10 +4,7 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode, BasePydan
 from pydantic import Field
 
 from aihub_lib.generative_ai.agent.AgentConfig import StepConfig
-from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import AzureOpenAIEmbeddingConfig
-from aihub_lib.generative_ai.llms.models.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-)
+from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 
 
 class RetrieveStepConfig(StepConfig):
@@ -15,9 +12,7 @@ class RetrieveStepConfig(StepConfig):
     Configuration for the step retrieving documents from a vector store.
     """
 
-    embed_model: AzureOpenAIEmbeddingConfig | SelfHostedEmbeddingConfig = Field(
-        ..., description="The embedding model configuration."
-    )
+    embed_model: EmbeddingLLMConfig = Field(..., description="The embedding model configuration.")
     index_namespaces: List[str] = Field(..., description="The namespaces to retrieve from.", min_length=1)
     retrieve_k: int = Field(..., description="The number of documents to retrieve.", ge=1)
     query_mode: VectorStoreQueryMode = Field(

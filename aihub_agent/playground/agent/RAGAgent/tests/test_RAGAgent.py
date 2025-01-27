@@ -69,25 +69,23 @@ def build_rag_agent_config(
         ),
         number_of_input_tokens=2048,
         condense_question_prompt=LocaleString(
-            en="""
-            Given the following conversation between a user and an AI assistant and a follow-up question from the user,
-            rephrase the follow-up question to be a standalone question.
-
-            Chat history:
-            {chat_history}
-            Follow-up input: {question}
-            Standalone question:"""
+            en="Given the following conversation between a user and an AI assistant and a follow-up question from the user,"
+            "rephrase the follow-up question to be a standalone question."
+            "\n"
+            "Chat history:"
+            "{chat_history}"
+            "Follow-up input: {question}"
+            "Standalone question:"
         ),
         context_prompt=LocaleString(
-            en="""
-            You are provided with some additional context information in form of structured documents with its general
-            structure and relevant information in more detail. Each document starts with an indicator <DOC_START [documentname]>
-            and ends with <DOC_END [documentname]>.
-            Here are the relevant documents for the context:
-
-            {context_str}
-
-            Instruction: Based on the above documents, provide a detailed answer for the user question below."""
+            en="You are provided with some additional context information in form of structured documents with its general"
+            "structure and relevant information in more detail. Each document starts with an indicator <DOC_START [documentname]>"
+            "and ends with <DOC_END [documentname]>."
+            "Here are the relevant documents for the context:"
+            "\n"
+            "{context_str}"
+            "\n"
+            "Instruction: Based on the above documents, provide a detailed answer for the user question below."
         ),
     )
 

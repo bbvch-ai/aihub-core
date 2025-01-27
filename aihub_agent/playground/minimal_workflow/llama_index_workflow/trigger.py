@@ -31,13 +31,13 @@ async def main():
             llm=SelfHostedLLMConfig(
                 name="unsloth/Llama-3.2-1B-Instruct",
                 base_url="http://localhost:8182/v1",
-                api_key="fake",
+                api_key=None,
+                context_size=512,
                 is_chat_model=True,
                 is_function_calling_model=False,
-                context_size=512,
                 default_parameter=SelfHostedLLMParameter(
-                    logprobs=None,
                     logit_bias=None,
+                    logprobs=None,
                 ),
             ),
         ),

@@ -54,8 +54,7 @@ def fill_collection(
         transformations=[embeddings],
         vector_store=vector_store,
     )
-    for doc in documents:
-        pipeline.run(documents=[doc])
+    pipeline.run(documents=documents)
 
 
 def drop_collection(
