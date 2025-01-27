@@ -27,8 +27,8 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 scenarios("../tests/features/multi_hop_rag_agent.feature")
 
 
-@given("a MultiHopRAGAgent runner with a valid configuration", target_fixture="agent_runner")
-def _():
+@given(parsers.parse('a MultiHopRAGAgent runner with a valid configuration with "{hops:d}" hops'), target_fixture="agent_runner")
+def _(hops: int):
     return AgentTestRunner(
         agent_type=MultiHopRAGAgent,
         agent_config=MultiHopRAGAgentConfig(
@@ -64,7 +64,7 @@ def _():
             ),
             number_of_input_tokens=8000,
             tokenizer_for_model="gpt-4o-mini",
-            hops=5,
+            hops=hops,
             decompose_chat_history_prompt=LocaleString(
                 en="""
                 Given the following conversation between a user and an AI assistant and a follow-up question from the user,
@@ -97,7 +97,9 @@ async def _(agent_runner: AgentTestRunner, query: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=StartEvent(
-                messages=[ChatMessage(content=query, role=MessageRole.USER)], locale="en"),
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
+                locale="en"
+            ),
         )
 
 
@@ -118,7 +120,6 @@ def _(agent_runner: AgentTestRunner, count: int):
     assert len(decompose_events) == count, f"Expected {count} decomposed questions found {len(decompose_events)}"
     assert decompose_events[0].decomposed_chat_history.content, "No decomposed questions found"
 
-# TODO: semantic events created twice, control event and display event, is this intended?
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
 def _(agent_runner: AgentTestRunner, count: int):
     retriever_events = agent_runner.get_events_of_type(RetrieverEvent)
