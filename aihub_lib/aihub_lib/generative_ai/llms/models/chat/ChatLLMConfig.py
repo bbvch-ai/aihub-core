@@ -2,10 +2,10 @@ from abc import abstractmethod
 from contextlib import asynccontextmanager
 from typing import Optional, Tuple
 
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from llama_index.core.llms import LLM
 from pydantic import Field
 
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.llms.models.LLMConfig import LLMConfig, ModelParameter
 
@@ -45,7 +45,7 @@ class ChatLLMConfig(LLMConfig):
 
     @asynccontextmanager
     async def cost_reporting_llm(
-        self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMModelParameter] = None
+            self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMModelParameter] = None
     ):
         """
         Async context manager that yields an LLM configured with merged parameters.

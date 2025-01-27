@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.nats.context.BaseContext import BaseContext
-from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -21,7 +21,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.tracing.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
@@ -88,19 +88,19 @@ class RunTraceCoordinator:
         """
         user_input = event.messages[-1].content if event.messages else ""
         with self.tracer.start_as_current_span(
-            name=f"🤖 {topic.agent_class}",
-            kind=trace.SpanKind.SERVER,
-            attributes={
-                SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
-                SpanAttributes.INPUT_VALUE: user_input,
-                SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
-                SpanAttributes.TAG_TAGS: [
-                    topic.thread_id,
-                    topic.display_id,
-                    topic.run_id,
-                ],
-            },
-            end_on_exit=False,
+                name=f"🤖 {topic.agent_class}",
+                kind=trace.SpanKind.SERVER,
+                attributes={
+                    SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
+                    SpanAttributes.INPUT_VALUE: user_input,
+                    SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
+                    SpanAttributes.TAG_TAGS: [
+                        topic.thread_id,
+                        topic.display_id,
+                        topic.run_id,
+                    ],
+                },
+                end_on_exit=False,
         ) as span:
             logger.debug(f"Tracing run start for {topic.agent_class}")
             span_context = trace.set_span_in_context(span)
@@ -157,11 +157,11 @@ class RunTraceCoordinator:
 
     @asynccontextmanager
     async def trace_step_start(
-        self,
-        telemetry_headers: Dict[str, str],
-        topic: AgentTopic,
-        step_method: Callable,
-        kwargs: Dict[str, Any],
+            self,
+            telemetry_headers: Dict[str, str],
+            topic: AgentTopic,
+            step_method: Callable,
+            kwargs: Dict[str, Any],
     ) -> AsyncIterator[Span]:
         """
         Context manager that starts a step-level child span. It:
@@ -208,10 +208,10 @@ class RunTraceCoordinator:
         }
 
         with self.tracer.start_as_current_span(
-            name=span_name,
-            kind=trace.SpanKind.CONSUMER,
-            context=parent_context,
-            attributes=attributes,
+                name=span_name,
+                kind=trace.SpanKind.CONSUMER,
+                context=parent_context,
+                attributes=attributes,
         ) as span:
             try:
                 yield span

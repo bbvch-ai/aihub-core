@@ -50,5 +50,4 @@ async def agent_description_guard(
         history=history,
     )
 
-    guard_result_class = guard_result_factory(t)
-    return guard_result_class.model_validate(result)
+    return GuardResult.model_validate(result)

@@ -1,34 +1,27 @@
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from llama_index.core import PromptTemplate
 from pytest_bdd import scenarios, given, when, then, parsers
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.generative_ai.guards.agent_description_guard import (
     agent_description_guard,
     GuardResult,
 )
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 scenarios("./features/agent_description_guard.feature")
 
 
 @pytest.fixture
-def llm_config():
-    mock_llm = Mock(spec=ChatLLMConfig)
-    mock_cost_reporting_llm = AsyncMock()
-    mock_cost_reporting_llm.structured_predict.return_value = GuardResult(reasoning="Expected reasoning", success=True)
-    mock_llm.cost_reporting_llm.return_value = mock_cost_reporting_llm
-    return mock_llm
-
-
-@pytest.fixture
-def displayer():
-    return Mock(spec=EventDisplayer)
+def llm():
+    with patch("llama_index.core.llms.llm.LLM", new_callable=AsyncMock) as mock_llm:
+        mock_llm_instance = mock_llm.return_value
+        mock_llm_instance.structured_predict.return_value = GuardResult(reasoning="Expected reasoning", success=True)
+        yield mock_llm_instance
 
 
 @given(parsers.parse('a locale handler with locale "{locale}"'), target_fixture="locale_handler")
@@ -37,8 +30,8 @@ def _(locale):
 
 
 @given(parsers.parse('an agent description "{description}"'), target_fixture="agent_description")
-def _(description):
-    return description
+def _(description, locale_handler):
+    return LocaleString(**{locale_handler.locale: description})
 
 
 @given(parsers.parse('a user query "{query}"'), target_fixture="user_query")
@@ -58,11 +51,10 @@ def _(datatable):
 
 @when("the agent description guard is executed")
 @async_test
-async def _(agent_description, llm_config, displayer, locale_handler, user_query, messages):
+async def _(agent_description, llm, locale_handler, user_query, messages):
     await agent_description_guard(
         agent_description=agent_description,
-        llm_config=llm_config,
-        displayer=displayer,
+        llm=llm,
         t=locale_handler,
         user_query=user_query,
         messages=messages,
@@ -70,8 +62,9 @@ async def _(agent_description, llm_config, displayer, locale_handler, user_query
 
 
 @then("structured_predict should be called", target_fixture="call_args")
-def _(llm_config):
-    call_args = llm_config.cost_reporting_llm.return_value.__aenter__.return_value.structured_predict.call_args
+def _(llm):
+    llm.structured_predict.assert_called()
+    call_args = llm.structured_predict.call_args
     return call_args
 
 

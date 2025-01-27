@@ -19,7 +19,7 @@ from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCo
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 
 
@@ -41,10 +41,10 @@ class RAGAgent(Agent):
 
     @step()
     async def limit_chat_history_step(
-        self,
-        event: StartEvent | UserMessageEvent,
-        agent_config: RAGAgentConfig,
-        run_context: RunContext,
+            self,
+            event: StartEvent | UserMessageEvent,
+            agent_config: RAGAgentConfig,
+            run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit
@@ -65,12 +65,12 @@ class RAGAgent(Agent):
 
     @step()
     async def condense_standalone_question_step(
-        self,
-        event: LimitChatHistoryEvent,
-        agent_config: RAGAgentConfig,
-        t: LocaleHandler,
-        displayer: EventDisplayer,
-        run_context: RunContext,
+            self,
+            event: LimitChatHistoryEvent,
+            agent_config: RAGAgentConfig,
+            t: LocaleHandler,
+            displayer: EventDisplayer,
+            run_context: RunContext,
     ) -> StandaloneQuestionCondenserEvent:
         """
         Condenses the chat history and user query into a standalone question.
@@ -89,11 +89,11 @@ class RAGAgent(Agent):
 
     @step()
     async def retrieve_step(
-        self,
-        event: StandaloneQuestionCondenserEvent,
-        retrieve_step_config: RetrieveStepConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
+            self,
+            event: StandaloneQuestionCondenserEvent,
+            retrieve_step_config: RetrieveStepConfig,
+            displayer: EventDisplayer,
+            t: LocaleHandler,
     ) -> RetrieverEvent:
         """
         Retrieves relevant nodes from the knowledge base.
@@ -113,11 +113,11 @@ class RAGAgent(Agent):
 
     @step()
     async def order_nodes_by_documents_step(
-        self,
-        event: RetrieverEvent,
-        t: LocaleHandler,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
+            self,
+            event: RetrieverEvent,
+            t: LocaleHandler,
+            agent_config: RAGAgentConfig,
+            displayer: EventDisplayer,
     ) -> InOrderNodeCombinerEvent:
         """
         Orders the retrieved nodes based on their source documents.
@@ -132,10 +132,10 @@ class RAGAgent(Agent):
 
     @step()
     async def limit_chat_history_with_context_step(
-        self,
-        event: InOrderNodeCombinerEvent,
-        agent_config: RAGAgentConfig,
-        run_context: RunContext,
+            self,
+            event: InOrderNodeCombinerEvent,
+            agent_config: RAGAgentConfig,
+            run_context: RunContext,
     ) -> LimitChatHistoryWithContextEvent:
         """
         Includes the combined context and truncates chat history again.
@@ -157,11 +157,11 @@ class RAGAgent(Agent):
 
     @step()
     async def respond_with_llm_step(
-        self,
-        event: LimitChatHistoryWithContextEvent,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
+            self,
+            event: LimitChatHistoryWithContextEvent,
+            agent_config: RAGAgentConfig,
+            displayer: EventDisplayer,
+            t: LocaleHandler,
     ) -> LLMEvent:
         """
         Generates a response using the configured LLM.
