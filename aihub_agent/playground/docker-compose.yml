@@ -10,12 +10,16 @@ services:
     restart: always
 
   nats:
-    image: nats:latest
-    command: [ "-js" ]  # Enable JetStream
+    image: nats:alpine
+    command: >
+      -js
+      -m 8222
     ports:
       - "4222:4222"  # Client connections
       - "8222:8222"  # HTTP monitoring interface
     restart: always
+    healthcheck:
+      test: wget --spider -q http://localhost:8222/healthz
 
   mongo:
     image: mongo:latest
@@ -25,6 +29,8 @@ services:
     ports:
       - "27017:27017"
     restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
 
   llama.cpp:
     image: ghcr.io/ggerganov/llama.cpp:server-b4524
@@ -36,6 +42,8 @@ services:
       --port 8182
       -c 512
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
 
   hf-TEI:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.6
@@ -45,3 +53,5 @@ services:
       --port 8183
       --model-id Alibaba-NLP/gte-base-en-v1.5
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
