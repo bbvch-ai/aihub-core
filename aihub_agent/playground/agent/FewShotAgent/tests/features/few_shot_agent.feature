@@ -20,3 +20,18 @@ Feature: Test the FewShotAgent
     Then a FewShotEvent is present with few shot context
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present
+
+  Scenario: Tigger RightAgentGuard rejection
+    Given I have an empty agent config
+    Given the agent description is "This agent can transform movie titles into emojis."
+    And the few shot system prompt is "Respond with three emojis for the movie."
+    And the following few-shot examples:
+      | user         | agent     |
+      | James Bond   | 🤵🍸🔫    |
+      | Harry Potter | 👓⚡️🪄    |
+      | Thor         | ⚡️🧔‍♂️🔨 |
+    And I create a FewShotAgent runner with the scenario config
+    When the start event is sent with a user query "Who is President of the United States?"
+    Then a StartEvent is present with payload "Who is President of the United States?"
+    Then a LimitChatHistoryEvent is present
+    Then a GuardRejectionEvent is present

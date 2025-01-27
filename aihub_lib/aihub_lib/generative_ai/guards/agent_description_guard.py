@@ -16,7 +16,7 @@ class GuardResult(BaseModel):
 
 def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
     class LocalizedGuardResult(GuardResult):
-        reasoning: str = Field(description=t("lib.guards.agent_description_guard.reasoning"))
+        reasoning: str = Field(description=t("lib.guards.agent_description_guard.reason"))
         success: bool = Field(description=t("lib.guards.agent_description_guard.success"))
 
     LocalizedGuardResult.__doc__ = t("lib.guards.agent_description_guard.docstring")
@@ -24,13 +24,13 @@ def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
 
 
 async def agent_description_guard(
-    agent_description: LocaleString,
-    llm: LLM,
-    t: LocaleHandler,
-    user_query: str,
-    messages: List[ChatMessage],
+        agent_description: LocaleString,
+        llm: LLM,
+        t: LocaleHandler,
+        user_query: str,
+        messages: List[ChatMessage],
 ) -> GuardResult:
-    prompt = PromptTemplate(t("lib.guards.agent_description_guard"))
+    prompt = PromptTemplate(t("lib.guards.agent_description_guard.prompt"))
     history = "".join(
         [
             (

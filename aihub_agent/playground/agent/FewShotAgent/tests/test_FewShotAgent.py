@@ -23,6 +23,7 @@ from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import 
     AzureOpenAIParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 scenarios("features/few_shot_agent.feature")
@@ -169,3 +170,8 @@ def then_llm_event(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def then_stop_event_present(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
+
+
+@then("a GuardRejectionEvent is present")
+def then_stop_event_present(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_type(GuardRejectionEvent), "Agent did not produce GuardRejectionEvent"
