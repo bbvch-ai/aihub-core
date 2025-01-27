@@ -26,13 +26,8 @@ services:
       - "27017:27017"
     restart: always
 
-  llama.cpp:
-    image: ghcr.io/ggerganov/llama.cpp:server
+  ollama:
+    image: ollama/ollama:latest
     ports:
-      - "8182:8182"
-    command: >
-      -hf unsloth/Llama-3.2-1B-Instruct-GGUF
-      --port 8182
-      --host 0.0.0.0
-      -n 512
+      - "8182:11434"
     restart: always

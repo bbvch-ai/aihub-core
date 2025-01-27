@@ -25,7 +25,8 @@ def _():
             description=LocaleString(en="This is an agent that uses a llama index llm"),
             system_prompt=LocaleString(en="You are an agent"),
             llm=SelfHostedLLMConfig(
-                name="unsloth/Llama-3.2-1B-Instruct",
+                name="hf.co/unsloth/Llama-3.2-1B-Instruct-GGUF:latest",
+                tokenizer_name="unsloth/Llama-3.2-1B-Instruct",
                 api_endpoint="http://localhost:8182/v1",
                 api_key="fake",
                 is_chat_model=True,
@@ -43,7 +44,7 @@ def _():
 @when(parsers.parse('the user sends a message "{payload}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, payload: str):
-    async with agent_runner.test_run(delay_before_stop=5) as topic:
+    async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             start_event=StartEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
             topic=topic,
