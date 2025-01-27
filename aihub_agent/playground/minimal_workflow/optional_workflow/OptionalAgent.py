@@ -22,7 +22,7 @@ class OptionalAgent(Agent):
 
     @step()
     async def optional_step(
-            self, event: OptionalEventA, optional_event: Optional[OptionalEventB]
+        self, event: OptionalEventA, optional_event: Optional[OptionalEventB]
     ) -> OptionalEventC | OptionalEventD:
         if optional_event:
             print("[OptionalAgent.optional_step] Received Optional EventB")

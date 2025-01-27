@@ -3,15 +3,14 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, AgentDiscoveryResponseEvent
+from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-
 from bson import ObjectId
 from pydantic import BaseModel
 
@@ -61,10 +60,10 @@ class AgentTestRunner(AgentRunner):
     """
 
     def __init__(
-            self,
-            agent_type: Type[Agent],
-            agent_config: AgentConfig,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        agent_type: Type[Agent],
+        agent_config: AgentConfig,
+        locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=["nats://localhost:4222"],

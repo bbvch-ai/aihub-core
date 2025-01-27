@@ -12,10 +12,10 @@ from playground.minimal_workflow.context_workflow.events.ContextEventA import Co
 class ContextAgent(Agent):
     @step()
     async def start_step(
-            self,
-            event: CustomStartEvent,
-            thread_context: ThreadContext,
-            run_context: RunContext,
+        self,
+        event: CustomStartEvent,
+        thread_context: ThreadContext,
+        run_context: RunContext,
     ) -> ContextEventA:
         thread_count = await thread_context.get("count", 0)
         run_count = await run_context.get("count", 0)
