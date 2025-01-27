@@ -1,7 +1,4 @@
 import asyncio
-from aihub_lib.testing.logging.logger import enable_logging
-
-enable_logging()
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
