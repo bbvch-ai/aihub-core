@@ -21,7 +21,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.tracing.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
 

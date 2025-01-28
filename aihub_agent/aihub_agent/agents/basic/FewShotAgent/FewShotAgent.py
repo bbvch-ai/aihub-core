@@ -11,7 +11,7 @@ from llama_index.core.base.llms.types import MessageRole, ChatMessage
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.generative_ai.guards.agent_description_guard import agent_description_guard
 

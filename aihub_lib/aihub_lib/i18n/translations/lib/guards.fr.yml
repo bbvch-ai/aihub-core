@@ -1,0 +1,30 @@
+agent_description_guard:
+  prompt: |
+    La description d'un agent est la suivante :
+    <Description de l'agent>
+    {agent_description}
+    </Description de l'agent>
+    L'agent peut avoir accès à des sources d'informations supplémentaires qui pourraient l'aider à répondre à la question.
+    Décidez si la question posée par l'utilisateur dans le cadre de la conversation doit être adressée à cet agent. Autorisez toutes les questions qui
+    pourraient potentiellement relever du domaine de l'agent. Bloquez toutes les questions qui, de manière évidente,
+    n'ont absolument rien à voir avec l'agent. En cas de doute, choisissez d'autoriser la question.
+    <Question de l'utilisateur>
+    {user_query}
+    </Question de l'utilisateur>
+    <Historique de la conversation>
+    {history}
+    </Historique de la conversation>
+  user_message: |
+    <Utilisateur>
+    {user}
+    </Utilisateur>
+  agent_message: |
+    <Agent>
+    {agent}
+    </Agent>
+  reason: |
+    Justification de la décision prise.
+  success: |
+    true si une réponse peut être donnée, false sinon
+  docstring: |
+    Modèle de données pour la décision concernant la possibilité de fournir une réponse.

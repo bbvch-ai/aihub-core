@@ -2,7 +2,7 @@ from aihub_lib.nats.events import LLMEvent, StartEvent, StopEvent, UserMessageEv
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 
 

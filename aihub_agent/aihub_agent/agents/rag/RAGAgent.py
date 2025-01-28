@@ -19,7 +19,7 @@ from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCo
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 
 

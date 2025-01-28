@@ -20,7 +20,7 @@ from nats.js import JetStreamContext
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize

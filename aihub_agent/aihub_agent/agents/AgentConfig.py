@@ -3,6 +3,7 @@ from typing import Dict, Optional, Type
 from pydantic import BaseModel, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.agents.IAgentConfig import IAgentConfig
 
 
 class StepConfig(BaseModel):
@@ -22,7 +23,7 @@ class StepConfig(BaseModel):
     pass
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(BaseModel, IAgentConfig):
     """
     Describes the configuration for an agent, including its identity, prompts, and style.
 
