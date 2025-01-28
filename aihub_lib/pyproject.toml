@@ -46,6 +46,7 @@ llama-index-storage-docstore-mongodb = "^0.3.0"
 pytest-mock = "^3.14.0"
 llama-index-llms-openai-like = "^0.3.3"
 transformers = "^4.48.1"
+llama-index-embeddings-text-embeddings-inference = "^0.3.1"
 
 
 [tool.poetry.group.dev.dependencies]

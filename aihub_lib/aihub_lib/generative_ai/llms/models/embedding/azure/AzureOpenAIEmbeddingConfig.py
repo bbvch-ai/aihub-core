@@ -37,7 +37,6 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
     """
 
     embedding_tokens_costs_per_thousand: float = Field(0.0, description="Cost per thousand embedding tokens.")
-    api_endpoint: str = Field(..., description="Azure OpenAI API endpoint for embeddings.")
     api_version: str = Field(..., description="Azure OpenAI API version for embeddings.")
 
     default_parameter: AzureOpenAIEmbeddingParameter = Field(
@@ -69,7 +68,7 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
 
         azure_open_ai_embedding = AzureOpenAIEmbedding(
             model=self.name,
-            azure_endpoint=self.api_endpoint,
+            azure_endpoint=self.base_url,
             azure_ad_token_provider=token_provider,
             api_version=self.api_version,
             additional_kwargs=additional_kwargs,
