@@ -11,7 +11,6 @@ from playground.minimal_workflow.context_workflow.events.ContextEvent import Con
 
 
 class ContextAgent(Agent):
-
     @step()
     async def start_step(
         self,

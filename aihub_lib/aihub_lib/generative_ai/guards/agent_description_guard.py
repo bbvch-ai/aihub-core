@@ -1,4 +1,4 @@
-from typing import Type, List
+from typing import List, Type
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -24,11 +24,11 @@ def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
 
 
 async def agent_description_guard(
-        agent_description: LocaleString,
-        llm: LLM,
-        t: LocaleHandler,
-        user_query: str,
-        messages: List[ChatMessage],
+    agent_description: LocaleString,
+    llm: LLM,
+    t: LocaleHandler,
+    user_query: str,
+    messages: List[ChatMessage],
 ) -> GuardResult:
     prompt = PromptTemplate(t("lib.guards.agent_description_guard.prompt"))
     history = "".join(

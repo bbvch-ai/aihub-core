@@ -1,9 +1,8 @@
 from typing import Dict, Optional, Type
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.agents.IAgentConfig import IAgentConfig
+from pydantic import BaseModel, Field
 
 
 class StepConfig(BaseModel):

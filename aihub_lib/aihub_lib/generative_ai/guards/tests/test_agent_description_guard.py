@@ -1,15 +1,12 @@
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from llama_index.core import PromptTemplate
-from pytest_bdd import scenarios, given, when, then, parsers
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_lib.generative_ai.guards.agent_description_guard import GuardResult, agent_description_guard
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.generative_ai.guards.agent_description_guard import (
-    agent_description_guard,
-    GuardResult,
-)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 

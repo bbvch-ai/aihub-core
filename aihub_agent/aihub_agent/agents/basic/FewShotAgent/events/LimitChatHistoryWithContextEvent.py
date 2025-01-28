@@ -1,9 +1,8 @@
 from typing import List
 
-from pydantic import Field
-
 from aihub_lib.nats.events import ControlEvent
 from llama_index.core.base.llms.types import ChatMessage
+from pydantic import Field
 
 
 class LimitChatHistoryWithContextEvent(ControlEvent):

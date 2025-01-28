@@ -1,13 +1,9 @@
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
+from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import (
-    FewShotStepConfig,
-)
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-)
-from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 
 
 class FewShotAgentConfig(AgentConfig):
