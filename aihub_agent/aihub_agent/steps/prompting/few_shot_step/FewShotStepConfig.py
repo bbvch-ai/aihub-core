@@ -1,6 +1,6 @@
 from typing import List
 
-from aihub_lib.generative_ai.agent.AgentConfig import StepConfig
+from aihub_agent.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.i18n.LocaleString import LocaleString
 
