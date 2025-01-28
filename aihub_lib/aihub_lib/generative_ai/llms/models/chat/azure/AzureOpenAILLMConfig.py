@@ -1,10 +1,11 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.azure_openai import AzureOpenAI
 from pydantic import Field
+from typing_extensions import Callable
 
 from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
@@ -42,6 +43,10 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
 
     default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.")
 
+    @property
+    def tokenizer(self) -> Callable[[str], List[int]]:
+        return tiktoken.encoding_for_model(self.name).encode
+
     def to_llama_index(
         self, model_parameter: Optional[AzureOpenAIParameter] = None
     ) -> Tuple[AzureOpenAI, LLMCostTracker]:
@@ -50,8 +55,7 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
 
         Uses Azure AD credentials and merges parameters from `default_parameter` and `model_parameter`.
         """
-        tokenizer = tiktoken.encoding_for_model(self.name).encode
-        token_counter = TokenCountingHandler(tokenizer=tokenizer)
+        token_counter = TokenCountingHandler(tokenizer=self.tokenizer)
 
         cost_tracker = LLMCostTracker(
             token_counter,
@@ -68,7 +72,7 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
 
         azure_open_ai = AzureOpenAI(
             model=self.name,
-            azure_endpoint=self.api_endpoint,
+            azure_endpoint=self.base_url,
             use_azure_ad=True,
             azure_ad_token_provider=token_provider,
             api_version=self.api_version,

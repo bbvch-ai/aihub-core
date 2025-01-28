@@ -30,14 +30,14 @@ async def main():
             system_prompt=LocaleString(en="You are an agent"),
             llm=SelfHostedLLMConfig(
                 name="unsloth/Llama-3.2-1B-Instruct",
-                api_endpoint="http://localhost:8182/v1",
-                api_key="fake",
+                base_url="http://localhost:8182/v1",
+                api_key=None,
+                context_size=512,
                 is_chat_model=True,
                 is_function_calling_model=False,
-                context_size=1024,
                 default_parameter=SelfHostedLLMParameter(
-                    logprobs=None,
                     logit_bias=None,
+                    logprobs=None,
                 ),
             ),
         ),
