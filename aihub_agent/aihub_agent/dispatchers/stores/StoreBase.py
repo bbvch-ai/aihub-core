@@ -10,7 +10,7 @@ class StoreBase:
     A base class for run-specific storage in JetStream KV stores.
 
     ### Why StoreBase?
-    In workflows, run-specific data (such as events, step counts, or other metadata) must be preserved
+    In workflows, run-specific data (such as Events, step counts, or other metadata) must be preserved
     between steps and even across server restarts. `StoreBase` provides a standardized way to manage
     these per-run key-value stores:
     - Creates a dedicated KV bucket for each run.
@@ -26,7 +26,7 @@ class StoreBase:
 
     ### Example
     Derived classes like `DistributedEventStore` or `DistributedStepStore` extend `StoreBase` to store run-specific
-    events or step execution data. They rely on `_get_kv_store(run_id)` to get the appropriate KV store, then read/write keys.
+    Events or step execution data. They rely on `_get_kv_store(run_id)` to get the appropriate KV store, then read/write keys.
 
     ### Lifecycle
     - At run start, when data is first stored for that run, a KV bucket is created if not existing.
@@ -69,7 +69,7 @@ class StoreBase:
         Deletes the KV store for a specific run, removing all associated data.
         Also clears any cached references in _kv_stores.
 
-        Use this at run completion to reclaim resources and maintain a clean state.
+        Use this at run completion to reclaim Resources and maintain a clean state.
         """
         if run_id in self._kv_stores:
             await self.js.delete_key_value(f"{self.prefix}_{run_id}")

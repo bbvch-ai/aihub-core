@@ -9,13 +9,13 @@ def extract_event_types(
     annotation: Annotated[Any, "A type annotation representing one or more event types."],
 ) -> Tuple[Set[Type[BaseEvent]], bool, Optional[int]]:
     """
-    Analyze a type annotation related to events and extract:
+    Analyze a type annotation related to Events and extract:
     - The set of possible event types (classes inheriting from BaseEvent).
     - Whether the annotation allows None (i.e., is optional).
     - A required size, if defined (e.g., for fixed-size collections).
 
-    This function helps determine what kinds of events a workflow step method can accept or produce,
-    as well as any constraints on those events (like required size).
+    This function helps determine what kinds of Events a workflow step method can accept or produce,
+    as well as any constraints on those Events (like required size).
 
     ### Parameters
     - `annotation` (Any): A type annotation that could reference:
@@ -32,7 +32,7 @@ def extract_event_types(
 
     ### How It Works
     1. **Fixed-size Containers:**
-       If `annotation` has a `_required_size` attribute, we treat it as a fixed-size container of events.
+       If `annotation` has a `_required_size` attribute, we treat it as a fixed-size container of Events.
 
     2. **Union/Optional:**
        If the annotation is a Union or UnionType and includes `None`, we mark it as optional.
@@ -81,7 +81,7 @@ def extract_event_types(
                 event_types.update(etypes)
 
     elif origin in (list, List):
-        # List[...] of events
+        # List[...] of Events
         elem_type = args[0]
         etypes, optional, _ = extract_event_types(elem_type)
         event_types.update(etypes)

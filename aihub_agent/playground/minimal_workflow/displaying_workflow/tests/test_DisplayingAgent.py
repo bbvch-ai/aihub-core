@@ -20,8 +20,8 @@ def _():
         agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
             name=LocaleString(en="Displaying Agent"),
-            description=LocaleString(en="This is an agent that displays events"),
-            system_prompt=LocaleString(en="You are an agent that displays events."),
+            description=LocaleString(en="This is an agent that displays Events"),
+            system_prompt=LocaleString(en="You are an agent that displays Events."),
         ),
     )
 

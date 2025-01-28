@@ -9,24 +9,24 @@ from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
 class DistributedEventStore(StoreBase):
     """
-    A run-scoped store for persisting and retrieving events (subclasses of ControlEvent) associated with a single run.
+    A run-scoped store for persisting and retrieving Events (subclasses of ControlEvent) associated with a single run.
 
     ### Why DistributedEventStore?
-    When executing workflows, steps may depend on historical events. The DistributedEventStore ensures that
-    all events for a given run are persisted in a JetStream KV store, making them accessible across
+    When executing workflows, steps may depend on historical Events. The DistributedEventStore ensures that
+    all Events for a given run are persisted in a JetStream KV store, making them accessible across
     distributed environments and restarts.
 
     ### Key Operations
     - **store_event(run_id, event):**
-      Appends the new event to the list of events for its type, ensuring no duplicate `event_id` entries.
-      Stores events in a type-wise manner (e.g., all StartEvents together, all StopEvents together).
+      Appends the new event to the list of Events for its type, ensuring no duplicate `event_id` entries.
+      Stores Events in a type-wise manner (e.g., all StartEvents together, all StopEvents together).
 
     - **get_events_of_type(run_id, event_type):**
-      Fetches all events of a specific type for the given run, deserializing them into event objects.
+      Fetches all Events of a specific type for the given run, deserializing them into event objects.
 
     - **get_all_events(run_id, before=None):**
-      Retrieves all events for a run, optionally filtered by a timestamp (only events created_at ≤ before).
-      Useful for determining whether enough events have occurred to trigger certain steps.
+      Retrieves all Events for a run, optionally filtered by a timestamp (only Events created_at ≤ before).
+      Useful for determining whether enough Events have occurred to trigger certain steps.
 
     ### Persistence Details
     - Each run has its own bucket (e.g. "events_RUNID").
@@ -35,12 +35,12 @@ class DistributedEventStore(StoreBase):
 
     ### Example
     If a run has multiple StartEvent and StopEvent instances, `store_event` appends them to their respective arrays.
-    Later, `get_events_of_type(run_id, StartEvent)` returns all recorded start events for that run.
+    Later, `get_events_of_type(run_id, StartEvent)` returns all recorded start Events for that run.
 
     """
 
     def __init__(self, js: JetStreamContext):
-        super().__init__(js, prefix="events")
+        super().__init__(js, prefix="Events")
 
     async def store_event(
         self,
@@ -53,7 +53,7 @@ class DistributedEventStore(StoreBase):
         kv = await self._get_kv_store(run_id)
         event_type = event.__class__.__name__
 
-        # Load existing events for this type
+        # Load existing Events for this type
         try:
             entry = await kv.get(event_type)
             event_list_data = json.loads(entry.value.decode())
@@ -73,8 +73,8 @@ class DistributedEventStore(StoreBase):
         event_type: Annotated[Type[ControlEvent], "The event subclass to fetch."],
     ) -> List[ControlEvent]:
         """
-        Returns all events of the specified type for the given run, reconstructed as event objects.
-        If no events exist for that type, returns an empty list.
+        Returns all Events of the specified type for the given run, reconstructed as event objects.
+        If no Events exist for that type, returns an empty list.
         """
         kv = await self._get_kv_store(run_id)
         try:
@@ -87,11 +87,11 @@ class DistributedEventStore(StoreBase):
     async def get_all_events(
         self,
         run_id: Annotated[str, "The run identifier."],
-        before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None,
+        before: Annotated[Optional[int], "Filter timestamp; only include Events created_at ≤ before."] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
-        Retrieves all events for a run, organized by event type name.
-        If `before` is provided, filters out events created after that timestamp.
+        Retrieves all Events for a run, organized by event type name.
+        If `before` is provided, filters out Events created after that timestamp.
 
         Returns a dict keyed by event type name, with values being lists of event instances.
         """

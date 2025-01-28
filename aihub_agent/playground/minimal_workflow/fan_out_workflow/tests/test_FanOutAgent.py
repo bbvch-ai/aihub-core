@@ -36,26 +36,26 @@ async def _(agent_runner: AgentTestRunner):
         )
 
 
-@then(parsers.parse('5 EventA events with payloads "{payloads}" are present'))
+@then(parsers.parse('5 EventA Events with payloads "{payloads}" are present'))
 def verify_event_a_payloads(agent_runner: AgentTestRunner, payloads: str):
     expected_payloads = payloads.split(",")
     events = agent_runner.get_events_of_type(FanOutA)
     actual_payloads = [event.payload for event in events]
-    assert len(events) == 5, f"Expected 5 EventA events but found {len(events)}"
-    assert sorted(actual_payloads) == sorted(expected_payloads), (
-        f"Expected EventA payloads {expected_payloads} but found {actual_payloads}"
-    )
+    assert len(events) == 5, f"Expected 5 EventA Events but found {len(events)}"
+    assert sorted(actual_payloads) == sorted(
+        expected_payloads
+    ), f"Expected EventA payloads {expected_payloads} but found {actual_payloads}"
 
 
-@then(parsers.parse('5 EventB events with matching payloads "{payloads}" are present'))
+@then(parsers.parse('5 EventB Events with matching payloads "{payloads}" are present'))
 def verify_event_b_payloads(agent_runner: AgentTestRunner, payloads: str):
     expected_payloads = payloads.split(",")
     events_b = agent_runner.get_events_of_type(FanOutB)
     actual_payloads = [event.payload for event in events_b]
-    assert len(events_b) == 5, f"Expected 5 EventB events but found {len(events_b)}"
-    assert sorted(actual_payloads) == sorted(expected_payloads), (
-        f"Expected EventB payloads {expected_payloads} but found {actual_payloads}"
-    )
+    assert len(events_b) == 5, f"Expected 5 EventB Events but found {len(events_b)}"
+    assert sorted(actual_payloads) == sorted(
+        expected_payloads
+    ), f"Expected EventB payloads {expected_payloads} but found {actual_payloads}"
 
 
 @then("a StopEvent is present")

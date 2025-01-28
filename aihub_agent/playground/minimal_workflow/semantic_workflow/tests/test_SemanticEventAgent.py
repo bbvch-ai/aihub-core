@@ -20,7 +20,7 @@ def _():
         agent_config=SemanticEventAgentConfig(
             agent_id="semantic_event_agent",
             name=LocaleString(en="Semantic Event Agent"),
-            description=LocaleString(en="This is an agent with semantic events"),
+            description=LocaleString(en="This is an agent with semantic Events"),
             system_prompt=LocaleString(en="You are an agent"),
         ),
     )

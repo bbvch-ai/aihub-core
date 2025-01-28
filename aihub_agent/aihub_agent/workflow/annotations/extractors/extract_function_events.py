@@ -21,14 +21,14 @@ def extract_function_events(
 ]:
     """
     Analyze a function’s parameters to determine which event types it consumes, as well as optionality
-    and size constraints for these events.
+    and size constraints for these Events.
 
     ### Why This Function?
-    Steps in a workflow often have type-annotated parameters indicating what kinds of events they expect.
+    Steps in a workflow often have type-annotated parameters indicating what kinds of Events they expect.
     By inspecting these annotations, you can programmatically derive what a workflow step needs:
-    - Which events must be provided?
+    - Which Events must be provided?
     - Are certain parameters optional?
-    - If a parameter expects a fixed-size collection of events, what is that size?
+    - If a parameter expects a fixed-size collection of Events, what is that size?
 
     ### Returns
     A tuple of:
@@ -45,14 +45,14 @@ def extract_function_events(
     ### Example
     Consider a step method:
     ```python
-    def my_step(event: SomeEvent | None, events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]):
+    def my_step(event: SomeEvent | None, Events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]):
         ...
     ```
     This might produce:
     - input_events = {SomeEvent, AnotherEvent, YetAnotherEvent}
-    - input_event_mapping = {"event": {SomeEvent}, "events": {AnotherEvent}, "fixed": {YetAnotherEvent}}
-    - parameter_optional_map = {"event": True, "events": False, "fixed": False}
-    - size_requirements = {"event": None, "events": None, "fixed": 3}
+    - input_event_mapping = {"event": {SomeEvent}, "Events": {AnotherEvent}, "fixed": {YetAnotherEvent}}
+    - parameter_optional_map = {"event": True, "Events": False, "fixed": False}
+    - size_requirements = {"event": None, "Events": None, "fixed": 3}
     """
 
     signature = inspect.signature(func)

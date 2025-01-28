@@ -54,14 +54,14 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner, payload: str):
     assert (
         agent_runner.get_event_of_type(EventConfiguredA).payload == payload
-    ), "Agent received incorrect start step config data"
+    ), "Agent received incorrect start step Configs data"
 
 
 @then(parsers.parse('an EventB event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert (
         agent_runner.get_event_of_type(EventConfiguredB).payload == payload
-    ), "Agent received incorrect agent config data"
+    ), "Agent received incorrect agent Configs data"
 
 
 @then("a StopEvent is present")

@@ -60,7 +60,7 @@ export const useEventsStore = defineStore('events', () => {
     },
   )
 
-  // Combine, deduplicate, and sort events by creation date
+  // Combine, deduplicate, and sort Events by creation date
   const events = computed<WSServerEvent[]>(() => {
     const allEvents = [...newEvents.value]
     if (oldEvents.value) {
@@ -72,7 +72,7 @@ export const useEventsStore = defineStore('events', () => {
       uniqueEventsMap.set(event.event_data.event_id, event)
     })
     const uniqueEvents = Array.from(uniqueEventsMap.values())
-    // Sort events by creation date
+    // Sort Events by creation date
     return uniqueEvents.sort(
       (a, b) => a.event_data.created_at - b.event_data.created_at,
     )

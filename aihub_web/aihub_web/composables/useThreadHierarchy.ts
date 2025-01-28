@@ -79,7 +79,7 @@ export const useThreadHierarchy = (thread_id: string) => {
       run.events.push(event)
     }
 
-    // Sort events within runs, runs within displays, and displays themselves
+    // Sort Events within runs, runs within displays, and displays themselves
     for (const display of displayMap.values()) {
       for (const run of display.runs) {
         run.events.sort(

@@ -27,19 +27,19 @@ logger = logging.getLogger(__name__)
 class AgentRunner:
     """
     Manages the lifecycle of an agent, connecting it to NATS/JetStream, subscribing to event streams,
-    and orchestrating the dispatch of events to the agent's steps via the Dispatcher.
+    and orchestrating the dispatch of Events to the agent's steps via the Dispatcher.
 
     ### Why AgentRunner?
     In complex AI workflows, agents:
-    - Receive events (like StartEvent) from distributed sources.
+    - Receive Events (like StartEvent) from distributed sources.
     - Respond to discovery requests (to expose their capabilities).
     - Handle incoming ControlEvents that trigger steps.
 
     The AgentRunner brings these elements together. It:
     - Connects to NATS and JetStream.
-    - Sets up subscriptions for discovery and control events.
-    - Hooks into the Dispatcher to execute steps in response to events.
-    - Provides methods to start/stop the agent and send initial events (like StartEvent).
+    - Sets up subscriptions for discovery and control Events.
+    - Hooks into the Dispatcher to execute steps in response to Events.
+    - Provides methods to start/stop the agent and send initial Events (like StartEvent).
 
     By encapsulating these concerns, AgentRunner simplifies the startup and operation of an agent in
     a distributed environment.
@@ -47,20 +47,20 @@ class AgentRunner:
     ### Key Responsibilities
     - **Discovery Handling:**
       On receiving a `DiscoveryRequestEvent`, responds with an `AgentDiscoveryResponseEvent` describing
-      the agent’s start events and configuration.
+      the agent’s start Events and configuration.
     - **Control Event Handling:**
-      Subscribes to control events and delegates them to the Dispatcher for step execution.
+      Subscribes to control Events and delegates them to the Dispatcher for step execution.
     - **Lifecycle Management:**
       Provides `start()`, `stop()`, and `run_forever()` methods to manage the agent’s runtime.
     - **Sending Initial Events:**
-      `send_event()` can send a `StartEvent` or other events to kick off a run.
+      `send_event()` can send a `StartEvent` or other Events to kick off a run.
 
     ### Example
     ```python
     runner = AgentRunner(servers=["nats://localhost:4222"], agent_type=MyAgent, agent_config=my_config)
     await runner.run_forever()
     ```
-    This code connects to NATS, listens for events, and processes them indefinitely until stopped.
+    This code connects to NATS, listens for Events, and processes them indefinitely until stopped.
     """
 
     def __init__(
@@ -95,7 +95,7 @@ class AgentRunner:
         Handles discovery requests by returning an `AgentDiscoveryResponseEvent` that includes:
         - Agent class, ID
         - Agent configuration
-        - Specs for start events (the events that can initiate a run)
+        - Specs for start Events (the Events that can initiate a run)
 
         If the discovery request doesn't match this agent (i.e., different agent_class/agent_id), it ignores it.
         """
@@ -126,7 +126,7 @@ class AgentRunner:
     async def start(self):
         """
         Connects to NATS, sets up JetStream, initializes the Dispatcher and subscribers,
-        and starts listening for events.
+        and starts listening for Events.
 
         - Starts the discovery subscriber so other services can discover this agent's capabilities.
         - Starts the control event subscriber to handle workflow execution.
@@ -159,7 +159,7 @@ class AgentRunner:
         )
         await self.discovery_event_subscriber.start()
 
-        # Subscribe to control events
+        # Subscribe to control Events
         self.control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,

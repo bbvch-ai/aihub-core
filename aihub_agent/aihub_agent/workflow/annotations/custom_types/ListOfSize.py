@@ -8,7 +8,7 @@ class ListOfSize(Generic[T]):
     A generic container that enforces a fixed size on a list of items.
 
     ### Why This Class?
-    Some workflow steps or functions may require a fixed number of events or inputs.
+    Some workflow steps or functions may require a fixed number of Events or inputs.
     `ListOfSize` ensures that the provided list has exactly the required length,
     raising a ValueError otherwise. This makes the contract between code components explicit
     and helps detect configuration errors early.

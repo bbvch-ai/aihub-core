@@ -8,6 +8,7 @@ from aihub_agent.workflow.annotations.extractors.extract_function_events import 
 
 logger = logging.getLogger(__name__)
 
+
 def step(
     *,
     max_executions_per_run: Annotated[
@@ -24,7 +25,7 @@ def step(
     ### Why This Decorator?
     In a workflow system, steps are special functions that:
     - Consume certain event types
-    - Optionally produce events
+    - Optionally produce Events
     - Have constraints like maximum execution count or custom naming/descriptions
     - Control the workflow's behavior on errors
 
@@ -74,7 +75,7 @@ def step(
         setattr(func, "_step_description", description)
         setattr(func, "__signature__", inspect.signature(func))
 
-        logger.debug(f"Decorated step: {func.__name__} with input events: {input_events}")
+        logger.debug(f"Decorated step: {func.__name__} with input Events: {input_events}")
         logger.debug(f"Decorated step: {func.__name__} with input event mapping: {input_event_mapping}")
         logger.debug(f"Decorated step: {func.__name__} with parameter optional map: {parameter_optional_map}")
         logger.debug(f"Decorated step: {func.__name__} with size requirements: {size_requirements}")

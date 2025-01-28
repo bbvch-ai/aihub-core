@@ -31,17 +31,17 @@ logger = logging.getLogger(__name__)
 class Dispatcher:
     """
     The Dispatcher orchestrates the execution of workflow steps within an agent run. It acts as the
-    central coordinator that listens to events, determines which steps should fire, injects the right
+    central coordinator that listens to Events, determines which steps should fire, injects the right
     parameters into those steps, and handles the lifecycle of runs (start, error, stop).
 
     ### Why the Dispatcher?
-    A workflow often involves multiple steps that depend on certain events. The Dispatcher ties all these
+    A workflow often involves multiple steps that depend on certain Events. The Dispatcher ties all these
     concepts together:
-    - It receives events (like `StartEvent`, `StopEvent`, custom `ControlEvent`s).
-    - Finds which steps are "ready" to execute based on available events and step definitions.
-    - Fetches needed contextual data (thread/run contexts, previous events) and constructs the arguments
+    - It receives Events (like `StartEvent`, `StopEvent`, custom `ControlEvent`s).
+    - Finds which steps are "ready" to execute based on available Events and step definitions.
+    - Fetches needed contextual data (thread/run contexts, previous Events) and constructs the arguments
       for the steps.
-    - Executes steps and publishes any resulting events, updating the run’s state as needed.
+    - Executes steps and publishes any resulting Events, updating the run’s state as needed.
 
     By centralizing these responsibilities, the Dispatcher ensures consistent, reliable orchestration of
     complex multi-step workflows.
@@ -56,7 +56,7 @@ class Dispatcher:
 
     2. **Step Execution Logic:**
        Steps might have constraints:
-       - Input events that must be present in certain quantities.
+       - Input Events that must be present in certain quantities.
        - Optional parameters.
        - Maximum number of executions per run.
        The Dispatcher enforces these rules in `is_step_ready` and `execute_step`.
@@ -71,13 +71,13 @@ class Dispatcher:
     ### Lifecycle
     A typical flow might be:
     - On a `StartEvent`, the run is initialized, contexts are set, tracing begins.
-    - Incoming events trigger checks for steps that can run.
-    - Steps run and produce new events, potentially enabling further steps.
+    - Incoming Events trigger checks for steps that can run.
+    - Steps run and produce new Events, potentially enabling further steps.
     - On completion (`StopEvent`), the Dispatcher cleans up run-level data.
 
     ### Integration with Other Components
-    - **Agent & Steps:** The Dispatcher uses the agent’s defined steps and their annotated metadata (like required events).
-    - **Publishers & Stores:** It uses JSPublisher to publish resulting events, and distributed stores to fetch/update events or steps info.
+    - **Agent & Steps:** The Dispatcher uses the agent’s defined steps and their annotated metadata (like required Events).
+    - **Publishers & Stores:** It uses JSPublisher to publish resulting Events, and distributed stores to fetch/update Events or steps info.
     - **Tracing & Localization:** Integrates with `RunTraceCoordinator` for metrics and `AgentLocaleHandler` for localized outputs.
 
     """
@@ -174,12 +174,12 @@ class Dispatcher:
         event: Annotated[ControlEvent, "The triggering event."],
     ) -> bool:
         """
-        Checks if a step can be run given the current state (events available, max executions, etc.).
+        Checks if a step can be run given the current state (Events available, max executions, etc.).
 
         It verifies:
         - The run hasn't crashed.
         - The step hasn't exceeded its max execution count.
-        - All required input events are available in the needed quantities.
+        - All required input Events are available in the needed quantities.
 
         Returns True if the step can execute, False otherwise.
         """
@@ -201,7 +201,7 @@ class Dispatcher:
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
 
         events = await self.event_store.get_all_events(run_id, before=event.created_at)
-        # For each parameter, check if we have enough events
+        # For each parameter, check if we have enough Events
         for argument_name, event_types in input_event_mapping.items():
             logger.debug(f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_types}")
             required_size = size_requirements.get(argument_name)
@@ -212,13 +212,13 @@ class Dispatcher:
             # If a fixed size is required, verify count
             if required_size is not None and available_events_count < required_size:
                 logger.debug(
-                    f"[{step_method.__name__}] Not enough events for '{argument_name}'. "
+                    f"[{step_method.__name__}] Not enough Events for '{argument_name}'. "
                     f"Needed {required_size}, got {available_events_count}."
                 )
                 return False
             elif required_size is None and not available_events_count and not is_optional:
-                # Required events not found
-                logger.debug(f"[{step_method.__name__}] Missing required argument '{argument_name}' events.")
+                # Required Events not found
+                logger.debug(f"[{step_method.__name__}] Missing required argument '{argument_name}' Events.")
                 return False
             elif not available_events_count and is_optional:
                 logger.debug(
@@ -234,7 +234,7 @@ class Dispatcher:
         step_method: Annotated[Callable, "The step method we're preparing arguments for."],
         events: Annotated[
             Dict[str, List[ControlEvent]],
-            "All events for this run, keyed by event_type_name.",
+            "All Events for this run, keyed by event_type_name.",
         ],
         trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."],
     ) -> Optional[Any]:
@@ -242,9 +242,9 @@ class Dispatcher:
         Finds the appropriate value for a given step parameter.
 
         Logic:
-        - Gathers all events that match the parameter's required event types.
+        - Gathers all Events that match the parameter's required event types.
         - If a fixed-size list is required, returns a `ListOfSize` if exact count matches.
-        - If a list is required (but not fixed-size), returns all matching events.
+        - If a list is required (but not fixed-size), returns all matching Events.
         - If a single event is expected, returns the trigger event if it matches, else the latest matching event.
 
         Returns None if no suitable event is found and the parameter is optional.
@@ -253,7 +253,7 @@ class Dispatcher:
         size_requirements = getattr(step_method, "_size_requirements", {})
         required_size = size_requirements.get(param.name)
 
-        # Gather all matching events
+        # Gather all matching Events
         all_matching_events: List[ControlEvent] = []
         for event_type in event_types:
             event_list = events.get(event_type.__name__, [])
@@ -262,7 +262,7 @@ class Dispatcher:
         if not all_matching_events:
             return None
 
-        # Sort events by creation time for deterministic ordering
+        # Sort Events by creation time for deterministic ordering
         all_matching_events.sort(key=lambda x: x.created_at)
 
         # Handle fixed-size requirements
@@ -294,9 +294,9 @@ class Dispatcher:
         """
         Executes a step method:
         1. Increments step execution count to avoid race conditions in distributed environments.
-        2. Constructs kwargs by retrieving appropriate events and other dependencies.
+        2. Constructs kwargs by retrieving appropriate Events and other dependencies.
         3. Calls the step method on a new agent instance.
-        4. Publishes any output events from the step.
+        4. Publishes any output Events from the step.
 
         On errors:
         - Logs the exception.
@@ -368,7 +368,7 @@ class Dispatcher:
                 traceback.print_exc()
                 return
 
-            # If the step returns events, publish them
+            # If the step returns Events, publish them
             if result:
                 if not isinstance(result, list):
                     result = [result]
@@ -395,7 +395,7 @@ class Dispatcher:
     ) -> AgentThreadTopicManager:
         """
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
-        Useful for publishing thread-scoped events.
+        Useful for publishing thread-scoped Events.
         """
         return AgentThreadTopicManager.from_agent_instance_topic_manager(
             topic_manager=self.topic_manager,

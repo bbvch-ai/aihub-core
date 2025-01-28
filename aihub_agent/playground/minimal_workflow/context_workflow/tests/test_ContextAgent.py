@@ -27,7 +27,7 @@ def _():
     )
 
 
-@when(parsers.parse('two start events are sent with payload "{payload1}" and "{payload2}" for the same thread'))
+@when(parsers.parse('two start Events are sent with payload "{payload1}" and "{payload2}" for the same thread'))
 @async_test
 async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
     thread_id = str(ObjectId())

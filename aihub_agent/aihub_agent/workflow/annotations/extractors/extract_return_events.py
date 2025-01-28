@@ -16,15 +16,15 @@ def extract_return_events(
     Determine which event types a function produces based on its return annotation.
 
     ### Why This Function?
-    Just like parameters can indicate which events a function consumes, the return annotation can
-    suggest which events a function emits. By examining the return type (which might be a single event,
-    a union of events, optional events, or event collections), we can understand what kind of output
+    Just like parameters can indicate which Events a function consumes, the return annotation can
+    suggest which Events a function emits. By examining the return type (which might be a single event,
+    a union of Events, optional Events, or event collections), we can understand what kind of output
     the workflow step may produce.
 
     ### How It Works
     - Retrieves the function’s return annotation from `func.__signature__.return_annotation`.
     - Passes that annotation to `extract_event_types` to handle unions, optionals, fixed-size lists, etc.
-    - Returns a set of `BaseEvent` subclasses that represent possible output events.
+    - Returns a set of `BaseEvent` subclasses that represent possible output Events.
 
     ### Note
     If the function lacks a return annotation (or if it's `inspect._empty`), this method returns an empty set.

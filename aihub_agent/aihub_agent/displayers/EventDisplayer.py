@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class EventDisplayer:
     """
-    A utility class responsible for publishing display-related events (e.g., chunks of output,
+    A utility class responsible for publishing display-related Events (e.g., chunks of output,
     reasoning thoughts, cost metrics) to the event stream. It integrates with tracing and ensures
     that each piece of output is captured as a `DisplayEvent` (or subclass) and sent to the corresponding
     subject.
@@ -28,9 +28,9 @@ class EventDisplayer:
     ### Why EventDisplayer?
     In conversational or generative AI workflows, you may produce intermediate outputs, reasoning steps,
     or cost metrics that should be visible in logs or UI streams. EventDisplayer:
-    - Publishes these outputs as display events.
+    - Publishes these outputs as display Events.
     - Flushes tokens or partial responses incrementally (like streaming chat responses).
-    - Allows other services or UIs to subscribe to these display events and show them to users or operators.
+    - Allows other services or UIs to subscribe to these display Events and show them to users or operators.
 
     ### Tracing Integration
     Each display event is recorded in the current OTel span, adding trace attributes for observability.
@@ -44,7 +44,7 @@ class EventDisplayer:
 
     def __init__(
         self,
-        publisher: Annotated[JSPublisher, "Publisher for sending events to JetStream"],
+        publisher: Annotated[JSPublisher, "Publisher for sending Events to JetStream"],
         topic_manager: Annotated[AgentThreadTopicManager, "Manages event subjects for a thread"],
     ):
         self.publisher = publisher
@@ -115,7 +115,7 @@ class EventDisplayer:
         ],
     ) -> LLMEvent:
         """
-        Stream the LLM's response incrementally as chunked events, then return a final LLMEvent encapsulating
+        Stream the LLM's response incrementally as chunked Events, then return a final LLMEvent encapsulating
         the entire output.
 
         ### How it Works

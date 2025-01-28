@@ -113,7 +113,7 @@ class RunTraceCoordinator:
     async def _end_span_on_event(self, topic: AgentTopic, span: Span):
         """
         Waits for a StopEvent or ExceptionEvent to conclude the run’s span, meanwhile accumulating output
-        (like chunks) from events that arrive during the run.
+        (like chunks) from Events that arrive during the run.
         """
         response_aggregate = ""
 

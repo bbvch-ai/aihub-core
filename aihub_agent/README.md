@@ -167,7 +167,7 @@ async def limit_chat_history_step(self, event: StartEvent) -> LimitChatHistoryEv
     """
     limited_chat_history = limit_chat_history(
         chat_history=event.messages,
-        number_of_input_tokens=2048,  # Example value; could be from config
+        number_of_input_tokens=2048,  # Example value; could be from Configs
     )
     return LimitChatHistoryEvent(limited_history=limited_chat_history)
 ```
@@ -208,7 +208,7 @@ async def limit_chat_history_step(
     limit_chat_history_step_config: LimitChatHistoryStepConfig,
 ) -> LimitChatHistoryEvent:
     """
-    Reduces the chat history to a token limit defined in the step config.
+    Reduces the chat history to a token limit defined in the step Configs.
     """
     limited_chat_history = limit_chat_history(
         chat_history=event.messages,

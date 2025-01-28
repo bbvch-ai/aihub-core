@@ -640,7 +640,7 @@ async def main():
     )
 
     # The run_forever() method starts the agent and keeps it running.
-    # The agent now listens for events. You can trigger events (e.g., StartEvents)
+    # The agent now listens for Events. You can trigger Events (e.g., StartEvents)
     # by publishing them to NATS or using the testing utilities to simulate them.
     await runner.run_forever()
 

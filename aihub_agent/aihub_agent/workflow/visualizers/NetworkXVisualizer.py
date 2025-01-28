@@ -86,7 +86,7 @@ class WorkflowVisualizer:
 
     def _map_events_to_steps(self, steps):
         """
-        Map events to the steps that consume and produce them.
+        Map Events to the steps that consume and produce them.
         """
         event_consumers = {}
         step_outputs = {}

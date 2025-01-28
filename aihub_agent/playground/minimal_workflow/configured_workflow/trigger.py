@@ -22,8 +22,8 @@ async def main():
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a configured agent"),
             system_prompt=LocaleString(en="You are an agent"),
-            some_agent_value="Value on agent config",
-            start_step_config=StartStepConfig(some_step_value="Value on step config"),
+            some_agent_value="Value on agent Configs",
+            start_step_config=StartStepConfig(some_step_value="Value on step Configs"),
         ),
     )
     async with runner.test_run() as topic:
