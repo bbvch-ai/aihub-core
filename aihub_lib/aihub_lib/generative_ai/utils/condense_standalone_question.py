@@ -34,7 +34,7 @@ def condense_standalone_question(
     if condense_prompt:
         condense_prompt_locale = LocaleHandler(t.locale).extract(condense_prompt, t.locale)
     else:
-        condense_prompt_locale = t("agent.prompt.condenser.standalone_question")
+        condense_prompt_locale = t("agents.prompt.condenser.standalone_question")
 
     response = llm.predict(
         prompt=PromptTemplate(condense_prompt_locale),

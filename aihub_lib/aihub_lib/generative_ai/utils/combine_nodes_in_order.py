@@ -36,7 +36,7 @@ def combine_nodes_in_order(
     if context_prompt:
         context_prompt_locale = LocaleHandler(locale_handler.locale).extract(context_prompt, locale_handler.locale)
     else:
-        context_prompt_locale = locale_handler("agent.prompt.rag_agent.context_prompt")
+        context_prompt_locale = locale_handler("agents.prompt.rag_agent.context_prompt")
     return ChatMessage(
         role=MessageRole.SYSTEM,
         content=context_prompt_locale.format(context_str="".join(documents)),

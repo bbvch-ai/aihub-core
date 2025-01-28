@@ -75,7 +75,7 @@ class RAGAgent(Agent):
         """
         Condenses the chat history and user query into a standalone question.
         """
-        await displayer.display_thought(t("agent.thought.condense_question"))
+        await displayer.display_thought(t("agents.thought.condense_question"))
         user_query = await run_context.get("user_query")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
@@ -98,7 +98,7 @@ class RAGAgent(Agent):
         """
         Retrieves relevant nodes from the knowledge base.
         """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
+        await displayer.display_thought(t("agents.thought.searching_knowledge"))
         embedding, _ = retrieve_step_config.embed_model.to_llama_index()
         nodes = retrieve_nodes(
             message=event.condensed_chat_message.content,
@@ -122,7 +122,7 @@ class RAGAgent(Agent):
         """
         Orders the retrieved nodes based on their source documents.
         """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
+        await displayer.display_thought(t("agents.thought.searching_knowledge"))
         ordered_nodes = combine_nodes_in_order(
             context_nodes=event.documents,
             locale_handler=t,
@@ -166,7 +166,7 @@ class RAGAgent(Agent):
         """
         Generates a response using the configured LLM.
         """
-        await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
+        await displayer.display_thought(t("agents.thought.write_answer_based_on_information"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, event.limited_history_with_context)
 

@@ -16,7 +16,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 class LLMSummarizer:
     def __init__(self, llm: LLM, locale: str = NODE_LANGUAGE_ENGLISH):
         self._llm = llm
-        self._summarize_prompt_template = PromptTemplate(t("agent.prompt.summarizer.summarize"), locale=locale)
+        self._summarize_prompt_template = PromptTemplate(t("agents.prompt.summarizer.summarize"), locale=locale)
 
     def summarize(self, text: str) -> str:
         response = self._llm.predict(self._summarize_prompt_template, text=text)
