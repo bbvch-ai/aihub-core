@@ -32,7 +32,7 @@ clean:
 
 test-cov:
 	@echo "Running tests in aihub_api with coverage..."
-	poetry run pytest --cov=aihub_api \
+	poetry run pytest --cov=. \
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml \
