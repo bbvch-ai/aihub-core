@@ -13,8 +13,26 @@ python = ">=3.11, <3.12"
 
 [tool.poetry.group.dev.dependencies]
 tomlkit = "^0.13.2"
-black = "^24.10.0"
+black = { extras = ["jupyter"], version = "^24.10.0" }
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''

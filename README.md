@@ -502,6 +502,11 @@ maintainability.
     - Ensure every microservice folder is configured with its own Poetry environment to avoid dependency conflicts. For
       example, if one microservice uses a specific version of a library, it won't interfere with others.
 
+5. **Add `aihub_lib` dependency to other services**:
+
+    - Go to **File > Settings > Project:\*\*\*\* > Project Dependencies**.
+    - Add `aihub_lib` as a dependency to each microservice project (`aihub_api`, `aihub_agent`, `aihub_pipeline`).
+
 ##### 2.2.2.1.1 Poetry Commands
 
 - `poetry install` to install the dependencies
@@ -549,10 +554,14 @@ Navigate to the `aihub_web` folder
         - Navigate to the `aihub_agent` directory.
         - Run the following command:
           ```bash
-          docker-compose up
+          docker compose up
           ```
           or simply click the green play button in PyCharm. This will start phoenix on localhost:6006, nats, and mongo
           DB.
+            - *Start Docker including the local milvus vector DB by running:*
+              ```bash
+              docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml up
+              ```
 
 ---
 
