@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from aihub_agent.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import (
     FewShotStepConfig,
 )

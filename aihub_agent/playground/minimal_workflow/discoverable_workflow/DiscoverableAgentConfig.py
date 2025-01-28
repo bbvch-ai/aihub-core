@@ -1,4 +1,4 @@
-from aihub_agent.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 
 
 class DiscoverableAgentConfig(AgentConfig):

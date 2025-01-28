@@ -4,7 +4,7 @@ import logging
 import traceback
 from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin
 
-from aihub_agent.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext

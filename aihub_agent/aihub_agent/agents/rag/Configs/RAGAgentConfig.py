@@ -1,4 +1,4 @@
-from aihub_agent.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
