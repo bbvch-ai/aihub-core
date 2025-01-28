@@ -3,6 +3,8 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
+    <option name="pathToExecutable" value="C:\Users\noahhermann\AppData\Local\Programs\Python\Python311\Scripts\black.exe" />
+    <option name="sdkName" value="Poetry (aihub_lib)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (aihub-core)" project-jdk-type="Python SDK" />
 </project>

@@ -1,0 +1,6 @@
+select_best_candidates:
+  candidates: |
+    Prompt goes here
+
+  doc_string: |
+    A list of candidates
