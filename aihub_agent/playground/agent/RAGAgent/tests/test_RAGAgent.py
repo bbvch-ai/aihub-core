@@ -170,7 +170,6 @@ def self_hosted_agent_config():
     drop_collection()
 
 
-@pytest.mark.azure
 @pytest.mark.usefixtures("azure_agent_config")
 @given("a RAGAgent runner with a valid azure configuration", target_fixture="agent_runner")
 def _(azure_agent_config):

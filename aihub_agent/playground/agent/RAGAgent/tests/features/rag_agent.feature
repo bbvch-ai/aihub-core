@@ -1,6 +1,7 @@
 Feature: RAG Agent
   Testing the RAGAgent steps in sequence with specific configuration
 
+  @azure
   Scenario: Test RAGAgent with valid azure configuration
     Given a RAGAgent runner with a valid azure configuration
     When the start event is sent with a user query "What is AI?"
