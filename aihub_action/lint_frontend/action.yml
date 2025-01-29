@@ -50,7 +50,7 @@ runs:
           echo "${{ inputs.private_ssh_key }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
           pnpm install --frozen-lockfile
       working-directory: ${{ inputs.working_directory }}
 
@@ -65,4 +65,3 @@ runs:
         github_token: ${{ inputs.github_token }}
         reporter: github-pr-review
         workdir: ${{ inputs.working_directory }}
-
