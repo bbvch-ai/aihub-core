@@ -16,7 +16,7 @@ from aihub_agent.agents.basic.FewShotAgent.events.StandaloneQuestionCondenserEve
 )
 from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 
 

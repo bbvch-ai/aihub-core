@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from aihub_agent.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import StartEventSpecs
 
 

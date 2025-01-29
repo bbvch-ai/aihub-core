@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from aihub_lib.nats.agents.IAgentConfig import IAgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent
 
 
@@ -41,7 +41,7 @@ class AgentDiscoveryResponseEvent(BaseEvent):
         ..., description="The class or category of the agent (e.g., a specific type of AI assistant)."
     )
     agent_id: str = Field(..., description="A unique identifier for the agent instance.")
-    agent_config: IAgentConfig = Field(
+    agent_config: AgentConfig = Field(
         ...,
         description="The agent's configuration object, containing details like the model used, temperature settings, or other domain-specific parameters.",
     )

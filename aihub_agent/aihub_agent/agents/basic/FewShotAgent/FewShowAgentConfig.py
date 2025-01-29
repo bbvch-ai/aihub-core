@@ -1,5 +1,5 @@
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -7,7 +7,7 @@ from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotS
 
 
 class FewShotAgentConfig(AgentConfig):
-    llm: AzureOpenAILLMConfig
+    llm: ChatLLMConfig
     few_shot: FewShotStepConfig
     condense_question_prompt: LocaleString = Field(
         ..., description="Prompt template for transforming a user query into a standalone question."

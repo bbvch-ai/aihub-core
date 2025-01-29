@@ -5,7 +5,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_agent.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     BaseEvent,

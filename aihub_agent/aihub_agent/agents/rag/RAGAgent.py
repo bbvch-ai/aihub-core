@@ -7,7 +7,7 @@ from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCo
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_agent.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question

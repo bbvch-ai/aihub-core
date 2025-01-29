@@ -3,6 +3,8 @@ from typing import List, Type
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
+from llama_index.llms.openai_like import OpenAILike
+from openai import NOT_GIVEN
 from pydantic import BaseModel, Field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -42,9 +44,15 @@ async def agent_description_guard(
         ]
     )
 
+    llm_kwargs = {}
+
+    if not llm.metadata.is_function_calling_model:
+        llm_kwargs["tool_choice"] = NOT_GIVEN
+
     result = llm.structured_predict(
         guard_result_factory(t),
         prompt,
+        llm_kwargs=llm_kwargs,
         agent_description=agent_description.in_locale(t.locale),
         user_query=user_query,
         history=history,

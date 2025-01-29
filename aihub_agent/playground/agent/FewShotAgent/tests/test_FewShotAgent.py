@@ -22,6 +22,11 @@ from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import 
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
+
+from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
+    SelfHostedLLMConfig,
+    SelfHostedLLMParameter,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -36,6 +41,40 @@ def agent_config_data():
     across steps in a single scenario.
     """
     return {"description": "", "few_shot_system_prompt": "", "few_shot_examples": []}
+
+
+@pytest.fixture
+def self_hosted_llm_config():
+    """
+    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
+    """
+    return SelfHostedLLMConfig(
+        name="unsloth/Llama-3.2-1B-Instruct",
+        base_url="http://localhost:8182/v1",
+        api_key=None,
+        context_size=512,
+        is_chat_model=True,
+        is_function_calling_model=False,
+        default_parameter=SelfHostedLLMParameter(
+            logit_bias=None,
+            logprobs=None,
+        ),
+    )
+
+
+@pytest.fixture
+def azure_llm_config():
+    """
+    Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
+    """
+    return AzureOpenAILLMConfig(
+        name="gpt-4o",
+        base_url="https://aihub-dev-openai-che.openai.azure.com/",
+        api_version="2024-08-01-preview",
+        prompt_tokens_costs_per_thousand=0.0045,
+        completion_tokens_costs_per_thousand=0.0133,
+        default_parameter=AzureOpenAIParameter(temperature=0.0),
+    )
 
 
 @given("I have an empty agent config")
@@ -71,8 +110,9 @@ def given_few_shot_examples(agent_config_data, datatable):
         agent_config_data["few_shot_examples"].append({"user": user_text, "agent": agent_text})
 
 
-@given("I create a FewShotAgent runner with the scenario config", target_fixture="agent_runner")
-def given_create_few_shot_agent_runner(agent_config_data):
+@pytest.mark.usefixtures("azure_agent_config")
+@given("I create a FewShotAgent runner with the config with valid azure configuration", target_fixture="agent_runner")
+def _(agent_config_data, azure_llm_config):
     """
     Finally build the actual AgentTestRunner now that we have
     description, system prompt, and examples in scenario_data.
@@ -87,14 +127,44 @@ def given_create_few_shot_agent_runner(agent_config_data):
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
         system_prompt=LocaleString(en="You're an agent..."),
-        llm=AzureOpenAILLMConfig(
-            name="gpt-4o",
-            api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
-            api_version="2024-08-01-preview",
-            prompt_tokens_costs_per_thousand=0.0045,
-            completion_tokens_costs_per_thousand=0.0133,
-            default_parameter=AzureOpenAIParameter(temperature=0.0),
+        llm=azure_llm_config,
+        number_of_input_tokens=100000,
+        condense_question_prompt=LocaleString(
+            en="""
+        Return the original user message noting a movie title.
+        The original user message was:
+        {question}
+        """
         ),
+        few_shot=FewShotStepConfig(
+            few_shot_examples=examples,
+            few_shot_system_prompt=LocaleString(en=agent_config_data["few_shot_system_prompt"]),
+        ),
+    )
+
+    return AgentTestRunner(agent_type=FewShotAgent, agent_config=config)
+
+
+@pytest.mark.usefixtures("self_hosted_agent_config")
+@given(
+    "I create a FewShotAgent runner with the config with valid self hosted configuration", target_fixture="agent_runner"
+)
+def _(agent_config_data, self_hosted_llm_config):
+    """
+    Finally build the actual AgentTestRunner now that we have
+    description, system prompt, and examples in scenario_data.
+    """
+    examples = [
+        FewShotExample(user=LocaleString(en=example["user"]), agent=LocaleString(en=example["agent"]))
+        for example in agent_config_data["few_shot_examples"]
+    ]
+
+    config = FewShotAgentConfig(
+        agent_id="few_shot_agent",
+        name=LocaleString(en="FewShotAgent"),
+        description=LocaleString(en=agent_config_data["description"]),
+        system_prompt=LocaleString(en="You're an agent..."),
+        llm=self_hosted_llm_config,
         number_of_input_tokens=100000,
         condense_question_prompt=LocaleString(
             en="""
@@ -115,7 +185,7 @@ def given_create_few_shot_agent_runner(agent_config_data):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=30) as topic:
+    async with agent_runner.test_run(delay_before_stop=60) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=StartEvent(locale="en", messages=[ChatMessage(content=query, role=MessageRole.USER)]),
