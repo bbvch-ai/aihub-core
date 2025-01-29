@@ -11,6 +11,16 @@ inputs:
   docker_compose_paths:
     description: 'Comma-separated list of Docker Compose file paths (empty if not needed)'
     required: false
+  azure_subscription_name:
+    description: 'Azure subscription name'
+    required: true
+  environment:
+    description: 'Environment name'
+    required: true
+  app_name:
+    description: 'App name for azure'
+  region_short:
+    description: 'Short region name for azure'
 
 runs:
   using: "composite"
@@ -81,10 +91,10 @@ runs:
 
     - name: Run Tests with Coverage and Generate Report
       env:
-        AZURE_SUBSCRIPTION_NAME: ${{ secrets.AZURE_SUBSCRIPTION_NAME }}
-        ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
-        APP_NAME: ${{ secrets.APP_NAME }}
-        REGION_SHORT: ${{ secrets.REGION_SHORT }}
+        AZURE_SUBSCRIPTION_NAME: ${{ inputs.azure_subscription_name }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        APP_NAME: ${{ inputs.app_name }}
+        REGION_SHORT: ${{ inputs.region_short }}
       shell: bash
       run: |
         if poetry run pytest --cov=. \
