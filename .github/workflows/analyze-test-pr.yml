@@ -105,5 +105,5 @@ jobs:
           working_directory: ${{ matrix.folder }}
           sonar_project_key: ${{ matrix.sonar_project_key }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          sonarcloud_token: ${{ secrets.SONARCLOUD_TOKEN }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
 
