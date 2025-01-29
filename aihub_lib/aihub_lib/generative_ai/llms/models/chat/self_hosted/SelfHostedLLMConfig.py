@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, Optional, Tuple, Callable, List
+from typing import Annotated, Callable, Dict, List, Optional, Tuple
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
