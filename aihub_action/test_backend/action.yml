@@ -80,6 +80,11 @@ runs:
       working-directory: ${{ inputs.working_directory }}
 
     - name: Run Tests with Coverage and Generate Report
+      env:
+        AZURE_SUBSCRIPTION_NAME: ${{ secrets.AZURE_SUBSCRIPTION_NAME }}
+        ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+        APP_NAME: ${{ secrets.APP_NAME }}
+        REGION_SHORT: ${{ secrets.REGION_SHORT }}
       shell: bash
       run: |
         if poetry run pytest --cov=. \

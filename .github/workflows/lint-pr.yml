@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   lint-backend:
+    name: Lint Backend
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
 
