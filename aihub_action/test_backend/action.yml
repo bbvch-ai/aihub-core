@@ -11,16 +11,10 @@ inputs:
   docker_compose_paths:
     description: 'Comma-separated list of Docker Compose file paths (empty if not needed)'
     required: false
-  azure_subscription_name:
-    description: 'Azure subscription name'
-    required: true
-  environment:
-    description: 'Environment name'
-    required: true
-  app_name:
-    description: 'App name for azure'
-  region_short:
-    description: 'Short region name for azure'
+  use_local_core:
+    description: 'Use local core'
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
@@ -76,6 +70,7 @@ runs:
       run: poetry install --no-interaction --no-root
 
     - name: Use Local Core
+      if: inputs.use_local_core == 'true'
       shell: bash
       run: poetry run make use-local-core
 
@@ -90,14 +85,9 @@ runs:
       working-directory: ${{ inputs.working_directory }}
 
     - name: Run Tests with Coverage and Generate Report
-      env:
-        AZURE_SUBSCRIPTION_NAME: ${{ inputs.azure_subscription_name }}
-        ENVIRONMENT: ${{ inputs.environment }}
-        APP_NAME: ${{ inputs.app_name }}
-        REGION_SHORT: ${{ inputs.region_short }}
       shell: bash
       run: |
-        if poetry run pytest --cov=. \
+        if poetry run pytest -m "not azure" --cov=. \
                              --cov-report=xml:coverage.xml \
                              --cov-report=term-missing \
                              --junitxml=pytest.xml; then
