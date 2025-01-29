@@ -50,7 +50,7 @@ Agents require a configuration file to define their settings:
 <summary>Example</summary>
 
 ```python
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from pydantic import Field
 
 
@@ -197,7 +197,7 @@ via the main `AgentConfig`. Always give your Pydantic fields **valuable** descri
 ```python
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.workflow.decorators import step
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig, StepConfig
+from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from pydantic import Field
 
 
