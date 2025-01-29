@@ -1,7 +1,8 @@
 from typing import Dict, Optional, Type
 
-from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import BaseModel, Field
+
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
 class StepConfig(BaseModel):

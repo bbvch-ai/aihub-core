@@ -1,3 +1,4 @@
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.agent_description_guard import agent_description_guard
 from aihub_lib.generative_ai.prompting.few_shot.create_few_shot_messages import create_few_shot_messages
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
@@ -16,7 +17,6 @@ from aihub_agent.agents.basic.FewShotAgent.events.StandaloneQuestionCondenserEve
 )
 from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.workflow.decorators.step import step
 
 

@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.context.BaseContext import BaseContext
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
@@ -21,7 +22,6 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_agent.tracing.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
 

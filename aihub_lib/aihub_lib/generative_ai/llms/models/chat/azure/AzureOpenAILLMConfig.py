@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, List, Optional, Tuple
 
 import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider

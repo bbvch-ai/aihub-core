@@ -1,4 +1,4 @@
-from typing import List, Callable
+from typing import Callable, List
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.memory import ChatMemoryBuffer

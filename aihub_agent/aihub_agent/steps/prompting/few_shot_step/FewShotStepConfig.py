@@ -1,9 +1,8 @@
 from typing import List
 
+from aihub_lib.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.i18n.LocaleString import LocaleString
-
-from aihub_lib.agents.AgentConfig import StepConfig
 
 
 class FewShotStepConfig(StepConfig):
