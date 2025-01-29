@@ -1,4 +1,5 @@
 condense_question: "Stelle Anfrage in Kontext der Konversation"
+decompose_question: "Zerlege Anfrage in mehrere Teile"
 write_answer_based_on_information: "Schreibe eine Antwort basierend auf den Informationen"
 searching_knowledge: "Suche nach Wissen"
 preparing_knowledge: "Wissen wird aufbearbeitet"

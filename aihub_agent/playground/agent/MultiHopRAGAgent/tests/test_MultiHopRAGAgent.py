@@ -8,7 +8,7 @@ from aihub_agent.agents.rag.Events.DecomposeQueryEvent import DecomposeQueryEven
 from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.rag.MultiHopRAGAgent import MultiHopRAGAgent
+from aihub_agent.agents.rag.MultiHopRAGAgent.MultiHopRAGAgent import MultiHopRAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -27,7 +27,10 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 scenarios("../tests/features/multi_hop_rag_agent.feature")
 
 
-@given(parsers.parse('a MultiHopRAGAgent runner with a valid configuration with "{hops:d}" hops'), target_fixture="agent_runner")
+@given(
+    parsers.parse('a MultiHopRAGAgent runner with a valid configuration with "{hops:d}" hops'),
+    target_fixture="agent_runner",
+)
 def _(hops: int):
     return AgentTestRunner(
         agent_type=MultiHopRAGAgent,
@@ -70,9 +73,13 @@ def _(hops: int):
                 Given the following conversation between a user and an AI assistant and a follow-up question from the user,
                 rephrase the follow-up question into multiple questions.
 
-                Chat history:
+                <chat_history>
                 {chat_history}
-                Follow-up input: {question}
+                </chat_history>
+                
+                <question>
+                {question}
+                </question>
                 Multiple questions:"""
             ),
             context_prompt=LocaleString(
@@ -96,10 +103,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(
-                messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                locale="en"
-            ),
+            start_event=StartEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)], locale="en"),
         )
 
 
@@ -113,12 +117,14 @@ def _(agent_runner: AgentTestRunner):
     assert agent_runner.get_event_of_type(LimitChatHistoryEvent), "Agent did not produce LimitChatHistoryEvent"
 
 
-@then(parsers.parse('"{count:d}" DecomposeQueryEvent are present'))
+@then(parsers.parse('"{count:d}" DecomposeQueryEvent are present and are not the same'))
 def _(agent_runner: AgentTestRunner, count: int):
     decompose_events = agent_runner.get_events_of_type(DecomposeQueryEvent)
-
+    queries = [event.decomposed_query.content for event in decompose_events]
     assert len(decompose_events) == count, f"Expected {count} decomposed questions found {len(decompose_events)}"
-    assert decompose_events[0].decomposed_chat_history.content, "No decomposed questions found"
+    assert decompose_events[0].decomposed_query.content, "No decomposed questions found"
+    assert len(set(queries)) == count, "Queries are not all unique."
+
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
 def _(agent_runner: AgentTestRunner, count: int):

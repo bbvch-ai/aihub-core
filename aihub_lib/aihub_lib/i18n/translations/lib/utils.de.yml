@@ -1,0 +1,23 @@
+decompose_chat_history:
+  decompose_prompt: |
+    Gegeben die folgende Konversation zwischen einem Benutzer und einem KI-Assistenten und einer Folgefrage des
+    Benutzers, zerlege diese in mehrere Fragen.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+    
+    Multiple questions:
+
+  decompose_result:
+    questions: |
+      Eine Liste von %{hops} Fragen, welche von der Konversation abgeleitet werden können.
+    
+    docstring: |
+      Zerlege das folgende Gespräch zwischen einem Nutzer und einem KI-Assistenten in mehrere Fragen, die
+      für die Suche nach relevanten Dokumenten verwendet werden.
+    

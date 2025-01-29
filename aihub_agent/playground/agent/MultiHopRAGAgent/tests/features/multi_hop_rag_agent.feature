@@ -6,7 +6,7 @@ Feature: Multi Hop RAG Agent
     When the start event is sent with a user query "What is the AI Hub?"
     Then a StartEvent is present with payload "What is the AI Hub?"
     And a LimitChatHistoryEvent is present
-    And "3" DecomposeQueryEvent are present
+    And "3" DecomposeQueryEvent are present and are not the same
     And "6" RetrieverEvent are present
     And a ConcatenationEvent is present with concatenated documents
     And an InOrderNodeCombinerEvent is present with ordered context message

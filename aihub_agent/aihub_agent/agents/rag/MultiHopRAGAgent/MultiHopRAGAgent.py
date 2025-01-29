@@ -4,13 +4,13 @@ from llama_index.core.base.llms.types import MessageRole, ChatMessage
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.rag.Configs.MultiHopRAGAgentConfig import MultiHopRAGAgentConfig
+from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.rag.Events.ConcatenationEvent import ConcatenationEvent
 from aihub_agent.agents.rag.Events.DecomposeQueryEvent import DecomposeQueryEvent
 from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.displayers.EventDisplayer import EventDisplayer
-from aihub_agent.workflow.annotations.custom_types.ListOfSize import FixedList
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.decompose_chat_history import decompose_chat_history
@@ -21,7 +21,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events import StopEvent, LLMEvent
 from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent, Document
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 
 
@@ -77,9 +77,9 @@ class MultiHopRAGAgent(Agent):
         run_context: RunContext,
     ) -> List[DecomposeQueryEvent]:
         """
-        Condenses the chat history and user query into a standalone question.
+        Decomposes the chat history and user query into multiple queries.
         """
-        await displayer.display_thought(t("agent.thought.condense_question"))
+        await displayer.display_thought(t("agent.thought.decompose_query"))
         user_query = await run_context.get("user_query")
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             decomposed_chat_history = decompose_chat_history(
@@ -91,8 +91,7 @@ class MultiHopRAGAgent(Agent):
                 decompose_prompt=agent_config.decompose_chat_history_prompt,
             )
             events = [
-                DecomposeQueryEvent(decomposed_chat_history=decomposed_chat)
-                for decomposed_chat in decomposed_chat_history
+                DecomposeQueryEvent(decomposed_query=decomposed_chat) for decomposed_chat in decomposed_chat_history
             ]
             return events
 
@@ -100,7 +99,7 @@ class MultiHopRAGAgent(Agent):
     async def retrieve_step(
         self,
         event: DecomposeQueryEvent,
-        agent_config: MultiHopRAGAgentConfig,
+        retrieve_step_config: RetrieveStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
@@ -108,20 +107,22 @@ class MultiHopRAGAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = agent_config.retrieve_step_config.embed_model.to_llama_index()
+        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
         nodes = retrieve_nodes(
-            message=event.decomposed_chat_history.content,
-            index_name=agent_config.retrieve_step_config.index_name,
-            index_namespaces=agent_config.retrieve_step_config.index_namespaces,
-            query_mode=agent_config.retrieve_step_config.query_mode,
-            node_types=agent_config.retrieve_step_config.node_types,
-            retrieve_k=agent_config.retrieve_step_config.retrieve_k,
+            message=event.decomposed_query.content,
+            index_name=retrieve_step_config.index_name,
+            index_namespaces=retrieve_step_config.index_namespaces,
+            query_mode=retrieve_step_config.query_mode,
+            node_types=retrieve_step_config.node_types,
+            retrieve_k=retrieve_step_config.retrieve_k,
             embed_model=embedding,
         )
         return RetrieverEvent.from_nodes(nodes)
 
     @step()
-    async def concatenation_step(self, events: List[RetrieverEvent], agent_config: MultiHopRAGAgentConfig) -> ConcatenationEvent | None:
+    async def concatenation_step(
+        self, events: List[RetrieverEvent], agent_config: MultiHopRAGAgentConfig
+    ) -> ConcatenationEvent | None:
         """
         Concatenates the nodes from 5 retrieval steps into one list of nodes.
         """

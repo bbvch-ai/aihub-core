@@ -1,0 +1,23 @@
+decompose_chat_history:
+  decompose_prompt: |
+    Data la seguente conversazione tra un utente e un assistente AI e una domanda successiva
+    dell'utente, scomporre la domanda successiva in più domande.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+    
+    Più domande:
+
+  decompose_result:
+    questions: |
+      Un elenco di %{hops} domande che vengono scomposte dalla conversazione.
+    
+    docstring: |
+      Decomporre la seguente conversazione tra un utente e un assistente AI in più domande,
+      che verranno utilizzate per cercare documenti pertinenti.
+    

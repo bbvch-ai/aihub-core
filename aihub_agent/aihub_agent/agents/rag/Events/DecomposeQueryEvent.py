@@ -8,9 +8,7 @@ from llama_index.core.base.llms.types import ChatMessage
 
 class DecomposeQueryEvent(ControlEvent):
     """
-    Event to decompose chat messages into a multiple questions.
+    Event of decomposed chat messages into multiple queries.
     """
 
-    decomposed_chat_history: ChatMessage = Field(
-        ..., description="Decomposed chat history based on number of input tokens."
-    )
+    decomposed_query: ChatMessage = Field(..., description="Decomposed chat history into one of multiple queries.")
