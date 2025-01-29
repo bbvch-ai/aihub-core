@@ -82,11 +82,18 @@ runs:
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       run: |
-        poetry run pytest --cov=. \
-                          --cov-report=xml:coverage.xml \
-                          --cov-report=term-missing \
-                          --junitxml=pytest.xml \
-                          --ignore=playground/agent/RAGAgent/tests || echo "TEST_FAIL=true" >> $GITHUB_ENV
+        if poetry run pytest --cov=. \
+                             --cov-report=xml:coverage.xml \
+                             --cov-report=term-missing \
+                             --junitxml=pytest.xml; then
+          echo "Tests ran successfully."
+        else
+          if [ $? -eq 5 ]; then
+            echo "No tests found. Skipping..."
+          else
+            echo "TEST_FAIL=true" >> $GITHUB_ENV
+          fi
+        fi
       working-directory: ${{ inputs.working_directory }}
 
     - name: Stop Docker services (if started)
