@@ -1,0 +1,55 @@
+name: Lint Backend Code
+description: Run linter on python backend
+
+inputs:
+  github_token:
+    description: 'GitHub token for authentication'
+    required: true
+  private_ssh_key:
+    description: 'Private SSH key for accessing repositories'
+    required: true
+  working_directory:
+    description: 'Working directory for the linter'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: '1.8.3'
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.private_ssh_key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+        git config --global url."git@github.com:".insteadOf "https://github.com/"
+        poetry install --no-interaction --no-root --with dev
+        rm -rf ~/.ssh
+      working-directory: ${{ inputs.working_directory }}
+
+    - name: Lint
+      uses: reviewdog/action-black@v3
+      with:
+        github_token: ${{ inputs.github_token }}
+        reporter: github-pr-review
+        workdir: ${{ inputs.working_directory }}

@@ -16,9 +16,6 @@ jobs:
     name: Test Modules
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-    strategy:
-      matrix:
-        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline ]
 
     permissions:
       id-token: write
@@ -34,93 +31,25 @@ jobs:
       test_report_time: ${{ steps.test_report.outputs.time }}
       test_report_url_html: ${{ steps.test_report.outputs.url_html }}
 
+    strategy:
+      matrix:
+        include:
+          - module: aihub_lib
+            docker_compose_files: ""
+          - module: aihub_api
+            docker_compose_files: ""
+          - module: aihub_pipeline
+            docker_compose_files: ""
+          - module: aihub_agent
+            docker_compose_files: "playground/docker-compose.yml,playground/milvus-standalone-docker-compose.yml"
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Run Tests
+        uses: ./.github/actions/test
         with:
-          python-version: '3.11'
-
-      - name: Start Docker services
-        if: matrix.module == 'aihub_agent'
-        run: |
-          docker compose -f playground/docker-compose.yml -f playground/milvus-standalone-docker-compose.yml up -d
-        working-directory: aihub_agent
-
-      - name: Wait for Docker services to become healthy
-        if: matrix.module == 'aihub_agent'
-        run: |
-          while docker compose -p playground ps | grep -q -e "unhealthy" -e "health: starting" -e "Restarting"; do
-            echo "Waiting for all services to become healthy...";               
-            sleep 5;           
-          done
-          echo "All services are healthy!"
-
-
-      - name: Configure Git to use GitHub Token
-        run: |
-          git config --global url."https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.8.3
-
-      - name: Validate global poetry.lock
-        run: poetry lock --no-update
-
-      - name: Install global dependencies
-        run: poetry install --no-interaction --no-root
-
-      - name: Use local core
-        run: poetry run make use-local-core
-
-      - name: Validate poetry.lock
-        run: poetry lock --no-update
-        working-directory: ${{ matrix.module }}
-
-      - name: Install dependencies
-        run: poetry install --no-interaction --no-root
-        working-directory: ${{ matrix.module }}
-
-      - name: Run tests with coverage and generate report
-        run: |
-          make test-cov || echo "TEST_FAIL=true" >> $GITHUB_ENV
-        working-directory: ${{ matrix.module }}
-
-      # Stop Docker services after tests
-      - name: Stop Docker services
-        if: matrix.module == 'aihub_agent'
-        run: |
-          docker compose -f playground/docker-compose.yml -f playground/milvus-standalone-docker-compose.yml down
-        working-directory: aihub_agent
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.module }}-coverage-report
-          path: ${{ matrix.module }}/coverage.xml
-
-      - name: Upload pytest report
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.module }}-pytest-report
-          path: ${{ matrix.module }}/pytest.xml
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          files: |
-            ${{ matrix.module }}/pytest.xml
-
-      - name: Check if tests failed
-        if: env.TEST_FAIL == 'true'
-        run: |
-          echo "Tests have failed!"
-          exit 1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          working_directory: ${{ matrix.module }}
+          docker_compose_paths: ${{ matrix.docker_compose_files }}
 
   pytest-coverage-comment:
     name: Pytest Coverage Comment
@@ -139,30 +68,10 @@ jobs:
         module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline ]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download pytest reports
-        uses: actions/download-artifact@v4
+      - name: Coverage comment
+        uses: bbvch-ai/aihub-core/aihub_action/pytest_coverage_comment@hotfix/move-actions
         with:
-          name: ${{ matrix.module }}-pytest-report
-          path: ${{ matrix.module }}
-
-      - name: Download coverage reports
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.module }}-coverage-report
-          path: ${{ matrix.module }}
-
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          junitxml-path: ${{ matrix.module }}/pytest.xml
-          pytest-xml-coverage-path: ${{ matrix.module }}/coverage.xml
-          coverage-path-prefix: ${{ matrix.module }}
-          title: Tests for ${{ matrix.module }}
-          default-branch: main
-          report-only-changed-files: true
+          working_directory: ${{ matrix.module }}
 
   sonarcloud-scan:
     name: SonarCloud Scan
@@ -185,53 +94,15 @@ jobs:
             sonar_project_key: aihub-core_lib-core
           - folder: aihub_pipeline
             sonar_project_key: aihub-core_pipelines-core
+          - folder: aihub_web
+            sonar_project_key: aihub-core_aihub-web
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: SonarCloud Scan
+        uses: bbvch-ai/aihub-core/aihub_action/sonarcloud_scan@hotfix/move-actions
         with:
-          fetch-depth: 0
-
-      - name: Download Coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.folder }}-coverage-report
-          path: ${{ matrix.folder }}
-
-      - name: Run SonarCloud
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: ${{ matrix.folder }}
-          args: >
-            -Dsonar.python.coverage.reportPaths=${{ matrix.folder }}/coverage.xml
-            -Dsonar.projectKey=${{ matrix.sonar_project_key }}
-
-  aihub_web-scan:
-    name: SonarCloud Scan for aihub_web
-    runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run SonarCloud
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: aihub_web
-          args: >
-            -Dsonar.projectKey=aihub-core_aihub-web
-
+          working_directory: ${{ matrix.folder }}
+          sonar_project_key: ${{ matrix.sonar_project_key }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          sonarcloud_token: ${{ secrets.SONARCLOUD_TOKEN }}
 
