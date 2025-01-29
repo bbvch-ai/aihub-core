@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Run Tests
-        uses: ./.github/actions/test
+        uses: bbvch-ai/aihub-core/aihub_action/test_backend@hotfix/move-actions
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.module }}
