@@ -1,6 +1,5 @@
-from typing import List
+from typing import List, Callable
 
-import tiktoken
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.utilities.token_counting import TokenCounter
@@ -11,11 +10,9 @@ def limit_chat_history_with_context(
     system_messages: List[ChatMessage],
     context_messages: List[ChatMessage],
     last_user_message: ChatMessage,
-    tokenizer_for_model: str,
+    tokenizer: Callable[[str], List[int]],
     number_of_input_tokens: int,
 ) -> List[ChatMessage]:
-    tokenizer = tiktoken.encoding_for_model(tokenizer_for_model).encode
-
     minimum_tokens = TokenCounter(tokenizer).estimate_tokens_in_messages(
         [*system_messages, *context_messages, last_user_message]
     )

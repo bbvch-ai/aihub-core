@@ -32,7 +32,7 @@ class LLMConfig(BaseModel):
     An application may rely on a variety of LLM backends (like OpenAI models or Azure endpoints),
     each with different defaults or endpoints. LLMConfig captures:
     - The model name
-    - The API endpoint
+    - The base URL
     - Default parameters (via ModelParameter)
 
     This makes it easy to:
@@ -42,7 +42,7 @@ class LLMConfig(BaseModel):
     """
 
     name: str = Field(..., description="The name of the LLM or embedding model.")
-    api_endpoint: str = Field(..., description="The API endpoint to access the model.")
+    base_url: str = Field(..., description="The base URL of the LLM or embedding model.")
     default_parameter: ModelParameter = Field(..., description="The default parameters for the model.")
 
     @abstractmethod
