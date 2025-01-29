@@ -50,10 +50,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.module }}
           docker_compose_paths: ${{ matrix.docker_compose_files }}
-          azure_subscription_name: ${{ secrets.AZURE_SUBSCRIPTION_NAME }}
-          environment: ${{ secrets.ENVIRONMENT }}
-          app_name: ${{ secrets.APP_NAME }}
-          region_short: ${{ secrets.REGION_SHORT }}
+          azure_subscription_name: ${{ vars.AZURE_SUBSCRIPTION_NAME }}
+          environment: ${{ vars.ENVIRONMENT }}
+          app_name: ${{ vars.APP_NAME }}
+          region_short: ${{ vars.REGION_SHORT }}
 
   pytest-coverage-comment:
     name: Pytest Coverage Comment
