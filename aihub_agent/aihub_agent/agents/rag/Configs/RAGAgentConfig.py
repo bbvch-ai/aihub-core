@@ -1,9 +1,10 @@
 from pydantic import Field
 
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+
+from aihub_agent.aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 
 
 class RAGAgentConfig(AgentConfig):
