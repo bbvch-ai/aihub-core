@@ -29,74 +29,64 @@ runs:
         python-version: '3.11'
 
     - name: Start Docker services (if needed)
-      if: ${{ inputs.docker_compose_paths != '' }}
+      if: inputs.docker_compose_paths != ''
       shell: bash
       run: |
-        if [[ -n "${{ inputs.docker_compose_paths }}" ]]; then
-          IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-          DOCKER_COMPOSE_CMD="docker compose"
-          for file in "${COMPOSE_FILES[@]}"; do
-            DOCKER_COMPOSE_CMD+=" -f $file"
-          done
-          eval "$DOCKER_COMPOSE_CMD up -d"
-        else
-          echo "No Docker services to start."
-        fi
+        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
+        DOCKER_COMPOSE_CMD="docker compose"
+        for file in "${COMPOSE_FILES[@]}"; do
+          DOCKER_COMPOSE_CMD+=" -f $file"
+        done
+        eval "$DOCKER_COMPOSE_CMD up -d"
+      working-directory: ${{ inputs.working_directory }}
+
+    - name: Wait for Docker services to become healthy
+      if: inputs.docker_compose_paths != ''
+      shell: bash
+      run: |
+        while docker compose ps | grep -q -e "unhealthy" -e "health: starting" -e "Restarting"; do
+          echo "Waiting for all services to become healthy..."
+          sleep 5;
+        done
+        echo "All services are healthy!"
       working-directory: ${{ inputs.working_directory }}
 
     - name: Configure Git to Use GitHub Token
       shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
-        git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-
-    - name: Debug Git Authentication
-      shell: bash
-      run: |
-        echo "Testing GitHub Authentication..."
-        git ls-remote https://github.com/bbvch-ai/aihub-core.git || echo "❌ Failed to authenticate"
+        git config --global url."https://${{ github.actor }}:${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
 
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: 1.8.3
 
-    - name: Validate global poetry.lock
-      if: ${{ inputs.use_local_core == 'true' }}
+    - name: Validate Global Poetry Lock
       shell: bash
       run: poetry lock --no-update
 
-
-    - name: Install global dependencies
-      if: ${{ inputs.use_local_core == 'true' }}
+    - name: Install Global Dependencies
       shell: bash
       run: poetry install --no-interaction --no-root
 
-    - name: Use local core
-      if: ${{ inputs.use_local_core == 'true' }}
+    - name: Use Local Core
+      if: inputs.use_local_core == 'true'
       shell: bash
       run: poetry run make use-local-core
 
-    - name: Validate poetry.lock
+    - name: Validate Poetry Lock
       shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: poetry lock --no-update
       working-directory: ${{ inputs.working_directory }}
 
-    - name: Install dependencies
+    - name: Install Dependencies
       shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: poetry install --no-interaction --no-root
       working-directory: ${{ inputs.working_directory }}
-
 
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       run: |
-        set -e
         pytest_exit_code=0
         poetry run pytest -m "not azure" --cov=. \
                          --cov-report=xml:coverage.xml \
@@ -113,10 +103,17 @@ runs:
         fi
       working-directory: ${{ inputs.working_directory }}
 
+
     - name: Stop Docker services (if started)
-      if: ${{ inputs.docker_compose_paths != '' }}
+      if: inputs.docker_compose_paths != ''
       shell: bash
-      run: docker compose down
+      run: |
+        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
+        DOCKER_COMPOSE_CMD="docker compose"
+        for file in "${COMPOSE_FILES[@]}"; do
+          DOCKER_COMPOSE_CMD+=" -f $file"
+        done
+        eval "$DOCKER_COMPOSE_CMD down"
       working-directory: ${{ inputs.working_directory }}
 
     - name: Upload Coverage Report
@@ -130,3 +127,17 @@ runs:
       with:
         name: ${{ inputs.working_directory }}-pytest-report
         path: ${{ inputs.working_directory }}/pytest.xml
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          ${{ inputs.working_directory }}/pytest.xml
+
+    - name: Check if Tests Failed
+      if: env.TEST_FAIL == 'true'
+      shell: bash
+      run: |
+        echo "Tests have failed!"
+        exit 1
