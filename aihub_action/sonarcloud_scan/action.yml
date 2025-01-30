@@ -6,8 +6,8 @@ inputs:
     description: 'SonarCloud token for authentication'
     required: true
   sonar_project_key:
-      description: 'SonarCloud project key'
-      required: true
+    description: 'SonarCloud project key'
+    required: true
   working_directory:
     description: 'Working directory for the SonarCloud scan'
     required: true
@@ -16,30 +16,44 @@ inputs:
     required: true
 
 runs:
-    using: "composite"
-    steps:
-      - name: Download Coverage (if exists)
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: ${{ inputs.working_directory }}-coverage-report
-          path: ${{ inputs.working_directory }}
+  using: "composite"
+  steps:
+    - name: Download Coverage (if exists)
+      uses: actions/download-artifact@v4
+      continue-on-error: true
+      with:
+        name: ${{ inputs.working_directory }}-coverage-report
+        path: ${{ inputs.working_directory }}
 
-      - name: Check if Coverage Report Exists
-        id: check_coverage
-        shell: bash
-        run: |
-          if [[ -f "${{ inputs.working_directory }}/coverage.xml" ]]; then
-            echo "COVERAGE_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "COVERAGE_EXISTS=false" >> $GITHUB_ENV
-          fi
+    - name: Check if Coverage Report Exists
+      id: check_coverage
+      shell: bash
+      run: |
+        if [[ -f "${{ inputs.working_directory }}/coverage.xml" ]]; then
+          echo "COVERAGE_EXISTS=true" >> $GITHUB_ENV
+        else
+          echo "COVERAGE_EXISTS=false" >> $GITHUB_ENV
+        fi
 
-      - name: Run SonarCloud
-        shell: bash
-        run: |
-          sonar-scanner -Dsonar.projectBaseDir=${{ inputs.working_directory }} -Dsonar.projectKey=${{ inputs.sonar_project_key }} \
-          $([[ "$COVERAGE_EXISTS" == "true" ]] && echo "-Dsonar.python.coverage.reportPaths=${{ inputs.working_directory }}/coverage.xml" || echo "")
-        env:
-          GITHUB_TOKEN: ${{ inputs.github_token }}
-          SONAR_TOKEN: ${{ inputs.sonar_token }}
+    - name: Run SonarCloud Without Coverage
+      if: env.COVERAGE_EXISTS == 'false'
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        SONAR_TOKEN: ${{ inputs.sonar_token }}
+      with:
+        projectBaseDir: ${{ inputs.working_directory }}
+        args: >
+          -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+
+    - name: Run SonarCloud With Coverage
+      if: env.COVERAGE_EXISTS == 'true'
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        SONAR_TOKEN: ${{ inputs.sonar_token }}
+      with:
+        projectBaseDir: ${{ inputs.working_directory }}
+        args: >
+          -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+          -Dsonar.python.coverage.reportPaths=${{ inputs.working_directory }}/coverage.xml
