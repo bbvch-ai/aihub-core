@@ -57,10 +57,7 @@ runs:
     - name: Use Local Core (Only at Root Level)
       if: inputs.use_local_core == 'true'
       shell: bash
-      run: |
-        echo "Switching to local aihub_lib..."
-         poetry run make use-local-core
-      working-directory: $GITHUB_WORKSPACE
+      run: poetry run make use-local-core
 
     - name: Start Docker services (if needed)
       if: ${{ inputs.docker_compose_paths != '' }}
