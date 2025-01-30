@@ -44,23 +44,23 @@ runs:
       with:
         version: 1.8.3
 
-    - name: Load cached Poetry dependencies
-      id: cache-poetry
-      uses: actions/cache@v4
-      with:
-        path: |
-          .venv
-          ~/.cache/pypoetry
-        key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          venv-${{ runner.os }}-
-
-    - name: Use Local Core (Only at Root Level)
-      if: inputs.use_local_core == 'true'
+    - name: Validate global poetry.lock
+      if: ${{ inputs.use_local_core == 'true' }}
       shell: bash
-      run: poetry run make use-local-core
+      run: poetry lock --no-update
 
-    - name: Install Dependencies (Current Module)
+
+    - name: Install global dependencies
+      if: ${{ inputs.use_local_core == 'true' }}
+      shell: bash
+      run: poetry install --no-interaction --no-root
+
+    - name: Validate poetry.lock
+      shell: bash
+      run: poetry lock --no-update
+      working-directory: ${{ inputs.working_directory }}
+
+    - name: Install dependencies
       shell: bash
       run: poetry install --no-interaction --no-root
       working-directory: ${{ inputs.working_directory }}
