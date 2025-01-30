@@ -18,6 +18,11 @@ inputs:
     description: 'Report coverage to SonarCloud'
     required: false
     default: 'true'
+  sonar_organization:
+    description: 'SonarCloud organization'
+    default: 'bbv-ai'
+    required: false
+
 
 runs:
   using: "composite"
@@ -31,7 +36,7 @@ runs:
 
     - name: Run SonarCloud Without Coverage
       if: inputs.report_coverage == 'false'
-      uses: SonarSource/sonarcloud-github-action@master
+      uses: SonarSource/sonarqube-scan-action@v4.1.0
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
@@ -39,10 +44,11 @@ runs:
         projectBaseDir: ${{ inputs.working_directory }}
         args: >
           -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+          -Dsonar.organization=${{ inputs.sonar_organization }}
 
     - name: Run SonarCloud With Coverage
       if:  inputs.report_coverage == 'true'
-      uses: SonarSource/sonarcloud-github-action@master
+      uses: SonarSource/sonarqube-scan-action@v4.1.0
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
@@ -50,4 +56,5 @@ runs:
         projectBaseDir: ${{ inputs.working_directory }}
         args: >
           -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+          -Dsonar.organization=${{ inputs.sonar_organization }}
           -Dsonar.python.coverage.reportPaths=${{ inputs.working_directory }}/coverage.xml
