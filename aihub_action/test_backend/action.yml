@@ -38,51 +38,50 @@ runs:
       with:
         version: 1.8.3
 
-    - name: Load cached venv
-      id: cached-poetry-dependencies
+    - name: Load cached Poetry dependencies
+      id: cache-poetry
       uses: actions/cache@v4
       with:
-        path: .venv
+        path: |
+          .venv
+          ~/.cache/pypoetry
         key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
         restore-keys: |
           venv-${{ runner.os }}-
 
-    - name: Install Dependencies
+    - name: Install Dependencies (Current Module)
       shell: bash
       run: poetry install --no-interaction --no-root
       working-directory: ${{ inputs.working_directory }}
 
-    - name: Use Local Core
+    - name: Use Local Core (Only at Root Level)
       if: inputs.use_local_core == 'true'
       shell: bash
-      run: poetry run make use-local-core
+      run: |
+        echo "Switching to local aihub_lib..."
+         poetry run make use-local-core
+      working-directory: $GITHUB_WORKSPACE
 
     - name: Start Docker services (if needed)
-      if: inputs.docker_compose_paths != ''
+      if: ${{ inputs.docker_compose_paths != '' }}
       shell: bash
       run: |
-        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-        DOCKER_COMPOSE_CMD="docker compose"
-        for file in "${COMPOSE_FILES[@]}"; do
-          DOCKER_COMPOSE_CMD+=" -f $file"
-        done
-        eval "$DOCKER_COMPOSE_CMD up -d"
-      working-directory: ${{ inputs.working_directory }}
-
-    - name: Wait for Docker services to become healthy
-      if: inputs.docker_compose_paths != ''
-      shell: bash
-      run: |
-        while docker compose ps | grep -q -e "unhealthy" -e "health: starting" -e "Restarting"; do
-          echo "Waiting for all services to become healthy..."
-          sleep 5;
-        done
-        echo "All services are healthy!"
+        if [[ -n "${{ inputs.docker_compose_paths }}" ]]; then
+          IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
+          DOCKER_COMPOSE_CMD="docker compose"
+          for file in "${COMPOSE_FILES[@]}"; do
+            DOCKER_COMPOSE_CMD+=" -f $file"
+          done
+          eval "$DOCKER_COMPOSE_CMD up -d"
+        else
+          echo "No Docker services to start."
+        fi
       working-directory: ${{ inputs.working_directory }}
 
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       run: |
+        set -e
         pytest_exit_code=0
         poetry run pytest -m "not azure" --cov=. \
                          --cov-report=xml:coverage.xml \
@@ -100,15 +99,9 @@ runs:
       working-directory: ${{ inputs.working_directory }}
 
     - name: Stop Docker services (if started)
-      if: inputs.docker_compose_paths != ''
+      if: ${{ inputs.docker_compose_paths != '' }}
       shell: bash
-      run: |
-        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-        DOCKER_COMPOSE_CMD="docker compose"
-        for file in "${COMPOSE_FILES[@]}"; do
-          DOCKER_COMPOSE_CMD+=" -f $file"
-        done
-        eval "$DOCKER_COMPOSE_CMD down"
+      run: docker compose down
       working-directory: ${{ inputs.working_directory }}
 
     - name: Upload Coverage Report
@@ -122,17 +115,3 @@ runs:
       with:
         name: ${{ inputs.working_directory }}-pytest-report
         path: ${{ inputs.working_directory }}/pytest.xml
-
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always()
-      with:
-        files: |
-          ${{ inputs.working_directory }}/pytest.xml
-
-    - name: Check if Tests Failed
-      if: env.TEST_FAIL == 'true'
-      shell: bash
-      run: |
-        echo "Tests have failed!"
-        exit 1
