@@ -46,8 +46,10 @@ runs:
 
     - name: Configure Git to Use GitHub Token
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
-        git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
+        git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
     - name: Debug Git Authentication
       shell: bash
@@ -78,11 +80,15 @@ runs:
 
     - name: Validate poetry.lock
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: poetry lock --no-update
       working-directory: ${{ inputs.working_directory }}
 
     - name: Install dependencies
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: poetry install --no-interaction --no-root
       working-directory: ${{ inputs.working_directory }}
 
