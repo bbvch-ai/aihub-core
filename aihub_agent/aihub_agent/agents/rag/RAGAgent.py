@@ -1,4 +1,3 @@
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
@@ -11,6 +10,7 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.abstract.Agent import Agent

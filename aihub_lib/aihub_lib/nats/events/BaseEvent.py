@@ -68,6 +68,8 @@ class BaseEvent(BaseModel):
         """
         super().__pydantic_init_subclass__(**kwargs)
         logger.debug(f"Registering Event {cls.__name__}")
+        if cls.__name__ in BaseEvent._event_registry:
+            raise ValueError(f"Duplication detected for Event {cls.__name__}")
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
