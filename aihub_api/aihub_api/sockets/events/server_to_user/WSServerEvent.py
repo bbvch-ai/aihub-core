@@ -1,9 +1,8 @@
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from pydantic import BaseModel, Field
 
 
 class WSServerEvent(BaseModel):

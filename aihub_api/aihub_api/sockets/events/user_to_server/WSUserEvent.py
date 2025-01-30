@@ -1,9 +1,8 @@
 import json
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
+from pydantic import BaseModel, Field
 
 
 class WSUserEvent(BaseModel):

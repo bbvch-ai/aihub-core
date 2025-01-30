@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from aihub_lib.nats.events.control.exception.ExceptionEvent import ExceptionEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.control.exception.ExceptionEvent import ExceptionEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
 
@@ -17,6 +17,5 @@ class AgentInTheLoopExceptionEvent(ControlEvent, DisplayEvent):
     """
 
     exception_event: ExceptionEvent = Field(
-        ...,
-        description="The exception event from the delegated agent containing error details and failure context."
+        ..., description="The exception event from the delegated agent containing error details and failure context."
     )

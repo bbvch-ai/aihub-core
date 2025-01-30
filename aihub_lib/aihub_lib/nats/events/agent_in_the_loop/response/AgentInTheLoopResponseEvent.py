@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from aihub_lib.nats.events.control.stop.StopEvent import StopEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.control.stop.StopEvent import StopEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
 
@@ -16,6 +16,5 @@ class AgentInTheLoopResponseEvent(ControlEvent, DisplayEvent):
     """
 
     stop_event: StopEvent = Field(
-        ...,
-        description="The stop event from the delegated agent containing the task results and marks the completion."
+        ..., description="The stop event from the delegated agent containing the task results and marks the completion."
     )

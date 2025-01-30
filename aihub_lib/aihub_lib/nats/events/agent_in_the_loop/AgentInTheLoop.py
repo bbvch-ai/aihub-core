@@ -5,7 +5,7 @@ from aihub_lib.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEv
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import PartialAgentTopic, AgentTopic
+from aihub_lib.nats.topics import AgentTopic, PartialAgentTopic
 
 
 class AgentInTheLoop:

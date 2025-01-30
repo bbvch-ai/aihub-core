@@ -1,4 +1,5 @@
-from typing import Callable, Any, List, Annotated
+from typing import Annotated, Any, Callable, List
+
 from fastapi import Depends, HTTPException
 from nats.aio.client import Client as NATS
 

@@ -1,13 +1,13 @@
-from typing import Callable, Any, List, Annotated
+from typing import Annotated, Any, Callable, List
 
 from fastapi import Depends, HTTPException
 from nats.aio.client import Client as NATS
 
 from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.nats.dependencies.use_nats import use_nats
-from aihub_api.routes.Controller import Controller
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.Controller import Controller
 
 
 class AgentController(Controller):

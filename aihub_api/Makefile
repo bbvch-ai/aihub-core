@@ -15,7 +15,7 @@ typecheck:
 # Sort imports with isort
 sort-imports:
 	@echo "Sorting imports..."
-	poetry run isort aihub_agent
+	poetry run isort aihub_api
 
 clean-jupyter:
 	@echo "Cleaning up notebooks..."

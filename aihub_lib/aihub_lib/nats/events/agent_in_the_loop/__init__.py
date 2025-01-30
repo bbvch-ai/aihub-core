@@ -1,7 +1,7 @@
+from .AgentInTheLoop import AgentInTheLoop
+from .exception import AgentInTheLoopExceptionEvent
 from .request import AgentInTheLoopRequestEvent
 from .response import AgentInTheLoopResponseEvent
-from .exception import AgentInTheLoopExceptionEvent
-from .AgentInTheLoop import AgentInTheLoop
 
 __all__ = [
     "AgentInTheLoopRequestEvent",
