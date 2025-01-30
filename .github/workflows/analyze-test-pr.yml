@@ -43,31 +43,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Docker Compose
-        if: matrix.module == 'aihub_agent'
-        run: sudo apt-get install -y docker-compose
-
       - name: Start Docker services
         if: matrix.module == 'aihub_agent'
         run: |
-          docker-compose -f playground/docker-compose.yml up -d
+          docker compose -f playground/docker-compose.yml -f playground/milvus-standalone-docker-compose.yml up -d
         working-directory: aihub_agent
 
-      - name: Wait for Docker services
+      - name: Wait for Docker services to become healthy
         if: matrix.module == 'aihub_agent'
         run: |
-          until nc -z localhost 4222; do
-            echo "Waiting for NATS service to be ready..."
-            sleep 3
+          while docker compose -p playground ps | grep -q -e "unhealthy" -e "health: starting" -e "Restarting"; do
+            echo "Waiting for all services to become healthy...";               
+            sleep 5;           
           done
-          until nc -z localhost 27017; do
-            echo "Waiting for MongoDB service to be ready..."
-            sleep 3
-          done
-          until nc -z localhost 8182; do
-            echo "Waiting for ollama service to be ready..."
-            sleep 3
-          done
+          echo "All services are healthy!"
+
 
       - name: Configure Git to use GitHub Token
         run: |
@@ -95,11 +85,6 @@ jobs:
         run: poetry install --no-interaction --no-root
         working-directory: ${{ matrix.module }}
 
-      - name: Pull Qwen2.5 to ollama
-        if: matrix.module == 'aihub_agent'
-        run: |
-          curl -X POST http://localhost:8182/api/pull -H "Content-Type: application/json" -d '{"model": "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF"}'
-
       - name: Run tests with coverage and generate report
         run: |
           make test-cov || echo "TEST_FAIL=true" >> $GITHUB_ENV
@@ -109,7 +94,7 @@ jobs:
       - name: Stop Docker services
         if: matrix.module == 'aihub_agent'
         run: |
-          docker-compose -f playground/docker-compose.yml down
+          docker compose -f playground/docker-compose.yml -f playground/milvus-standalone-docker-compose.yml down
         working-directory: aihub_agent
 
       - name: Upload coverage report

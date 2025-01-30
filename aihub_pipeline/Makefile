@@ -23,5 +23,5 @@ pr-ready: sort-imports format
 
 test-cov:
 	@echo "Running tests in aihub_pipeline with coverage..."
-	poetry run pytest --cov=aihub_pipeline --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml \
+	poetry run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml \
 	|| echo "No tests found. Skipping..."

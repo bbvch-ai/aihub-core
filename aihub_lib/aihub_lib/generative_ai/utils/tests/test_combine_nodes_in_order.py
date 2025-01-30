@@ -1,10 +1,10 @@
 import pytest
-from pytest_bdd import scenarios, given, when, then
+from llama_index.core.base.llms.types import ChatMessage
+from pytest_bdd import given, scenarios, then, when
 
+from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.semantic.retriever import Document
-from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from llama_index.core.base.llms.types import ChatMessage
 from aihub_lib.persistence.rag.vectors.node_metadata import SECTION_START_LINE, SOURCE
 
 scenarios("./features/combine_nodes_in_order.feature")

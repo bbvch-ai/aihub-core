@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from typing import Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from llama_index.core.llms import LLM
@@ -38,6 +38,11 @@ class ChatLLMConfig(LLMConfig):
     """
 
     default_parameter: ChatLLMModelParameter = Field(..., description="Default parameters for the chat-based LLM.")
+
+    @property
+    @abstractmethod
+    def tokenizer(self) -> Callable[[str], List[int]]:
+        pass
 
     @abstractmethod
     def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLM, LLMCostTracker]:

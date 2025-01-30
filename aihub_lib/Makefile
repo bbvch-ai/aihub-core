@@ -19,4 +19,4 @@ pr-ready: sort-imports format
 
 test-cov:
 	@echo "Running tests in aihub_lib with coverage..."
-	poetry run pytest --cov=aihub_lib --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml
+	poetry run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml

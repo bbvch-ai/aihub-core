@@ -1,16 +1,16 @@
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.simple_workflow.events.EventA import EventA
+from playground.minimal_workflow.simple_workflow.events.SimpleEventA import SimpleEventA
 
 
 class SimpleAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent) -> EventA:
+    async def start_step(self, event: StartEvent) -> SimpleEventA:
         print("[SimpleAgent.start_step]", event)
-        return EventA(payload=event.messages[-1].content)
+        return SimpleEventA(payload=event.messages[-1].content)
 
     @step()
-    async def end_step(self, event: EventA) -> StopEvent:
+    async def end_step(self, event: SimpleEventA) -> StopEvent:
         print("[SimpleAgent.end_step]", event)
         return StopEvent()

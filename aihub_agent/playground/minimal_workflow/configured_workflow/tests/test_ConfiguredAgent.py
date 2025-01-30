@@ -21,7 +21,6 @@ scenarios("../tests/features/configured_agent.feature")
     target_fixture="agent_runner",
 )
 def _(start_step_value: str, agent_value: str):
-
     return AgentTestRunner(
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(

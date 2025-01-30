@@ -1,6 +1,6 @@
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 
