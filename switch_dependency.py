@@ -6,6 +6,7 @@ existing file structure.
 It specifically looks for pyproject.toml in:
   - aihub_agent/
   - aihub_api/
+  - aihub_bots/
   - aihub_pipeline/
 
 Usage:
@@ -22,10 +23,11 @@ Examples:
   python switch_dependency.py remote --tag v0.2.0
 """
 
-import sys
 import argparse
 import subprocess
 from pathlib import Path
+
+import sys
 
 try:
     import tomlkit
@@ -40,6 +42,7 @@ except ImportError:
 MICROSERVICE_DIRS = [
     "aihub_agent",
     "aihub_api",
+    "aihub_bots",
     "aihub_pipeline",
 ]
 
@@ -47,7 +50,7 @@ MICROSERVICE_DIRS = [
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Toggle 'aihub_lib' between local and remote references "
-                    "for specified microservice folders (using tomlkit)."
+        "for specified microservice folders (using tomlkit)."
     )
     parser.add_argument(
         "mode",
@@ -96,9 +99,7 @@ def process_file(pyproject_path: Path, mode: str, local_path: str, remote_tag: s
     subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent)
 
 
-def update_aihub_lib(
-        doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str
-):
+def update_aihub_lib(doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str):
     if "tool" not in doc or "poetry" not in doc["tool"]:
         return
 
