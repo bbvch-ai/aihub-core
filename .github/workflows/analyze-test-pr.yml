@@ -89,12 +89,16 @@ jobs:
         include:
           - folder: aihub_agent
             sonar_project_key: aihub-core_agents-core
+            report_coverage: 'true'
           - folder: aihub_api
             sonar_project_key: aihub-core_api-core
+            report_coverage: 'true'
           - folder: aihub_lib
             sonar_project_key: aihub-core_lib-core
+            report_coverage: 'true'
           - folder: aihub_pipeline
             sonar_project_key: aihub-core_pipelines-core
+            report_coverage: 'true'
           - folder: aihub_web
             sonar_project_key: aihub-core_aihub-web
             report_coverage: 'false'
@@ -107,4 +111,5 @@ jobs:
           sonar_project_key: ${{ matrix.sonar_project_key }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
+          report_coverage: ${{ matrix.report_coverage }}
 
