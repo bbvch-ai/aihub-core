@@ -20,5 +20,9 @@ class AgentDTO(BaseModel):
 
     agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
     agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
-    agent_config: AgentConfig = Field(..., description="Configuration details of the agent, including name, description, and prompts.")
-    start_events: List[StartEventSpecs] = Field(..., description="A list of `StartEventSpecs` representing events that can start this agent's workflow.")
+    agent_config: AgentConfig = Field(
+        ..., description="Configuration details of the agent, including name, description, and prompts."
+    )
+    start_events: List[StartEventSpecs] = Field(
+        ..., description="A list of `StartEventSpecs` representing events that can start this agent's workflow."
+    )

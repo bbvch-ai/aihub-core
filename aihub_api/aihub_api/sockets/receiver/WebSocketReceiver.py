@@ -144,9 +144,7 @@ class WebSocketReceiver:
             if agent.agent_id == topic.agent_id and agent.agent_class == topic.agent_class:
                 break
         else:
-            raise Exception(
-                f"Agent {topic.agent_id} of class {topic.agent_class} is not in thread {topic.thread_id}"
-            )
+            raise Exception(f"Agent {topic.agent_id} of class {topic.agent_class} is not in thread {topic.thread_id}")
 
         topic_manager = AgentThreadTopicManager(
             agent_class=topic.agent_class,

@@ -23,6 +23,7 @@ from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity, 
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class StreamingResources:
     """
@@ -31,9 +32,11 @@ class StreamingResources:
     - subscriber: Subscribed to display events that provide chunks.
     - chunk_queue: Queue of chunks waiting to be sent as SSE.
     """
+
     stop_event: asyncio.Event
     subscriber: NCSubscriber
     chunk_queue: asyncio.Queue
+
 
 @dataclass
 class JsonResources:
@@ -45,6 +48,7 @@ class JsonResources:
     - costs: Tracks LLMCostEvents for usage reporting.
     - model_name: Tracks the LLM model name used.
     """
+
     stop_event: asyncio.Event
     subscriber: NCSubscriber
     chunk_events: List[ChunkEvent]
@@ -108,7 +112,7 @@ class ChatService:
             event=UserMessageEvent(
                 messages=messages[:-1],
                 content=messages[-1].content,
-            )
+            ),
         )
         logger.debug(f"Created event: {event}")
 
@@ -145,11 +149,7 @@ class ChatService:
         # Trigger the agent interaction via WebSocket
         await ws_receiver.receive_event(event, user.oid)
 
-        return StreamingResources(
-            stop_event=stop_event,
-            subscriber=subscriber,
-            chunk_queue=chunk_queue
-        )
+        return StreamingResources(stop_event=stop_event, subscriber=subscriber, chunk_queue=chunk_queue)
 
     @staticmethod
     async def start_json_chat_interaction(
@@ -180,7 +180,7 @@ class ChatService:
             event=UserMessageEvent(
                 messages=messages[:-1],
                 content=messages[-1].content,
-            )
+            ),
         )
         logger.debug(f"Created event: {event}")
 
@@ -202,7 +202,7 @@ class ChatService:
             subscriber=None,  # assigned after subscriber creation
             chunk_events=chunk_events,
             costs=costs,
-            model_name=model_name
+            model_name=model_name,
         )
 
         async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
@@ -233,7 +233,9 @@ class ChatService:
         return resources
 
     @staticmethod
-    def build_json_response(chunk_events: List[ChunkEvent], costs: LLMCosts, model_name: str) -> ChatCompletionsSuccessResponse:
+    def build_json_response(
+        chunk_events: List[ChunkEvent], costs: LLMCosts, model_name: str
+    ) -> ChatCompletionsSuccessResponse:
         """
         Construct a JSON response from collected chunk events and cost metrics.
 
@@ -241,7 +243,7 @@ class ChatService:
         to wrap the content and usage data.
         """
         chunk_events = sorted(chunk_events, key=lambda x: x.created_at)
-        content = ''.join([chunk.content for chunk in chunk_events])
+        content = "".join([chunk.content for chunk in chunk_events])
         return ChatCompletionsSuccessResponse.from_string(content, costs, model=model_name)
 
     @staticmethod
@@ -261,8 +263,7 @@ class ChatService:
                 try:
                     chunk_event = await asyncio.wait_for(chunk_queue.get(), timeout=0.5)
                     chat_completion_chunk = ChatCompletionChunk.from_string(
-                        chunk_event.content,
-                        model=chunk_event.model_name
+                        chunk_event.content, model=chunk_event.model_name
                     )
                     yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
                     chunk_queue.task_done()

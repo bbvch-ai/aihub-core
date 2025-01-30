@@ -47,10 +47,9 @@ class EventController(Controller):
         super().__init__(route, auth)
 
     def get_events(self, path: str = "/") -> "EventController":
-
         @self.router.get(path)
         async def get_all_events(
-                user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> List[WSServerEvent]:
             """
             Returns all persisted events visible to the authenticated user.
@@ -61,7 +60,6 @@ class EventController(Controller):
         return self
 
     def ws(self, path: str = "/ws") -> "EventController":
-
         @self.router.websocket(path)
         async def websocket_endpoint(websocket: WebSocket):
             """

@@ -17,8 +17,8 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topics import DiscoveryTopic
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
-DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)   # Cache the entire agent list for 60s
-GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)       # Cache individual agents for 60s
+DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
+GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
 
 
 class AgentService:
@@ -67,8 +67,7 @@ class AgentService:
 
         # Broadcast the discovery request
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
+            event=DiscoveryRequestEvent(), subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
         )
 
         # Wait briefly for responses
@@ -124,8 +123,7 @@ class AgentService:
 
         # Send discovery request for the specific agent
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
+            event=DiscoveryRequestEvent(), subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
         )
 
         # Wait up to 1 second for response

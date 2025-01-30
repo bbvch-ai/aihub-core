@@ -19,7 +19,11 @@ class NoAuthConfig(BaseSettings):
 
     NAME: str = Field(..., description="The user's displayed name.")
     EMAIL: str = Field(..., description="The user's email (often used as a login or unique identifier).")
-    OID: str = Field(..., description="A unique OID (Object ID) for the user. Defaults to a UUID.", default_factory=lambda: str(uuid.uuid4()))
+    OID: str = Field(
+        ...,
+        description="A unique OID (Object ID) for the user. Defaults to a UUID.",
+        default_factory=lambda: str(uuid.uuid4()),
+    )
     ROLES: List[str] = Field(..., description="A list of roles this user possesses.")
 
     model_config = SettingsConfigDict(

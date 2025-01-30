@@ -10,11 +10,7 @@ from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequ
 from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
 from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
-from .ChatService import (
-    ChatService,
-    StreamingResources,
-    JsonResources
-)
+from .ChatService import ChatService, StreamingResources, JsonResources
 from ..Controller import Controller
 from ...nats.dependencies.use_nats import use_nats
 from ...sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
@@ -59,8 +55,8 @@ class ChatController(Controller):
             route,
             summary="Stream Chat",
             description=(
-                    "Initiates a streaming interaction with a specific agent. "
-                    "Requires authentication and role checks. Returns textual responses as SSE."
+                "Initiates a streaming interaction with a specific agent. "
+                "Requires authentication and role checks. Returns textual responses as SSE."
             ),
             tags=["Agent"],
             responses={
@@ -72,12 +68,12 @@ class ChatController(Controller):
             response_class=StreamingResponse,
         )
         async def stream_chat(
-                chat_completions_request: Annotated[ChatCompletionsRequest, Body],
-                agent_class: Annotated[str, Path(title="Agent class")],
-                agent_id: Annotated[str, Path(title="Agent ID")],
-                nc: Annotated[NATS, Depends(use_nats)],
-                ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-                user: AuthenticatedUser = Depends(self.auth),
+            chat_completions_request: Annotated[ChatCompletionsRequest, Body],
+            agent_class: Annotated[str, Path(title="Agent class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> StreamingResponse:
             """
             Start a streaming chat interaction. Streams chunks of the agent's response as SSE.
@@ -92,7 +88,7 @@ class ChatController(Controller):
             )
             return StreamingResponse(
                 ChatService.create_sse_generator(resources.stop_event, resources.chunk_queue),
-                media_type="text/event-stream"
+                media_type="text/event-stream",
             )
 
         return self
@@ -101,8 +97,8 @@ class ChatController(Controller):
         @self.router.post(
             route,
             description=(
-                    "Initiates a chat interaction with a specific agent and returns a full JSON response "
-                    "once all tokens are processed. Requires authentication and checks user limits."
+                "Initiates a chat interaction with a specific agent and returns a full JSON response "
+                "once all tokens are processed. Requires authentication and checks user limits."
             ),
             tags=["Agent"],
             responses={
@@ -113,12 +109,12 @@ class ChatController(Controller):
             },
         )
         async def json_chat(
-                chat_completions_request: Annotated[ChatCompletionsRequest, Body],
-                agent_class: Annotated[str, Path(title="Agent class")],
-                agent_id: Annotated[str, Path(title="Agent ID")],
-                nc: Annotated[NATS, Depends(use_nats)],
-                ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-                user: AuthenticatedUser = Depends(self.auth),
+            chat_completions_request: Annotated[ChatCompletionsRequest, Body],
+            agent_class: Annotated[str, Path(title="Agent class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> ChatCompletionsSuccessResponse:
             """
             Start a chat interaction and return a JSON response after all tokens have been processed.

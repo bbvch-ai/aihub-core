@@ -6,6 +6,10 @@ from .display import ChunkEvent, DisplayEvent, ThoughtEvent
 from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
+from .agent_in_the_loop import AgentInTheLoop
+from .agent_in_the_loop.request import AgentInTheLoopRequestEvent
+from .agent_in_the_loop.response import AgentInTheLoopResponseEvent
+from .agent_in_the_loop.exception import AgentInTheLoopExceptionEvent
 from .semantic import AgentEvent, ChainEvent, EmbeddingEvent, LLMEvent, RerankerEvent, RetrieverEvent, ToolEvent
 from .user import UserMessageEvent
 
@@ -22,6 +26,10 @@ __all__ = [
     "HumanInTheLoopRequestEvent",
     "HumanInTheLoopResponseEvent",
     "HumanInTheLoop",
+    "AgentInTheLoopRequestEvent",
+    "AgentInTheLoopResponseEvent",
+    "AgentInTheLoopExceptionEvent",
+    "AgentInTheLoop",
     "DisplayEvent",
     "ChunkEvent",
     "ThoughtEvent",

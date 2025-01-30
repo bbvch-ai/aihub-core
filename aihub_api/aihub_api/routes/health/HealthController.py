@@ -39,4 +39,5 @@ class HealthController(Controller):
             the application is running and capable of handling requests.
             """
             return {"status": "ok"}
+
         return self
