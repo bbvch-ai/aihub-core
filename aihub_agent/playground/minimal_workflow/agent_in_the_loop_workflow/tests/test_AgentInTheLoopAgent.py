@@ -66,8 +66,8 @@ def _(worker_config):
 async def send_start_to_orchestrator(
     orchestrator_runner: AgentTestRunner, worker_runner: AgentTestRunner, message: str
 ):
-    async with worker_runner.test_run(delay_before_stop=5):
-        async with orchestrator_runner.test_run(delay_before_stop=3) as topic:
+    async with worker_runner.test_run():
+        async with orchestrator_runner.test_run() as topic:
             await orchestrator_runner.send_event_from_topic(
                 start_event=StartEvent(messages=[ChatMessage(content=message, role=MessageRole.USER)]), topic=topic
             )
