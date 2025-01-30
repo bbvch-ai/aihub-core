@@ -3,8 +3,13 @@ from typing import List, Optional
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores import MetadataFilter
-from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery, MetadataFilters
-from llama_index.core.vector_stores.types import VectorStoreQueryMode, FilterCondition
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    FilterCondition,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 
 from aihub_lib.generative_ai.processors.ScoreScalerPostProcessor import ScoreScalerPostProcessor
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE

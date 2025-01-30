@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from typing import Optional, Tuple, Callable, List
+from typing import Callable, List, Optional, Tuple
 
 from aihub_agent.displayers.EventDisplayer import EventDisplayer
 from llama_index.core.llms import LLM

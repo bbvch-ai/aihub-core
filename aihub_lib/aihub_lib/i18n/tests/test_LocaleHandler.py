@@ -8,6 +8,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 
 LANG_FOLDER = os.path.join(os.path.dirname(__file__), "../translations")
 
+
 def _create_yaml_files(directory: str) -> Dict[str, List[str]]:
     yaml_files = {}
     for root, _, files in os.walk(directory):
@@ -18,6 +19,7 @@ def _create_yaml_files(directory: str) -> Dict[str, List[str]]:
                     yaml_files[base_name] = []
                 yaml_files[base_name].append(os.path.join(root, file))
     return yaml_files
+
 
 @pytest.fixture(scope="module")
 def yaml_files() -> Dict[str, List[str]]:
@@ -33,6 +35,7 @@ def dict_locale_data() -> dict:
         "it": "Agente di ricerca",
     }
 
+
 @pytest.fixture(scope="module")
 def multi_locale_data() -> LocaleString:
     return LocaleString(
@@ -41,6 +44,7 @@ def multi_locale_data() -> LocaleString:
         fr="Agent de recherche",
         it="Agente di ricerca",
     )
+
 
 def test_all_languages_present(yaml_files: Dict[str, List[str]]):
     missing_languages = {}
