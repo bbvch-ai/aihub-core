@@ -31,7 +31,7 @@ runs:
 
     - name: Run SonarCloud Without Coverage
       if: inputs.report_coverage == 'false'
-      uses: SonarSource/sonarqube-scan-action@v4.1.0
+      uses: SonarSource/sonarcloud-github-action@master
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
@@ -42,7 +42,7 @@ runs:
 
     - name: Run SonarCloud With Coverage
       if:  inputs.report_coverage == 'true'
-      uses: SonarSource/sonarqube-scan-action@v4.1.0
+      uses: SonarSource/sonarcloud-github-action@master
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
