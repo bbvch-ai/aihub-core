@@ -97,6 +97,7 @@ jobs:
             sonar_project_key: aihub-core_pipelines-core
           - folder: aihub_web
             sonar_project_key: aihub-core_aihub-web
+            report_coverage: 'false'
 
     steps:
       - name: SonarCloud Scan
