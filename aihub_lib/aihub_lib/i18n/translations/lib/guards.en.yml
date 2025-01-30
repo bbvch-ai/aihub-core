@@ -23,6 +23,6 @@ agent_description_guard:
   reason: |
     Justification for the decision made.
   success: |
-    true if the request can be accepted, false otherwise.
+    true if the request can be forwarded to the agent, false if the request does not fall into the responsibility of the agent.
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
