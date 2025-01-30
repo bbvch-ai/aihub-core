@@ -69,6 +69,11 @@ runs:
     - name: Install global dependencies
       if: ${{ inputs.use_local_core == 'true' }}
       shell: bash
+      run: poetry install --no-interaction --no-root
+
+    - name: Use local core
+      if: ${{ inputs.use_local_core == 'true' }}
+      shell: bash
       run: poetry run make use-local-core
 
     - name: Validate poetry.lock
