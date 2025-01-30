@@ -36,12 +36,10 @@ runs:
           fi
 
       - name: Run SonarCloud
-        uses: SonarSource/sonarcloud-github-action@master
+        shell: bash
+        run: |
+          sonar-scanner -Dsonar.projectBaseDir=${{ inputs.working_directory }} -Dsonar.projectKey=${{ inputs.sonar_project_key }} \
+          $([[ "$COVERAGE_EXISTS" == "true" ]] && echo "-Dsonar.python.coverage.reportPaths=${{ inputs.working_directory }}/coverage.xml" || echo "")
         env:
           GITHUB_TOKEN: ${{ inputs.github_token }}
           SONAR_TOKEN: ${{ inputs.sonar_token }}
-        with:
-          projectBaseDir: ${{ inputs.working_directory }}
-          args: >
-            -Dsonar.projectKey=${{ inputs.sonar_project_key }}
-            ${{ env.COVERAGE_EXISTS == 'true' && '-Dsonar.python.coverage.reportPaths=' || '' }}${{ inputs.working_directory }}/coverage.xml
