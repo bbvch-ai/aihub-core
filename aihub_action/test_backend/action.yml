@@ -51,10 +51,9 @@ runs:
         echo "All services are healthy!"
       working-directory: ${{ inputs.working_directory }}
 
-    - name: Configure Git to Use GitHub Token
+    - name: Configure Git Authentication
       shell: bash
-      run: |
-        git config --global url."https://${{ github.actor }}:${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
+      run: git config --global url."git@github.com:".insteadOf "https://github.com/"
 
     - name: Install Poetry
       uses: snok/install-poetry@v1
