@@ -33,6 +33,12 @@ runs:
       run: |
         git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
 
+    - name: Debug Git Authentication
+      shell: bash
+      run: |
+        echo "Testing GitHub Authentication..."
+        git ls-remote https://github.com/bbvch-ai/aihub-core.git || echo "❌ Failed to authenticate"
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
@@ -49,15 +55,15 @@ runs:
         restore-keys: |
           venv-${{ runner.os }}-
 
-    - name: Install Dependencies (Current Module)
-      shell: bash
-      run: poetry install --no-interaction --no-root
-      working-directory: ${{ inputs.working_directory }}
-
     - name: Use Local Core (Only at Root Level)
       if: inputs.use_local_core == 'true'
       shell: bash
       run: poetry run make use-local-core
+
+    - name: Install Dependencies (Current Module)
+      shell: bash
+      run: poetry install --no-interaction --no-root
+      working-directory: ${{ inputs.working_directory }}
 
     - name: Start Docker services (if needed)
       if: ${{ inputs.docker_compose_paths != '' }}
