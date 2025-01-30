@@ -5,9 +5,6 @@ inputs:
   github_token:
     description: 'GitHub token for authentication'
     required: true
-  private_ssh_key:
-    description: 'Private SSH key for accessing repositories'
-    required: true
   working_directory:
     description: 'Working directory for the linter'
   lockfile:
@@ -43,18 +40,16 @@ runs:
         restore-keys: |
           ${{ runner.os }}-pnpm-
 
+    - name: Configure Git to Use `GITHUB_TOKEN`
+      shell: bash
+      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
+
     - name: Install dependencies
       shell: bash
-      run: |
-          mkdir -p ~/.ssh
-          echo "${{ inputs.private_ssh_key }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
-          pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
       working-directory: ${{ inputs.working_directory }}
 
-    - name: Prepare nuxt
+    - name: Prepare Nuxt
       shell: bash
       run: pnpm exec nuxi prepare
       working-directory: ${{ inputs.working_directory }}

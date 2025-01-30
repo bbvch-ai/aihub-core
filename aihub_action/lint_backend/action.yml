@@ -5,9 +5,6 @@ inputs:
   github_token:
     description: 'GitHub token for authentication'
     required: true
-  private_ssh_key:
-    description: 'Private SSH key for accessing repositories'
-    required: true
   working_directory:
     description: 'Working directory for the linter'
     required: true
@@ -37,27 +34,10 @@ runs:
         restore-keys: |
           venv-${{ runner.os }}-
 
-    - name: Debug SSH
-      shell: bash
-      run: |
-        ssh -T git@github.com || echo "SSH failed"
-        git remote -v
-      working-directory: ${{ inputs.working_directory }}
 
-    - name: Install dependencies
+    - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ inputs.private_ssh_key }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
-        git config --global url."git@github.com:".insteadOf "https://github.com/"
-
-        python -m venv .venv
-        source .venv/bin/activate
-        poetry install --no-interaction --no-root --with dev
-        rm -rf ~/.ssh
-      working-directory: ${{ inputs.working_directory }}
+      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
 
     - name: Lint
       uses: reviewdog/action-black@v3

@@ -26,7 +26,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
-          private_ssh_key: ${{ secrets.PRIVATE_SSH_KEY }}
 
   lint-frontend:
     name: Lint Web
@@ -38,5 +37,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: aihub_web/aihub_web
-          private_ssh_key: ${{ secrets.PRIVATE_SSH_KEY }}
           lockfile: aihub_web/aihub_web/pnpm-lock.yaml
