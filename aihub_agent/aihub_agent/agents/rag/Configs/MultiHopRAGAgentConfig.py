@@ -18,9 +18,9 @@ class MultiHopRAGAgentConfig(AgentConfig):
         ..., description="Maximum tokens allowed in input to manage context size or cost."
     )
     hops: int = Field(..., description="The number of hops to use.")
-    decompose_chat_history_prompt: LocaleString = Field(
-        ..., description="Prompt template for decomposition of chat history into multiple questions."
+    decompose_chat_history_prompt: Optional[LocaleString] = Field(
+       None, description="Prompt template for decomposition of chat history into multiple questions."
     )
-    context_prompt: LocaleString = Field(
-        ..., description="Prompt template for providing context (e.g., retrieved documents) to the LLM."
+    context_prompt: Optional[LocaleString] = Field(
+        None, description="Prompt template for providing context (e.g., retrieved documents) to the LLM."
     )
