@@ -55,7 +55,6 @@ runs:
       if: inputs.use_local_core == 'true'
       shell: bash
       run: poetry run make use-local-core
-      working-directory: ${{ inputs.working_directory }}
 
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_paths != ''
