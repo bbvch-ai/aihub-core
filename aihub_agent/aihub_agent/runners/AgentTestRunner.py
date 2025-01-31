@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -66,7 +67,7 @@ class AgentTestRunner(AgentRunner):
         locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
-            servers=["nats://localhost:4222"],
+            servers=[NatsConfig().NATS_ENDPOINT],
             agent_type=agent_type,
             agent_config=agent_config,
             locale_paths=locale_paths,
