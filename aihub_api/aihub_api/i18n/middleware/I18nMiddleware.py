@@ -1,9 +1,8 @@
 import re
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
 class I18nMiddleware(BaseHTTPMiddleware):

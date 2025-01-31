@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Any
+from typing import Any, Callable
 
 from fastapi import APIRouter, FastAPI
 
@@ -41,11 +41,7 @@ class Controller(abc.ABC):
     This sets up all routes defined in `MyController` under `/my-endpoints`.
     """
 
-    def __init__(
-        self,
-        route: str,
-        auth: Callable[..., Any] = None
-    ):
+    def __init__(self, route: str, auth: Callable[..., Any] = None):
         self.base_route = route
         self.auth = auth or use_no_auth_user
         self.router = APIRouter()

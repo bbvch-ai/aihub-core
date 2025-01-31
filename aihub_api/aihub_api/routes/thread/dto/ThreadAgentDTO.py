@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent
+from pydantic import BaseModel
 
 
 class ThreadAgentDTO(BaseModel):

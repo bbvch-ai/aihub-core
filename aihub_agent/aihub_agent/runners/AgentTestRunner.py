@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager

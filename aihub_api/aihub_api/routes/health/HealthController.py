@@ -1,4 +1,4 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
 from aihub_api.routes.Controller import Controller
 
@@ -39,4 +39,5 @@ class HealthController(Controller):
             the application is running and capable of handling requests.
             """
             return {"status": "ok"}
+
         return self

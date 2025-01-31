@@ -1,4 +1,5 @@
 from typing import List
+
 from pydantic import BaseModel, Field
 
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
