@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
+from aihub_bots.errorhandling.ErrorMiddleware import ErrorMiddleware
 from aihub_bots.routes.Controller import Controller
 from aihub_bots.runners.lifetime.lifetime_manager import lifetime_manager
 from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
@@ -16,42 +17,12 @@ seed(0)
 
 
 class BotsRunner:
-    """
-    A utility class for constructing and running a FastAPI-based API application,
-    integrating multiple controllers, middleware, and optional frontend static files.
-
-    ### Why Use ApiRunner?
-    Instead of manually piecing together a FastAPI application, CORS middleware,
-    internationalization layers, and controllers, `ApiRunner` centralizes this setup.
-    It:
-    - Builds a base app and a nested API app.
-    - Applies CORS and i18n middleware.
-    - Mounts controllers under a specified API path.
-    - Optionally serves a frontend directly from the same server, simplifying deployment.
-
-    ### Key Features
-    - **Separation of Concerns:** Distinguishes between a base application (for static files or other mounts)
-      and the API application (serving JSON routes under a given prefix).
-    - **Integration with Config:** Pulls version info, allowed origins, and other details from `BaseConfig`.
-    - **Easy Controller Mounting:** Controllers that subclass `Controller` can be attached with a simple `.mount()` call.
-    - **Optional Frontend Integration:** Serve a React or Vue frontend directly by calling `.mount_frontend(directory)`.
-
-    ### Usage
-    ```python
-    runner = ApiRunner(api_path="/api/v1", title="My API", debug=True)
-    runner.mount(MyController())  # Mounting a controller
-    runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
-    app = runner.get_app()  # This is the main FastAPI instance to run
-    ```
-
-    You can then run `app` using `uvicorn` or another ASGI server.
-    """
 
     def __init__(
         self,
         api_path: str = "/api/v1",
         title: str = "AI Hub",
-        description: str = "AI Hub Backend",
+        description: str = "AI Hub Bots",
         origins: Optional[List[str]] = None,
         debug: bool = False,
     ):
@@ -112,6 +83,9 @@ class BotsRunner:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+        # Add error handling middleware
+        app.add_middleware(ErrorMiddleware)
 
         return app
 
