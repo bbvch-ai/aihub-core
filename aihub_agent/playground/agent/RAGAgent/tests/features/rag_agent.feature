@@ -17,7 +17,7 @@ Feature: RAG Agent
   Scenario: Test RAGAgent with valid self hosted configuration
     Given a RAGAgent runner with a valid self hosted configuration
     When the start event is sent with a user query "What is AI?"
-    Then a StartEvent is present with user query "What is AI?"
+    Then a StartEvent is present with payload "What is AI?"
     And a LimitChatHistoryEvent is present
     And a StandaloneQuestionCondenserEvent is present with condensed question
     And a RetrieverEvent is present with retrieved documents
