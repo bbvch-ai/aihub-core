@@ -5,16 +5,17 @@ from aiohttp.web import Request, Response
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, ActivityTypes
+from nats.aio.client import Client as NATS
 
-from aihub_bots.bots.EchoBot import EchoBot
+from aihub_bots.bots.ChatBot import ChatBot
 from aihub_bots.routes.messages.DefaultConfig import DefaultConfig
+from aihub_bots.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class MessagesService:
 
     CONFIG = DefaultConfig()
     ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
-    BOT = EchoBot()
 
     @staticmethod
     # Catch-all for errors.
@@ -41,5 +42,5 @@ class MessagesService:
     ADAPTER.on_turn_error = on_error
 
     @staticmethod
-    async def process_messages(req: Request) -> Response:
-        return await MessagesService.ADAPTER.process(req, MessagesService.BOT)
+    async def process_messages(nc: NATS, req: Request, ws_receiver: WebSocketReceiver) -> Response:
+        return await MessagesService.ADAPTER.process(req, ChatBot(nc, ws_receiver))

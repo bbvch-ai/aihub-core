@@ -3,10 +3,8 @@ from random import seed
 from typing import List, Optional
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
-from aihub_bots.errorhandling.ErrorMiddleware import ErrorMiddleware
 from aihub_bots.routes.Controller import Controller
 from aihub_bots.runners.lifetime.lifetime_manager import lifetime_manager
 from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
@@ -69,23 +67,6 @@ class BotsRunner:
             version=BaseConfig().VERSION or ".dev",
             debug=self.debug,
         )
-
-        origins = self.origins or ["http://localhost:8080"]
-        if BaseConfig().FRONTEND_ORIGIN:
-            origins += [item.strip() for item in BaseConfig().FRONTEND_ORIGIN.split(",")]
-
-        # Add CORS middleware
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=origins,
-            allow_origin_regex=r"https://.*\.ai-agents\.ch",
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-
-        # Add error handling middleware
-        app.add_middleware(ErrorMiddleware)
 
         return app
 

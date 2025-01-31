@@ -3,11 +3,12 @@ from os.path import abspath, join, dirname
 
 from aihub_bots.routes.health.HealthController import HealthController
 from aihub_bots.routes.messages.MessagesController import MessagesController
-from aihub_bots.runners.BotsTestRunner import BotsTestRunner
+from aihub_bots.runners.SimulatedAgentBotsTestRunner import SimulatedAgentBotsTestRunner
 
 
 async def main():
-    runner = BotsTestRunner()
+    runner = SimulatedAgentBotsTestRunner(agent_class="my_agent_class", agent_id="my_agent_id")
+    runner.with_simple_chunk_events()
 
     runner.mount(
         HealthController().get_health(),
