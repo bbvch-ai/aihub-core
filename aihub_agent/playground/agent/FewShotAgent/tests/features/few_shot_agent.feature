@@ -2,6 +2,7 @@ Feature: Test the FewShotAgent
   In order to verify that the FewShotAgent processes a user query correctly,
   we run a scenario that sends a user message and observes the produced events.
 
+  @azure
   Scenario: Validate the FewShotAgent workflow with azure llm
     Given I have an empty agent config
     Given the agent description is "This agent can transform movie titles into emojis."
@@ -21,6 +22,7 @@ Feature: Test the FewShotAgent
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present
 
+  @self_hosted
   Scenario: Validate the FewShotAgent workflow with self hosted llm
     Given I have an empty agent config
     Given the agent description is "This agent can transform movie titles into emojis."
@@ -40,6 +42,7 @@ Feature: Test the FewShotAgent
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present
 
+  @azure
   Scenario: Validate the RightAgentGuard workflow with azure llm
     Given I have an empty agent config
     Given the agent description is "This agent can transform movie titles into emojis."

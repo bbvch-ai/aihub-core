@@ -36,7 +36,7 @@ test-cov:
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml \
-	                  --ignore=playground/agent/RAGAgent/tests
+	                  -k "not azure"
 
 pr-ready: sort-imports format
 	@echo "Running full check (format, sort)..."
