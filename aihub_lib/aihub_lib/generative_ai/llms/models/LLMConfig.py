@@ -47,7 +47,7 @@ class LLMConfig(BaseModel):
 
     @abstractmethod
     def to_llama_index(
-        self, model_parameter: Optional[ModelParameter]
+        self, model_parameter: Optional[ModelParameter] = None
     ) -> Tuple[Union[LLM, BaseEmbedding], LLMCostTracker]:
         """
         Instantiate an LLM or embedding along with a cost tracker for llama_index.
@@ -58,7 +58,7 @@ class LLMConfig(BaseModel):
         """
         pass
 
-    def merge_model_params(self, model_parameter: Optional[ModelParameter]) -> Dict:
+    def merge_model_params(self, model_parameter: Optional[ModelParameter] = None) -> Dict:
         """
         Merge default model parameters with provided ones. The merged dictionary excludes any
         fields starting with '_'.

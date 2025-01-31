@@ -45,7 +45,7 @@ class ChatLLMConfig(LLMConfig):
         pass
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLM, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter] = None) -> Tuple[LLM, LLMCostTracker]:
         pass
 
     @asynccontextmanager

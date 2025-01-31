@@ -37,6 +37,6 @@ class EmbeddingLLMConfig(LLMConfig):
 
     @abstractmethod
     def to_llama_index(
-        self, model_parameter: Optional[EmbeddingLLMModelParameter]
+        self, model_parameter: Optional[EmbeddingLLMModelParameter] = None
     ) -> Tuple[BaseEmbedding, LLMCostTracker]:
         pass

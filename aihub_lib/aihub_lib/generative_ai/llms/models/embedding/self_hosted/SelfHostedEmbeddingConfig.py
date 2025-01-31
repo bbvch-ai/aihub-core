@@ -46,7 +46,7 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
     ]
 
     def to_llama_index(
-        self, model_parameter: Optional[SelfHostedEmbeddingParameter]
+        self, model_parameter: Optional[SelfHostedEmbeddingParameter] = None
     ) -> Tuple[TextEmbeddingsInference, LLMCostTracker]:
         """
         Instantiate a TextEmbeddingsInference object and LLMCostTracker for self-hosted embeddings.
