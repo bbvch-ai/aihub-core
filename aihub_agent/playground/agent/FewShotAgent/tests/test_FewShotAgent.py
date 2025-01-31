@@ -185,7 +185,7 @@ def _(agent_config_data, self_hosted_llm_config):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=60) as topic:
+    async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=StartEvent(locale="en", messages=[ChatMessage(content=query, role=MessageRole.USER)]),
@@ -203,28 +203,27 @@ def then_start_event_present(agent_runner: AgentTestRunner, payload: str):
 
 @then("a LimitChatHistoryEvent is present")
 def then_limit_chat_history_event(agent_runner: AgentTestRunner):
-    event = agent_runner.get_event_of_type(LimitChatHistoryEvent)
-    assert event, "Agent did not produce a LimitChatHistoryEvent"
+    assert agent_runner.has_event_of_type(LimitChatHistoryEvent), "Agent did not produce a LimitChatHistoryEvent"
 
 
 @then("a RightAgentEvent is present")
 def then_guard_or_rejection_event(agent_runner: AgentTestRunner):
-    assert agent_runner.get_event_of_type(
-        RightAgentEvent
-    ), "Agent did not produce either RightAgentEvent or GuardRejectionEvent"
+    assert agent_runner.has_event_of_type(RightAgentEvent), "Agent did not produce either RightAgentEvent"
 
 
 @then("a FewShotStandaloneQuestionCondenserEvent is present with condensed question")
 def then_few_shot_condenser_event(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_type(
+        FewShotStandaloneQuestionCondenserEvent
+    ), "FewShotStandaloneQuestionCondenserEvent was not emitted"
     condenser_event = agent_runner.get_event_of_type(FewShotStandaloneQuestionCondenserEvent)
-    assert condenser_event, "FewShotStandaloneQuestionCondenserEvent was not emitted"
     assert condenser_event.condensed_chat_message.content, "Condensed question content was empty"
 
 
 @then("a FewShotEvent is present with few shot context")
 def then_few_shot_event(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_type(FewShotEvent), "FewShotEvent was not emitted"
     few_shot_event = agent_runner.get_event_of_type(FewShotEvent)
-    assert few_shot_event, "FewShotEvent was not emitted"
     assert few_shot_event.few_shot_examples, "No few shot examples found in FewShotEvent"
     assert few_shot_event.few_shot_system_prompt, "No few shot system prompt found in FewShotEvent"
     assert few_shot_event.full_context, "No full context found in FewShotEvent"
@@ -232,8 +231,8 @@ def then_few_shot_event(agent_runner: AgentTestRunner):
 
 @then("an LLMEvent is present with a generated response")
 def then_llm_event(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_type(LLMEvent), "LLMEvent not produced"
     llm_event = agent_runner.get_event_of_type(LLMEvent)
-    assert llm_event, "LLMEvent not produced"
     assert llm_event.output_messages[0].content, "LLMEvent response content is empty"
 
 
