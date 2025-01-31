@@ -1,6 +1,11 @@
 import logging
 from contextlib import asynccontextmanager
 
+from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from fastapi import FastAPI
 from mongoengine import connect
 from nats.aio.client import Client as NATS
@@ -9,11 +14,6 @@ from aihub_api.persistance.EventPersister import EventPersister
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 
 @asynccontextmanager

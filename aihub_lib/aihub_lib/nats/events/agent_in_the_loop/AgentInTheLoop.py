@@ -1,9 +1,9 @@
 from bson import ObjectId
 
-from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInTheLoopExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
+from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import PartialAgentTopic
 
