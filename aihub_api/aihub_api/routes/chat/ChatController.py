@@ -8,12 +8,11 @@ from starlette.responses import StreamingResponse
 from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
 from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
-from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
-
-from ...nats.dependencies.use_nats import use_nats
-from ...sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
+from aihub_api.sockets.receiver import WebSocketReceiver
+from aihub_api.sockets.receiver.dependencies import use_ws_receiver
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from .ChatService import ChatService, StreamingResources, JsonResources
 from ..Controller import Controller
-from .ChatService import ChatService, JsonResources, StreamingResources
 
 logger = logging.getLogger(__name__)
 

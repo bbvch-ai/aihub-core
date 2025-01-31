@@ -8,9 +8,7 @@ from starlette.websockets import WebSocketDisconnect
 from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.routes.Controller import Controller
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-
-from ...auth.dependencies.oauth2.OAuth2Config import OAuth2Config
+from aihub_api.sockets.events.user_to_server import WSUserEvent
 from .EventService import EventService
 
 logger = logging.getLogger(__name__)

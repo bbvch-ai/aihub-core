@@ -3,6 +3,15 @@ import logging
 from dataclasses import dataclass
 from typing import List
 
+from bson import ObjectId
+from nats.aio.client import Client as NATS
+
+from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
+from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
+from aihub_api.routes.chat.dto.stream.ChatCompletionChunk import ChatCompletionChunk
+from aihub_api.sockets.events.user_to_server import WSUserEvent
+from aihub_api.sockets.receiver import WebSocketReceiver
 from aihub_lib.generative_ai.llms.costs.LLMCosts import LLMCosts
 from aihub_lib.nats.events import ChunkEvent, DisplayEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
@@ -11,15 +20,6 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from bson import ObjectId
-from nats.aio.client import Client as NATS
-
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
-from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
-from aihub_api.routes.chat.dto.stream.ChatCompletionChunk import ChatCompletionChunk
-from aihub_api.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 logger = logging.getLogger(__name__)
 

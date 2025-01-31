@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "aihub_bot"
+version = "v0.16.0"
+description = "bots core"
+authors = [
+    "Joel Barmettler <joel.barmettler@bbv.ch>",
+    "Marius Högger <marius.hoegger@bbv.ch>",
+    "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
+]
+license = "Proprietary"
+
+[tool.poetry.dependencies]
+python = ">=3.11, <3.12"
+pydantic = "^2.10.3"
+nats-py = "^2.9.0"
+colorlog = "^6.9.0"
+fastapi = "^0.115.6"
+cachetools = "^5.5.0"
+mongoengine = "^0.29.1"
+azure-identity = "^1.19.0"
+azure-mgmt-cosmosdb = "^9.7.0"
+azure-mgmt-resource = "^23.2.0"
+uvicorn = "^0.34.0"
+httpx = "^0.28.1"
+cryptography = "^44.0.0"
+pyjwt = "^2.10.1"
+botbuilder-integration-aiohttp = "^4.16.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+pytest-asyncio = "^0.24.0"
+ruff = "^0.8.1"
+isort = "^5.13.2"
+mypy = "^1.13.0"
+toml-sort = "^0.24.2"
+black = { extras = ["jupyter"], version = "^24.10.0" }
+pytest-bdd = "^8.1.0"
+pytest-cov = "^6.0.0"
+
+[tool.poetry.dependencies.aihub_lib]
+path = "../aihub_lib"
+develop = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+target-version = 'py311'
+
+[tool.ruff.lint]
+extend-ignore = ["E203"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
