@@ -1,9 +1,15 @@
 import logging
 from typing import List, Optional
 
+from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
+
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
+from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.events import BaseEvent, ControlEvent, StartEvent, StopEvent, ChunkEvent, DisplayEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
@@ -153,7 +159,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()
-        await self.nc.connect(servers=["nats://localhost:4222"])
+        await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
