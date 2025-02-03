@@ -1,13 +1,11 @@
 from typing import Dict, List, Optional
 
-from aihub_agent.tracing.decorators.tracing import tracing
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
 class RawLoader(BaseReader):
-    @tracing()
     def load_data(
         self,
         file: str,

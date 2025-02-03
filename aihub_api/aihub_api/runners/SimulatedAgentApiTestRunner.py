@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
@@ -102,7 +102,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [StartEventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())]
+        start_events = [
+            StartEventSpecs(
+                event_type=StartEvent.__name__,
+                event_schema=StartEvent.model_json_schema(),
+            )
+        ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -126,7 +131,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         and display events to display_event subjects.
         """
         thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
-            self.topic_manager, thread_id=topic.thread_id, display_id=topic.display_id, run_id=topic.run_id
+            self.topic_manager,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            run_id=topic.run_id,
         )
         if isinstance(event, ControlEvent):
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(

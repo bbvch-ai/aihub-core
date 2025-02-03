@@ -1,0 +1,2 @@
+def agent():
+    return None

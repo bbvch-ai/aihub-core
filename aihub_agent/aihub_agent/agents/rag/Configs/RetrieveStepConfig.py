@@ -1,6 +1,6 @@
 from typing import List, Literal
 
-from aihub_lib.generative_ai.agent.AgentConfig import StepConfig
+from aihub_lib.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryMode
 from pydantic import Field

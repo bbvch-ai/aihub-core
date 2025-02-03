@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Type
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
