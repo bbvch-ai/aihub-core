@@ -1,10 +1,11 @@
 import logging
 
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+
+from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 
 logger = logging.getLogger(__name__)
 

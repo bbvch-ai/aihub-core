@@ -5,6 +5,7 @@ from aihub_api.auth.dependencies.no_auth.NoAuthConfig import NoAuthConfig
 
 logger = logging.getLogger(__name__)
 
+
 async def use_no_auth_user() -> AuthenticatedUser:
     """
     A FastAPI dependency that returns a static, pre-configured user for testing or local development.

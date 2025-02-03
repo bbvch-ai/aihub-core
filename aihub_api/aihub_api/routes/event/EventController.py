@@ -1,8 +1,8 @@
 import logging
 import traceback
-from typing import Callable, Any, List
+from typing import Any, Callable, List
 
-from fastapi import WebSocket, Depends, HTTPException
+from fastapi import Depends, HTTPException, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
@@ -10,8 +10,8 @@ from aihub_api.routes.Controller import Controller
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_api.sockets.events.user_to_server.WSUserEvent import WSUserEvent
 
-from .EventService import EventService
 from ...auth.dependencies.oauth2.OAuth2Config import OAuth2Config
+from .EventService import EventService
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +47,9 @@ class EventController(Controller):
         super().__init__(route, auth)
 
     def get_events(self, path: str = "/") -> "EventController":
-
         @self.router.get(path)
         async def get_all_events(
-                user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Depends(self.auth),
         ) -> List[WSServerEvent]:
             """
             Returns all persisted events visible to the authenticated user.
@@ -61,7 +60,6 @@ class EventController(Controller):
         return self
 
     def ws(self, path: str = "/ws") -> "EventController":
-
         @self.router.websocket(path)
         async def websocket_endpoint(websocket: WebSocket):
             """

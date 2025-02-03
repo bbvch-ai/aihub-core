@@ -1,9 +1,8 @@
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from pydantic import BaseModel, Field
 
 
 class WSServerEvent(BaseModel):
@@ -28,16 +27,20 @@ class WSServerEvent(BaseModel):
 
     agent_class: str = Field(..., description="The agent class responsible for this event.")
     agent_id: str = Field(..., description="Unique identifier of the agent instance that produced the event.")
-    thread_id: str = Field(..., description="Thread identifier linking events to a particular conversation or workflow.")
+    thread_id: str = Field(
+        ..., description="Thread identifier linking events to a particular conversation or workflow."
+    )
     display_id: str = Field(..., description="Display session ID, used to group events for the UI.")
     run_id: Optional[str] = Field(None, description="Optional run ID if the event is associated with a particular run.")
-    event_type: Optional[str] = Field(TopicManager.DISPLAY_EVENT, description="Type of the event (default: 'display_event').")
+    event_type: Optional[str] = Field(
+        TopicManager.DISPLAY_EVENT, description="Type of the event (default: 'display_event')."
+    )
     event_name: str = Field(..., description="Name of the event, indicating its subtype or category.")
     event_id: str = Field(..., description="Unique identifier of this event instance.")
     event_data: Dict = Field(..., description="Payload of the event, containing detailed information.")
 
     @classmethod
-    def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> 'WSServerEvent':
+    def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":
         """
         Construct a WSServerEvent from a PersistedEventEntity, converting persisted event data
         into a client-ready format.

@@ -2,23 +2,23 @@ import asyncio
 from asyncio import sleep
 from typing import List, Optional
 
-from bson import ObjectId
-from fastapi import HTTPException
-from nats.aio.client import Client as NATS
-from cachetools import TTLCache
-
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
+from bson import ObjectId
+from cachetools import TTLCache
+from fastapi import HTTPException
+from nats.aio.client import Client as NATS
+
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
-DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)   # Cache the entire agent list for 60s
-GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)       # Cache individual agents for 60s
+DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
+GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
 
 
 class AgentService:
@@ -67,8 +67,7 @@ class AgentService:
 
         # Broadcast the discovery request
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
+            event=DiscoveryRequestEvent(), subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
         )
 
         # Wait briefly for responses
@@ -124,8 +123,7 @@ class AgentService:
 
         # Send discovery request for the specific agent
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
+            event=DiscoveryRequestEvent(), subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
         )
 
         # Wait up to 1 second for response

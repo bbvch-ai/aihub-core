@@ -39,7 +39,8 @@ class NCPublisher(Generic[TEvent]):
         and then sends the message through the NATS client.
         """
         logger.debug(f"Publishing event {event.__class__.__name__} to {subject}")
-        logger.debug(f"Serialized event: {event.model_dump_json()}")
+        serialized_event = event.model_dump_json(serialize_as_any=True)
+        logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not isinstance(event, ControlEvent):
             logger.warning(
@@ -51,4 +52,4 @@ class NCPublisher(Generic[TEvent]):
                 f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
             )
 
-        await self.nc.publish(subject, event.model_dump_json().encode())
+        await self.nc.publish(subject, serialized_event.encode())

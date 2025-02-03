@@ -9,11 +9,15 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent, ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -121,7 +125,7 @@ class Dispatcher:
 
         If steps are ready, it triggers their execution asynchronously.
         """
-        logger.debug(f"Handling event for subject {topic}")
+        logger.debug(f"Handling event {event.__class__.__name__} for subject {topic}")
         # Store the event for future reference
         await self.event_store.store_event(topic.run_id, event)
 
@@ -130,7 +134,7 @@ class Dispatcher:
         thread_context = await ThreadContext.create(self.js, topic.thread_id)
 
         if isinstance(event, StartEvent):
-            logger.debug("Handling StartEvent")
+            logger.debug(f"Handling StartEvent: {event.__class__.__name__}")
             telemetry_headers = self.tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
 
@@ -141,7 +145,7 @@ class Dispatcher:
                 await run_context.set(key, value)
 
         if isinstance(event, StopEvent):
-            logger.debug("Handling StopEvent")
+            logger.debug(f"Handling StopEvent: {event.__class__.__name__}")
             # Clean up run-specific data
             await run_context.delete_all()
             await self.event_store.delete_run_store(topic.run_id)
@@ -149,7 +153,7 @@ class Dispatcher:
             return
 
         if isinstance(event, ExceptionEvent):
-            logger.debug("Handling ExceptionEvent")
+            logger.debug(f"Handling ExceptionEvent: {event.__class__.__name__}")
             # Mark run as crashed so no further steps are executed
             await self.step_store.mark_run_as_crashed(topic.run_id)
             return
@@ -374,6 +378,7 @@ class Dispatcher:
                     result = [result]
                 for event in result:
                     if isinstance(event, HumanInTheLoopRequestEvent):
+                        logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
                         event.topic = AgentTopic.from_partial_topic(
                             partial_topic=event.topic,
@@ -384,6 +389,10 @@ class Dispatcher:
                             display_id=topic.display_id,
                             event_id=event.event_id,
                         )
+
+                    if isinstance(event, AgentInTheLoopRequestEvent):
+                        logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
+                        await self.trigger_agent_in_the_loop(event, topic)
 
                     await self.event_store.store_event(topic.run_id, event)
                     await self.publish_event(event, topic)
@@ -403,6 +412,56 @@ class Dispatcher:
             display_id=topic.display_id,
             run_id=topic.run_id,
         )
+
+    async def trigger_agent_in_the_loop(self, aitl_request_event: AgentInTheLoopRequestEvent, topic: AgentTopic):
+        """
+        Orchestrates agent-to-agent delegation by creating a temporary subscription to the delegated agent.
+        When agents collaborate, we need a way to route responses back to the requesting agent.
+        A temporary subscription:
+        - Ensures responses are captured even in distributed environments
+        - Allows proper cleanup after the interaction completes
+        - Maintains isolation between different agent-to-agent interactions
+        - Enables monitoring of both successful completions and failures
+        """
+        response_event_type = aitl_request_event.response
+        exception_event_type = aitl_request_event.exception
+
+        start_event = aitl_request_event.start_event
+
+        async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
+            if isinstance(aitl_event, StopEvent):
+                aitl_response = response_event_type(stop_event=aitl_event)
+                logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
+                await event_subscriber.stop()
+                await self.publish_event(aitl_response, topic)
+            if isinstance(aitl_event, ExceptionEvent):
+                aitl_exception = exception_event_type(exception_event=aitl_event)
+                logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
+                await event_subscriber.stop()
+                await self.publish_event(aitl_exception, topic)
+
+        aitl_run_id = topic.run_id if aitl_request_event.share_run_id else str(ObjectId())
+        aitl_thread_id = topic.thread_id if aitl_request_event.share_thread_id else str(ObjectId())
+        aitl_display_id = topic.display_id if aitl_request_event.share_display_id else str(ObjectId())
+
+        aitl_request_event.other_agent_topic = AgentTopic.from_partial_topic(
+            partial_topic=aitl_request_event.other_agent_topic,
+            thread_id=aitl_thread_id,
+            display_id=aitl_display_id,
+            run_id=aitl_run_id,
+        )
+
+        logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
+        event_subscriber = NCSubscriber.for_all_thread_events(
+            nc=self.nc,
+            topic_manager=AgentThreadTopicManager.from_agent_topic(aitl_request_event.other_agent_topic),
+            handler=convert_event_to_agent_in_the_loop_response,
+        )
+        await event_subscriber.start()
+
+        subject = aitl_request_event.other_agent_topic.to_subject()
+        logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
+        await self.publisher.publish_event(start_event, subject)
 
     async def publish_event(
         self,

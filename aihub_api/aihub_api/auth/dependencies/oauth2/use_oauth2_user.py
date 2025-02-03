@@ -1,8 +1,8 @@
 from typing import Annotated
 
+import httpx
 import jwt
 from fastapi import Depends, HTTPException
-import httpx
 from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError
 
@@ -62,7 +62,7 @@ async def use_oauth2_user(token: Annotated[str, Depends(OAuth2Config().SCHEMA)])
             rsa_key,
             algorithms=["RS256"],
             audience=OAuth2Config().CLIENT_ID,
-            issuer=f"{OAuth2Config().AUTHORITY}/v2.0"
+            issuer=f"{OAuth2Config().AUTHORITY}/v2.0",
         )
 
         # Parse token claims into AuthenticatedUser
