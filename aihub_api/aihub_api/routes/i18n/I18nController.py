@@ -10,7 +10,6 @@ from aihub_api.routes.i18n.dto.LocaleResponse import LocaleResponse
 from aihub_api.routes.i18n.I18nService import I18nService
 
 
-
 class I18nController(Controller):
     """
     A controller for handling internationalization (i18n) operations, such as retrieving the user's current locale.
