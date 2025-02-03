@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
@@ -23,13 +23,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StreamingResources:
-    """
-    Holds resources required for streaming responses:
-    - stop_event: Signals when streaming should end.
-    - subscriber: Subscribed to display events that provide chunks.
-    - chunk_queue: Queue of chunks waiting to be sent as SSE.
-    """
-
     stop_event: asyncio.Event
     subscriber: NCSubscriber
     chunk_queue: asyncio.Queue
@@ -37,15 +30,6 @@ class StreamingResources:
 
 @dataclass
 class JsonResources:
-    """
-    Holds resources for JSON-based responses:
-    - stop_event: Signals when the run is complete.
-    - subscriber: Subscribed to display events.
-    - chunk_events: Accumulated chunk events for constructing the final response.
-    - costs: Tracks LLMCostEvents for usage reporting.
-    - model_name: Tracks the LLM model name used.
-    """
-
     stop_event: asyncio.Event
     subscriber: NCSubscriber
     chunk_events: List[ChunkEvent]
@@ -56,44 +40,17 @@ class JsonResources:
 class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
-
-    ### Key Steps in the Interaction
-    1. Create a conversation thread (saving state in ThreadEntity).
-    2. Convert user request into a WSUserEvent and send it to the agent via WebSocketReceiver.
-    3. Subscribe to agent responses (via DisplayEvents) and aggregate them.
-    4. For streaming:
-       - Return an SSE stream of chunked responses as they are produced.
-    5. For JSON:
-       - Wait for all responses (chunks and cost events), then build a single JSON response.
-
-    ### Separation of Concerns
-    ChatService doesn't handle HTTP details directly. Instead, it:
-    - Creates threads
-    - Sends WSUserEvents to the system
-    - Subscribes to events from agents
-    - Aggregates results (chunks, costs)
-    - Returns structured resources for controllers to send back to clients.
-
-    This design ensures the service is testable and maintainable.
     """
 
     @staticmethod
-    async def start_stream_chat_interaction(
+    def _initialize_interaction(
         user_oid: str,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
-        nc: NATS,
-        ws_receiver: WebSocketReceiver,
-    ) -> StreamingResources:
+    ) -> Tuple[WSUserEvent, AgentThreadTopicManager]:
         """
-        Starts a streaming chat interaction. The final output is a SSE generator.
-
-        Steps:
-        1. Create a thread.
-        2. Create and send a WSUserEvent with the user's messages.
-        3. Subscribe to display events (ChunkEvents and StopEvent).
-        4. Return resources containing a chunk_queue and a stop_event. The controller uses these to produce SSE.
+        Common initialization steps for both streaming and JSON interactions.
         """
         thread = ThreadEntity.create_thread(
             "chat",
@@ -119,6 +76,21 @@ class ChatService:
             display_id=event.display_id,
             run_id="*",
         )
+        return event, topic_manager
+
+    @staticmethod
+    async def start_stream_chat_interaction(
+        user_oid: str,
+        agent_class: str,
+        agent_id: str,
+        messages: List[ChatMessage],
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
+    ) -> StreamingResources:
+        """
+        Starts a streaming chat interaction and returns the resources for SSE streaming.
+        """
+        event, topic_manager = ChatService._initialize_interaction(user_oid, agent_class, agent_id, messages)
 
         stop_event = asyncio.Event()
         chunk_queue = asyncio.Queue()
@@ -138,7 +110,6 @@ class ChatService:
             topic_manager=topic_manager,
             handler=response_aggregator,
         )
-
         await subscriber.start()
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
@@ -157,35 +128,9 @@ class ChatService:
         ws_receiver: WebSocketReceiver,
     ) -> JsonResources:
         """
-        Starts a JSON-based chat interaction, waiting until all tokens and costs are processed before returning.
-
-        Similar steps as the streaming method, but here we collect all ChunkEvents and LLMCostEvents,
-        and wait for a StopEvent before constructing the final JSON response.
+        Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        thread = ThreadEntity.create_thread(
-            "chat",
-            users=[User(user_id=user_oid)],
-            agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
-        )
-        logger.debug(f"Created thread: {thread.id}")
-
-        event = WSUserEvent(
-            thread_id=str(thread.id),
-            display_id=str(ObjectId()),
-            event=UserMessageEvent(
-                messages=messages[:-1],
-                content=messages[-1].content,
-            ),
-        )
-        logger.debug(f"Created event: {event}")
-
-        topic_manager = AgentThreadTopicManager(
-            agent_class=agent_class,
-            agent_id=agent_id,
-            thread_id=event.thread_id,
-            display_id=event.display_id,
-            run_id="*",
-        )
+        event, topic_manager = ChatService._initialize_interaction(user_oid, agent_class, agent_id, messages)
 
         stop_event = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
@@ -194,7 +139,7 @@ class ChatService:
 
         resources = JsonResources(
             stop_event=stop_event,
-            subscriber=None,  # assigned after subscriber creation
+            subscriber=None,  # Will be set after subscriber creation.
             chunk_events=chunk_events,
             costs=costs,
             model_name=model_name,
@@ -230,11 +175,8 @@ class ChatService:
     @staticmethod
     def build_json_response_content(chunk_events: List[ChunkEvent]) -> str:
         """
-        Construct a JSON response from collected chunk events and cost metrics.
-
-        Sort chunks by creation time, join them into a single string, and use `ChatCompletionsSuccessResponse`
-        to wrap the content and usage data.
+        Construct a JSON response from collected chunk events.
         """
-        chunk_events = sorted(chunk_events, key=lambda x: x.created_at)
-        content = "".join([chunk.content for chunk in chunk_events])
+        sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
+        content = "".join(chunk.content for chunk in sorted_chunks)
         return content
