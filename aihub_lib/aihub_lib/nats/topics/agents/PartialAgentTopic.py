@@ -70,3 +70,16 @@ class PartialAgentTopic(Topic):
             event_name=none_if_wildcard(event_name),
             event_id=none_if_wildcard(event_id),
         )
+
+    def to_subject(self):
+        return (
+            f"{TopicManager.AGENT_TOPIC}."
+            f"{self.agent_class or '*'}."
+            f"{self.agent_id or '*'}."
+            f"{self.thread_id or '*'}."
+            f"{self.display_id or '*'}."
+            f"{self.run_id or '*'}."
+            f"{self.event_type or '*'}."
+            f"{self.event_name or '*'}."
+            f"{self.event_id or '*'}"
+        )

@@ -1,9 +1,8 @@
 import json
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
+from pydantic import BaseModel, Field
 
 
 class WSUserEvent(BaseModel):
@@ -44,7 +43,7 @@ class WSUserEvent(BaseModel):
     event: UserMessageEvent | HumanInTheLoopResponseEvent = Field(..., description="The user-originated event.")
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict) -> 'WSUserEvent':
+    def deserialize_event(cls, data: bytes | str | dict) -> "WSUserEvent":
         """
         Deserialize incoming raw data (JSON string, bytes, or dict) into a WSUserEvent.
 

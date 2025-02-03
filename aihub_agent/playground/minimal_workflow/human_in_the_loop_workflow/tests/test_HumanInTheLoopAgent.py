@@ -1,15 +1,10 @@
-import asyncio
-from asyncio import sleep
-
-import pytest
 from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
-from aihub_lib.nats.topics import PartialAgentTopic
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.events.human_in_the_loop import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
@@ -74,7 +69,7 @@ def _(agent_runner: AgentTestRunner):
 @then(parsers.parse('a HumanInTheLoopResponseEvent event with the response "{response}" is present'))
 def _(agent_runner: AgentTestRunner, response: str):
     assert (
-            agent_runner.get_event_of_type(HumanInTheLoopResponseEvent).response == response
+        agent_runner.get_event_of_type(HumanInTheLoopResponseEvent).response == response
     ), "Agent did not receive correct response"
 
 

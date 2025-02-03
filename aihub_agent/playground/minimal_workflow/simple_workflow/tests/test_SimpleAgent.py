@@ -7,7 +7,7 @@ from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
 from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
-from playground.minimal_workflow.simple_workflow.events.EventA import EventA
+from playground.minimal_workflow.simple_workflow.events.SimpleEventA import SimpleEventA
 
 scenarios("../tests/features/simple_agent.feature")
 
@@ -47,4 +47,4 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('an EventA event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.get_event_of_type(EventA).payload == payload, "Agent received incorrect data"
+    assert agent_runner.get_event_of_type(SimpleEventA).payload == payload, "Agent received incorrect data"

@@ -51,6 +51,9 @@ class BaseEvent(BaseModel):
         use_enum_values=True,
     )
 
+    def __str__(self):
+        return f"{self.__class__.__name__}({super().__str__()})"
+
     @computed_field  # makes _type a computed property
     @property
     def _type(self) -> str:
@@ -68,6 +71,8 @@ class BaseEvent(BaseModel):
         """
         super().__pydantic_init_subclass__(**kwargs)
         logger.debug(f"Registering Event {cls.__name__}")
+        if cls.__name__ in BaseEvent._event_registry:
+            raise ValueError(f"Duplication detected for Event {cls.__name__}")
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
@@ -93,6 +98,9 @@ class BaseEvent(BaseModel):
         if event_type and isinstance(event_type, str):
             event_class = cls._event_registry.get(event_type)
             if event_class:
+                for key, value in json_data.items():
+                    if isinstance(value, dict) and "_type" in value:
+                        json_data[key] = cls.deserialize_event(value)
                 return event_class(**json_data)
 
         logger.warning(

@@ -1,25 +1,26 @@
 import logging
 from typing import List, Optional
 
-from nats.aio.client import Client as NATS
-from nats.js import JetStreamContext
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import BaseEvent, ControlEvent, StartEvent, StopEvent, ChunkEvent, DisplayEvent
+from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
+from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
+
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +102,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [
-            StartEventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())
-        ]
+        start_events = [StartEventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -127,10 +126,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         and display events to display_event subjects.
         """
         thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
-            self.topic_manager,
-            thread_id=topic.thread_id,
-            display_id=topic.display_id,
-            run_id=topic.run_id
+            self.topic_manager, thread_id=topic.thread_id, display_id=topic.display_id, run_id=topic.run_id
         )
         if isinstance(event, ControlEvent):
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(
@@ -158,7 +154,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()
-        await self.nc.connect(servers=["nats://localhost:4222"])
+        await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
@@ -179,7 +175,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         await super().run()
 
-    def with_simple_chunk_events(self) -> 'SimulatedAgentApiTestRunner':
+    def with_simple_chunk_events(self) -> "SimulatedAgentApiTestRunner":
         """
         A convenience method to populate a standard sequence of chunk and cost events, simulating
         a typical LLM-based agent responding with textual chunks and cost metrics.
