@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from aihub_agent.tracing.decorators.tracing import tracing
-from azure.ai.documentintelligence.models import AnalyzeResult, ContentFormat
+from azure.ai.documentintelligence.models import AnalyzeResult, DocumentContentFormat
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
@@ -18,7 +17,6 @@ class DocumentIntelligenceLoader(BaseReader):
 
         self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
 
-    @tracing()
     def load_data(
         self,
         file: str,
@@ -31,7 +29,7 @@ class DocumentIntelligenceLoader(BaseReader):
                 "prebuilt-layout",
                 analyze_request=pdf_file,
                 content_type="application/octet-stream",
-                output_content_format=ContentFormat.MARKDOWN,
+                output_content_format=DocumentContentFormat.MARKDOWN,
             )
         result: AnalyzeResult = poller.result()
         metadata = {"number_of_pages": len(result.pages)}

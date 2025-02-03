@@ -126,11 +126,6 @@ jobs:
             cd -
           done
 
-      - name: Clean up SSH keys
-        run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf
-
       - name: Delete existing tag (in case we re-tag)
         run: |
           # Remove local tag if exists
@@ -169,3 +164,8 @@ jobs:
           GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com
           GIT_AUTHOR_NAME: ${{ github.actor }}
           GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
+
+      - name: Clean up SSH keys
+        run: |
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf

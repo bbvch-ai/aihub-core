@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.16.0"
+version = "v0.20.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -39,6 +39,7 @@ opentelemetry-api = "^1.29.0"
 opentelemetry-instrumentation = "^0.50b0"
 opentelemetry-sdk = "^1.29.0"
 opentelemetry-semantic-conventions = "^0.50b0"
+opentelemetry-exporter-otlp = "^1.29.0"
 pydantic = "^2.10.3"
 llama-index-embeddings-azure-openai = "^0.3.0"
 llama-index-storage-docstore-mongodb = "^0.3.0"
@@ -120,3 +121,4 @@ markers = [
     "experimental: mark a test as experimental"
 ]
 addopts = "--strict-markers"
+pythonpath = ["."]

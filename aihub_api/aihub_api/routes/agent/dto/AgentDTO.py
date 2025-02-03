@@ -1,6 +1,6 @@
 from typing import List
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import StartEventSpecs
 from pydantic import BaseModel, Field
 

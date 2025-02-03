@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from aihub_lib.generative_ai.agent.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent
 
 
