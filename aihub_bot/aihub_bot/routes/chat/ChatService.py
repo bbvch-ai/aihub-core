@@ -42,5 +42,12 @@ class ChatService:
     ADAPTER.on_turn_error = on_error
 
     @staticmethod
-    async def process_messages(nc: NATS, req: Request, ws_receiver: WebSocketReceiver) -> Response:
-        return await ChatService.ADAPTER.process(req, ChatBot(nc, ws_receiver))
+    async def process_messages(
+        nc: NATS,
+        req: Request,
+        ws_receiver: WebSocketReceiver,
+        agent_class: str,
+        agent_id: str,
+    ) -> Response:
+        chat_bot: ChatBot = ChatBot(nc, ws_receiver, agent_class, agent_id)
+        return await ChatService.ADAPTER.process(req, chat_bot)

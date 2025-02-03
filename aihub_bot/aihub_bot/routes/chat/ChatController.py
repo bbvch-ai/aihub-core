@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Path
 from nats.aio.client import Client as NATS
 from starlette.requests import Request
 from starlette.responses import Response
@@ -17,13 +17,21 @@ class ChatController(Controller):
     def __init__(self, route: str = "/chat"):
         super().__init__(route)
 
-    def post_messages(self, route: str = "/") -> "ChatController":
+    def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "ChatController":
         @self.router.post(route)
-        async def post_messages(
+        async def json_chat(
             request: Request,
+            agent_class: Annotated[str, Path(title="Agent class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
-            return await ChatService.process_messages(req=request, nc=nc, ws_receiver=ws_receiver)
+            return await ChatService.process_messages(
+                req=request,
+                nc=nc,
+                ws_receiver=ws_receiver,
+                agent_class=agent_class,
+                agent_id=agent_id,
+            )
 
         return self

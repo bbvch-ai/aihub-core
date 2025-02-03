@@ -6,7 +6,7 @@ existing file structure.
 It specifically looks for pyproject.toml in:
   - aihub_agent/
   - aihub_api/
-  - aihub_bots/
+  - aihub_bot/
   - aihub_pipeline/
 
 Usage:
@@ -42,7 +42,7 @@ except ImportError:
 MICROSERVICE_DIRS = [
     "aihub_agent",
     "aihub_api",
-    "aihub_bots",
+    "aihub_bot",
     "aihub_pipeline",
 ]
 

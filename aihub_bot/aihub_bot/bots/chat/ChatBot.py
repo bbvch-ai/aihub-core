@@ -42,12 +42,12 @@ class JsonResources:
 class ChatBot(ActivityHandler):
     messages: Dict[str, List[ChatMessage]] = {}
     users: Dict[str, str] = {}
-    agent_class = "my_agent_class"
-    agent_id = "my_agent_id"
 
-    def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver):
+    def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver, agent_class: str, agent_id: str):
         self.nc = nc
         self.ws_receiver = ws_receiver
+        self.agent_class = agent_class
+        self.agent_id = agent_id
 
     @staticmethod
     def _save_user(from_property_id: str):
@@ -71,8 +71,8 @@ class ChatBot(ActivityHandler):
             return ChatBot.messages[conversation_id]
         return []
 
-    @staticmethod
     async def _start_json_chat_interaction(
+            self,
         user_id: str,
         messages: List[ChatMessage],
         nc: NATS,
@@ -81,7 +81,7 @@ class ChatBot(ActivityHandler):
         thread = ThreadEntity.create_thread(
             name="chat",
             users=[User(user_id=user_id)],
-            agents=[Agent(agent_class=ChatBot.agent_class, agent_id=ChatBot.agent_id)],
+            agents=[Agent(agent_class=self.agent_class, agent_id=self.agent_id)],
         )
         logger.debug(f"Created thread: {thread.id}")
 
@@ -96,8 +96,8 @@ class ChatBot(ActivityHandler):
         logger.debug(f"Created event: {event}")
 
         topic_manager = AgentThreadTopicManager(
-            agent_class=ChatBot.agent_class,
-            agent_id=ChatBot.agent_id,
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
             thread_id=event.thread_id,
             display_id=event.display_id,
             run_id="*",
@@ -148,14 +148,14 @@ class ChatBot(ActivityHandler):
         content = "".join([chunk.content for chunk in chunk_events])
         return content
 
-    @staticmethod
     async def _json_chat(
+        self,
         user_id: str,
         messages: List[ChatMessage],
         nc: NATS,
         ws_receiver: WebSocketReceiver,
     ) -> str:
-        resources: JsonResources = await ChatBot._start_json_chat_interaction(user_id, messages, nc, ws_receiver)
+        resources: JsonResources = await self._start_json_chat_interaction(user_id, messages, nc, ws_receiver)
 
         # Wait until all events are processed
         await resources.stop_event.wait()
