@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated, Any, Callable
 
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from fastapi import Body, Depends, Path, Request
 from nats.aio.client import Client as NATS
 from starlette.responses import StreamingResponse
@@ -10,9 +11,9 @@ from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequ
 from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
 from aihub_api.sockets.receiver import WebSocketReceiver
 from aihub_api.sockets.receiver.dependencies import use_ws_receiver
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from .ChatService import ChatService, StreamingResources, JsonResources
+
 from ..Controller import Controller
+from .ChatService import ChatService, JsonResources, StreamingResources
 
 logger = logging.getLogger(__name__)
 

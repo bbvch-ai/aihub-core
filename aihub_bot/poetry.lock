@@ -26,7 +26,7 @@ optional = false
 python-versions = ">=3.11, <3.12"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 azure-ai-documentintelligence = "^1.0.0b4"
@@ -41,7 +41,6 @@ flatdict = "^4.0.1"
 fsspec = "^2024.10.0"
 llama-index-core = "^0.12.3"
 llama-index-embeddings-azure-openai = "^0.3.0"
-llama-index-embeddings-text-embeddings-inference = "^0.3.1"
 llama-index-llms-openai-like = "^0.3.3"
 llama-index-readers-file = "^0.4.1"
 llama-index-storage-docstore-mongodb = "^0.3.0"
@@ -65,8 +64,11 @@ pyyaml = "^6.0.2"
 transformers = "^4.48.1"
 
 [package.source]
-type = "directory"
-url = "../aihub_lib"
+type = "git"
+url = "https://github.com/bbvch-ai/aihub-core.git"
+reference = "v0.16.0"
+resolved_reference = "3a5ed4b2ab41c702f73791234b295cfefa55d9a3"
+subdirectory = "aihub_lib"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -1604,7 +1606,6 @@ files = [
 ]
 
 [package.dependencies]
-aiohttp = {version = "*", optional = true, markers = "extra == \"inference\""}
 filelock = "*"
 fsspec = ">=2023.5.0"
 packaging = ">=20.9"
@@ -1948,23 +1949,6 @@ llama-index-core = ">=0.12.0,<0.13.0"
 openai = ">=1.1.0"
 
 [[package]]
-name = "llama-index-embeddings-text-embeddings-inference"
-version = "0.3.2"
-description = "llama-index embeddings text embeddings inference integration"
-optional = false
-python-versions = "<4.0,>=3.9"
-groups = ["main"]
-files = [
-    {file = "llama_index_embeddings_text_embeddings_inference-0.3.2-py3-none-any.whl", hash = "sha256:7ee41709df258d1f13bb47b31dc8bf05ce4580a19360d2e96515a0e4f0833352"},
-    {file = "llama_index_embeddings_text_embeddings_inference-0.3.2.tar.gz", hash = "sha256:e379767cb95d4fba02612c0d681d98df96563f24b508bad1835c04b6fe744ab6"},
-]
-
-[package.dependencies]
-httpx = ">=0.26.0"
-llama-index-core = ">=0.12.0,<0.13.0"
-llama-index-utils-huggingface = ">=0.3.0,<0.4.0"
-
-[[package]]
 name = "llama-index-llms-azure-openai"
 version = "0.3.0"
 description = "llama-index llms azure openai integration"
@@ -2069,22 +2053,6 @@ files = [
 llama-index-core = ">=0.12.0,<0.13.0"
 motor = ">=3.6,<4.0"
 pymongo = ">=4.6.1,<5.0.0"
-
-[[package]]
-name = "llama-index-utils-huggingface"
-version = "0.3.0"
-description = "llama-index utils for huggingface integration"
-optional = false
-python-versions = "<4.0,>=3.9"
-groups = ["main"]
-files = [
-    {file = "llama_index_utils_huggingface-0.3.0-py3-none-any.whl", hash = "sha256:03691de49f9dab86822ae1f86088433bc2f611f058bd9df995112843cd7ef5dd"},
-    {file = "llama_index_utils_huggingface-0.3.0.tar.gz", hash = "sha256:039b3facbe3468dd10b728c3ef9161adca862f043bd23b629aec57140ce216b2"},
-]
-
-[package.dependencies]
-huggingface-hub = {version = ">=0.19.0", extras = ["inference"]}
-llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-azureaisearch"
@@ -4955,4 +4923,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "80a8ca7793d322fda7c5e1648e38afcb73f5420430e9053bbc5a57c393dccbfa"
+content-hash = "45e9d1ff57cedd7e6b5a9ca9d816b868d35b7986298cb25b84c13f92740526be"

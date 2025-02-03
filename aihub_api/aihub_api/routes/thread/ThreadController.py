@@ -1,16 +1,16 @@
 from typing import Annotated, Any, Callable, List
 
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from fastapi import Depends, HTTPException
 from nats.aio.client import Client as NATS
 
 from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.routes.Controller import Controller
-from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
 from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
-from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_api.routes.thread.ThreadService import ThreadService
 
 
 class ThreadController(Controller):
