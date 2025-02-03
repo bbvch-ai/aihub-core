@@ -1,8 +1,7 @@
-from bson import ObjectId
-
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from bson import ObjectId
 
 
 class EventPersister:

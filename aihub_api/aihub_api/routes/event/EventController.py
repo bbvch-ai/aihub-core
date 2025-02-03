@@ -1,8 +1,8 @@
 import logging
 import traceback
-from typing import Callable, Any, List
+from typing import Any, Callable, List
 
-from fastapi import WebSocket, Depends, HTTPException
+from fastapi import Depends, HTTPException, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
@@ -10,8 +10,8 @@ from aihub_api.routes.Controller import Controller
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_api.sockets.events.user_to_server.WSUserEvent import WSUserEvent
 
-from .EventService import EventService
 from ...auth.dependencies.oauth2.OAuth2Config import OAuth2Config
+from .EventService import EventService
 
 logger = logging.getLogger(__name__)
 

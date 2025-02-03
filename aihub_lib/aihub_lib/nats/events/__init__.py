@@ -1,3 +1,7 @@
+from .agent_in_the_loop import AgentInTheLoop
+from .agent_in_the_loop.exception import AgentInTheLoopExceptionEvent
+from .agent_in_the_loop.request import AgentInTheLoopRequestEvent
+from .agent_in_the_loop.response import AgentInTheLoopResponseEvent
 from .BaseEvent import BaseEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .cost import CostEvent, LLMCostEvent
@@ -22,6 +26,10 @@ __all__ = [
     "HumanInTheLoopRequestEvent",
     "HumanInTheLoopResponseEvent",
     "HumanInTheLoop",
+    "AgentInTheLoopRequestEvent",
+    "AgentInTheLoopResponseEvent",
+    "AgentInTheLoopExceptionEvent",
+    "AgentInTheLoop",
     "DisplayEvent",
     "ChunkEvent",
     "ThoughtEvent",

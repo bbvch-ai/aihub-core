@@ -2,6 +2,7 @@ import logging
 from random import seed
 from typing import List, Optional
 
+from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
@@ -9,7 +10,6 @@ from starlette.staticfiles import StaticFiles
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
 from aihub_api.routes.Controller import Controller
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 
 logger = logging.getLogger(__name__)
 

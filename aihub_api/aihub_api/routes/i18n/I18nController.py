@@ -1,13 +1,14 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.records.User import User
 from fastapi import APIRouter, Depends
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.Controller import Controller
 from aihub_api.routes.i18n.dto.LocaleResponse import LocaleResponse
 from aihub_api.routes.i18n.I18nService import I18nService
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.records.User import User
+
 
 
 class I18nController(Controller):

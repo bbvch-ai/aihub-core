@@ -1,8 +1,8 @@
 from typing import Annotated
 
+import httpx
 import jwt
 from fastapi import Depends, HTTPException
-import httpx
 from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError
 

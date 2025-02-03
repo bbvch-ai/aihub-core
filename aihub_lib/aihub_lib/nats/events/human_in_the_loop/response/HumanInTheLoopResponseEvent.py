@@ -2,7 +2,7 @@ from pydantic import Field
 
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 
 
 class HumanInTheLoopResponseEvent(ControlEvent, DisplayEvent):
