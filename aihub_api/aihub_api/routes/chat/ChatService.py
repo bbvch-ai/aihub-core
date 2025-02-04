@@ -17,7 +17,7 @@ from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 logger = logging.getLogger(__name__)
 
 
-class ChatService:
+class ChatService(ChatServiceLib):
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
 
@@ -42,7 +42,7 @@ class ChatService:
     """
 
     @staticmethod
-    async def start_stream_chat_interaction(
+    async def start_api_stream_chat_interaction(
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
@@ -59,7 +59,7 @@ class ChatService:
         3. Subscribe to display events (ChunkEvents and StopEvent).
         4. Return resources containing a chunk_queue and a stop_event. The controller uses these to produce SSE.
         """
-        return await ChatServiceLib.start_stream_chat_interaction(
+        return await ChatService.start_stream_chat_interaction(
             user_oid=user.oid,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -69,7 +69,7 @@ class ChatService:
         )
 
     @staticmethod
-    async def start_json_chat_interaction(
+    async def start_api_json_chat_interaction(
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
@@ -83,7 +83,7 @@ class ChatService:
         Similar steps as the streaming method, but here we collect all ChunkEvents and LLMCostEvents,
         and wait for a StopEvent before constructing the final JSON response.
         """
-        return await ChatServiceLib.start_json_chat_interaction(
+        return await ChatService.start_json_chat_interaction(
             user_oid=user.oid,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -93,7 +93,7 @@ class ChatService:
         )
 
     @staticmethod
-    def build_json_response(
+    def build_api_json_response(
         chunk_events: List[ChunkEvent], costs: LLMCosts, model_name: str
     ) -> ChatCompletionsSuccessResponse:
         """
@@ -102,11 +102,11 @@ class ChatService:
         Sort chunks by creation time, join them into a single string, and use `ChatCompletionsSuccessResponse`
         to wrap the content and usage data.
         """
-        content = ChatServiceLib.build_json_response_content(chunk_events)
+        content = ChatService.build_json_response_content(chunk_events)
         return ChatCompletionsSuccessResponse.from_string(content, costs, model=model_name)
 
     @staticmethod
-    def create_sse_generator(stop_event: asyncio.Event, chunk_queue: asyncio.Queue):
+    def create_api_sse_generator(stop_event: asyncio.Event, chunk_queue: asyncio.Queue):
         """
         Creates an asynchronous generator producing SSE events from a queue of ChunkEvents.
 

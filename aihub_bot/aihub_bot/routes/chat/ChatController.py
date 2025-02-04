@@ -5,6 +5,7 @@ from nats.aio.client import Client as NATS
 from starlette.requests import Request
 from starlette.responses import Response
 
+from aihub_bot.bots.chat.ChatBot import ChatBot
 from aihub_bot.routes.chat.ChatService import ChatService
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
@@ -25,12 +26,7 @@ class ChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
-            return await ChatService.process_messages(
-                req=request,
-                nc=nc,
-                ws_receiver=ws_receiver,
-                agent_class=agent_class,
-                agent_id=agent_id,
-            )
+            chat_bot: ChatBot = ChatBot(nc, ws_receiver, agent_class, agent_id)
+            return await ChatService.ADAPTER.process(request, chat_bot)
 
         return self

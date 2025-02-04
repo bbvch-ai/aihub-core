@@ -77,7 +77,7 @@ class ChatController(Controller):
             """
             Start a streaming chat interaction. Streams chunks of the agent's response as SSE.
             """
-            resources: StreamingResources = await ChatService.start_stream_chat_interaction(
+            resources: StreamingResources = await ChatService.start_api_stream_chat_interaction(
                 user,
                 agent_class,
                 agent_id,
@@ -86,7 +86,7 @@ class ChatController(Controller):
                 ws_receiver=ws_receiver,
             )
             return StreamingResponse(
-                ChatService.create_sse_generator(resources.stop_event, resources.chunk_queue),
+                ChatService.create_api_sse_generator(resources.stop_event, resources.chunk_queue),
                 media_type="text/event-stream",
             )
 
@@ -118,7 +118,7 @@ class ChatController(Controller):
             """
             Start a chat interaction and return a JSON response after all tokens have been processed.
             """
-            resources: JsonResources = await ChatService.start_json_chat_interaction(
+            resources: JsonResources = await ChatService.start_api_json_chat_interaction(
                 user,
                 agent_class,
                 agent_id,
@@ -132,6 +132,6 @@ class ChatController(Controller):
             await resources.subscriber.stop()
 
             # Construct final JSON response
-            return ChatService.build_json_response(resources.chunk_events, resources.costs, resources.model_name)
+            return ChatService.build_api_json_response(resources.chunk_events, resources.costs, resources.model_name)
 
         return self
