@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from pydantic import BaseModel
 
 
 class UserDTO(BaseModel):

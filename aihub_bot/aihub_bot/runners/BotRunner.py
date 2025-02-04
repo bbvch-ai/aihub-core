@@ -1,12 +1,12 @@
 import logging
 from typing import List, Optional
 
+from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.routes.Controller import Controller
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
 
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
-from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
 
