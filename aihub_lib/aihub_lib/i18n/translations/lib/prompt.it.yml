@@ -1,0 +1,13 @@
+condenser:
+  standalone_question: |
+    Data la seguente conversazione tra un utente e un assistente IA e una domanda di follow-up dell'utente, riformula la domanda di follow-up in modo che sia una domanda indipendente.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+
+    <user_question>
+    {question}
+    </user_question>
+
+    Domanda indipendente:
