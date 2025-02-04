@@ -26,7 +26,7 @@ optional = false
 python-versions = ">=3.11, <3.12"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 azure-ai-documentintelligence = "^1.0.0b4"
@@ -66,8 +66,11 @@ pyyaml = "^6.0.2"
 transformers = "^4.48.1"
 
 [package.source]
-type = "directory"
-url = "../aihub_lib"
+type = "git"
+url = "https://github.com/bbvch-ai/aihub-core.git"
+reference = "v0.22.0"
+resolved_reference = "73303ead0d6c08a4fe86b1aa10f326f27b90008d"
+subdirectory = "aihub_lib"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -5844,4 +5847,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "0c7fce20b22580306eaacee96e39848d4afe83674c63032d073076cb5ae8c45d"
+content-hash = "f7de11852f0b76f942fc390134df9fcfec3e855b67d523a68d66ed4cbb32f58f"
