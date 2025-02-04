@@ -4,6 +4,7 @@ lint:
 	@(cd aihub_lib && make lint)
 	@(cd aihub_agent && make lint)
 	@(cd aihub_api && make lint)
+	@(cd aihub_bot && make lint)
 
 # Format code with Black
 format:
@@ -12,6 +13,7 @@ format:
 	@(cd aihub_lib && make format)
 	@(cd aihub_agent && make format)
 	@(cd aihub_api && make format)
+	@(cd aihub_bot && make format)
 
 # Type-check with MyPy
 typecheck:
@@ -20,6 +22,7 @@ typecheck:
 	@(cd aihub_lib && make typecheck)
 	@(cd aihub_agent && make typecheck)
 	@(cd aihub_api && make typecheck)
+	@(cd aihub_bot && make typecheck)
 
 # Sort imports with isort
 sort-imports:
@@ -28,6 +31,7 @@ sort-imports:
 	@(cd aihub_lib &&  make sort-imports)
 	@(cd aihub_agent &&  make sort-imports)
 	@(cd aihub_api &&  make sort-imports)
+	@(cd aihub_bot &&  make sort-imports)
 
 # Run format, sort-imports, type-check, and test in sequence
 pr-ready:
@@ -36,6 +40,7 @@ pr-ready:
 	@(cd aihub_lib &&  make pr-ready)
 	@(cd aihub_agent &&  make pr-ready)
 	@(cd aihub_api &&  make pr-ready)
+	@(cd aihub_bot &&  make pr-ready)
 
 # Use local cores for development
 use-local-core:

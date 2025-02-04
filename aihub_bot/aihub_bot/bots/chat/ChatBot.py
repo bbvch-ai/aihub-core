@@ -1,14 +1,13 @@
 import logging
 from typing import Dict, List
 
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import ActivityHandler, TurnContext
-from botbuilder.schema import ChannelAccount, Activity
+from botbuilder.schema import Activity, ChannelAccount
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
-
-from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 logger = logging.getLogger(__name__)
 

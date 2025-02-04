@@ -6,12 +6,11 @@ from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, ActivityTypes
 
-from aihub_bot.DefaultConfig import DefaultConfig
 from aihub_bot.bots.echo.EchoBot import EchoBot
+from aihub_bot.DefaultConfig import DefaultConfig
 
 
 class EchoService:
-
     CONFIG = DefaultConfig()
     ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
     BOT = EchoBot()

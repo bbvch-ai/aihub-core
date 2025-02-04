@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import Dict, List
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -14,7 +14,6 @@ class BotServiceResponse:
 
 
 class BotTestRunner(BotRunner):
-
     def __init__(self):
         super().__init__(title="Local AI Hub", description="Local version only", origins=[], debug=True)
 
@@ -27,7 +26,7 @@ class BotTestRunner(BotRunner):
             "/service{full_path:path}",
             self.service_endpoint,
             methods=["POST"],
-            summary="Catch-all service endpoint for bot responses"
+            summary="Catch-all service endpoint for bot responses",
         )
 
         self.responses: List[BotServiceResponse] = []

@@ -6,7 +6,6 @@ from aihub_bot.routes.echo.EchoService import EchoService
 
 
 class EchoController(Controller):
-
     def __init__(self, route: str = "/echo"):
         super().__init__(route)
 

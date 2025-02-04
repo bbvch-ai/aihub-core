@@ -1,19 +1,18 @@
 import logging
 from datetime import datetime
 
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from aiohttp.web import Request, Response
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, ActivityTypes
 from nats.aio.client import Client as NATS
 
-from aihub_bot.DefaultConfig import DefaultConfig
 from aihub_bot.bots.chat.ChatBot import ChatBot
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_bot.DefaultConfig import DefaultConfig
 
 
 class ChatService:
-
     CONFIG = DefaultConfig()
     ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
 
