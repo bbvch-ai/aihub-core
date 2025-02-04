@@ -1,13 +1,14 @@
 import logging
 from typing import Dict, List
 
-from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import Activity, ChannelAccount
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
+
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class ChatBot(ActivityHandler):
         # Construct final JSON response
         return ChatService.build_json_response_content(resources.chunk_events)
 
-    async def on_members_added_activity(self, members_added: [ChannelAccount], turn_context: TurnContext):
+    async def on_members_added_activity(self, members_added: List[ChannelAccount], turn_context: TurnContext):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
                 self._save_user(turn_context.activity.from_property.id)

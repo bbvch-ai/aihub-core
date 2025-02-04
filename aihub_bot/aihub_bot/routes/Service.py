@@ -8,6 +8,8 @@ from botbuilder.schema import Activity, ActivityTypes
 
 from aihub_bot.DefaultConfig import DefaultConfig
 
+logger = logging.getLogger(__name__)
+
 
 class Service(abc.ABC):
     CONFIG = DefaultConfig()
@@ -15,14 +17,12 @@ class Service(abc.ABC):
 
     @staticmethod
     async def on_error(context: TurnContext, error: Exception):
-        logging.error(f"\n [on_turn_error] unhandled error: {error}")
+        logger.error(f"\n [on_turn_error] unhandled error: {error}")
 
-        # Send a message to the user
         await context.send_activity("The bot encountered an error or bug.")
 
         # Send a trace activity if we're talking to the Bot Framework Emulator
         if context.activity.channel_id == "emulator":
-            # Create a trace activity that contains the error object
             trace_activity = Activity(
                 label="TurnError",
                 name="on_turn_error Trace",
@@ -31,7 +31,6 @@ class Service(abc.ABC):
                 value=f"{error}",
                 value_type="https://www.botframework.com/schemas/error",
             )
-            # Send a trace activity, which will be displayed in Bot Framework Emulator
             await context.send_activity(trace_activity)
 
     ADAPTER.on_turn_error = on_error
