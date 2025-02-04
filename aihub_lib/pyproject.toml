@@ -114,4 +114,11 @@ extend-exclude = '''
 '''
 
 [tool.pytest.ini_options]
+markers = [
+    "azure: mark tests that use Azure services",
+    "slow: mark a test as slow",
+    "integration: mark a test as an integration test",
+    "experimental: mark a test as experimental"
+]
+addopts = "--strict-markers"
 pythonpath = ["."]
