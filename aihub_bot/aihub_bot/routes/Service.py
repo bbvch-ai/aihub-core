@@ -14,7 +14,6 @@ class Service(abc.ABC):
     ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
 
     @staticmethod
-    # Catch-all for errors.
     async def on_error(context: TurnContext, error: Exception):
         logging.error(f"\n [on_turn_error] unhandled error: {error}")
 

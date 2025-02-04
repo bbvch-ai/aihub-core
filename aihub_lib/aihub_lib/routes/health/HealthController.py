@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from aihub_api.routes.Controller import Controller
+from aihub_lib.routes.Controller import Controller
 
 
 class HealthController(Controller):

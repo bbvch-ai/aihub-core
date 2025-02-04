@@ -6,8 +6,8 @@ from fastapi import Depends, HTTPException
 from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError
 
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.auth.dependencies.oauth2.OAuth2Config import OAuth2Config
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 
 
 async def use_oauth2_user(token: Annotated[str, Depends(OAuth2Config().SCHEMA)]) -> AuthenticatedUser:

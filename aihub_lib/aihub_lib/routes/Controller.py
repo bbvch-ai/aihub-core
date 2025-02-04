@@ -1,6 +1,9 @@
 import abc
+from typing import Any, Callable
 
 from fastapi import APIRouter, FastAPI
+
+from aihub_lib.auth.dependencies.no_auth.use_no_auth_user import use_no_auth_user
 
 
 class Controller(abc.ABC):
@@ -38,8 +41,9 @@ class Controller(abc.ABC):
     This sets up all routes defined in `MyController` under `/my-endpoints`.
     """
 
-    def __init__(self, route: str):
+    def __init__(self, route: str, auth: Callable[..., Any] = None):
         self.base_route = route
+        self.auth = auth or use_no_auth_user
         self.router = APIRouter()
 
     def mount(self, app: FastAPI):

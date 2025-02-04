@@ -1,7 +1,7 @@
 import asyncio
 
-from aihub_bot.routes.health.HealthController import HealthController
 from aihub_bot.runners.BotTestRunner import BotTestRunner
+from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()

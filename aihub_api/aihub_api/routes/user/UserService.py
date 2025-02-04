@@ -1,6 +1,6 @@
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.auth.identity.azure.AzureUserInformationProvider import AzureUserInformationProvider
 from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 
 
 class UserService:

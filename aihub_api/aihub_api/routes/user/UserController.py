@@ -1,11 +1,11 @@
 from typing import Any, Callable
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends
 
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_api.routes.Controller import Controller
-from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.UserService import UserService
+from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.routes.Controller import Controller
 
 
 class UserController(Controller):

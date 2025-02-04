@@ -1,12 +1,13 @@
 import json
+from pathlib import Path
 from typing import Dict
 
 import httpx
 import pytest_asyncio
 
 from aihub_bot.routes.chat.ChatController import ChatController
-from aihub_bot.routes.health.HealthController import HealthController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from aihub_lib.routes.health.HealthController import HealthController
 
 PORT = 8001
 API_PATH = "/api/v1"
@@ -68,7 +69,7 @@ async def test_runner():
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_update_conversation(test_runner: SimulatedAgentBotTestRunner):
-    with open("conversation_update.json") as file:
+    with open(Path(__file__).parent / "conversation_update.json") as file:
         payload: Dict = json.loads(file.read())
 
     payload["serviceUrl"] = SERVICE_ENDPOINT
@@ -92,7 +93,7 @@ async def test_update_conversation(test_runner: SimulatedAgentBotTestRunner):
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_message(test_runner: SimulatedAgentBotTestRunner):
-    with open("user_message.json") as file:
+    with open(Path(__file__).parent / "user_message.json") as file:
         payload: Dict = json.loads(file.read())
 
     payload["serviceUrl"] = SERVICE_ENDPOINT

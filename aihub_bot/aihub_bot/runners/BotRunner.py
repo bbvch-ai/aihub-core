@@ -1,23 +1,21 @@
 import logging
-from random import seed
 from typing import List, Optional
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
 
-from aihub_bot.routes.Controller import Controller
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
+from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
-
 
 
 class BotRunner:
     def __init__(
         self,
         api_path: str = "/api/v1",
-        title: str = "AI Hub",
+        title: str = "AI Hub Bot Service",
         description: str = "AI Hub Bots",
         origins: Optional[List[str]] = None,
         debug: bool = False,

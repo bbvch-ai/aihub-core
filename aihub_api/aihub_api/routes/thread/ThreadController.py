@@ -1,16 +1,16 @@
 from typing import Annotated, Any, Callable, List
 
-from aihub_lib.nats.dependencies.use_nats import use_nats
 from fastapi import Depends, HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_api.routes.Controller import Controller
+from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
 from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
-from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
 
 
 class ThreadController(Controller):
@@ -55,6 +55,8 @@ class ThreadController(Controller):
         .mount(app)
     ```
     """
+    not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
+    not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
     def __init__(self, route: str = "/thread", auth: Callable[..., Any] = None):
         super().__init__(route, auth)
@@ -103,7 +105,7 @@ class ThreadController(Controller):
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.user_id for u in thread.users]:
-                raise HTTPException(status_code=403, detail="Not authorized to view this thread")
+                raise self.not_authorized_to_view_exception
             return thread
 
         return self
@@ -121,7 +123,7 @@ class ThreadController(Controller):
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.user_id for u in thread.users]:
-                raise HTTPException(status_code=403, detail="Not authorized to modify this thread")
+                raise self.not_authorized_to_modify_exception
 
             return await ThreadService.add_agent_to_thread(nc, thread_id, req.agent_id, req.agent_class)
 
@@ -143,7 +145,7 @@ class ThreadController(Controller):
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.user_id for u in thread.users]:
-                raise HTTPException(status_code=403, detail="Not authorized to modify this thread")
+                raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_agent_from_thread(nc, thread_id, agent_class, agent_id)
 
@@ -162,7 +164,7 @@ class ThreadController(Controller):
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.user_id for u in thread.users]:
-                raise HTTPException(status_code=403, detail="Not authorized to modify this thread")
+                raise self.not_authorized_to_modify_exception
 
             return await ThreadService.add_user_to_thread(nc, thread_id, req.user_id)
 
@@ -181,7 +183,7 @@ class ThreadController(Controller):
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.user_id for u in thread.users]:
-                raise HTTPException(status_code=403, detail="Not authorized to modify this thread")
+                raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_user_from_thread(nc, thread_id, remove_user_id)
 
