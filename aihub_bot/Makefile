@@ -21,15 +21,6 @@ clean-jupyter:
 	@echo "Cleaning up notebooks..."
 	jupyter nbconvert --ClearOutputPreprocessor.enabled=True --clear-output --inplace **/*.ipynb
 
-# Clean up unnecessary files
-clean:
-	@echo "Cleaning up..."
-	find . -type f -name "**/*.pyc" -delete
-	find . -type d -name "__pycache__" -delete
-	rm -f coverage.xml
-	rm -f .coverage
-	poetry run
-
 test-cov:
 	@echo "Running tests in aihub_bot with coverage..."
 	poetry run pytest --cov=. \
