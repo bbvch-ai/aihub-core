@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Run Tests
-        uses: bbvch-ai/aihub-core/aihub_action/test_backend@hotfix/move-actions
+        uses: bbvch-ai/aihub-core/aihub_action/test_backend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.module }}
@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Coverage comment
-        uses: bbvch-ai/aihub-core/aihub_action/pytest_coverage_comment@hotfix/move-actions
+        uses: bbvch-ai/aihub-core/aihub_action/pytest_coverage_comment@main
         with:
           working_directory: ${{ matrix.module }}
 
@@ -105,7 +105,7 @@ jobs:
 
     steps:
       - name: SonarCloud Scan
-        uses: bbvch-ai/aihub-core/aihub_action/sonarcloud_scan@hotfix/move-actions
+        uses: bbvch-ai/aihub-core/aihub_action/sonarcloud_scan@main
         with:
           working_directory: ${{ matrix.folder }}
           sonar_project_key: ${{ matrix.sonar_project_key }}

@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Lint backend
-        uses: bbvch-ai/aihub-core/aihub_action/lint_backend@hotfix/move-actions
+        uses: bbvch-ai/aihub-core/aihub_action/lint_backend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Lint frontend
-        uses: bbvch-ai/aihub-core/aihub_action/lint_frontend@hotfix/move-actions
+        uses: bbvch-ai/aihub-core/aihub_action/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: aihub_web/aihub_web
