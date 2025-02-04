@@ -11,7 +11,6 @@ from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 
 logger = logging.getLogger(__name__)
 
-seed(0)
 
 
 class BotRunner:
