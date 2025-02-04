@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: PR Agent action step
-        uses: bbvch-ai/aihub-core/aihub_action/review_pr@hotfix/move-actions
+        uses: bbvch-ai/aihub-core/aihub_action/review_pr@main
         with:
           azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
