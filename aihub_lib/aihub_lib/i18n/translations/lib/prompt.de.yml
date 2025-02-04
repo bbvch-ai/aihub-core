@@ -1,0 +1,14 @@
+condenser:
+  standalone_question: |
+    Gegeben ist die folgende Konversation zwischen einem Benutzer und einem KI-Assistenten und eine Folgefrage des Benutzers,
+    formuliere die Folgefrage um, so dass sie als eigenständige Frage gestellt werden kann.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+    
+    Eigenständige Frage:

@@ -1,3 +1,18 @@
+common:
+  reason: |
+    Begründung der getroffenen Entscheidung.
+  success: |
+    true wenn die Antwort gegeben werden kann, false wenn nicht
+  docstring: |
+    Datenmodel für die Enscheidung ob eine Antwort gegeben werden kann.
+  user_message: |
+    <Benutzer>
+    {user}
+    </Benutzer>
+  agent_message: |
+    <Agent>
+    {agent}
+    </Agent>
 agent_description_guard:
   prompt: |
     Die Beschreibung eines Agenten lautet wiefolgt:
@@ -14,17 +29,15 @@ agent_description_guard:
     <vergangener Gesprächsverlauf>
     {history}
     </vergangener Gesprächsverlauf>
-  user_message: |
-    <Benutzer>
-    {user}
-    </Benutzer>
-  agent_message: |
-    <Agent>
-    {agent}
-    </Agent>
-  reason: |
-    Begründung der getroffenen Entscheidung.
-  success: |
-    true wenn die Antwort gegeben werden kann, false wenn nicht
-  docstring: |
-    Datenmodel für die Enscheidung ob eine Antwort gegeben werden kann.
+few_shot_guard:
+  prompt: |
+    Ich gebe dir eine Reihe an Beispielen von Nachrichten und Antworten. Diese Beispiele Zeigen auf welche Art von Fragen
+    der Agent beantworten darf oder nicht. Wenn der Agent die Frage beantworten kann, dann wirds success true sein,
+    wenn nicht, dann wirds success false sein. Entscheide basierend auf diesen Beispielen ob eine neue Frage beantwortet
+    werden darf oder nicht.
+    <Beispiele von Nachrichten und Antworten>
+    { examples }
+    </Beispiele von Nachrichten und Antworten>
+    <Benutzer Anfrage>
+    { user_query }
+    </Benutzer Anfrage>

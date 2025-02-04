@@ -1,3 +1,18 @@
+common:
+  user_message: |
+    <Utilisateur>
+    {user}
+    </Utilisateur>
+  agent_message: |
+    <Agent>
+    {agent}
+    </Agent>
+  reason: |
+    Justification de la décision prise.
+  success: |
+    true si une réponse peut être donnée, false sinon
+  docstring: |
+    Modèle de données pour la décision concernant la possibilité de fournir une réponse.
 agent_description_guard:
   prompt: |
     La description d'un agent est la suivante :
@@ -14,17 +29,13 @@ agent_description_guard:
     <Historique de la conversation>
     {history}
     </Historique de la conversation>
-  user_message: |
-    <Utilisateur>
-    {user}
-    </Utilisateur>
-  agent_message: |
-    <Agent>
-    {agent}
-    </Agent>
-  reason: |
-    Justification de la décision prise.
-  success: |
-    true si une réponse peut être donnée, false sinon
-  docstring: |
-    Modèle de données pour la décision concernant la possibilité de fournir une réponse.
+few_shot_guard:
+  prompt: |
+    Je vais vous fournir une série d'exemples de messages et de réponses. Ces exemples montrent les types de questions
+    auxquelles l'agent peut répondre. Si l'agent peut répondre à la question, le succès sera true ; sinon, le succès sera false. Sur la base de ces exemples, décidez si une nouvelle question peut être répondue ou non.
+    <Exemples de messages et de réponses>
+    { examples }
+    </Exemples de messages et de réponses>
+    <Question de l'utilisateur>
+    { user_query }
+    </Question de l'utilisateur>

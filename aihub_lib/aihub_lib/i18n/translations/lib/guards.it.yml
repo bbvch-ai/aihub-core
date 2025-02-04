@@ -1,3 +1,18 @@
+common:
+  user_message: |
+    <Utente>
+    {user}
+    </Utente>
+  agent_message: |
+    <Agente>
+    {agent}
+    </Agente>
+  reason: |
+    Motivazione della decisione presa.
+  success: |
+    true se la risposta può essere fornita, false altrimenti
+  docstring: |
+    Modello di dati per la decisione se è possibile fornire una risposta.
 agent_description_guard:
   prompt: |
     La descrizione di un agente è la seguente:
@@ -14,17 +29,14 @@ agent_description_guard:
     <CronologiaConversazionePrecedente>
     {history}
     </CronologiaConversazionePrecedente>
-  user_message: |
-    <Utente>
-    {user}
-    </Utente>
-  agent_message: |
-    <Agente>
-    {agent}
-    </Agente>
-  reason: |
-    Motivazione della decisione presa.
-  success: |
-    true se la risposta può essere fornita, false altrimenti
-  docstring: |
-    Modello di dati per la decisione se è possibile fornire una risposta.
+few_shot_guard:
+  prompt: |
+    Ti fornirò una serie di esempi di messaggi e risposte. Questi esempi mostrano i tipi di domande a cui l'agente può rispondere. 
+    Se l'agente può rispondere alla domanda, il successo sarà true; se non può, il successo sarà false. 
+    Sulla base di questi esempi, decidi se una nuova domanda può essere risposta o meno.
+    <EsempiMessaggiERisposte>
+    { examples }
+    </EsempiMessaggiERisposte>
+    <DomandaUtente>
+    { user_query }
+    </DomandaUtente>

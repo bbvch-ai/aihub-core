@@ -1,26 +1,29 @@
+from llama_index.core import PromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
@@ -44,39 +47,30 @@ class RAGAgent(Agent):
         self,
         event: StartEvent | UserMessageEvent,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit
         """
-        user_messages = [msg for msg in event.messages if msg.role == MessageRole.USER]
-        try:
-            await run_context.set("user_query", user_messages[-1].content)
-        except IndexError:
-            raise ValueError("No user messages found in the event.")
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
-        serialized_chat_history = [msg.model_dump() for msg in limited_chat_history]
-        await run_context.set("chat_history", serialized_chat_history)
-
         return LimitChatHistoryEvent(limited_history=limited_chat_history)
 
     @step()
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
+        start_event: StartEvent | UserMessageEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
-        run_context: RunContext,
     ) -> StandaloneQuestionCondenserEvent:
         """
         Condenses the chat history and user query into a standalone question.
         """
         await displayer.display_thought(t("agent.thought.condense_question"))
-        user_query = await run_context.get("user_query")
+        user_query = start_event.user_query
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
                 chat_history=event.limited_history,
@@ -88,9 +82,37 @@ class RAGAgent(Agent):
             return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 
     @step()
-    async def retrieve_step(
+    async def few_shot_guard_step(
         self,
         event: StandaloneQuestionCondenserEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> FewShotRejectEvent | FewShotAcceptEvent:
+        if not agent_config.few_shot_guard_examples:
+            return FewShotAcceptEvent(success=True, reasoning=t("agent.thought.no_few_shot_examples"))
+
+        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+            guard_result = await few_shot_guard(
+                llm=llm,
+                t=t,
+                user_query=event.condensed_chat_message.content,
+                examples=agent_config.few_shot_guard_examples,
+            )
+
+        if not guard_result.success:
+            return FewShotRejectEvent(reasoning=guard_result.reasoning)
+
+        return FewShotAcceptEvent(
+            success=guard_result.success,
+            reasoning=guard_result.reasoning,
+        )
+
+    @step()
+    async def retrieve_step(
+        self,
+        standalone_question_event: StandaloneQuestionCondenserEvent,
+        _: FewShotAcceptEvent,
         retrieve_step_config: RetrieveStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -101,7 +123,7 @@ class RAGAgent(Agent):
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
         nodes = retrieve_nodes(
-            message=event.condensed_chat_message.content,
+            message=standalone_question_event.condensed_chat_message.content,
             retrieve_k=retrieve_step_config.retrieve_k,
             embed_model=embedding,
             index_namespaces=retrieve_step_config.index_namespaces,
@@ -134,22 +156,20 @@ class RAGAgent(Agent):
     async def limit_chat_history_with_context_step(
         self,
         event: InOrderNodeCombinerEvent,
+        chat_history_event: LimitChatHistoryEvent,
+        start_event: StartEvent | UserMessageEvent,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
     ) -> LimitChatHistoryWithContextEvent:
         """
         Includes the combined context and truncates chat history again.
         """
-        serialized_chat_history = await run_context.get("chat_history")
-        chat_history = [ChatMessage.model_validate(msg) for msg in serialized_chat_history]
-
+        chat_history = chat_history_event.limited_history
         system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
-        last_user_message = await run_context.get("user_query")
         limited_chat_history = limit_chat_history_with_context(
-            chat_history=chat_history,
+            chat_history=chat_history_event.limited_history,
             context_messages=[event.context_message],
             system_messages=system_messages,
-            last_user_message=ChatMessage(role=MessageRole.USER, content=last_user_message),
+            last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
             tokenizer=agent_config.llm.tokenizer,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
@@ -158,7 +178,8 @@ class RAGAgent(Agent):
     @step()
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent,
+        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent,
+        start_event: StartEvent | UserMessageEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -166,9 +187,18 @@ class RAGAgent(Agent):
         """
         Generates a response using the configured LLM.
         """
+        if isinstance(event, FewShotRejectEvent):
+            messages = [
+                ChatMessage(role=MessageRole.USER, content=start_event.user_query),
+                ChatMessage(role=MessageRole.SYSTEM, content=PromptTemplate(t("agents.prompt.guard.reject")).format(
+                    reason=event.reasoning
+                )),
+            ]
+        else:
+            messages = event.limited_history_with_context
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.limited_history_with_context)
+            return await displayer.display_llm_stream(agent_config.llm, llm, messages)
 
     @step()
     async def stop_step(self, event: LLMEvent) -> StopEvent:

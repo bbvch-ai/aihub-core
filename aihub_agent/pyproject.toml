@@ -28,11 +28,12 @@ colorlog = "^6.9.0"
 llama-index-llms-openai = "^0.3.12"
 llama-index-llms-azure-openai = "^0.3.0"
 pytest-mock = "^3.14.0"
+transformers = "^4.48.2"
+llama-index-llms-openai-like = "^0.3.3"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.22.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
