@@ -55,6 +55,7 @@ class ThreadController(Controller):
         .mount(app)
     ```
     """
+
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
