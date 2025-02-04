@@ -1,6 +1,8 @@
 from typing import List
 
-from llama_index.core.base.llms.types import ChatMessage
+from botbuilder.core import TurnContext
+from botbuilder.schema import Activity
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message, User
@@ -11,6 +13,19 @@ from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class ChatService(Service, ChatServiceLib):
+
+    @staticmethod
+    def message_to_chat_message(message: Message) -> ChatMessage:
+        role: MessageRole
+        match message.role:
+            case "user":
+                role = MessageRole.USER
+            case "bot":
+                role = MessageRole.ASSISTANT
+            case _:
+                raise NotImplementedError(f"Role {message.role} not supported")
+
+        return ChatMessage(role=role, content=message.content)
 
     @staticmethod
     async def json_chat(
@@ -78,3 +93,17 @@ class ChatService(Service, ChatServiceLib):
         conversation_id: str,
     ) -> List[Message]:
         return ConversationEntity.get_messages_by_conversation_id(conversation_id)
+
+    @staticmethod
+    async def respond_to_user(
+        turn_context: TurnContext,
+        user_activity: Activity,
+        message: str,
+    ):
+        await turn_context.send_activity(message)
+        bot_message: Message = Message(
+            user_id=user_activity.recipient.id,
+            content=message,
+            role=user_activity.recipient.role,
+        )
+        ChatService.add_message_to_conversation(user_activity.conversation.id, bot_message)

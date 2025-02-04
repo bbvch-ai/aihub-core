@@ -23,8 +23,12 @@ class ConversationEntity(Document):
     messages = ListField(EmbeddedDocumentField(Message), required=False)
 
     @classmethod
-    def create_conversation(cls, conversation_id: str, users: List[User],
-                            messages: List[Message]) -> "ConversationEntity":
+    def create_conversation(
+        cls,
+        conversation_id: str,
+        users: List[User],
+        messages: List[Message],
+    ) -> "ConversationEntity":
         conversation = cls(conversation_id=conversation_id, users=users, messages=messages)
         conversation.save()
         return conversation

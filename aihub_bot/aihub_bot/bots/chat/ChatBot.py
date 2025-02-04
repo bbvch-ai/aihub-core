@@ -3,7 +3,7 @@ from typing import List
 
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import ChannelAccount
-from llama_index.core.base.llms.types import ChatMessage, TextBlock
+from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import User, Message
@@ -30,26 +30,25 @@ class ChatBot(ActivityHandler):
             if member.id != turn_context.activity.recipient.id:
                 user = User(user_id=member.id)
                 ChatService.add_user_to_conversation(turn_context.activity.conversation.id, user)
+                return await ChatService.respond_to_user(turn_context, turn_context.activity, "Hello and welcome!")
 
     async def on_message_activity(self, turn_context: TurnContext):
-        message = Message(
+        user_message = Message(
             user_id=turn_context.activity.from_property.id,
             content=turn_context.activity.text,
-            role=turn_context.activity.from_property.role
+            role=turn_context.activity.from_property.role,
         )
-        ChatService.add_message_to_conversation(turn_context.activity.conversation.id, message)
+        ChatService.add_message_to_conversation(turn_context.activity.conversation.id, user_message)
         persisted_messages: List[Message] = ChatService.get_messages_by_conversation_id(
-            turn_context.activity.conversation.id)
-        messages: List[ChatMessage] = [
-            ChatMessage(role=message.role, blocks=[TextBlock(text=message.content)])
-            for message in persisted_messages
-        ]
+            turn_context.activity.conversation.id
+        )
+        messages: List[ChatMessage] = [ChatService.message_to_chat_message(message) for message in persisted_messages]
         response: str = await ChatService.json_chat(
             user_id=turn_context.activity.from_property.id,
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             messages=messages,
             nc=self.nc,
-            ws_receiver=self.ws_receiver
+            ws_receiver=self.ws_receiver,
         )
-        return await turn_context.send_activity(response)
+        return await ChatService.respond_to_user(turn_context, turn_context.activity, response)
