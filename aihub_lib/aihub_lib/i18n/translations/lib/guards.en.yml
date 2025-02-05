@@ -1,18 +1,3 @@
-common:
-  user_message: |
-    <User>
-    {user}
-    </User>
-  agent_message: |
-    <Agent>
-    {agent}
-    </Agent>
-  reason: |
-    Justification for the decision made.
-  success: |
-    true if the request can be forwarded to the agent, false if the request does not fall into the responsibility of the agent.
-  docstring: |
-    Data model for the decision on whether the request is acceptable or not.
 agent_description_guard:
   prompt: |
     The description of an agent is as follows:
@@ -27,12 +12,55 @@ agent_description_guard:
     <Past Conversation Context>
     {history}
     </Past Conversation Context>
+  user_message: |
+    <User>
+    {user}
+    </User>
+  agent_message: |
+    <Agent>
+    {agent}
+    </Agent>
+  reason: |
+    Justification for the decision made.
+  success: |
+    true if the request can be forwarded to the agent, false if the request does not fall into the responsibility of the agent.
+  docstring: |
+    Data model for the decision on whether the request is acceptable or not.
 few_shot_guard:
   prompt: |
-    I will provide you with a series of examples of messages and responses. These examples show the types of questions the agent can answer. If the agent can answer the question, the success will be true; if not, the success will be false. Based on these examples, decide whether a new question can be answered or not.
-    <Examples of Messages and Responses>
+    You will be provided with a series of example user messages, each labeled with a success status and an explanation. 
+    These examples define the types of queries the agent is allowed to answer.
+    
+    - If a query is allowed, the success status is **true**.
+    - If a query is not allowed, the success status is **false**, along with a justification.
+    
+    Your task is to determine whether a new user query is permissible based on these examples.
+    
+    **Examples:**
+    <Examples>
     {examples}
-    </Examples of Messages and Responses>
-    <User Query>
+    </Examples>
+    **User Query:**
+    <UserQuery>
     {user_query}
-    </User Query>
+    </UserQuery>
+  user_message: |
+    <User>
+    {user}
+    </User>
+  success_message: |
+    <Success>
+    {success}
+    </Success>
+  reason_message: |
+    <Reason>
+    {reason}
+    </Reason>
+  success: |
+    true if the user query is permitted, false if the request is not allowed.
+  reason: |
+    Justification for the decision made.
+  docstring: |
+    Data model for the decision on whether the request is acceptable or not.
+
+  

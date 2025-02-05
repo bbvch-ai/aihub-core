@@ -29,7 +29,7 @@ from aihub_lib.generative_ai.llms.models.embedding.self_hosted.SelfHostedEmbeddi
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )
-from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent
 from aihub_lib.nats.events.control.start import StartEvent
@@ -123,7 +123,7 @@ def azure_agent_config():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def self_hosted_agent_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
@@ -265,7 +265,7 @@ def _(agent_runner: AgentTestRunner, datatable):
     """
     examples = []
     for row in datatable[1:]:
-        examples.append(FewShotExample(user=LocaleString(en=row[0]), agent=LocaleString(en=row[1])))
+        examples.append(FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2])))
     agent_runner.agent_config.few_shot_guard_examples = examples
     return agent_runner
 

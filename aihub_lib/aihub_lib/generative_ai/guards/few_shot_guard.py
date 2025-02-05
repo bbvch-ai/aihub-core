@@ -1,16 +1,30 @@
-from typing import List
+from typing import List, Type
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from openai import NOT_GIVEN
+from pydantic import BaseModel, Field
 
-from aihub_lib.generative_ai.guards.common.guard_result import GuardResult, guard_result_factory
-from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
+class GuardResult(BaseModel):
+    reasoning: str
+    success: bool
+
+
+def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
+    class LocalizedGuardResult(GuardResult):
+        reasoning: str = Field(description=t("lib.guards.few_shot_guard.reason"))
+        success: bool = Field(description=t("lib.guards.few_shot_guard.success"))
+
+    LocalizedGuardResult.__doc__ = t("lib.guards.few_shot_guard.docstring")
+    return LocalizedGuardResult
+
+
 async def few_shot_guard(
-    examples: List[FewShotExample],
+    examples: List[FewShotGuardExample],
     llm: LLM,
     t: LocaleHandler,
     user_query: str,
@@ -18,8 +32,9 @@ async def few_shot_guard(
     prompt = PromptTemplate(t("lib.guards.few_shot_guard.prompt"))
     joined_examples = "".join(
         [
-            PromptTemplate(t("lib.guards.common.user_message")).format(user=example.user.in_locale(t.locale))
-            + PromptTemplate(t("lib.guards.common.agent_message")).format(agent=example.agent.in_locale(t.locale))
+            PromptTemplate(t("lib.guards.few_shot_guard.user_message")).format(user=example.user.in_locale(t.locale))
+            + PromptTemplate(t("lib.guards.few_shot_guard.success_message")).format(success=example.success)
+            + PromptTemplate(t("lib.guards.few_shot_guard.reason_message")).format(reason=example.reason.in_locale(t.locale))
             for example in examples
         ]
     )

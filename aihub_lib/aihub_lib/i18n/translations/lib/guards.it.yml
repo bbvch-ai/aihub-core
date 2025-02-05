@@ -31,12 +31,38 @@ agent_description_guard:
     </CronologiaConversazionePrecedente>
 few_shot_guard:
   prompt: |
-    Ti fornirò una serie di esempi di messaggi e risposte. Questi esempi mostrano i tipi di domande a cui l'agente può rispondere. 
-    Se l'agente può rispondere alla domanda, il successo sarà true; se non può, il successo sarà false. 
-    Sulla base di questi esempi, decidi se una nuova domanda può essere risposta o meno.
-    <EsempiMessaggiERisposte>
-    { examples }
-    </EsempiMessaggiERisposte>
-    <DomandaUtente>
-    { user_query }
-    </DomandaUtente>
+    Ti verrà fornita una serie di esempi di messaggi utente, ciascuno etichettato con uno stato di successo e una spiegazione.
+    Questi esempi definiscono i tipi di richieste a cui l'agente è autorizzato a rispondere.
+
+    - Se una richiesta è consentita, lo stato di successo è **true**.
+    - Se una richiesta non è consentita, lo stato di successo è **false**, accompagnato da una giustificazione.
+
+    Il tuo compito è determinare se una nuova richiesta dell'utente è consentita in base a questi esempi.
+
+    **Esempi:**
+    <Examples>
+    {examples}
+    </Examples>
+
+    **Richiesta utente:**
+    <UserQuery>
+    {user_query}
+    </UserQuery>
+  user_message: |
+    <Utente>
+    {user}
+    </Utente>
+  success_message: |
+    <Successo>
+    {success}
+    </Successo>
+  reason_message: |
+    <Motivo>
+    {reason}
+    </Motivo>
+  success: |
+    true se la richiesta dell'utente è consentita, false se la richiesta non è permessa.
+  reason: |
+    Giustificazione della decisione presa.
+  docstring: |
+    Modello di dati per la decisione sull'accettabilità della richiesta.
