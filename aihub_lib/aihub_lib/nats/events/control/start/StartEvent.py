@@ -52,4 +52,3 @@ class StartEvent(ControlEvent):
         """
         user_messages = [msg for msg in self.messages if msg.role == "user"]
         return user_messages[-1].content if user_messages else ""
-    
