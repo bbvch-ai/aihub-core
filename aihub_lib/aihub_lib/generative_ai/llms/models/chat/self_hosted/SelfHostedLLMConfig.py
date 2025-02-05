@@ -40,8 +40,8 @@ class SelfHostedLLMConfig(ChatLLMConfig):
 
     api_key: Annotated[Optional[str], Field(None, description="API key if required by the local endpoint.")]
     context_size: Annotated[int, Field(..., description="Context window size (max tokens) supported by the model.")]
-    is_chat_model: Annotated[bool, Field(..., description="True if the model uses a chat-based interface.")]
     is_function_calling_model: Annotated[bool, Field(..., description="True if the model supports function calling.")]
+    is_chat_model: Annotated[bool, Field(True, description="True if the model uses a chat-based interface.")]
 
     default_parameter: Annotated[
         SelfHostedLLMParameter, Field(..., description="Default parameters for the self-hosted LLM.")

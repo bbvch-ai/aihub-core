@@ -1,0 +1,4 @@
+
+
+class ImageGenerationRequest(BaseModel):
+    pass

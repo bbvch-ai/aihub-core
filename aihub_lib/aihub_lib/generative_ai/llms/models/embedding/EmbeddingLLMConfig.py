@@ -32,7 +32,8 @@ class EmbeddingLLMConfig(LLMConfig):
     """
 
     default_parameter: EmbeddingLLMModelParameter = Field(
-        ..., description="Default parameters for the embedding model."
+        ..., description="Default parameters for the embedding model.",
+        default_factory=lambda: EmbeddingLLMModelParameter(),
     )
 
     @abstractmethod

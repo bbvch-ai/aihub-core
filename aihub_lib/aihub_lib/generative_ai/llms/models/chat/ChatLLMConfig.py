@@ -37,7 +37,7 @@ class ChatLLMConfig(LLMConfig):
     With ChatLLMConfig, we integrate these parameters and the cost tracking mechanism in one place.
     """
 
-    default_parameter: ChatLLMModelParameter = Field(..., description="Default parameters for the chat-based LLM.")
+    default_parameter: ChatLLMModelParameter = Field(..., description="Default parameters for the chat-based LLM.", default_factory=lambda: ChatLLMModelParameter())
 
     @property
     @abstractmethod
@@ -45,7 +45,7 @@ class ChatLLMConfig(LLMConfig):
         pass
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLM, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter] = None) -> Tuple[LLM, LLMCostTracker]:
         pass
 
     @asynccontextmanager

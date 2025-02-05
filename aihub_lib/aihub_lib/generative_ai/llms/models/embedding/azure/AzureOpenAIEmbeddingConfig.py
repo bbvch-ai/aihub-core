@@ -40,7 +40,8 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
     api_version: str = Field(..., description="Azure OpenAI API version for embeddings.")
 
     default_parameter: AzureOpenAIEmbeddingParameter = Field(
-        ..., description="Default parameters for Azure OpenAI embeddings."
+        ..., description="Default parameters for Azure OpenAI embeddings.",
+        default_factory=lambda: AzureOpenAIEmbeddingParameter(),
     )
 
     def to_llama_index(

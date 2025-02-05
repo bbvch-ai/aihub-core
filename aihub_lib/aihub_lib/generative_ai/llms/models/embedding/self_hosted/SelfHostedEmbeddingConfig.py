@@ -42,7 +42,7 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
     embed_batch_size: Annotated[int, Field(32, description="Number of texts to embed in one batch.")]
 
     default_parameter: Annotated[
-        SelfHostedEmbeddingParameter, Field(..., description="Default parameters for the self-hosted embedding model.")
+        SelfHostedEmbeddingParameter, Field(..., description="Default parameters for the self-hosted embedding model.", default_factory=lambda: SelfHostedEmbeddingParameter())
     ]
 
     def to_llama_index(

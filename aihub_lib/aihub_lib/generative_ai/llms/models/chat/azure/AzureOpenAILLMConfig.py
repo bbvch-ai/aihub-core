@@ -41,7 +41,7 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
     completion_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand completion tokens.")
     api_version: str = Field(..., description="Azure OpenAI API version.")
 
-    default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.")
+    default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.", default_factory=lambda: AzureOpenAIParameter())
 
     @property
     def tokenizer(self) -> Callable[[str], List[int]]:
