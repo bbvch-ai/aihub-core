@@ -1,6 +1,6 @@
 from fastapi import Request
 
-from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 def use_ws_receiver(request: Request) -> WebSocketReceiver:
