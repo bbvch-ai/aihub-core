@@ -14,6 +14,29 @@ class Message(EmbeddedDocument):
 
 
 class ConversationEntity(Document):
+    """
+    Represents a persistent conversation thread between users and agents over the Azure Bot Service.
+
+    ### Purpose
+    - Stores conversation history, including user messages and AI responses.
+    - Tracks participants involved in a given conversation.
+    - Enables retrieval of prior messages for contextual interactions.
+
+    ### Key Fields
+    - `conversation_id`: Unique identifier for the conversation.
+    - `users`: List of users participating in the conversation.
+    - `messages`: Stored chat history.
+
+    ### Methods
+    - **Create a new conversation** if it doesn’t exist.
+    - **Retrieve conversation history** by ID.
+    - **Add users and messages** dynamically.
+    - **Delete a conversation** when needed.
+
+    ### Usage
+    This class enables AI agents to maintain contextual awareness across multiple exchanges,
+    ensuring better response generation and user experience.
+    """
     meta = {
         "collection": "conversations",
         "strict": False,

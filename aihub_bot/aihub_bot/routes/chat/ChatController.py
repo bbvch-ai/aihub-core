@@ -1,9 +1,5 @@
 from typing import Annotated
 
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.routes.Controller import Controller
-from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import Depends, Path
 from nats.aio.client import Client as NATS
 from starlette.requests import Request
@@ -11,13 +7,40 @@ from starlette.responses import Response
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
 from aihub_bot.routes.chat.ChatService import ChatService
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 
 
 class ChatController(Controller):
+    """
+    Exposes API endpoints for handling Azure Bot Service interactions with AI agents.
+
+    ### Purpose
+    - Acts as an intermediary between the Azure Bot Service and the AI agents.
+
+    ### Key Endpoints
+    - **JSON (`/completions/{agent_class}/{agent_id}/json`)**:
+      - Returns a complete response only after the full conversation is processed.
+      - Ensures structured interactions, useful for logging or non-streaming clients.
+
+    ### Authentication & Access Control
+    """
+
     def __init__(self, route: str = "/chat"):
         super().__init__(route)
 
     def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "ChatController":
+        """
+        Registers an endpoint for JSON-based chat completions.
+
+        ### Functionality
+        - Handles Azure Bot Service interactions directed at an AI agent.
+        - Waits for the full response.
+        - Sends a message Activity with the response to the Azure Bot Service.
+        """
+
         @self.router.post(route)
         async def json_chat(
             request: Request,
