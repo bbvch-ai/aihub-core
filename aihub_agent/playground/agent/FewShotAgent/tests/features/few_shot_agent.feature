@@ -42,8 +42,8 @@ Feature: Test the FewShotAgent
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present
 
-  @azure
-  Scenario: Validate the RightAgentGuard workflow with azure llm
+  @self_hosted
+  Scenario: Validate the RightAgentGuard workflow with self hosted llm
     Given I have an empty agent config
     Given the agent description is "This agent can transform movie titles into emojis."
     And the few shot system prompt is "Respond with three emojis for the movie."

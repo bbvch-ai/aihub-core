@@ -12,8 +12,8 @@ class GuardResult(BaseModel):
 
 def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
     class LocalizedGuardResult(GuardResult):
-        reasoning: str = Field(description=t("lib.guards.agent_description_guard.reason"))
-        success: bool = Field(description=t("lib.guards.agent_description_guard.success"))
+        reasoning: str = Field(description=t("lib.guards.common.reason"))
+        success: bool = Field(description=t("lib.guards.common.success"))
 
-    LocalizedGuardResult.__doc__ = t("lib.guards.agent_description_guard.docstring")
+    LocalizedGuardResult.__doc__ = t("lib.guards.common.docstring")
     return LocalizedGuardResult
