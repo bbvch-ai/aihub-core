@@ -1,7 +1,7 @@
 import logging
 
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_api.auth.dependencies.no_auth.NoAuthConfig import NoAuthConfig
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.no_auth.NoAuthConfig import NoAuthConfig
 
 logger = logging.getLogger(__name__)
 

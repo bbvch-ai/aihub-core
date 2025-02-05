@@ -10,8 +10,8 @@ from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_api.sockets.events.user_to_server import WSUserEvent
+from aihub_api.sockets.receiver import WebSocketReceiver
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,8 @@
 import asyncio
 from os.path import abspath, join, dirname
 
-from aihub_api.routes.health.HealthController import HealthController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_lib.routes.health.HealthController import HealthController
 
 
 async def main():

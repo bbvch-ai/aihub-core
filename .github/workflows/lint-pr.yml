@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline ]
+        folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline, aihub_bot ]
 
     steps:
       - name: Lint backend

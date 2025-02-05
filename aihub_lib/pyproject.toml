@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.22.0"
+version = "v0.23.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -47,6 +47,7 @@ pytest-mock = "^3.14.0"
 llama-index-llms-openai-like = "^0.3.3"
 transformers = "^4.48.1"
 llama-index-embeddings-text-embeddings-inference = "^0.3.1"
+fastapi = "^0.115.8"
 
 
 [tool.poetry.group.dev.dependencies]

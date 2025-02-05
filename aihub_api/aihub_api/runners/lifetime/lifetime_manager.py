@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.NatsConfig import NatsConfig
@@ -12,12 +13,12 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.persistance.EventPersister import EventPersister
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
-from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_api.sockets.receiver import WebSocketReceiver
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 
 @asynccontextmanager
-async def lifetime_manager(app: FastAPI) -> None:
+async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     """
     Manages the lifecycle of critical application resources, including NATS connections, JetStream context,
     database connections, and event consumers.
