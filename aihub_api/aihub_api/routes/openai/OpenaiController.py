@@ -1,40 +1,50 @@
-import asyncio
 import logging
-from typing import Any, Callable, List, Annotated, AsyncGenerator
+from typing import Annotated, Any, Callable, List, Optional, Literal, AsyncIterator
 
-from fastapi import Depends, HTTPException, Body
+from openai.types import ImagesResponse
+from openai.types.audio import Transcription, TranscriptionVerbose
+
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from fastapi import Body, Depends, File, UploadFile, Form
 from llama_index.llms.openai import OpenAI
-from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
+from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureImageModelConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
+from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureSTTConfig
+from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureTTSConfig
+from aihub_lib.routes.Controller import Controller
+from .OpenaiService import OpenaiService
 from .dto.ChatCompletionRequest import ChatCompletionRequest
-from .dto.Embeddings import Embeddings
 from .dto.EmbeddingsRequest import EmbeddingsRequest
 from .dto.EmbeddingsResponse import EmbeddingsResponse
+from .dto.ImageGenerationRequest import ImageGenerationRequest
 from .dto.ModelDetails import ModelDetails
 from .dto.ModelResponse import ModelResponse
-from ..Controller import Controller
-from ...auth.AuthenticatedUser import AuthenticatedUser
+from .dto.TextToSpeechRequest import TextToSpeechRequest
 
 logger = logging.getLogger(__name__)
 
 
 class OpenaiController(Controller):
-
     def __init__(
-            self,
-            route: str = "/openai",
-            auth: Callable[..., Any] = None,
-            embedding_models: List[EmbeddingLLMConfig] = None,
-            chat_models: List[ChatLLMConfig] = None,
-
-         ):
+        self,
+        route: str = "/openai",
+        auth: Callable[..., Any] = None,
+        embedding_models: List[EmbeddingLLMConfig] = None,
+        chat_models: List[ChatLLMConfig] = None,
+        image_models: List[AzureImageModelConfig] = None,
+        stt_models: List[AzureSTTConfig] = None,
+        tts_models: List[AzureTTSConfig] = None,
+    ):
         super().__init__(route, auth)
         self.embedding_models = embedding_models or []
         self.chat_models = chat_models or []
+        self.image_models = image_models or []
+        self.tts_models = tts_models or []
+        self.stt_models = stt_models or []
 
         for chat_model in self.chat_models:
             model, _ = chat_model.to_llama_index()
@@ -46,77 +56,105 @@ class OpenaiController(Controller):
         async def get_models(
             user: AuthenticatedUser = Depends(self.auth),
         ) -> ModelResponse:
-            models = [ModelDetails(id=model.name) for model in self.chat_models]
-            return ModelResponse(data=models)
+            return OpenaiService.get_models(self.chat_models)
 
         return self
 
-    def get_model(self, route: str = "/models/{model_name}") -> "OpenaiController":
+    def get_model(self, route: str = "/models/{full_path:path}") -> "OpenaiController":
         @self.router.get(route)
         async def get_model(
-            model_name: str,
+            full_path: str,
             user: AuthenticatedUser = Depends(self.auth),
         ) -> ModelDetails:
-            models = [ModelDetails(id=model.name) for model in self.chat_models if model.name == model_name]
-            if len(models) == 0:
-                raise HTTPException(status_code=404, detail="Model not found.")
-            return ModelDetails(id=models[0].name)
+            return OpenaiService.get_model(self.chat_models, model_name=full_path)
 
         return self
 
     def get_embeddings(self, route: str = "/embeddings") -> "OpenaiController":
         @self.router.post(route)
         async def get_embeddings(
-            req: EmbeddingsRequest,
+            req: Annotated[EmbeddingsRequest, Body],
             user: AuthenticatedUser = Depends(self.auth),
         ) -> EmbeddingsResponse:
-            try:
-                embedding_model_config = next((model for model in self.embedding_models if model.name == req.model), None)
-            except StopIteration:
-                raise HTTPException(status_code=404, detail="Model not found.")
-
-            embedding_model, cost_tracker = embedding_model_config.to_llama_index()
-            inputs = req.input if isinstance(req.input, list) else [req.input]
-            embeddings = embedding_model.get_text_embedding_batch(inputs)
-            return EmbeddingsResponse(
-                model=req.model,
-                data=[Embeddings(index=i, embedding=embedding) for i, embedding in enumerate(embeddings)],
+            return OpenaiService.get_embeddings(
+                self.embedding_models,
+                req.model,
+                req.input,
+                dimensions=req.dimensions,
+                encoding_format=req.encoding_format,
             )
 
         return self
 
     def chat_completion(self, route: str = "/chat/completions") -> "OpenaiController":
-        @self.router.post(route)
+        @self.router.post(route, response_model=ChatCompletion)
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
             user: AuthenticatedUser = Depends(self.auth),
         ) -> ChatCompletion | StreamingResponse:
-            try:
-                chat_model_config = next((model for model in self.chat_models if model.name == completion_request.model), None)
-            except StopIteration:
-                raise HTTPException(status_code=404, detail="Model not found.")
-
-            chat_model, _ = chat_model_config.to_llama_index()
-            client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
-            function_args = completion_request.model_dump()
-
-            if completion_request.stream:
-                async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:
-                    """Handles streaming responses from OpenAI's API."""
-                    response = await client.chat.completions.create(**kwargs)
-
-                    async for chunk in response:
-                        yield f"data: {chunk.model_dump_json()}\n\n"
-                        await asyncio.sleep(0)
-                return StreamingResponse(stream_chat_completion(**function_args), media_type="text/event-stream")
-            else:
-                return await client.chat.completions.create(**function_args)
+            return await OpenaiService.chat_completion(
+                self.chat_models, completion_request.model, completion_request.model_dump()
+            )
 
         return self
 
     def generate_image(self, route: str = "/images/generations") -> "OpenaiController":
         @self.router.post(route)
         async def generate_image(
+            generation_request: Annotated[ImageGenerationRequest, Body],
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> ImagesResponse:
+            return await OpenaiService.generate_image(
+                self.image_models, str(generation_request.model), generation_request.model_dump()
+            )
 
-        ):
-            pass
+        return self
+
+    def stt(self, route: str = "/audio/transcriptions") -> "OpenaiController":
+        @self.router.post(route)
+        async def create_transcription(
+            file: UploadFile = File(..., description="The audio file to transcribe"),
+            model: str = Form(..., description="ID of the model to use"),
+            language: Optional[str] = Form(None, description="ISO-639-1 language code"),
+            prompt: Optional[str] = Form(None, description="Optional text prompt"),
+            response_format: Optional[str] = Form("json", description="Format of the response"),
+            temperature: Optional[float] = Form(0, description="Sampling temperature between 0 and 1"),
+            timestamp_granularities: Optional[List[Literal["word", "segment"]]] = Form(
+                None,
+                description="Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
+            ),
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> Transcription | TranscriptionVerbose | str:
+            return await OpenaiService.stt(
+                self.stt_models,
+                file,
+                model,
+                language,
+                prompt,
+                response_format,
+                temperature,
+                timestamp_granularities,
+            )
+
+        return self
+
+    def tts(self, route: str = "/audio/speech") -> "OpenaiController":
+        @self.router.post(route)
+        async def create_speech(
+            speech_request: Annotated[TextToSpeechRequest, Body],
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> StreamingResponse:
+            tts_response = await OpenaiService.tts(
+                self.tts_models, speech_request.model, speech_request.input, speech_request.model_dump()
+            )
+
+            async def stream_generator() -> AsyncIterator[bytes]:
+                # Notice we await the aiter_bytes method to get the async iterator.
+                async_iterator = await tts_response.aiter_bytes()
+                async for chunk in async_iterator:
+                    yield chunk
+
+            media_type = tts_response.response.headers.get("Content-Type", f"audio/{speech_request.response_format}")
+            return StreamingResponse(stream_generator(), media_type=media_type)
+
+        return self

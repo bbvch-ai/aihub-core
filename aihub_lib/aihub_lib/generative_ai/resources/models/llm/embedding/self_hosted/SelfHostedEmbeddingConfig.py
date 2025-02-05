@@ -5,14 +5,14 @@ from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInfer
 from pydantic import Field
 from transformers import AutoTokenizer
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import (
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import (
+    EmbeddingLLMParameter,
     EmbeddingLLMConfig,
-    EmbeddingLLMModelParameter,
 )
 
 
-class SelfHostedEmbeddingParameter(EmbeddingLLMModelParameter):
+class SelfHostedEmbeddingParameter(EmbeddingLLMParameter):
     """
     Parameters for a self-hosted embedding model, possibly using text-embedding-inference or another local inference server.
 
@@ -42,11 +42,16 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
     embed_batch_size: Annotated[int, Field(32, description="Number of texts to embed in one batch.")]
 
     default_parameter: Annotated[
-        SelfHostedEmbeddingParameter, Field(..., description="Default parameters for the self-hosted embedding model.", default_factory=lambda: SelfHostedEmbeddingParameter())
+        SelfHostedEmbeddingParameter,
+        Field(
+            ...,
+            description="Default parameters for the self-hosted embedding model.",
+            default_factory=lambda: SelfHostedEmbeddingParameter(),
+        ),
     ]
 
     def to_llama_index(
-        self, model_parameter: Optional[SelfHostedEmbeddingParameter]
+        self, model_parameter: Optional[SelfHostedEmbeddingParameter] = None
     ) -> Tuple[TextEmbeddingsInference, LLMCostTracker]:
         """
         Instantiate a TextEmbeddingsInference object and LLMCostTracker for self-hosted embeddings.

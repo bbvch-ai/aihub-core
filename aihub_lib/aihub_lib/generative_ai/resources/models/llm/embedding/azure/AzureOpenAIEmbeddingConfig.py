@@ -6,14 +6,15 @@ from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from pydantic import Field
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import (
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.AzureResourceConfig import AzureResourceConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import (
+    EmbeddingLLMParameter,
     EmbeddingLLMConfig,
-    EmbeddingLLMModelParameter,
 )
 
 
-class AzureOpenAIEmbeddingParameter(EmbeddingLLMModelParameter):
+class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     """
     Parameters for Azure OpenAI embeddings.
 
@@ -22,11 +23,11 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMModelParameter):
     maintains consistency and allows easy extension if needed.
     """
 
-    dimensions: Optional[int] = Field(None, description="Number of embedding dimensions if applicable.")
+    dimensions: int = Field(1536, description="Number of embedding dimensions if applicable.")
     encoding_format: str = Field("float", description="The encoding format of the returned embeddings.")
 
 
-class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
+class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureResourceConfig):
     """
     Configuration for an Azure OpenAI embedding model.
 
@@ -37,10 +38,10 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig):
     """
 
     embedding_tokens_costs_per_thousand: float = Field(0.0, description="Cost per thousand embedding tokens.")
-    api_version: str = Field(..., description="Azure OpenAI API version for embeddings.")
 
     default_parameter: AzureOpenAIEmbeddingParameter = Field(
-        ..., description="Default parameters for Azure OpenAI embeddings.",
+        ...,
+        description="Default parameters for Azure OpenAI embeddings.",
         default_factory=lambda: AzureOpenAIEmbeddingParameter(),
     )
 

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import List
 
-from aihub_lib.generative_ai.llms.costs.LLMCosts import LLMCosts
+from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from pydantic import BaseModel, Field
 
 from aihub_api.routes.chat.dto.json.ChoiceResponse import ChoiceResponse

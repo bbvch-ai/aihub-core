@@ -18,12 +18,12 @@ from aihub_agent.agents.basic.FewShotAgent.events.StandaloneQuestionCondenserEve
 )
 from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
 
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+from aihub_lib.generative_ai.resources.models.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
 
-from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
+from aihub_lib.generative_ai.resources.models.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
 )

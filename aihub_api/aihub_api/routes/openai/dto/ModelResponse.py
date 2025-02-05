@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
 

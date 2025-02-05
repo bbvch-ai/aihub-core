@@ -9,4 +9,3 @@ class EmbeddingsResponse(BaseModel):
     object: str = Field("list", description="The type of object.")
     model: str = Field(..., description="The model name.")
     data: List[Embeddings] = Field(..., description="The list of embeddings.")
-

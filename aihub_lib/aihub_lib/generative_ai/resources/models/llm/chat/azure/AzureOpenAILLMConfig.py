@@ -7,11 +7,12 @@ from llama_index.llms.azure_openai import AzureOpenAI
 from pydantic import Field
 from typing_extensions import Callable
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.AzureResourceConfig import AzureResourceConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMParameter, ChatLLMConfig
 
 
-class AzureOpenAIParameter(ChatLLMModelParameter):
+class AzureOpenAIParameter(ChatLLMParameter):
     """
     Parameters for the Azure OpenAI chat model.
 
@@ -25,7 +26,7 @@ class AzureOpenAIParameter(ChatLLMModelParameter):
     logit_bias: Optional[Dict[str, float]] = Field(None, description="Adjust probabilities of specific tokens.")
 
 
-class AzureOpenAILLMConfig(ChatLLMConfig):
+class AzureOpenAILLMConfig(ChatLLMConfig, AzureResourceConfig):
     """
     Configuration for an Azure OpenAI chat-based LLM.
 
@@ -39,9 +40,10 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
 
     prompt_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand prompt tokens.")
     completion_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand completion tokens.")
-    api_version: str = Field(..., description="Azure OpenAI API version.")
 
-    default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.", default_factory=lambda: AzureOpenAIParameter())
+    default_parameter: AzureOpenAIParameter = Field(
+        ..., description="Default parameters for Azure OpenAI LLM.", default_factory=lambda: AzureOpenAIParameter()
+    )
 
     @property
     def tokenizer(self) -> Callable[[str], List[int]]:

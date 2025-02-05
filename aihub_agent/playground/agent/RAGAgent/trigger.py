@@ -7,11 +7,11 @@ from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
 )
-from aihub_lib.generative_ai.llms.models.embedding.self_hosted.SelfHostedEmbeddingConfig import (
+from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )

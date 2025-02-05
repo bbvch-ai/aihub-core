@@ -1,5 +1,5 @@
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 

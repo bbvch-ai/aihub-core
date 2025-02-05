@@ -37,6 +37,7 @@ class ConversationEntity(Document):
     This class enables AI agents to maintain contextual awareness across multiple exchanges,
     ensuring better response generation and user experience.
     """
+
     meta = {
         "collection": "conversations",
         "strict": False,

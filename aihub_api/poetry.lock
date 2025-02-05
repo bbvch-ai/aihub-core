@@ -1533,6 +1533,7 @@ files = [
 ]
 
 [package.dependencies]
+aiohttp = {version = "*", optional = true, markers = "extra == \"inference\""}
 filelock = "*"
 fsspec = ">=2023.5.0"
 packaging = ">=20.9"
@@ -1859,6 +1860,23 @@ llama-index-core = ">=0.12.0,<0.13.0"
 openai = ">=1.1.0"
 
 [[package]]
+name = "llama-index-embeddings-text-embeddings-inference"
+version = "0.3.2"
+description = "llama-index embeddings text embeddings inference integration"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_embeddings_text_embeddings_inference-0.3.2-py3-none-any.whl", hash = "sha256:7ee41709df258d1f13bb47b31dc8bf05ce4580a19360d2e96515a0e4f0833352"},
+    {file = "llama_index_embeddings_text_embeddings_inference-0.3.2.tar.gz", hash = "sha256:e379767cb95d4fba02612c0d681d98df96563f24b508bad1835c04b6fe744ab6"},
+]
+
+[package.dependencies]
+httpx = ">=0.26.0"
+llama-index-core = ">=0.12.0,<0.13.0"
+llama-index-utils-huggingface = ">=0.3.0,<0.4.0"
+
+[[package]]
 name = "llama-index-llms-azure-openai"
 version = "0.3.0"
 description = "llama-index llms azure openai integration"
@@ -1963,6 +1981,22 @@ files = [
 llama-index-core = ">=0.12.0,<0.13.0"
 motor = ">=3.6,<4.0"
 pymongo = ">=4.6.1,<5.0.0"
+
+[[package]]
+name = "llama-index-utils-huggingface"
+version = "0.3.0"
+description = "llama-index utils for huggingface integration"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_utils_huggingface-0.3.0-py3-none-any.whl", hash = "sha256:03691de49f9dab86822ae1f86088433bc2f611f058bd9df995112843cd7ef5dd"},
+    {file = "llama_index_utils_huggingface-0.3.0.tar.gz", hash = "sha256:039b3facbe3468dd10b728c3ef9161adca862f043bd23b629aec57140ce216b2"},
+]
+
+[package.dependencies]
+huggingface-hub = {version = ">=0.19.0", extras = ["inference"]}
+llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-azureaisearch"
@@ -3669,6 +3703,18 @@ files = [
 yaml = ["pyyaml (>=3.10)"]
 
 [[package]]
+name = "python-multipart"
+version = "0.0.20"
+description = "A streaming multipart parser for Python"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "python_multipart-0.0.20-py3-none-any.whl", hash = "sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104"},
+    {file = "python_multipart-0.0.20.tar.gz", hash = "sha256:8dd0cab45b8e23064ae09147625994d090fa46f5b0d1e13af944c331a7fa9d13"},
+]
+
+[[package]]
 name = "pytz"
 version = "2025.1"
 description = "World timezone definitions, modern and historical"
@@ -4819,4 +4865,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "ce2d627223d84bc90b4de094515a2121426a2fdc5e3d2b3d171b5d17e59c92e8"
+content-hash = "d336e577510047e8fb85fbcedf5cf8061786f1df8fb157feb2d11f90ace9641b"

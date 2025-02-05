@@ -3,12 +3,13 @@ from typing import Dict, Optional, Tuple, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms import LLM
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceConfig, ResourceParameter
 
 
-class ModelParameter(BaseModel):
+class LLMModelParameter(ResourceParameter):
     """
     A base class for model parameters used to configure LLMs or embeddings.
 
@@ -24,30 +25,12 @@ class ModelParameter(BaseModel):
     pass
 
 
-class LLMConfig(BaseModel):
-    """
-    Configuration for a Language Model or embedding, including defaults and endpoints.
-
-    ### Why LLMConfig?
-    An application may rely on a variety of LLM backends (like OpenAI models or Azure endpoints),
-    each with different defaults or endpoints. LLMConfig captures:
-    - The model name
-    - The base URL
-    - Default parameters (via ModelParameter)
-
-    This makes it easy to:
-    - Switch between models without changing code.
-    - Merge per-request parameters with defaults.
-    - Instantiate LLM or embedding objects for llama_index consistently.
-    """
-
-    name: str = Field(..., description="The name of the LLM or embedding model.")
-    base_url: str = Field(..., description="The base URL of the LLM or embedding model.")
-    default_parameter: ModelParameter = Field(..., description="The default parameters for the model.")
+class LLMConfig(ResourceConfig):
+    default_parameter: LLMModelParameter = Field(..., description="The default parameters for the model.")
 
     @abstractmethod
     def to_llama_index(
-        self, model_parameter: Optional[ModelParameter]
+        self, model_parameter: Optional[LLMModelParameter]
     ) -> Tuple[Union[LLM, BaseEmbedding], LLMCostTracker]:
         """
         Instantiate an LLM or embedding along with a cost tracker for llama_index.
@@ -58,7 +41,7 @@ class LLMConfig(BaseModel):
         """
         pass
 
-    def merge_model_params(self, model_parameter: Optional[ModelParameter]) -> Dict:
+    def merge_model_params(self, model_parameter: Optional[LLMModelParameter] = None) -> Dict:
         """
         Merge default model parameters with provided ones. The merged dictionary excludes any
         fields starting with '_'.
