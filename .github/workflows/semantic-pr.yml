@@ -86,4 +86,5 @@ jobs:
             initiative/tracing
             initiative/workflows
             initiative/micro
-            /^(quickfix|hotfix|agent-custom|agent-xp|avatar|chat-xp|chat-backend|debt|dagster|confidence|deploy|ui|guards|rag|local|tracing|workflows|micro)\/([a-z-0-9])+$/
+            initiative/bots
+            /^(quickfix|hotfix|agent-custom|agent-xp|avatar|chat-xp|chat-backend|debt|dagster|confidence|deploy|ui|guards|rag|local|tracing|workflows|micro|bots)\/([a-z-0-9])+$/

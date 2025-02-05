@@ -1,5 +1,8 @@
 import logging
 
+from bson import ObjectId
+from nats.js import JetStreamContext
+
 from aihub_lib.nats.events import DisplayEvent, StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -7,10 +10,7 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from bson import ObjectId
-from nats.js import JetStreamContext
-
-from aihub_api.sockets.events.user_to_server.WSUserEvent import WSUserEvent
+from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
 
 logger = logging.getLogger(__name__)
 
@@ -52,32 +52,32 @@ class WebSocketReceiver:
     def __init__(self, js: JetStreamContext):
         self.publisher = JSPublisher(js)
 
-    async def receive_event(self, ws_vent: WSUserEvent, user_id: str):
+    async def receive_event(self, ws_event: WSUserEvent, user_id: str):
         """
         Entry point for receiving a user event (WSUserEvent) from the WebSocket layer.
 
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.
         """
-        thread = ThreadEntity.get_thread_by_id(ws_vent.thread_id)
-        logger.debug(f"Received event {ws_vent.event.__class__.__name__} for thread {ws_vent.thread_id}")
+        thread = ThreadEntity.get_thread_by_id(ws_event.thread_id)
+        logger.debug(f"Received event {ws_event.event.__class__.__name__} for thread {ws_event.thread_id}")
         users_in_thread = [user.user_id for user in thread.users]
 
         if user_id not in users_in_thread:
-            logger.error(f"User {user_id} is not in thread {ws_vent.thread_id}")
-            raise Exception(f"User {user_id} is not in thread {ws_vent.thread_id}")
+            logger.error(f"User {user_id} is not in thread {ws_event.thread_id}")
+            raise Exception(f"User {user_id} is not in thread {ws_event.thread_id}")
 
-        if isinstance(ws_vent.event, HumanInTheLoopResponseEvent):
-            run_id = ws_vent.event.request_event.topic.run_id
-            await self._handle_human_in_the_loop_response(thread, ws_vent)
+        if isinstance(ws_event.event, HumanInTheLoopResponseEvent):
+            run_id = ws_event.event.request_event.topic.run_id
+            await self._handle_human_in_the_loop_response(thread, ws_event)
         else:
             run_id = str(ObjectId())
 
-        if isinstance(ws_vent.event, DisplayEvent):
-            await self._handle_display_message(ws_vent, run_id, user_id)
+        if isinstance(ws_event.event, DisplayEvent):
+            await self._handle_display_message(ws_event, run_id, user_id)
 
-        if isinstance(ws_vent.event, StartEvent):
-            await self._handle_start_event(thread, ws_vent, run_id)
+        if isinstance(ws_event.event, StartEvent):
+            await self._handle_start_event(thread, ws_event, run_id)
 
     async def _handle_start_event(self, thread: ThreadEntity, ws_event: WSUserEvent, run_id: str):
         """

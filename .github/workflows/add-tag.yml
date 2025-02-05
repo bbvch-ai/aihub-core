@@ -69,7 +69,7 @@ jobs:
       - name: Define directories
         id: define-directories
         run: |
-          echo "directories=aihub_pipeline aihub_agent aihub_api" >> $GITHUB_OUTPUT
+          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot" >> $GITHUB_OUTPUT
 
       - name: Increment version-tag in pyproject.toml
         run: |

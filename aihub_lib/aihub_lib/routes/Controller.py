@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from fastapi import APIRouter, FastAPI
 
-from aihub_api.auth.dependencies.no_auth.use_no_auth_user import use_no_auth_user
+from aihub_lib.auth.dependencies.no_auth.use_no_auth_user import use_no_auth_user
 
 
 class Controller(abc.ABC):
