@@ -7,7 +7,7 @@ from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from pydantic import Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.resources.models.AzureResourceConfig import AzureResourceConfig
+from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import (
     EmbeddingLLMParameter,
     EmbeddingLLMConfig,
@@ -27,7 +27,7 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     encoding_format: str = Field("float", description="The encoding format of the returned embeddings.")
 
 
-class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureResourceConfig):
+class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
     """
     Configuration for an Azure OpenAI embedding model.
 

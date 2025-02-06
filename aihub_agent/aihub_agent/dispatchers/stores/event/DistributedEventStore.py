@@ -13,6 +13,7 @@ from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
 logger = logging.getLogger(__name__)
 
+
 class DistributedEventStore(StoreBase):
     """
     A run-scoped store for persisting and retrieving events (subclasses of ControlEvent) associated with a single run.
@@ -72,7 +73,6 @@ class DistributedEventStore(StoreBase):
         # Add the new event and remove duplicates
         event_list_data.append(event.model_dump())
         event_list_data = list({e["event_id"]: e for e in event_list_data}.values())
-
 
         # Save updated list
         await kv.put(event_type, json.dumps(event_list_data).encode())

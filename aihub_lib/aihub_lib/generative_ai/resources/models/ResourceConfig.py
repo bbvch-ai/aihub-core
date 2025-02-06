@@ -7,21 +7,23 @@ class ResourceParameter(BaseModel):
 
 class ResourceConfig(BaseModel):
     """
-    Configuration for a Language Model or embedding, including defaults and endpoints.
+    Configuration for a multitude of online resources, identified by their name and their access url.
 
-    ### Why LLMConfig?
-    An application may rely on a variety of LLM backends (like OpenAI models or Azure endpoints),
-    each with different defaults or endpoints. LLMConfig captures:
+    ### Why ResourceConfig?
+    An application may rely on a variety of services,
+    each with different defaults or endpoints. ResourceConfig captures:
     - The model name
     - The base URL
     - Default parameters (via ModelParameter)
 
     This makes it easy to:
-    - Switch between models without changing code.
+    - Inherit resource definitions
     - Merge per-request parameters with defaults.
-    - Instantiate LLM or embedding objects for llama_index consistently.
+    - Instantiate, pass or configure resources.
     """
 
     name: str = Field(..., description="The name of the model.")
     base_url: str = Field(..., description="The base URL of the model.")
-    default_parameter: ResourceParameter = Field(..., description="The default parameters for the model.")
+    default_parameter: ResourceParameter = Field(
+        ..., description="The default parameters for the model.", default_factory=lambda: ResourceParameter()
+    )

@@ -10,11 +10,11 @@ from llama_index.llms.openai import OpenAI
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
-from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureImageModelConfig
+from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureTTSConfig
+from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
+from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.Controller import Controller
 from .OpenaiService import OpenaiService
 from .dto.ChatCompletionRequest import ChatCompletionRequest
@@ -29,15 +29,35 @@ logger = logging.getLogger(__name__)
 
 
 class OpenaiController(Controller):
+    """
+    A controller that fully emulates the OpenAI API, enabling AI Hub to serve as a drop-in replacement for OpenAI's endpoints.
+
+    ### Why OpenaiController?
+    The OpenaiController is designed to mirror the exact API interface provided by OpenAI, so that customers can seamlessly switch
+    from OpenAI's services to AI Hub without modifying their client code. Every endpoint that OpenAI offers—ranging from model management,
+    chat completions, embeddings, image generation, to audio processing (both speech-to-text and text-to-speech)—is implemented here with the same
+    request/response structure expected by the OpenAI Python and JavaScript SDKs.
+
+    ### Key Intentions
+    - **API Compatibility**: Provide identical endpoints and interfaces as OpenAI, allowing customers to replace OpenAI endpoints with AI Hub's
+      endpoints without changes to their integration.
+    - **Unified Access**: Centralize access to various generative AI capabilities (LLM chat, embeddings, image generation, STT, and TTS)
+      under a single controller.
+    - **Extensibility**: Support multiple underlying model configurations (e.g., Azure, Self-Hosted, ...) and validate compatibility where necessary.
+
+    This setup ensures that your backend exposes a fully OpenAI-compatible API interface, allowing customers to plug in the
+    OpenAI SDKs directly against AI Hub.
+    """
+
     def __init__(
         self,
         route: str = "/openai",
         auth: Callable[..., Any] = None,
         embedding_models: List[EmbeddingLLMConfig] = None,
         chat_models: List[ChatLLMConfig] = None,
-        image_models: List[AzureImageModelConfig] = None,
-        stt_models: List[AzureSTTConfig] = None,
-        tts_models: List[AzureTTSConfig] = None,
+        image_models: List[AzureOpenaiImageModelConfig] = None,
+        stt_models: List[AzureOpenaiSTTConfig] = None,
+        tts_models: List[AzureOpenaiTTSConfig] = None,
     ):
         super().__init__(route, auth)
         self.embedding_models = embedding_models or []
@@ -52,7 +72,12 @@ class OpenaiController(Controller):
                 raise ValueError(f"Chat model {chat_model.name} is not an OpenAI compatible model.")
 
     def get_models(self, route: str = "/models") -> "OpenaiController":
-        @self.router.get(route)
+        @self.router.get(
+            route,
+            summary="List Models",
+            description="Lists the currently available models, and provides basic information about each one such as the owner and availability.",
+            response_model=ModelResponse,
+        )
         async def get_models(
             user: AuthenticatedUser = Depends(self.auth),
         ) -> ModelResponse:
@@ -61,7 +86,11 @@ class OpenaiController(Controller):
         return self
 
     def get_model(self, route: str = "/models/{full_path:path}") -> "OpenaiController":
-        @self.router.get(route)
+        @self.router.get(
+            route,
+            summary="Retrieve model",
+            description="Retrieves a model instance, providing basic information about the model such as the owner and permissioning.",
+        )
         async def get_model(
             full_path: str,
             user: AuthenticatedUser = Depends(self.auth),
@@ -71,7 +100,11 @@ class OpenaiController(Controller):
         return self
 
     def get_embeddings(self, route: str = "/embeddings") -> "OpenaiController":
-        @self.router.post(route)
+        @self.router.post(
+            route,
+            summary="Create embeddings",
+            description="Creates an embedding vector representing the input text.",
+        )
         async def get_embeddings(
             req: Annotated[EmbeddingsRequest, Body],
             user: AuthenticatedUser = Depends(self.auth),
@@ -87,7 +120,12 @@ class OpenaiController(Controller):
         return self
 
     def chat_completion(self, route: str = "/chat/completions") -> "OpenaiController":
-        @self.router.post(route, response_model=ChatCompletion)
+        @self.router.post(
+            route,
+            response_model=ChatCompletion,
+            summary="Create chat completion",
+            description="Creates a model response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
+        )
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
             user: AuthenticatedUser = Depends(self.auth),
@@ -99,7 +137,7 @@ class OpenaiController(Controller):
         return self
 
     def generate_image(self, route: str = "/images/generations") -> "OpenaiController":
-        @self.router.post(route)
+        @self.router.post(route, summary="Create image", description="Creates an image given a prompt.")
         async def generate_image(
             generation_request: Annotated[ImageGenerationRequest, Body],
             user: AuthenticatedUser = Depends(self.auth),
@@ -111,7 +149,9 @@ class OpenaiController(Controller):
         return self
 
     def stt(self, route: str = "/audio/transcriptions") -> "OpenaiController":
-        @self.router.post(route)
+        @self.router.post(
+            route, summary="Create transcription", description="Transcribes audio into the input language."
+        )
         async def create_transcription(
             file: UploadFile = File(..., description="The audio file to transcribe"),
             model: str = Form(..., description="ID of the model to use"),
@@ -139,7 +179,11 @@ class OpenaiController(Controller):
         return self
 
     def tts(self, route: str = "/audio/speech") -> "OpenaiController":
-        @self.router.post(route)
+        @self.router.post(
+            route,
+            summary="Create speech",
+            description="Generates audio from the input text.",
+        )
         async def create_speech(
             speech_request: Annotated[TextToSpeechRequest, Body],
             user: AuthenticatedUser = Depends(self.auth),

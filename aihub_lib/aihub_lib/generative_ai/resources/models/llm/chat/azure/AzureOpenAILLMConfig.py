@@ -8,7 +8,7 @@ from pydantic import Field
 from typing_extensions import Callable
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.resources.models.AzureResourceConfig import AzureResourceConfig
+from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMParameter, ChatLLMConfig
 
 
@@ -26,7 +26,7 @@ class AzureOpenAIParameter(ChatLLMParameter):
     logit_bias: Optional[Dict[str, float]] = Field(None, description="Adjust probabilities of specific tokens.")
 
 
-class AzureOpenAILLMConfig(ChatLLMConfig, AzureResourceConfig):
+class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
     """
     Configuration for an Azure OpenAI chat-based LLM.
 

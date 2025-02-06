@@ -11,14 +11,15 @@ from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
-from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import \
-    AzureOpenAIEmbeddingConfig
+from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
+)
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureTTSConfig
+from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
+from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.health.HealthController import HealthController
 
 
@@ -53,7 +54,7 @@ async def main():
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2023-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
-                )
+                ),
             ],
             chat_models=[
                 SelfHostedLLMConfig(
@@ -78,21 +79,21 @@ async def main():
                 ),
             ],
             image_models=[
-                AzureImageModelConfig(
+                AzureOpenaiImageModelConfig(
                     name="dall-e-3",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2024-02-01",
                 )
             ],
             stt_models=[
-                AzureSTTConfig(
+                AzureOpenaiSTTConfig(
                     name="whisper-1",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2024-06-01",
                 )
             ],
             tts_models=[
-                AzureTTSConfig(
+                AzureOpenaiTTSConfig(
                     name="tts-1-hd",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2024-05-01-preview",

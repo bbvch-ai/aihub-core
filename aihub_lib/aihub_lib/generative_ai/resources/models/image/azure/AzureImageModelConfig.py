@@ -4,7 +4,7 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AsyncAzureOpenAI
 from pydantic import Field
 
-from aihub_lib.generative_ai.resources.models.AzureResourceConfig import AzureResourceConfig
+from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
 from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceParameter
 from aihub_lib.generative_ai.resources.models.image.ImageModelConfig import ImageModelConfig
 
@@ -26,7 +26,11 @@ class AzureImageModelParameter(ResourceParameter):
     )
 
 
-class AzureImageModelConfig(ImageModelConfig, AzureResourceConfig):
+class AzureOpenaiImageModelConfig(ImageModelConfig, AzureOpenaiResourceConfig):
+    """
+    Resource representing the parameters for the Azure Dall-E image model.
+    """
+
     default_parameter: AzureImageModelParameter = Field(
         ...,
         description="Default parameters for the Azure image model.",

@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from pydantic import Field
 
-from aihub_lib.generative_ai.resources.models.AzureResourceConfig import AzureResourceConfig
+from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
 from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceParameter
 from aihub_lib.generative_ai.resources.models.tts.TTSConfig import TTSConfig
 
@@ -19,7 +19,11 @@ class AzureTTSParameter(ResourceParameter):
     )
 
 
-class AzureTTSConfig(TTSConfig, AzureResourceConfig):
+class AzureOpenaiTTSConfig(TTSConfig, AzureOpenaiResourceConfig):
+    """
+    Resource representing the parameters for the Azure text-to-speech model.
+    """
+
     default_parameter: AzureTTSParameter = Field(
         ...,
         description="Default parameters for the Azure text-to-speech model.",
