@@ -8,11 +8,11 @@ from typing_extensions import override
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
 from aihub_bot.persistence.chat.entities.ConversationEntity import Message, ConversationEntity
-from aihub_bot.routes.chat.ChatAgentService import ChatAgentService
+from aihub_bot.routes.chat.agent.AgentChatService import AgentChatService
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
-class StreamChatAgentBot(ChatBot):
+class StreamAgentChatBot(ChatBot):
 
     def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver, agent_class: str, agent_id: str):
         self.nc = nc
@@ -36,12 +36,13 @@ class StreamChatAgentBot(ChatBot):
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role,
         )
-        ChatAgentService.add_message_to_conversation(turn_context.activity.conversation.id, user_message)
-        persisted_messages: List[Message] = ChatAgentService.get_messages_by_conversation_id(
+        AgentChatService.add_message_to_conversation(turn_context.activity.conversation.id, user_message)
+        persisted_messages: List[Message] = AgentChatService.get_messages_by_conversation_id(
             turn_context.activity.conversation.id
         )
-        messages: List[ChatMessage] = [ChatAgentService.message_to_chat_message(message) for message in persisted_messages]
-        response_generator: AsyncGenerator[str, None] = await ChatAgentService.stream_chat(
+        messages: List[ChatMessage] = [AgentChatService.message_to_chat_message(message) for message in
+                                       persisted_messages]
+        response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat(
             user_id=turn_context.activity.from_property.id,
             agent_class=self.agent_class,
             agent_id=self.agent_id,

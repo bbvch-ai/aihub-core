@@ -8,33 +8,7 @@ from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
-class ChatAgentService(ChatService):
-    """
-    Manages AI-driven chat interactions by orchestrating request handling and response generation.
-
-    ### Purpose
-    - Aggregates AI responses from WebSocket events.
-    - Manages and persists conversation history.
-
-    ### Workflow
-    1. **User Request Handling**:
-       - Receives and processes chat messages from Azure Bot Service.
-       - Converts requests into structured agent interactions.
-    2. **Agent Interaction**:
-       - Sends WebSocket events to AI agents.
-       - Collects responses from agents as they process the user input.
-    3. **Conversation History**:
-       - Stores and retrieves conversation history for each conversation.
-       - Sends history to agents for context.
-    4. **Response Aggregation**:
-       - For JSON: Waits for all response chunks before compiling a final structured response.
-
-    ### Integration
-    - Provides the logic for the ChatBot to handle user interactions.
-    - Communicates with AI agents via `WebSocketReceiver`.
-    - Stores and retrieves conversation history via `ConversationEntity`.
-    """
-
+class AgentChatService(ChatService):
     @staticmethod
     async def stream_chat(
         user_id: str,
@@ -44,7 +18,7 @@ class ChatAgentService(ChatService):
         nc: NATS,
         ws_receiver: WebSocketReceiver,
     ) -> AsyncGenerator[str, None]:
-        resources: StreamingResources = await ChatAgentService.start_stream_chat_interaction(
+        resources: StreamingResources = await AgentChatService.start_stream_chat_interaction(
             user_oid=user_id,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -52,7 +26,7 @@ class ChatAgentService(ChatService):
             nc=nc,
             ws_receiver=ws_receiver,
         )
-        return ChatAgentService.build_stream_response_generator(resources.stop_event, resources.chunk_queue)
+        return AgentChatService.build_stream_response_generator(resources.stop_event, resources.chunk_queue)
 
     @staticmethod
     async def json_chat(
@@ -75,7 +49,7 @@ class ChatAgentService(ChatService):
         3. Constructs a final JSON response after all events are received.
         """
 
-        resources: JsonResources = await ChatAgentService.start_json_chat_interaction(
+        resources: JsonResources = await AgentChatService.start_json_chat_interaction(
             user_oid=user_id,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -89,4 +63,4 @@ class ChatAgentService(ChatService):
         await resources.subscriber.stop()
 
         # Construct final JSON response
-        return ChatAgentService.build_json_response_content(resources.chunk_events)
+        return AgentChatService.build_json_response_content(resources.chunk_events)

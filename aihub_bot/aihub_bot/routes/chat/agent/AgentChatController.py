@@ -5,17 +5,17 @@ from nats.aio.client import Client as NATS
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from aihub_bot.bots.chat.JsonChatAgentBot import JsonChatAgentBot
-from aihub_bot.bots.chat.StreamChatAgentBot import StreamChatAgentBot
+from aihub_bot.bots.chat.agent.JsonAgentChatBot import JsonAgentChatBot
+from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
-from aihub_bot.routes.chat.ChatAgentService import ChatAgentService
+from aihub_bot.routes.chat.agent.AgentChatService import AgentChatService
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 
 
-class ChatController(Controller):
+class AgentChatController(Controller):
     """
     Exposes API endpoints for handling Azure Bot Service interactions with AI agents.
 
@@ -30,10 +30,10 @@ class ChatController(Controller):
     ### Authentication & Access Control
     """
 
-    def __init__(self, route: str = "/chat"):
+    def __init__(self, route: str = "/agent/chat"):
         super().__init__(route)
 
-    def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "ChatController":
+    def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "AgentChatController":
         """
         Registers an endpoint for JSON-based chat completions.
 
@@ -69,12 +69,12 @@ class ChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> JSONResponse:
-            chat_bot: JsonChatAgentBot = JsonChatAgentBot(nc, ws_receiver, agent_class, agent_id)
-            return await ChatAgentService.ADAPTER.process(request, chat_bot)
+            chat_bot: JsonAgentChatBot = JsonAgentChatBot(nc, ws_receiver, agent_class, agent_id)
+            return await AgentChatService.ADAPTER.process(request, chat_bot)
 
         return self
 
-    def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "ChatController":
+    def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "AgentChatController":
         """
         Registers an endpoint for streaming chat completions.
 
@@ -109,7 +109,7 @@ class ChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> JSONResponse:
-            chat_bot: StreamChatAgentBot = StreamChatAgentBot(nc, ws_receiver, agent_class, agent_id)
-            return await ChatAgentService.ADAPTER.process(request, chat_bot)
+            chat_bot: StreamAgentChatBot = StreamAgentChatBot(nc, ws_receiver, agent_class, agent_id)
+            return await AgentChatService.ADAPTER.process(request, chat_bot)
 
         return self
