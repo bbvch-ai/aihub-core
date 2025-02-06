@@ -16,7 +16,8 @@ AGENT_ID = "my_agent_id"
 
 HEALTH_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/health/"
 JSON_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
-SERVICE_ENDPOINT = f"http://localhost:{PORT}/service"
+STREAM_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream"
+SERVICE_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/service"
 
 CONVERSATION_ID = "test_conversation_id"
 BOT_ID = "test_bot_id"
@@ -29,10 +30,7 @@ import pytest
 
 async def start_api(runner: SimulatedAgentBotTestRunner):
     runner.with_simple_chunk_events()
-    runner.mount(
-        HealthController().get_health(),
-        ChatController().completions_json(),
-    )
+    runner.mount(HealthController().get_health(), ChatController().completions_json().completions_stream())
     await runner.run()
 
 
@@ -89,6 +87,7 @@ async def test_update_conversation(test_runner: SimulatedAgentBotTestRunner):
     assert test_runner.responses[-1].payload["conversation"]["id"] == CONVERSATION_ID
     assert test_runner.responses[-1].payload["from"]["id"] == BOT_ID
     assert test_runner.responses[-1].payload["recipient"]["id"] == USER_ID
+    assert test_runner.responses[-1].payload["text"] == "Hello and welcome!"
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -114,3 +113,52 @@ async def test_send_message(test_runner: SimulatedAgentBotTestRunner):
     assert test_runner.responses[-1].payload["conversation"]["id"] == CONVERSATION_ID
     assert test_runner.responses[-1].payload["from"]["id"] == BOT_ID
     assert test_runner.responses[-1].payload["recipient"]["id"] == USER_ID
+    assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_stream_response(test_runner: SimulatedAgentBotTestRunner):
+    with open(Path(__file__).parent / "user_message.json") as file:
+        payload: Dict = json.loads(file.read())
+
+    payload["serviceUrl"] = SERVICE_ENDPOINT
+    payload["conversation"]["id"] = CONVERSATION_ID
+    payload["from"]["id"] = USER_ID
+    payload["recipient"]["id"] = BOT_ID
+    payload["id"] = ACTIVITY_ID
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            url=STREAM_ENDPOINT,
+            json=payload,
+        )
+
+    assert response.status_code == 200
+
+    max_retries = 10
+    retries = 0
+    while True:
+        if (
+            test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
+            and test_runner.responses[-2].payload["text"] == "First chunk.\n"
+        ):
+            break
+        if retries >= max_retries:
+            pytest.fail(f"Chunks not received in time. Last chunk: {test_runner.responses[-1].payload}")
+        retries += 1
+        await asyncio.sleep(0.5)
+
+    assert test_runner.responses[-2].path == f"/v3/conversations/{CONVERSATION_ID}/activities/{ACTIVITY_ID}"
+    assert test_runner.responses[-2].payload["type"] == "message"
+    assert test_runner.responses[-2].payload["conversation"]["id"] == CONVERSATION_ID
+    assert test_runner.responses[-2].payload["from"]["id"] == BOT_ID
+    assert test_runner.responses[-2].payload["recipient"]["id"] == USER_ID
+    assert test_runner.responses[-2].payload["text"] == "First chunk.\n"
+
+    assert test_runner.responses[-1].path.startswith(f"/v3/conversations/{CONVERSATION_ID}/activities/")
+    assert test_runner.responses[-1].path != f"/v3/conversations/{CONVERSATION_ID}/activities/{ACTIVITY_ID}"
+    assert test_runner.responses[-1].payload["type"] == "message"
+    assert test_runner.responses[-1].payload["conversation"]["id"] == CONVERSATION_ID
+    assert test_runner.responses[-1].payload["from"]["id"] == BOT_ID
+    assert test_runner.responses[-1].payload["recipient"]["id"] == USER_ID
+    assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."

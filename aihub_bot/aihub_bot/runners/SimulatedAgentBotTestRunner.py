@@ -198,7 +198,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 completion_tokens_costs=0.3,
                 embedding_tokens_costs=0.05,
             ),
-            ChunkEvent(content="Second chunk", model_name=model_name),
+            ChunkEvent(content="Second chunk.", model_name=model_name),
             LLMCostEvent(
                 llm_name=model_name,
                 prompt_token_count=7,

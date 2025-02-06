@@ -46,8 +46,11 @@ jobs:
             docker_compose_files: "docker-compose.yml"
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Run Tests
-        uses: bbvch-ai/aihub-core/aihub_action/test_backend@bots/aihub-bots
+        uses: ./aihub_action/test_backend
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.module }}
