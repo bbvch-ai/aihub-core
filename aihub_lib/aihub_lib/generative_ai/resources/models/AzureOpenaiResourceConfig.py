@@ -3,17 +3,20 @@ from typing import Optional
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AsyncAzureOpenAI
 from pydantic import Field
+from typing_extensions import Annotated
 
 from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceConfig
 
 
 class AzureOpenaiResourceConfig(ResourceConfig):
     """
-    A azure openai based resources that are defined through an api and a deployment.
+    An Azure OpenAI-based resource that is defined through an API and a deployment.
     """
 
-    api_version: str = Field(..., description="Azure OpenAI API version for embeddings.")
-    deployment: Optional[str] = Field(None, description="Deployment name. If not set, defaults to resource name.")
+    api_version: Annotated[str, Field(description="Azure OpenAI API version for embeddings.")]
+    deployment: Annotated[
+        Optional[str], Field(description="Deployment name. If not set, defaults to resource name.")
+    ] = None
 
     def get_openai_client(self) -> AsyncAzureOpenAI:
         """

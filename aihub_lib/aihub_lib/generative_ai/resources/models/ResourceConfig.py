@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
 class ResourceParameter(BaseModel):
@@ -7,7 +8,7 @@ class ResourceParameter(BaseModel):
 
 class ResourceConfig(BaseModel):
     """
-    Configuration for a multitude of online resources, identified by their name and their access url.
+    Configuration for a multitude of online resources, identified by their name and their access URL.
 
     ### Why ResourceConfig?
     An application may rely on a variety of services,
@@ -19,11 +20,14 @@ class ResourceConfig(BaseModel):
     This makes it easy to:
     - Inherit resource definitions
     - Merge per-request parameters with defaults.
-    - Instantiate, pass or configure resources.
+    - Instantiate, pass, or configure resources.
     """
 
-    name: str = Field(..., description="The name of the model.")
-    base_url: str = Field(..., description="The base URL of the model.")
+    name: Annotated[str, Field(description="The name of the model.")]
+    base_url: Annotated[str, Field(description="The base URL of the model.")]
+
+    # Using default_factory, so keeping Field() explicitly
     default_parameter: ResourceParameter = Field(
-        ..., description="The default parameters for the model.", default_factory=lambda: ResourceParameter()
+        default_factory=lambda: ResourceParameter(),
+        description="The default parameters for the model.",
     )
