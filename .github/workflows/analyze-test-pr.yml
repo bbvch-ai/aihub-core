@@ -46,6 +46,9 @@ jobs:
             docker_compose_files: "docker-compose.yml"
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Run Tests
         uses: ./aihub_action/test_backend
         with:
