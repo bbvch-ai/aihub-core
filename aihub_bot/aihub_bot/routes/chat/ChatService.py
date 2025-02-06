@@ -1,4 +1,5 @@
-from typing import List
+import asyncio
+from typing import List, AsyncGenerator
 
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity
@@ -7,7 +8,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message, User
 from aihub_bot.routes.Service import Service
-from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
+from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib, StreamingResources
 from aihub_lib.routes.chat.ChatService import JsonResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
@@ -55,6 +56,40 @@ class ChatService(Service, ChatServiceLib):
                 raise NotImplementedError(f"Role {message.role} not supported")
 
         return ChatMessage(role=role, content=message.content)
+
+    @staticmethod
+    async def stream_chat(
+        user_id: str,
+        agent_class: str,
+        agent_id: str,
+        messages: List[ChatMessage],
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
+    ) -> AsyncGenerator[str, None]:
+        resources: StreamingResources = await ChatService.start_stream_chat_interaction(
+            user_oid=user_id,
+            agent_class=agent_class,
+            agent_id=agent_id,
+            messages=messages,
+            nc=nc,
+            ws_receiver=ws_receiver,
+        )
+        return ChatService.build_stream_response_generator(resources.stop_event, resources.chunk_queue)
+
+    @staticmethod
+    def build_stream_response_generator(
+        stop_event: asyncio.Event,
+        chunk_queue: asyncio.Queue,
+    ) -> AsyncGenerator[str, None]:
+        async def response_generator():
+            while True:
+                if stop_event.is_set() and chunk_queue.empty():
+                    break
+                chunk_event = await asyncio.wait_for(chunk_queue.get(), timeout=0.5)
+                yield chunk_event.content
+                chunk_queue.task_done()
+
+        return response_generator()
 
     @staticmethod
     async def json_chat(

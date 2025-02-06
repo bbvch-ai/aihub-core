@@ -1,6 +1,10 @@
 import logging
 from typing import List, Optional
 
+from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
+
+from aihub_bot.runners.BotTestRunner import BotTestRunner
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
@@ -11,15 +15,11 @@ from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from nats.aio.client import Client as NATS
-from nats.js import JetStreamContext
-
-from aihub_bot.runners.BotTestRunner import BotTestRunner
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 completion_tokens_costs=0.3,
                 embedding_tokens_costs=0.05,
             ),
-            ChunkEvent(content="Second chunk", model_name=model_name),
+            ChunkEvent(content="Second chunk.", model_name=model_name),
             LLMCostEvent(
                 llm_name=model_name,
                 prompt_token_count=7,

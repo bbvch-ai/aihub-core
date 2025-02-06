@@ -5,7 +5,8 @@ from nats.aio.client import Client as NATS
 from starlette.requests import Request
 from starlette.responses import Response
 
-from aihub_bot.bots.chat.ChatBot import ChatBot
+from aihub_bot.bots.chat.JsonChatBot import JsonChatBot
+from aihub_bot.bots.chat.StreamChatBot import StreamChatBot
 from aihub_bot.routes.chat.ChatService import ChatService
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
@@ -49,7 +50,29 @@ class ChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
-            chat_bot: ChatBot = ChatBot(nc, ws_receiver, agent_class, agent_id)
+            chat_bot: JsonChatBot = JsonChatBot(nc, ws_receiver, agent_class, agent_id)
+            return await ChatService.ADAPTER.process(request, chat_bot)
+
+        return self
+
+    def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "ChatController":
+        """
+        Registers an endpoint for streaming chat completions.
+
+        ### Functionality
+        - Handles Azure Bot Service interactions directed at an AI agent.
+        - Streams responses as they are produced by updating the response Activity.
+        """
+
+        @self.router.post(route)
+        async def stream_chat(
+            request: Request,
+            agent_class: Annotated[str, Path(title="Agent class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+        ) -> Response:
+            chat_bot: StreamChatBot = StreamChatBot(nc, ws_receiver, agent_class, agent_id)
             return await ChatService.ADAPTER.process(request, chat_bot)
 
         return self
