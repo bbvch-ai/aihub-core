@@ -42,7 +42,10 @@ class StreamChatBot(ChatBot):
             ws_receiver=self.ws_receiver,
         )
         # Send a message activity for the first response
-        response: str = await response_generator.__anext__()
+        try:
+            response: str = await response_generator.__anext__()
+        except StopAsyncIteration:
+            response = "No response from the agent."
         message: ResourceResponse = await turn_context.send_activity(response)
 
         # Update the message with the rest of the responses
