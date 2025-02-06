@@ -17,11 +17,8 @@ class BotTestRunner(BotRunner):
     def __init__(self):
         super().__init__(title="Local AI Hub Bot Service", description="Local version only", origins=[], debug=True)
 
-        # This is the base service URL you'll provide to the bot.
-        self.service_url = "http://localhost:8001/service"
-
         # Register a route that catches all requests to /service and any sub-URLs.
-        self._base_app.add_api_route(
+        self._api_app.add_api_route(
             "/service{full_path:path}",
             self.service_endpoint,
             methods=["POST", "PUT"],

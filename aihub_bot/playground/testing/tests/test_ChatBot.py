@@ -17,7 +17,7 @@ AGENT_ID = "my_agent_id"
 HEALTH_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/health/"
 JSON_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
 STREAM_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream"
-SERVICE_ENDPOINT = f"http://localhost:{PORT}/service"
+SERVICE_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/service"
 
 CONVERSATION_ID = "test_conversation_id"
 BOT_ID = "test_bot_id"
