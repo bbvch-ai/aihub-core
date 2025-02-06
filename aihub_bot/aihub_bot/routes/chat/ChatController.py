@@ -1,12 +1,13 @@
 from typing import Annotated
 
-from fastapi import Depends, Path
+from fastapi import Depends, Path, Body
 from nats.aio.client import Client as NATS
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse
 
 from aihub_bot.bots.chat.JsonChatBot import JsonChatBot
 from aihub_bot.bots.chat.StreamChatBot import StreamChatBot
+from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.chat.ChatService import ChatService
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
@@ -42,14 +43,30 @@ class ChatController(Controller):
         - Sends a message Activity with the response to the Azure Bot Service.
         """
 
-        @self.router.post(route)
+        @self.router.post(
+            route,
+            summary="Synchronous chat completions",
+            description="Handles chat completions by sending a single response Activity to the Azure Bot Service.",
+            tags=["Chat"],
+            response_model=None,
+            responses={
+                200: {
+                    "description": "Success",
+                    "content": {"application/json": {
+                        "schema": {"type": "object", "properties": {}},
+                        "example": {},
+                    }},
+                },
+            },
+        )
         async def json_chat(
             request: Request,
+            _: Annotated[ActivityModel, Body],  # openapi request body
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-        ) -> Response:
+        ) -> JSONResponse:
             chat_bot: JsonChatBot = JsonChatBot(nc, ws_receiver, agent_class, agent_id)
             return await ChatService.ADAPTER.process(request, chat_bot)
 
@@ -64,14 +81,30 @@ class ChatController(Controller):
         - Streams responses as they are produced by updating the response Activity.
         """
 
-        @self.router.post(route)
+        @self.router.post(
+            route,
+            summary="Asynchronous chat completions",
+            description="Handles chat completions by updating the response Activity as responses are produced.",
+            tags=["Chat"],
+            response_model=None,
+            responses={
+                200: {
+                    "description": "Success",
+                    "content": {"application/json": {
+                        "schema": {"type": "object", "properties": {}},
+                        "example": {},
+                    }},
+                },
+            },
+        )
         async def stream_chat(
             request: Request,
+            _: Annotated[ActivityModel, Body],  # openapi request body
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-        ) -> Response:
+        ) -> JSONResponse:
             chat_bot: StreamChatBot = StreamChatBot(nc, ws_receiver, agent_class, agent_id)
             return await ChatService.ADAPTER.process(request, chat_bot)
 
