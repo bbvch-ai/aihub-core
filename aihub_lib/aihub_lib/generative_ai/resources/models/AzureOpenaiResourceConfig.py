@@ -1,6 +1,6 @@
 from typing import Optional
 
-from azure.identity import get_bearer_token_provider, DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AsyncAzureOpenAI
 from pydantic import Field
 

@@ -9,7 +9,7 @@ from typing_extensions import Callable
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMParameter, ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMParameter
 
 
 class AzureOpenAIParameter(ChatLLMParameter):

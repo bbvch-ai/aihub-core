@@ -1,12 +1,12 @@
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AsyncAzureOpenAI
 from pydantic import Field
 
 from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
-from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceParameter
 from aihub_lib.generative_ai.resources.models.image.ImageModelConfig import ImageModelConfig
+from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceParameter
 
 
 class AzureImageModelParameter(ResourceParameter):

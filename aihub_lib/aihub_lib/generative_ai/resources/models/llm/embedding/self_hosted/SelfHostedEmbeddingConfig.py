@@ -7,8 +7,8 @@ from transformers import AutoTokenizer
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import (
-    EmbeddingLLMParameter,
     EmbeddingLLMConfig,
+    EmbeddingLLMParameter,
 )
 
 

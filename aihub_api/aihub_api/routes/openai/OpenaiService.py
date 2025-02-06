@@ -1,9 +1,18 @@
 import asyncio
-from typing import List, Dict, AsyncGenerator, Optional, Literal, Tuple, Mapping
+from typing import AsyncGenerator, Dict, List, Literal, Mapping, Optional, Tuple
 
+from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
+    AzureOpenAIEmbeddingParameter,
+)
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
+from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
+from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from fastapi import UploadFile
-from openai import AsyncOpenAI, AsyncAzureOpenAI, HttpxBinaryResponseContent
-from openai.types import ImagesResponse, FileContent
+from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
+from openai.types import FileContent, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
@@ -12,15 +21,6 @@ from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
 from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
 from aihub_api.routes.openai.dto.ModelResponse import ModelResponse
-from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingParameter,
-    AzureOpenAIEmbeddingConfig,
-)
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 
 
 class OpenaiService:

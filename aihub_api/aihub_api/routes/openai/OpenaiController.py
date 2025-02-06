@@ -1,22 +1,20 @@
 import logging
-from typing import Annotated, Any, Callable, List, Optional, Literal, AsyncIterator
-
-from openai.types import ImagesResponse
-from openai.types.audio import Transcription, TranscriptionVerbose
+from typing import Annotated, Any, AsyncIterator, Callable, List, Literal, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from fastapi import Body, Depends, File, UploadFile, Form
-from llama_index.llms.openai import OpenAI
-from openai.types.chat import ChatCompletion
-from starlette.responses import StreamingResponse
-
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.Controller import Controller
-from .OpenaiService import OpenaiService
+from fastapi import Body, Depends, File, Form, UploadFile
+from llama_index.llms.openai import OpenAI
+from openai.types import ImagesResponse
+from openai.types.audio import Transcription, TranscriptionVerbose
+from openai.types.chat import ChatCompletion
+from starlette.responses import StreamingResponse
+
 from .dto.ChatCompletionRequest import ChatCompletionRequest
 from .dto.EmbeddingsRequest import EmbeddingsRequest
 from .dto.EmbeddingsResponse import EmbeddingsResponse
@@ -24,6 +22,7 @@ from .dto.ImageGenerationRequest import ImageGenerationRequest
 from .dto.ModelDetails import ModelDetails
 from .dto.ModelResponse import ModelResponse
 from .dto.TextToSpeechRequest import TextToSpeechRequest
+from .OpenaiService import OpenaiService
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +65,7 @@ class OpenaiController(Controller):
         self.tts_models = tts_models or []
         self.stt_models = stt_models or []
 
+        # Validate that all chat models are OpenAI compatible
         for chat_model in self.chat_models:
             model, _ = chat_model.to_llama_index()
             if not isinstance(model, OpenAI):
