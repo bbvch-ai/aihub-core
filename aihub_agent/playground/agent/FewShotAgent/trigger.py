@@ -10,7 +10,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.chat.azure.AzureOpenAILLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )

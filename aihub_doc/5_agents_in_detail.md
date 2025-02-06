@@ -609,9 +609,7 @@ agent might be a developmental agent used to explore new features or test config
 ```python
 import asyncio
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig,
-
-AzureOpenAIParameter
+from aihub_lib.generative_ai.resources.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, AzureOpenAIParameter
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.agent.LLMWrappingAgent import DevAgent

@@ -3,7 +3,7 @@ import asyncio
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.chat.self_hosted.SelfHostedLLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
 )
