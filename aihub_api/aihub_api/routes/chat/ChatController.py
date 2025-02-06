@@ -1,18 +1,18 @@
 import logging
 from typing import Annotated, Any, Callable
 
-from fastapi import Body, Depends, Path, Request
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
+from fastapi import Body, Depends, Path
 from nats.aio.client import Client as NATS
 from starlette.responses import StreamingResponse
 
-from aihub_api.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
 from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
-from aihub_api.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_api.sockets.receiver import WebSocketReceiver
+from aihub_api.sockets.receiver.dependencies import use_ws_receiver
 
-from ...nats.dependencies.use_nats import use_nats
-from ...sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
-from ..Controller import Controller
 from .ChatService import ChatService, JsonResources, StreamingResources
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ class ChatController(Controller):
             """
             Start a streaming chat interaction. Streams chunks of the agent's response as SSE.
             """
-            resources: StreamingResources = await ChatService.start_stream_chat_interaction(
+            resources: StreamingResources = await ChatService.start_api_stream_chat_interaction(
                 user,
                 agent_class,
                 agent_id,
@@ -87,7 +87,7 @@ class ChatController(Controller):
                 ws_receiver=ws_receiver,
             )
             return StreamingResponse(
-                ChatService.create_sse_generator(resources.stop_event, resources.chunk_queue),
+                ChatService.create_api_sse_generator(resources.stop_event, resources.chunk_queue),
                 media_type="text/event-stream",
             )
 
@@ -119,7 +119,7 @@ class ChatController(Controller):
             """
             Start a chat interaction and return a JSON response after all tokens have been processed.
             """
-            resources: JsonResources = await ChatService.start_json_chat_interaction(
+            resources: JsonResources = await ChatService.start_api_json_chat_interaction(
                 user,
                 agent_class,
                 agent_id,
@@ -133,6 +133,6 @@ class ChatController(Controller):
             await resources.subscriber.stop()
 
             # Construct final JSON response
-            return ChatService.build_json_response(resources.chunk_events, resources.costs, resources.model_name)
+            return ChatService.build_api_json_response(resources.chunk_events, resources.costs, resources.model_name)
 
         return self
