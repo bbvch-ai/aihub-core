@@ -1,7 +1,6 @@
 import pytest
 import pytest_asyncio
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -21,9 +20,6 @@ from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.Sec
     SecondStepHumanInTheLoopResponseEvent,
 )
 
-# Link this test file to your .feature file:
-scenarios("../tests/features/multistep_human_in_the_loop_agent.feature")
-
 
 @pytest_asyncio.fixture
 async def agent_runner():
@@ -42,56 +38,37 @@ async def agent_runner():
     await agent_runner.test_run_stop()
 
 
-@given("a MultistepHumanInTheLoopAgent is started")
 @pytest.mark.asyncio
-async def start_agent(agent_runner: AgentTestRunner):
+async def test_multistep_human_in_the_loop_workflow(agent_runner: AgentTestRunner):
+    # Start the agent
     await agent_runner.send_event_from_topic(
         start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER)]), topic=agent_runner.topic
     )
 
-
-@when("the agent successfully started")
-@pytest.mark.asyncio
-async def start_agent(agent_runner: AgentTestRunner):
-    await agent_runner.wait_for_event(StartEvent)
-
-
-@then(parsers.parse('the agent initiated the first HITL-step with the question "{text}"'))
-@pytest.mark.asyncio
-async def assert_first_step_initiated(agent_runner: AgentTestRunner, text: str):
+    # Wait for the first step
     event = await agent_runner.wait_for_event(FirstStepHumanInTheLoopRequestEvent)
-    assert event.question == text, f"Expected question '{text}', but got '{event.question}'."
 
+    # Assert the first step
+    assert event.question == "Shall I continue?", f"Expected question 'Shall I continue?', but got '{event.question}'."
 
-@when(parsers.parse('the first HITL-step is answered with "{text}"'))
-@pytest.mark.asyncio
-async def answer_first_step(agent_runner: AgentTestRunner, text: str):
-    event = await agent_runner.wait_for_event(FirstStepHumanInTheLoopRequestEvent)
+    # Answer the first step
     await agent_runner.send_event_from_topic(
-        start_event=FirstStepHumanInTheLoopResponseEvent(response=text, request_event=event),
-        topic=event.topic,
+        start_event=FirstStepHumanInTheLoopResponseEvent(response="Yes", request_event=event), topic=event.topic
     )
 
-
-@then(parsers.parse('the agent initiated the second HITL-step with the question "{text}"'))
-@pytest.mark.asyncio
-async def assert_second_step_initiated(agent_runner: AgentTestRunner, text: str):
-    event = await agent_runner.wait_for_event(FirstStepHumanInTheLoopResponseEvent)
-    assert event.question == text, f"Expected question '{text}', but got '{event.request_event.question}'."
-
-
-@when(parsers.parse('the second HITL-step is answered with "{text}"'))
-@pytest.mark.asyncio
-async def answer_second_step(agent_runner: AgentTestRunner, text: str):
+    # Wait for the second step
     event = await agent_runner.wait_for_event(SecondStepHumanInTheLoopRequestEvent)
+
+    # Assert the second step
+    assert event.question == "Are you sure?", f"Expected question 'Are you sure?', but got '{event.question}'."
+
+    # Answer the second step
     await agent_runner.send_event_from_topic(
-        start_event=SecondStepHumanInTheLoopResponseEvent(response=text, request_event=event),
-        topic=event.topic,
+        start_event=SecondStepHumanInTheLoopResponseEvent(response="Yes", request_event=event), topic=event.topic
     )
 
-
-@then("the agent stopped")
-@pytest.mark.asyncio
-async def assert_agent_stopped(agent_runner: AgentTestRunner):
+    # Wait for the agent to stop
     await agent_runner.wait_for_event(StopEvent)
+
+    # Assert the agent has stopped
     assert agent_runner.has_stop_event
