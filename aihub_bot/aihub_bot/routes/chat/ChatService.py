@@ -1,6 +1,9 @@
 import asyncio
-from typing import List, AsyncGenerator
+from typing import AsyncGenerator, List
 
+from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
+from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -8,9 +11,6 @@ from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message, User
 from aihub_bot.routes.Service import Service
-from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib, StreamingResources
-from aihub_lib.routes.chat.ChatService import JsonResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class ChatService(Service, ChatServiceLib):

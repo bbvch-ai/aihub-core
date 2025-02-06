@@ -1,8 +1,17 @@
 from datetime import datetime
 from typing import Any, Dict, List, Type
 
-from botbuilder.schema import ChannelAccount, ConversationAccount, MessageReaction, SuggestedActions, \
-    Attachment, ConversationReference, TextHighlight, SemanticAction, Activity
+from botbuilder.schema import (
+    Activity,
+    Attachment,
+    ChannelAccount,
+    ConversationAccount,
+    ConversationReference,
+    MessageReaction,
+    SemanticAction,
+    SuggestedActions,
+    TextHighlight,
+)
 from msrest.serialization import Model
 from pydantic import create_model
 

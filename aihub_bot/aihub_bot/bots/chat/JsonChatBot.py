@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class JsonChatBot(ChatBot):
-
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         """

@@ -30,12 +30,7 @@ import pytest
 
 async def start_api(runner: SimulatedAgentBotTestRunner):
     runner.with_simple_chunk_events()
-    runner.mount(
-        HealthController().get_health(),
-        ChatController()
-        .completions_json()
-        .completions_stream()
-    )
+    runner.mount(HealthController().get_health(), ChatController().completions_json().completions_stream())
     await runner.run()
 
 
@@ -143,8 +138,10 @@ async def test_stream_response(test_runner: SimulatedAgentBotTestRunner):
     max_retries = 10
     retries = 0
     while True:
-        if test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk." \
-            and test_runner.responses[-2].payload["text"] == "First chunk.\n":
+        if (
+            test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
+            and test_runner.responses[-2].payload["text"] == "First chunk.\n"
+        ):
             break
         if retries >= max_retries:
             pytest.fail(f"Chunks not received in time. Last chunk: {test_runner.responses[-1].payload}")

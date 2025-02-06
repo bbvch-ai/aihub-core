@@ -1,17 +1,16 @@
-from typing import List, AsyncGenerator
+from typing import AsyncGenerator, List
 
-from botbuilder.core import TurnContext, MessageFactory
+from botbuilder.core import MessageFactory, TurnContext
 from botbuilder.schema import Activity, ResourceResponse
 from llama_index.core.base.llms.types import ChatMessage
 from typing_extensions import override
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
-from aihub_bot.persistence.chat.entities.ConversationEntity import Message, ConversationEntity
+from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message
 from aihub_bot.routes.chat.ChatService import ChatService
 
 
 class StreamChatBot(ChatBot):
-
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         """
