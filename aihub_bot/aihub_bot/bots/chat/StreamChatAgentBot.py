@@ -1,16 +1,25 @@
-from typing import AsyncGenerator, List
+from typing import List, AsyncGenerator
 
-from botbuilder.core import MessageFactory, TurnContext
+from botbuilder.core import TurnContext, MessageFactory
 from botbuilder.schema import Activity, ResourceResponse
 from llama_index.core.base.llms.types import ChatMessage
+from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
-from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message
-from aihub_bot.routes.chat.ChatService import ChatService
+from aihub_bot.persistence.chat.entities.ConversationEntity import Message, ConversationEntity
+from aihub_bot.routes.chat.ChatAgentService import ChatAgentService
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
-class StreamChatBot(ChatBot):
+class StreamChatAgentBot(ChatBot):
+
+    def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver, agent_class: str, agent_id: str):
+        self.nc = nc
+        self.ws_receiver = ws_receiver
+        self.agent_class = agent_class
+        self.agent_id = agent_id
+
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         """
@@ -27,12 +36,12 @@ class StreamChatBot(ChatBot):
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role,
         )
-        ChatService.add_message_to_conversation(turn_context.activity.conversation.id, user_message)
-        persisted_messages: List[Message] = ChatService.get_messages_by_conversation_id(
+        ChatAgentService.add_message_to_conversation(turn_context.activity.conversation.id, user_message)
+        persisted_messages: List[Message] = ChatAgentService.get_messages_by_conversation_id(
             turn_context.activity.conversation.id
         )
-        messages: List[ChatMessage] = [ChatService.message_to_chat_message(message) for message in persisted_messages]
-        response_generator: AsyncGenerator[str, None] = await ChatService.stream_chat(
+        messages: List[ChatMessage] = [ChatAgentService.message_to_chat_message(message) for message in persisted_messages]
+        response_generator: AsyncGenerator[str, None] = await ChatAgentService.stream_chat(
             user_id=turn_context.activity.from_property.id,
             agent_class=self.agent_class,
             agent_id=self.agent_id,

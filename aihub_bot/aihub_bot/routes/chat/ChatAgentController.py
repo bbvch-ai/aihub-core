@@ -1,18 +1,18 @@
 from typing import Annotated
 
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.routes.Controller import Controller
-from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import Body, Depends, Path
 from nats.aio.client import Client as NATS
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse
 
-from aihub_bot.bots.chat.JsonChatBot import JsonChatBot
-from aihub_bot.bots.chat.StreamChatBot import StreamChatBot
+from aihub_bot.bots.chat.JsonChatAgentBot import JsonChatAgentBot
+from aihub_bot.bots.chat.StreamChatAgentBot import StreamChatAgentBot
 from aihub_bot.routes.activity_model import ActivityModel
-from aihub_bot.routes.chat.ChatService import ChatService
+from aihub_bot.routes.chat.ChatAgentService import ChatAgentService
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 
 
 class ChatController(Controller):
@@ -69,8 +69,8 @@ class ChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> JSONResponse:
-            chat_bot: JsonChatBot = JsonChatBot(nc, ws_receiver, agent_class, agent_id)
-            return await ChatService.ADAPTER.process(request, chat_bot)
+            chat_bot: JsonChatAgentBot = JsonChatAgentBot(nc, ws_receiver, agent_class, agent_id)
+            return await ChatAgentService.ADAPTER.process(request, chat_bot)
 
         return self
 
@@ -109,7 +109,7 @@ class ChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> JSONResponse:
-            chat_bot: StreamChatBot = StreamChatBot(nc, ws_receiver, agent_class, agent_id)
-            return await ChatService.ADAPTER.process(request, chat_bot)
+            chat_bot: StreamChatAgentBot = StreamChatAgentBot(nc, ws_receiver, agent_class, agent_id)
+            return await ChatAgentService.ADAPTER.process(request, chat_bot)
 
         return self

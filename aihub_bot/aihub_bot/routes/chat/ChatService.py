@@ -1,16 +1,13 @@
 import asyncio
-from typing import AsyncGenerator, List
+from typing import List, AsyncGenerator
 
-from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
-from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message, User
 from aihub_bot.routes.Service import Service
+from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 
 
 class ChatService(Service, ChatServiceLib):
@@ -41,42 +38,6 @@ class ChatService(Service, ChatServiceLib):
     """
 
     @staticmethod
-    def message_to_chat_message(message: Message) -> ChatMessage:
-        """
-        Azure Bot Service messages are stored as `Message` objects in the database.
-        To communicate with AI agents, these messages must be converted to the llama-index `ChatMessage` format.
-        """
-        role: MessageRole
-        match message.role:
-            case "user":
-                role = MessageRole.USER
-            case "bot":
-                role = MessageRole.ASSISTANT
-            case _:
-                raise NotImplementedError(f"Role {message.role} not supported")
-
-        return ChatMessage(role=role, content=message.content)
-
-    @staticmethod
-    async def stream_chat(
-        user_id: str,
-        agent_class: str,
-        agent_id: str,
-        messages: List[ChatMessage],
-        nc: NATS,
-        ws_receiver: WebSocketReceiver,
-    ) -> AsyncGenerator[str, None]:
-        resources: StreamingResources = await ChatService.start_stream_chat_interaction(
-            user_oid=user_id,
-            agent_class=agent_class,
-            agent_id=agent_id,
-            messages=messages,
-            nc=nc,
-            ws_receiver=ws_receiver,
-        )
-        return ChatService.build_stream_response_generator(resources.stop_event, resources.chunk_queue)
-
-    @staticmethod
     def build_stream_response_generator(
         stop_event: asyncio.Event,
         chunk_queue: asyncio.Queue,
@@ -92,41 +53,21 @@ class ChatService(Service, ChatServiceLib):
         return response_generator()
 
     @staticmethod
-    async def json_chat(
-        user_id: str,
-        agent_class: str,
-        agent_id: str,
-        messages: List[ChatMessage],
-        nc: NATS,
-        ws_receiver: WebSocketReceiver,
-    ) -> str:
+    def message_to_chat_message(message: Message) -> ChatMessage:
         """
-        Processes a JSON-based chat request with an AI agent.
-
-        ### Purpose
-        - Manages a synchronous AI interaction where the user receives a response only after all processing is completed.
-
-        ### Workflow
-        1. Initiates a conversation between the user and the specified agent.
-        2. Waits for AI-generated responses (including chunks and cost tracking events).
-        3. Constructs a final JSON response after all events are received.
+        Azure Bot Service messages are stored as `Message` objects in the database.
+        To communicate with AI agents, these messages must be converted to the llama-index `ChatMessage` format.
         """
+        role: MessageRole
+        match message.role:
+            case "user":
+                role = MessageRole.USER
+            case "bot":
+                role = MessageRole.ASSISTANT
+            case _:
+                raise NotImplementedError(f"Role {message.role} not supported")
 
-        resources: JsonResources = await ChatService.start_json_chat_interaction(
-            user_oid=user_id,
-            agent_class=agent_class,
-            agent_id=agent_id,
-            messages=messages,
-            nc=nc,
-            ws_receiver=ws_receiver,
-        )
-
-        # Wait until all events are processed
-        await resources.stop_event.wait()
-        await resources.subscriber.stop()
-
-        # Construct final JSON response
-        return ChatService.build_json_response_content(resources.chunk_events)
+        return ChatMessage(role=role, content=message.content)
 
     @staticmethod
     def create_conversation(

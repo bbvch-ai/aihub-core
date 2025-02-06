@@ -1,7 +1,7 @@
 import asyncio
 from os.path import abspath, join, dirname
 
-from aihub_bot.routes.chat.ChatController import ChatController
+from aihub_bot.routes.chat.ChatAgentController import ChatController
 from aihub_bot.routes.echo.EchoController import EchoController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 from aihub_lib.routes.health.HealthController import HealthController
