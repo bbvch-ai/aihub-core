@@ -13,7 +13,7 @@ async def main():
 
     runner.mount(
         HealthController().get_health(),
-        ChatController().completions_json(),
+        ChatController().completions_json().completions_stream(),
         EchoController().post_messages(),
     )
 

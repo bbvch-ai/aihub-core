@@ -17,15 +17,11 @@ class BotTestRunner(BotRunner):
     def __init__(self):
         super().__init__(title="Local AI Hub Bot Service", description="Local version only", origins=[], debug=True)
 
-        # This is the base service URL you'll provide to the bot.
-        self.service_url = "http://localhost:8001/service"
-
-        # Register a route that catches all POST requests to /service and any sub-URLs.
-        # The wildcard "{full_path:path}" will capture any additional path segments.
-        self._base_app.add_api_route(
+        # Register a route that catches all requests to /service and any sub-URLs.
+        self._api_app.add_api_route(
             "/service{full_path:path}",
             self.service_endpoint,
-            methods=["POST"],
+            methods=["POST", "PUT"],
             summary="Catch-all service endpoint for bot responses",
         )
 
@@ -37,11 +33,8 @@ class BotTestRunner(BotRunner):
         The 'full_path' parameter contains the remaining path after /service.
         """
         payload = await request.json()
-        # You can log or store the payload for later inspection during testing.
         self.responses.append(BotServiceResponse(path=full_path, payload=payload))
-
-        # Respond with a simple acknowledgment.
-        return JSONResponse({"status": "received", "path": full_path})
+        return JSONResponse({"id": payload.get("id") or "test_id"})
 
     async def run(self) -> None:
         """
