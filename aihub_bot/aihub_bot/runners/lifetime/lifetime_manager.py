@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import FastAPI
 from mongoengine import connect
@@ -23,7 +24,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=["nats://localhost:4222"])
+        await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
         ws_receiver = WebSocketReceiver(js=js)
 
