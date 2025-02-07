@@ -69,9 +69,11 @@ class RunTraceCoordinator:
         self.nc = nc
 
         endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
+        auth_token = PhoenixConfig().PHOENIX_AUTH_TOKEN
+        headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}
         tracer_provider = TracerProvider()
         set_tracer_provider(tracer_provider)
-        tracer_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint)))
+        tracer_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint, headers=headers)))
 
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
