@@ -35,7 +35,7 @@ def _string_to_type(type_str: str) -> Any:
     if type_str == "bool":
         return bool
     if type_str == "object":
-        return dict
+        return object
     if type_str == "iso-8601":
         return datetime
 
