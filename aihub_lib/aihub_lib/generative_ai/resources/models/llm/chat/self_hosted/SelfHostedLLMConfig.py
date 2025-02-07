@@ -5,11 +5,11 @@ from llama_index.llms.openai_like import OpenAILike
 from pydantic import Field
 from transformers import AutoTokenizer
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMParameter
 
 
-class SelfHostedLLMParameter(ChatLLMModelParameter):
+class SelfHostedLLMParameter(ChatLLMParameter):
     """
     Parameters for a self-hosted LLM using a local model via vLLM or another backend.
 
@@ -40,11 +40,16 @@ class SelfHostedLLMConfig(ChatLLMConfig):
 
     api_key: Annotated[Optional[str], Field(None, description="API key if required by the local endpoint.")]
     context_size: Annotated[int, Field(..., description="Context window size (max tokens) supported by the model.")]
-    is_chat_model: Annotated[bool, Field(..., description="True if the model uses a chat-based interface.")]
     is_function_calling_model: Annotated[bool, Field(..., description="True if the model supports function calling.")]
+    is_chat_model: Annotated[bool, Field(True, description="True if the model uses a chat-based interface.")]
 
     default_parameter: Annotated[
-        SelfHostedLLMParameter, Field(..., description="Default parameters for the self-hosted LLM.")
+        SelfHostedLLMParameter,
+        Field(
+            ...,
+            description="Default parameters for the self-hosted LLM.",
+            default_factory=lambda: SelfHostedLLMParameter(),
+        ),
     ]
 
     @property

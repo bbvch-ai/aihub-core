@@ -7,7 +7,7 @@ from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import (
     LLMWrappingAgentConfig,
 )
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )

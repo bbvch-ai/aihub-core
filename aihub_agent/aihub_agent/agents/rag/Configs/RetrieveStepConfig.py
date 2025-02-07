@@ -4,8 +4,8 @@ from llama_index.core.vector_stores.types import BasePydanticVectorStore, Vector
 from pydantic import Field
 
 from aihub_lib.agents.AgentConfig import StepConfig
-from aihub_lib.generative_ai.llms.models.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 
 
 class RetrieveStepConfig(StepConfig):

@@ -8,8 +8,8 @@ from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
 from opentelemetry import trace
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, ThoughtEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.semantic import Message

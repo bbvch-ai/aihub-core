@@ -3,12 +3,13 @@ from typing import Optional, Tuple
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from pydantic import Field
+from typing_extensions import Annotated
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.LLMConfig import LLMConfig, ModelParameter
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMModelParameter
 
 
-class EmbeddingLLMModelParameter(ModelParameter):
+class EmbeddingLLMParameter(LLMModelParameter):
     """
     Parameters specific to embedding models.
 
@@ -31,12 +32,14 @@ class EmbeddingLLMConfig(LLMConfig):
     model can be integrated uniformly with llama_index and cost tracking.
     """
 
-    default_parameter: EmbeddingLLMModelParameter = Field(
-        ..., description="Default parameters for the embedding model."
+    # Keeping Field() explicitly for default_factory
+    default_parameter: EmbeddingLLMParameter = Field(
+        default_factory=lambda: EmbeddingLLMParameter(),
+        description="Default parameters for the embedding model.",
     )
 
     @abstractmethod
     def to_llama_index(
-        self, model_parameter: Optional[EmbeddingLLMModelParameter]
+        self, model_parameter: Optional[EmbeddingLLMParameter] = None
     ) -> Tuple[BaseEmbedding, LLMCostTracker]:
         pass

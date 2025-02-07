@@ -5,13 +5,14 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.azure_openai import AzureOpenAI
 from pydantic import Field
-from typing_extensions import Callable
+from typing_extensions import Annotated, Callable
 
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMModelParameter
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig, ChatLLMParameter
 
 
-class AzureOpenAIParameter(ChatLLMModelParameter):
+class AzureOpenAIParameter(ChatLLMParameter):
     """
     Parameters for the Azure OpenAI chat model.
 
@@ -20,12 +21,16 @@ class AzureOpenAIParameter(ChatLLMModelParameter):
     that may not be relevant for other providers. Defining them here keeps the configuration modular.
     """
 
-    logprobs: bool = Field(False, description="If True, return log probabilities of tokens.")
-    top_logprobs: Optional[int] = Field(None, description="Number of top log probabilities to return.")
-    logit_bias: Optional[Dict[str, float]] = Field(None, description="Adjust probabilities of specific tokens.")
+    logprobs: Annotated[bool, Field(description="If True, return log probabilities of tokens.")] = False
+
+    top_logprobs: Annotated[Optional[int], Field(description="Number of top log probabilities to return.")] = None
+
+    logit_bias: Annotated[Optional[Dict[str, float]], Field(description="Adjust probabilities of specific tokens.")] = (
+        None
+    )
 
 
-class AzureOpenAILLMConfig(ChatLLMConfig):
+class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
     """
     Configuration for an Azure OpenAI chat-based LLM.
 
@@ -37,11 +42,15 @@ class AzureOpenAILLMConfig(ChatLLMConfig):
     we ensure cost calculations align with Azure's pricing model.
     """
 
-    prompt_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand prompt tokens.")
-    completion_tokens_costs_per_thousand: float = Field(..., description="Cost per thousand completion tokens.")
-    api_version: str = Field(..., description="Azure OpenAI API version.")
+    prompt_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand prompt tokens.")]
 
-    default_parameter: AzureOpenAIParameter = Field(..., description="Default parameters for Azure OpenAI LLM.")
+    completion_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand completion tokens.")]
+
+    # Keeping Field() explicitly for default_factory
+    default_parameter: AzureOpenAIParameter = Field(
+        default_factory=lambda: AzureOpenAIParameter(),
+        description="Default parameters for Azure OpenAI LLM.",
+    )
 
     @property
     def tokenizer(self) -> Callable[[str], List[int]]:
