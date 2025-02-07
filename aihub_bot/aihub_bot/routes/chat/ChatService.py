@@ -127,6 +127,6 @@ class ChatService(Service, ChatServiceLib):
         bot_message: Message = Message(
             user_id=user_activity.recipient.id,
             content=message,
-            role=user_activity.recipient.role,
+            role=user_activity.recipient.role or "bot",
         )
         ChatService.add_message_to_conversation(user_activity.conversation.id, bot_message)

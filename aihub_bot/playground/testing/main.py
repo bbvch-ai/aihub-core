@@ -78,7 +78,8 @@ async def main():
                 ),
             ],
         )
-        .chat_completion()
+        .json_chat_completion()
+        .stream_chat_completion(),
     )
 
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))

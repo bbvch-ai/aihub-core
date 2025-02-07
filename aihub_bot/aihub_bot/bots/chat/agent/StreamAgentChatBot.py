@@ -7,7 +7,7 @@ from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
-from aihub_bot.persistence.chat.entities.ConversationEntity import Message, ConversationEntity
+from aihub_bot.persistence.chat.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.agent.AgentChatService import AgentChatService
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
@@ -69,4 +69,4 @@ class StreamAgentChatBot(ChatBot):
             content=response,
             role=turn_context.activity.recipient.role,
         )
-        ConversationEntity.add_message_to_conversation(turn_context.activity.conversation.id, bot_message)
+        AgentChatService.add_message_to_conversation(turn_context.activity.conversation.id, bot_message)
