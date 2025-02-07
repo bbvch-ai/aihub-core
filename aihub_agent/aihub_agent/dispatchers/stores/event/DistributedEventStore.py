@@ -3,15 +3,14 @@ import json
 import logging
 from typing import Annotated, Dict, List, Optional, Type
 
-from nats.js.errors import KeyNotFoundError
-
 from aihub_lib.nats.events import ControlEvent
 from nats.js import JetStreamContext
+from nats.js.errors import KeyNotFoundError
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
-
 logger = logging.getLogger(__name__)
+
 
 class DistributedEventStore(StoreBase):
     """
@@ -72,7 +71,6 @@ class DistributedEventStore(StoreBase):
         # Add the new event and remove duplicates
         event_list_data.append(event.model_dump())
         event_list_data = list({e["event_id"]: e for e in event_list_data}.values())
-
 
         # Save updated list
         await kv.put(event_type, json.dumps(event_list_data).encode())

@@ -7,7 +7,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
-from aihub_lib.generative_ai.llms.costs.LLMCosts import LLMCosts
+from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.nats.events import ChunkEvent, DisplayEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.user import UserMessageEvent

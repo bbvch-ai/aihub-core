@@ -3,7 +3,7 @@ import logging
 from typing import List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.generative_ai.llms.costs.LLMCosts import LLMCosts
+from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.nats.events import ChunkEvent
 from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources

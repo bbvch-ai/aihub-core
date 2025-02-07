@@ -6,11 +6,11 @@ from llama_index.core.llms import LLM
 from pydantic import Field
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.llms.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.generative_ai.llms.models.LLMConfig import LLMConfig, ModelParameter
+from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMModelParameter
 
 
-class ChatLLMModelParameter(ModelParameter):
+class ChatLLMParameter(LLMModelParameter):
     """
     Parameters for a chat-based LLM.
 
@@ -37,7 +37,9 @@ class ChatLLMConfig(LLMConfig):
     With ChatLLMConfig, we integrate these parameters and the cost tracking mechanism in one place.
     """
 
-    default_parameter: ChatLLMModelParameter = Field(..., description="Default parameters for the chat-based LLM.")
+    default_parameter: ChatLLMParameter = Field(
+        ..., description="Default parameters for the chat-based LLM.", default_factory=lambda: ChatLLMParameter()
+    )
 
     @property
     @abstractmethod
@@ -45,13 +47,11 @@ class ChatLLMConfig(LLMConfig):
         pass
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMModelParameter]) -> Tuple[LLM, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: Optional[ChatLLMParameter] = None) -> Tuple[LLM, LLMCostTracker]:
         pass
 
     @asynccontextmanager
-    async def cost_reporting_llm(
-        self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMModelParameter] = None
-    ):
+    async def cost_reporting_llm(self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMParameter] = None):
         """
         Async context manager that yields an LLM configured with merged parameters.
         After the block, it reports costs to `displayer`.
