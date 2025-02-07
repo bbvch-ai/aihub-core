@@ -6,7 +6,7 @@ from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, ActivityTypes
 
-from aihub_bot.DefaultConfig import DefaultConfig
+from aihub_bot.bots.DefaultConfig import DefaultConfig
 
 logger = logging.getLogger(__name__)
 
