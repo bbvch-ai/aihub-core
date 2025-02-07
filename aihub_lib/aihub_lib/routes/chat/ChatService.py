@@ -63,8 +63,7 @@ class ChatService:
             thread_id=str(thread.id),
             display_id=str(ObjectId()),
             event=UserMessageEvent(
-                messages=messages[:-1],
-                content=messages[-1].content,
+                messages=messages,
             ),
         )
         logger.debug(f"Created event: {event}")
