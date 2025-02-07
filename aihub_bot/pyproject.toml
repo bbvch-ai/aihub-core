@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_bot"
-version = "v0.29.0"
+version = "v0.30.0"
 description = "bots core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -41,7 +41,7 @@ pytest-cov = "^6.0.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.29.0"
+tag = "v0.30.0"
 subdirectory = "aihub_lib"
 
 [build-system]
