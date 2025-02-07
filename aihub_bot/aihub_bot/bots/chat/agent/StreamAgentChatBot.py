@@ -1,6 +1,7 @@
-from typing import List, AsyncGenerator
+from typing import AsyncGenerator, List
 
-from botbuilder.core import TurnContext, MessageFactory
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from botbuilder.core import MessageFactory, TurnContext
 from botbuilder.schema import Activity, ResourceResponse
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
@@ -9,11 +10,9 @@ from typing_extensions import override
 from aihub_bot.bots.chat.ChatBot import ChatBot
 from aihub_bot.persistence.chat.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.agent.AgentChatService import AgentChatService
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class StreamAgentChatBot(ChatBot):
-
     def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver, agent_class: str, agent_id: str):
         self.nc = nc
         self.ws_receiver = ws_receiver
@@ -40,8 +39,9 @@ class StreamAgentChatBot(ChatBot):
         persisted_messages: List[Message] = AgentChatService.get_messages_by_conversation_id(
             turn_context.activity.conversation.id
         )
-        messages: List[ChatMessage] = [AgentChatService.message_to_chat_message(message) for message in
-                                       persisted_messages]
+        messages: List[ChatMessage] = [
+            AgentChatService.message_to_chat_message(message) for message in persisted_messages
+        ]
         response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat(
             user_id=turn_context.activity.from_property.id,
             agent_class=self.agent_class,

@@ -1,6 +1,6 @@
 from typing import AsyncGenerator
 
-from botbuilder.core import TurnContext, MessageFactory
+from botbuilder.core import MessageFactory, TurnContext
 from botbuilder.schema import Activity
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from typing_extensions import override
@@ -11,7 +11,6 @@ from aihub_bot.routes.chat.openai.OpenaiChatService import OpenaiChatService
 
 
 class StreamOpenaiChatBot(ChatBot):
-
     def __init__(
         self,
         model_name: str,

@@ -8,7 +8,6 @@ from aihub_bot.routes.chat.openai.OpenaiChatService import OpenaiChatService
 
 
 class JsonOpenaiChatBot(ChatBot):
-
     def __init__(
         self,
         model_name: str,

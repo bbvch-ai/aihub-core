@@ -1,8 +1,12 @@
-from typing import List, AsyncGenerator
+from typing import AsyncGenerator, List
 
-from openai import AsyncOpenAI, AsyncAzureOpenAI
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionUserMessageParam, \
-    ChatCompletionAssistantMessageParam, ChatCompletion
+from openai import AsyncAzureOpenAI, AsyncOpenAI
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionMessageParam,
+    ChatCompletionUserMessageParam,
+)
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.ChatService import ChatService
@@ -37,9 +41,7 @@ class OpenaiChatService(ChatService):
             OpenaiChatService.message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
         chat_completion: ChatCompletion = await client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            stream=False
+            model=model_name, messages=messages, stream=False
         )
         return chat_completion.choices[0].message.content
 

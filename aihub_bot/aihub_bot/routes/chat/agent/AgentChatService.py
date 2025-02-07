@@ -1,11 +1,11 @@
 from typing import AsyncGenerator, List
 
+from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
 from aihub_bot.routes.chat.ChatService import ChatService
-from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class AgentChatService(ChatService):

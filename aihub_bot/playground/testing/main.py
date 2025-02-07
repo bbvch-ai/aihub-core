@@ -5,10 +5,14 @@ from aihub_bot.routes.chat.agent.AgentChatController import AgentChatController
 from aihub_bot.routes.chat.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.routes.echo.EchoController import EchoController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, \
-    AzureOpenAIParameter
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig, \
-    SelfHostedLLMParameter
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+    AzureOpenAIParameter,
+)
+from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
+    SelfHostedLLMConfig,
+    SelfHostedLLMParameter,
+)
 from aihub_lib.routes.health.HealthController import HealthController
 
 
