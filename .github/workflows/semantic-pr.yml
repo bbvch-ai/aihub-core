@@ -27,6 +27,7 @@ jobs:
             agent-custom
             agent-xp
             avatar
+            bots
             chat-xp
             chat-backend
             debt
