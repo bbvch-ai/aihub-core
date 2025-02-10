@@ -5,7 +5,7 @@ from llama_index.core.ingestion import IngestionPipeline
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from pymilvus import MilvusClient
 
-from aihub_lib.generative_ai.llms.models.embedding.self_hosted.SelfHostedEmbeddingConfig import (
+from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted import (
     SelfHostedEmbeddingConfig,
 )
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, TYPE, NAMESPACE, SOURCE, NODE_TYPE_CONTENT

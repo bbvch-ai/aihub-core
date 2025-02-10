@@ -1,10 +1,15 @@
+import asyncio
 import json
+import logging
 from typing import Annotated, Dict, List, Optional, Type
 
 from aihub_lib.nats.events import ControlEvent
 from nats.js import JetStreamContext
+from nats.js.errors import KeyNotFoundError
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class DistributedEventStore(StoreBase):
@@ -57,7 +62,10 @@ class DistributedEventStore(StoreBase):
         try:
             entry = await kv.get(event_type)
             event_list_data = json.loads(entry.value.decode())
-        except Exception:
+        except KeyNotFoundError:
+            event_list_data = []
+        except Exception as e:
+            logger.error(f"Error storing event of type {event_type}: {e}")
             event_list_data = []
 
         # Add the new event and remove duplicates
@@ -70,7 +78,7 @@ class DistributedEventStore(StoreBase):
     async def get_events_of_type(
         self,
         run_id: Annotated[str, "The run identifier."],
-        event_type: Annotated[Type[ControlEvent], "The event subclass to fetch."],
+        class_name: Annotated[str, "The event subclass name to fetch."],
     ) -> List[ControlEvent]:
         """
         Returns all events of the specified type for the given run, reconstructed as event objects.
@@ -78,10 +86,11 @@ class DistributedEventStore(StoreBase):
         """
         kv = await self._get_kv_store(run_id)
         try:
-            entry = await kv.get(event_type.__name__)
+            entry = await kv.get(class_name)
             event_list_data = json.loads(entry.value.decode())
-            return [event_type(**data) for data in event_list_data]
-        except Exception:
+            return [ControlEvent.deserialize_event(data) for data in event_list_data]
+        except Exception as e:
+            logger.error(f"Error fetching events of type {class_name}: {e}")
             return []
 
     async def get_all_events(
@@ -97,13 +106,11 @@ class DistributedEventStore(StoreBase):
         """
         kv = await self._get_kv_store(run_id)
         events: Dict[str, List[ControlEvent]] = {}
-        keys = await kv.keys()
-        for key in keys:
+        class_names = await kv.keys()
+        for class_name in class_names:
             # Use the event registry to find the event class by name
-            event_class = ControlEvent._event_registry.get(key)
-            if event_class:
-                event_list = await self.get_events_of_type(run_id, event_class)
-                if before is not None:
-                    event_list = [evt for evt in event_list if evt.created_at <= before]
-                events[key] = event_list
+            event_list = await self.get_events_of_type(run_id, class_name)
+            if before is not None:
+                event_list = [evt for evt in event_list if evt.created_at <= before]
+            events[class_name] = event_list
         return events

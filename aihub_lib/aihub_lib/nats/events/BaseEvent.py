@@ -133,6 +133,10 @@ class BaseEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         data = super().model_dump(**kwargs)
+        for field_name, value in self.__dict__.items():
+            if isinstance(value, BaseEvent):
+                data[field_name] = value.model_dump()
+
         if not self._unknown_data:
             return data
         return {

@@ -12,11 +12,11 @@ from aihub_agent.agents.basic.FewShotAgent.events.RightAgentEvent import RightAg
 from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
-from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
 )

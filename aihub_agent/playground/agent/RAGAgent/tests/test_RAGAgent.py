@@ -13,19 +13,19 @@ from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
-from aihub_lib.generative_ai.llms.models.chat.self_hosted.SelfHostedLLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
 )
-from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
+from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
     AzureOpenAIEmbeddingParameter,
 )
-from aihub_lib.generative_ai.llms.models.embedding.self_hosted.SelfHostedEmbeddingConfig import (
+from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )

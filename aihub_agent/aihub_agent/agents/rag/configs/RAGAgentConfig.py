@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.llms.models.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleString import LocaleString
 

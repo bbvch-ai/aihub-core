@@ -4,7 +4,7 @@ from aihub_agent.agents.basic.FewShotAgent.FewShotAgent import FewShotAgent
 from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
@@ -27,7 +27,7 @@ async def main():
             ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
-                api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
+                base_url="https://aihub-dev-openai-che.openai.azure.com/",
                 api_version="2023-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,

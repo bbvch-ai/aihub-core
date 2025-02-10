@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from aihub_lib.generative_ai.llms.costs.LLMCosts import LLMCosts
+from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.nats.events.cost.CostEvent import CostEvent
 
 
