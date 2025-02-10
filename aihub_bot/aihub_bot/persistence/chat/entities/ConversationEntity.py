@@ -79,6 +79,8 @@ class ConversationEntity(Document):
     @classmethod
     def add_message_to_conversation(cls, conversation_id: str, message: Message) -> "ConversationEntity":
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        if conversation is None:
+            conversation = cls.create_conversation(conversation_id, [], [])
         conversation.messages.append(message)
         conversation.save()
         return conversation

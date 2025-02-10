@@ -1,16 +1,11 @@
-import logging
 from typing import List
 
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import ChannelAccount
-from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import User
 from aihub_bot.routes.chat.ChatService import ChatService
-
-logger = logging.getLogger(__name__)
 
 
 class ChatBot(ActivityHandler):
@@ -35,12 +30,6 @@ class ChatBot(ActivityHandler):
         - Persists agent responses in the conversation history.
         - Sends agent responses to the Azure Bot Service.
     """
-
-    def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver, agent_class: str, agent_id: str):
-        self.nc = nc
-        self.ws_receiver = ws_receiver
-        self.agent_class = agent_class
-        self.agent_id = agent_id
 
     @override
     async def on_conversation_update_activity(self, turn_context: TurnContext):

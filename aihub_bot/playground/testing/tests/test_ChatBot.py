@@ -5,7 +5,7 @@ from typing import Dict
 import httpx
 import pytest_asyncio
 
-from aihub_bot.routes.chat.ChatController import ChatController
+from aihub_bot.routes.chat.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -15,8 +15,8 @@ AGENT_CLASS = "my_agent_class"
 AGENT_ID = "my_agent_id"
 
 HEALTH_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/health/"
-JSON_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
-STREAM_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream"
+JSON_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
+STREAM_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream"
 SERVICE_ENDPOINT = f"http://localhost:{PORT}{API_PATH}/service"
 
 CONVERSATION_ID = "test_conversation_id"
@@ -30,7 +30,7 @@ import pytest
 
 async def start_api(runner: SimulatedAgentBotTestRunner):
     runner.with_simple_chunk_events()
-    runner.mount(HealthController().get_health(), ChatController().completions_json().completions_stream())
+    runner.mount(HealthController().get_health(), AgentChatController().completions_json().completions_stream())
     await runner.run()
 
 

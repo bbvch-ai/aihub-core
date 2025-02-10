@@ -6,13 +6,13 @@ from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, ActivityTypes
 
-from aihub_bot.DefaultConfig import DefaultConfig
+from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Service(abc.ABC):
-    CONFIG = DefaultConfig()
+    CONFIG = BaseConfig()
     ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
 
     @staticmethod
