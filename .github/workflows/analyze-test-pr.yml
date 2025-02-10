@@ -35,7 +35,7 @@ jobs:
       matrix:
         include:
           - module: aihub_lib
-            docker_compose_files: ""
+            docker_compose_files: "docker-compose.yml"
           - module: aihub_api
             docker_compose_files: ""
           - module: aihub_pipeline
