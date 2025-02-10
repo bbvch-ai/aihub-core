@@ -1,10 +1,10 @@
 import asyncio
 
+from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
@@ -19,7 +19,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.logging.logger import enable_logging
-from playground.agent.RAGAgent.milvus_vector_store_content import fill_collection, drop_collection
+from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
 
 enable_logging()
 
