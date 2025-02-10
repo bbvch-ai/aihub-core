@@ -34,7 +34,9 @@ async def few_shot_guard(
         [
             PromptTemplate(t("lib.guards.few_shot_guard.user_message")).format(user=example.user.in_locale(t.locale))
             + PromptTemplate(t("lib.guards.few_shot_guard.success_message")).format(success=example.success)
-            + PromptTemplate(t("lib.guards.few_shot_guard.reason_message")).format(reason=example.reason.in_locale(t.locale))
+            + PromptTemplate(t("lib.guards.few_shot_guard.reason_message")).format(
+                reason=example.reason.in_locale(t.locale)
+            )
             for example in examples
         ]
     )

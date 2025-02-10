@@ -26,7 +26,7 @@ def _(locale):
     return LocaleHandler(locale=locale)
 
 
-@given(parsers.parse('the following few-shot examples:'), target_fixture="examples")
+@given(parsers.parse("the following few-shot examples:"), target_fixture="examples")
 def _(datatable, locale_handler):
     examples = []
     for row in datatable[1:]:
@@ -70,7 +70,6 @@ def _(call_args, locale_handler, user_query, examples, docstring):
     normalized_prompt = normalize(prompt)
     normalized_docstring = normalize(docstring)
 
-    assert normalized_prompt == normalized_docstring, (
-        f"\nExpected:\n{repr(normalized_docstring)}\n\nGot:\n{repr(normalized_prompt)}"
-    )
-
+    assert (
+        normalized_prompt == normalized_docstring
+    ), f"\nExpected:\n{repr(normalized_docstring)}\n\nGot:\n{repr(normalized_prompt)}"
