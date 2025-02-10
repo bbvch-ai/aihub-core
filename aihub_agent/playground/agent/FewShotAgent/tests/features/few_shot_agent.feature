@@ -52,7 +52,7 @@ Feature: Test the FewShotAgent
       | James Bond   | 🤵🍸🔫    |
       | Harry Potter | 👓⚡️🪄    |
       | Thor         | ⚡️🧔‍♂️🔨 |
-    And I create a FewShotAgent runner with the config with valid azure configuration
+    And I create a FewShotAgent runner with the config with valid self hosted configuration
     When the start event is sent with a user query "Who is President of the United States?"
     Then a StartEvent is present with payload "Who is President of the United States?"
     Then a LimitChatHistoryEvent is present
