@@ -1,16 +1,3 @@
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
-from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.control.stop import StopEvent
-from aihub_lib.nats.events.semantic.llm import LLMEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.abstract.Agent import Agent
@@ -21,6 +8,20 @@ from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistory
 from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.workflow.decorators.step import step
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
+from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
+from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_lib.nats.events.control.start import StartEvent
+from aihub_lib.nats.events.control.stop import StopEvent
+from aihub_lib.nats.events.semantic.llm import LLMEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.user import UserMessageEvent
 
 
 class RAGAgent(Agent):
@@ -109,6 +110,13 @@ class RAGAgent(Agent):
             node_types=retrieve_step_config.node_types,
             vector_store=retrieve_step_config.vector_store,
         )
+        if retrieve_step_config.retrieve_prev_next:
+            nodes = retrieve_prev_next_nodes(
+                vector_store=retrieve_step_config.vector_store,
+                nodes=nodes,
+                num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
+                prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
+            )
         return RetrieverEvent.from_nodes(nodes)
 
     @step()

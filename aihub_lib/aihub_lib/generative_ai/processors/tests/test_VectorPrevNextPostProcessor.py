@@ -1,0 +1,106 @@
+import pytest
+from llama_index.core.schema import Document, NodeRelationship, RelatedNodeInfo, NodeWithScore
+from pytest_bdd import scenarios, when, then, parsers, given
+
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
+from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
+    SelfHostedEmbeddingParameter,
+    SelfHostedEmbeddingConfig,
+)
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.testing.milvus_vector_store_content import fill_collection
+
+scenarios("features/vector_prev_next_post_processor.feature")
+
+
+def get_node_ids(result):
+    if isinstance(result, dict):
+        return list(result.keys())
+    elif isinstance(result, list):
+        return [n.node.node_id for n in result]
+    return []
+
+
+@given("these nodes:", target_fixture="nodes")
+def _(datatable):
+    nodes = []
+    for row in datatable:
+        nodes.append(Document(id_=row[0], text=row[1], metadata={}))
+    return nodes
+
+
+@given(parsers.parse('the following relationships for "{node_id}":'), target_fixture="nodes_with_relationships")
+def _(nodes, node_id, datatable):
+    target_node = [node for node in nodes if node.id_ == node_id][0]
+    for row in datatable:
+        if row[0] == "previous":
+            target_node.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=row[1])
+        elif row[0] == "next":
+            target_node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=row[1])
+    return nodes
+
+
+@pytest.fixture()
+def milvus_vector_store(nodes_with_relationships):
+    embedding_config = SelfHostedEmbeddingConfig(
+        name="Alibaba-NLP/gte-base-en-v1.5",
+        base_url="http://localhost:8183",
+        api_key=None,
+        timeout=60,
+        embed_batch_size=32,
+        default_parameter=SelfHostedEmbeddingParameter(
+            text_instruction=None,
+            query_instruction=None,
+            truncate_text=False,
+        ),
+    )
+    vector_store = create_milvus_vector_store(
+        uri="http://localhost",
+        collection_name="prev_next_test",
+        embedding_vector_dimension=768,
+    )
+
+    fill_collection(
+        embedding_config,
+        vector_store,
+        documents=nodes_with_relationships,
+    )
+    yield vector_store
+
+
+@given("a valid vector store with all nodes", target_fixture="vector_store")
+def _(milvus_vector_store):
+    return milvus_vector_store
+
+
+@given(parsers.parse('starting node is "{target_node_id}"'), target_fixture="starting_node")
+def _(target_node_id, nodes_with_relationships):
+    start_node = [node for node in nodes_with_relationships if node.node_id == target_node_id][0]
+    return NodeWithScore(node=start_node, score=1.0)
+
+
+@pytest.fixture
+def test_context():
+    return {}
+
+
+@when(
+    parsers.parse(
+        'I postprocess nodes from the starting node using the VectorPrevNextPostProcessor with mode "{mode}" and num_nodes set to {num_nodes:d}'
+    )
+)
+def postprocess_nodes(starting_node, vector_store, test_context, mode, num_nodes):
+    processor = VectorPrevNextPostProcessor(vectorstore=vector_store, num_nodes=num_nodes, mode=mode)
+    result = processor._postprocess_nodes([starting_node])
+    test_context["result"] = result
+
+
+@then(
+    parsers.parse("the resulting node chain should contain nodes in the following order:"),
+)
+def check_node_chain(test_context, datatable):
+    expected_ids = [row[0] for row in datatable[1:]]
+
+    result = test_context.get("result")
+    result_ids = get_node_ids(result)
+    assert result_ids == expected_ids, f"Expected order {expected_ids}, got {result_ids}"
