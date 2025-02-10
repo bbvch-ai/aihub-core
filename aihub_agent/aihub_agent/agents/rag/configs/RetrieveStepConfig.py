@@ -1,9 +1,11 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
-from aihub_lib.agents.AgentConfig import StepConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryMode
 from pydantic import Field
+
+from aihub_lib.agents.AgentConfig import StepConfig
+from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 
 
 class RetrieveStepConfig(StepConfig):
@@ -21,3 +23,7 @@ class RetrieveStepConfig(StepConfig):
         ..., description="The types of nodes to retrieve (options: 'summary' or 'content').", min_length=1
     )
     vector_store: BasePydanticVectorStore = Field(..., description="The vector store to retrieve from.")
+    retrieve_prev_next: Optional[RetrievePrevNextConfig] = Field(
+        default=None,
+        description="Whether to retrieve previous and next nodes based on the retrieved nodes from the vector store.",
+    )

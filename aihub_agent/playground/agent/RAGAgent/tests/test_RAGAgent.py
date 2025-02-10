@@ -1,10 +1,9 @@
 import pytest
+from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
@@ -13,6 +12,7 @@ from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -37,7 +37,7 @@ from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from playground.agent.RAGAgent.milvus_vector_store_content import fill_collection, drop_collection
+from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
 
 scenarios("../tests/features/rag_agent.feature")
 
@@ -69,6 +69,10 @@ def build_rag_agent_config(
             query_mode=query_mode,
             node_types=["content"],
             vector_store=vector_store,
+            retrieve_prev_next=RetrievePrevNextConfig(
+                num_nodes=2,
+                mode="both",
+            ),
         ),
         number_of_input_tokens=2048,
         condense_question_prompt=LocaleString(

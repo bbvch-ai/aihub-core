@@ -18,6 +18,7 @@ from aihub_lib.generative_ai.utils.condense_standalone_question import condense_
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
+from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
@@ -131,6 +132,13 @@ class RAGAgent(Agent):
             node_types=retrieve_step_config.node_types,
             vector_store=retrieve_step_config.vector_store,
         )
+        if retrieve_step_config.retrieve_prev_next:
+            nodes = retrieve_prev_next_nodes(
+                vector_store=retrieve_step_config.vector_store,
+                nodes=nodes,
+                num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
+                prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
+            )
         return RetrieverEvent.from_nodes(nodes)
 
     @step()

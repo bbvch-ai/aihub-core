@@ -1,0 +1,113 @@
+from enum import Enum
+from typing import Dict, List, Optional
+
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from pydantic import Field, field_validator
+
+from aihub_lib.persistence.rag.vectors.node_metadata import INDEX
+
+
+class ModeOptions(str, Enum):
+    NEXT = "next"
+    PREVIOUS = "previous"
+    BOTH = "both"
+
+
+def traverse_nodes(
+    node_with_score: NodeWithScore,
+    num_nodes: int,
+    vectorstore: BasePydanticVectorStore,
+    direction: ModeOptions,
+) -> Dict[str, NodeWithScore]:
+    """
+    Traverses nodes in a chain either forward or backward.
+    For backward traversal, if the metadata INDEX equals 0, the chain stops.
+    """
+    nodes = {node_with_score.node.node_id: node_with_score}
+    current_node = node_with_score.node
+
+    for _ in range(num_nodes):
+        relation = current_node.next_node if direction == ModeOptions.NEXT else current_node.prev_node
+        if not relation:
+            break
+        # For backward direction, check the INDEX metadata value
+        if direction == ModeOptions.PREVIOUS and relation.metadata.get(INDEX) == 0:
+            break
+        current_node = vectorstore.get_nodes([relation.node_id])[0]
+        nodes[current_node.node_id] = NodeWithScore(node=current_node)
+    return nodes
+
+
+def get_forward_nodes(
+    node_with_score: NodeWithScore, num_nodes: int, vectorstore: BasePydanticVectorStore
+) -> Dict[str, NodeWithScore]:
+    return traverse_nodes(node_with_score, num_nodes, vectorstore, ModeOptions.NEXT)
+
+
+def get_backward_nodes(
+    node_with_score: NodeWithScore, num_nodes: int, vectorstore: BasePydanticVectorStore
+) -> Dict[str, NodeWithScore]:
+    return traverse_nodes(node_with_score, num_nodes, vectorstore, ModeOptions.PREVIOUS)
+
+
+class VectorPrevNextPostProcessor(BaseNodePostprocessor):
+    """
+    Post-processor to fetch additional nodes from the vector store based on node relationships.
+
+    Attributes:
+        vectorstore (BasePydanticVectorStore): The vector store.
+        num_nodes (int): Number of additional nodes to fetch (default is 1).
+        mode (ModeOptions): Direction to fetch nodes. Options are NEXT, PREVIOUS, or BOTH.
+    """
+
+    vectorstore: BasePydanticVectorStore
+    num_nodes: int = Field(default=1)
+    mode: ModeOptions = Field(default=ModeOptions.NEXT)
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, v: ModeOptions) -> ModeOptions:
+        if v not in ModeOptions:
+            raise ValueError(f"Invalid mode: {v}")
+        return v
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "VectorPrevNextPostProcessor"
+
+    def _postprocess_nodes(
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None
+    ) -> List[NodeWithScore]:
+        # Accumulate all nodes from the input and the forward/backward chains.
+        all_nodes: Dict[str, NodeWithScore] = {}
+        for node in nodes:
+            all_nodes[node.node.node_id] = node
+            if self.mode in (ModeOptions.NEXT, ModeOptions.BOTH):
+                all_nodes.update(get_forward_nodes(node, self.num_nodes, self.vectorstore))
+            if self.mode in (ModeOptions.PREVIOUS, ModeOptions.BOTH):
+                all_nodes.update(get_backward_nodes(node, self.num_nodes, self.vectorstore))
+        all_nodes_values = list(all_nodes.values())
+        return self._sort_nodes(all_nodes_values)
+
+    def _sort_nodes(self, all_nodes_values: List[NodeWithScore]) -> List[NodeWithScore]:
+        sorted_nodes: List[NodeWithScore] = []
+        for node in all_nodes_values:
+            node_inserted = False
+            for i, cand in enumerate(sorted_nodes):
+                node_id = node.node.node_id
+                prev_node_info = cand.node.prev_node
+                next_node_info = cand.node.next_node
+                if prev_node_info is not None and node_id == prev_node_info.node_id:
+                    node_inserted = True
+                    sorted_nodes.insert(i, node)
+                    break
+                # append to current candidate
+                elif next_node_info is not None and node_id == next_node_info.node_id:
+                    node_inserted = True
+                    sorted_nodes.insert(i + 1, node)
+                    break
+            if not node_inserted:
+                sorted_nodes.append(node)
+        return sorted_nodes
