@@ -1,13 +1,13 @@
 import asyncio
 from typing import AsyncGenerator, List
 
-from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import ConversationEntity, Message, User
 from aihub_bot.routes.Service import Service
+from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 
 
 class ChatService(Service, ChatServiceLib):
@@ -46,7 +46,7 @@ class ChatService(Service, ChatServiceLib):
             while True:
                 if stop_event.is_set() and chunk_queue.empty():
                     break
-                chunk_event = await asyncio.wait_for(chunk_queue.get(), timeout=0.5)
+                chunk_event = await asyncio.wait_for(chunk_queue.get(), timeout=1)
                 yield chunk_event.content
                 chunk_queue.task_done()
 

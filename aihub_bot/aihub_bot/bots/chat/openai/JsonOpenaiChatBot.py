@@ -23,7 +23,7 @@ class JsonOpenaiChatBot(ChatBot):
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role,
         )
-        response = await OpenaiChatService.json_chat_completion(
+        response = await OpenaiChatService.json_on_message_activity(
             message=user_message,
             conversation_id=turn_context.activity.conversation.id,
             model_name=self.model_name,

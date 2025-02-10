@@ -10,6 +10,7 @@ from openai.types.chat import (
 
 from aihub_bot.persistence.chat.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.ChatService import ChatService
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 
 
 class OpenaiChatService(ChatService):
@@ -29,7 +30,19 @@ class OpenaiChatService(ChatService):
         raise ValueError(f"Unsupported message role: {message.role}")
 
     @staticmethod
-    async def json_chat_completion(
+    def get_client(
+        models: List[ChatLLMConfig],
+        model_name: str,
+    ) -> AsyncOpenAI | AsyncAzureOpenAI:
+        matches = [model for model in models if model.name == model_name]
+        if len(matches) == 0:
+            raise ValueError(f"Model {model_name} not found.")
+        model_config = matches[0]
+        llm, _ = model_config.to_llama_index()
+        return llm._get_aclient()
+
+    @staticmethod
+    async def json_on_message_activity(
         message: Message,
         conversation_id: str,
         model_name: str,
@@ -46,7 +59,7 @@ class OpenaiChatService(ChatService):
         return chat_completion.choices[0].message.content
 
     @staticmethod
-    async def stream_chat_completion(
+    async def stream_on_message_completion(
         message: Message,
         conversation_id: str,
         model_name: str,
