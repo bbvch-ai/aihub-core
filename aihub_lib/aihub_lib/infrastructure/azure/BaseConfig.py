@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Annotated
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,6 +24,9 @@ class BaseConfig(BaseSettings):
     VERSION: Optional[str] = Field(None, description="Version of the app")
 
     FRONTEND_ORIGIN: Optional[str] = Field(None, description="Comma separated list of origins to allow CORS")
+
+    APP_ID: Annotated[str, Field("", description="Azure Bot Service App ID")]
+    APP_PASSWORD: Annotated[str, Field("", description="Azure Bot Service App Password")]
 
     model_config = SettingsConfigDict(
         env_file=".env",
