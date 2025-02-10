@@ -26,7 +26,7 @@ class StreamOpenaiChatBot(ChatBot):
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role or "user",
         )
-        response_generator: AsyncGenerator[str, None] = await OpenaiChatService.stream_on_message(
+        response_generator: AsyncGenerator[str, None] = await OpenaiChatService.stream_on_message_completion(
             message=user_message,
             conversation_id=turn_context.activity.conversation.id,
             model_name=self.model_name,
