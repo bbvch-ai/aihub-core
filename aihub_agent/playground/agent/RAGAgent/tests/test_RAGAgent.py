@@ -257,6 +257,7 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
 
+
 @given("with few shot guard examples")
 def _(agent_runner: AgentTestRunner, datatable):
     """
@@ -265,7 +266,9 @@ def _(agent_runner: AgentTestRunner, datatable):
     """
     examples = []
     for row in datatable[1:]:
-        examples.append(FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2])))
+        examples.append(
+            FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2]))
+        )
     agent_runner.agent_config.few_shot_guard_examples = examples
     return agent_runner
 

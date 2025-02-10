@@ -190,9 +190,10 @@ class RAGAgent(Agent):
         if isinstance(event, FewShotRejectEvent):
             messages = [
                 ChatMessage(role=MessageRole.USER, content=start_event.user_query),
-                ChatMessage(role=MessageRole.SYSTEM, content=PromptTemplate(t("agents.prompt.guard.reject")).format(
-                    reason=event.reasoning
-                )),
+                ChatMessage(
+                    role=MessageRole.SYSTEM,
+                    content=PromptTemplate(t("agents.prompt.guard.reject")).format(reason=event.reasoning),
+                ),
             ]
         else:
             messages = event.limited_history_with_context
