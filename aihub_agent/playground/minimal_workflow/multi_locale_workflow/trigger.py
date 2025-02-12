@@ -30,7 +30,7 @@ async def main():
         await runner.send_event_from_topic(
             start_event=StartEvent(
                 locale="en",
-                messages=[ChatMessage(content="agents.thought.searching_knowledge", role=MessageRole.USER)],
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
             ),
             topic=topic,
         )
