@@ -1,0 +1,32 @@
+condenser:
+  standalone_question: |
+    Dato il seguente dialogo tra un utente e un assistente AI, insieme a una domanda di follow-up dell'utente, 
+    riformula la domanda di follow-up in modo che sia una domanda completamente autonoma mantenendo il contesto originale.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+    
+    Domanda autonoma:
+
+rag:
+  context_prompt: |
+    Ti vengono fornite informazioni di contesto aggiuntive sotto forma di documenti strutturati. Ogni documento segue 
+    un formato coerente, iniziando con `<DOCUMENT [metadata]>` e terminando con `</DOCUMENT>`. Questi documenti 
+    contengono dettagli essenziali che devono essere utilizzati per comprendere e rispondere con precisione alla domanda dell'utente.
+
+    Ogni documento include metadati come fonte, namespace, tipo, lingua, versione e timestamp. Il contenuto di questi 
+    documenti fornisce approfondimenti cruciali pertinenti al contesto fornito.
+
+    Di seguito sono riportati i documenti rilevanti:
+
+    <context_documents>
+    {context_str}
+    </context_documents>
+
+    Istruzione: Utilizza le informazioni dai documenti forniti per generare una risposta dettagliata e ben strutturata 
+    alla domanda dell'utente.

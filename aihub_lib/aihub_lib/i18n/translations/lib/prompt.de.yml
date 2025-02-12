@@ -1,0 +1,34 @@
+condenser:
+  standalone_question: |
+    Basierend auf dem folgenden Gespräch zwischen einem Benutzer und einem KI-Assistenten sowie einer 
+    Anschlussfrage des Benutzers, formuliere die Anschlussfrage so um, dass sie eine eigenständige Frage 
+    darstellt und den ursprünglichen Kontext beibehält.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+    
+    Eigenständige Frage:
+
+rag:
+  context_prompt: |
+    Dir werden zusätzliche Kontextinformationen in Form von strukturierten Dokumenten bereitgestellt. 
+    Jedes Dokument folgt einem einheitlichen Format, beginnend mit `<DOCUMENT [metadata]>` und endend 
+    mit `</DOCUMENT>`. Diese Dokumente enthalten wichtige Details, die genutzt werden sollten, um die 
+    Benutzeranfrage genau zu verstehen und zu beantworten.
+
+    Jedes Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version und Zeitstempel. 
+    Der Inhalt dieser Dokumente bietet wichtige Einblicke, die für den gegebenen Kontext relevant sind.
+
+    Nachfolgend findest du die relevanten Dokumente:
+
+    <context_documents>
+    {context_str}
+    </context_documents>
+
+    Anweisung: Nutze die Informationen aus den bereitgestellten Dokumenten, um eine detaillierte und 
+    gut strukturierte Antwort auf die Benutzerfrage zu erstellen.

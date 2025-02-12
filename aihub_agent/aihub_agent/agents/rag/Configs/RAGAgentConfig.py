@@ -1,6 +1,8 @@
-from pydantic import Field
+from typing import Optional
 
 from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
+from pydantic import Field
+
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -16,9 +18,9 @@ class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: int = Field(
         ..., description="Maximum tokens allowed in input to manage context size or cost."
     )
-    condense_question_prompt: LocaleString = Field(
-        ..., description="Prompt template for transforming a user query into a standalone question."
+    condense_question_prompt: Optional[LocaleString] = Field(
+        None, description="Prompt template for transforming a user query into a standalone question."
     )
-    context_prompt: LocaleString = Field(
-        ..., description="Prompt template for providing context (e.g., retrieved documents) to the LLM."
+    context_prompt: Optional[LocaleString] = Field(
+        None, description="Prompt template for providing context (e.g., retrieved documents) to the LLM."
     )
