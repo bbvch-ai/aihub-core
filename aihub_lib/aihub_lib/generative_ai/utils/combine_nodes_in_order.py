@@ -29,12 +29,11 @@ _headers_in_order = [H6, H5, H4, H3, H2, H1]
 
 
 def sanitize_metadata_value(value: str) -> str:
-    """Sanitizes metadata values to prevent injection attacks and formatting issues."""
     if not isinstance(value, str):
-        return str(value)  # Convert non-string values safely
+        return str(value)
 
-    sanitized_value = value.replace("'", "").strip()  # Remove single quotes & trim whitespace
-    sanitized_value = html.escape(sanitized_value)  # Escape <, >, &, etc. for safety
+    sanitized_value = value.replace("'", "").strip()
+    sanitized_value = html.escape(sanitized_value)
     return sanitized_value
 
 
