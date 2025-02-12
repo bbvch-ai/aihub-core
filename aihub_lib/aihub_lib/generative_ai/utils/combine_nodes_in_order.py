@@ -1,3 +1,4 @@
+import html
 from collections import defaultdict
 from typing import List
 
@@ -25,6 +26,16 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
+
+
+def sanitize_metadata_value(value: str) -> str:
+    """Sanitizes metadata values to prevent injection attacks and formatting issues."""
+    if not isinstance(value, str):
+        return str(value)  # Convert non-string values safely
+
+    sanitized_value = value.replace("'", "").strip()  # Remove single quotes & trim whitespace
+    sanitized_value = html.escape(sanitized_value)  # Escape <, >, &, etc. for safety
+    return sanitized_value
 
 
 def combine_nodes_in_order(
@@ -55,7 +66,9 @@ def combine_nodes_in_order(
             "updated_at": metadata.get(UPDATED_AT),
             "inserted_at": metadata.get(INSERTED_AT),
         }
-        metadata_string = " ".join(f"{k}='{v}'" for k, v in metadata_fields.items() if v not in [None, "unknown"])
+        metadata_string = " ".join(
+            f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items() if v not in [None, "unknown"]
+        )
 
         doc_header = f"<DOCUMENT {metadata_string}>\n\n"
 
