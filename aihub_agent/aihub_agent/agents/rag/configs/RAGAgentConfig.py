@@ -1,10 +1,10 @@
-from typing import Optional
-
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from pydantic import Field
+from typing import List, Optional
 
+from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleString import LocaleString
 
 
@@ -23,4 +23,7 @@ class RAGAgentConfig(AgentConfig):
     )
     context_prompt: Optional[LocaleString] = Field(
         None, description="Prompt template for providing context (e.g., retrieved documents) to the LLM."
+    )
+    few_shot_guard_examples: List[FewShotGuardExample] = Field(
+        default_factory=list, description="Examples for the few-shot guard to define which user requests are accepted."
     )

@@ -30,7 +30,8 @@ def condense_standalone_question(
     llm: LLM,
     condense_prompt: LocaleString = None,
 ) -> ChatMessage:
-    chat_history_str = _messages_to_history_str(chat_history)
+    chat_history_without_system_messages = [msg for msg in chat_history if msg.role != MessageRole.SYSTEM]
+    chat_history_str = _messages_to_history_str(chat_history_without_system_messages)
     if condense_prompt:
         condense_prompt_locale = LocaleHandler(t.locale).extract(condense_prompt, t.locale)
     else:

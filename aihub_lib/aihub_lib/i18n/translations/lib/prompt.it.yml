@@ -6,7 +6,7 @@ condenser:
     <chat_history>
     {chat_history}
     </chat_history>
-    
+
     <user_question>
     {question}
     </user_question>

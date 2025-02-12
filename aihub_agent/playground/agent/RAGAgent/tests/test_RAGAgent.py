@@ -1,15 +1,16 @@
 import pytest
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.Events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.rag.Events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import scenarios, given, when, then, parsers
-
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
+from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
@@ -28,6 +29,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent
 from aihub_lib.nats.events.control.start import StartEvent
@@ -84,7 +86,7 @@ def azure_agent_config():
     llm_config = AzureOpenAILLMConfig(
         name="gpt-4o-mini",
         base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2023-12-01-preview",
+        api_version="2024-08-01-preview",
         prompt_tokens_costs_per_thousand=0.0045,
         completion_tokens_costs_per_thousand=0.0133,
         default_parameter=AzureOpenAIParameter(temperature=0.0),
@@ -106,7 +108,7 @@ def azure_agent_config():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def self_hosted_agent_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
@@ -239,3 +241,58 @@ def _(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
+
+
+@given("with few shot guard examples")
+def _(agent_runner: AgentTestRunner, datatable):
+    """
+    Given few shot guard examples provided as a table.
+    The table should have columns: 'user' and 'agent'
+    """
+    examples = []
+    for row in datatable[1:]:
+        examples.append(
+            FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2]))
+        )
+    agent_runner.agent_config.few_shot_guard_examples = examples
+    return agent_runner
+
+
+@when(parsers.parse('the start event is sent with a user query "{query}" and locale {locale}'))
+@async_test
+async def _(agent_runner: AgentTestRunner, query: str, locale: str):
+    async with agent_runner.test_run(delay_before_stop=30) as topic:
+        await agent_runner.send_event_from_topic(
+            topic=topic,
+            start_event=StartEvent(locale=locale, messages=[ChatMessage(content=query, role=MessageRole.USER)]),
+        )
+
+
+@then("the few shot guard should reject the user query")
+def _(agent_runner: AgentTestRunner):
+    event = agent_runner.get_event_of_type(FewShotRejectEvent)
+    assert event is not None, "FewShotRejectEvent was not produced for an invalid user query"
+
+
+@then("the few shot guard should accept the user query")
+def _(agent_runner: AgentTestRunner):
+    event = agent_runner.get_event_of_type(FewShotAcceptEvent)
+    assert event is not None, "FewShotAcceptEvent was not produced for a valid user query"
+
+
+@then("respond to the user with the reasoning for the rejection")
+def _(agent_runner: AgentTestRunner):
+    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    input_messages = llm_event.input_messages
+    for msg in input_messages:
+        if msg.role == MessageRole.SYSTEM:
+            assert "reason" in msg.content.lower(), "The llm does not receive the rejection reasoning"
+    response_content = llm_event.output_messages[0].content
+    assert response_content, "No response was returned for a rejected user query"
+
+
+@then("respond to the user with a generated response")
+def _(agent_runner: AgentTestRunner):
+    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    response_content = llm_event.output_messages[0].content
+    assert response_content, "No generated response was returned for a valid user query"

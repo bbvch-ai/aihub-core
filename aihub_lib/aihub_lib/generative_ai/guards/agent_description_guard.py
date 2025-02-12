@@ -3,9 +3,8 @@ from typing import List, Type
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from llama_index.llms.openai_like import OpenAILike
 from openai import NOT_GIVEN
-from pydantic import BaseModel, Field
+from pydantic import Field, BaseModel
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString

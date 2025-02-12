@@ -28,3 +28,40 @@ agent_description_guard:
     true wenn die Antwort gegeben werden kann, false wenn nicht
   docstring: |
     Datenmodel für die Enscheidung ob eine Antwort gegeben werden kann.
+few_shot_guard:
+  prompt: |
+    Sie erhalten eine Reihe von Beispielbenutzernachrichten, die jeweils mit einem Erfolgsstatus und einer Erklärung versehen sind.
+    Diese Beispiele definieren die Arten von Anfragen, die der Agent beantworten darf.
+
+    - Wenn eine Anfrage erlaubt ist, ist der Erfolgsstatus **true**.
+    - Wenn eine Anfrage nicht erlaubt ist, ist der Erfolgsstatus **false**, zusammen mit einer Begründung.
+
+    Ihre Aufgabe ist es, zu bestimmen, ob eine neue Benutzeranfrage basierend auf diesen Beispielen zulässig ist.
+
+    **Beispiele:**
+    <Examples>
+    {examples}
+    </Examples>
+
+    **Benutzeranfrage:**
+    <UserQuery>
+    {user_query}
+    </UserQuery>
+  user_message: |
+    <Benutzer>
+    {user}
+    </Benutzer>
+  success_message: |
+    <Erfolg>
+    {success}
+    </Erfolg>
+  reason_message: |
+    <Begründung>
+    {reason}
+    </Begründung>
+  success: |
+    true, wenn die Benutzeranfrage zulässig ist, false, wenn die Anfrage nicht erlaubt ist.
+  reason: |
+    Begründung für die getroffene Entscheidung.
+  docstring: |
+    Datenmodell für die Entscheidung, ob die Anfrage akzeptabel ist oder nicht.
