@@ -104,10 +104,7 @@ class RAGAgent(Agent):
         if not guard_result.success:
             return FewShotRejectEvent(reasoning=guard_result.reasoning)
 
-        return FewShotAcceptEvent(
-            success=guard_result.success,
-            reasoning=guard_result.reasoning,
-        )
+        return FewShotAcceptEvent(reasoning=guard_result.reasoning)
 
     @step()
     async def retrieve_step(

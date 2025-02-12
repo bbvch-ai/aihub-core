@@ -42,8 +42,8 @@ Feature: Test the FewShotAgent
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present
 
-  @self_hosted
-  Scenario: Validate the RightAgentGuard workflow with self hosted llm
+  @azure
+  Scenario: Validate the RightAgentGuard workflow with azure llm
     Given I have an empty agent config
     Given the agent description is "This agent can transform movie titles into emojis."
     And the few shot system prompt is "Respond with three emojis for the movie."
@@ -52,7 +52,7 @@ Feature: Test the FewShotAgent
       | James Bond   | 🤵🍸🔫    |
       | Harry Potter | 👓⚡️🪄    |
       | Thor         | ⚡️🧔‍♂️🔨 |
-    And I create a FewShotAgent runner with the config with valid self hosted configuration
+    And I create a FewShotAgent runner with the config with valid azure configuration
     When the start event is sent with a user query "Who is President of the United States?"
     Then a StartEvent is present with payload "Who is President of the United States?"
     Then a LimitChatHistoryEvent is present

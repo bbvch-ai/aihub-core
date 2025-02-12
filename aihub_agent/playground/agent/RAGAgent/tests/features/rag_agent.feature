@@ -40,7 +40,7 @@ Feature: RAG Agent
     * respond to the user with the reasoning for the rejection
 
   @azure
-  Scenario: Test the RAGAgent with few shot guard examples when sending an valid user query
+  Scenario: Test the RAGAgent with few shot guard examples when sending a valid user query
     Given a RAGAgent runner with a valid azure configuration
     * with few shot guard examples
       | user                           | success | reason                                          |
