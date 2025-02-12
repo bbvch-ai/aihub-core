@@ -7,18 +7,30 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import (
-    NAMESPACE, SOURCE, TYPE, LANGUAGE, VERSION,
-    CREATED_AT, UPDATED_AT, INSERTED_AT,
-    H1, H2, H3, H4, H5, H6, SECTION_START_LINE
+    NAMESPACE,
+    SOURCE,
+    TYPE,
+    LANGUAGE,
+    VERSION,
+    CREATED_AT,
+    UPDATED_AT,
+    INSERTED_AT,
+    H1,
+    H2,
+    H3,
+    H4,
+    H5,
+    H6,
+    SECTION_START_LINE,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
 
 
 def combine_nodes_in_order(
-        context_nodes: List[Document],
-        locale_handler: LocaleHandler,
-        context_prompt: LocaleString = None,
+    context_nodes: List[Document],
+    locale_handler: LocaleHandler,
+    context_prompt: LocaleString = None,
 ) -> ChatMessage:
     nodes_per_document = defaultdict(list)
 
@@ -43,9 +55,7 @@ def combine_nodes_in_order(
             "updated_at": metadata.get(UPDATED_AT),
             "inserted_at": metadata.get(INSERTED_AT),
         }
-        metadata_string = " ".join(
-            f"{k}='{v}'" for k, v in metadata_fields.items() if v not in [None, "unknown"]
-        )
+        metadata_string = " ".join(f"{k}='{v}'" for k, v in metadata_fields.items() if v not in [None, "unknown"])
 
         doc_header = f"<DOCUMENT {metadata_string}>\n\n"
 
@@ -60,7 +70,6 @@ def combine_nodes_in_order(
 
         documents.append("".join(text_parts))
 
-    # Retrieve translation for the context prompt
     if context_prompt:
         context_prompt_locale = LocaleHandler(locale_handler.locale).extract(context_prompt, locale_handler.locale)
     else:

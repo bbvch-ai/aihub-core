@@ -72,7 +72,7 @@ def build_rag_agent_config(
                 mode="both",
             ),
         ),
-        number_of_input_tokens=2048
+        number_of_input_tokens=2048,
     )
 
 
