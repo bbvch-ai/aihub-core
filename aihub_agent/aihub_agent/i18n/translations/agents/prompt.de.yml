@@ -25,3 +25,9 @@ rag_agent:
     </context_documents>
     
     Aufgabe: Gib basierend auf den obigen Dokumenten eine detaillierte Antwort auf die folgende Benutzerfrage.
+guard:
+  reject: |
+    Informiere den Benutzer, dass du die Frage nicht beantworten kannst, aufgrund des folgenden Grundes:
+    <Grund>
+    {reason}
+    </Grund>

@@ -44,3 +44,11 @@ class StartEvent(ControlEvent):
         del non_private["event_id"]
         del non_private["created_at"]
         return non_private
+
+    @property
+    def user_query(self) -> str:
+        """
+        Extracts the user query from the chat history, returning the last user message.
+        """
+        user_messages = [msg for msg in self.messages if msg.role == "user"]
+        return user_messages[-1].content if user_messages else ""

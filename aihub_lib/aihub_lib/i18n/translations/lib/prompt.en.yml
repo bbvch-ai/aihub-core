@@ -1,0 +1,14 @@
+condenser:
+  standalone_question: |
+    Given the following conversation between a user and an AI assistant and a follow-up question from the user,
+    rephrase the follow-up question to be a standalone question.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+    
+    Standalone question:

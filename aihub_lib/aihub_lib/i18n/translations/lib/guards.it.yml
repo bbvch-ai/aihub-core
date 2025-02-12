@@ -1,3 +1,18 @@
+common:
+  user_message: |
+    <Utente>
+    {user}
+    </Utente>
+  agent_message: |
+    <Agente>
+    {agent}
+    </Agente>
+  reason: |
+    Motivazione della decisione presa.
+  success: |
+    true se la risposta può essere fornita, false altrimenti
+  docstring: |
+    Modello di dati per la decisione se è possibile fornire una risposta.
 agent_description_guard:
   prompt: |
     La descrizione di un agente è la seguente:
@@ -14,17 +29,40 @@ agent_description_guard:
     <CronologiaConversazionePrecedente>
     {history}
     </CronologiaConversazionePrecedente>
+few_shot_guard:
+  prompt: |
+    Ti verrà fornita una serie di esempi di messaggi utente, ciascuno etichettato con uno stato di successo e una spiegazione.
+    Questi esempi definiscono i tipi di richieste a cui l'agente è autorizzato a rispondere.
+
+    - Se una richiesta è consentita, lo stato di successo è **true**.
+    - Se una richiesta non è consentita, lo stato di successo è **false**, accompagnato da una giustificazione.
+
+    Il tuo compito è determinare se una nuova richiesta dell'utente è consentita in base a questi esempi.
+
+    **Esempi:**
+    <Examples>
+    {examples}
+    </Examples>
+
+    **Richiesta utente:**
+    <UserQuery>
+    {user_query}
+    </UserQuery>
   user_message: |
     <Utente>
     {user}
     </Utente>
-  agent_message: |
-    <Agente>
-    {agent}
-    </Agente>
-  reason: |
-    Motivazione della decisione presa.
+  success_message: |
+    <Successo>
+    {success}
+    </Successo>
+  reason_message: |
+    <Motivo>
+    {reason}
+    </Motivo>
   success: |
-    true se la risposta può essere fornita, false altrimenti
+    true se la richiesta dell'utente è consentita, false se la richiesta non è permessa.
+  reason: |
+    Giustificazione della decisione presa.
   docstring: |
-    Modello di dati per la decisione se è possibile fornire una risposta.
+    Modello di dati per la decisione sull'accettabilità della richiesta.
