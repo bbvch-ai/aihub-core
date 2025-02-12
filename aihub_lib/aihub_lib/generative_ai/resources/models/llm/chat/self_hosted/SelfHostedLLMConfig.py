@@ -46,7 +46,6 @@ class SelfHostedLLMConfig(ChatLLMConfig):
     default_parameter: Annotated[
         SelfHostedLLMParameter,
         Field(
-            ...,
             description="Default parameters for the self-hosted LLM.",
             default_factory=lambda: SelfHostedLLMParameter(),
         ),

@@ -25,8 +25,10 @@ class BaseConfig(BaseSettings):
 
     FRONTEND_ORIGIN: Optional[str] = Field(None, description="Comma separated list of origins to allow CORS")
 
+    APP_TYPE: Annotated[str, Field("", description="Azure Bot Service App Type")]
     APP_ID: Annotated[str, Field("", description="Azure Bot Service App ID")]
     APP_PASSWORD: Annotated[str, Field("", description="Azure Bot Service App Password")]
+    APP_TENANTID: Annotated[str, Field("", description="Azure Bot Service Tenant ID")]
 
     model_config = SettingsConfigDict(
         env_file=".env",

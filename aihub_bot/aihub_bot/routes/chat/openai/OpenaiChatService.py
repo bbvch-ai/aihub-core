@@ -1,3 +1,4 @@
+import asyncio
 from typing import AsyncGenerator, List
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI
@@ -79,5 +80,6 @@ class OpenaiChatService(ChatService):
             )
             async for chunk in response:
                 yield chunk.choices[0].delta.content
+                await asyncio.sleep(0)
 
         return stream_chat_completion()
