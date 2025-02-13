@@ -19,12 +19,11 @@ from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingCon
     AzureOpenAIEmbeddingParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import LLMEvent
+from aihub_lib.nats.events import LLMEvent, RetrieverEvent
 from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
-scenarios("../tests/features/multi_hop_rag_agent.feature")
+scenarios("features/multi_hop_rag_agent.feature")
 
 
 @given(
@@ -40,9 +39,7 @@ def _(hops: int):
             description=LocaleString(
                 en="This is an agent that can be used to answer user questions using Multi Hop RAG"
             ),
-            system_prompt=LocaleString(
-                en="You're an agent answering user requests. Only use the context information provided."
-            ),
+            system_prompt=LocaleString(en="You're answering user requests. Only use the context information provided."),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o-mini",
                 api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
@@ -65,21 +62,17 @@ def _(hops: int):
                 query_mode="hybrid",
                 node_types=["content"],
             ),
-            number_of_input_tokens=8000,
+            number_of_input_tokens=100000,
             tokenizer_for_model="gpt-4o-mini",
-            hops=hops,
+            hops=3,
             decompose_chat_history_prompt=LocaleString(
                 en="""
-                Given the following conversation between a user and an AI assistant and a follow-up question from the user,
+                Given the following conversation between a user and an assistant and a follow-up question from the user,
                 rephrase the follow-up question into multiple questions.
 
-                <chat_history>
+                Chat history:
                 {chat_history}
-                </chat_history>
-                
-                <question>
-                {question}
-                </question>
+                Follow-up input: {question}
                 Multiple questions:"""
             ),
             context_prompt=LocaleString(
@@ -128,7 +121,7 @@ def _(agent_runner: AgentTestRunner, count: int):
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
 def _(agent_runner: AgentTestRunner, count: int):
-    retriever_events = agent_runner.get_events_of_type(RetrieverEvent)
+    retriever_events = agent_runner.get_events_of_type(RetrieverEvent, "control_event")
     assert len(retriever_events) == count, f"Expected {count} retriever events found {len(retriever_events)}"
     assert retriever_events[0].documents, "RetrieverEvent did not produce documents"
 

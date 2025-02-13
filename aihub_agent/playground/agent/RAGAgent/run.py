@@ -1,9 +1,5 @@
 import asyncio
 
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.RAGAgent import RAGAgent
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -14,6 +10,11 @@ from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingCon
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.logging.logger import enable_logging
+
+from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.RAGAgent import RAGAgent
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 

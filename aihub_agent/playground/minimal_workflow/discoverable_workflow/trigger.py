@@ -1,12 +1,12 @@
 import asyncio
 
-from bson import ObjectId
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.testing.logging.logger import enable_logging
+from bson import ObjectId
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import (
     DiscoverableAgent,
 )

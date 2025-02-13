@@ -1,12 +1,12 @@
 import asyncio
 from asyncio import sleep
 
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (
     HumanInTheLoopAgent,
 )

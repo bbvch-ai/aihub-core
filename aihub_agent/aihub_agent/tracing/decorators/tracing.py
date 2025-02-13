@@ -1,7 +1,6 @@
-import functools
 import inspect
 import json
-from typing import Annotated, Any, Callable
+from typing import Any, Callable
 
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, SpanAttributes
 from opentelemetry import trace

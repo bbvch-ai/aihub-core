@@ -1,10 +1,8 @@
 from typing import List
 
-from llama_index.core.schema import NodeWithScore
-from pydantic import Field
-
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.events.semantic.retriever import Document
+from pydantic import Field
 
 
 class ConcatenationEvent(ControlEvent):

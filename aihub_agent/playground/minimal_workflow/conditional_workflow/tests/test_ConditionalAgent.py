@@ -1,17 +1,19 @@
 from unittest.mock import patch
-from pytest_bdd import scenarios, given, when, then, parsers
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from playground.minimal_workflow.conditional_workflow.events.AboveThresholdEvent import AboveThresholdEvent
-from playground.minimal_workflow.conditional_workflow.events.BelowThresholdEvent import BelowThresholdEvent
+from pytest_bdd import scenarios, given, when, then, parsers
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.conditional_workflow.ConditionalAgent import (
     ConditionalAgent,
 )
 from playground.minimal_workflow.conditional_workflow.ConditionalAgentConfig import (
     ConditionalAgentConfig,
 )
+from playground.minimal_workflow.conditional_workflow.events.AboveThresholdEvent import AboveThresholdEvent
+from playground.minimal_workflow.conditional_workflow.events.BelowThresholdEvent import BelowThresholdEvent
 
 scenarios("features/conditional_agent.feature")
 

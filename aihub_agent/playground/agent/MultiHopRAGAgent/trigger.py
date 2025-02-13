@@ -1,21 +1,21 @@
 import asyncio
 
-from aihub_agent.agents.rag.Configs.MultiHopRAGAgentConfig import MultiHopRAGAgentConfig
-from aihub_agent.agents.rag.MultiHopRAGAgent import MultiHopRAGAgent
-from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from aihub_lib.nats.events import StartEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
+from aihub_agent.agents.rag.Configs.MultiHopRAGAgentConfig import MultiHopRAGAgentConfig
 from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.MultiHopRAGAgent.MultiHopRAGAgent import MultiHopRAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
+from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
+    AzureOpenAIEmbeddingParameter,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
@@ -30,9 +30,7 @@ async def main():
             description=LocaleString(
                 en="This is an agent that can be used to answer user questions using Multi Hop RAG"
             ),
-            system_prompt=LocaleString(
-                en="You're an agent answering user requests. Only use the context information provided."
-            ),
+            system_prompt=LocaleString(en="You're answering user requests. Only use the context information provided."),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o-mini",
                 api_endpoint="https://aihub-dev-openai-che.openai.azure.com/",
@@ -57,10 +55,10 @@ async def main():
             ),
             number_of_input_tokens=100000,
             tokenizer_for_model="gpt-4o-mini",
-            hops=5,
+            hops=3,
             decompose_chat_history_prompt=LocaleString(
                 en="""
-                Given the following conversation between a user and an AI assistant and a follow-up question from the user,
+                Given the following conversation between a user and an assistant and a follow-up question from the user,
                 rephrase the follow-up question into multiple questions.
 
                 Chat history:
@@ -88,14 +86,12 @@ async def main():
             start_event=StartEvent(
                 locale="en",
                 messages=[
-                    ChatMessage(
-                        content="You're an agent answering user requests. Only use the context information provided.",
-                        role=MessageRole.SYSTEM,
-                    ),
-                    ChatMessage(content="What is the AI Hub?", role=MessageRole.USER),
-                ]
+                    ChatMessage(content="Hello my Name is Joe. What can we discuss?", role=MessageRole.USER),
+                ],
             ),
         )
+
+        return runner
 
 
 if __name__ == "__main__":

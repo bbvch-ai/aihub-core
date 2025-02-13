@@ -1,10 +1,10 @@
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import StartEvent
+from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.configured_workflow.ConfiguredAgent import ConfiguredAgent
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import ConfiguredAgentConfig
 from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import StartStepConfig
@@ -21,7 +21,6 @@ scenarios("../tests/features/configured_agent.feature")
     target_fixture="agent_runner",
 )
 def _(start_step_value: str, agent_value: str):
-
     return AgentTestRunner(
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(

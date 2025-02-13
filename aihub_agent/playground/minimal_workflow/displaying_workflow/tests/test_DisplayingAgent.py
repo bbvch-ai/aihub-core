@@ -1,8 +1,9 @@
-from pytest_bdd import scenarios, given, when, then, parsers
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, ThoughtEvent, ChunkEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from pytest_bdd import scenarios, given, when, then, parsers
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.displaying_workflow.DisplayingAgent import (
     DisplayingAgent,
 )
@@ -30,7 +31,6 @@ def _():
 @async_test
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
-
         await agent_runner.send_event_from_topic(
             start_event=StartEvent(),
             topic=topic,

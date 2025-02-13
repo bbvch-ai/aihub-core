@@ -1,14 +1,15 @@
-from pytest_bdd import scenarios, given, when, then, parsers
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
-from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
+from pytest_bdd import scenarios, given, when, then, parsers
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.fan_out_workflow.FanOutAgent import FanOutAgent
 from playground.minimal_workflow.fan_out_workflow.FanOutAgentConfig import (
     FanOutAgentConfig,
 )
+from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
+from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 
 scenarios("../tests/features/fan_out_agent.feature")
 
@@ -42,9 +43,9 @@ def verify_event_a_payloads(agent_runner: AgentTestRunner, payloads: str):
     events = agent_runner.get_events_of_type(FanOutA)
     actual_payloads = [event.payload for event in events]
     assert len(events) == 5, f"Expected 5 EventA events but found {len(events)}"
-    assert sorted(actual_payloads) == sorted(expected_payloads), (
-        f"Expected EventA payloads {expected_payloads} but found {actual_payloads}"
-    )
+    assert sorted(actual_payloads) == sorted(
+        expected_payloads
+    ), f"Expected EventA payloads {expected_payloads} but found {actual_payloads}"
 
 
 @then(parsers.parse('5 EventB events with matching payloads "{payloads}" are present'))
@@ -53,9 +54,9 @@ def verify_event_b_payloads(agent_runner: AgentTestRunner, payloads: str):
     events_b = agent_runner.get_events_of_type(FanOutB)
     actual_payloads = [event.payload for event in events_b]
     assert len(events_b) == 5, f"Expected 5 EventB events but found {len(events_b)}"
-    assert sorted(actual_payloads) == sorted(expected_payloads), (
-        f"Expected EventB payloads {expected_payloads} but found {actual_payloads}"
-    )
+    assert sorted(actual_payloads) == sorted(
+        expected_payloads
+    ), f"Expected EventB payloads {expected_payloads} but found {actual_payloads}"
 
 
 @then("a StopEvent is present")

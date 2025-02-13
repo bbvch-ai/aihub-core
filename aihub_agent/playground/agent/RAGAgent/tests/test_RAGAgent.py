@@ -1,3 +1,16 @@
+from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+    AzureOpenAIParameter,
+)
+from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
+    AzureOpenAIEmbeddingParameter,
+)
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import LLMEvent
+from aihub_lib.nats.events.control.start import StartEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
@@ -9,15 +22,6 @@ from aihub_agent.agents.rag.Events.LimitChatHistoryWithContextEvent import Limit
 from aihub_agent.agents.rag.Events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.llms.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, \
-    AzureOpenAIParameter
-from aihub_lib.generative_ai.llms.models.embedding.azure.AzureOpenAIEmbeddingConfig import AzureOpenAIEmbeddingConfig, \
-    AzureOpenAIEmbeddingParameter
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import LLMEvent
-from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 scenarios("../tests/features/rag_agent.feature")
 
@@ -88,9 +92,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(
-                messages=[ChatMessage(content=query, role=MessageRole.USER)]
-            ),
+            start_event=StartEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)]),
         )
 
 
@@ -98,12 +100,13 @@ async def _(agent_runner: AgentTestRunner, query: str):
 def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
 
+
 @then("a LimitChatHistoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.get_event_of_type(LimitChatHistoryEvent), "Agent did not produce LimitChatHistoryEvent"
 
 
-@then(parsers.parse('a StandaloneQuestionCondenserEvent is present with condensed question'))
+@then(parsers.parse("a StandaloneQuestionCondenserEvent is present with condensed question"))
 def _(agent_runner: AgentTestRunner):
     condenser_event = agent_runner.get_event_of_type(StandaloneQuestionCondenserEvent)
     assert condenser_event.condensed_chat_message.content, "No condensed question found"
@@ -138,10 +141,7 @@ def _(agent_runner: AgentTestRunner):
     llm_event = agent_runner.get_event_of_type(LLMEvent)
     assert "detailed" in llm_event.response.content.lower(), "Response does not contain a detailed explanation"
 
+
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
-
-
-
-
