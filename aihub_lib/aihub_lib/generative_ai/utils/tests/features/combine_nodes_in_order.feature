@@ -153,7 +153,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <DOCUMENT source='doc1' namespace='research_paper' type='report' language='en' version='1.2' created_at='1700000000' updated_at='1700005000' inserted_at='1700010000'>
+      Custom prompt: <DOCUMENT source='doc1' namespace='research_paper' type='report' language='en' version='1.2' created_at='14.11.2023' updated_at='14.11.2023' inserted_at='15.11.2023'>
 
       Doc1 line10 content
 
@@ -162,7 +162,7 @@ Feature: Combine nodes in order
       </DOCUMENT>
 
       ---
-      <DOCUMENT source='doc2' namespace='legal_document' type='contract' language='fr' version='2.0' created_at='1690000000' updated_at='1690005000' inserted_at='1690010000'>
+      <DOCUMENT source='doc2' namespace='legal_document' type='contract' language='fr' version='2.0' created_at='22.07.2023' updated_at='22.07.2023' inserted_at='22.07.2023'>
 
       Doc2 line15 content
 

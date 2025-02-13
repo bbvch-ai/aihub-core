@@ -1,6 +1,7 @@
 import html
 from collections import defaultdict
-from typing import List
+from datetime import datetime, timezone
+from typing import List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -31,16 +32,29 @@ _headers_in_order = [H6, H5, H4, H3, H2, H1]
 def sanitize_metadata_value(value: str) -> str:
     if not isinstance(value, str):
         return str(value)
-
     sanitized_value = value.replace("'", "").strip()
     sanitized_value = html.escape(sanitized_value)
     return sanitized_value
 
 
+def format_unix_timestamp(timestamp: Optional[str]) -> Optional[str]:
+    if not timestamp or not timestamp.isdigit():
+        return None
+
+    try:
+        timestamp_int = int(timestamp)
+        if timestamp_int <= 0:
+            return None
+        dt = datetime.fromtimestamp(timestamp_int, tz=timezone.utc)
+        return dt.strftime("%d.%m.%Y")
+    except (ValueError, OverflowError):
+        return None
+
+
 def combine_nodes_in_order(
-    context_nodes: List[Document],
-    locale_handler: LocaleHandler,
-    context_prompt: LocaleString = None,
+        context_nodes: List[Document],
+        locale_handler: LocaleHandler,
+        context_prompt: LocaleString = None,
 ) -> ChatMessage:
     nodes_per_document = defaultdict(list)
 
@@ -61,12 +75,15 @@ def combine_nodes_in_order(
             "type": metadata.get(TYPE),
             "language": metadata.get(LANGUAGE),
             "version": metadata.get(VERSION),
-            "created_at": metadata.get(CREATED_AT),
-            "updated_at": metadata.get(UPDATED_AT),
-            "inserted_at": metadata.get(INSERTED_AT),
+            "created_at": format_unix_timestamp(metadata.get(CREATED_AT)),
+            "updated_at": format_unix_timestamp(metadata.get(UPDATED_AT)),
+            "inserted_at": format_unix_timestamp(metadata.get(INSERTED_AT)),
         }
+
+        metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
+
         metadata_string = " ".join(
-            f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items() if v not in [None, "unknown"]
+            f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items()
         )
 
         doc_header = f"<DOCUMENT {metadata_string}>\n\n"
