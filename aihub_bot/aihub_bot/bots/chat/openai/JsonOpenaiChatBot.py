@@ -1,6 +1,7 @@
+from typing_extensions import override
+
 from botbuilder.core import TurnContext
 from openai import AsyncAzureOpenAI, AsyncOpenAI
-from typing_extensions import override
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
 from aihub_bot.persistence.chat.entities.ConversationEntity import Message
@@ -21,7 +22,7 @@ class JsonOpenaiChatBot(ChatBot):
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
             content=turn_context.activity.text,
-            role=turn_context.activity.from_property.role,
+            role=turn_context.activity.from_property.role or "user",
         )
         response = await OpenaiChatService.json_on_message_activity(
             message=user_message,
