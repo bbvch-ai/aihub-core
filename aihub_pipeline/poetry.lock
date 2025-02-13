@@ -19,7 +19,7 @@ requests = ">=2.0.0,<3"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.34.0"
+version = "v0.35.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -67,8 +67,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.35.0"
-resolved_reference = "57f00f89fb7ee6b0a37b46f60270aa352c0cc83b"
+reference = "v0.36.0"
+resolved_reference = "64dd3f9ff178a94d783fcafbdde5a2415c007ab3"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -1569,13 +1569,13 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.66.0"
+version = "1.67.0"
 description = "Common protobufs used in Google APIs"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "googleapis_common_protos-1.66.0-py2.py3-none-any.whl", hash = "sha256:d7abcd75fabb2e0ec9f74466401f6c119a0b498e27370e9be4c94cb7e382b8ed"},
-    {file = "googleapis_common_protos-1.66.0.tar.gz", hash = "sha256:c3e7b33d15fdca5374cc0a7346dd92ffa847425cc4ea941d970f13680052ec8c"},
+    {file = "googleapis_common_protos-1.67.0-py2.py3-none-any.whl", hash = "sha256:579de760800d13616f51cf8be00c876f00a9f146d3e6510e19d1f4111758b741"},
+    {file = "googleapis_common_protos-1.67.0.tar.gz", hash = "sha256:21398025365f138be356d5923e9168737d94d46a72aefee4a6110a1f23463c86"},
 ]
 
 [package.dependencies]
@@ -5678,4 +5678,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.12"
-content-hash = "6399a8987c177c13fdd66a23758b9fefdd7184e93bc6f4a88dcadf4c2f63b5ca"
+content-hash = "380ea6ff3eec920fdf6ad2ee76a6c5c84ce2533fc3c7d31ecda97f694beb27e8"
