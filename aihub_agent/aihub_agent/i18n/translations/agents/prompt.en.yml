@@ -1,27 +1,3 @@
-test: This is a prompt in english
-condenser:
-  standalone_question: |
-    Given the following conversation between a user and an AI assistant and a follow-up question from the user,
-    rephrase the follow-up question to be a standalone question.
-    <chat_history>
-    {chat_history}
-    </chat_history>
-    
-    <user_question>
-    {question}
-    </user_question>
-    
-    Standalone question:
-rag_agent:
-  context_prompt: |
-    You are provided with some additional context information in form of structured documents with it's general
-    structure and relevant information in more detail. Each document starts with an indicator <DOC_START [documentname]>
-    and ends with <DOC_END [documentname]>.
-    Here are the relevant documents for the context:
-    <context_documents>
-    {context_str}
-    </context_documents>
-    Instruction: Based on the above documents, provide a detailed answer for the user question below.
 guard:
   reject: |
     Inform the user that you can not answer the question due to the following reason:

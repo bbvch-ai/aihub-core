@@ -5,7 +5,17 @@ from pytest_bdd import given, scenarios, then, when
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.semantic.retriever import Document
-from aihub_lib.persistence.rag.vectors.node_metadata import SECTION_START_LINE, SOURCE
+from aihub_lib.persistence.rag.vectors.node_metadata import (
+    SECTION_START_LINE,
+    SOURCE,
+    NAMESPACE,
+    LANGUAGE,
+    TYPE,
+    VERSION,
+    CREATED_AT,
+    UPDATED_AT,
+    INSERTED_AT,
+)
 
 scenarios("./features/combine_nodes_in_order.feature")
 
@@ -14,7 +24,7 @@ scenarios("./features/combine_nodes_in_order.feature")
 def locale_handler():
     class MockLocaleHandler(LocaleHandler):
         def __call__(self, key: str):
-            if key == "agent.prompt.rag_agent.context_prompt":
+            if key == "agent.prompt.rag.context_prompt":
                 return "Default prompt: {context_str}"
             return super().__call__(key)
 
@@ -49,18 +59,38 @@ def _(custom_prompt):
 @given("the following context nodes:", target_fixture="the_context_nodes")
 def _(datatable):
     context_nodes = []
+    headers = datatable[0]
+    metadata_fields = [
+        NAMESPACE,
+        SOURCE,
+        TYPE,
+        LANGUAGE,
+        VERSION,
+        CREATED_AT,
+        UPDATED_AT,
+        INSERTED_AT,
+        SECTION_START_LINE,
+    ]
+
     for row in datatable[1:]:
-        src = row[0]
-        start_line = int(row[1])
-        text = row[2]
-        score = float(row[3])
-        metadata = {}
-        if src:
-            metadata[SOURCE] = src
-        metadata[SECTION_START_LINE] = start_line
+        metadata = {
+            column: (int(row[index]) if column == "section_start_line" else row[index])
+            for index, column in enumerate(headers)
+            if row[index] and column in metadata_fields
+        }
+
+        text = row[headers.index("text")]
+        score = float(row[headers.index("score")])
+
         context_nodes.append(
-            Document(id=f"{src or 'missing'}-{start_line}", score=score, content=text, metadata=metadata)
+            Document(
+                id=f"{metadata.get(SOURCE, 'missing')}-{metadata.get(SECTION_START_LINE, 0)}",
+                score=score,
+                content=text,
+                metadata=metadata,
+            )
         )
+
     return context_nodes
 
 
@@ -82,8 +112,9 @@ def _(the_context_nodes, the_locale_handler, the_context_prompt):
 @then("it should return:")
 def _(the_result, docstring):
     assert isinstance(the_result, ChatMessage)
-    expected = docstring.strip()
-    actual = the_result.content.strip()
+    expected = "\n".join(line.rstrip() for line in docstring.strip().splitlines())
+    actual = "\n".join(line.rstrip() for line in the_result.content.strip().splitlines())
+
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"
 
 

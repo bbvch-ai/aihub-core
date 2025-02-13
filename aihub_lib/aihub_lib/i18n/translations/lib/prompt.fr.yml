@@ -1,6 +1,8 @@
 condenser:
   standalone_question: |
-    Étant donné la conversation suivante entre un utilisateur et un assistant IA ainsi qu'une question de suivi de l'utilisateur, reformulez la question de suivi pour qu'elle soit une question autonome.
+    Étant donné la conversation suivante entre un utilisateur et un assistant IA, ainsi qu'une question de suivi de l'utilisateur, 
+    reformule la question de suivi de manière à ce qu'elle soit une question autonome tout en conservant le contexte d'origine.
+
     <chat_history>
     {chat_history}
     </chat_history>
@@ -10,3 +12,21 @@ condenser:
     </user_question>
     
     Question autonome :
+
+rag:
+  context_prompt: |
+    Des informations contextuelles supplémentaires vous sont fournies sous la forme de documents structurés. Chaque document suit 
+    un format cohérent, commençant par `<DOCUMENT [metadata]>` et se terminant par `</DOCUMENT>`. Ces documents contiennent des 
+    détails essentiels qui doivent être utilisés pour comprendre et répondre avec précision à la requête de l’utilisateur.
+
+    Chaque document comprend des métadonnées telles que la source, l’espace de noms, le type, la langue, la version et les 
+    horodatages. Le contenu de ces documents fournit des informations précieuses pertinentes pour le contexte donné.
+
+    Voici les documents pertinents :
+
+    <context_documents>
+    {context_str}
+    </context_documents>
+
+    Instruction : Utilisez les informations des documents fournis pour générer une réponse détaillée et bien structurée 
+    à la question de l'utilisateur.

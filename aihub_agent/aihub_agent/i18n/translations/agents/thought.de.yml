@@ -3,3 +3,4 @@ write_answer_based_on_information: "Schreibe eine Antwort basierend auf den Info
 write_answer_based_on_few_shot_examples: "Schreibe eine Antwort basierend auf vordefinierten Beispielen"
 searching_knowledge: "Suche nach Wissen"
 preparing_knowledge: "Wissen wird aufbearbeitet"
+test: "Test"

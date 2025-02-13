@@ -1,6 +1,5 @@
 import asyncio
 import os
-
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -22,6 +21,7 @@ async def main():
             name=LocaleString(en="Multi Locale Agent"),
             description=LocaleString(en="This is an agent that knows multiple languages"),
             system_prompt=LocaleString(en="You are an agent"),
+            locale_path="myagent.myscope.test",
         ),
         locale_paths=[os.path.join(os.path.dirname(os.path.abspath(__file__)), "translations")],
     )
