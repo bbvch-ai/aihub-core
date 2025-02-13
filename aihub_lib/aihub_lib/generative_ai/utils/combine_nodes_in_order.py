@@ -52,9 +52,9 @@ def format_unix_timestamp(timestamp: Optional[str]) -> Optional[str]:
 
 
 def combine_nodes_in_order(
-        context_nodes: List[Document],
-        locale_handler: LocaleHandler,
-        context_prompt: LocaleString = None,
+    context_nodes: List[Document],
+    locale_handler: LocaleHandler,
+    context_prompt: LocaleString = None,
 ) -> ChatMessage:
     nodes_per_document = defaultdict(list)
 
@@ -82,9 +82,7 @@ def combine_nodes_in_order(
 
         metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
 
-        metadata_string = " ".join(
-            f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items()
-        )
+        metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
 
         doc_header = f"<DOCUMENT {metadata_string}>\n\n"
 
