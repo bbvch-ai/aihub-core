@@ -37,15 +37,11 @@ def sanitize_metadata_value(value: str) -> str:
     return sanitized_value
 
 
-def format_unix_timestamp(timestamp: Optional[str]) -> Optional[str]:
-    if not timestamp or not timestamp.isdigit():
+def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
+    if timestamp is None or timestamp <= 0:
         return None
-
     try:
-        timestamp_int = int(timestamp)
-        if timestamp_int <= 0:
-            return None
-        dt = datetime.fromtimestamp(timestamp_int, tz=timezone.utc)
+        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
         return dt.strftime("%d.%m.%Y")
     except (ValueError, OverflowError):
         return None
