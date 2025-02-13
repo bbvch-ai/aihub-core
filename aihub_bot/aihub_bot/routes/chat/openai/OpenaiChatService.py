@@ -79,7 +79,12 @@ class OpenaiChatService(ChatService):
                 stream=True,
             )
             async for chunk in response:
-                yield chunk.choices[0].delta.content
+                if len(chunk.choices) == 0:
+                    continue
+                content = chunk.choices[0].delta.content
+                if content is None:
+                    continue
+                yield content
                 await asyncio.sleep(0)
 
         return stream_chat_completion()
