@@ -1,6 +1,3 @@
-from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
@@ -25,6 +22,8 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+from llama_index.core import PromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 
 class RAGAgent(Agent):
@@ -185,6 +184,7 @@ class RAGAgent(Agent):
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent,
         start_event: StartEvent | UserMessageEvent,
+        limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -193,8 +193,7 @@ class RAGAgent(Agent):
         Generates a response using the configured LLM.
         """
         if isinstance(event, FewShotRejectEvent):
-            messages = [
-                ChatMessage(role=MessageRole.USER, content=start_event.user_query),
+            messages =  limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
                     content=PromptTemplate(t("agents.prompt.guard.reject")).format(reason=event.reasoning),

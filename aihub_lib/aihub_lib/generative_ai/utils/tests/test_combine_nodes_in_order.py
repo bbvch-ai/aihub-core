@@ -74,7 +74,9 @@ def _(datatable):
 
     for row in datatable[1:]:
         metadata = {
-            column: (int(row[index]) if column == "section_start_line" else row[index])
+            column: (
+                int(row[index]) if column in {SECTION_START_LINE, INSERTED_AT, UPDATED_AT, CREATED_AT} else row[index]
+            )
             for index, column in enumerate(headers)
             if row[index] and column in metadata_fields
         }
