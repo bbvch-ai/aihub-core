@@ -1,10 +1,9 @@
-from typing_extensions import override
-
 from botbuilder.core import TurnContext
 from openai import AsyncAzureOpenAI, AsyncOpenAI
+from typing_extensions import override
 
 from aihub_bot.bots.chat.ChatBot import ChatBot
-from aihub_bot.persistence.chat.entities.ConversationEntity import Message
+from aihub_bot.persistence.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.openai.OpenaiChatService import OpenaiChatService
 
 

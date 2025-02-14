@@ -6,14 +6,16 @@ from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, ActivityTypes
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 
 logger = logging.getLogger(__name__)
 
 
 class Service(abc.ABC):
-    CONFIG = BaseConfig()
-    ADAPTER = CloudAdapter(ConfigurationBotFrameworkAuthentication(CONFIG))
+    @staticmethod
+    def get_adapter(path: str) -> CloudAdapter:
+        credentials: Credentials = PathEntity.get_credentials_by_path(path)
+        return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
 
     @staticmethod
     async def on_error(context: TurnContext, error: Exception):

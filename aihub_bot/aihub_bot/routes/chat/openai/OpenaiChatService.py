@@ -9,7 +9,7 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 
-from aihub_bot.persistence.chat.entities.ConversationEntity import Message
+from aihub_bot.persistence.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.ChatService import ChatService
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 

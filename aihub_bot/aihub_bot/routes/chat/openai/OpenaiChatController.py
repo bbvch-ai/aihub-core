@@ -1,10 +1,11 @@
 import logging
 from typing import Annotated, Any, Callable, List
 
+from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query
 from llama_index.llms.openai import OpenAI
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import Response
 
 from aihub_bot.bots.chat.openai.JsonOpenaiChatBot import JsonOpenaiChatBot
 from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
@@ -40,10 +41,11 @@ class OpenaiChatController(Controller):
             request: Request,
             _: Annotated[ActivityModel, Body],
             model_name: Annotated[str, Query(title="Model Name")],
-        ) -> JSONResponse:
+        ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
             chat_bot = JsonOpenaiChatBot(model_name, client)
-            return await OpenaiChatService.ADAPTER.process(request, chat_bot)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(request.url.path)
+            return await adapter.process(request, chat_bot)
 
         return self
 
@@ -56,9 +58,10 @@ class OpenaiChatController(Controller):
             request: Request,
             _: Annotated[ActivityModel, Body],
             model_name: Annotated[str, Query(title="Model Name")],
-        ) -> JSONResponse:
+        ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
             chat_bot = StreamOpenaiChatBot(model_name, client)
-            return await OpenaiChatService.ADAPTER.process(request, chat_bot)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(request.url.path)
+            return await adapter.process(request, chat_bot)
 
         return self
