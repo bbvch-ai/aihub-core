@@ -1,3 +1,5 @@
+from typing import Optional
+
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, StringField
 
 
@@ -15,5 +17,6 @@ class PathEntity(Document):
     credentials = EmbeddedDocumentField(Credentials, required=True)
 
     @classmethod
-    def get_credentials_by_path(cls, path: str) -> Credentials:
-        return cls.objects().filter(path=path).first().credentials
+    def get_credentials_by_path(cls, path: str) -> Optional[Credentials]:
+        doc = cls.objects().filter(path=path).first()
+        return doc.credentials if doc else None
