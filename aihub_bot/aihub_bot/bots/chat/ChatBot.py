@@ -4,7 +4,7 @@ from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import ChannelAccount
 from typing_extensions import override
 
-from aihub_bot.persistence.chat.entities.ConversationEntity import User
+from aihub_bot.persistence.entities.ConversationEntity import User
 from aihub_bot.routes.chat.ChatService import ChatService
 
 
