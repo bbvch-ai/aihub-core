@@ -19,12 +19,13 @@ class ApiUser(EmbeddedDocument):
     roles = ListField(StringField(), required=True)
 
 
-class AccessToken(Document):
+class BearerToken(Document):
     meta = {
         "collection": "tokens",
         "strict": False,
     }
     version = IntField(default=1, db_field="_version")
+    name = StringField(required=True)
     token = StringField(required=True)  # Should be stored as "<object_id>.<random_part>"
     expiry_date = DateTimeField(required=True)
     roles = ListField(StringField())
@@ -34,7 +35,7 @@ class AccessToken(Document):
     TOKEN_REGEX = re.compile(r"^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9]+)$")
 
     @classmethod
-    def verify_token(cls, token_str: str) -> "AccessToken":
+    def verify_token(cls, token_str: str) -> "BearerToken":
         """
         Verifies that the provided token string is valid:
           - Matches the expected format.

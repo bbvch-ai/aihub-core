@@ -10,7 +10,7 @@ from starlette.datastructures import Headers
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.AccessToken import AccessToken, ApiUser
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken, ApiUser
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 
@@ -113,7 +113,7 @@ def insert_token_document(token_context, cleanup_token, name, email, roles):
         roles=roles_list,
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
-    token_doc = AccessToken(id=object_id, token=token_str, expiry_date=expiry, roles=roles_list, user=api_user)
+    token_doc = BearerToken(id=object_id, name="token-name", token=token_str, expiry_date=expiry, roles=roles_list, user=api_user)
     token_doc.save()
     token_context["token_str"] = token_str
     token_context["object_id"] = str(object_id)

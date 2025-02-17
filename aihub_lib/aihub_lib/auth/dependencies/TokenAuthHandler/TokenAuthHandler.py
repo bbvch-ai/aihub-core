@@ -4,7 +4,7 @@ from fastapi import HTTPException, Request
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.persistence.access.entities.AccessToken import AccessToken
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class TokenAuthHandler(AuthHandler):
 
         try:
             # This call should perform a DB lookup and verify the token.
-            access_token = AccessToken.verify_token(token_str)
+            access_token = BearerToken.verify_token(token_str)
         except ValueError as e:
             logger.warning("Token authentication failed: %s", e)
             raise HTTPException(status_code=401, detail=str(e))
