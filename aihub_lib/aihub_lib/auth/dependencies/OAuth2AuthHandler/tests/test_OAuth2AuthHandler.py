@@ -1,5 +1,6 @@
 import os
 import base64
+import json
 import pytest
 import jwt
 import httpx
@@ -55,10 +56,26 @@ class DummyResponse:
             raise httpx.HTTPStatusError("Error", request=None, response=self)
 
 # -------------------------------
-# Scenario Declaration
+# Scenario Declarations
 # -------------------------------
 @scenario("features/oauth2_auth_handler.feature", "Valid OAuth2 token returns authenticated user")
 def test_valid_oauth2_token():
+    pass
+
+@scenario("features/oauth2_auth_handler.feature", "Invalid token format is rejected")
+def test_invalid_format():
+    pass
+
+@scenario("features/oauth2_auth_handler.feature", "Expired OAuth2 token is rejected")
+def test_expired_token():
+    pass
+
+@scenario("features/oauth2_auth_handler.feature", "Token with unknown key id is rejected")
+def test_unknown_kid():
+    pass
+
+@scenario("features/oauth2_auth_handler.feature", "Token with invalid signature is rejected")
+def test_invalid_signature():
     pass
 
 # -------------------------------
@@ -66,9 +83,7 @@ def test_valid_oauth2_token():
 # -------------------------------
 @pytest.fixture
 def oauth2_config(monkeypatch):
-    """
-    Set up the OAuth2 configuration via environment variables.
-    """
+    """Set up the OAuth2 configuration via environment variables."""
     monkeypatch.setenv("TENANT_ID", "test-tenant")
     monkeypatch.setenv("CLIENT_ID", "test-client")
     monkeypatch.setenv("AUTHORITY_URL", "https://login.microsoftonline.com")
@@ -89,16 +104,14 @@ def fake_jwks_response(rsa_keys):
 
 @pytest.fixture(autouse=True)
 def monkeypatch_httpx(monkeypatch, fake_jwks_response, oauth2_config):
-    """
-    Monkeypatch httpx.AsyncClient.get to return a fake JWKS response.
-    """
+    """Monkeypatch httpx.AsyncClient.get to return a fake JWKS response."""
     async def fake_get(self, url, **kwargs):
         return DummyResponse(fake_jwks_response, status_code=200)
     monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
 
 @pytest.fixture
 def oauth2_context():
-    """Context to store data (like the authenticated user) across steps."""
+    """Context to store data (like the token, authenticated user, or error) across steps."""
     return {}
 
 # -------------------------------
@@ -118,7 +131,7 @@ def generated_token(oauth2_config, rsa_keys, name: str, email: str, roles: str):
     """
     Generate a valid OAuth2 JWT:
       - Uses the test RSA private key.
-      - Includes claims for name, preferred_username (email), and roles.
+      - Includes claims for name, preferred_username (email), roles, and a fixed oid.
       - Sets audience to CLIENT_ID and issuer to AUTHORITY/v2.0.
     """
     now = datetime.now(timezone.utc)
@@ -136,16 +149,88 @@ def generated_token(oauth2_config, rsa_keys, name: str, email: str, roles: str):
     token = jwt.encode(payload, rsa_keys["private_key"], algorithm="RS256", headers=headers)
     return token
 
+@given(parsers.parse('an invalid OAuth2 token "{token}"'))
+def given_invalid_token(oauth2_context, token: str):
+    oauth2_context["token"] = token
+
+@given(
+    parsers.parse('an expired OAuth2 token is generated with name "{name}", email "{email}", and roles "{roles}"'),
+    target_fixture="generated_token"
+)
+def generated_expired_token(oauth2_config, rsa_keys, oauth2_context, name: str, email: str, roles: str):
+    now = datetime.now(timezone.utc)
+    exp = now - timedelta(minutes=10)  # expired 10 minutes ago
+    payload = {
+        "name": name,
+        "preferred_username": email,
+        "roles": [r.strip() for r in roles.split(",")],
+        "aud": oauth2_config.CLIENT_ID,
+        "oid": "expired-oid",
+        "iss": f"{oauth2_config.AUTHORITY}/v2.0",
+        "exp": exp,
+    }
+    headers = {"kid": rsa_keys["kid"]}
+    token = jwt.encode(payload, rsa_keys["private_key"], algorithm="RS256", headers=headers)
+    # Store the token into oauth2_context so that the When step can find it.
+    oauth2_context["token"] = token
+    return token
+
+@given("I modify the token's header to use kid \"unknown-key-id\"")
+def modify_token_unknown_kid(oauth2_context, generated_token):
+    parts = generated_token.split(".")
+    if len(parts) != 3:
+        pytest.fail("Token format invalid for modification")
+    header_b64 = parts[0]
+    payload_part = parts[1]
+    signature = parts[2]
+    header_bytes = base64.urlsafe_b64decode(header_b64 + "==")
+    header = json.loads(header_bytes)
+    header["kid"] = "unknown-key-id"
+    new_header_b64 = base64url_encode(json.dumps(header).encode("utf-8"))
+    new_token = ".".join([new_header_b64, payload_part, signature])
+    oauth2_context["token"] = new_token
+
+@given("I re-sign the token with a different private key")
+def resign_token_with_different_key(oauth2_context, oauth2_config, generated_token):
+    unverified = jwt.get_unverified_header(generated_token)
+    payload = jwt.decode(generated_token, options={"verify_signature": False})
+    new_private_key, _ = generate_rsa_keypair()
+    new_token = jwt.encode(payload, new_private_key, algorithm="RS256", headers=unverified)
+    oauth2_context["token"] = new_token
+
+# For the positive case, store the generated token in context.
+@given("no modification is applied to the token")
+def store_generated_token(oauth2_context, generated_token):
+    oauth2_context["token"] = generated_token
+
 # -------------------------------
-# When Step
+# When Steps
 # -------------------------------
 @when("I invoke the OAuth2AuthHandler with the token")
 @async_test
-async def invoke_oauth2_handler(generated_token, oauth2_context):
-    token = generated_token
+async def invoke_oauth2_handler(oauth2_context):
+    token = oauth2_context.get("token")
+    if token is None:
+        pytest.fail("No token found in context")
+    # Always pass token as bytes.
+    token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
     handler = OAuth2AuthHandler()
-    user = await handler(token)
+    user = await handler(token_bytes)
     oauth2_context["user"] = user
+
+@when("I invoke the OAuth2AuthHandler with the token expecting error")
+@async_test
+async def invoke_oauth2_handler_expect_error(oauth2_context):
+    token = oauth2_context.get("token")
+    if token is None:
+        pytest.fail("No token found in context")
+    token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
+    handler = OAuth2AuthHandler()
+    try:
+        await handler(token_bytes)
+        pytest.fail("OAuth2AuthHandler did not raise an exception")
+    except Exception as e:
+        oauth2_context["error"] = str(e)
 
 # -------------------------------
 # Then Steps
@@ -165,3 +250,10 @@ def check_oauth2_user_email(oauth2_context, expected_email):
 def check_oauth2_user_roles(oauth2_context, role1, role2):
     user = oauth2_context.get("user")
     assert set(user.roles) == {role1, role2}
+
+@then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
+def check_oauth2_error(oauth2_context, expected_detail):
+    error = oauth2_context.get("error")
+    assert error is not None, "No error was captured"
+    # We check that the error message contains the expected detail.
+    assert expected_detail in error
