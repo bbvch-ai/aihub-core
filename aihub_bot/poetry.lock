@@ -19,7 +19,7 @@ requests = ">=2.0.0,<3"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.39.0"
+version = "v0.40.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -67,8 +67,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.40.0"
-resolved_reference = "711b8fd71440bdbef2eac82b7418b9a7b40552d3"
+reference = "v0.41.0"
+resolved_reference = "7a936a552c09f253eb2119e5ce0b1b6013357254"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -1856,13 +1856,13 @@ testing-libs = ["demjson", "simplejson", "ujson", "yajl"]
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.17"
+version = "0.12.18"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_core-0.12.17-py3-none-any.whl", hash = "sha256:867ec650a1f9eba9f6d65005045a68bc13bae8d65763e32029d9610360c03979"},
-    {file = "llama_index_core-0.12.17.tar.gz", hash = "sha256:2e8fb457983978af19db1ceba71d440f6891279525c5e7eb2ec73a6b727be113"},
+    {file = "llama_index_core-0.12.18-py3-none-any.whl", hash = "sha256:c5a467e12bdeb40ba314b52adc16a84ee2f353edcfa255e94ff041d6d7e255a6"},
+    {file = "llama_index_core-0.12.18.tar.gz", hash = "sha256:de80c68d3406d84dc4f0efe65ca586ad31858dc9607d1699bf882bdec5f4aaf4"},
 ]
 
 [package.dependencies]
@@ -1955,13 +1955,13 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.3.19"
+version = "0.3.20"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_llms_openai-0.3.19-py3-none-any.whl", hash = "sha256:ad3c4a8c86aef181eba6b34cfff995a7c288d6bd5b99207438e25c051d80532d"},
-    {file = "llama_index_llms_openai-0.3.19.tar.gz", hash = "sha256:2e2dad70e7a9cb7a1519be1af4ba60c651a0039bc88888332a17922be00b0299"},
+    {file = "llama_index_llms_openai-0.3.20-py3-none-any.whl", hash = "sha256:45bb71197ec990cb67d2ea99287572d4575279fcefc77f5b7cfbaa4d467dc6c9"},
+    {file = "llama_index_llms_openai-0.3.20.tar.gz", hash = "sha256:21f19c76a7241321e546f8c565a1ccbd4035ebfb39e8de6c9d83d705282619d4"},
 ]
 
 [package.dependencies]
@@ -2053,13 +2053,13 @@ llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-azureaisearch"
-version = "0.3.4"
+version = "0.3.5"
 description = "llama-index vector_stores azureaisearch integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_vector_stores_azureaisearch-0.3.4-py3-none-any.whl", hash = "sha256:84f1f8725f06f22df8d1108f68aba74389d7fe00d251ef0d6a50da6b4ab63607"},
-    {file = "llama_index_vector_stores_azureaisearch-0.3.4.tar.gz", hash = "sha256:43548108efaceb1d47fa8a6818897385514e8d3d01988719d523ef398af7cbe0"},
+    {file = "llama_index_vector_stores_azureaisearch-0.3.5-py3-none-any.whl", hash = "sha256:6bdfac5a6ce2ec33360d95a6b9cd3027b3d7c4f961384733533a2fdba39d21af"},
+    {file = "llama_index_vector_stores_azureaisearch-0.3.5.tar.gz", hash = "sha256:b522f17f958e5d45be74195d3823be157b2b4b924f1d4baaab1ae303394768e2"},
 ]
 
 [package.dependencies]
@@ -4889,4 +4889,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.12"
-content-hash = "54d1b08377ef18c352ceea34f0e4bac958ab85a9e7e731f359bd7e3484e018c7"
+content-hash = "eb0fd53281f84e3105bf7e6d605a766d87905b9e403076a8376dc3a9151cba52"
