@@ -44,7 +44,7 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
             chat_bot = JsonOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request.url.path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -61,7 +61,7 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
             chat_bot = StreamOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request.url.path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
             return await adapter.process(request, chat_bot)
 
         return self
