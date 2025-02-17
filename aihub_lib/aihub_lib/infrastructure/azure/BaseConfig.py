@@ -5,12 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class BaseConfig(BaseSettings):
-    AZURE_SUBSCRIPTION_NAME: str = Field(
+    AZURE_SUBSCRIPTION_ID: str = Field(
         ...,
-        pattern=r"^sub-lz-[\w-]+-[\w-]+-\d{3}$",
-        description="Azure subscription name",
+        pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+        description="Azure subscription id (GUID format)",
     )
-    ENVIRONMENT: Literal["dev", "prod"] = Field(..., description="Environment: dev or prod")
     APP_NAME: str = Field(..., pattern=r"^[a-z]+$", description="App name: lowercase, no whitespace")
     REGION_SHORT: str = Field(..., min_length=2, max_length=3, description="ISO country code")
 
