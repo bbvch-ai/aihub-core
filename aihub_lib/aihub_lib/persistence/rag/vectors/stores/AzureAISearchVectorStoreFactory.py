@@ -1,8 +1,6 @@
 from functools import cache
 from typing import List
 
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement
-
 from aihub_lib.infrastructure.azure.ai_search.AISearchAccess import AISearchAccess
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA_FIELDS,
@@ -12,6 +10,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_ID,
     NODE_METADATA,
 )
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement
 
 
 @cache
@@ -19,6 +18,7 @@ def create_azure_ai_search_vector_store(
     vector_store_name: str,
     metadata_fields: List[str] | None = None,
     language: str = "de",
+    semantic_configuration_name: str | None = None
 ) -> AzureAISearchVectorStore:
     search_client_singleton = AISearchAccess()
     index_client = search_client_singleton.get_client()
@@ -40,4 +40,5 @@ def create_azure_ai_search_vector_store(
         metadata_string_field_key=NODE_METADATA,
         doc_id_field_key=DOCUMENT_ID,
         language_analyzer=f"{language}.microsoft",
+        semantic_configuration_name=semantic_configuration_name
     )
