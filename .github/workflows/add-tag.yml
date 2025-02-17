@@ -121,7 +121,7 @@ jobs:
           for dir in "${dir_array[@]}"; do
             cd "$dir"
             pip install poetry
-            poetry lock --no-update
+            poetry lock
             poetry install --with dev
             cd -
           done
