@@ -17,8 +17,14 @@ class PathEntity(Document):
     }
     path = StringField(required=True)
     credentials = EmbeddedDocumentField(Credentials, required=True)
+    system_message = StringField(required=False)
 
     @classmethod
     def get_credentials_by_path(cls, path: str) -> Optional[Credentials]:
         doc = cls.objects().filter(path=path).first()
         return doc.credentials if doc else None
+
+    @classmethod
+    def get_system_message_by_path(cls, path: str) -> Optional[str]:
+        doc = cls.objects().filter(path=path).first()
+        return doc.system_message if doc else None

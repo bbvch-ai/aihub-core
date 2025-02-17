@@ -42,8 +42,9 @@ class OpenaiChatController(Controller):
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
-            chat_bot = JsonOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
+            path = OpenaiChatService.get_path(request)
+            chat_bot = JsonOpenaiChatBot(model_name, client, path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -59,8 +60,9 @@ class OpenaiChatController(Controller):
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
-            chat_bot = StreamOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
+            path = OpenaiChatService.get_path(request)
+            chat_bot = StreamOpenaiChatBot(model_name, client, path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self

@@ -7,6 +7,7 @@ from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionUserMessageParam,
+    ChatCompletionSystemMessageParam,
 )
 
 from aihub_bot.persistence.entities.ConversationEntity import Message
@@ -25,6 +26,11 @@ class OpenaiChatService(ChatService):
         if message.role == "bot":
             return ChatCompletionAssistantMessageParam(
                 role="assistant",
+                content=message.content,
+            )
+        if message.role == "system":
+            return ChatCompletionSystemMessageParam(
+                role="system",
                 content=message.content,
             )
 
@@ -48,7 +54,10 @@ class OpenaiChatService(ChatService):
         conversation_id: str,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
+        path: str,
+        username: str,
     ) -> str:
+        OpenaiChatService.add_system_message_to_conversation(conversation_id, path, username)
         OpenaiChatService.add_message_to_conversation(conversation_id, message)
         persisted_messages: List[Message] = OpenaiChatService.get_messages_by_conversation_id(conversation_id)
         messages: List[ChatCompletionMessageParam] = [
@@ -60,12 +69,15 @@ class OpenaiChatService(ChatService):
         return chat_completion.choices[0].message.content
 
     @staticmethod
-    async def stream_on_message_completion(
+    async def stream_on_message_activity(
         message: Message,
         conversation_id: str,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
+        path: str,
+        username: str,
     ) -> AsyncGenerator[str, None]:
+        OpenaiChatService.add_system_message_to_conversation(conversation_id, path, username)
         OpenaiChatService.add_message_to_conversation(conversation_id, message)
         persisted_messages: List[Message] = OpenaiChatService.get_messages_by_conversation_id(conversation_id)
         messages: List[ChatCompletionMessageParam] = [

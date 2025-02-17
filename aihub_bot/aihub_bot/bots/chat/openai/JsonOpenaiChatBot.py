@@ -12,9 +12,11 @@ class JsonOpenaiChatBot(ChatBot):
         self,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
+        path: str,
     ):
         self.model_name = model_name
         self.client = client
+        self.path = path
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
@@ -23,11 +25,14 @@ class JsonOpenaiChatBot(ChatBot):
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role or "user",
         )
+        username = turn_context.activity.from_property.name
         response = await OpenaiChatService.json_on_message_activity(
             message=user_message,
             conversation_id=turn_context.activity.conversation.id,
             model_name=self.model_name,
             client=self.client,
+            path=self.path,
+            username=username,
         )
         return await OpenaiChatService.respond_to_user(
             turn_context,

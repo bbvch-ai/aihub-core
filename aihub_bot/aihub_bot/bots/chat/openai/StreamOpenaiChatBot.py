@@ -15,9 +15,11 @@ class StreamOpenaiChatBot(ChatBot):
         self,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
+        path: str,
     ):
         self.model_name = model_name
         self.client = client
+        self.path = path
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
@@ -26,11 +28,14 @@ class StreamOpenaiChatBot(ChatBot):
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role or "user",
         )
-        response_generator: AsyncGenerator[str, None] = await OpenaiChatService.stream_on_message_completion(
+        username = turn_context.activity.from_property.name
+        response_generator: AsyncGenerator[str, None] = await OpenaiChatService.stream_on_message_activity(
             message=user_message,
             conversation_id=turn_context.activity.conversation.id,
             model_name=self.model_name,
             client=self.client,
+            path=self.path,
+            username=username,
         )
         response: str
         try:

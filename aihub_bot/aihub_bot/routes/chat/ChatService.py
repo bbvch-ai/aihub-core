@@ -109,6 +109,26 @@ class ChatService(Service, ChatServiceLib):
         )
 
     @staticmethod
+    def add_system_message_to_conversation(
+        conversation_id: str,
+        path: str,
+        username: str,
+    ) -> ConversationEntity:
+        conversation: ConversationEntity = ConversationEntity.get_conversation_by_conversation_id(conversation_id)
+        system_message = ChatService.get_system_message(path, username)
+        if system_message is None:
+            return conversation
+        message: Message = Message(
+            user_id="system",
+            content=system_message,
+            role="system",
+        )
+        messages = conversation.messages if conversation is not None else []
+        if len(messages) != 0 and messages[0].role == "system":
+            return conversation
+        return ConversationEntity.add_system_message_to_conversation(conversation_id, message)
+
+    @staticmethod
     def get_messages_by_conversation_id(
         conversation_id: str,
     ) -> List[Message]:
