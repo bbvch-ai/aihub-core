@@ -19,7 +19,7 @@ requests = ">=2.0.0,<3"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.40.0"
+version = "v0.41.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -67,8 +67,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.41.0"
-resolved_reference = "7a936a552c09f253eb2119e5ce0b1b6013357254"
+reference = "v0.42.0"
+resolved_reference = "5fa403ac31693318d12f4daccf9d6e319e286b53"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -4889,4 +4889,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.12"
-content-hash = "eb0fd53281f84e3105bf7e6d605a766d87905b9e403076a8376dc3a9151cba52"
+content-hash = "fe78931ad4e2493e13d1a254218bfda77b06a4d4cb7af5576a7f26cbc0efbee5"
