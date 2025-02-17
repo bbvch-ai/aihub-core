@@ -55,6 +55,6 @@ def retrieve_nodes(
     ]
 
     if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
-        nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).process(nodes)
+        nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).postprocess_nodes(nodes)
 
     return nodes
