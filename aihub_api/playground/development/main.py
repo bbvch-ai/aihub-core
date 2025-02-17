@@ -1,6 +1,5 @@
 import asyncio
 
-from aihub_api.auth.dependencies.oauth2.use_oauth2_user import use_oauth2_user
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.chat.ChatController import ChatController
 from aihub_api.routes.event.EventController import EventController
@@ -9,6 +8,7 @@ from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
@@ -31,10 +31,10 @@ async def main():
 
     runner.mount(
         HealthController().get_health(),
-        UserController(auth=use_oauth2_user).get_user(),
-        I18nController(auth=use_oauth2_user).get_my_locale(),
-        EventController(auth=use_oauth2_user).ws().get_events(),
-        ThreadController(auth=use_oauth2_user)
+        UserController(auth=OAuth2AuthHandler()).get_user(),
+        I18nController(auth=OAuth2AuthHandler()).get_my_locale(),
+        EventController(auth=OAuth2AuthHandler()).ws().get_events(),
+        ThreadController(auth=OAuth2AuthHandler())
         .get_user_threads()
         .create_thread()
         .get_thread()
@@ -42,10 +42,10 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        AgentController(auth=use_oauth2_user).get_agent().discover_agents(),
-        ChatController(auth=use_oauth2_user).completions_json().completions_stream(),
+        AgentController(auth=OAuth2AuthHandler()).get_agent().discover_agents(),
+        ChatController(auth=OAuth2AuthHandler()).completions_json().completions_stream(),
         OpenaiController(
-            auth=use_oauth2_user,
+            auth=OAuth2AuthHandler(),
             embedding_models=[
                 SelfHostedEmbeddingConfig(
                     name="Alibaba-NLP/gte-base-en-v1.5",

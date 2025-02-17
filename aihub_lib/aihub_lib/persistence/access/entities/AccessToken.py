@@ -1,3 +1,5 @@
+import re
+from datetime import datetime, timezone
 from mongoengine import (
     DateTimeField,
     Document,
@@ -7,23 +9,64 @@ from mongoengine import (
     ListField,
     StringField,
 )
+from mongoengine.errors import DoesNotExist
 
 
 class ApiUser(EmbeddedDocument):
     name = StringField(required=True)
-    email = StringField(required=True)
+    preferred_username = StringField(required=True)  # E-Mail
+    roles = ListField(StringField(), required=True)
 
 
 class AccessToken(Document):
     meta = {
-        "collection": "accesstokens",
+        "collection": "tokens",
         "strict": False,
     }
     version = IntField(default=1, db_field="_version")
+    token = StringField(required=True)  # Should be stored as "<object_id>.<random_part>"
     expiry_date = DateTimeField(required=True)
     roles = ListField(StringField())
     user = EmbeddedDocumentField(ApiUser)
 
-    @staticmethod
-    def by_id(organization_shortname: str, token: str) -> "AccessToken":
-        return AccessToken.objects.using(organization_shortname).get(id=token)
+    # Pre-compile a regex to parse tokens of the form "<mongo_id>.<random_string>"
+    TOKEN_REGEX = re.compile(r'^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9]+)$')
+
+    @classmethod
+    def verify_token(cls, token_str: str) -> "AccessToken":
+        """
+        Verifies that the provided token string is valid:
+          - Matches the expected format.
+          - Exists in the DB (looked up by the object id).
+          - The stored token exactly matches the provided token.
+          - Has not expired.
+
+        Raises:
+            ValueError: with an appropriate message if the token is invalid.
+        """
+        match = cls.TOKEN_REGEX.match(token_str)
+        if not match:
+            raise ValueError("Invalid token format")
+
+        # Extract the MongoDB ObjectID from the token string
+        oid = match.group("oid")
+
+        try:
+            # Lookup the token document using the organization-specific DB
+            token_obj = cls.objects.get(id=oid)
+        except DoesNotExist:
+            raise ValueError("Token not found")
+
+        # Check that the token string exactly matches the stored token
+        if token_obj.token != token_str:
+            raise ValueError("Token mismatch")
+
+        # Ensure expiry_date is timezone-aware before comparing
+        expiry_date = token_obj.expiry_date
+        if expiry_date.tzinfo is None:
+            expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+
+        if expiry_date < datetime.now(timezone.utc):
+            raise ValueError("Token expired")
+
+        return token_obj
