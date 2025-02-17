@@ -1,12 +1,12 @@
 import argparse
 import json
 import subprocess
+from typing import Optional
 
 import sys
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cosmosdb import CosmosDBManagementClient
 from azure.mgmt.resource import SubscriptionClient
-from bson import ObjectId
 from pymongo import MongoClient
 
 
@@ -20,13 +20,15 @@ def run_command(cmd):
     return result.stdout
 
 
-def create_app_registration(bot_name) -> str:
+def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
     print(f"Creating Azure AD app registration for bot '{bot_name}'...")
+
+    sign_in_audience = "AzureADMyOrg" if tenant_id is not None else "AzureADandPersonalMicrosoftAccount"
 
     # fmt: off
     cmd = [ "az", "ad", "app", "create",
         "--display-name", bot_name,
-        "--sign-in-audience", "AzureADMyOrg",
+        "--sign-in-audience", sign_in_audience,
     ]
     # fmt: on
 
@@ -68,23 +70,30 @@ def reset_app_credentials(app_id) -> str:
     return app_password
 
 
-def create_bot_resource(resource_group, bot_name, app_id, api_endpoint, api_app_name, location):
+def get_app_type(tenant_id: Optional[str]) -> str:
+    return "SingleTenant" if tenant_id is not None else "MultiTenant"
+
+
+def create_bot_resource(
+    resource_group, bot_name, app_id, api_endpoint, api_app_name, location, tenant_id: Optional[str]
+):
     # Compute the bot endpoint similar to the original ARM template logic.
     bot_endpoint = f"https://{api_app_name}.azurewebsites.net{api_endpoint}"
     print(f"Creating Azure Bot resource with endpoint: {bot_endpoint} ...")
-
     # fmt: off
     cmd = [
         "az", "bot", "create",
-        "--app-type", "MultiTenant",
+        "--app-type", get_app_type(tenant_id),
         "--appid", app_id,
         "--name", bot_name,
         "--resource-group", resource_group,
         "--display-name", bot_name,
         "--endpoint", bot_endpoint,
         "--location", location,
-        "--sku", "F0"
+        "--sku", "F0",
     ]
+    if tenant_id is not None:
+        cmd.extend(["--tenant-id", tenant_id])
     # fmt: on
 
     output = run_command(cmd)
@@ -97,7 +106,9 @@ def create_bot_resource(resource_group, bot_name, app_id, api_endpoint, api_app_
     return bot_info
 
 
-def save_credentials_in_cosmos(cosmos_name, api_endpoint, app_id, app_password, subscription_name, resource_group):
+def save_credentials_in_cosmos(
+    cosmos_name, api_endpoint, app_id, app_password, subscription_name, resource_group, tenant_id: Optional[str]
+):
     print("Saving credentials in Cosmos DB...")
     credential = DefaultAzureCredential()
     subscription_client = SubscriptionClient(credential)
@@ -116,9 +127,13 @@ def save_credentials_in_cosmos(cosmos_name, api_endpoint, app_id, app_password, 
     database = client["aihub_bot"]
     collection = database.get_collection("paths")
     document = {
-        "_id": str(ObjectId()),
         "path": api_endpoint,
-        "credentials": {"app_id": app_id, "app_password": app_password},
+        "credentials": {
+            "APP_TYPE": get_app_type(tenant_id),
+            "APP_ID": app_id,
+            "APP_PASSWORD": app_password,
+            "APP_TENANTID": tenant_id,
+        },
     }
     _filter = {"path": api_endpoint}
     payload = {"$set": document}
@@ -139,6 +154,7 @@ def main():
     parser.add_argument(
         "--location", "-loc", default="westeurope", help="Azure location for the bot (default: 'westeurope')."
     )
+    parser.add_argument("--tenant-id", "-tid", default=None, help="Azure tenant ID for the Azure Bot (default: None).")
 
     # Cosmos DB parameters passed as arguments.
     parser.add_argument("--cosmos-name", "-cos", required=True, help="Cosmos DB account name.")
@@ -147,17 +163,25 @@ def main():
     args = parser.parse_args()
 
     # Create the Azure AD app registration and reset its credentials.
-    app_id = create_app_registration(args.bot_name)
+    app_id = create_app_registration(args.bot_name, args.tenant_id)
     app_password = reset_app_credentials(app_id)
     print(f"Using newly created app registration credentials:\n  App ID: {app_id}\n  Password: {app_password}")
 
     # Save the credentials in Cosmos DB.
     save_credentials_in_cosmos(
-        args.cosmos_name, args.api_endpoint, app_id, app_password, args.subscription_name, args.resource_group
+        args.cosmos_name,
+        args.api_endpoint,
+        app_id,
+        app_password,
+        args.subscription_name,
+        args.resource_group,
+        args.tenant_id,
     )
 
     # Create the Azure Bot resource using a direct az command.
-    create_bot_resource(args.resource_group, args.bot_name, app_id, args.api_endpoint, args.app_name, args.location)
+    create_bot_resource(
+        args.resource_group, args.bot_name, app_id, args.api_endpoint, args.app_name, args.location, args.tenant_id
+    )
 
 
 if __name__ == "__main__":

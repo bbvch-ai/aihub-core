@@ -4,14 +4,16 @@ from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, Strin
 
 
 class Credentials(EmbeddedDocument):
-    app_id = StringField(required=True)
-    app_password = StringField(required=True)
+    APP_TYPE = StringField(required=False)
+    APP_ID = StringField(required=False)
+    APP_PASSWORD = StringField(required=False)
+    APP_TENANTID = StringField(required=False)
 
 
 class PathEntity(Document):
     meta = {
         "collection": "paths",
-        "strict": True,
+        "strict": False,
     }
     path = StringField(required=True)
     credentials = EmbeddedDocumentField(Credentials, required=True)
