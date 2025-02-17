@@ -16,7 +16,7 @@ tomlkit = "^0.13.2"
 black = { extras = ["jupyter"], version = "^24.10.0" }
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
