@@ -46,7 +46,7 @@ def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
     return app_id
 
 
-def reset_app_credentials(app_id) -> str:
+def reset_app_credentials(app_id: str) -> str:
     print(f"Resetting credentials for Azure AD app '{app_id}'...")
 
     # fmt: off
@@ -75,7 +75,13 @@ def get_app_type(tenant_id: Optional[str]) -> str:
 
 
 def create_bot_resource(
-    resource_group, bot_name, app_id, api_endpoint, api_app_name, location, tenant_id: Optional[str]
+    resource_group: str,
+    bot_name: str,
+    app_id: str,
+    api_endpoint: str,
+    api_app_name: str,
+    location: str,
+    tenant_id: Optional[str],
 ):
     # Compute the bot endpoint similar to the original ARM template logic.
     bot_endpoint = f"https://{api_app_name}.azurewebsites.net{api_endpoint}"
@@ -107,7 +113,13 @@ def create_bot_resource(
 
 
 def save_credentials_in_cosmos(
-    cosmos_name, api_endpoint, app_id, app_password, subscription_name, resource_group, tenant_id: Optional[str]
+    cosmos_name: str,
+    api_endpoint: str,
+    app_id: str,
+    app_password: str,
+    subscription_name: str,
+    resource_group: str,
+    tenant_id: Optional[str],
 ):
     print("Saving credentials in Cosmos DB...")
     credential = DefaultAzureCredential()
@@ -180,7 +192,13 @@ def main():
 
     # Create the Azure Bot resource using a direct az command.
     create_bot_resource(
-        args.resource_group, args.bot_name, app_id, args.api_endpoint, args.app_name, args.location, args.tenant_id
+        args.resource_group,
+        args.bot_name,
+        app_id,
+        args.api_endpoint,
+        args.app_name,
+        args.location,
+        args.tenant_id,
     )
 
 
