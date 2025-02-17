@@ -13,7 +13,7 @@ class Credentials(EmbeddedDocument):
 class PathEntity(Document):
     meta = {
         "collection": "paths",
-        "strict": False,
+        "strict": True,
     }
     path = StringField(required=True)
     credentials = EmbeddedDocumentField(Credentials, required=True)
