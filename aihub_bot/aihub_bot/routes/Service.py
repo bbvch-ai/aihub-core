@@ -2,7 +2,7 @@ import abc
 import logging
 
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from starlette.requests import Request
+from fastapi import Request
 
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 

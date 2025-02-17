@@ -3,9 +3,8 @@ from typing import Annotated, Any, Callable, List
 
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query
+from fastapi import Request, Response
 from llama_index.llms.openai import OpenAI
-from starlette.requests import Request
-from starlette.responses import Response
 
 from aihub_bot.bots.chat.openai.JsonOpenaiChatBot import JsonOpenaiChatBot
 from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
