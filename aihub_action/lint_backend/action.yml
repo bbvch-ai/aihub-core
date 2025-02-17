@@ -23,7 +23,7 @@ runs:
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
-        version: '1.8.3'
+        version: '2.1.1'
 
     - name: Load cached venv
       id: cached-poetry-dependencies
