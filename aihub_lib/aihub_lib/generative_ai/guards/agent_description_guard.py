@@ -4,7 +4,7 @@ from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 from openai import NOT_GIVEN
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString

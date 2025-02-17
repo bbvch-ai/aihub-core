@@ -1,7 +1,8 @@
+from fastapi import HTTPException, Request
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 
-from fastapi import Request, HTTPException
 
 class MultiAuthHandler(AuthHandler):
     """

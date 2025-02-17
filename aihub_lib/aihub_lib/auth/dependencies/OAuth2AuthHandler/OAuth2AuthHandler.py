@@ -1,16 +1,14 @@
 import logging
-
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-
 from typing import Annotated
 
 import httpx
 import jwt
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from fastapi import Depends, HTTPException
 from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 
 logger = logging.getLogger(__name__)

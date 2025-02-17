@@ -1,10 +1,9 @@
 import logging
 
+from fastapi import HTTPException, Request
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-
-from fastapi import Request, HTTPException
-
 from aihub_lib.persistence.access.entities.AccessToken import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -27,12 +26,13 @@ class TokenAuthHandler(AuthHandler):
     Returns:
         AuthenticatedUser: A user instance constructed from the token's associated API user details.
     """
+
     async def __call__(self, request: Request) -> AuthenticatedUser:
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Invalid authorization header format.")
 
-        token_str = auth_header[len("Bearer "):].strip()
+        token_str = auth_header[len("Bearer ") :].strip()
 
         try:
             # This call should perform a DB lookup and verify the token.

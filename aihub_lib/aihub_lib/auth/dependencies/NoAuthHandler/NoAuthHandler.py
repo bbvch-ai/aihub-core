@@ -1,13 +1,13 @@
 import logging
 
+from fastapi import Request
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthConfig import NoAuthConfig
 
-from fastapi import Request
-
-
 logger = logging.getLogger(__name__)
+
 
 class NoAuthHandler(AuthHandler):
     def __init__(self):

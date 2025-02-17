@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timezone
+
 from mongoengine import (
     DateTimeField,
     Document,
@@ -30,7 +31,7 @@ class AccessToken(Document):
     user = EmbeddedDocumentField(ApiUser)
 
     # Pre-compile a regex to parse tokens of the form "<mongo_id>.<random_string>"
-    TOKEN_REGEX = re.compile(r'^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9]+)$')
+    TOKEN_REGEX = re.compile(r"^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9]+)$")
 
     @classmethod
     def verify_token(cls, token_str: str) -> "AccessToken":

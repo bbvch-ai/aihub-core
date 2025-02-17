@@ -1,5 +1,6 @@
 from typing import List
 
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import TurnContext
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
@@ -8,7 +9,6 @@ from typing_extensions import override
 from aihub_bot.bots.chat.ChatBot import ChatBot
 from aihub_bot.persistence.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.agent.AgentChatService import AgentChatService
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class JsonAgentChatBot(ChatBot):

@@ -1,11 +1,10 @@
 from typing import List, Literal, Optional
 
-from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryMode
-from pydantic import Field
-
 from aihub_lib.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
+from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryMode
+from pydantic import Field
 
 
 class RetrieveStepConfig(StepConfig):

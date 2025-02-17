@@ -58,8 +58,4 @@ class RefDoc(Document):
         namespace: str,
         exclude_ids: Optional[List[str]] = None,
     ) -> List["RefDoc"]:
-        return list(
-            cls.objects.filter(
-                data__metadata__namespace=namespace, id__nin=(exclude_ids or [])
-            )
-        )
+        return list(cls.objects.filter(data__metadata__namespace=namespace, id__nin=(exclude_ids or [])))

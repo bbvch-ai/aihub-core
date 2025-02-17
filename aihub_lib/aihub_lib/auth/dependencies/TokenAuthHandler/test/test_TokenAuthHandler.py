@@ -1,16 +1,15 @@
-import pytest
 from datetime import datetime, timedelta, timezone
+
+import pytest
 from bson import ObjectId
-
+from fastapi import HTTPException, Request
 from mongoengine import connect, disconnect
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-
-from pytest_bdd import scenario, given, when, then, parsers
-from fastapi import Request, HTTPException
+from pytest_bdd import given, parsers, scenario, then, when
 from starlette.datastructures import Headers
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.AccessToken import AccessToken, ApiUser
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
@@ -35,17 +34,21 @@ def mongo_connection():
 def test_valid_token():
     pass
 
+
 @scenario("features/token_auth_handler.feature", "Token with invalid format is rejected")
 def test_invalid_format():
     pass
+
 
 @scenario("features/token_auth_handler.feature", "Token not found in database is rejected")
 def test_token_not_found():
     pass
 
+
 @scenario("features/token_auth_handler.feature", "Token mismatch causes rejection")
 def test_token_mismatch():
     pass
+
 
 @scenario("features/token_auth_handler.feature", "Expired token is rejected")
 def test_expired_token():
@@ -60,15 +63,18 @@ def token_context():
     """Stores values needed across steps, including the inserted token string and document id."""
     return {}
 
+
 @pytest.fixture
 def token_context_result():
     """Stores the result (the authenticated user) from TokenAuthHandler."""
     return {}
 
+
 @pytest.fixture
 def error_context():
     """Stores error information when TokenAuthHandler rejects a token."""
     return {}
+
 
 @pytest.fixture
 def cleanup_token():
@@ -77,6 +83,7 @@ def cleanup_token():
     yield inserted_tokens
     for token_doc in inserted_tokens:
         token_doc.delete()
+
 
 def create_dummy_request(headers: dict) -> Request:
     """
@@ -91,7 +98,11 @@ def create_dummy_request(headers: dict) -> Request:
 # -----------------------------------------------------------------------------
 # Given Steps
 # -----------------------------------------------------------------------------
-@given(parsers.parse('a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'))
+@given(
+    parsers.parse(
+        'a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'
+    )
+)
 def insert_token_document(token_context, cleanup_token, name, email, roles):
     object_id = ObjectId()
     token_str = f"{str(object_id)}.random123"
@@ -109,20 +120,25 @@ def insert_token_document(token_context, cleanup_token, name, email, roles):
     # Also store the token document for later modification if needed.
     token_context["token_doc"] = token_doc
 
+
 @given(parsers.parse('an invalid token format "{token}"'))
 def invalid_token_format(token_context, token):
     token_context["token_str"] = token
+
 
 @given(parsers.parse('a token does not exist in the database with token "{token}"'))
 def token_not_found(token_context, token):
     token_context["token_str"] = token
 
+
 # The following steps are now decorated as @given to match the feature file
+
 
 @given("I modify the token to cause a mismatch")
 def modify_token_for_mismatch(token_context):
     # Append an extra character to the token so that it doesn't match the stored token.
     token_context["token_str"] = token_context["token_str"] + "x"
+
 
 @given("I set the token expiry to a past time")
 def set_token_expired(token_context):
@@ -147,6 +163,7 @@ async def invoke_token_auth_handler(token_context, token_context_result):
         pytest.fail(f"TokenAuthHandler raised an unexpected exception: {e.detail}")
     token_context_result["user"] = user
 
+
 @when("I invoke the TokenAuthHandler with an Authorization header using the token expecting error")
 @async_test
 async def invoke_token_auth_handler_expect_error(token_context, error_context):
@@ -170,10 +187,12 @@ def check_name(token_context_result, expected_name):
     assert user is not None, "No user was returned by TokenAuthHandler"
     assert user.name == expected_name
 
+
 @then(parsers.parse('the returned user should have preferred_username "{expected_email}"'))
 def check_preferred_username(token_context_result, expected_email):
     user = token_context_result.get("user")
     assert user.preferred_username == expected_email
+
 
 @then("the returned user should have oid matching the token's id")
 def check_oid(token_context_result, token_context):
@@ -181,10 +200,12 @@ def check_oid(token_context_result, token_context):
     expected_oid = token_context.get("object_id")
     assert user.oid == expected_oid
 
+
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))
 def check_roles(token_context_result, role1, role2):
     user = token_context_result.get("user")
     assert set(user.roles) == {role1, role2}
+
 
 @then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
 def check_error_detail(error_context, expected_detail):

@@ -3,7 +3,7 @@ from typing import List
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor, ModeOptions
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions, VectorPrevNextPostProcessor
 
 
 def retrieve_prev_next_nodes(

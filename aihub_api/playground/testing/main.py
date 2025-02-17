@@ -9,6 +9,7 @@ from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
@@ -28,12 +29,14 @@ async def main():
 
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
+    auth = TokenAuthHandler()
+
     runner.mount(
-        HealthController().get_health(),
-        UserController().get_user(),
-        I18nController().get_my_locale(),
-        EventController().ws().get_events(),
-        ThreadController()
+        HealthController(auth=auth).get_health(),
+        UserController(auth=auth).get_user(),
+        I18nController(auth=auth).get_my_locale(),
+        EventController(auth=auth).ws().get_events(),
+        ThreadController(auth=auth)
         .get_user_threads()
         .create_thread()
         .get_thread()
@@ -41,9 +44,10 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        AgentController().get_agent().discover_agents(),
-        ChatController().completions_json().completions_stream(),
+        AgentController(auth=auth).get_agent().discover_agents(),
+        ChatController(auth=auth).completions_json().completions_stream(),
         OpenaiController(
+            auth=auth,
             embedding_models=[
                 SelfHostedEmbeddingConfig(
                     name="Alibaba-NLP/gte-base-en-v1.5",

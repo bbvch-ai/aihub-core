@@ -1,6 +1,7 @@
 import asyncio
 from typing import AsyncGenerator, List
 
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.chat import (
     ChatCompletion,
@@ -11,7 +12,6 @@ from openai.types.chat import (
 
 from aihub_bot.persistence.entities.ConversationEntity import Message
 from aihub_bot.routes.chat.ChatService import ChatService
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 
 
 class OpenaiChatService(ChatService):

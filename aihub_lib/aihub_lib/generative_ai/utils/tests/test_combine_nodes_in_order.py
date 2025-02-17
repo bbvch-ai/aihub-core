@@ -6,15 +6,15 @@ from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_i
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import (
+    CREATED_AT,
+    INSERTED_AT,
+    LANGUAGE,
+    NAMESPACE,
     SECTION_START_LINE,
     SOURCE,
-    NAMESPACE,
-    LANGUAGE,
     TYPE,
-    VERSION,
-    CREATED_AT,
     UPDATED_AT,
-    INSERTED_AT,
+    VERSION,
 )
 
 scenarios("./features/combine_nodes_in_order.feature")

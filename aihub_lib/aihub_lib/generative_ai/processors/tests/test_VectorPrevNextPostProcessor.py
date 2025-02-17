@@ -1,11 +1,11 @@
 import pytest
-from llama_index.core.schema import Document, NodeRelationship, RelatedNodeInfo, NodeWithScore
-from pytest_bdd import scenarios, when, then, parsers, given
+from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingParameter,
     SelfHostedEmbeddingConfig,
+    SelfHostedEmbeddingParameter,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.milvus_vector_store_content import fill_collection

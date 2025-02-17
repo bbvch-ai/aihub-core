@@ -1,13 +1,13 @@
 import asyncio
 from typing import AsyncGenerator, List
 
+from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message, User
 from aihub_bot.routes.Service import Service
-from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 
 
 class ChatService(Service, ChatServiceLib):

@@ -9,7 +9,9 @@ from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent i
 
 class MultiLocaleAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent, t: LocaleHandler, agent_config: MultiLocaleAgentConfig) -> MultiLocaleEvent:
+    async def start_step(
+        self, event: StartEvent, t: LocaleHandler, agent_config: MultiLocaleAgentConfig
+    ) -> MultiLocaleEvent:
         print(f"[MultiLocaleAgent.start_step] Start step in locale {event.locale}.")
         print(f"[MultiLocaleAgent.start_step] Lib Core says: {t('lib.common.test')}.")
         print(f"[MultiLocaleAgent.start_step] Agents Core says: {t('agents.thought.test')}.")

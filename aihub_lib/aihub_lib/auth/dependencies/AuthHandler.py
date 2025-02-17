@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from fastapi import Request
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
