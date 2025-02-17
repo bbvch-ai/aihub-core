@@ -101,6 +101,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
+        logger.debug(f"Received discovery request for {self.agent_class} ({self.agent_id})")
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
         start_events = [
             StartEventSpecs(
@@ -152,13 +153,13 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
     async def start_simulation(self):
         """
-                Orchestrates the simulation:
-                1. Connect to NATS.
-                2. Set up publishers and subscribers (discovery requests, agent control events).
-                3. Start the parent ApiTestRunner's run method to launch the server.
+        Orchestrates the simulation:
+        1. Connect to NATS.
+        2. Set up publishers and subscribers (discovery requests, agent control events).
+        3. Start the parent ApiTestRunner's run method to launch the server.
 
-                Requires that at least one simulated event is provided; otherwise, it's a no-op.
-                """
+        Requires that at least one simulated event is provided; otherwise, it's a no-op.
+        """
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()

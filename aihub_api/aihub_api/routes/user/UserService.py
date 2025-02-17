@@ -1,3 +1,6 @@
+from aihub_api.auth.identity.MultiStrategyUserInformationProvider import MultiStrategyUserInformationProvider
+from aihub_api.auth.identity.api.ApiTokenUserInformationProvider import ApiTokenUserInformationProvider
+from aihub_api.auth.identity.development.DevUserInformationProvider import DevUserInformationProvider
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 
 from aihub_api.auth.identity.azure.AzureUserInformationProvider import AzureUserInformationProvider
@@ -21,7 +24,11 @@ class UserService:
     - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID), useful for building responses that include user details.
     """
 
-    user_information_provider = AzureUserInformationProvider()
+    user_information_provider = MultiStrategyUserInformationProvider(
+        DevUserInformationProvider(),
+        AzureUserInformationProvider(),
+        ApiTokenUserInformationProvider(),
+    )
 
     @staticmethod
     def get_logged_in_user(user: AuthenticatedUser) -> UserDTO:
