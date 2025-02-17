@@ -5,7 +5,7 @@ from azure.mgmt.search import SearchManagementClient
 from azure.search.documents.indexes import SearchIndexClient
 
 from aihub_lib.infrastructure.azure.ai_search.AISearchConfig import AISearchConfig
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 
 
 class AISearchAccess:
@@ -32,10 +32,10 @@ class AISearchAccess:
             )
             return
 
-        self._env = BaseConfig().ENVIRONMENT
-        self._app = BaseConfig().APP_NAME
-        self._region = BaseConfig().REGION_SHORT
-        self._subscription_name = BaseConfig().AZURE_SUBSCRIPTION_NAME
+        self._env = AzureBaseConfig().ENVIRONMENT
+        self._app = AzureBaseConfig().APP_NAME
+        self._region = AzureBaseConfig().REGION_SHORT
+        self._subscription_name = AzureBaseConfig().AZURE_SUBSCRIPTION_NAME
         self._resource_group_name = (
             AISearchConfig().COGNITIVE_SEARCH_RESOURCE_GROUP_NAME or f"{self._app}-{self._env}-rg-{self._region}"
         )

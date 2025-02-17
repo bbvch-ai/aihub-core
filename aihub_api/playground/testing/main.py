@@ -9,6 +9,7 @@ from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
@@ -29,7 +30,7 @@ async def main():
 
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
-    auth = TokenAuthHandler()
+    auth = NoAuthHandler()
 
     runner.mount(
         HealthController(auth=auth).get_health(),

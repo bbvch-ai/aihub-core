@@ -2,7 +2,7 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
 from azure.mgmt.resource import SubscriptionClient
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 
 
 class CognitiveServiceAccess:
@@ -14,10 +14,10 @@ class CognitiveServiceAccess:
     _client = None
 
     def _initialize(self):
-        self._env = BaseConfig().ENVIRONMENT
-        self._app = BaseConfig().APP_NAME
-        self._region = BaseConfig().REGION_SHORT
-        self._subscription_name = BaseConfig().AZURE_SUBSCRIPTION_NAME
+        self._env = AzureBaseConfig().ENVIRONMENT
+        self._app = AzureBaseConfig().APP_NAME
+        self._region = AzureBaseConfig().REGION_SHORT
+        self._subscription_name = AzureBaseConfig().AZURE_SUBSCRIPTION_NAME
         self._azure_credential = DefaultAzureCredential()
 
         # Otherwise, get the key and region from the Azure Cognitive Services account

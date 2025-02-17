@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any, Callable
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Path
@@ -47,7 +48,7 @@ class ChatController(Controller):
     and other forms of user input. By integrating with `ChatService`, the logic remains clean and testable.
     """
 
-    def __init__(self, route: str = "/chat", auth: Callable[..., Any] = None):
+    def __init__(self, route: str = "/chat", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
     def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "ChatController":

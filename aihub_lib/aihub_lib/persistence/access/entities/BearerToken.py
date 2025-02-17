@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timezone
+import secrets
 
 from mongoengine import (
     DateTimeField,
@@ -14,10 +15,10 @@ from mongoengine.errors import DoesNotExist
 
 
 class ApiUser(EmbeddedDocument):
+    oid = StringField(required=True)
     name = StringField(required=True)
     preferred_username = StringField(required=True)  # E-Mail
     roles = ListField(StringField(), required=True)
-
 
 class BearerToken(Document):
     meta = {
@@ -26,7 +27,7 @@ class BearerToken(Document):
     }
     version = IntField(default=1, db_field="_version")
     name = StringField(required=True)
-    token = StringField(required=True)  # Should be stored as "<object_id>.<random_part>"
+    token = StringField(required=False)  # Should be stored as "<object_id>.<random_part>"
     expiry_date = DateTimeField(required=True)
     roles = ListField(StringField())
     user = EmbeddedDocumentField(ApiUser)
@@ -71,4 +72,25 @@ class BearerToken(Document):
         if expiry_date < datetime.now(timezone.utc):
             raise ValueError("Token expired")
 
+        return token_obj
+
+    @classmethod
+    def create_new_token(cls, name: str, expiry_date: datetime, user: ApiUser, roles: list[str]) -> "BearerToken":
+        """
+        Creates a new API token. The token is generated using the document's ID
+        and a secure, random string.
+        """
+        # Generate a secure random part for the token
+        random_part = secrets.token_urlsafe(32)
+        token_obj = cls(
+            name=name,
+            expiry_date=expiry_date,
+            user=user,
+            roles=roles,
+        )
+        token_obj.save()  # Save to generate the document ID
+        # Construct token string in the format "<mongo_id>.<random_part>"
+        token_value = f"{str(token_obj.id)}.{random_part}"
+        token_obj.token = token_value
+        token_obj.save()  # Update the token field
         return token_obj

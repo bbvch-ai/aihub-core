@@ -5,9 +5,7 @@ from bson import ObjectId
 from fastapi import HTTPException, Request
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenario, then, when
-from starlette.datastructures import Headers
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken, ApiUser
@@ -108,6 +106,7 @@ def insert_token_document(token_context, cleanup_token, name, email, roles):
     token_str = f"{str(object_id)}.random123"
     roles_list = [r.strip() for r in roles.split(",")]
     api_user = ApiUser(
+        oid=str(object_id),
         name=name,
         preferred_username=email,
         roles=roles_list,

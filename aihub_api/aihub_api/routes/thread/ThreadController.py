@@ -1,6 +1,7 @@
 from typing import Annotated, Any, Callable, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException
@@ -59,7 +60,7 @@ class ThreadController(Controller):
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
-    def __init__(self, route: str = "/thread", auth: Callable[..., Any] = None):
+    def __init__(self, route: str = "/thread", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
     def get_user_threads(self, route: str = "/") -> "ThreadController":

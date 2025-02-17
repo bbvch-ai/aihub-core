@@ -2,7 +2,7 @@ from adlfs import AzureBlobFileSystem
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 from aihub_lib.infrastructure.azure.data_lake import DataLakeConfig
 
 
@@ -20,9 +20,9 @@ class DataLakeAccess:
         return cls._instance
 
     def _initialize(self):
-        self._env = BaseConfig().ENVIRONMENT
-        self._app = BaseConfig().APP_NAME
-        self._region = BaseConfig().REGION_SHORT
+        self._env = AzureBaseConfig().ENVIRONMENT
+        self._app = AzureBaseConfig().APP_NAME
+        self._region = AzureBaseConfig().REGION_SHORT
         self._storage_service_name = (
             DataLakeConfig().DATA_LAKE_NAME or f"{self._app}{self._env}st{self._region}datalake"
         )

@@ -150,15 +150,15 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
-    async def run(self):
+    async def start_simulation(self):
         """
-        Orchestrates the simulation:
-        1. Connect to NATS.
-        2. Set up publishers and subscribers (discovery requests, agent control events).
-        3. Start the parent ApiTestRunner's run method to launch the server.
+                Orchestrates the simulation:
+                1. Connect to NATS.
+                2. Set up publishers and subscribers (discovery requests, agent control events).
+                3. Start the parent ApiTestRunner's run method to launch the server.
 
-        Requires that at least one simulated event is provided; otherwise, it's a no-op.
-        """
+                Requires that at least one simulated event is provided; otherwise, it's a no-op.
+                """
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()
@@ -181,6 +181,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.js_publisher = JSPublisher(self.js)
 
+    async def run(self):
+        await self.start_simulation()
         await super().run()
 
     def with_simple_chunk_events(self) -> "SimulatedAgentApiTestRunner":
