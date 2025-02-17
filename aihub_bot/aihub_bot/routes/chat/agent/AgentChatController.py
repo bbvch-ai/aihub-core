@@ -1,10 +1,8 @@
 from typing import Annotated
 
 from botbuilder.integration.aiohttp import CloudAdapter
-from fastapi import Body, Depends, Path
+from fastapi import Body, Depends, Path, Request, Response
 from nats.aio.client import Client as NATS
-from starlette.requests import Request
-from starlette.responses import Response
 
 from aihub_bot.bots.chat.agent.JsonAgentChatBot import JsonAgentChatBot
 from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
@@ -71,7 +69,7 @@ class AgentChatController(Controller):
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
             chat_bot: JsonAgentChatBot = JsonAgentChatBot(nc, ws_receiver, agent_class, agent_id)
-            adapter: CloudAdapter = AgentChatService.get_adapter(request.url.path)
+            adapter: CloudAdapter = AgentChatService.get_adapter(request)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -112,7 +110,7 @@ class AgentChatController(Controller):
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(nc, ws_receiver, agent_class, agent_id)
-            adapter: CloudAdapter = AgentChatService.get_adapter(request.url.path)
+            adapter: CloudAdapter = AgentChatService.get_adapter(request)
             return await adapter.process(request, chat_bot)
 
         return self
