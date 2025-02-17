@@ -1,5 +1,7 @@
+import re
+from typing import Optional
+
 from botbuilder.core import TurnContext
-from botbuilder.schema import Activity
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from typing_extensions import override
 
@@ -25,13 +27,22 @@ class JsonOpenaiChatBot(ChatBot):
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
+        is_slack: bool = turn_context.activity.channel_id == "slack"
+        slack_parent_conversation_id: Optional[str] = None
+        if is_slack:
+            coversation_id: str = turn_context.activity.conversation.id
+            channel_id_regex = re.compile(r"^B[0-9A-Z]{10}:T[0-9A-Z]{10}:C[0-9A-Z]{10}$")
+            if channel_id_regex.match(coversation_id):
+                channel_data = turn_context.activity.channel_data
+                ts: str = channel_data["SlackMessage"]["event"]["ts"]
+                turn_context.activity.conversation.id = coversation_id + f":{ts}"
+                slack_parent_conversation_id = coversation_id
+
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role or "user",
         )
-        is_slack: bool = turn_context.activity.channel_id == "slack"
-
         username = turn_context.activity.from_property.name
         response = await OpenaiChatService.json_on_message_activity(
             message=user_message,
@@ -40,18 +51,12 @@ class JsonOpenaiChatBot(ChatBot):
             client=self.client,
             path=self.path,
             username=username,
+            parent_conversation_id=slack_parent_conversation_id,
         )
-        bot_activity: Activity = Activity()
-
-        if is_slack:
-            channel_data = turn_context.activity.channel_data
-            ts: str = channel_data["SlackMessage"]["event"]["ts"]
-            bot_activity.channel_data = {"thread_ts": ts, "text": response}
-
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
             content=response,
             role=turn_context.activity.recipient.role or "bot",
         )
         OpenaiChatService.add_message_to_conversation(turn_context.activity.conversation.id, bot_message)
-        return await turn_context.send_activity(bot_activity)
+        return await turn_context.send_activity(response)

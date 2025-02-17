@@ -58,6 +58,22 @@ class ConversationEntity(Document):
         return conversation
 
     @classmethod
+    def create_conversation_if_not_exists(
+        cls,
+        conversation_id: str,
+        messages: List[Message],
+    ) -> "ConversationEntity":
+        existing = cls.get_conversation_by_conversation_id(conversation_id)
+        if existing is not None:
+            return existing
+        else:
+            return cls.create_conversation(
+                conversation_id=conversation_id,
+                users=[],
+                messages=messages,
+            )
+
+    @classmethod
     def get_conversation_by_conversation_id(cls, conversation_id: str) -> "ConversationEntity":
         return cls.objects().filter(conversation_id=conversation_id).first()
 

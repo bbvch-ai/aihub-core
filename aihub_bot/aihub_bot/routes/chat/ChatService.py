@@ -109,6 +109,16 @@ class ChatService(Service, ChatServiceLib):
         )
 
     @staticmethod
+    def create_conversation_if_not_exists(
+        conversation_id: str,
+        messages: List[Message],
+    ) -> ConversationEntity:
+        return ConversationEntity.create_conversation_if_not_exists(
+            conversation_id=conversation_id,
+            messages=messages,
+        )
+
+    @staticmethod
     def add_system_message_to_conversation(
         conversation_id: str,
         path: str,

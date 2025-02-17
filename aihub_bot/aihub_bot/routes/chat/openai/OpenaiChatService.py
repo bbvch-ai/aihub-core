@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncGenerator, List
+from typing import AsyncGenerator, List, Optional
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.chat import (
@@ -56,7 +56,12 @@ class OpenaiChatService(ChatService):
         client: AsyncOpenAI | AsyncAzureOpenAI,
         path: str,
         username: str,
+        parent_conversation_id: Optional[str] = None,
     ) -> str:
+        if parent_conversation_id is not None:
+            parent_messages: List[Message] = OpenaiChatService.get_messages_by_conversation_id(parent_conversation_id)
+            OpenaiChatService.create_conversation_if_not_exists(conversation_id, parent_messages)
+            OpenaiChatService.add_message_to_conversation(parent_conversation_id, message)
         OpenaiChatService.add_system_message_to_conversation(conversation_id, path, username)
         OpenaiChatService.add_message_to_conversation(conversation_id, message)
         persisted_messages: List[Message] = OpenaiChatService.get_messages_by_conversation_id(conversation_id)
