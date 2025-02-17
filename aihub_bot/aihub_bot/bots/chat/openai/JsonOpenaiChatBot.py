@@ -1,4 +1,5 @@
 from botbuilder.core import TurnContext
+from botbuilder.schema import Activity
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from typing_extensions import override
 
@@ -19,12 +20,18 @@ class JsonOpenaiChatBot(ChatBot):
         self.path = path
 
     @override
+    async def on_turn(self, turn_context: TurnContext):
+        return await super().on_turn(turn_context)
+
+    @override
     async def on_message_activity(self, turn_context: TurnContext):
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
             content=turn_context.activity.text,
             role=turn_context.activity.from_property.role or "user",
         )
+        is_slack: bool = turn_context.activity.channel_id == "slack"
+
         username = turn_context.activity.from_property.name
         response = await OpenaiChatService.json_on_message_activity(
             message=user_message,
@@ -34,8 +41,17 @@ class JsonOpenaiChatBot(ChatBot):
             path=self.path,
             username=username,
         )
-        return await OpenaiChatService.respond_to_user(
-            turn_context,
-            turn_context.activity,
-            response,
+        bot_activity: Activity = Activity()
+
+        if is_slack:
+            channel_data = turn_context.activity.channel_data
+            ts: str = channel_data["SlackMessage"]["event"]["ts"]
+            bot_activity.channel_data = {"thread_ts": ts, "text": response}
+
+        bot_message = Message(
+            user_id=turn_context.activity.recipient.id,
+            content=response,
+            role=turn_context.activity.recipient.role or "bot",
         )
+        OpenaiChatService.add_message_to_conversation(turn_context.activity.conversation.id, bot_message)
+        return await turn_context.send_activity(bot_activity)
