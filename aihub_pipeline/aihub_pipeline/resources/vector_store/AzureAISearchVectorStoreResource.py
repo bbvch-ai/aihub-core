@@ -1,4 +1,3 @@
-
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 
