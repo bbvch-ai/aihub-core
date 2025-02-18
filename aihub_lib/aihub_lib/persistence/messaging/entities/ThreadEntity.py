@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 from bson import ObjectId
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField, DateTimeField
+from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
 
 class User(EmbeddedDocument):

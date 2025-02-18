@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -8,15 +9,16 @@ from pytest_bdd import given, parsers, scenario, then, when
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.BearerToken import BearerToken, ApiUser
+from aihub_lib.persistence.access.entities.BearerToken import ApiUser, BearerToken
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
+# --- MongoDB Connection Fixture ---
 
-# -----------------------------------------------------------------------------
-# MongoDB Connection Fixture
-# -----------------------------------------------------------------------------
-@pytest.fixture(scope="module", autouse=True)
-def mongo_connection():
+
+@pytest.fixture(autouse=True)
+def mongo_connection(monkeypatch) -> None:
+    """Set up a MongoDB connection for testing and disconnect after."""
+    monkeypatch.setenv("COSMOS_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/")
     connection = connect(
         db="aihub",
         host=CosmosAccess().get_connection_string(),
@@ -25,58 +27,63 @@ def mongo_connection():
     disconnect()
 
 
-# -----------------------------------------------------------------------------
-# Scenario Declarations
-# -----------------------------------------------------------------------------
+# --- Scenario Declarations ---
+
+
 @scenario("features/token_auth_handler.feature", "Valid token returns authenticated user")
-def test_valid_token():
+def test_valid_token() -> None:
+    """Scenario: Valid token returns authenticated user."""
     pass
 
 
 @scenario("features/token_auth_handler.feature", "Token with invalid format is rejected")
-def test_invalid_format():
+def test_invalid_format() -> None:
+    """Scenario: Token with invalid format is rejected."""
     pass
 
 
 @scenario("features/token_auth_handler.feature", "Token not found in database is rejected")
-def test_token_not_found():
+def test_token_not_found() -> None:
+    """Scenario: Token not found in database is rejected."""
     pass
 
 
 @scenario("features/token_auth_handler.feature", "Token mismatch causes rejection")
-def test_token_mismatch():
+def test_token_mismatch() -> None:
+    """Scenario: Token mismatch causes rejection."""
     pass
 
 
 @scenario("features/token_auth_handler.feature", "Expired token is rejected")
-def test_expired_token():
+def test_expired_token() -> None:
+    """Scenario: Expired token is rejected."""
     pass
 
 
-# -----------------------------------------------------------------------------
-# Common Fixtures and Helpers
-# -----------------------------------------------------------------------------
+# --- Common Fixtures and Helpers ---
+
+
 @pytest.fixture
-def token_context():
-    """Stores values needed across steps, including the inserted token string and document id."""
+def token_context() -> dict:
+    """Store token values (e.g. token string and expected user id) across steps."""
     return {}
 
 
 @pytest.fixture
-def token_context_result():
-    """Stores the result (the authenticated user) from TokenAuthHandler."""
+def token_context_result() -> dict:
+    """Store the authenticated user returned by TokenAuthHandler."""
     return {}
 
 
 @pytest.fixture
-def error_context():
-    """Stores error information when TokenAuthHandler rejects a token."""
+def error_context() -> dict:
+    """Store error information when TokenAuthHandler rejects a token."""
     return {}
 
 
 @pytest.fixture
-def cleanup_token():
-    """Collects inserted token documents for cleanup after the test."""
+def cleanup_token() -> list:
+    """Collect inserted token documents for cleanup after the test."""
     inserted_tokens = []
     yield inserted_tokens
     for token_doc in inserted_tokens:
@@ -84,74 +91,95 @@ def cleanup_token():
 
 
 def create_dummy_request(headers: dict) -> Request:
-    """
-    Create a dummy FastAPI Request with the provided headers.
-    ASGI requires header names to be lower-case.
-    """
+    """Create and return a dummy FastAPI Request with the given headers."""
     headers_list = [(k.lower().encode("utf8"), v.encode("utf8")) for k, v in headers.items()]
     scope = {"type": "http", "headers": headers_list, "method": "GET", "path": "/"}
     return Request(scope)
 
 
-# -----------------------------------------------------------------------------
-# Given Steps
-# -----------------------------------------------------------------------------
+def generate_dummy_valid_token(oid: str) -> str:
+    """Generate a dummy token string using the given OID (24 hex characters)."""
+    random_part = secrets.token_urlsafe(128)[:128]
+    return f"{oid}.{random_part}"
+
+
+# --- Given Steps ---
+
+
 @given(
     parsers.parse(
         'a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'
     )
 )
-def insert_token_document(token_context, cleanup_token, name, email, roles):
-    object_id = ObjectId()
-    token_str = f"{str(object_id)}.random123"
+def insert_token_document(token_context: dict, cleanup_token: list, name: str, email: str, roles: str) -> None:
+    """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
+    user_oid = str(ObjectId())
     api_user = ApiUser(
-        oid=str(object_id),
+        oid=user_oid,
         name=name,
         preferred_username=email,
         roles=roles_list,
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
-    token_doc = BearerToken(id=object_id, name="token-name", token=token_str, expiry_date=expiry, roles=roles_list, user=api_user)
-    token_doc.save()
-    token_context["token_str"] = token_str
-    token_context["object_id"] = str(object_id)
-    # Also store the token document for later modification if needed.
+    token_doc = BearerToken.create_new_token(
+        name="token-name",
+        expiry_date=expiry,
+        user=api_user,
+        roles=roles_list,
+    )
+    token_context["token_str"] = token_doc.token
+    token_context["expected_user_oid"] = user_oid
     token_context["token_doc"] = token_doc
+    cleanup_token.append(token_doc)
 
 
 @given(parsers.parse('an invalid token format "{token}"'))
-def invalid_token_format(token_context, token):
+def invalid_token_format(token_context: dict, token: str) -> None:
+    """Store an invalid token format in the context."""
     token_context["token_str"] = token
 
 
 @given(parsers.parse('a token does not exist in the database with token "{token}"'))
-def token_not_found(token_context, token):
+def token_not_found(token_context: dict, token: str) -> None:
+    """Store a token (formatted as <oid>.<random>) that is not found in the database."""
+    parts = token.split(".")
+    if len(parts) != 2 or len(parts[0]) != 24 or len(parts[1]) != 128:
+        oid = parts[0] if len(parts[0]) == 24 else "123456789012345678901234"
+        token = generate_dummy_valid_token(oid)
     token_context["token_str"] = token
 
 
-# The following steps are now decorated as @given to match the feature file
-
-
 @given("I modify the token to cause a mismatch")
-def modify_token_for_mismatch(token_context):
-    # Append an extra character to the token so that it doesn't match the stored token.
-    token_context["token_str"] = token_context["token_str"] + "x"
+def modify_token_for_mismatch(token_context: dict) -> None:
+    """Modify the token's random part to cause a mismatch."""
+    token_str = token_context["token_str"]
+    parts = token_str.split(".")
+    if len(parts) == 2:
+        oid, random_part = parts
+        new_char = "A" if random_part[0] != "A" else "B"
+        new_random = new_char + random_part[1:]
+        token_context["token_str"] = f"{oid}.{new_random}"
+    else:
+        token_context["token_str"] = token_str + "x"
 
 
 @given("I set the token expiry to a past time")
-def set_token_expired(token_context):
+def set_token_expired(token_context: dict) -> None:
+    """Set the token's expiry date to a past time."""
     token_doc = token_context.get("token_doc")
-    token_doc.expiry_date = datetime.now(timezone.utc) - timedelta(hours=1)
-    token_doc.save()
+    if token_doc:
+        token_doc.expiry_date = datetime.now(timezone.utc) - timedelta(hours=1)
+        token_doc.save()
 
 
-# -----------------------------------------------------------------------------
-# When Steps
-# -----------------------------------------------------------------------------
+# --- When Steps ---
+
+
 @when("I invoke the TokenAuthHandler with an Authorization header using the token")
 @async_test
-async def invoke_token_auth_handler(token_context, token_context_result):
+async def invoke_token_auth_handler(token_context: dict, token_context_result: dict) -> None:
+    """Invoke the TokenAuthHandler with the token and store the authenticated user."""
     token_str = token_context["token_str"]
     headers = {"Authorization": f"Bearer {token_str}"}
     request = create_dummy_request(headers)
@@ -165,7 +193,8 @@ async def invoke_token_auth_handler(token_context, token_context_result):
 
 @when("I invoke the TokenAuthHandler with an Authorization header using the token expecting error")
 @async_test
-async def invoke_token_auth_handler_expect_error(token_context, error_context):
+async def invoke_token_auth_handler_expect_error(token_context: dict, error_context: dict) -> None:
+    """Invoke the TokenAuthHandler with the token and capture the error."""
     token_str = token_context["token_str"]
     headers = {"Authorization": f"Bearer {token_str}"}
     request = create_dummy_request(headers)
@@ -177,36 +206,44 @@ async def invoke_token_auth_handler_expect_error(token_context, error_context):
         error_context["error"] = e.detail
 
 
-# -----------------------------------------------------------------------------
-# Then Steps
-# -----------------------------------------------------------------------------
+# --- Then Steps ---
+
+
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
-def check_name(token_context_result, expected_name):
+def check_name(token_context_result: dict, expected_name: str) -> None:
+    """Check that the authenticated user has the expected name."""
     user = token_context_result.get("user")
     assert user is not None, "No user was returned by TokenAuthHandler"
-    assert user.name == expected_name
+    assert user.name == expected_name, f"Expected name '{expected_name}', got '{user.name}'"
 
 
 @then(parsers.parse('the returned user should have preferred_username "{expected_email}"'))
-def check_preferred_username(token_context_result, expected_email):
+def check_preferred_username(token_context_result: dict, expected_email: str) -> None:
+    """Check that the authenticated user has the expected preferred username."""
     user = token_context_result.get("user")
-    assert user.preferred_username == expected_email
+    assert (
+        user.preferred_username == expected_email
+    ), f"Expected email '{expected_email}', got '{user.preferred_username}'"
 
 
-@then("the returned user should have oid matching the token's id")
-def check_oid(token_context_result, token_context):
+@then("the returned user should have oid matching the token's user id")
+def check_user_oid(token_context_result: dict, token_context: dict) -> None:
+    """Check that the authenticated user's oid matches the expected user id."""
     user = token_context_result.get("user")
-    expected_oid = token_context.get("object_id")
-    assert user.oid == expected_oid
+    expected_oid = token_context.get("expected_user_oid")
+    assert user.oid == expected_oid, f"Expected user oid '{expected_oid}', got '{user.oid}'"
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))
-def check_roles(token_context_result, role1, role2):
+def check_roles(token_context_result: dict, role1: str, role2: str) -> None:
+    """Check that the authenticated user has the expected roles."""
     user = token_context_result.get("user")
-    assert set(user.roles) == {role1, role2}
+    expected_roles = {role1, role2}
+    assert set(user.roles) == expected_roles, f"Expected roles {expected_roles}, got {set(user.roles)}"
 
 
 @then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
-def check_error_detail(error_context, expected_detail):
+def check_error_detail(error_context: dict, expected_detail: str) -> None:
+    """Check that the error detail matches the expected detail."""
     error = error_context.get("error")
-    assert error == expected_detail
+    assert error == expected_detail, f"Expected error detail '{expected_detail}', got '{error}'"

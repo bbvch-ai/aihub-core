@@ -46,6 +46,8 @@ class OAuth2AuthHandler(AuthHandler):
         self.config = OAuth2Config()
 
     async def __call__(self, token: Annotated[str, Depends(OAuth2Config().SCHEMA)]) -> AuthenticatedUser:
+        print("auth handler", OAuth2Config())
+
         try:
             # Retrieve JWKS keys for signature verification
             async with httpx.AsyncClient() as client:

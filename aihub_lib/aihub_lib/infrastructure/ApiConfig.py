@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class ApiConfig(BaseSettings):
     DEV_DEBUG: bool = Field(False, description="Debug mode for development")
     VERSION: Optional[str] = Field(None, description="Version of the app")

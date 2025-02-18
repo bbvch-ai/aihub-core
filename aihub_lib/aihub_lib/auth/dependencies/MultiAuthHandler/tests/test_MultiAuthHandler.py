@@ -12,23 +12,31 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 class DummySuccessAuth(AuthHandler):
     async def __call__(self, request: Request) -> AuthenticatedUser:
-        return AuthenticatedUser(name="Dummy Success", preferred_username="dummy@success.com", oid="1", roles=["user"])
+        """Return a successful authenticated user."""
+        return AuthenticatedUser(
+            name="Dummy Success",
+            preferred_username="dummy@success.com",
+            oid="1",
+            roles=["user"],
+        )
 
 
 class DummyFailureAuth(AuthHandler):
-    def __init__(self, detail, status_code=401):
+    def __init__(self, detail: str, status_code: int = 401):
         self.detail = detail
         self.status_code = status_code
 
     async def __call__(self, request: Request) -> AuthenticatedUser:
+        """Raise HTTPException with a 401 error."""
         raise HTTPException(status_code=self.status_code, detail=self.detail)
 
 
 class DummyFailureNon401(AuthHandler):
-    def __init__(self, detail):
+    def __init__(self, detail: str):
         self.detail = detail
 
     async def __call__(self, request: Request) -> AuthenticatedUser:
+        """Raise HTTPException with a non-401 error."""
         raise HTTPException(status_code=500, detail=self.detail)
 
 
@@ -36,19 +44,23 @@ class DummyFailureNon401(AuthHandler):
 
 
 @pytest.fixture
-def multi_auth_result():
+def multi_auth_result() -> dict:
+    """Container for storing the multi auth handler result."""
     return {}
 
 
 @pytest.fixture
-def multi_auth_error():
+def multi_auth_error() -> dict:
+    """Container for storing the multi auth handler error."""
     return {}
 
 
-# --- Helper to create a dummy request ---
+# --- Optional: Fixture to create a dummy request ---
 
 
-def create_dummy_request() -> Request:
+@pytest.fixture
+def dummy_request() -> Request:
+    """Create and return a dummy Request object."""
     scope = {"type": "http", "headers": [], "method": "GET", "path": "/"}
     return Request(scope)
 
@@ -58,21 +70,25 @@ def create_dummy_request() -> Request:
 
 @scenario("features/multi_auth_handler.feature", "First handler succeeds")
 def test_multi_auth_first_success():
+    """Scenario: First handler succeeds."""
     pass
 
 
 @scenario("features/multi_auth_handler.feature", "First fails with 401, second succeeds")
 def test_multi_auth_first_fail_second_success():
+    """Scenario: First fails with 401, second succeeds."""
     pass
 
 
 @scenario("features/multi_auth_handler.feature", "All handlers fail with 401 errors")
 def test_multi_auth_all_fail():
+    """Scenario: All handlers fail with 401 errors."""
     pass
 
 
 @scenario("features/multi_auth_handler.feature", "A handler fails with a non-401 error")
 def test_multi_auth_non_401_fail():
+    """Scenario: A handler fails with a non-401 error."""
     pass
 
 
@@ -80,17 +96,10 @@ def test_multi_auth_non_401_fail():
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
-def given_multi_auth_handler(datatable):
-    """
-    Build a MultiAuthHandler from the provided table.
-    The table is expected to have columns:
-      - handler_name (informational)
-      - behavior: "success", "failure_401", or "failure_non_401"
-      - detail: error detail (if applicable)
-    """
-    # The first row is assumed to be the header.
+def given_multi_auth_handler(datatable: list[list[str]]) -> MultiAuthHandler:
+    """Build a MultiAuthHandler from the provided table."""
     headers = datatable[0]
-    handlers = []
+    handlers: list[AuthHandler] = []
     for row in datatable[1:]:
         row_data = dict(zip(headers, row))
         behavior = row_data["behavior"].strip().lower()
@@ -109,10 +118,10 @@ def given_multi_auth_handler(datatable):
 
 @when("I invoke the multi auth handler")
 @async_test
-async def invoke_multi_auth(multi_auth_instance, multi_auth_result):
-    request = create_dummy_request()
+async def invoke_multi_auth(multi_auth_instance: MultiAuthHandler, multi_auth_result: dict, dummy_request: Request):
+    """Invoke the multi auth handler and store the returned user."""
     try:
-        user = await multi_auth_instance(request)
+        user = await multi_auth_instance(dummy_request)
         multi_auth_result["user"] = user
     except HTTPException as e:
         pytest.fail(f"MultiAuthHandler raised an unexpected exception: {e.detail}")
@@ -120,26 +129,28 @@ async def invoke_multi_auth(multi_auth_instance, multi_auth_result):
 
 @when("I invoke the multi auth handler expecting error")
 @async_test
-async def invoke_multi_auth_expect_error(multi_auth_instance, multi_auth_error):
-    request = create_dummy_request()
-    try:
-        await multi_auth_instance(request)
-        pytest.fail("MultiAuthHandler did not raise an exception")
-    except HTTPException as e:
-        multi_auth_error["error"] = e.detail
+async def invoke_multi_auth_expect_error(
+    multi_auth_instance: MultiAuthHandler, multi_auth_error: dict, dummy_request: Request
+):
+    """Invoke the multi auth handler and store the error detail."""
+    with pytest.raises(HTTPException) as excinfo:
+        await multi_auth_instance(dummy_request)
+    multi_auth_error["error"] = excinfo.value.detail
 
 
 # --- Then steps ---
 
 
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
-def check_multi_auth_user_name(multi_auth_result, expected_name):
+def check_multi_auth_user_name(multi_auth_result: dict, expected_name: str):
+    """Check that the returned user has the expected name."""
     user = multi_auth_result.get("user")
     assert user is not None, "No user was returned"
-    assert user.name == expected_name
+    assert user.name == expected_name, f'Expected user name "{expected_name}", got "{user.name}"'
 
 
 @then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
-def check_multi_auth_error(multi_auth_error, expected_detail):
+def check_multi_auth_error(multi_auth_error: dict, expected_detail: str):
+    """Check that the error detail matches the expected detail."""
     error = multi_auth_error.get("error")
-    assert error == expected_detail
+    assert error == expected_detail, f'Expected error detail "{expected_detail}", got "{error}"'

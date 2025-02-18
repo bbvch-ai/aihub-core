@@ -4,32 +4,35 @@ from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import SelfHostedEmbeddingConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
+    SelfHostedEmbeddingConfig,
+)
+
+BASE_URL = "http://test"
+MODELS_ENDPOINT = "/api/v1/openai/models"
+CHAT_MODEL = "unsloth/Llama-3.2-1B-Instruct"
+EMBEDDING_MODEL = "Alibaba-NLP/gte-base-en-v1.5"
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
-    """
-    Set up an end-to-end test client with the OpenaiController endpoints.
-    This uses real implementations of the SelfHostedEmbeddingConfig and SelfHostedLLMConfig.
-    """
+    """Create an API client with OpenaiController endpoints mounted."""
     auth = NoAuthHandler()
     controller = (
         OpenaiController(
             auth=auth,
             embedding_models=[
                 SelfHostedEmbeddingConfig(
-                    name="Alibaba-NLP/gte-base-en-v1.5",
+                    name=EMBEDDING_MODEL,
                     base_url="http://localhost:8183",
                 ),
             ],
             chat_models=[
                 SelfHostedLLMConfig(
-                    name="unsloth/Llama-3.2-1B-Instruct",
+                    name=CHAT_MODEL,
                     base_url="http://localhost:8182/v1",
                     is_function_calling_model=False,
                     context_size=512,
@@ -41,51 +44,34 @@ async def api_client():
         .get_embeddings()
         .chat_completion()
     )
-
     runner = ApiTestRunner()
     runner.mount(controller)
     app = runner.get_app()
 
     async with LifespanManager(app) as lifespan:
-        async with AsyncClient(
-            transport=ASGITransport(app=lifespan.app),
-            base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_get_models(api_client):
-    """
-    Test the GET /openai/models endpoint.
-    Verifies that a valid list of models is returned including our self-hosted chat model.
-    """
-    response = await api_client.get("/api/v1/openai/models")
+    """Test GET /openai/models returns a valid model list."""
+    response = await api_client.get(MODELS_ENDPOINT)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
-
-    # Validate the structure of the ModelResponse
     assert data.get("object") == "list"
     assert isinstance(data.get("data"), list)
-
-    # Check that our self-hosted model appears in the list
     model_ids = [model.get("id") for model in data.get("data")]
-    assert "unsloth/Llama-3.2-1B-Instruct" in model_ids
+    assert CHAT_MODEL in model_ids
 
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_get_model(api_client):
-    """
-    Test the GET /openai/models/{full_path} endpoint.
-    Retrieves the details of the self-hosted chat model.
-    """
-    model_name = "unsloth/Llama-3.2-1B-Instruct"
-    response = await api_client.get(f"/api/v1/openai/models/{model_name}")
+    """Test GET /openai/models/{full_path} returns valid model details."""
+    response = await api_client.get(f"{MODELS_ENDPOINT}/{CHAT_MODEL}")
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
-
-    # Validate the structure of the ModelDetails response
-    assert data.get("id") == model_name
+    assert data.get("id") == CHAT_MODEL
     assert data.get("object") == "model"
     assert isinstance(data.get("created"), int)
     assert data.get("owned_by") == "aihub"
@@ -93,25 +79,18 @@ async def test_get_model(api_client):
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_get_embeddings(api_client):
-    """
-    Test the POST /openai/embeddings endpoint.
-    Sends a sample embeddings request and verifies the response structure.
-    """
+    """Test POST /openai/embeddings returns valid embeddings."""
     payload = {
         "input": "Test input for embeddings",
-        "model": "Alibaba-NLP/gte-base-en-v1.5",
-        "encoding_format": "float"
+        "model": EMBEDDING_MODEL,
+        "encoding_format": "float",
     }
     response = await api_client.post("/api/v1/openai/embeddings", json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
-
-    # Validate the structure of the EmbeddingsResponse
     assert data.get("object") == "list"
-    assert data.get("model") == "Alibaba-NLP/gte-base-en-v1.5"
+    assert data.get("model") == EMBEDDING_MODEL
     assert isinstance(data.get("data"), list)
-
-    # Optionally, check that each embedding item has the expected keys
     for item in data.get("data"):
         assert item.get("object") == "embeddings"
         assert isinstance(item.get("embedding"), list)
@@ -120,12 +99,9 @@ async def test_get_embeddings(api_client):
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_chat_completion(api_client):
-    """
-    Test the POST /openai/chat/completions endpoint.
-    Sends a chat completion request and verifies the minimal structure of the response.
-    """
+    """Test POST /openai/chat/completions returns a valid chat completion."""
     payload = {
-        "model": "unsloth/Llama-3.2-1B-Instruct",
+        "model": CHAT_MODEL,
         "messages": [
             {"role": "user", "content": "Say: Hello"},
             {"role": "assistant", "content": "Hello"},
@@ -135,20 +111,15 @@ async def test_chat_completion(api_client):
             {"role": "assistant", "content": "Hello"},
             {"role": "user", "content": "Again"},
         ],
-        "stream": False
+        "stream": False,
     }
     response = await api_client.post("/api/v1/openai/chat/completions", json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
-
-    # Validate the minimal structure of a ChatCompletion response
-    # (Typical keys include 'id', 'object', 'choices', etc.)
     assert "id" in data
     assert "object" in data
     assert "choices" in data
     assert isinstance(data["choices"], list)
-
-    # Check the content of the first completion
-    completion = data["choices"][0]['message']
+    completion = data["choices"][0]["message"]
     assert completion.get("role") == "assistant"
     assert completion.get("content") == "Hello"

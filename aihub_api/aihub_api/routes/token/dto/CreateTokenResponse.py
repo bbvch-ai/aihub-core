@@ -9,7 +9,4 @@ class CreateTokenResponse(BaseModel):
     name: str = Field(..., example="My API Token")
     expiry_date: datetime = Field(..., description="Expiry date")
     roles: List[str]
-    token: str = Field(
-        ...,
-        description="The generated API token, only returned at creation"
-    )
+    token: str = Field(..., description="The generated API token, only returned at creation")

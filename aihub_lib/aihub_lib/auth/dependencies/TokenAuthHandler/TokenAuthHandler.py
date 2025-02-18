@@ -35,17 +35,15 @@ class TokenAuthHandler(AuthHandler):
         token_str = auth_header[len("Bearer ") :].strip()
 
         try:
-            # This call should perform a DB lookup and verify the token.
             access_token = BearerToken.verify_token(token_str)
         except ValueError as e:
             logger.warning("Token authentication failed: %s", e)
             raise HTTPException(status_code=401, detail=str(e))
 
-        # Map the token's stored API user onto an AuthenticatedUser.
         api_user = access_token.user
         return AuthenticatedUser(
             name=api_user.name,
             preferred_username=api_user.preferred_username,
-            oid=str(access_token.id),
+            oid=api_user.oid,
             roles=access_token.roles,
         )

@@ -1,6 +1,6 @@
 import re
-from datetime import datetime, timezone
 import secrets
+from datetime import datetime, timezone
 
 from mongoengine import (
     DateTimeField,
@@ -20,6 +20,7 @@ class ApiUser(EmbeddedDocument):
     preferred_username = StringField(required=True)  # E-Mail
     roles = ListField(StringField(), required=True)
 
+
 class BearerToken(Document):
     meta = {
         "collection": "tokens",
@@ -33,7 +34,7 @@ class BearerToken(Document):
     user = EmbeddedDocumentField(ApiUser)
 
     # Pre-compile a regex to parse tokens of the form "<mongo_id>.<random_string>"
-    TOKEN_REGEX = re.compile(r"^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9]+)$")
+    TOKEN_REGEX = re.compile(r"^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9\-_]{128})$")
 
     @classmethod
     def verify_token(cls, token_str: str) -> "BearerToken":
@@ -81,7 +82,7 @@ class BearerToken(Document):
         and a secure, random string.
         """
         # Generate a secure random part for the token
-        random_part = secrets.token_urlsafe(32)
+        random_part = secrets.token_urlsafe(128)[:128]
         token_obj = cls(
             name=name,
             expiry_date=expiry_date,

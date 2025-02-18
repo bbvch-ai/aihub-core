@@ -1,19 +1,17 @@
 from datetime import datetime, timezone
-
-from fastapi import Depends, HTTPException, status
 from typing import List
 
-from aihub_api.routes.token.TokenService import TokenService
-from aihub_api.routes.token.dto.CreateTokenRequest import CreateTokenRequest
-from aihub_api.routes.token.dto.CreateTokenResponse import CreateTokenResponse
-from aihub_api.routes.token.dto.RevokeTokenResponse import RevokeTokenResponse
-from aihub_api.routes.token.dto.TokenResponse import TokenResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
+from fastapi import Depends, HTTPException, status
 
-
+from aihub_api.routes.token.dto.CreateTokenRequest import CreateTokenRequest
+from aihub_api.routes.token.dto.CreateTokenResponse import CreateTokenResponse
+from aihub_api.routes.token.dto.RevokeTokenResponse import RevokeTokenResponse
+from aihub_api.routes.token.dto.TokenResponse import TokenResponse
+from aihub_api.routes.token.TokenService import TokenService
 
 
 class ApiTokenController(Controller):
@@ -28,8 +26,7 @@ class ApiTokenController(Controller):
             status_code=status.HTTP_201_CREATED,
         )
         async def create_token_endpoint(
-            token_data: CreateTokenRequest,
-            user: AuthenticatedUser = Depends(self.auth)
+            token_data: CreateTokenRequest, user: AuthenticatedUser = Depends(self.auth)
         ) -> CreateTokenResponse:
             try:
                 return TokenService.create_token(
@@ -63,9 +60,7 @@ class ApiTokenController(Controller):
         async def revoke_token_endpoint(token_id: str, user: User = Depends(self.auth)) -> RevokeTokenResponse:
             try:
                 TokenService.revoke_token(token_id, user)
-                return RevokeTokenResponse(
-                    detail="Token revoked successfully."
-                )
+                return RevokeTokenResponse(detail="Token revoked successfully.")
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
 

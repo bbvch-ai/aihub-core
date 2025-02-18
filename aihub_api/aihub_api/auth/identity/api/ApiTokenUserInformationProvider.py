@@ -1,6 +1,7 @@
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
 from aihub_api.routes.user.dto.UserDTO import UserDTO
-from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
 
 class ApiTokenUserInformationProvider(BaseUserInformationProvider):

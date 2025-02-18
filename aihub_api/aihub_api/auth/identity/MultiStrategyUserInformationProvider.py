@@ -1,5 +1,3 @@
-
-
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 
@@ -36,8 +34,5 @@ class MultiStrategyUserInformationProvider(BaseUserInformationProvider):
             except Exception as e:
                 errors.append(f"{provider.__class__.__name__}: {str(e)}")
 
-        error_message = (
-            f"All user information providers failed for oid '{oid}'. Errors: " +
-            " | ".join(errors)
-        )
+        error_message = f"All user information providers failed for oid '{oid}'. Errors: " + " | ".join(errors)
         raise Exception(error_message)

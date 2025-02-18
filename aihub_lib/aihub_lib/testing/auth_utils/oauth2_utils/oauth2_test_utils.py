@@ -34,6 +34,7 @@ def public_key_to_jwk(public_key, kid: str) -> dict:
     }
     return jwk
 
+
 class DummyResponse:
     """A dummy HTTPX response for JWKS requests."""
 
@@ -48,12 +49,10 @@ class DummyResponse:
         if self.status_code >= 400:
             raise httpx.HTTPStatusError("Error", request=None, response=self)
 
+
 @pytest.fixture
 def oauth2_config(monkeypatch):
     """Set up the OAuth2 configuration via environment variables."""
-    monkeypatch.setenv("TENANT_ID", "test-tenant")
-    monkeypatch.setenv("CLIENT_ID", "test-client")
-    monkeypatch.setenv("AUTHORITY_URL", "https://login.microsoftonline.com")
     return OAuth2Config()
 
 
@@ -70,4 +69,3 @@ def rsa_keys():
 def fake_jwks_response(rsa_keys):
     """Return a fake JWKS response using the generated public key."""
     return {"keys": [rsa_keys["jwk"]]}
-

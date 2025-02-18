@@ -1,15 +1,18 @@
 from datetime import datetime
 from typing import List
 
-from aihub_api.routes.token.dto.CreateTokenResponse import CreateTokenResponse
-from aihub_api.routes.token.dto.TokenResponse import TokenResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.persistence.access.entities.BearerToken import ApiUser, BearerToken
+
+from aihub_api.routes.token.dto.CreateTokenResponse import CreateTokenResponse
+from aihub_api.routes.token.dto.TokenResponse import TokenResponse
 
 
 class TokenService:
     @staticmethod
-    def create_token(name: str, expiry_date: datetime, user: AuthenticatedUser, roles: List[str]) -> CreateTokenResponse:
+    def create_token(
+        name: str, expiry_date: datetime, user: AuthenticatedUser, roles: List[str]
+    ) -> CreateTokenResponse:
         """
         Creates a new API token for the authenticated user.
         Returns token information including the generated token string.
@@ -39,12 +42,14 @@ class TokenService:
         tokens = BearerToken.objects.filter(user__oid=user.oid)
         token_list = []
         for token in tokens:
-            token_list.append(TokenResponse(
-                id=str(token.id),
-                name=token.name,
-                expiry_date=token.expiry_date,
-                roles=token.roles,
-            ))
+            token_list.append(
+                TokenResponse(
+                    id=str(token.id),
+                    name=token.name,
+                    expiry_date=token.expiry_date,
+                    roles=token.roles,
+                )
+            )
         return token_list
 
     @staticmethod

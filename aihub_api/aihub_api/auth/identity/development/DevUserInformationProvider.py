@@ -1,6 +1,7 @@
+from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthConfig import NoAuthConfig
+
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
 from aihub_api.routes.user.dto.UserDTO import UserDTO
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthConfig import NoAuthConfig
 
 
 class DevUserInformationProvider(BaseUserInformationProvider):

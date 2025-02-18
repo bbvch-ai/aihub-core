@@ -4,6 +4,9 @@ from fastapi.testclient import TestClient
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.routes.health.HealthController import HealthController
 
+BASE_ENDPOINT = "/api/v1/health"
+EXPECTED_STATUS = "ok"
+
 
 @pytest.fixture
 def api_client():
@@ -14,23 +17,10 @@ def api_client():
 
 
 def test_health_endpoint(api_client):
-    """
-    Test the health endpoint returns the expected response.
-
-    Ensures that:
-    1. The endpoint returns a 200 status code
-    2. The response contains the expected 'status: ok' message
-    """
-    # Given
-    endpoint = "/api/v1/health"
+    """Test that the health endpoint returns a 200 status code and 'status: ok' message."""
     headers = {"Content-Type": "application/json"}
-
-    # When
-    response = api_client.get(endpoint, headers=headers)
-
-    # Then
+    response = api_client.get(BASE_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
 
     data = response.json()
-    assert "status" in data, "Response missing 'status' field"
-    assert data["status"] == "ok", f"Expected status 'ok', got '{data.get('status')}'"
+    assert data.get("status") == EXPECTED_STATUS, f"Expected status '{EXPECTED_STATUS}', got '{data.get('status')}'"
