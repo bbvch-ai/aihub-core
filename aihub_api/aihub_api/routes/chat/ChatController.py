@@ -5,7 +5,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, Path
+from fastapi import Body, Depends, Path, HTTPException
 from nats.aio.client import Client as NATS
 from starlette.responses import StreamingResponse
 
@@ -79,6 +79,9 @@ class ChatController(Controller):
             """
             Start a streaming chat interaction. Streams chunks of the agent's response as SSE.
             """
+            if not user.has_access_to_agent(agent_class, agent_id):
+                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
+
             resources: StreamingResources = await ChatService.start_api_stream_chat_interaction(
                 user,
                 agent_class,
@@ -120,6 +123,9 @@ class ChatController(Controller):
             """
             Start a chat interaction and return a JSON response after all tokens have been processed.
             """
+            if not user.has_access_to_agent(agent_class, agent_id):
+                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
+
             resources: JsonResources = await ChatService.start_api_json_chat_interaction(
                 user,
                 agent_class,

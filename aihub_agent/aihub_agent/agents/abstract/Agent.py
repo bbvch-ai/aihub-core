@@ -4,6 +4,7 @@ from typing import Set, Type
 
 from aihub_lib.nats.events.control import ControlEvent
 from aihub_lib.nats.events.control.start import StartEvent
+from aihub_lib.nats.events.control.stop import StopEvent
 
 
 class Agent(abc.ABC):
@@ -76,3 +77,12 @@ class Agent(abc.ABC):
         """
         input_events = cls.get_input_events()
         return {event for event in input_events if issubclass(event, StartEvent)}
+
+    @classmethod
+    def get_stop_events(cls) -> Set[Type[StopEvent]]:
+        """
+        Returns all event types that are considered stop events (subclasses of StopEvent).
+        These events indicate how a run/workflow can terminate.
+        """
+        input_events = cls.get_input_events()
+        return {event for event in input_events if issubclass(event, StopEvent)}

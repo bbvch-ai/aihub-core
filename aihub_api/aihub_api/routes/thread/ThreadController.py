@@ -90,6 +90,8 @@ class ThreadController(Controller):
             if user.oid not in req.user_ids:
                 req.user_ids.append(user.oid)
 
+            # Todo: Check if all users have access to all agents in thread
+
             return await ThreadService.create_thread(nc, name=req.name, user_ids=req.user_ids, agent_dtos=req.agents)
 
         return self
@@ -126,6 +128,8 @@ class ThreadController(Controller):
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
+
+            # TODO: Check if all users have access to new agent
 
             return await ThreadService.add_agent_to_thread(nc, thread_id, req.agent_id, req.agent_class)
 
@@ -167,6 +171,8 @@ class ThreadController(Controller):
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
+
+            # TODO: Check if new users has access to all agents in thread
 
             return await ThreadService.add_user_to_thread(nc, thread_id, req.user_id)
 

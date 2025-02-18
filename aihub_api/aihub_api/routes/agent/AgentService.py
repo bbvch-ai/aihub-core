@@ -80,6 +80,7 @@ class AgentService:
                 agent_id=response.agent_id,
                 agent_config=response.agent_config,
                 start_events=response.start_events,
+                stop_events=response.stop_events,
             )
             for response in discovery_responses
         ]
@@ -111,6 +112,7 @@ class AgentService:
                 agent_id=event.agent_id,
                 agent_config=event.agent_config,
                 start_events=event.start_events,
+                stop_events=event.stop_events,
             )
             agent_found_event.set()
 

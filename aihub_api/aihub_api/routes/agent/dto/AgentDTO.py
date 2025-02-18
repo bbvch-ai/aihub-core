@@ -1,7 +1,7 @@
 from typing import List
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import StartEventSpecs
+from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel, Field
 
 
@@ -22,6 +22,9 @@ class AgentDTO(BaseModel):
     agent_config: AgentConfig = Field(
         ..., description="Configuration details of the agent, including name, description, and prompts."
     )
-    start_events: List[StartEventSpecs] = Field(
-        ..., description="A list of `StartEventSpecs` representing events that can start this agent's workflow."
+    start_events: List[EventSpecs] = Field(
+        ..., description="A list of `EventSpecs` representing events that can start this agent's workflow."
+    )
+    stop_events: List[EventSpecs] = Field(
+        ..., description="A list of `EventSpecs` representing events that can stop this agent's workflow."
     )

@@ -5,7 +5,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
+from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -101,7 +101,8 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [StartEventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())]
+        start_events = [EventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())]
+        stop_events = [EventSpecs(event_type=StopEvent.__name__, event_schema=StopEvent.model_json_schema())]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -112,6 +113,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 system_prompt=LocaleString(de="Test Agent System Prompt"),
             ),
             start_events=start_events,
+            stop_events=stop_events,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
