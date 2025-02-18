@@ -36,11 +36,10 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
         super()._initialize()
 
         self._resource_group_name = (
-            DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_RESOURCE_GROUP_NAME
-            or f"{self._app}-{self._env}-rg-{self._region}"
+            DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_RESOURCE_GROUP_NAME or f"{self._app}-rg-{self._region}"
         )
         self._di_service_name = (
-            DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_NAME or f"{self._app}-{self._env}-di-{self._region}"
+            DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_NAME or f"{self._app}-di-{self._region}"
         )
 
         account = self._client.accounts.get(self._resource_group_name, self._di_service_name)

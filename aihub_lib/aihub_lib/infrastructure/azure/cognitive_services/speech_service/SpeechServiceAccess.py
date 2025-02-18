@@ -30,10 +30,10 @@ class SpeechServiceAccess(CognitiveServiceAccess):
         super()._initialize()
 
         self._resource_group_name = (
-            SpeechServiceConfig().SPEECH_SERVICE_RESOURCE_GROUP_NAME or f"{self._app}-{self._env}-rg-{self._region}"
+            SpeechServiceConfig().SPEECH_SERVICE_RESOURCE_GROUP_NAME or f"{self._app}-rg-{self._region}"
         )
         self._speech_service_account_name = (
-            SpeechServiceConfig().SPEECH_SERVICE_NAME or f"{self._app}-{self._env}-srch-{self._region}"
+            SpeechServiceConfig().SPEECH_SERVICE_NAME or f"{self._app}-srch-{self._region}"
         )
 
         account = self._client.accounts.get(self._resource_group_name, self._speech_service_account_name)
