@@ -1,4 +1,4 @@
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.core.llms import LLM
 
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
@@ -43,7 +43,7 @@ class LanguageModelResource(ConfigurableResource[LLM]):
 
     """
 
-    llm_config: AzureOpenAILLMConfig | SelfHostedLLMConfig
+    llm_config: ResourceDependency[AzureOpenAILLMConfig | SelfHostedLLMConfig]
 
     def create_resource(self, context: InitResourceContext) -> LLM:
         llm, _ = self.llm_config.to_llama_index(self.llm_config.default_parameter)
