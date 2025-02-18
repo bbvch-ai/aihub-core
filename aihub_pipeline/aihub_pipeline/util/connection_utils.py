@@ -1,6 +1,7 @@
+from mongoengine import connect
+
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from mongoengine import connect
 
 
 def connect_to_mongo_db(shortname: str = None):

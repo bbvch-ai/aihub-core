@@ -9,4 +9,4 @@ class EchoService(Service):
 
     @staticmethod
     async def process_messages(req: Request) -> Response:
-        return await EchoService.ADAPTER.process(req, EchoService.BOT)
+        return await EchoService.get_adapter(req).process(req, EchoService.BOT)

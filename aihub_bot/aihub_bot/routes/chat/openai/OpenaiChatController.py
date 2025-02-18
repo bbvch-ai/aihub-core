@@ -6,9 +6,8 @@ from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import Chat
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query
+from fastapi import Request, Response
 from llama_index.llms.openai import OpenAI
-from starlette.requests import Request
-from starlette.responses import Response
 
 from aihub_bot.bots.chat.openai.JsonOpenaiChatBot import JsonOpenaiChatBot
 from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
@@ -45,7 +44,7 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
             chat_bot = JsonOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request.url.path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -62,7 +61,7 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
             chat_bot = StreamOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request.url.path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
             return await adapter.process(request, chat_bot)
 
         return self
