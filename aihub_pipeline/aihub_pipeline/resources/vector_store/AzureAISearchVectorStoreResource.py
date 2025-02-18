@@ -1,9 +1,7 @@
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import (
-    create_azure_ai_search_vector_store,
-)
+from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 
 
 class AzureAISearchVectorStoreResource(ConfigurableResource):

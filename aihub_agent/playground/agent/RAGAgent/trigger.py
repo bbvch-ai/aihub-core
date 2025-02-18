@@ -1,7 +1,5 @@
 import asyncio
 
-from aihub_agent.agents.rag.Configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.Configs.RetrieveStepConfig import RetrieveStepConfig
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from aihub_agent.agents.rag.RAGAgent import RAGAgent

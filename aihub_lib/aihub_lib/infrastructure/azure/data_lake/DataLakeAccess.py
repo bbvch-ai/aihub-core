@@ -20,12 +20,9 @@ class DataLakeAccess:
         return cls._instance
 
     def _initialize(self):
-        self._env = BaseConfig().ENVIRONMENT
         self._app = BaseConfig().APP_NAME
         self._region = BaseConfig().REGION_SHORT
-        self._storage_service_name = (
-            DataLakeConfig().DATA_LAKE_NAME or f"{self._app}{self._env}st{self._region}datalake"
-        )
+        self._storage_service_name = DataLakeConfig().DATA_LAKE_NAME or f"{self._app}st{self._region}datalake"
         self._service_endpoint = (
             DataLakeConfig().DATA_LAKE_ENDPOINT or f"https://{self._storage_service_name}.dfs.core.windows.net"
         )
