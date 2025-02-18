@@ -1,8 +1,7 @@
-from aihub_lib.persistence.rag.documents.document_stores.MongoDocumentStoreFactory import create_mongo_document_store
-from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
+from dagster import ConfigurableResource, InitResourceContext
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
-from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
+from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 
 
 class MongoDocumentStoreResource(ConfigurableResource[MongoDocumentStore]):
@@ -16,10 +15,9 @@ class MongoDocumentStoreResource(ConfigurableResource[MongoDocumentStore]):
 
     1. Use the Document store as a stand-alone resource
 
-    .. code-block:: python
+    ... code-block:: python
 
         from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import MongoDocumentStoreResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -32,19 +30,18 @@ class MongoDocumentStoreResource(ConfigurableResource[MongoDocumentStore]):
             assets=[asset1],
             resources={
                 "doc_store": MongoDocumentStoreResource(
-                    namespace=NamespaceResource(name="my_namespace", organization="my_organization"),
+                    document_store_name="my_document_store"
                 ),
-            },
+            }
         )
-
+    ...
 
     2. Use the Document store in conjunction with a doc store IO Manager ``"doc_store_io_manager"``
 
-    .. code-block:: python
+    ... code-block:: python
 
         from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
         from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import MongoDocumentStoreResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -58,21 +55,20 @@ class MongoDocumentStoreResource(ConfigurableResource[MongoDocumentStore]):
             # RefDocDocument loaded from the document store
             ...
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
-        doc_store = MongoDocumentStoreResource(namespace=namespace)
+        doc_store = MongoDocumentStoreResource(document_store_name="my_document_store")
         doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
 
         defs = Definitions(
             assets=[ref_doc, downstream_asset],
             resources={
-                "namespace": namespace,
                 "doc_store": doc_store,
                 "doc_store_io_manager": doc_store_io_manager,
-            },
+            }
         )
+    ...
     """
 
-    namespace: ResourceDependency[NamespaceResource]
+    document_store_name: str
 
     def create_resource(self, context: InitResourceContext) -> MongoDocumentStore:
-        return create_mongo_document_store(self.namespace.organization)
+        return create_mongo_document_store(self.document_store_name)

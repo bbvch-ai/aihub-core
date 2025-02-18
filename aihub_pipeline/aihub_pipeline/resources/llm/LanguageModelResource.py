@@ -1,14 +1,15 @@
-from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
+from dagster import ConfigurableResource, InitResourceContext
 from llama_index.core.llms import LLM
 
-from aihub_pipeline.resources.llm.LlmHandlerResource import LlmHandlerResource
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+)
+from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
 
 
 class LanguageModelResource(ConfigurableResource[LLM]):
     """
     This resource provides a language model for the use in any operation or asset.
-
-    To configure this resource, provide the llm handler as well as the model name.
 
     Example usage:
 
@@ -17,8 +18,6 @@ class LanguageModelResource(ConfigurableResource[LLM]):
     .. code-block:: python
 
         from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
-        from aihub_pipeline.resources.llm.LlmHandlerResource import LlmHandlerResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -26,29 +25,26 @@ class LanguageModelResource(ConfigurableResource[LLM]):
         def asset1(language_model: ResourceParam[LLM]):
             response = language_model.predict("The coolest city in Switzerland is: ")
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
-        llm_handler_resource = LlmHandlerResource(namespace=namespace)
-
         defs = Definitions(
             assets=[asset1],
             resources={
                 "language_model": LanguageModelResource(
-                        llm_handler_resource=llm_handler_resource,
-                        model_name="gpt-4o-mini",
+                    AzureOpenAILLMConfig(
+                        name="gpt-4o",
+                        base_url="https://aihub-dev-openai-che.openai.azure.com/",
+                        api_version="2024-08-01-preview",
+                        prompt_tokens_costs_per_thousand=0.0045,
+                        completion_tokens_costs_per_thousand=0.0133,
+                        default_parameter=AzureOpenAIParameter(temperature=0.0),
                     )
-                }
+                )
+            }
         )
 
     """
 
-    llm_handler_resource: ResourceDependency[LlmHandlerResource]
-    model_name: str
+    model: AzureOpenAILLMConfig | SelfHostedLLMConfig
 
     def create_resource(self, context: InitResourceContext) -> LLM:
-        model = self.llm_handler_resource.chat_model(
-            name=self.model_name,
-        )
-        if not isinstance(model, LLM):
-            raise ValueError(f"Model {self.model_name} is not a language model.")
-
-        return model
+        llm, _ = self.model.to_llama_index(self.model.default_parameter)
+        return llm

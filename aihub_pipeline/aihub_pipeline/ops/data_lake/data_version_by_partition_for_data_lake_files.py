@@ -1,5 +1,8 @@
 from typing import List
 
+from aihub_pipeline.types.DataLakeFile import DataLakeFile
+from aihub_pipeline.util.meta_utils import data_lake_metadata_table
+from aihub_pipeline.util.partition_utils import replace_partition_keys
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -8,16 +11,10 @@ from dagster import (
     OpExecutionContext,
 )
 
-from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
-from aihub_pipeline.types.DataLakeFile import DataLakeFile
-from aihub_pipeline.util.meta_utils import data_lake_metadata_table
-from aihub_pipeline.util.partition_utils import replace_partition_keys
-
 
 def data_version_by_partition_for_data_lake_files_no_op(
     context: OpExecutionContext,
     asset_key: AssetKey,
-    namespace: NamespaceResource,
     partition: DynamicPartitionsDefinition,
     data_lake_files: List[DataLakeFile],
 ) -> DataVersionsByPartition:
@@ -36,8 +33,7 @@ def data_version_by_partition_for_data_lake_files_no_op(
             asset_key=asset_key,
             partition=data_lake_files[-1].uri,
             metadata={
-                "Organization": namespace.organization,
-                "Namespace": namespace.name,
+                # TODO: do we need namespace name here? before we had namespace name and organization
                 "Number of Files": len(data_lake_files),
                 "Total File Size (MB)": sum([data_lake_file.size for data_lake_file in data_lake_files]) / 1e6,
                 "Table": data_lake_metadata_table(data_lake_files),

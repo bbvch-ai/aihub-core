@@ -1,11 +1,11 @@
 from typing import List, Sequence, Union
 
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from aihub_pipeline.util.id_utils import uri_to_id
 
 
@@ -44,7 +44,6 @@ class VectorStoreIOManager(ConfigurableIOManager):
 
         from aihub_pipeline.io.VectorStoreIOManager import VectorStoreIOManager
         from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import AzureAISearchVectorStoreResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -58,14 +57,12 @@ class VectorStoreIOManager(ConfigurableIOManager):
             # TextNodes loaded from the vector store
             ...
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
-        vector_store = AzureAISearchVectorStoreResource(namespace=namespace)
+        vector_store = AzureAISearchVectorStoreResource(vector_store_name="my_vector_store")
         vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
 
         defs = Definitions(
             assets=[text_nodes, downstream_asset],
             resources={
-                "namespace": namespace,
                 "vector_store": vector_store,
                 "vector_store_io_manager": vector_store_io_manager,
             },

@@ -49,18 +49,16 @@ class RefDoc(Document):
 
     # Static methods for querying
     @classmethod
-    def by_id(cls, organization_shortname: str, doc_id: str) -> "RefDoc":
-        return cls.objects.using(organization_shortname).get(id=doc_id)
+    def by_id(cls, collection_name: str, doc_id: str) -> "RefDoc":
+        return cls.objects.using(collection_name).get(id=doc_id)
 
     @classmethod
     def by_namespace(
         cls,
-        organization_shortname: str,
+        collection_name: str,
         namespace: str,
         exclude_ids: Optional[List[str]] = None,
     ) -> List["RefDoc"]:
         return list(
-            cls.objects.using(organization_shortname).filter(
-                data__metadata__namespace=namespace, id__nin=(exclude_ids or [])
-            )
+            cls.objects.using(collection_name).filter(data__metadata__namespace=namespace, id__nin=(exclude_ids or []))
         )
