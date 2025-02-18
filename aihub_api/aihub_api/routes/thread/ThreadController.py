@@ -76,7 +76,7 @@ class ThreadController(Controller):
 
         return self
 
-    def create_thread(self, route: str = "/{thread_id}") -> "ThreadController":
+    def create_thread(self, route: str = "/") -> "ThreadController":
         @self.router.post(route)
         async def create_thread(
             req: CreateThreadRequest,
@@ -106,7 +106,7 @@ class ThreadController(Controller):
             Raises 403 if the user is not a member of that thread.
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
-            if user.oid not in [u.user_id for u in thread.users]:
+            if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_view_exception
             return thread
 
@@ -124,7 +124,7 @@ class ThreadController(Controller):
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
-            if user.oid not in [u.user_id for u in thread.users]:
+            if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.add_agent_to_thread(nc, thread_id, req.agent_id, req.agent_class)
@@ -146,7 +146,7 @@ class ThreadController(Controller):
             Removes an agent from the thread, if the user is part of that thread.
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
-            if user.oid not in [u.user_id for u in thread.users]:
+            if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_agent_from_thread(nc, thread_id, agent_class, agent_id)
@@ -165,7 +165,7 @@ class ThreadController(Controller):
             Adds another user to the thread, provided the current user is a member of the thread.
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
-            if user.oid not in [u.user_id for u in thread.users]:
+            if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.add_user_to_thread(nc, thread_id, req.user_id)
@@ -184,7 +184,7 @@ class ThreadController(Controller):
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
             thread = await ThreadService.get_thread_by_id(nc, thread_id)
-            if user.oid not in [u.user_id for u in thread.users]:
+            if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_user_from_thread(nc, thread_id, remove_user_id)

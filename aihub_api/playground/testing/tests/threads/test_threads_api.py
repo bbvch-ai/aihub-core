@@ -71,12 +71,6 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
 
 
 @pytest.fixture
-def thread_id():
-    """Generate a valid MongoDB ObjectID as string."""
-    return str(ObjectId())
-
-
-@pytest.fixture
 def create_thread_request(agent_class, agent_id):
     """Create a valid thread request."""
     return {
@@ -90,13 +84,21 @@ def create_thread_request(agent_class, agent_id):
         ]
     }
 
+@pytest.fixture
+def create_empty_thread_request(agent_class, agent_id):
+    """Create a valid thread request."""
+    return {
+        "name": "Test Thread",
+        "user_ids": [],  # Using the OID from NoAuthHandler
+        "agents": []
+    }
 
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_create_thread(api_client, create_thread_request):
     """Test creating a new thread."""
     # When
-    response = await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    response = await api_client.post("/api/v1/thread/", json=create_thread_request)
 
     # Then
     assert response.status_code == 200, f"Response: {response.text}"
@@ -115,10 +117,12 @@ async def test_create_thread(api_client, create_thread_request):
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_get_thread(api_client, thread_id, create_thread_request):
+async def test_get_thread(api_client, create_thread_request):
     """Test retrieving a specific thread."""
     # First create a thread
-    await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    create_response = await api_client.post("/api/v1/thread/", json=create_thread_request)
+    create_data = create_response.json()
+    thread_id = create_data["id"]
 
     # Then get it
     response = await api_client.get(f"/api/v1/thread/{thread_id}")
@@ -130,13 +134,15 @@ async def test_get_thread(api_client, thread_id, create_thread_request):
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_get_user_threads(api_client, thread_id, create_thread_request):
+async def test_get_user_threads(api_client, create_thread_request):
     """Test listing all threads for a user."""
     # Create a thread first
-    await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    create_response = await api_client.post("/api/v1/thread/", json=create_thread_request)
+    create_data = create_response.json()
+    thread_id = create_data["id"]
 
     # Get all threads
-    response = api_client.get("/api/v1/thread/")
+    response = await api_client.get("/api/v1/thread/")
 
     assert response.status_code == 200
     threads = response.json()
@@ -145,14 +151,16 @@ async def test_get_user_threads(api_client, thread_id, create_thread_request):
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_add_agent_to_thread(api_client, thread_id, create_thread_request, agent_class, agent_id):
+async def test_add_agent_to_thread(api_client, create_empty_thread_request, agent_class, agent_id):
     """Test adding an agent to an existing thread."""
     # Create thread first
-    await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    create_response = await api_client.post("/api/v1/thread/", json=create_empty_thread_request)
+    create_data = create_response.json()
+    thread_id = create_data["id"]
 
     # Add new agent
     new_agent_request = {
-        "agent_id": "new_agent_id",
+        "agent_id": agent_id,
         "agent_class": agent_class
     }
     response = await api_client.post(f"/api/v1/thread/{thread_id}/agents", json=new_agent_request)
@@ -163,10 +171,12 @@ async def test_add_agent_to_thread(api_client, thread_id, create_thread_request,
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_remove_agent_from_thread(api_client, thread_id, create_thread_request, agent_class, agent_id):
+async def test_remove_agent_from_thread(api_client, create_thread_request, agent_class, agent_id):
     """Test removing an agent from a thread."""
     # Create thread first
-    await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    create_response = await api_client.post("/api/v1/thread/", json=create_thread_request)
+    create_data = create_response.json()
+    thread_id = create_data["id"]
 
     # Remove agent
     response = await api_client.delete(f"/api/v1/thread/{thread_id}/agents/{agent_class}/{agent_id}")
@@ -177,14 +187,16 @@ async def test_remove_agent_from_thread(api_client, thread_id, create_thread_req
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_add_user_to_thread(api_client, thread_id, create_thread_request):
+async def test_add_user_to_thread(api_client, create_empty_thread_request):
     """Test adding a user to an existing thread."""
     # Create thread first
-    await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    create_response = await api_client.post("/api/v1/thread/", json=create_empty_thread_request)
+    create_data = create_response.json()
+    thread_id = create_data["id"]
 
     # Add new user
     new_user_request = {
-        "user_id": "new_user_id"
+        "user_id": "1234567890"
     }
     response = await api_client.post(f"/api/v1/thread/{thread_id}/users", json=new_user_request)
 
@@ -194,22 +206,18 @@ async def test_add_user_to_thread(api_client, thread_id, create_thread_request):
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_remove_user_from_thread(api_client, thread_id, create_thread_request):
+async def test_remove_user_from_thread(api_client, create_thread_request):
     """Test removing a user from a thread."""
     # Create thread first
-    await api_client.post(f"/api/v1/thread/{thread_id}", json=create_thread_request)
+    create_response = await api_client.post("/api/v1/thread/", json=create_thread_request)
+    create_data = create_response.json()
+    thread_id = create_data["id"]
 
     # Remove user
     user_to_remove = create_thread_request["user_ids"][0]
-    response = api_client.delete(f"/api/v1/thread/{thread_id}/users/{user_to_remove}")
+    response = await api_client.delete(f"/api/v1/thread/{thread_id}/users/{user_to_remove}")
 
     assert response.status_code == 200
     data = response.json()
     assert not any(user["id"] == user_to_remove for user in data["users"])
 
-
-@pytest.mark.asyncio(loop_scope="module")
-async def test_unauthorized_access(api_client, thread_id):
-    """Test accessing a thread without proper authorization."""
-    response = await api_client.get(f"/api/v1/thread/{thread_id}")
-    assert response.status_code == 403

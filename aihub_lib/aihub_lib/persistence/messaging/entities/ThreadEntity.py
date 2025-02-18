@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import List
 
 from bson import ObjectId
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
+from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField, DateTimeField
 
 
 class User(EmbeddedDocument):
@@ -19,13 +20,13 @@ class ThreadEntity(Document):
         "strict": False,
     }
     name = StringField(required=True)
-    # created_at = DateTimeField(required=True)
-    users = ListField(EmbeddedDocumentField(User), required=True)
-    agents = ListField(EmbeddedDocumentField(Agent), required=True)
+    created_at = DateTimeField(required=True)
+    users = ListField(EmbeddedDocumentField(User))
+    agents = ListField(EmbeddedDocumentField(Agent))
 
     @classmethod
     def create_thread(cls, name: str, users: List[User], agents: List[Agent]) -> "ThreadEntity":
-        thread = cls(name=name, users=users, agents=agents)
+        thread = cls(name=name, users=users, agents=agents, created_at=datetime.now())
         thread.save()
         return thread
 
