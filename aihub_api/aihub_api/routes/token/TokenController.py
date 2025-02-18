@@ -14,11 +14,11 @@ from aihub_api.routes.token.dto.TokenResponse import TokenResponse
 from aihub_api.routes.token.TokenService import TokenService
 
 
-class ApiTokenController(Controller):
+class TokenController(Controller):
     def __init__(self, route: str = "/tokens", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
-    def create_token(self, route: str = "/") -> "ApiTokenController":
+    def create_token(self, route: str = "/") -> "TokenController":
         @self.router.post(
             route,
             summary="Create API Token",
@@ -40,7 +40,7 @@ class ApiTokenController(Controller):
 
         return self
 
-    def list_tokens(self, route: str = "/") -> "ApiTokenController":
+    def list_tokens(self, route: str = "/") -> "TokenController":
         @self.router.get(
             route,
             summary="List API Tokens",
@@ -51,7 +51,7 @@ class ApiTokenController(Controller):
 
         return self
 
-    def revoke_token(self, route: str = "/{token_id}") -> "ApiTokenController":
+    def revoke_token(self, route: str = "/{token_id}") -> "TokenController":
         @self.router.delete(
             route,
             summary="Revoke API Token",

@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
-from aihub_api.routes.token.TokenController import ApiTokenController
+from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
@@ -28,7 +28,7 @@ def api_client(mongodb):
     """Create test client with ApiTokenController mounted."""
     runner = ApiTestRunner()
     auth = NoAuthHandler()
-    runner.mount(ApiTokenController(auth=auth).create_token().list_tokens().revoke_token())
+    runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
     with TestClient(runner.get_app(), raise_server_exceptions=True) as client:
         yield client
 

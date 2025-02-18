@@ -6,9 +6,10 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
+from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
@@ -29,7 +30,7 @@ enable_logging()
 async def main():
     runner = ApiTestRunner()
 
-    auth = OAuth2AuthHandler()
+    auth = TokenAuthHandler()
 
     runner.mount(
         HealthController().get_health(),
@@ -46,6 +47,7 @@ async def main():
         .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().discover_agents(),
         ChatController(auth=auth).completions_json().completions_stream(),
+        TokenController().create_token().list_tokens().revoke_token(),
         OpenaiController(
             auth=auth,
             embedding_models=[
