@@ -24,14 +24,14 @@ class ConversationEntity(Document):
 
     ### Key Fields
     - `conversation_id`: Unique identifier for the conversation.
-    - `users`: List of users participating in the conversation.
     - `messages`: Stored chat history.
 
     ### Methods
-    - **Create a new conversation** if it doesn’t exist.
-    - **Retrieve conversation history** by ID.
-    - **Add users and messages** dynamically.
-    - **Delete a conversation** when needed.
+    - `create_conversation`: Create a new conversation with the given users and messages.
+    - `add_messages_to_conversation`: Add messages to the end of an existing conversation.
+    - `get_conversation_by_conversation_id`: Retrieve a conversation by its unique identifier.
+    - `add_system_message_to_conversation`: Add a system message to the beginning of an existing conversation.
+    - `get_messages_by_conversation_id`: Retrieve all messages from a conversation.
 
     ### Usage
     This class enables AI agents to maintain contextual awareness across multiple exchanges,
@@ -40,90 +40,45 @@ class ConversationEntity(Document):
 
     meta = {
         "collection": "conversations",
-        "strict": False,
+        "strict": True,
     }
     conversation_id = StringField(required=True)
-    users = ListField(EmbeddedDocumentField(User), required=False)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
 
     @classmethod
     def create_conversation(
         cls,
         conversation_id: str,
-        users: List[User],
         messages: List[Message],
     ) -> "ConversationEntity":
-        conversation = cls(conversation_id=conversation_id, users=users, messages=messages)
-        conversation.save()
-        return conversation
+        conversation = cls(conversation_id=conversation_id, messages=messages)
+        return conversation.save()
 
     @classmethod
-    def create_conversation_if_not_exists(
+    def add_messages_to_conversation(
         cls,
         conversation_id: str,
         messages: List[Message],
     ) -> "ConversationEntity":
-        existing = cls.get_conversation_by_conversation_id(conversation_id)
-        if existing is not None:
-            return existing
-        else:
-            return cls.create_conversation(
-                conversation_id=conversation_id,
-                users=[],
-                messages=messages,
-            )
+        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        if conversation is None:
+            conversation = cls.create_conversation(conversation_id, [])
+        conversation.messages.extend(messages)
+        return conversation.save()
 
     @classmethod
     def get_conversation_by_conversation_id(cls, conversation_id: str) -> "ConversationEntity":
         return cls.objects().filter(conversation_id=conversation_id).first()
 
     @classmethod
-    def get_conversations_by_user(cls, user_id: str) -> List["ConversationEntity"]:
-        return cls.objects().filter(users__user_id=user_id)
-
-    @classmethod
-    def get_conversations_by_users(cls, user_ids: List[str]) -> List["ConversationEntity"]:
-        return cls.objects().filter(users__user_id__in=user_ids)
-
-    @classmethod
-    def add_user_to_conversation(cls, conversation_id: str, user: User) -> "ConversationEntity":
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
-        conversation.users.append(user)
-        conversation.save()
-        return conversation
-
-    @classmethod
-    def add_message_to_conversation(cls, conversation_id: str, message: Message) -> "ConversationEntity":
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
-        if conversation is None:
-            conversation = cls.create_conversation(conversation_id, [], [])
-        conversation.messages.append(message)
-        conversation.save()
-        return conversation
-
-    @classmethod
     def add_system_message_to_conversation(cls, conversation_id: str, message: Message) -> "ConversationEntity":
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         if conversation is None:
-            conversation = cls.create_conversation(conversation_id, [], [])
+            conversation = cls.create_conversation(conversation_id, [])
         conversation.messages.insert(0, message)
-        conversation.save()
-        return conversation
+        return conversation.save()
 
     @classmethod
     def get_messages_by_conversation_id(cls, conversation_id: str) -> List[Message]:
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         return conversation.messages
-
-    @classmethod
-    def remove_user_from_conversation(cls, conversation_id: str, user_id: str) -> "ConversationEntity":
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
-        conversation.users = [user for user in conversation.users if user.user_id != user_id]
-        conversation.save()
-        return conversation
-
-    @classmethod
-    def delete_conversation(cls, conversation_id: str) -> "ConversationEntity":
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
-        conversation.delete()
-        return conversation

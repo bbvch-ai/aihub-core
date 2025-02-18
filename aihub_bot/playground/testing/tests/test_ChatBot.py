@@ -5,7 +5,7 @@ from typing import Dict
 import httpx
 import pytest_asyncio
 
-from aihub_bot.routes.chat.agent.AgentChatController import AgentChatController
+from aihub_bot.routes.agent import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 from aihub_lib.routes.health.HealthController import HealthController
 

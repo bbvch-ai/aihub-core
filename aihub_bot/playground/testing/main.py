@@ -1,9 +1,8 @@
 import asyncio
 from os.path import abspath, join, dirname
 
-from aihub_bot.routes.chat.agent.AgentChatController import AgentChatController
-from aihub_bot.routes.chat.openai.OpenaiChatController import OpenaiChatController
-from aihub_bot.routes.echo.EchoController import EchoController
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
+from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -19,7 +18,6 @@ async def main():
     runner.mount(
         HealthController().get_health(),
         AgentChatController().completions_json().completions_stream(),
-        EchoController().post_messages(),
         OpenaiChatController(
             chat_models=[
                 AzureOpenAILLMConfig(
