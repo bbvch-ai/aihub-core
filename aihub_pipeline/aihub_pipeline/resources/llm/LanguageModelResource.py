@@ -29,7 +29,7 @@ class LanguageModelResource(ConfigurableResource[LLM]):
             assets=[asset1],
             resources={
                 "language_model": LanguageModelResource(
-                    AzureOpenAILLMConfig(
+                    llm_config=AzureOpenAILLMConfig(
                         name="gpt-4o",
                         base_url="https://aihub-dev-openai-che.openai.azure.com/",
                         api_version="2024-08-01-preview",
@@ -43,8 +43,8 @@ class LanguageModelResource(ConfigurableResource[LLM]):
 
     """
 
-    model: AzureOpenAILLMConfig | SelfHostedLLMConfig
+    llm_config: AzureOpenAILLMConfig | SelfHostedLLMConfig
 
     def create_resource(self, context: InitResourceContext) -> LLM:
-        llm, _ = self.model.to_llama_index(self.model.default_parameter)
+        llm, _ = self.llm_config.to_llama_index(self.llm_config.default_parameter)
         return llm

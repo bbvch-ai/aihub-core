@@ -75,7 +75,7 @@ def default_io_manager_azure_datalake_resources(
 
 def default_llm_resources() -> Dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        model=AzureOpenAIEmbeddingConfig(
+        embedding_config=AzureOpenAIEmbeddingConfig(
             name="text-embedding-ada-002",
             base_url="https://aihub-dev-openai-che.openai.azure.com/",
             api_version="2023-12-01-preview",
@@ -84,7 +84,7 @@ def default_llm_resources() -> Dict[str, ConfigurableResourceFactory]:
         )
     )
     language_model = LanguageModelResource(
-        model=AzureOpenAILLMConfig(
+        llm_config=AzureOpenAILLMConfig(
             name="gpt-4o-mini",
             base_url="https://aihub-dev-openai-che.openai.azure.com/",
             api_version="2023-12-01-preview",
