@@ -1,7 +1,6 @@
-from typing import Dict
-
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
+from typing import Dict
 
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -55,14 +54,16 @@ def mongo_aisearch_storage_context_resources(
     }
 
 
-def default_io_manager_azure_datalake_resources() -> Dict[str, ConfigurableResourceFactory]:
+def default_io_manager_azure_datalake_resources(
+    container_name: str, namespace_name: str
+) -> Dict[str, ConfigurableResourceFactory]:
     adls2 = ADLS2Resource(
         storage_account=DataLakeAccess().get_storage_account_name(),
         credential=ADLS2DefaultAzureCredential(kwargs={}),
     )
     adls2_pickle_io_manager = ADLS2PickleIOManager(
-        adls2_file_system=namespace.organization,  # TODO: change
-        adls2_prefix=f".{namespace.name}-dagster/",  # TODO: change
+        adls2_file_system=container_name,
+        adls2_prefix=f".{namespace_name}-dagster/",  # TODO: what do we want here
         adls2=adls2,
     )
 
@@ -72,7 +73,6 @@ def default_io_manager_azure_datalake_resources() -> Dict[str, ConfigurableResou
     }
 
 
-# TODO: change
 def default_llm_resources() -> Dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
         model=AzureOpenAIEmbeddingConfig(

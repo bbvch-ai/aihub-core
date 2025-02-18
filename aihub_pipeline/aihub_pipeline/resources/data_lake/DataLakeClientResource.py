@@ -5,7 +5,6 @@ from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 
 
 class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
-    # TODO: update documenation
     """
     A resource that provides a FileSystemClient for interacting with the Azure Data Lake using
     the Azure SDK for Python. The FileSystemClient is suitable when you need granular control over storage operations,
@@ -39,15 +38,13 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
         from dagster import Definitions, asset
 
         @asset
-        def asset1(namespace: NamespaceResource, data_lake_client: ResourceParam[FileSystemClient]):
+        def asset1(namespace: NamespaceResource, data_lake_client: ResourceParam[FileSystemClient]): # TODO how to do this
             paths = data_lake_client.get_paths(path=f"{namespace.name}/", recursive=True)
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
         defs = Definitions(
             assets=[asset1],
             resources={
-                "namespace": namespace,
-                "data_lake_client": DataLakeClientResource(namespace=namespace)
+                "data_lake_client": DataLakeClientResource(container_name="my_container")
             }
         )
 
@@ -79,9 +76,8 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
             # The input asset will be loaded from the data_lake
             ...
 
-        data_lake_client = DataLakeClientResource(
-            container_name="my_container",
-        )
+        data_lake_client = DataLakeClientResource(container_name="my_container")
+
         data_lake_file_system = DataLakeFileSystemResource()
         data_lake_io_manager = AzureDataLakeIOManager(
             data_lake_client=data_lake_client,
