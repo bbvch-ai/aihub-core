@@ -1,7 +1,7 @@
+from aihub_lib.routes.Controller import Controller
 from fastapi import Request, Response
 
 from aihub_bot.routes.echo.EchoService import EchoService
-from aihub_lib.routes.Controller import Controller
 
 
 class EchoController(Controller):
