@@ -143,7 +143,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
-    async def run(self):
+    async def start_simulation(self):
         """
         Orchestrates the simulation:
         1. Connect to NATS.
@@ -174,6 +174,8 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
 
         self.js_publisher = JSPublisher(self.js)
 
+    async def run(self):
+        await self.start_simulation()
         await super().run()
 
     def with_simple_chunk_events(self) -> "SimulatedAgentBotTestRunner":

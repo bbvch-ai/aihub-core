@@ -32,6 +32,7 @@ class BotTestRunner(BotRunner):
         This endpoint catches POST requests to any URL that starts with /service.
         The 'full_path' parameter contains the remaining path after /service.
         """
+        print("Connection received")
         payload = await request.json()
         self.responses.append(BotServiceResponse(path=full_path, payload=payload))
         return JSONResponse({"id": payload.get("id") or "test_id"})
