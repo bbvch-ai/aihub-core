@@ -23,6 +23,11 @@ runs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
+
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
@@ -53,11 +58,6 @@ runs:
     - name: Configure Git Authentication
       shell: bash
       run: git config --global url."git@github.com:".insteadOf "https://github.com/"
-
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: '2.1.1'
 
     - name: Validate Global Poetry Lock
       shell: bash

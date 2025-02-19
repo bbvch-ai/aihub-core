@@ -15,16 +15,16 @@ runs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
+
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'poetry'
-
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: '2.1.1'
 
     - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash
