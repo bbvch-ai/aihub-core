@@ -84,6 +84,17 @@ Now, we turn our attention to each major component of the AI-Hub, exploring thei
 - Pipelines operate behind the scenes. By the time an agent needs to answer a question, the data it depends on is already processed, indexed, and ready for retrieval.
 - This separation of concerns lets agents focus on reasoning and decision-making, while pipelines focus on preparing and maintaining a robust data foundation.
 
+
+### Chatbots as an Interface Layer
+
+An additional component in the AI-Hub architecture is the chatbot interface. This layer serves as a natural conduit between users and the backend, enabling real-time, conversational interactions. 
+
+**Key Roles of the Chatbot Interface:**
+- **User Interaction:** Provides a conversational UI that can be embedded within web applications, mobile apps, or messaging platforms.
+- **Backend Integration:** Chatbot inputs are directed through dedicated FastAPI endpoints, which authenticate and route messages into the NATS/JetStream event system. This integration enables chatbots to trigger and interact with the same structured workflows as our other AI agents.
+- **Multi Channel Support:** Chatbots can be deployed across multiple channels, such as web chat, Slack, Microsoft Teams, or WhatsApp. This flexibility ensures that users can access AI-Hub services wherever they are most comfortable.
+- **Agent-Human Collaboration:** By avoiding the separation between interfaces for human users and Agents, the chatbot interface fosters seamless collaboration between humans and Agents. It should not matter whether a user is interacting with a human or an AI Agent — the experience should be consistent and intuitive.
+
 ## 4.2 Event-Driven Architecture
 
 > tldr; The event-driven architecture of the AI-Hub, built on NATS and JetStream, ensures that complexity is well-managed and that components remain decoupled. Key concepts like threads, runs, and events offer a robust framework for structuring and organizing the flow of data and logic. The result is a system that scales easily, maintains transparency, and allows for fine-grained control over how agents operate, all while preserving the flexibility and intelligence at the core of the AI-Hub’s design.

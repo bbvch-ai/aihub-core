@@ -60,6 +60,8 @@ e.g., `aihub_agents`, `aihub_api`, etc.):
 
 - **`api`**: Contains API endpoint definitions.
 
+- **`bot`**: Contains API endpoint definitions for Azure Bot Framework.
+
 - **`doc`**: Contains documentation (for example, arc42 documentation).
 
 - **`lib`**: Provides shared functionality that can be reused across multiple scopes within the repository.
@@ -373,6 +375,7 @@ once all features are done.
   resources ([Download Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)).
     - Verify: `az --version`
 - **Postman**: For API testing ([Download Postman](https://www.postman.com/)).
+- **Bot Framework Emulator**: For testing chatbots ([Download Bot Framework Emulator](https://github.com/microsoft/BotFramework-Emulator)).
 
 ### 2.1.1 Optional JetBrains Tools
 
@@ -472,8 +475,8 @@ maintainability.
 
 2. **Attach Microservices as Additional Projects**:
 
-    - For each folder in `aihub-core` containing a `pyproject.toml` file (e.g., `aihub_api`, `aihub_lib`, `aihub_agent`,
-      `aihub_pipeline`):
+    - For each folder in `aihub-core` containing a `pyproject.toml` file (e.g., `aihub_api`, `aihub_bot`, `aihub_lib`, 
+      `aihub_agent`,`aihub_pipeline`):
         - Go to **File > Open...**.
         - Select the microservice folder.
         - In the popup, select the **Attach** option to keep all microservices accessible within the same PyCharm
@@ -505,7 +508,7 @@ maintainability.
 5. **Add `aihub_lib` dependency to other services**:
 
     - Go to **File > Settings > Project:\*\*\*\* > Project Dependencies**.
-    - Add `aihub_lib` as a dependency to each microservice project (`aihub_api`, `aihub_agent`, `aihub_pipeline`).
+    - Add `aihub_lib` as a dependency to each microservice project (`aihub_api`, `aihub_bot`, `aihub_agent`, `aihub_pipeline`).
 
 ##### 2.2.2.1.1 Poetry Commands
 
@@ -683,6 +686,7 @@ The AI hub consists of multiple packages:
 
 - `aihub_agents`: Contains common code for agent development
 - `aihub_api`: Contains common code for API implementation
+- `aihub_bot`: Contains common code for bot development
 - `aihub_pipeline`: Contains common code pipeline development
 - `aihub_lib`: Contains code relevant for multiple packages of above
 
@@ -789,15 +793,16 @@ and specifying the version by the tag.
 
 ### Cloud Technologies
 
-| Category        | Technology Used                        | Description                                                                                                                                                                                                                                                                   | Alternatives |
-|-----------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| Vector Database | Azure Cognitive Search                 | Azure Cognitive Search is a cloud-based search service that provides full-text, numerical, and faceted search capabilities over structured and unstructured data. It is used to store and index vector representations of data, enabling efficient similarity-based searches. | ...          |
-| LLM             | GPT Models, Open Source LLaMA, Mistral | Azure provides access to various large language models (LLMs), including GPT models, the open-source LLaMA models, and the Mistral model. These LLMs are used for natural language processing tasks such as text generation, question answering, and language understanding.  | ...          |
-| Database        | Cosmos MongoDB (Azure)                 | The agent definitions are stored in an Azure Cosmos DB MongoDB database, which is a fully managed, globally distributed, and highly available NoSQL database service.                                                                                                         | ...          |
-| Backend Server  | Azure App Service                      | The backend server is deployed on Azure App Service, a fully managed platform for building, deploying, and scaling web applications and APIs.                                                                                                                                 | ...          |
-| Frontend Host   | Azure Static Web App                   | The frontend of the application is hosted on Azure Static Web Apps, a fully managed service that automatically builds and deploys full-stack web apps from a GitHub repository.                                                                                               | ...          |
-| Voice Input     | Azure Speech Service                   | The Azure Speech Service is used to enable voice input functionality, allowing users to interact with the application using speech recognition.                                                                                                                               | ...          |
-| Voice Output    | Azure Speech Service                   | The Azure Speech Service is also used to generate speech output, enabling the application to provide audio responses to users.                                                                                                                                                | ...          |
+| Category            | Technology Used                        | Description                                                                                                                                                                                                                                                                   | Alternatives |
+|---------------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| Vector Database     | Azure Cognitive Search                 | Azure Cognitive Search is a cloud-based search service that provides full-text, numerical, and faceted search capabilities over structured and unstructured data. It is used to store and index vector representations of data, enabling efficient similarity-based searches. | ...          |
+| LLM                 | GPT Models, Open Source LLaMA, Mistral | Azure provides access to various large language models (LLMs), including GPT models, the open-source LLaMA models, and the Mistral model. These LLMs are used for natural language processing tasks such as text generation, question answering, and language understanding.  | ...          |
+| Database            | Cosmos MongoDB (Azure)                 | The agent definitions are stored in an Azure Cosmos DB MongoDB database, which is a fully managed, globally distributed, and highly available NoSQL database service.                                                                                                         | ...          |
+| Backend Server      | Azure App Service                      | The backend server is deployed on Azure App Service, a fully managed platform for building, deploying, and scaling web applications and APIs.                                                                                                                                 | ...          |
+| Frontend Host       | Azure Static Web App                   | The frontend of the application is hosted on Azure Static Web Apps, a fully managed service that automatically builds and deploys full-stack web apps from a GitHub repository.                                                                                               | ...          |
+| Voice Input         | Azure Speech Service                   | The Azure Speech Service is used to enable voice input functionality, allowing users to interact with the application using speech recognition.                                                                                                                               | ...          |
+| Voice Output        | Azure Speech Service                   | The Azure Speech Service is also used to generate speech output, enabling the application to provide audio responses to users.                                                                                                                                                | ...          |
+| Chatbot Integration | Azure Bot Service                      | The Azure Bot Service is used to implement Chatbots over a multitude of Channels (e.g. Slack, MS Teams, WebChat)                                                                                                                                                              | ...          |
 
 ### OnPrem Technologies
 
