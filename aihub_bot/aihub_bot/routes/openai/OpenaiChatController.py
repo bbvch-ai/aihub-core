@@ -1,17 +1,17 @@
 import logging
 from typing import Annotated, Any, Callable, List
 
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
-from fastapi import Body, Query, Request, Response
+from fastapi import Body, Query
+from fastapi import Request, Response
 from llama_index.llms.openai import OpenAI
 
-from aihub_bot.bots.chat.openai.JsonOpenaiChatBot import JsonOpenaiChatBot
-from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
+from aihub_bot.bots.openai import StreamOpenaiChatBot
+from aihub_bot.bots.openai.OpenaiChatBot import OpenaiChatBot
 from aihub_bot.routes.activity_model import ActivityModel
-from aihub_bot.routes.chat.openai.OpenaiChatService import OpenaiChatService
+from aihub_bot.routes.openai.OpenaiChatService import OpenaiChatService
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class OpenaiChatController(Controller):
     def __init__(
         self,
         route: str = "/openai/chat",
-        auth: AuthHandler | None = None,
+        auth: Callable[..., Any] = None,
         chat_models: List[ChatLLMConfig] = None,
     ):
         super().__init__(route, auth)
@@ -42,8 +42,9 @@ class OpenaiChatController(Controller):
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
-            chat_bot = JsonOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
+            path = OpenaiChatService.get_path(request)
+            chat_bot = OpenaiChatBot(model_name, client, path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -59,8 +60,9 @@ class OpenaiChatController(Controller):
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             client = OpenaiChatService.get_client(self.chat_models, model_name)
-            chat_bot = StreamOpenaiChatBot(model_name, client)
-            adapter: CloudAdapter = OpenaiChatService.get_adapter(request)
+            path = OpenaiChatService.get_path(request)
+            chat_bot = StreamOpenaiChatBot(model_name, client, path)
+            adapter: CloudAdapter = OpenaiChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
