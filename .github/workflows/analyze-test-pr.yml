@@ -43,7 +43,7 @@ jobs:
           - module: aihub_agent
             docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
           - module: aihub_bot
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_files: ""
 
     steps:
       - name: Checkout repository
