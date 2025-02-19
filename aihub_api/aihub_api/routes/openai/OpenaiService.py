@@ -16,7 +16,7 @@ from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import Az
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, FileContent, ImagesResponse
@@ -62,14 +62,14 @@ class OpenaiService:
         return ModelResponse(data=models)
 
     @staticmethod
-    async def get_models_with_assistants(chat_models: List[ChatLLMConfig], nc: NATS) -> ModelResponse:
+    async def get_models_with_assistants(chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
         chat_models = [ModelDetails(id=model.name) for model in chat_models]
         agent_dtos = await AgentService.discover_agents(nc)
-        agent_dtos = [agent_dto for agent_dto in agent_dtos if agent_dto.start_events]
+        agent_dtos = [agent_dto for agent_dto in agent_dtos if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))]
         assistants = [
             ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
             for agent_dto in agent_dtos
@@ -84,21 +84,25 @@ class OpenaiService:
         """
         models = [ModelDetails(id=model.name) for model in chat_models if model.name == model_name]
         if len(models) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
         return models[0]
 
     @staticmethod
-    async def get_model_with_assistants(chat_models: List[ChatLLMConfig], model_name: str, nc: NATS) -> ModelDetails:
+    async def get_model_with_assistants(chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS) -> ModelDetails:
         """
         Fetch details for a specific chat model or ai-hub assistant by name.
         Scans the chat model configurations and returns the matching model's or agent's details.
         """
         try:
             return OpenaiService.get_model(chat_models, model_name)
-        except ValueError:
+        except HTTPException:
             pass
         agent_class, agent_id = model_name.split("/")
         agent_dto = await AgentService.get_agent(nc, agent_class, agent_id)
+        if not agent_dto.is_conversational:
+            raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
+        if not user.has_access_to_agent(agent_class, agent_id):
+            raise HTTPException(status_code=403, detail="User does not have access to this agent.")
         return ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
 
     @staticmethod
@@ -115,7 +119,7 @@ class OpenaiService:
         """
         models = [model for model in embedding_models if model.name == model_name]
         if len(models) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
         embedding_model_config = models[0]
 
         model_parameters = None
@@ -142,7 +146,7 @@ class OpenaiService:
         """
         models = [model for model in chat_models if model.name == model_name]
         if len(models) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
         chat_model_config = models[0]
 
         chat_model, _ = chat_model_config.to_llama_index()
@@ -181,6 +185,14 @@ class OpenaiService:
 
         agent_class, agent_id = model_name.split("/")
 
+        if not user.has_access_to_agent(agent_class, agent_id):
+            raise HTTPException(status_code=403, detail="User does not have access to this agent.")
+
+        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id)
+
+        if not agent_dto.is_conversational:
+            raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
+
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
                 agent_class, agent_id, chat_completion_request, user, nc, ws_receiver
@@ -208,6 +220,7 @@ class OpenaiService:
         # Wait until all events are processed
         await resources.stop_event.wait()
         await resources.subscriber.stop()
+
         # Construct final JSON response
         content = ChatService.build_json_response_content(resources.chunk_events)
         return ChatCompletion(
