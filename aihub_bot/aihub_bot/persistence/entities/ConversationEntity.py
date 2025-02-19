@@ -60,6 +60,6 @@ class ConversationEntity(Document):
         return cls.objects().filter(conversation_id=conversation_id).first()
 
     @classmethod
-    def get_messages_by_conversation_id(cls, conversation_id: str) -> List[Message]:
+    def get_messages_by_conversation_id(cls, conversation_id: str) -> ListField:
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         return conversation.messages
