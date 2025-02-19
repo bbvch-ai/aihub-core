@@ -1,14 +1,3 @@
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
-from aihub_agent.agents.basic.FewShotAgent.events.FewShotEvent import FewShotEvent
-from aihub_agent.agents.basic.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
-    FewShotStandaloneQuestionCondenserEvent,
-)
-from aihub_agent.agents.basic.FewShotAgent.events.RightAgentEvent import RightAgentEvent
-from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.agent_description_guard import agent_description_guard
 from aihub_lib.generative_ai.prompting.few_shot.create_few_shot_messages import create_few_shot_messages
@@ -17,6 +6,17 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import LLMEvent, StartEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.basic.FewShotAgent.events.FewShotEvent import FewShotEvent
+from aihub_agent.agents.basic.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
+    FewShotStandaloneQuestionCondenserEvent,
+)
+from aihub_agent.agents.basic.FewShotAgent.events.RightAgentEvent import RightAgentEvent
+from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.workflow.decorators.step import step
 
 
 class FewShotAgent(Agent):

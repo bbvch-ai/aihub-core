@@ -21,7 +21,6 @@ def fetch_ref_docs_to_remove(
 
     connect_to_mongo_db(namespace.organization)
     ref_docs = RefDoc.by_namespace(
-        organization_shortname=namespace.organization,
         namespace=namespace.name,
         exclude_ids=ids,
     )

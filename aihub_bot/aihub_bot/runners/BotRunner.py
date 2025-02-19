@@ -1,7 +1,8 @@
 import logging
 from typing import List, Optional
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 from aihub_lib.routes.Controller import Controller
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
@@ -47,7 +48,7 @@ class BotRunner:
         return FastAPI(
             title=self.title,
             description=self.description,
-            version=BaseConfig().VERSION or ".dev",
+            version=ApiConfig().VERSION or ".dev",
             lifespan=lifetime_manager,
             debug=self.debug,
         )
@@ -60,7 +61,7 @@ class BotRunner:
         app = FastAPI(
             title=self.title,
             description=self.description,
-            version=BaseConfig().VERSION or ".dev",
+            version=ApiConfig().VERSION or ".dev",
             debug=self.debug,
         )
 

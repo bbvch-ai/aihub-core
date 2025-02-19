@@ -1,15 +1,15 @@
 import logging
 import re
-from typing import Optional, List, AsyncGenerator
+from typing import AsyncGenerator, List, Optional
 
+from aihub_lib.routes.chat.ChatService import ChatService
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, Entity
 from fastapi import Request
 
-from aihub_bot.persistence.entities.ConversationEntity import Message, ConversationEntity
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
-from aihub_lib.routes.chat.ChatService import ChatService
 
 logger = logging.getLogger(__name__)
 

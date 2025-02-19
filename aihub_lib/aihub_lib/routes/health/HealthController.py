@@ -1,5 +1,9 @@
 from typing import Any, Callable
 
+from fastapi import Depends
+
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
 
 
@@ -28,12 +32,16 @@ class HealthController(Controller):
     Now calling `GET /health` returns a JSON response indicating the application status.
     """
 
-    def __init__(self, route: str = "/health", auth: Callable[..., Any] = None):
+    def __init__(self, route: str = "/health", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
     def get_health(self, route: str = "/") -> "HealthController":
-        @self.router.get(route)
-        async def get_health() -> dict[str, str]:
+        @self.router.get(
+            route,
+        )
+        async def get_health(
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> dict[str, str]:
             """
             A simple health check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.

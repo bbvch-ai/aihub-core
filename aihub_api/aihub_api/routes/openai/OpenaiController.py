@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any, AsyncIterator, Callable, List, Literal, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
@@ -51,7 +52,7 @@ class OpenaiController(Controller):
     def __init__(
         self,
         route: str = "/openai",
-        auth: Callable[..., Any] = None,
+        auth: AuthHandler | None = None,
         embedding_models: List[EmbeddingLLMConfig] = None,
         chat_models: List[ChatLLMConfig] = None,
         image_models: List[AzureOpenaiImageModelConfig] = None,

@@ -5,7 +5,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
+from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -101,11 +101,18 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
+        logger.debug(f"Received discovery request for {self.agent_class} ({self.agent_id})")
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
         start_events = [
-            StartEventSpecs(
+            EventSpecs(
                 event_type=StartEvent.__name__,
                 event_schema=StartEvent.model_json_schema(),
+            )
+        ]
+        stop_events = [
+            EventSpecs(
+                event_type=StopEvent.__name__,
+                event_schema=StopEvent.model_json_schema(),
             )
         ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
@@ -118,6 +125,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 system_prompt=LocaleString(de="Test Agent System Prompt"),
             ),
             start_events=start_events,
+            stop_events=stop_events,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -150,7 +158,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
-    async def run(self):
+    async def start_simulation(self):
         """
         Orchestrates the simulation:
         1. Connect to NATS.
@@ -181,6 +189,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.js_publisher = JSPublisher(self.js)
 
+    async def run(self):
+        await self.start_simulation()
         await super().run()
 
     def with_simple_chunk_events(self) -> "SimulatedAgentApiTestRunner":

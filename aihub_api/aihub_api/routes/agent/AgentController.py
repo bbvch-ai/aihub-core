@@ -1,6 +1,7 @@
 from typing import Annotated, Any, Callable, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException
@@ -43,7 +44,7 @@ class AgentController(Controller):
     This sets up `/agent/discover` and `/agent/{agent_class}/{agent_id}` endpoints.
     """
 
-    def __init__(self, route: str = "/agent", auth: Callable[..., Any] = None):
+    def __init__(self, route: str = "/agent", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
     def discover_agents(self, route: str = "/discover") -> "AgentController":
