@@ -61,7 +61,7 @@ runs:
 
     - name: Validate Global Poetry Lock
       shell: bash
-      run: poetry lock --no-update
+      run: poetry lock
 
     - name: Install Global Dependencies
       shell: bash
@@ -74,7 +74,7 @@ runs:
 
     - name: Validate Poetry Lock
       shell: bash
-      run: poetry lock --no-update
+      run: poetry lock
       working-directory: ${{ inputs.working_directory }}
 
     - name: Install Dependencies
