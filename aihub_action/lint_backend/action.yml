@@ -26,15 +26,6 @@ runs:
       with:
         version: '2.1.1'
 
-    - name: Cache Poetry Dependencies
-      id: cached-poetry-dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pypoetry
-        key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: poetry-${{ runner.os }}-
-
-
     - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash
       run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"

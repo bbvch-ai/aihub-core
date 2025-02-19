@@ -59,13 +59,6 @@ runs:
       with:
         version: '2.1.1'
 
-    - name: Cache Poetry Dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pypoetry
-        key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: poetry-${{ runner.os }}-
-
     - name: Validate Global Poetry Lock
       shell: bash
       run: poetry lock --no-update
