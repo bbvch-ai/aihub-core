@@ -25,7 +25,9 @@ class StreamOpenaiChatBot(OpenaiChatBot):
 
         OpenaiChatService.add_user_message_to_conversation(turn_context)
 
-        if turn_context.activity.channel_id == "slack":
+        if turn_context.activity.channel_id == "slack" and OpenaiChatService.is_slack_channel_message(turn_context):
+            if not OpenaiChatService.is_bot_mentioned(turn_context):
+                return
             turn_context = OpenaiChatService.update_slack_turn_context(turn_context)
 
         OpenaiChatService.get_system_message(
