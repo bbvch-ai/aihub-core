@@ -281,6 +281,9 @@ The AI-Hub’s architecture has evolved to not only deliver intelligent automati
 7. **Process Panel:**  
    A process modeling and monitoring tool that visualizes the collaboration between humans and AI agents. The Process Panel supports the design, simulation, and continuous improvement of automated workflows. It enables a human-in-the-loop approach, ensuring that critical decision points are monitored and that agent actions harmonize seamlessly with human oversight.
 
+8. **Chatbots (Integration into Chat Interfaces):**  
+   Chatbots provide a way for users to interact with AI agents over the same channels they use for human-to-human communication. This integration can be crucial for seamless user experiences and for embedding AI capabilities into existing workflows.
+
 ### Technologies in Use
 
 The AI-Hub leverages a well-curated technology stack that balances performance, scalability, and developer productivity. This stack is designed to integrate smoothly into enterprise IT environments and supports both cloud-based and on-premises deployments.
@@ -306,6 +309,12 @@ The AI-Hub leverages a well-curated technology stack that balances performance, 
 - **Pinia & Other Vue Ecosystem Tools:**  
   State management, internationalization, and other frontend capabilities are implemented using well-established Vue ecosystem tools.
 
+**Chatbot Integration:**
+- **Azure Bot Service:**  
+  For integrating AI agents into chat interfaces, Azure Bot Service provides a robust platform for building, deploying, and managing chatbots across multiple channels.
+- **Python & Microsoft Bot Framework SDK:**  
+  Custom chatbot logic can be implemented in Python using the Microsoft Bot Framework SDK, allowing for seamless integration with the AI-Hub’s backend services.
+
 **Additional Tools and Processes:**
 - **CI/CD Pipelines & Testing Frameworks:**  
   Automated testing, linting, and type checks ensure code quality. Tools like `black`, `mypy`, `eslint`, and `ruff` standardize coding practices and help maintain a high standard of quality.
@@ -321,7 +330,7 @@ flowchart LR
 
   subgraph "User Interfaces"
     ChatUI["Chat UI (Open-Source)"]
-    Bots["Bots (Azure Bot Framework)"]
+    Bots["Bots (Azure Bot Service)"]
     TransparencyUI["Agents Transparency Frontend"]
     ProcessPanel["Process Panel"]
   end
