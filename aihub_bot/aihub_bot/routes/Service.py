@@ -180,7 +180,7 @@ class Service(ChatService):
         ### Why
         - To add the messages to the context of the conversation.
         """
-        return ConversationEntity.get_messages_by_conversation_id(conversation_id)
+        return list(ConversationEntity.get_messages_by_conversation_id(conversation_id) or [])
 
     @staticmethod
     async def send_response_stream(
