@@ -29,13 +29,7 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         self.scope = "https://graph.microsoft.com/.default"
 
     def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        """
-        Fetch user information from Microsoft Graph using an OID.
-
-        :param oid: The unique OID of the user in Azure AD.
-        :return: A `UserDTO` with user details like id, name, and email.
-        :raises Exception: If the request to Microsoft Graph fails.
-        """
+        """Fetch user information from Microsoft Graph using an OID."""
         # Acquire an access token from Azure Identity
         access_token = self.credential.get_token(self.scope).token
 
@@ -53,4 +47,4 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
                 email=user_data.get("mail") or user_data.get("userPrincipalName"),
             )
         else:
-            raise Exception(f"Failed to fetch user info. Status: {response.status_code}, Response: {response.text}")
+            raise ValueError(f"Failed to fetch user info. Status: {response.status_code}, Response: {response.text}")

@@ -1,8 +1,7 @@
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cosmosdb import CosmosDBManagementClient
-from azure.mgmt.resource import SubscriptionClient
 
-from aihub_lib.infrastructure.azure.BaseConfig import BaseConfig
+from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosConfig import CosmosConfig
 
 
@@ -25,9 +24,9 @@ class CosmosAccess:
         if CosmosConfig().COSMOS_CONNECTION_STRING:
             self._connection_string = CosmosConfig().COSMOS_CONNECTION_STRING
             return
-        self._app = BaseConfig().APP_NAME
-        self._region = BaseConfig().REGION_SHORT
-        self._subscription_id = BaseConfig().AZURE_SUBSCRIPTION_ID
+        self._app = AzureBaseConfig().APP_NAME
+        self._region = AzureBaseConfig().REGION_SHORT
+        self._subscription_id = AzureBaseConfig().AZURE_SUBSCRIPTION_ID
         self._resource_group_name = CosmosConfig().COSMOS_RESOURCE_GROUP_NAME or f"{self._app}-rg-{self._region}"
         self._cosmos_account_name = CosmosConfig().COSMOS_ACCOUNT_NAME or f"{self._app}-cos-{self._region}"
 

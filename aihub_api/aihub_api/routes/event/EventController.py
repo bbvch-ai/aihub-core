@@ -3,6 +3,7 @@ import traceback
 from typing import Any, Callable, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, WebSocket
 from starlette.websockets import WebSocketDisconnect
@@ -42,7 +43,7 @@ class EventController(Controller):
     Any exceptions are caught, and `ExceptionEvent` may be sent back to the client as feedback.
     """
 
-    def __init__(self, route: str = "/event", auth: Callable[..., Any] = None):
+    def __init__(self, route: str = "/event", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
     def get_events(self, path: str = "/") -> "EventController":

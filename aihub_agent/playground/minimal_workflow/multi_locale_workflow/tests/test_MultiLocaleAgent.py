@@ -22,7 +22,7 @@ def _(locale_path: str):
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
             system_prompt=LocaleString(en="You are an agent"),
-            locale_path=locale_path
+            locale_path=locale_path,
         ),
         locale_paths=[os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../translations"))],
     )
@@ -39,6 +39,7 @@ async def _(agent_runner: AgentTestRunner, locale: str):
             ),
             topic=topic,
         )
+
 
 @then(parsers.parse('an event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):

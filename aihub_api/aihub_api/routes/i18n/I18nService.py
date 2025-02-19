@@ -18,7 +18,7 @@ class I18nService:
     """
 
     @staticmethod
-    def get_user_locale(user: User, locale_handler: LocaleHandler) -> LocaleResponse:
+    def get_user_locale(locale_handler: LocaleHandler) -> LocaleResponse:
         """
         Returns a LocaleResponse for the given user and locale_handler.
 

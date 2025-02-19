@@ -9,21 +9,21 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import (
-    NAMESPACE,
-    SOURCE,
-    TYPE,
-    LANGUAGE,
-    VERSION,
     CREATED_AT,
-    UPDATED_AT,
-    INSERTED_AT,
     H1,
     H2,
     H3,
     H4,
     H5,
     H6,
+    INSERTED_AT,
+    LANGUAGE,
+    NAMESPACE,
     SECTION_START_LINE,
+    SOURCE,
+    TYPE,
+    UPDATED_AT,
+    VERSION,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]

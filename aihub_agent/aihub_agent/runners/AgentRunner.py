@@ -4,7 +4,7 @@ from typing import List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, StartEventSpecs
+from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -112,14 +112,19 @@ class AgentRunner:
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
 
         start_events = [
-            StartEventSpecs(event_type=e.__name__, event_schema=e.model_json_schema())
+            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema())
             for e in self.agent_type.get_start_events()
+        ]
+        stop_events = [
+            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema())
+            for e in self.agent_type.get_stop_events()
         ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
             agent_config=self.agent_config,
             start_events=start_events,
+            stop_events=stop_events,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 

@@ -30,17 +30,19 @@ async def few_shot_guard(
     user_query: str,
 ) -> GuardResult:
     prompt = PromptTemplate(t("lib.guards.few_shot_guard.prompt"))
-    
+
     user_template = PromptTemplate(t("lib.guards.few_shot_guard.user_message"))
     success_template = PromptTemplate(t("lib.guards.few_shot_guard.success_message"))
     reason_template = PromptTemplate(t("lib.guards.few_shot_guard.reason_message"))
 
     def format_example(example):
-        return "".join([
-            user_template.format(user=example.user.in_locale(t.locale)),
-            success_template.format(success=example.success),
-            reason_template.format(reason=example.reason.in_locale(t.locale))
-        ])
+        return "".join(
+            [
+                user_template.format(user=example.user.in_locale(t.locale)),
+                success_template.format(success=example.success),
+                reason_template.format(reason=example.reason.in_locale(t.locale)),
+            ]
+        )
 
     joined_examples = "".join(format_example(example) for example in examples)
 

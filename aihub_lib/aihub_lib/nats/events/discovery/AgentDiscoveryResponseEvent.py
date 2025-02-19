@@ -6,7 +6,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent
 
 
-class StartEventSpecs(BaseModel):
+class EventSpecs(BaseModel):
     """
     Defines a specification for a start event that an agent can handle.
     """
@@ -31,6 +31,7 @@ class AgentDiscoveryResponseEvent(BaseEvent):
     - Which agent instance is available (identified by `agent_class` and `agent_id`).
     - What configuration that agent operates under (e.g., model parameters, runtime settings).
     - Which start events the agent can process to begin its workflow.
+    - Which stop events the agent might respond with.
 
     By providing this structured information, the discovery response helps orchestrators and clients
     dynamically integrate with newly discovered agents without manual configuration or guesswork.
@@ -45,7 +46,11 @@ class AgentDiscoveryResponseEvent(BaseEvent):
         ...,
         description="The agent's configuration object, containing details like the model used, temperature settings, or other domain-specific parameters.",
     )
-    start_events: List[StartEventSpecs] = Field(
+    start_events: List[EventSpecs] = Field(
         ...,
-        description="A list of `StartEventSpecs` objects, each describing a start event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
+        description="A list of `EventSpecs` objects, each describing a start event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
+    )
+    stop_events: List[EventSpecs] = Field(
+        ...,
+        description="A list of `EventSpecs` objects, each describing a stop event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
     )

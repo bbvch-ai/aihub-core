@@ -1,13 +1,3 @@
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
-from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
@@ -24,6 +14,17 @@ from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
@@ -193,7 +194,7 @@ class RAGAgent(Agent):
         Generates a response using the configured LLM.
         """
         if isinstance(event, FewShotRejectEvent):
-            messages =  limited_history_without_context.limited_history + [
+            messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
                     content=PromptTemplate(t("agents.prompt.guard.reject")).format(reason=event.reasoning),

@@ -1,5 +1,7 @@
 from typing import Any, Callable
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
@@ -40,7 +42,7 @@ class I18nController(Controller):
     depending on the user’s locale.
     """
 
-    def __init__(self, route: str = "/i18n", auth: Callable[..., Any] = None):
+    def __init__(self, route: str = "/i18n", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
     def get_my_locale(self, route: str = "/my-locale") -> "I18nController":
@@ -57,12 +59,12 @@ class I18nController(Controller):
             },
         )
         async def get_locale(
-            user: User = Depends(self.auth),
+            user: AuthenticatedUser = Depends(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> LocaleResponse:
             """
             Return the user's current locale and a localized test string.
             """
-            return I18nService.get_user_locale(user, t)
+            return I18nService.get_user_locale(t)
 
         return self

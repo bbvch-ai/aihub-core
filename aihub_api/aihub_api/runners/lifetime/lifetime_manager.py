@@ -2,13 +2,14 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from fastapi import FastAPI
-from mongoengine import connect
+from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
 from aihub_api.persistance.EventPersister import EventPersister
@@ -63,7 +64,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db="aihub",
+        db=ApiConfig().DB_NAME,
         host=CosmosAccess().get_connection_string(),
     )
 
@@ -110,6 +111,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Shutdown: stop subscribers
         await persist_subscriber.stop()
         await ws_subscriber.stop()
+        disconnect()
 
     finally:
         # Close NATS connection on exit

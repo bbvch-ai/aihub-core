@@ -10,4 +10,4 @@ class AuthenticatedUser(BaseModel):
     roles: Optional[List[str]] = Field(..., default_factory=list, description="User's roles")
 
     def has_access_to_agent(self, agent_class: str, agent_id: str) -> bool:
-        return f"{agent_class}.{agent_id}" in self.roles
+        return f"{agent_class}.{agent_id}" in self.roles or "AllAgents" in self.roles

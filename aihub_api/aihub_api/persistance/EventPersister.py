@@ -26,20 +26,11 @@ class EventPersister:
     """
 
     def __init__(self, db: str):
-        """
-        Initialize the persister with a given database name.
-
-        :param db: Name of the MongoDB database to store events.
-        """
+        """Initialize the persister with a given database name."""
         self.db = db
 
     async def persist_event(self, event: BaseEvent, topic: AgentTopic) -> None:
-        """
-        Persist the given event along with its topic metadata into MongoDB.
-
-        :param event: The event object to persist.
-        :param topic: The parsed topic metadata (agent_class, agent_id, thread_id, etc.).
-        """
+        """Persist the given event along with its topic metadata into MongoDB."""
         persisted_entity = PersistedEventEntity(
             id=ObjectId(),
             agent_class=topic.agent_class,
