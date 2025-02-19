@@ -20,6 +20,7 @@ class AgentChatService(Service):
     @staticmethod
     async def json_chat_completion(
         turn_context: TurnContext,
+        path: str,
         agent_class: str,
         agent_id: str,
         nc: NATS,
@@ -35,6 +36,7 @@ class AgentChatService(Service):
         """
         resources: JsonResources = await AgentChatService.chat_completion(
             turn_context=turn_context,
+            path=path,
             agent_class=agent_class,
             agent_id=agent_id,
             nc=nc,
@@ -50,6 +52,7 @@ class AgentChatService(Service):
     @staticmethod
     async def stream_chat_completion(
         turn_context: TurnContext,
+        path: str,
         agent_class: str,
         agent_id: str,
         nc: NATS,
@@ -65,6 +68,7 @@ class AgentChatService(Service):
         """
         resources: StreamingResources = await AgentChatService.chat_completion(
             turn_context=turn_context,
+            path=path,
             agent_class=agent_class,
             agent_id=agent_id,
             nc=nc,
@@ -76,7 +80,7 @@ class AgentChatService(Service):
             while True:
                 if resources.stop_event.is_set() and resources.chunk_queue.empty():
                     break
-                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=1)
+                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=30)
                 yield chunk_event.content
                 resources.chunk_queue.task_done()
 
@@ -85,6 +89,7 @@ class AgentChatService(Service):
     @staticmethod
     async def chat_completion(
         turn_context: TurnContext,
+        path: str,
         agent_class: str,
         agent_id: str,
         nc: NATS,
@@ -104,7 +109,13 @@ class AgentChatService(Service):
         persisted_messages: List[Message] = Service.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
-        messages: List[ChatMessage] = [
+        system_message: Message = Service.get_system_message(
+            turn_context=turn_context,
+            path=path,
+        )
+        if system_message is not None:
+            persisted_messages.insert(0, system_message)
+        chat_messages: List[ChatMessage] = [
             AgentChatService.message_to_chat_message(message) for message in persisted_messages
         ]
         if stream:
@@ -112,7 +123,7 @@ class AgentChatService(Service):
                 user_oid=turn_context.activity.from_property.id,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                messages=messages,
+                messages=chat_messages,
                 nc=nc,
                 ws_receiver=ws_receiver,
             )
@@ -121,7 +132,7 @@ class AgentChatService(Service):
                 user_oid=turn_context.activity.from_property.id,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                messages=messages,
+                messages=chat_messages,
                 nc=nc,
                 ws_receiver=ws_receiver,
             )

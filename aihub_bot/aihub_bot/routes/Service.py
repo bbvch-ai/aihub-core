@@ -47,7 +47,7 @@ class Service(ChatService):
         return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
 
     @staticmethod
-    def get_system_message(path: str, username: str) -> Optional[str]:
+    def get_system_message(turn_context: TurnContext, path: str) -> Optional[Message]:
         """
         ### What
         - Returns the configured system message for the given path.
@@ -61,7 +61,13 @@ class Service(ChatService):
         system_message: Optional[str] = PathEntity.get_system_message_by_path(path)
         if system_message is None:
             return None
-        return system_message.format(username=username)
+        username = turn_context.activity.from_property.name
+        system_message = system_message.format(username=username)
+        return Message(
+            user_id="system",
+            content=system_message,
+            role="system",
+        )
 
     @staticmethod
     def update_slack_turn_context(turn_context: TurnContext):
@@ -116,47 +122,6 @@ class Service(ChatService):
             role=turn_context.activity.recipient.role or "bot",
         )
         return Service.add_messages_to_conversation(turn_context, bot_message)
-
-    @staticmethod
-    def add_system_message_to_conversation(
-        turn_context: TurnContext,
-        path: str,
-    ) -> ConversationEntity:
-        """
-        ### What
-        - If the first message in the conversation is a system message, do nothing.
-        - Get the system message for the given path.
-        - Add the system message to the beginning of the conversation.
-
-        ### Why
-        - The system message should be added only once.
-        - System messages are instructions for the LLM and Agents and are always the first message in the conversation.
-        - See `add_messages_to_conversation`.
-        """
-        conversation: ConversationEntity = ConversationEntity.get_conversation_by_conversation_id(
-            conversation_id=turn_context.activity.conversation.id,
-        )
-        messages = conversation.messages if conversation is not None else []
-        if len(messages) != 0 and messages[0].role == "system":
-            return conversation
-
-        system_message = Service.get_system_message(
-            path=path,
-            username=turn_context.activity.from_property.name,
-        )
-
-        if system_message is None:
-            return conversation
-        message: Message = Message(
-            user_id="system",
-            content=system_message,
-            role="system",
-        )
-
-        return ConversationEntity.add_system_message_to_conversation(
-            conversation_id=turn_context.activity.conversation.id,
-            message=message,
-        )
 
     @staticmethod
     def add_messages_to_conversation(

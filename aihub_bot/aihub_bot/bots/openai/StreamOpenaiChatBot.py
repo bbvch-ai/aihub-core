@@ -28,13 +28,14 @@ class StreamOpenaiChatBot(OpenaiChatBot):
         if turn_context.activity.channel_id == "slack":
             turn_context = OpenaiChatService.update_slack_turn_context(turn_context)
 
-        OpenaiChatService.add_system_message_to_conversation(
+        OpenaiChatService.get_system_message(
             turn_context=turn_context,
             path=self.path,
         )
 
         response_generator: AsyncGenerator[str, None] = await OpenaiChatService.stream_chat_completion(
             turn_context=turn_context,
+            path=self.path,
             model_name=self.model_name,
             client=self.client,
         )

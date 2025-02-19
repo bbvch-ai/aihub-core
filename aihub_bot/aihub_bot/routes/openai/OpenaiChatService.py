@@ -45,6 +45,7 @@ class OpenaiChatService(Service):
     @staticmethod
     async def json_chat_completion(
         turn_context: TurnContext,
+        path: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
         model_name: str,
     ) -> str:
@@ -58,6 +59,7 @@ class OpenaiChatService(Service):
         """
         chat_completion: ChatCompletion = await OpenaiChatService.chat_completion(
             turn_context=turn_context,
+            path=path,
             model_name=model_name,
             client=client,
             stream=False,
@@ -67,6 +69,7 @@ class OpenaiChatService(Service):
     @staticmethod
     async def stream_chat_completion(
         turn_context: TurnContext,
+        path: str,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
     ) -> AsyncGenerator[str, None]:
@@ -80,6 +83,7 @@ class OpenaiChatService(Service):
         """
         chat_completion: AsyncStream[ChatCompletionChunk] = await OpenaiChatService.chat_completion(
             turn_context=turn_context,
+            path=path,
             model_name=model_name,
             client=client,
             stream=True,
@@ -99,7 +103,11 @@ class OpenaiChatService(Service):
 
     @staticmethod
     async def chat_completion(
-        turn_context: TurnContext, model_name: str, client: AsyncOpenAI | AsyncAzureOpenAI, stream: bool
+        turn_context: TurnContext,
+        path: str,
+        model_name: str,
+        client: AsyncOpenAI | AsyncAzureOpenAI,
+        stream: bool,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         """
         ### What
@@ -114,12 +122,18 @@ class OpenaiChatService(Service):
         persisted_messages: List[Message] = Service.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
-        messages: List[ChatCompletionMessageParam] = [
+        system_message: Message = Service.get_system_message(
+            turn_context=turn_context,
+            path=path,
+        )
+        if system_message is not None:
+            persisted_messages.insert(0, system_message)
+        chat_messages: List[ChatCompletionMessageParam] = [
             OpenaiChatService.message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
         return await client.chat.completions.create(
             model=model_name,
-            messages=messages,
+            messages=chat_messages,
             stream=stream,
         )
 

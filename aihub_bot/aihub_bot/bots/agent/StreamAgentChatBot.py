@@ -28,13 +28,14 @@ class StreamAgentChatBot(AgentChatBot):
         if turn_context.activity.channel_id == "slack":
             turn_context = AgentChatService.update_slack_turn_context(turn_context)
 
-        AgentChatService.add_system_message_to_conversation(
+        AgentChatService.get_system_message(
             turn_context=turn_context,
             path=self.path,
         )
 
         response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat_completion(
             turn_context=turn_context,
+            path=self.path,
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             nc=self.nc,

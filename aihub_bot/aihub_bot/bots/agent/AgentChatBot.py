@@ -31,13 +31,9 @@ class AgentChatBot(ActivityHandler):
         if turn_context.activity.channel_id == "slack":
             turn_context = AgentChatService.update_slack_turn_context(turn_context)
 
-        AgentChatService.add_system_message_to_conversation(
-            turn_context=turn_context,
-            path=self.path,
-        )
-
         response = await AgentChatService.json_chat_completion(
             turn_context=turn_context,
+            path=self.path,
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             nc=self.nc,
