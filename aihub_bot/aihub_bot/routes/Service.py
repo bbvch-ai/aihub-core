@@ -4,7 +4,7 @@ from typing import Optional, List, AsyncGenerator
 
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity
+from botbuilder.schema import Activity, Entity
 from fastapi import Request
 
 from aihub_bot.persistence.entities.ConversationEntity import Message, ConversationEntity
@@ -70,6 +70,35 @@ class Service(ChatService):
         )
 
     @staticmethod
+    def is_slack_channel_message(turn_context: TurnContext) -> bool:
+        """
+        ### What
+        - Check if the message is from a Slack channel.
+
+        ### Why
+        - Slack channel messages need special handling.
+        """
+        assert turn_context.activity.channel_id == "slack"
+        conversation_id: str = turn_context.activity.conversation.id
+        channel_id_regex = re.compile(r"^B[0-9A-Z]{10}:T[0-9A-Z]{10}:C[0-9A-Z]{10}$")
+        return channel_id_regex.match(conversation_id) is not None
+
+    @staticmethod
+    def is_bot_mentioned(turn_context: TurnContext) -> bool:
+        """
+        ### What
+        - Check if the bot is mentioned in the user's message.
+
+        ### Why
+        - The Bot may only respond if it is mentioned.
+        """
+        mentions: List[Entity] = turn_context.activity.get_mentions()
+        return any(
+            mention.additional_properties["mentioned"]["id"] == turn_context.activity.recipient.id
+            for mention in mentions
+        )
+
+    @staticmethod
     def update_slack_turn_context(turn_context: TurnContext):
         """
         ### What
@@ -80,15 +109,12 @@ class Service(ChatService):
         1. The Bot should always respond in the same thread as the user's message.
         2. The Bot should have all channel messages to understand the conversation context.
         """
-        assert turn_context.activity.channel_id == "slack"
-        conversation_id: str = turn_context.activity.conversation.id
-        channel_id_regex = re.compile(r"^B[0-9A-Z]{10}:T[0-9A-Z]{10}:C[0-9A-Z]{10}$")
-        if channel_id_regex.match(conversation_id):
-            channel_data = turn_context.activity.channel_data
-            ts: str = channel_data["SlackMessage"]["event"]["ts"]
-            turn_context.activity.conversation.id = conversation_id + f":{ts}"
-            parent_messages: List[Message] = Service.get_messages_by_conversation_id(conversation_id)
-            Service.add_messages_to_conversation(turn_context, parent_messages)
+        channel_conversation_id: str = turn_context.activity.conversation.id
+        channel_data = turn_context.activity.channel_data
+        ts: str = channel_data["SlackMessage"]["event"]["ts"]
+        turn_context.activity.conversation.id = channel_conversation_id + f":{ts}"
+        parent_messages: List[Message] = Service.get_messages_by_conversation_id(channel_conversation_id)
+        Service.add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
 
     @staticmethod
