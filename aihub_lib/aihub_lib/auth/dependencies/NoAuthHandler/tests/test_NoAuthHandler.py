@@ -1,6 +1,6 @@
 import pytest
 from fastapi import Request
-from pytest_bdd import given, parsers, scenario, then, when
+from pytest_bdd import given, parsers, scenario, then, when, scenarios
 
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -8,10 +8,8 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 # --- Scenario Declaration ---
 
 
-@scenario("features/no_auth_handler.feature", "NoAuthHandler returns a static user")
-def test_no_auth_handler() -> None:
-    """Scenario: NoAuthHandler returns a static user."""
-    pass
+scenarios("features/no_auth_handler.feature")
+
 
 
 # --- Fixtures ---

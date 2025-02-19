@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 import jwt
 import pytest
-from pytest_bdd import given, parsers, scenario, then, when
+from pytest_bdd import given, parsers, scenario, then, when, scenarios
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -18,36 +18,7 @@ from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
 
 # --- Scenario Declarations ---
 
-
-@scenario("features/oauth2_auth_handler.feature", "Valid OAuth2 token returns authenticated user")
-def test_valid_oauth2_token() -> None:
-    """Scenario: Valid OAuth2 token returns authenticated user."""
-    pass
-
-
-@scenario("features/oauth2_auth_handler.feature", "Invalid token format is rejected")
-def test_invalid_format() -> None:
-    """Scenario: Invalid token format is rejected."""
-    pass
-
-
-@scenario("features/oauth2_auth_handler.feature", "Expired OAuth2 token is rejected")
-def test_expired_token() -> None:
-    """Scenario: Expired OAuth2 token is rejected."""
-    pass
-
-
-@scenario("features/oauth2_auth_handler.feature", "Token with unknown key id is rejected")
-def test_unknown_kid() -> None:
-    """Scenario: Token with unknown key id is rejected."""
-    pass
-
-
-@scenario("features/oauth2_auth_handler.feature", "Token with invalid signature is rejected")
-def test_invalid_signature() -> None:
-    """Scenario: Token with invalid signature is rejected."""
-    pass
-
+scenarios("features/oauth2_auth_handler.feature")
 
 # --- Fixtures ---
 

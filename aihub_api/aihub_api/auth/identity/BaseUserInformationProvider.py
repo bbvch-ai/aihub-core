@@ -19,10 +19,4 @@ class BaseUserInformationProvider(ABC):
 
     @abstractmethod
     def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        """
-        Retrieve user information from the identity provider using the user's OID.
-
-        :param oid: The unique OID of the user in the identity provider.
-        :return: A `UserDTO` instance containing user details (id, name, email).
-        """
         pass

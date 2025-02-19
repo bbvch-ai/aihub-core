@@ -1,6 +1,6 @@
 import pytest
 from fastapi import HTTPException, Request
-from pytest_bdd import given, parsers, scenario, then, when
+from pytest_bdd import given, parsers, scenario, then, when, scenarios
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -55,9 +55,6 @@ def multi_auth_error() -> dict:
     return {}
 
 
-# --- Optional: Fixture to create a dummy request ---
-
-
 @pytest.fixture
 def dummy_request() -> Request:
     """Create and return a dummy Request object."""
@@ -65,31 +62,10 @@ def dummy_request() -> Request:
     return Request(scope)
 
 
-# --- Scenario declarations ---
+# --- Scenario Declarations ---
 
 
-@scenario("features/multi_auth_handler.feature", "First handler succeeds")
-def test_multi_auth_first_success():
-    """Scenario: First handler succeeds."""
-    pass
-
-
-@scenario("features/multi_auth_handler.feature", "First fails with 401, second succeeds")
-def test_multi_auth_first_fail_second_success():
-    """Scenario: First fails with 401, second succeeds."""
-    pass
-
-
-@scenario("features/multi_auth_handler.feature", "All handlers fail with 401 errors")
-def test_multi_auth_all_fail():
-    """Scenario: All handlers fail with 401 errors."""
-    pass
-
-
-@scenario("features/multi_auth_handler.feature", "A handler fails with a non-401 error")
-def test_multi_auth_non_401_fail():
-    """Scenario: A handler fails with a non-401 error."""
-    pass
+scenarios("features/multi_auth_handler.feature")
 
 
 # --- Given step: Build the MultiAuthHandler from a data table ---

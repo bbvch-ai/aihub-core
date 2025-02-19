@@ -16,16 +16,10 @@ class ApiTokenUserInformationProvider(BaseUserInformationProvider):
     """
 
     def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        """
-        Fetch user information from your MongoDB database using an OID.
-
-        :param oid: The unique OID of the user.
-        :return: A `UserDTO` with user details such as id, name, and email.
-        :raises Exception: If no user is found with the provided oid.
-        """
+        """Fetch user information from your MongoDB database using an OID."""
         token_obj = BearerToken.objects(user__oid=oid).first()
         if token_obj is None:
-            raise Exception(f"User with oid '{oid}' not found in the database.")
+            raise ValueError(f"User with oid '{oid}' not found in the database.")
 
         api_user = token_obj.user
         return UserDTO(

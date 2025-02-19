@@ -12,21 +12,14 @@ class MultiStrategyUserInformationProvider(BaseUserInformationProvider):
     """
 
     def __init__(self, *providers: BaseUserInformationProvider):
-        """
-        Initializes the composite provider with a list of base providers.
-
-        :param providers: A list of instances of BaseUserInformationProvider.
-        """
+        """Initializes the composite provider with a list of base providers."""
+        if len(providers) == 0:
+            raise ValueError("At least one user information provider must be provided.")
         self.providers = providers
 
-    def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        """
-        Attempts to fetch user information using the provided base providers in order.
 
-        :param oid: The unique OID of the user.
-        :return: A `UserDTO` with user details such as id, name, and email.
-        :raises Exception: If all providers fail to fetch the user information.
-        """
+    def get_user_info_by_oid(self, oid: str) -> UserDTO:
+        """Attempts to fetch user information using the provided base providers in order."""
         errors = []
         for provider in self.providers:
             try:
@@ -35,4 +28,4 @@ class MultiStrategyUserInformationProvider(BaseUserInformationProvider):
                 errors.append(f"{provider.__class__.__name__}: {str(e)}")
 
         error_message = f"All user information providers failed for oid '{oid}'. Errors: " + " | ".join(errors)
-        raise Exception(error_message)
+        raise PermissionError(error_message)

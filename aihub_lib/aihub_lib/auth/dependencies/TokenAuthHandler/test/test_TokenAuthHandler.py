@@ -1,11 +1,12 @@
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Generator
 
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException, Request
 from mongoengine import connect, disconnect
-from pytest_bdd import given, parsers, scenario, then, when
+from pytest_bdd import given, parsers, scenario, then, when, scenarios
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
@@ -16,48 +17,21 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 
 @pytest.fixture(autouse=True)
-def mongo_connection(monkeypatch) -> None:
+def mongo_connection(monkeypatch) -> Generator[None, None, None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     monkeypatch.setenv("COSMOS_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/")
-    connection = connect(
+    connect(
         db="aihub",
         host=CosmosAccess().get_connection_string(),
     )
-    yield connection
+    yield
     disconnect()
 
 
 # --- Scenario Declarations ---
 
 
-@scenario("features/token_auth_handler.feature", "Valid token returns authenticated user")
-def test_valid_token() -> None:
-    """Scenario: Valid token returns authenticated user."""
-    pass
-
-
-@scenario("features/token_auth_handler.feature", "Token with invalid format is rejected")
-def test_invalid_format() -> None:
-    """Scenario: Token with invalid format is rejected."""
-    pass
-
-
-@scenario("features/token_auth_handler.feature", "Token not found in database is rejected")
-def test_token_not_found() -> None:
-    """Scenario: Token not found in database is rejected."""
-    pass
-
-
-@scenario("features/token_auth_handler.feature", "Token mismatch causes rejection")
-def test_token_mismatch() -> None:
-    """Scenario: Token mismatch causes rejection."""
-    pass
-
-
-@scenario("features/token_auth_handler.feature", "Expired token is rejected")
-def test_expired_token() -> None:
-    """Scenario: Expired token is rejected."""
-    pass
+scenarios("features/token_auth_handler.feature")
 
 
 # --- Common Fixtures and Helpers ---

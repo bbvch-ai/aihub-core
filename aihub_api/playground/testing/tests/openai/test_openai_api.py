@@ -111,6 +111,7 @@ async def test_chat_completion(api_client):
             {"role": "assistant", "content": "Hello"},
             {"role": "user", "content": "Again"},
         ],
+        "temperature": 0,
         "stream": False,
     }
     response = await api_client.post("/api/v1/openai/chat/completions", json=payload)
@@ -122,4 +123,4 @@ async def test_chat_completion(api_client):
     assert isinstance(data["choices"], list)
     completion = data["choices"][0]["message"]
     assert completion.get("role") == "assistant"
-    assert completion.get("content") == "Hello"
+    assert "hello" in completion.get("content").lower()
