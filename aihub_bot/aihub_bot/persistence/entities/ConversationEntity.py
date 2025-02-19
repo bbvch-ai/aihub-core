@@ -22,17 +22,6 @@ class ConversationEntity(Document):
     - Tracks participants involved in a given conversation.
     - Enables retrieval of prior messages for contextual interactions.
 
-    ### Key Fields
-    - `conversation_id`: Unique identifier for the conversation.
-    - `messages`: Stored chat history.
-
-    ### Methods
-    - `create_conversation`: Create a new conversation with the given users and messages.
-    - `add_messages_to_conversation`: Add messages to the end of an existing conversation.
-    - `get_conversation_by_conversation_id`: Retrieve a conversation by its unique identifier.
-    - `add_system_message_to_conversation`: Add a system message to the beginning of an existing conversation.
-    - `get_messages_by_conversation_id`: Retrieve all messages from a conversation.
-
     ### Usage
     This class enables AI agents to maintain contextual awareness across multiple exchanges,
     ensuring better response generation and user experience.
