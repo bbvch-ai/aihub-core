@@ -11,14 +11,32 @@ class Credentials(EmbeddedDocument):
 
 
 class PathEntity(Document):
+    """
+    Represents the configuration for a given path/endpoint and therefore for a specific bot.
+
+    ### Purpose
+    - Stores the credentials required to authenticate with a given bot.
+    - Stores the system message with instructions for the bot.
+
+    ### Usage
+    This class enables the AI Hub to configure deployed bots with the necessary credentials and system messages
+    directly in the database.
+    """
+
     meta = {
         "collection": "paths",
         "strict": True,
     }
     path = StringField(required=True)
     credentials = EmbeddedDocumentField(Credentials, required=True)
+    system_message = StringField(required=False)
 
     @classmethod
     def get_credentials_by_path(cls, path: str) -> Optional[Credentials]:
         doc = cls.objects().filter(path=path).first()
         return doc.credentials if doc else None
+
+    @classmethod
+    def get_system_message_by_path(cls, path: str) -> Optional[str]:
+        doc = cls.objects().filter(path=path).first()
+        return doc.system_message if doc else None

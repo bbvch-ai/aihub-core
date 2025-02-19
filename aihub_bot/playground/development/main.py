@@ -1,6 +1,6 @@
 import asyncio
 
-from aihub_bot.routes.chat.openai.OpenaiChatController import OpenaiChatController
+from aihub_bot.routes.openai import OpenaiChatController
 from aihub_bot.runners.BotTestRunner import BotTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.routes.health.HealthController import HealthController

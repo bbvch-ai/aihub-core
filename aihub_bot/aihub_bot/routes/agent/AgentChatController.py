@@ -4,10 +4,10 @@ from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
 from nats.aio.client import Client as NATS
 
-from aihub_bot.bots.chat.agent.JsonAgentChatBot import JsonAgentChatBot
-from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
+from aihub_bot.bots.agent.AgentChatBot import AgentChatBot
+from aihub_bot.bots.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
-from aihub_bot.routes.chat.agent.AgentChatService import AgentChatService
+from aihub_bot.routes.agent.AgentChatService import AgentChatService
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
@@ -68,8 +68,9 @@ class AgentChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
-            chat_bot: JsonAgentChatBot = JsonAgentChatBot(nc, ws_receiver, agent_class, agent_id)
-            adapter: CloudAdapter = AgentChatService.get_adapter(request)
+            path: str = AgentChatService.get_path(request)
+            chat_bot: AgentChatBot = AgentChatBot(nc, ws_receiver, agent_class, agent_id, path)
+            adapter: CloudAdapter = AgentChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -109,8 +110,9 @@ class AgentChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
         ) -> Response:
-            chat_bot: StreamAgentChatBot = StreamAgentChatBot(nc, ws_receiver, agent_class, agent_id)
-            adapter: CloudAdapter = AgentChatService.get_adapter(request)
+            path: str = AgentChatService.get_path(request)
+            chat_bot: StreamAgentChatBot = StreamAgentChatBot(nc, ws_receiver, agent_class, agent_id, path)
+            adapter: CloudAdapter = AgentChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
