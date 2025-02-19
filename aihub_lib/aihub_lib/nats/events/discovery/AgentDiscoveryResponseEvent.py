@@ -46,6 +46,7 @@ class AgentDiscoveryResponseEvent(BaseEvent):
         ...,
         description="The agent's configuration object, containing details like the model used, temperature settings, or other domain-specific parameters.",
     )
+    is_conversational: bool = Field(..., description="Whether the agent can participate in a chat-based conversation")
     start_events: List[EventSpecs] = Field(
         ...,
         description="A list of `EventSpecs` objects, each describing a start event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",

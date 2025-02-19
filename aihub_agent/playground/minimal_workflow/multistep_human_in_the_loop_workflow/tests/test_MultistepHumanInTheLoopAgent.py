@@ -1,6 +1,5 @@
 import pytest
 import pytest_asyncio
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -41,9 +40,7 @@ async def agent_runner():
 @pytest.mark.asyncio
 async def test_multistep_human_in_the_loop_workflow(agent_runner: AgentTestRunner):
     # Start the agent
-    await agent_runner.send_event_from_topic(
-        start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER)]), topic=agent_runner.topic
-    )
+    await agent_runner.send_event_from_topic(start_event=StartEvent(), topic=agent_runner.topic)
 
     # Wait for the first step
     event = await agent_runner.wait_for_event(FirstStepHumanInTheLoopRequestEvent)

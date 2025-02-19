@@ -1,5 +1,4 @@
 from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -44,9 +43,7 @@ def _():
 async def _(agent_runner: AgentTestRunner, response: str):
     async with agent_runner.test_run() as topic:
         # Send StartEvent
-        await agent_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER)]), topic=topic
-        )
+        await agent_runner.send_event_from_topic(start_event=StartEvent(), topic=topic)
         # Get the HumanInTheLoopRequestEvent and send the corresponding response
         hil_request_event = await agent_runner.wait_for_event(HumanInTheLoopRequestEvent)
         await agent_runner.send_event_from_topic(

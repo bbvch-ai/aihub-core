@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import uuid
+from datetime import datetime, timezone
 from typing import List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
@@ -9,10 +11,12 @@ from aihub_lib.routes.chat.ChatService import ChatService as ChatServiceLib
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from nats.aio.client import Client as NATS
+from openai.types import CompletionUsage
+from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice as JsonChoice
+from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 
-from aihub_api.routes.chat.dto.ChatCompletionsRequest import ChatCompletionsRequest
-from aihub_api.routes.chat.dto.json.ChatCompletionsSuccessResponse import ChatCompletionsSuccessResponse
-from aihub_api.routes.chat.dto.stream.ChatCompletionChunk import ChatCompletionChunk
+from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +50,7 @@ class ChatService(ChatServiceLib):
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
-        chat_completions_request: ChatCompletionsRequest,
+        chat_completions_request: ChatCompletionRequest,
         nc: NATS,
         ws_receiver: WebSocketReceiver,
     ) -> StreamingResources:
@@ -73,7 +77,7 @@ class ChatService(ChatServiceLib):
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
-        chat_completions_request: ChatCompletionsRequest,
+        chat_completions_request: ChatCompletionRequest,
         nc: NATS,
         ws_receiver: WebSocketReceiver,
     ) -> JsonResources:
@@ -93,9 +97,7 @@ class ChatService(ChatServiceLib):
         )
 
     @staticmethod
-    def build_api_json_response(
-        chunk_events: List[ChunkEvent], costs: LLMCosts, model_name: str
-    ) -> ChatCompletionsSuccessResponse:
+    def build_api_json_response(chunk_events: List[ChunkEvent], costs: LLMCosts, model_name: str) -> ChatCompletion:
         """
         Construct a JSON response from collected chunk events and cost metrics.
 
@@ -103,7 +105,24 @@ class ChatService(ChatServiceLib):
         to wrap the content and usage data.
         """
         content = ChatService.build_json_response_content(chunk_events)
-        return ChatCompletionsSuccessResponse.from_string(content, costs, model=model_name)
+        return ChatCompletion(
+            id=str(uuid.uuid4()),
+            object="chat.completion",
+            created=int(datetime.now(timezone.utc).timestamp()),
+            model=model_name,
+            choices=[
+                JsonChoice(
+                    index=0,
+                    message=ChatCompletionMessage(role="assistant", content=content),
+                    finish_reason="stop",
+                )
+            ],
+            usage=CompletionUsage(
+                prompt_tokens=costs.prompt_token_count,
+                completion_tokens=costs.completion_token_count,
+                total_tokens=(costs.prompt_token_count + costs.completion_token_count),
+            ),
+        )
 
     @staticmethod
     def create_api_sse_generator(stop_event: asyncio.Event, chunk_queue: asyncio.Queue):
@@ -121,8 +140,13 @@ class ChatService(ChatServiceLib):
                     break
                 try:
                     chunk_event = await asyncio.wait_for(chunk_queue.get(), timeout=0.5)
-                    chat_completion_chunk = ChatCompletionChunk.from_string(
-                        chunk_event.content, model=chunk_event.model_name
+                    chat_completion_chunk = ChatCompletionChunk(
+                        id=str(uuid.uuid4()),
+                        object="chat.completion.chunk",
+                        created=int(datetime.now(timezone.utc).timestamp()),
+                        model=chunk_event.model_name,
+                        choices=[Choice(index=0, delta=ChoiceDelta(content=chunk_event.content, role="assistant"))],
+                        usage=None,
                     )
                     yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
                     chunk_queue.task_done()
@@ -132,7 +156,14 @@ class ChatService(ChatServiceLib):
                 except asyncio.CancelledError:
                     break
             # Send a final "stop" chunk at the end
-            chat_completion_chunk = ChatCompletionChunk.from_string("", model="", finish_reason="stop")
+            chat_completion_chunk = ChatCompletionChunk(
+                id=str(uuid.uuid4()),
+                object="chat.completion.chunk",
+                created=int(datetime.now(timezone.utc).timestamp()),
+                model="",
+                choices=[Choice(index=0, delta=ChoiceDelta(content="", role="assistant"), finish_reason="stop")],
+                usage=None,
+            )
             yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
 
         return sse_event_generator()

@@ -1,7 +1,6 @@
 import asyncio
 
 from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.chat.ChatController import ChatController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
@@ -46,7 +45,6 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().discover_agents(),
-        ChatController(auth=auth).completions_json().completions_stream(),
         TokenController().create_token().list_tokens().revoke_token(),
         OpenaiController(
             auth=auth,
@@ -106,10 +104,10 @@ async def main():
                 )
             ],
         )
-        .get_models()
-        .get_model()
+        .get_models_with_assistants()
+        .get_model_with_assistants()
         .get_embeddings()
-        .chat_completion()
+        .chat_completion_with_assistants()
         .generate_image()
         .stt()
         .tts(),

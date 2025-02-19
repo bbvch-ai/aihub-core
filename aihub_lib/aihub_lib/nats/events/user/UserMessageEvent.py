@@ -1,5 +1,12 @@
-from aihub_lib.nats.events.control.start import StartEvent
+from typing import List, Optional
+
+from llama_index.core.base.llms.types import ChatMessage
+from pydantic import Field
+
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
 
 
 class UserMessageEvent(DisplayEvent, StartEvent):
@@ -28,4 +35,19 @@ class UserMessageEvent(DisplayEvent, StartEvent):
     are triggered, depending on the source of the event.
     """
 
-    pass
+    locale: Optional[str] = Field(
+        LocaleHandler.DEFAULT_LOCALE,
+        description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.",
+    )
+    messages: List[ChatMessage | UserChatMessage | AssistantChatMessage] = Field(
+        description="A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
+        default_factory=list,
+    )
+
+    @property
+    def user_query(self) -> str:
+        """
+        Extracts the user query from the chat history, returning the last user message.
+        """
+        user_messages = [msg for msg in self.messages if msg.role == "user"]
+        return user_messages[-1].content if user_messages else ""

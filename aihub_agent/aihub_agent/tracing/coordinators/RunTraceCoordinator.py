@@ -6,7 +6,7 @@ from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.context.BaseContext import BaseContext
-from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -88,7 +88,7 @@ class RunTraceCoordinator:
 
         Returns a dict of telemetry headers to pass along for consistent parent-child relationships in spans.
         """
-        user_input = event.messages[-1].content if event.messages else ""
+        user_input = event.user_query if isinstance(event, UserMessageEvent) else ""
         with self.tracer.start_as_current_span(
             name=f"🤖 {topic.agent_class}",
             kind=trace.SpanKind.SERVER,

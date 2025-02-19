@@ -31,7 +31,7 @@ def _():
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[]),
+            start_event=StartEvent(),
             topic=topic,
         )
 

@@ -124,6 +124,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 description=LocaleString(de="Test Agent Description"),
                 system_prompt=LocaleString(de="Test Agent System Prompt"),
             ),
+            is_conversational=True,
             start_events=start_events,
             stop_events=stop_events,
         )

@@ -22,7 +22,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLM
 )
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, LLMEvent
+from aihub_lib.nats.events import StartEvent, LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
@@ -183,7 +183,7 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(locale="en", messages=[ChatMessage(content=query, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(locale="en", messages=[ChatMessage(content=query, role=MessageRole.USER)]),
         )
 
 
@@ -191,7 +191,7 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
 def then_start_event_present(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive StartEvent"
 
-    start_event = agent_runner.get_event_of_type(StartEvent)
+    start_event = agent_runner.get_event_of_type(UserMessageEvent)
     user_messages = [m for m in start_event.messages if m.role == MessageRole.USER]
     assert any(payload in m.content for m in user_messages), "No user message payload found in StartEvent"
 

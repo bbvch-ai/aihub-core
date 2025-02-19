@@ -8,9 +8,13 @@ from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import Chat
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
+from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import Body, Depends, File, Form, UploadFile
 from llama_index.llms.openai import OpenAI
+from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
@@ -86,6 +90,21 @@ class OpenaiController(Controller):
 
         return self
 
+    def get_models_with_assistants(self, route: str = "/models") -> "OpenaiController":
+        @self.router.get(
+            route,
+            summary="List Models (including ai-hub assistants)",
+            description="Lists the currently available models and ai-hub assistants, and provides basic information about each one such as the owner and availability.",
+            response_model=ModelResponse,
+        )
+        async def get_models(
+            nc: Annotated[NATS, Depends(use_nats)],
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> ModelResponse:
+            return await OpenaiService.get_models_with_assistants(self.chat_models, nc)
+
+        return self
+
     def get_model(self, route: str = "/models/{full_path:path}") -> "OpenaiController":
         @self.router.get(
             route,
@@ -97,6 +116,21 @@ class OpenaiController(Controller):
             user: AuthenticatedUser = Depends(self.auth),
         ) -> ModelDetails:
             return OpenaiService.get_model(self.chat_models, model_name=full_path)
+
+        return self
+
+    def get_model_with_assistants(self, route: str = "/models/{full_path:path}") -> "OpenaiController":
+        @self.router.get(
+            route,
+            summary="Retrieve model (including ai-hub assistants)",
+            description="Retrieves a model or ai-hub assistant instance, providing basic information about the model such as the owner and permissioning.",
+        )
+        async def get_model(
+            full_path: str,
+            nc: Annotated[NATS, Depends(use_nats)],
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> ModelDetails:
+            return await OpenaiService.get_model_with_assistants(self.chat_models, model_name=full_path, nc=nc)
 
         return self
 
@@ -133,6 +167,25 @@ class OpenaiController(Controller):
         ) -> ChatCompletion | StreamingResponse:
             return await OpenaiService.chat_completion(
                 self.chat_models, completion_request.model, completion_request.model_dump()
+            )
+
+        return self
+
+    def chat_completion_with_assistants(self, route: str = "/chat/completions") -> "OpenaiController":
+        @self.router.post(
+            route,
+            response_model=ChatCompletion,
+            summary="Create chat completion (including ai-hub assistants)",
+            description="Creates a model or ai-hub assistant response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
+        )
+        async def chat_completion(
+            completion_request: Annotated[ChatCompletionRequest, Body],
+            nc: Annotated[NATS, Depends(use_nats)],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Depends(self.auth),
+        ) -> ChatCompletion | StreamingResponse:
+            return await OpenaiService.chat_completion_with_assistants(
+                self.chat_models, completion_request.model, completion_request, user, nc, ws_receiver
             )
 
         return self

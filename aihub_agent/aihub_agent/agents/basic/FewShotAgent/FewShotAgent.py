@@ -36,7 +36,7 @@ class FewShotAgent(Agent):
     @step()
     async def limit_chat_history_step(
         self,
-        event: StartEvent | UserMessageEvent,
+        event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
     ) -> LimitChatHistoryEvent:
         """
@@ -52,7 +52,7 @@ class FewShotAgent(Agent):
     async def right_agent_guard(
         self,
         event: LimitChatHistoryEvent,
-        start_event: StartEvent | UserMessageEvent,
+        start_event: UserMessageEvent,
         t: LocaleHandler,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
@@ -77,7 +77,7 @@ class FewShotAgent(Agent):
     async def condense_standalone_question_step(
         self,
         _: RightAgentEvent,
-        start_event: StartEvent | UserMessageEvent,
+        start_event: UserMessageEvent,
         chat_history_event: LimitChatHistoryEvent,
         agent_config: FewShotAgentConfig,
         t: LocaleHandler,
@@ -102,7 +102,7 @@ class FewShotAgent(Agent):
     async def create_few_shot_examples(
         self,
         event: FewShotStandaloneQuestionCondenserEvent,
-        start_event: StartEvent | UserMessageEvent,
+        start_event: UserMessageEvent,
         chat_history_event: LimitChatHistoryEvent,
         agent_config: FewShotAgentConfig,
     ) -> FewShotEvent:

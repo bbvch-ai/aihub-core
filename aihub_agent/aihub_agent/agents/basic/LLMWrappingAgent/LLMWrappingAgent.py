@@ -10,7 +10,7 @@ class LLMWrappingAgent(Agent):
     @step()
     async def start_step(
         self,
-        event: StartEvent | UserMessageEvent,
+        event: UserMessageEvent,
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
     ) -> LLMEvent:
