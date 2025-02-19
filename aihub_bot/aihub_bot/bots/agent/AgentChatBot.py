@@ -1,9 +1,9 @@
-from botbuilder.core import TurnContext, ActivityHandler
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from botbuilder.core import ActivityHandler, TurnContext
 from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.routes.agent.AgentChatService import AgentChatService
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class AgentChatBot(ActivityHandler):
