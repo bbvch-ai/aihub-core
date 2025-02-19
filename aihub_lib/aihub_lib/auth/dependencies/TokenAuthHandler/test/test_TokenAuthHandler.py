@@ -6,7 +6,7 @@ import pytest
 from bson import ObjectId
 from fastapi import HTTPException, Request
 from mongoengine import connect, disconnect
-from pytest_bdd import given, parsers, scenario, then, when, scenarios
+from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
