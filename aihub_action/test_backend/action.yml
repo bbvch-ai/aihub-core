@@ -27,6 +27,7 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+        cache: 'poetry'
 
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_paths != ''
@@ -56,7 +57,14 @@ runs:
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
-        version: 1.8.3
+        version: '2.1.1'
+
+    - name: Cache Poetry Dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pypoetry
+        key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: poetry-${{ runner.os }}-
 
     - name: Validate Global Poetry Lock
       shell: bash
