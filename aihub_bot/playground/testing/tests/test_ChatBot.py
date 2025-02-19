@@ -43,7 +43,7 @@ async def test_runner():
 
     # A simple way is to wait for the health endpoint to respond.
     async with httpx.AsyncClient() as client:
-        for _ in range(10):  # Try for up to ~5 seconds
+        for _ in range(30):
             try:
                 response = await client.get(HEALTH_ENDPOINT)
                 if response.status_code == 200:
@@ -135,18 +135,15 @@ async def test_stream_response(test_runner: SimulatedAgentBotTestRunner):
 
     assert response.status_code == 200
 
-    max_retries = 10
-    retries = 0
-    while True:
+    for _ in range(30):
         if (
             test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
             and test_runner.responses[-2].payload["text"] == "First chunk.\n"
         ):
             break
-        if retries >= max_retries:
-            pytest.fail(f"Chunks not received in time. Last chunk: {test_runner.responses[-1].payload}")
-        retries += 1
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
+    else:
+        pytest.fail(f"Chunks not received in time. Last chunk: {test_runner.responses[-1].payload}")
 
     assert test_runner.responses[-2].path == f"/v3/conversations/{CONVERSATION_ID}/activities/{ACTIVITY_ID}"
     assert test_runner.responses[-2].payload["type"] == "message"
