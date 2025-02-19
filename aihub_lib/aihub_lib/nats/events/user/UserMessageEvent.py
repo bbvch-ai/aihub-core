@@ -1,3 +1,6 @@
+from pydantic import Field
+
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
@@ -28,4 +31,4 @@ class UserMessageEvent(DisplayEvent, StartEvent):
     are triggered, depending on the source of the event.
     """
 
-    pass
+    user: AuthenticatedUser = Field(..., description="User who sent the message")

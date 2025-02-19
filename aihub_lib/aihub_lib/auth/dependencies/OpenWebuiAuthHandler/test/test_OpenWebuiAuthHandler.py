@@ -8,13 +8,12 @@ from fastapi import HTTPException, Request
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import ApiUser, BearerToken
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- MongoDB Connection Fixture ---
-
 
 @pytest.fixture(autouse=True)
 def mongo_connection(monkeypatch) -> Generator[None, None, None]:
@@ -30,12 +29,10 @@ def mongo_connection(monkeypatch) -> Generator[None, None, None]:
 
 # --- Scenario Declarations ---
 
-
-scenarios("features/token_auth_handler.feature")
+scenarios("features/openwebui_auth_handler.feature")
 
 
 # --- Common Fixtures and Helpers ---
-
 
 @pytest.fixture
 def token_context() -> dict:
@@ -45,13 +42,13 @@ def token_context() -> dict:
 
 @pytest.fixture
 def token_context_result() -> dict:
-    """Store the authenticated user returned by TokenAuthHandler."""
+    """Store the authenticated user returned by OpenWebuiAuthHandler."""
     return {}
 
 
 @pytest.fixture
 def error_context() -> dict:
-    """Store error information when TokenAuthHandler rejects a token."""
+    """Store error information when OpenWebuiAuthHandler rejects a token."""
     return {}
 
 
@@ -78,7 +75,6 @@ def generate_dummy_valid_token(oid: str) -> str:
 
 
 # --- Given Steps ---
-
 
 @given(
     parsers.parse(
@@ -149,45 +145,54 @@ def set_token_expired(token_context: dict) -> None:
 
 # --- When Steps ---
 
-
-@when("I invoke the TokenAuthHandler with an Authorization header using the token")
+@when("I invoke the OpenWebuiAuthHandler with the required headers and a valid token")
 @async_test
-async def invoke_token_auth_handler(token_context: dict, token_context_result: dict) -> None:
-    """Invoke the TokenAuthHandler with the token and store the authenticated user."""
+async def invoke_openwebui_auth_handler(token_context: dict, token_context_result: dict) -> None:
+    """Invoke the OpenWebuiAuthHandler with the open-webui headers and the token and store the authenticated user."""
     token_str = token_context["token_str"]
-    headers = {"Authorization": f"Bearer {token_str}"}
+    # The open-webui headers provide user name, id, and email.
+    headers = {
+        "X-OpenWebUI-User-Name": "OpenWebUI User",
+        "X-OpenWebUI-User-Id": "unused_in_result",  # This header is not used for oid
+        "X-OpenWebUI-User-Email": "openwebui@example.com",
+        "Authorization": f"Bearer {token_str}"
+    }
     request = create_dummy_request(headers)
-    handler = TokenAuthHandler()
+    handler = OpenWebuiAuthHandler()
     try:
         user = await handler(request)
     except HTTPException as e:
-        pytest.fail(f"TokenAuthHandler raised an unexpected exception: {e.detail}")
+        pytest.fail(f"OpenWebuiAuthHandler raised an unexpected exception: {e.detail}")
     token_context_result["user"] = user
 
 
-@when("I invoke the TokenAuthHandler with an Authorization header using the token expecting error")
+@when("I invoke the OpenWebuiAuthHandler with the required headers and a token expecting error")
 @async_test
-async def invoke_token_auth_handler_expect_error(token_context: dict, error_context: dict) -> None:
-    """Invoke the TokenAuthHandler with the token and capture the error."""
+async def invoke_openwebui_auth_handler_expect_error(token_context: dict, error_context: dict) -> None:
+    """Invoke the OpenWebuiAuthHandler with the open-webui headers and the token, capturing any error."""
     token_str = token_context["token_str"]
-    headers = {"Authorization": f"Bearer {token_str}"}
+    headers = {
+        "X-OpenWebUI-User-Name": "OpenWebUI User",
+        "X-OpenWebUI-User-Id": "unused_in_result",
+        "X-OpenWebUI-User-Email": "openwebui@example.com",
+        "Authorization": f"Bearer {token_str}"
+    }
     request = create_dummy_request(headers)
-    handler = TokenAuthHandler()
+    handler = OpenWebuiAuthHandler()
     try:
         await handler(request)
-        pytest.fail("TokenAuthHandler did not raise an exception")
+        pytest.fail("OpenWebuiAuthHandler did not raise an exception")
     except HTTPException as e:
         error_context["error"] = e.detail
 
 
 # --- Then Steps ---
 
-
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
 def check_name(token_context_result: dict, expected_name: str) -> None:
     """Check that the authenticated user has the expected name."""
     user = token_context_result.get("user")
-    assert user is not None, "No user was returned by TokenAuthHandler"
+    assert user is not None, "No user was returned by OpenWebuiAuthHandler"
     assert user.name == expected_name, f"Expected name '{expected_name}', got '{user.name}'"
 
 
@@ -202,7 +207,7 @@ def check_preferred_username(token_context_result: dict, expected_email: str) ->
 
 @then("the returned user should have oid matching the token's user id")
 def check_user_oid(token_context_result: dict, token_context: dict) -> None:
-    """Check that the authenticated user's oid matches the expected user id."""
+    """Check that the authenticated user's oid matches the expected user id from the token."""
     user = token_context_result.get("user")
     expected_oid = token_context.get("expected_user_oid")
     assert user.oid == expected_oid, f"Expected user oid '{expected_oid}', got '{user.oid}'"

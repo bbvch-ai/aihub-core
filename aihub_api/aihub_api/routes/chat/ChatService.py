@@ -60,7 +60,7 @@ class ChatService(ChatServiceLib):
         4. Return resources containing a chunk_queue and a stop_event. The controller uses these to produce SSE.
         """
         return await ChatService.start_stream_chat_interaction(
-            user_oid=user.oid,
+            user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=chat_completions_request.messages,
@@ -84,7 +84,7 @@ class ChatService(ChatServiceLib):
         and wait for a StopEvent before constructing the final JSON response.
         """
         return await ChatService.start_json_chat_interaction(
-            user_oid=user.oid,
+            user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=chat_completions_request.messages,
