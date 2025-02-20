@@ -37,6 +37,7 @@ from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
 
 scenarios("../tests/features/rag_agent.feature")
@@ -188,7 +189,9 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=UserMessageEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)], locale="en"),
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(content=query, role=MessageRole.USER)], user=fake_user(), locale="en"
+            ),
         )
 
 
@@ -264,7 +267,9 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=UserMessageEvent(locale=locale, messages=[ChatMessage(content=query, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(
+                locale=locale, user=fake_user(), messages=[ChatMessage(content=query, role=MessageRole.USER)]
+            ),
         )
 
 

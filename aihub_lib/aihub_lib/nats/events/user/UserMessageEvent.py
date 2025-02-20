@@ -3,6 +3,7 @@ from typing import List, Optional
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
@@ -39,6 +40,7 @@ class UserMessageEvent(DisplayEvent, StartEvent):
         LocaleHandler.DEFAULT_LOCALE,
         description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.",
     )
+    user: AuthenticatedUser = Field(..., description="User who sent the message")
     messages: List[ChatMessage | UserChatMessage | AssistantChatMessage] = Field(
         description="A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
         default_factory=list,

@@ -130,7 +130,9 @@ class OpenaiController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Depends(self.auth),
         ) -> ModelDetails:
-            return await OpenaiService.get_model_with_assistants(self.chat_models, model_name=full_path, user=user, nc=nc)
+            return await OpenaiService.get_model_with_assistants(
+                self.chat_models, model_name=full_path, user=user, nc=nc
+            )
 
         return self
 

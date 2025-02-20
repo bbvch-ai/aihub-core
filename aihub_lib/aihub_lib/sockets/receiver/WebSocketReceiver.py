@@ -3,6 +3,7 @@ import logging
 from bson import ObjectId
 from nats.js import JetStreamContext
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events import DisplayEvent, StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -52,13 +53,14 @@ class WebSocketReceiver:
     def __init__(self, js: JetStreamContext):
         self.publisher = JSPublisher(js)
 
-    async def receive_event(self, ws_event: WSUserEvent, user_id: str):
+    async def receive_event(self, ws_event: WSUserEvent, user: AuthenticatedUser):
         """
         Entry point for receiving a user event (WSUserEvent) from the WebSocket layer.
 
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.
         """
+        user_id = user.oid
         thread = ThreadEntity.get_thread_by_id(ws_event.thread_id)
         logger.debug(f"Received event {ws_event.event.__class__.__name__} for thread {ws_event.thread_id}")
         users_in_thread = [user.user_id for user in thread.users]

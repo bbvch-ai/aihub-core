@@ -7,6 +7,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.nats.events import ChunkEvent, DisplayEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
@@ -44,7 +45,7 @@ class ChatService:
 
     @staticmethod
     def _initialize_interaction(
-        user_oid: str,
+        user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -54,7 +55,7 @@ class ChatService:
         """
         thread = ThreadEntity.create_thread(
             "chat",
-            users=[User(user_id=user_oid)],
+            users=[User(user_id=user.oid)],
             agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
         )
         logger.debug(f"Created thread: {thread.id}")
@@ -64,6 +65,7 @@ class ChatService:
             display_id=str(ObjectId()),
             event=UserMessageEvent(
                 messages=messages,
+                user=user,
             ),
         )
         logger.debug(f"Created event: {event}")
@@ -79,7 +81,7 @@ class ChatService:
 
     @staticmethod
     async def start_stream_chat_interaction(
-        user_oid: str,
+        user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -89,7 +91,7 @@ class ChatService:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
-        event, topic_manager = ChatService._initialize_interaction(user_oid, agent_class, agent_id, messages)
+        event, topic_manager = ChatService._initialize_interaction(user, agent_class, agent_id, messages)
 
         stop_event = asyncio.Event()
         chunk_queue = asyncio.Queue()
@@ -113,13 +115,13 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await ws_receiver.receive_event(event, user_oid)
+        await ws_receiver.receive_event(event, user)
 
         return StreamingResources(stop_event=stop_event, subscriber=subscriber, chunk_queue=chunk_queue)
 
     @staticmethod
     async def start_json_chat_interaction(
-        user_oid: str,
+        user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -129,7 +131,7 @@ class ChatService:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        event, topic_manager = ChatService._initialize_interaction(user_oid, agent_class, agent_id, messages)
+        event, topic_manager = ChatService._initialize_interaction(user, agent_class, agent_id, messages)
 
         stop_event = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
@@ -167,7 +169,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await ws_receiver.receive_event(event, user_oid)
+        await ws_receiver.receive_event(event, user)
 
         return resources
 

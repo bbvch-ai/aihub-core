@@ -16,7 +16,7 @@ from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import Az
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
-from fastapi import UploadFile, HTTPException
+from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, FileContent, ImagesResponse
@@ -62,14 +62,20 @@ class OpenaiService:
         return ModelResponse(data=models)
 
     @staticmethod
-    async def get_models_with_assistants(chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS) -> ModelResponse:
+    async def get_models_with_assistants(
+        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS
+    ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
         chat_models = [ModelDetails(id=model.name) for model in chat_models]
         agent_dtos = await AgentService.discover_agents(nc)
-        agent_dtos = [agent_dto for agent_dto in agent_dtos if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))]
+        agent_dtos = [
+            agent_dto
+            for agent_dto in agent_dtos
+            if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))
+        ]
         assistants = [
             ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
             for agent_dto in agent_dtos
@@ -88,7 +94,9 @@ class OpenaiService:
         return models[0]
 
     @staticmethod
-    async def get_model_with_assistants(chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS) -> ModelDetails:
+    async def get_model_with_assistants(
+        chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS
+    ) -> ModelDetails:
         """
         Fetch details for a specific chat model or ai-hub assistant by name.
         Scans the chat model configurations and returns the matching model's or agent's details.
@@ -202,15 +210,15 @@ class OpenaiService:
 
     @staticmethod
     async def json_assistant(
-            agent_class: str,
-            agent_id: str,
-            chat_completion_request: ChatCompletionRequest,
-            user: AuthenticatedUser,
-            nc: NATS,
-            ws_receiver: WebSocketReceiver,
+        agent_class: str,
+        agent_id: str,
+        chat_completion_request: ChatCompletionRequest,
+        user: AuthenticatedUser,
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
     ):
         resources: JsonResources = await ChatService.start_json_chat_interaction(
-            user_oid=user.oid,
+            user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=chat_completion_request.messages,
@@ -252,7 +260,7 @@ class OpenaiService:
         ws_receiver: WebSocketReceiver,
     ):
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
-            user_oid=user.oid,
+            user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=chat_completion_request.messages,

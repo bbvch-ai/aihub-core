@@ -1,6 +1,7 @@
 import asyncio
 from typing import AsyncGenerator, List
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import TurnContext
@@ -118,9 +119,15 @@ class AgentChatService(Service):
         chat_messages: List[ChatMessage] = [
             AgentChatService.message_to_chat_message(message) for message in persisted_messages
         ]
+        user = AuthenticatedUser(
+            name=turn_context.activity.from_property.name,
+            preferred_username=turn_context.activity.from_property.name,
+            oid=turn_context.activity.from_property.id,
+            roles=[],
+        )
         if stream:
             return await Service.start_stream_chat_interaction(
-                user_oid=turn_context.activity.from_property.id,
+                user=user,
                 agent_class=agent_class,
                 agent_id=agent_id,
                 messages=chat_messages,
@@ -129,7 +136,7 @@ class AgentChatService(Service):
             )
         else:
             return await Service.start_json_chat_interaction(
-                user_oid=turn_context.activity.from_property.id,
+                user=user,
                 agent_class=agent_class,
                 agent_id=agent_id,
                 messages=chat_messages,
