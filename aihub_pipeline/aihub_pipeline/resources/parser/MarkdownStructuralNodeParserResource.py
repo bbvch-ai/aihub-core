@@ -1,7 +1,7 @@
-from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from dagster import ConfigurableResource
 from llama_index.core.node_parser import NodeParser
 
+from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 
@@ -14,7 +14,7 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
 
     1. Split a RefDoc into a set of nodes:
 
-    .. code-block:: python
+    ... code-block:: python
         from aihub_pipeline.resources.app.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 
         from dagster import Definitions, asset
@@ -32,7 +32,7 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
             assets=[asset1],
             resources={
                 "node_parser": MarkdownStructuralNodeParserResource(),
-            },
+            }
         )
     """
 

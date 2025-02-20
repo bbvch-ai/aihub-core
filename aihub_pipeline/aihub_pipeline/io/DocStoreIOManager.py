@@ -39,7 +39,6 @@ class DocStoreIOManager(ConfigurableIOManager):
 
         from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
         from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import MongoDocumentStoreResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -53,14 +52,12 @@ class DocStoreIOManager(ConfigurableIOManager):
             # RefDocDocument loaded from the document store
             ...
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
-        doc_store = MongoDocumentStoreResource(namespace=namespace)
+        doc_store = MongoDocumentStoreResource(document_store_name="my_doc_store")
         doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
 
         defs = Definitions(
             assets=[ref_doc, downstream_asset],
             resources={
-                "namespace": namespace,
                 "doc_store": doc_store,
                 "doc_store_io_manager": doc_store_io_manager,
             },

@@ -14,7 +14,7 @@ from aihub_pipeline.ops.data_lake.data_version_by_partition_for_data_lake_files 
     data_version_by_partition_for_data_lake_files_no_op,
 )
 from aihub_pipeline.ops.data_lake.fetch_all_files_in_data_lake import fetch_all_files_in_data_lake_no_op
-from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
+from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
@@ -35,17 +35,17 @@ def observable_data_lake_factory(key: AssetKey, partitions: DynamicPartitionsDef
     def observable_data_lake(
         context: OpExecutionContext,
         data_lake_client: ResourceParam[FileSystemClient],
-        namespace: NamespaceResource,
+        data_lake_resource: DataLakeResource,
     ) -> DataVersionsByPartition:
         data_lake_files: List[DataLakeFile] = fetch_all_files_in_data_lake_no_op(
             context=context,
             data_lake_client=data_lake_client,
-            namespace=namespace,
+            data_lake_container_name=data_lake_resource.container_name,
+            data_lake_directory_name=data_lake_resource.directory_name,
         )
         return data_version_by_partition_for_data_lake_files_no_op(
             context=context,
             asset_key=key,
-            namespace=namespace,
             partition=partitions,
             data_lake_files=data_lake_files,
         )

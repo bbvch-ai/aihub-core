@@ -1,6 +1,6 @@
 from typing import List
 
-from dagster import DynamicPartitionsDefinition, OpExecutionContext
+from dagster import OpExecutionContext
 
 
 def replace_partition_keys(context: OpExecutionContext, partition_name: str, keys: List[str]):
@@ -11,9 +11,3 @@ def replace_partition_keys(context: OpExecutionContext, partition_name: str, key
         partitions_def_name=partition_name,
         partition_keys=keys,
     )
-
-
-def create_dynamic_partition(
-    customer_name: str, namespace_name: str, partitions_name: str
-) -> DynamicPartitionsDefinition:
-    return DynamicPartitionsDefinition(name=f"{customer_name}_{namespace_name}_{partitions_name}")

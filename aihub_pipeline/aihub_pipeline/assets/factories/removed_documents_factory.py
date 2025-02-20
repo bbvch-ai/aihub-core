@@ -1,6 +1,5 @@
-from typing import List
-
 from dagster import AssetIn, AssetKey, AutomationCondition, Output, graph_asset
+from typing import List
 
 from aihub_pipeline.ops.document.add_metadata_to_ref_docs import add_metadata_to_ref_docs
 from aihub_pipeline.ops.document.delete_removed_ref_docs_from_docstore import delete_removed_ref_docs_from_docstore
@@ -9,7 +8,7 @@ from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 
-def removed_documents_factory(key: AssetKey, data_lake_key: str) -> graph_asset:
+def removed_documents_factory(key: AssetKey, data_lake_key: str | AssetKey) -> graph_asset:
     """Pseudo-Asset that removes documents from the document store and vector store that are no longer present
     in the Data Lake.
     This asset takes a list of DataLakeFiles as input, compares the documents in the Data Lake to the documents
