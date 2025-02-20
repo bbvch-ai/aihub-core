@@ -53,6 +53,7 @@ runs:
           echo "Waiting for all services to become healthy..."
           sleep 5;
         done
+        docker compose ps
         echo "All services are healthy!"
 
     - name: Configure Git Authentication
