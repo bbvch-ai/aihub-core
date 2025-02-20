@@ -218,7 +218,7 @@ class OpenaiService:
         ws_receiver: WebSocketReceiver,
     ):
         resources: JsonResources = await ChatService.start_json_chat_interaction(
-            user_oid=user.oid,
+            user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=chat_completion_request.messages,
