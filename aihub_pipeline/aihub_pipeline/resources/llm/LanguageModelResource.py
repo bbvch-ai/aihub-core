@@ -47,4 +47,6 @@ class LanguageModelResource(ConfigurableResource[LLM]):
 
     def create_resource(self, context: InitResourceContext) -> LLM:
         llm, _ = self.llm_config.to_llama_index(self.llm_config.default_parameter)
+        if not isinstance(llm, LLM):
+            raise ValueError("The returned model is not an instance of LLM.")
         return llm

@@ -51,4 +51,6 @@ class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
 
     def create_resource(self, context: InitResourceContext) -> BaseEmbedding:
         model, _ = self.embedding_config.to_llama_index(self.embedding_config.default_parameter)
+        if not isinstance(model, BaseEmbedding):
+            raise ValueError("The returned model is not an instance of BaseEmbedding.")
         return model
