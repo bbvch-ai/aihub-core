@@ -2,6 +2,8 @@ import logging
 from random import seed
 from typing import List, Optional
 
+from fastapi.routing import APIRoute
+
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 from aihub_lib.routes.Controller import Controller
@@ -126,6 +128,9 @@ class ApiRunner:
         """
         for controller in controllers:
             controller.mount(self._api_app)
+        for route in self._api_app.routes:
+            if isinstance(route, APIRoute):
+                route.operation_id = route.name  # in this case, 'read_items'
         return self
 
     def mount_frontend(self, directory: str) -> "ApiRunner":

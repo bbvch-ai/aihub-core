@@ -5,7 +5,7 @@ from typing import Any, Callable, List
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, WebSocket
+from fastapi import Depends, HTTPException, WebSocket, Security
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
@@ -49,7 +49,7 @@ class EventController(Controller):
     def get_events(self, path: str = "/") -> "EventController":
         @self.router.get(path)
         async def get_all_events(
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> List[WSServerEvent]:
             """
             Returns all persisted events visible to the authenticated user.

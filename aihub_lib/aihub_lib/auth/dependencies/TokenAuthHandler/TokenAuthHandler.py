@@ -1,15 +1,16 @@
 import logging
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Security, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
 logger = logging.getLogger(__name__)
 
 
-class TokenAuthHandler(AuthHandler):
+class TokenAuthHandler(BearerAuthHandler):
     """
     A FastAPI dependency that implements token-based authentication.
 
@@ -27,12 +28,10 @@ class TokenAuthHandler(AuthHandler):
         AuthenticatedUser: A user instance constructed from the token's associated API user details.
     """
 
-    async def __call__(self, request: Request) -> AuthenticatedUser:
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization header format.")
-
-        token_str = auth_header[len("Bearer ") :].strip()
+    async def __call__(self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())) -> AuthenticatedUser:
+        token_str = bearer_token.credentials
+        if not token_str:
+            raise HTTPException(status_code=401, detail="Token missing.")
 
         try:
             access_token = BearerToken.verify_token(token_str)

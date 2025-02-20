@@ -4,7 +4,7 @@ from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.dependencies.MultiAuthHandler.MultiAuthHandler import MultiAuthHandler
+from aihub_lib.auth.dependencies.MultiAuthHandler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Dummy authentication handler implementations ---
@@ -72,7 +72,7 @@ scenarios("features/multi_auth_handler.feature")
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
-def given_multi_auth_handler(datatable: list[list[str]]) -> MultiAuthHandler:
+def given_multi_auth_handler(datatable: list[list[str]]) -> TokenAndOauth2Handler:
     """Build a MultiAuthHandler from the provided table."""
     headers = datatable[0]
     handlers: list[AuthHandler] = []
@@ -86,7 +86,7 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> MultiAuthHandler:
             handlers.append(DummyFailureAuth(detail=detail, status_code=401))
         elif behavior == "failure_non_401":
             handlers.append(DummyFailureNon401(detail=detail))
-    return MultiAuthHandler(*handlers)
+    return TokenAndOauth2Handler(*handlers)
 
 
 # --- When steps ---
@@ -94,7 +94,7 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> MultiAuthHandler:
 
 @when("I invoke the multi auth handler")
 @async_test
-async def invoke_multi_auth(multi_auth_instance: MultiAuthHandler, multi_auth_result: dict, dummy_request: Request):
+async def invoke_multi_auth(multi_auth_instance: TokenAndOauth2Handler, multi_auth_result: dict, dummy_request: Request):
     """Invoke the multi auth handler and store the returned user."""
     try:
         user = await multi_auth_instance(dummy_request)
@@ -106,7 +106,7 @@ async def invoke_multi_auth(multi_auth_instance: MultiAuthHandler, multi_auth_re
 @when("I invoke the multi auth handler expecting error")
 @async_test
 async def invoke_multi_auth_expect_error(
-    multi_auth_instance: MultiAuthHandler, multi_auth_error: dict, dummy_request: Request
+    multi_auth_instance: TokenAndOauth2Handler, multi_auth_error: dict, dummy_request: Request
 ):
     """Invoke the multi auth handler and store the error detail."""
     with pytest.raises(HTTPException) as excinfo:

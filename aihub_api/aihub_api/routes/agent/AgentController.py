@@ -4,7 +4,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
 from aihub_api.routes.agent.AgentService import AgentService
@@ -51,7 +51,7 @@ class AgentController(Controller):
         @self.router.get(route)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all discovered agents. Filters out agents the user cannot access.
@@ -67,7 +67,7 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             agent_class: str,
             agent_id: str,
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> AgentDTO:
             """
             Retrieve details for a specific agent. Raises 403 if the user lacks access.
