@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -111,20 +111,20 @@ class AgentRunner:
         logger.debug(f"Received discovery request for {topic.agent_class} with id {topic.agent_id}.")
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
 
-        start_events = [
-            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema())
-            for e in self.agent_type.get_start_events()
+        start_events = self.agent_type.get_start_events()
+        start_event_specs = [
+            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in start_events
         ]
-        stop_events = [
-            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema())
-            for e in self.agent_type.get_stop_events()
-        ]
+
+        stop_events = self.agent_type.get_stop_events()
+        stop_event_specs = [EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in stop_events]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
+            is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             agent_config=self.agent_config,
-            start_events=start_events,
-            stop_events=stop_events,
+            start_events=start_event_specs,
+            stop_events=stop_event_specs,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 

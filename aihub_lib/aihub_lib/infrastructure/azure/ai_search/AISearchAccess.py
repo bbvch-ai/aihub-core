@@ -17,6 +17,7 @@ class AISearchAccess:
     _resource_group_name = None
     _search_service_name = None
     _service_endpoint = None
+    index_client = None
 
     def __new__(cls):
         if cls._instance is None:

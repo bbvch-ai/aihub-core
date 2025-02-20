@@ -46,7 +46,7 @@ class RAGAgent(Agent):
     @step()
     async def limit_chat_history_step(
         self,
-        event: StartEvent | UserMessageEvent,
+        event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryEvent:
         """
@@ -62,7 +62,7 @@ class RAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: StartEvent | UserMessageEvent,
+        start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -162,7 +162,7 @@ class RAGAgent(Agent):
         self,
         event: InOrderNodeCombinerEvent,
         chat_history_event: LimitChatHistoryEvent,
-        start_event: StartEvent | UserMessageEvent,
+        start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         """
@@ -184,7 +184,6 @@ class RAGAgent(Agent):
     async def respond_with_llm_step(
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent,
-        start_event: StartEvent | UserMessageEvent,
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,

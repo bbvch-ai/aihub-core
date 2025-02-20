@@ -3,7 +3,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
 from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
@@ -30,7 +30,7 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
             topic=topic,
         )
 

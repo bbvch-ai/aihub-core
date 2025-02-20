@@ -48,7 +48,6 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().discover_agents(),
-        ChatController(auth=auth).completions_json().completions_stream(),
         OpenaiController(
             auth=auth,
             embedding_models=[

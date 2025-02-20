@@ -4,19 +4,26 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
 
+from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_api.routes.chat.ChatController import ChatController
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
 BASE_URL = "http://test/api/v1"
+MODELS_ENDPOINT = "/openai/models"
+COMPLETIONS_ENDPOINT = "/openai/chat/completions"
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def chat_api_client():
+async def api_client():
     auth = NoAuthHandler()
-    controller = ChatController(auth=auth).completions_stream().completions_json()
+    controller = (
+        OpenaiController(auth=auth)
+        .get_models_with_assistants()
+        .get_model_with_assistants()
+        .chat_completion_with_assistants()
+    )
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()
@@ -27,10 +34,38 @@ async def chat_api_client():
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_chat_completions_stream(chat_api_client):
+async def test_get_models(api_client):
+    """Test GET /openai/models returns a valid model list."""
+    response = await api_client.get(MODELS_ENDPOINT)
+    assert response.status_code == 200, f"Response: {response.text}"
+    data = response.json()
+    assert data.get("object") == "list"
+    assert isinstance(data.get("data"), list)
+    model_ids = [model.get("id") for model in data.get("data")]
+    assert f"{AGENT_CLASS}/{AGENT_ID}" in model_ids
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_get_model(api_client):
+    """Test GET /openai/models/{full_path} returns valid model details."""
+    response = await api_client.get(f"{MODELS_ENDPOINT}/{AGENT_CLASS}/{AGENT_ID}")
+    assert response.status_code == 200, f"Response: {response.text}"
+    data = response.json()
+    assert data.get("id") == f"{AGENT_CLASS}/{AGENT_ID}"
+    assert data.get("object") == "assistant"
+    assert isinstance(data.get("created"), int)
+    assert data.get("owned_by") == "aihub"
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_chat_completions_stream(api_client):
     """Test streaming chat completions endpoint returns expected chunks."""
-    payload = {"messages": [{"role": "user", "content": "Hello!"}]}
-    response = await chat_api_client.post(f"/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream", json=payload)
+    payload = {
+        "model": f"{AGENT_CLASS}/{AGENT_ID}",
+        "messages": [{"role": "user", "content": "Hello!"}],
+        "stream": True,
+    }
+    response = await api_client.post(COMPLETIONS_ENDPOINT, json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
 
     chunk_aggregate = ""
@@ -52,11 +87,16 @@ async def test_chat_completions_stream(chat_api_client):
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_chat_completions_json(chat_api_client):
+async def test_chat_completions_json(api_client):
     """Test JSON chat completions endpoint returns expected combined message."""
-    payload = {"messages": [{"role": "user", "content": "Hello!"}]}
-    response = await chat_api_client.post(f"/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json", json=payload)
+    payload = {
+        "model": f"{AGENT_CLASS}/{AGENT_ID}",
+        "messages": [{"role": "user", "content": "Hello!"}],
+        "stream": False,
+    }
+    response = await api_client.post(COMPLETIONS_ENDPOINT, json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
+
     data = response.json()
 
     assert data.get("object") == "chat.completion", f"Unexpected object type: {data.get('object')}"

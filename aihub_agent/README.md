@@ -456,7 +456,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=5) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)])
+            start_event=UserMessageEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)])
         )
 
 

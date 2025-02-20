@@ -8,7 +8,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLM
     SelfHostedLLMParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import (
     LlamaIndexAgent,
@@ -46,7 +46,7 @@ async def main():
     async with runner.test_run(delay_before_stop=5) as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]),
+            start_event=UserMessageEvent(messages=[ChatMessage(content="Hey!", role=MessageRole.USER)]),
         )
 
 
