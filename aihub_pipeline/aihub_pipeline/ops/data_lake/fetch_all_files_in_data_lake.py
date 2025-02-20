@@ -1,8 +1,9 @@
 from typing import List
 
-from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
+
+from aihub_pipeline.types.DataLakeFile import DataLakeFile
 
 
 def fetch_all_files_in_data_lake_no_op(
@@ -23,7 +24,7 @@ def fetch_all_files_in_data_lake_no_op(
         path_parts = path.name.split("/")
         document_namespace = path_parts[0]
 
-        if len(path_parts) == 1 or document_namespace != namespace.name:
+        if len(path_parts) == 1 or document_namespace != data_lake_directory_name:
             continue
 
         document_uri = f"{data_lake_container_name}/{path.name.lstrip('/')}"

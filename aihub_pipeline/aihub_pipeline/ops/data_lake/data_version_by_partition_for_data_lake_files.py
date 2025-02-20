@@ -1,8 +1,5 @@
 from typing import List
 
-from aihub_pipeline.types.DataLakeFile import DataLakeFile
-from aihub_pipeline.util.meta_utils import data_lake_metadata_table
-from aihub_pipeline.util.partition_utils import replace_partition_keys
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -10,6 +7,10 @@ from dagster import (
     DynamicPartitionsDefinition,
     OpExecutionContext,
 )
+
+from aihub_pipeline.types.DataLakeFile import DataLakeFile
+from aihub_pipeline.util.meta_utils import data_lake_metadata_table
+from aihub_pipeline.util.partition_utils import replace_partition_keys
 
 
 def data_version_by_partition_for_data_lake_files_no_op(
@@ -28,18 +29,18 @@ def data_version_by_partition_for_data_lake_files_no_op(
     )
     context.log.info(f"Found {len(data_lake_files)} files in the data lake")
     context.log.info("Materializing external data lake asset")
-    context.instance.report_runless_asset_event(
-        AssetMaterialization(
-            asset_key=asset_key,
-            partition=data_lake_files[-1].uri,
-            metadata={
-                # TODO: do we need namespace name here? before we had namespace name and organization
-                "Number of Files": len(data_lake_files),
-                "Total File Size (MB)": sum([data_lake_file.size for data_lake_file in data_lake_files]) / 1e6,
-                "Table": data_lake_metadata_table(data_lake_files),
-            },
+    if len(data_lake_files) > 0:
+        context.instance.report_runless_asset_event(
+            AssetMaterialization(
+                asset_key=asset_key,
+                partition=data_lake_files[-1].uri,
+                metadata={
+                    "Number of Files": len(data_lake_files),
+                    "Total File Size (MB)": sum([data_lake_file.size for data_lake_file in data_lake_files]) / 1e6,
+                    "Table": data_lake_metadata_table(data_lake_files),
+                },
+            )
         )
-    )
 
     # We need to incorporate the updated timestamp into the version key to ensure that a file that is deleted
     # from the data lake and then inserted again with the exact same content will be detected as a new version

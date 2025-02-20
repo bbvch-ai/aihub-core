@@ -1,7 +1,7 @@
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ConfigurableResource, InitResourceContext
 
-from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
+from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 
 
 class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
@@ -94,6 +94,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
         )
 
     """
+
     container_name: str
 
     def create_resource(self, context: InitResourceContext) -> FileSystemClient:

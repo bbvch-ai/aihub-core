@@ -1,4 +1,3 @@
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 
@@ -71,4 +70,6 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
     vector_store_name: str
 
     def create_resource(self, context: InitResourceContext) -> AzureAISearchVectorStore:
-        return create_azure_ai_search_vector_store(self.vector_store_name)
+        return create_azure_ai_search_vector_store(
+            vector_store_name=self.vector_store_name, semantic_configuration_name="mySemanticConfig"
+        )
