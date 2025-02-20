@@ -126,6 +126,20 @@ jobs:
             cd -
           done
 
+      - name: Update lib version tag in poetry.lock
+        run: |
+          VERSION="${{ steps.create-tag.outputs.version }}"
+            update_version_tag() {
+                echo "Update version tag in $1"
+                sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
+            }
+          
+          directories="${{ steps.define-directories.outputs.directories }}"
+            IFS=' ' read -r -a dir_array <<< "$directories"
+            for dir in "${dir_array[@]}"; do
+                update_version_tag "$dir/poetry.lock"
+            done
+
       - name: Delete existing tag (in case we re-tag)
         run: |
           # Remove local tag if exists
@@ -146,6 +160,7 @@ jobs:
             git add "$dir/poetry.lock"
           done
           git add aihub_lib/pyproject.toml
+          git add Makefile
           git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
           git push origin --force
         env:
