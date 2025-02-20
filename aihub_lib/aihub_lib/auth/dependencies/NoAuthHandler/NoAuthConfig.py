@@ -18,7 +18,10 @@ class NoAuthConfig(BaseSettings):
     """
 
     NAME: str = Field("Melanie Musterfrau", description="The user's displayed name.")
-    EMAIL: str = Field("melanie.musterfrau@bbv.ch", description="The user's email (often used as a login or unique identifier).")
+    EMAIL: str = Field(
+        "melanie.musterfrau@bbv.ch",
+        description="The user's email (often used as a login or unique identifier).",
+    )
     OID: str = Field(
         ...,
         description="A unique OID (Object ID) for the user. Defaults to a UUID.",
