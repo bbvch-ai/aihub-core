@@ -15,6 +15,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- MongoDB Connection Fixture ---
 
+
 @pytest.fixture(autouse=True)
 def mongo_connection(monkeypatch) -> Generator[None, None, None]:
     """Set up a MongoDB connection for testing and disconnect after."""
@@ -33,6 +34,7 @@ scenarios("features/openwebui_auth_handler.feature")
 
 
 # --- Common Fixtures and Helpers ---
+
 
 @pytest.fixture
 def token_context() -> dict:
@@ -75,6 +77,7 @@ def generate_dummy_valid_token(oid: str) -> str:
 
 
 # --- Given Steps ---
+
 
 @given(
     parsers.parse(
@@ -145,6 +148,7 @@ def set_token_expired(token_context: dict) -> None:
 
 # --- When Steps ---
 
+
 @when("I invoke the OpenWebuiAuthHandler with the required headers and a valid token")
 @async_test
 async def invoke_openwebui_auth_handler(token_context: dict, token_context_result: dict) -> None:
@@ -155,7 +159,7 @@ async def invoke_openwebui_auth_handler(token_context: dict, token_context_resul
         "X-OpenWebUI-User-Name": "OpenWebUI User",
         "X-OpenWebUI-User-Id": "unused_in_result",  # This header is not used for oid
         "X-OpenWebUI-User-Email": "openwebui@example.com",
-        "Authorization": f"Bearer {token_str}"
+        "Authorization": f"Bearer {token_str}",
     }
     request = create_dummy_request(headers)
     handler = OpenWebuiAuthHandler()
@@ -175,7 +179,7 @@ async def invoke_openwebui_auth_handler_expect_error(token_context: dict, error_
         "X-OpenWebUI-User-Name": "OpenWebUI User",
         "X-OpenWebUI-User-Id": "unused_in_result",
         "X-OpenWebUI-User-Email": "openwebui@example.com",
-        "Authorization": f"Bearer {token_str}"
+        "Authorization": f"Bearer {token_str}",
     }
     request = create_dummy_request(headers)
     handler = OpenWebuiAuthHandler()
@@ -187,6 +191,7 @@ async def invoke_openwebui_auth_handler_expect_error(token_context: dict, error_
 
 
 # --- Then Steps ---
+
 
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
 def check_name(token_context_result: dict, expected_name: str) -> None:

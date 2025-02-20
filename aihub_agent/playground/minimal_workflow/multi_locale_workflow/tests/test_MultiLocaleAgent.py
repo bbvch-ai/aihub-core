@@ -6,6 +6,7 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import MultiLocaleAgent
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
 from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent
@@ -34,8 +35,7 @@ async def _(agent_runner: AgentTestRunner, locale: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
             start_event=UserMessageEvent(
-                locale=locale,
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                locale=locale, messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
             ),
             topic=topic,
         )

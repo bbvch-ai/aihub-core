@@ -25,6 +25,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 
 scenarios("features/few_shot_agent.feature")
 
@@ -183,7 +184,9 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=UserMessageEvent(locale="en", messages=[ChatMessage(content=query, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(
+                locale="en", user=fake_user(), messages=[ChatMessage(content=query, role=MessageRole.USER)]
+            ),
         )
 
 

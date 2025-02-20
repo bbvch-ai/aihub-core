@@ -9,6 +9,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLM
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, LLMEvent, ChunkEvent, UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 
@@ -45,7 +46,9 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run(delay_before_stop=5) as topic:
         await agent_runner.send_event_from_topic(
-            start_event=UserMessageEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(content=payload, role=MessageRole.USER)], user=fake_user()
+            ),
             topic=topic,
         )
 

@@ -13,6 +13,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
@@ -40,7 +41,9 @@ async def main():
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=UserMessageEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+            ),
         )
 
 

@@ -29,14 +29,13 @@ class OpenWebuiAuthHandler(AuthHandler):
 
     async def __call__(self, request: Request) -> AuthenticatedUser:
         user_name = request.headers.get("X-OpenWebUI-User-Name")
-        user_id = request.headers.get("X-OpenWebUI-User-Id")
         user_email = request.headers.get("X-OpenWebUI-User-Email")
 
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Invalid authorization header format.")
 
-        token_str = auth_header[len("Bearer "):].strip()
+        token_str = auth_header[len("Bearer ") :].strip()
 
         try:
             access_token = BearerToken.verify_token(token_str)
@@ -45,8 +44,8 @@ class OpenWebuiAuthHandler(AuthHandler):
             raise HTTPException(status_code=401, detail=str(e))
 
         return AuthenticatedUser(
-            name=user_name,
-            preferred_username=user_email,
+            name=user_name or access_token.user.name,
+            preferred_username=user_email or access_token.user.preferred_username,
             oid=access_token.user.oid,
-            roles=access_token.roles
+            roles=access_token.roles,
         )

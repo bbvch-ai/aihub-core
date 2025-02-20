@@ -10,6 +10,7 @@ from aihub_lib.nats.events.agent_in_the_loop import (
     AgentInTheLoopResponseEvent,
 )
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (
     OrchestrationResultEvent,
 )
@@ -69,7 +70,9 @@ async def send_start_to_orchestrator(
     async with worker_runner.test_run():
         async with orchestrator_runner.test_run() as topic:
             await orchestrator_runner.send_event_from_topic(
-                start_event=UserMessageEvent(messages=[ChatMessage(content=message, role=MessageRole.USER)]),
+                start_event=UserMessageEvent(
+                    messages=[ChatMessage(content=message, role=MessageRole.USER)], user=fake_user()
+                ),
                 topic=topic,
             )
 

@@ -5,6 +5,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgent import OrchestratorAgent
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgentConfig import (
@@ -41,7 +42,9 @@ async def main():
         async with orchestrator_runner.test_run(delay_before_stop=3) as topic:
             await orchestrator_runner.send_event_from_topic(
                 topic=topic,
-                start_event=UserMessageEvent(messages=[ChatMessage(content="128", role=MessageRole.USER)]),
+                start_event=UserMessageEvent(
+                    messages=[ChatMessage(content="128", role=MessageRole.USER)], user=fake_user()
+                ),
             )
 
 

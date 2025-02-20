@@ -123,7 +123,7 @@ class AgentChatService(Service):
             name=turn_context.activity.from_property.name,
             preferred_username=turn_context.activity.from_property.name,
             oid=turn_context.activity.from_property.id,
-            roles=[]
+            roles=[],
         )
         if stream:
             return await Service.start_stream_chat_interaction(
