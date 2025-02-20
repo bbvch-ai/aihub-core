@@ -650,7 +650,7 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
             topic=topic,
         )
 

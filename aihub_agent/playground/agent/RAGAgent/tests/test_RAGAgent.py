@@ -31,7 +31,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import LLMEvent
+from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
@@ -188,7 +188,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)], locale="en"),
+            start_event=UserMessageEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)], locale="en"),
         )
 
 
@@ -264,7 +264,7 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
     async with agent_runner.test_run(delay_before_stop=30) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(locale=locale, messages=[ChatMessage(content=query, role=MessageRole.USER)]),
+            start_event=UserMessageEvent(locale=locale, messages=[ChatMessage(content=query, role=MessageRole.USER)]),
         )
 
 

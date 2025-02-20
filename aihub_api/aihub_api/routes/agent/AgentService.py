@@ -79,6 +79,7 @@ class AgentService:
                 agent_class=response.agent_class,
                 agent_id=response.agent_id,
                 agent_config=response.agent_config,
+                is_conversational=response.is_conversational,
                 start_events=response.start_events,
                 stop_events=response.stop_events,
             )
@@ -111,6 +112,7 @@ class AgentService:
                 agent_class=event.agent_class,
                 agent_id=event.agent_id,
                 agent_config=event.agent_config,
+                is_conversational=event.is_conversational,
                 start_events=event.start_events,
                 stop_events=event.stop_events,
             )

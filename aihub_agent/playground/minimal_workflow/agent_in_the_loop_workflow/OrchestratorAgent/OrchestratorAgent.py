@@ -2,7 +2,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (
     OrchestrationResultEvent,
@@ -12,7 +12,7 @@ from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.W
 
 class OrchestratorAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent) -> AgentInTheLoop.request:
+    async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
         print("[OrchestratorAgent.start_step]", event)
         return AgentInTheLoop.invoke(agent_id="worker_agent", agent_class="WorkerAgent", start_event=event)
 

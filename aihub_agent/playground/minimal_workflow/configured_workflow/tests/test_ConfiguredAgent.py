@@ -1,4 +1,3 @@
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -39,7 +38,7 @@ def _(start_step_value: str, agent_value: str):
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(messages=[ChatMessage(role=MessageRole.USER, content="")]),
+            start_event=StartEvent(),
             topic=topic,
         )
 

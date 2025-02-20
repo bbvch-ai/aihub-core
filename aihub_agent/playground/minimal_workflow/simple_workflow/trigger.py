@@ -4,7 +4,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
 from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import (
@@ -28,7 +28,7 @@ async def main():
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
+            start_event=UserMessageEvent(messages=[ChatMessage(content="Hello", role=MessageRole.USER)]),
         )
 
 
