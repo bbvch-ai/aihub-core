@@ -19,7 +19,6 @@ inputs:
   file:
     description: 'Dockerfile path'
     required: false
-    default: './Dockerfile'
   github_token:
     description: 'GitHub token for authentication'
     required: true
