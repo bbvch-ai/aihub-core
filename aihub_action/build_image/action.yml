@@ -16,6 +16,9 @@ inputs:
   context:
     description: 'context path'
     required: true
+  file:
+    description: 'Dockerfile path'
+    required: false
   github_token:
     description: 'GitHub token for authentication'
     required: true
@@ -44,6 +47,7 @@ runs:
       uses: docker/build-push-action@v6
       with:
         context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
         push: true
         secrets: |
             "ssh_key=${{ inputs.ssh_key }}"

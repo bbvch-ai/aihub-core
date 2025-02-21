@@ -3,7 +3,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 
 from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
-from aihub_lib.infrastructure.azure.data_lake import DataLakeConfig
+from aihub_lib.infrastructure.azure.data_lake.DataLakeConfig import DataLakeConfig
 
 
 class DataLakeAccess:

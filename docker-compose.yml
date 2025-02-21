@@ -33,7 +33,7 @@ services:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
 
   llama.cpp:
-    image: ghcr.io/ggerganov/llama.cpp:server-b4524
+    image: ghcr.io/ggerganov/llama.cpp:server
     platform: linux/amd64
     ports:
       - "8182:8182"

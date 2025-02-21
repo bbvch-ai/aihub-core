@@ -2,21 +2,21 @@ from asyncio import sleep
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
-from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from bson import ObjectId
 from pydantic import BaseModel
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.runners.AgentRunner import AgentRunner
+from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
+from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
 class ObservedEvent(BaseModel):
@@ -193,9 +193,16 @@ class AgentTestRunner(AgentRunner):
             for event in self.observed_events
         )
 
-    def get_events(self, event_type: Type[BaseEvent]) -> List[BaseEvent]:
+    def get_events(self, event_type: Type[BaseEvent], event_filter: str) -> List[BaseEvent]:
         """Returns all observed events of the specified type."""
-        return [ev.event for ev in self.observed_events if isinstance(ev.event, event_type)]
+        if event_filter:
+            return [
+                ev.event
+                for ev in self.observed_events
+                if isinstance(ev.event, event_type) and ev.topic.event_type == event_filter
+            ]
+        else:
+            return [ev.event for ev in self.observed_events if isinstance(ev.event, event_type)]
 
     def get_topics(self, event_type: Type[BaseEvent]) -> List[AgentTopic]:
         """Returns the topics of all observed events of the specified type, if any are AgentTopic."""
@@ -205,9 +212,9 @@ class AgentTestRunner(AgentRunner):
             if isinstance(ev.event, event_type) and isinstance(ev.topic, AgentTopic)
         ]
 
-    def get_events_of_type(self, event_type: Type[BaseEvent]) -> List[BaseEvent]:
+    def get_events_of_type(self, event_type: Type[BaseEvent], event_filter: str | None = None) -> List[BaseEvent]:
         """Alias for get_events(event_type), provided for convenience."""
-        return self.get_events(event_type)
+        return self.get_events(event_type, event_filter)
 
     def has_event_of_type(self, event_type: Type[BaseEvent]) -> bool:
         """Check if any event of the specified type was observed."""

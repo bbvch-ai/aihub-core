@@ -4,9 +4,11 @@ from typing import Sequence
 from dagster import (
     AnchorBasedFilePathMapping,
     AssetsDefinition,
-    Definitions,
     link_code_references_to_git,
     with_source_code_references,
+    Definitions,
+    DynamicPartitionsDefinition,
+    AssetKey,
 )
 
 from aihub_pipeline.assets.factories.documents_factory import documents_factory
@@ -16,18 +18,15 @@ from aihub_pipeline.assets.factories.removed_documents_factory import removed_do
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.jobs.factory import observe_source_job
 from aihub_pipeline.resources.factory import (
-    azure_data_lake_resources,
-    default_io_manager_azure_datalake_resources,
     default_llm_resources,
+    default_io_manager_azure_datalake_resources,
     mongo_aisearch_storage_context_resources,
-    namespace_resource,
+    azure_data_lake_resources,
 )
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.schedules.factory import default_daily_materialize_schedule
 from aihub_pipeline.sensors.factory import default_automation_sensor
-from aihub_pipeline.util.key_utils import asset_key_from_customer_and_namespace
-from aihub_pipeline.util.partition_utils import create_dynamic_partition
 
 
 def asset_definition_with_code_link(
@@ -35,25 +34,30 @@ def asset_definition_with_code_link(
 ) -> Sequence[AssetsDefinition]:
     return link_code_references_to_git(
         assets_defs=with_source_code_references(assets),
-        git_url="https://github.com/bbvch-ai/ai-hub",
-        git_branch="dev",
+        git_url=f"https://github.com/bbvch-ai/aihub-{customer_name}",
+        git_branch="main",
         file_path_mapping=AnchorBasedFilePathMapping(
             local_file_anchor=Path(__file__),
-            file_anchor_path_in_repository=f"server/pipelines/customer/{customer_name}/{namespace_name}/__init__.py",
+            file_anchor_path_in_repository=f"pipelines/{namespace_name}/__init__.py",
         ),
     )
 
 
-def default_definitions(customer_name: str, namespace_name: str) -> Definitions:
-    document_partitions = create_dynamic_partition(customer_name, namespace_name, "documents")
+def default_definitions(
+    datalake_container_name: str,
+    namespace_name: str,
+    datalake_directory_name: str,
+    vector_store_name: str,
+    document_store_name: str,
+) -> Definitions:
+    document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
-    DATA_LAKE_KEY = asset_key_from_customer_and_namespace(customer_name, namespace_name, "data_lake")
-    DOCUMENT_KEY = asset_key_from_customer_and_namespace(customer_name, namespace_name, "documents")
-    NODES_KEY = asset_key_from_customer_and_namespace(customer_name, namespace_name, "nodes")
-    REMOVED_DOCUMENTS_KEY = asset_key_from_customer_and_namespace(customer_name, namespace_name, "removed_documents")
+    DATA_LAKE_KEY = AssetKey([namespace_name, "data_lake"])
+    DOCUMENT_KEY = AssetKey([namespace_name, "documents"])
+    NODES_KEY = AssetKey([namespace_name, "nodes"])
+    REMOVED_DOCUMENTS_KEY = AssetKey([namespace_name, "removed_documents"])
 
     observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions)
-
     assets = [
         observable_asset,
         removed_documents_factory(REMOVED_DOCUMENTS_KEY, data_lake_key=DATA_LAKE_KEY),
@@ -61,23 +65,26 @@ def default_definitions(customer_name: str, namespace_name: str) -> Definitions:
         nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
     ]
 
-    namespace = namespace_resource(customer_name, namespace_name)
     job = observe_source_job(
         observable_asset=observable_asset,
-        customer_name=customer_name,
         namespace_name=namespace_name,
     )
 
     return Definitions(
-        assets=asset_definition_with_code_link(assets, customer_name, namespace_name),
+        assets=assets,
         resources={
-            "namespace": namespace,
             "document_parser": DocumentParserResource(),
             "node_parser": MarkdownStructuralNodeParserResource(),
-            **default_llm_resources(namespace),
-            **default_io_manager_azure_datalake_resources(namespace),
-            **mongo_aisearch_storage_context_resources(namespace),
-            **azure_data_lake_resources(namespace),
+            **default_llm_resources(),
+            **default_io_manager_azure_datalake_resources(
+                container_name=datalake_container_name, directory_name=datalake_directory_name
+            ),
+            **mongo_aisearch_storage_context_resources(
+                vector_store_name=vector_store_name,
+                document_store_name=document_store_name,
+                namespace_name=namespace_name,
+            ),
+            **azure_data_lake_resources(container_name=datalake_container_name, directory_name=datalake_directory_name),
         },
         sensors=[default_automation_sensor(assets)],
         executor=default_process_executor(),

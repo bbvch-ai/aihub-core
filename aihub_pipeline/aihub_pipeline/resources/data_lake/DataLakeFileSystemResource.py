@@ -1,6 +1,7 @@
 from adlfs import AzureBlobFileSystem
-from aihub_lib.infrastructure.azure.data_lake import DataLakeAccess
 from dagster import ConfigurableResource, InitResourceContext
+
+from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 
 
 class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
@@ -45,14 +46,13 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
         from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
         from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
         @asset(partitions_def=my_partition, "io_manager_key=data_lake_io_manager")
-        def create_file_on_lake(namespace: NamespaceResource) -> DataLakeFile:
+        def create_file_on_lake(container_name, directory_name) -> DataLakeFile:
             # Manually create a file to be written to data lake
-            uri = f"/{namespace.organization}/{namespace.name}/my_file.txt"
+            uri = f"/{container_name}/{directory_name}/my_file.txt"
             content = b"Hello, Azure Data Lake!"
             metadata = {"author": "John Doe"}
             return DataLakeFile.from_content(
@@ -61,15 +61,13 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
                 metadata=metadata,
             )
 
-
         @asset(partitions_def=my_partition)
         def downstream_asset(create_file_on_lake: DataLakeFile):
             # The input asset will be loaded from the data_lake
             ...
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
         data_lake_client = DataLakeClientResource(
-            namespace=namespace,
+            container_name="my_container",
         )
         data_lake_file_system = DataLakeFileSystemResource()
         data_lake_io_manager = AzureDataLakeIOManager(
@@ -80,7 +78,6 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
         defs = Definitions(
             assets=[create_file_on_lake, downstream_asset],
             resources={
-                "namespace": namespace,
                 "data_lake_client": data_lake_client,
                 "data_lake_file_system": data_lake_file_system,
                 "data_lake_io_manager": data_lake_io_manager,

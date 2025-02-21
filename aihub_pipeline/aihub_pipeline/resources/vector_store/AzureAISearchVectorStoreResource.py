@@ -1,8 +1,7 @@
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
-from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
+from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 
-from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
+from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 
 
 class AzureAISearchVectorStoreResource(ConfigurableResource):
@@ -19,7 +18,6 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
     .. code-block:: python
 
         from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import AzureAISearchVectorStoreResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -32,18 +30,17 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
             assets=[asset1],
             resources={
                 "vector_store": AzureAISearchVectorStoreResource(
-                    namespace=NamespaceResource(name="my_namespace", organization="my_organization"),
+                    vector_store_name="my_vector_store"
                 ),
             },
         )
 
     2. Use the Vector store in conjunction with a vector store IO Manager ``"vector_store_io_manager"``
 
-    .. code-block:: python
+    ... code-block:: python
 
         from aihub_pipeline.io.VectorStoreIOManager import VectorStoreIOManager
         from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import AzureAISearchVectorStoreResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
 
         from dagster import Definitions, asset
 
@@ -57,14 +54,12 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
             # TextNodes loaded from the vector store
             ...
 
-        namespace = NamespaceResource(name="my_namespace", organization="my_organization")
-        vector_store = AzureAISearchVectorStoreResource(namespace=namespace)
+        vector_store = AzureAISearchVectorStoreResource(vector_store_name="my_vector_store")
         vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
 
         defs = Definitions(
             assets=[text_nodes, downstream_asset],
             resources={
-                "namespace": namespace,
                 "vector_store": vector_store,
                 "vector_store_io_manager": vector_store_io_manager,
             },
@@ -72,7 +67,7 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
 
     """
 
-    namespace: ResourceDependency[NamespaceResource]
+    vector_store_name: str
 
     def create_resource(self, context: InitResourceContext) -> AzureAISearchVectorStore:
-        return create_azure_ai_search_vector_store(self.namespace.organization)
+        return create_azure_ai_search_vector_store(vector_store_name=self.vector_store_name)

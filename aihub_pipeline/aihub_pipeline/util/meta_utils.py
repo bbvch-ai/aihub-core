@@ -1,6 +1,9 @@
 from datetime import datetime
 from typing import List
 
+from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
+from llama_index.core.schema import TextNode
+
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -21,9 +24,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
     VERSION,
 )
-from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
-from llama_index.core.schema import TextNode
-
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
@@ -95,7 +95,6 @@ def data_lake_file_metadata(data_lake_file: DataLakeFile):
 def ref_doc_table_row(ref_doc: RefDocDocument):
     return {
         "id": ref_doc.id_,
-        "text": ref_doc.get_text(),
         "content": ref_doc.get_content(),
         "created_at_str": readable_date(ref_doc.metadata.get(CREATED_AT)),
         "updated_at_str": readable_date(ref_doc.metadata.get(UPDATED_AT)),
@@ -107,7 +106,7 @@ def ref_doc_table_row(ref_doc: RefDocDocument):
 def ref_doc_metadata(ref_doc: RefDocDocument):
     return {
         "Document ID": ref_doc.id_,
-        "Text": MetadataValue.md(ref_doc.get_text()),
+        "Text": MetadataValue.md(ref_doc.get_content()),
         "Metadata": MetadataValue.json(ref_doc.metadata),
     }
 

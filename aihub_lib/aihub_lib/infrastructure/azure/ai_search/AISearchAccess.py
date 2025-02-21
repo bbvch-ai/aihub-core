@@ -1,11 +1,10 @@
 from azure.core.credentials import AzureKeyCredential
 from azure.identity import DefaultAzureCredential
-from azure.mgmt.resource import SubscriptionClient
 from azure.mgmt.search import SearchManagementClient
 from azure.search.documents.indexes import SearchIndexClient
 
-from aihub_lib.infrastructure.azure.ai_search.AISearchConfig import AISearchConfig
 from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
+from aihub_lib.infrastructure.azure.ai_search.AISearchConfig import AISearchConfig
 
 
 class AISearchAccess:

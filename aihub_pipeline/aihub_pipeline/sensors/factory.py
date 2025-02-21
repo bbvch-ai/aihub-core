@@ -1,6 +1,5 @@
-from typing import Sequence
-
 from dagster import AssetsDefinition, AutomationConditionSensorDefinition, DefaultSensorStatus
+from typing import Sequence
 
 
 def default_automation_sensor(
@@ -9,7 +8,7 @@ def default_automation_sensor(
     """Sensor required to enable auto asset materialization"""
     return AutomationConditionSensorDefinition(
         "AutomaterializeSensor",
-        asset_selection=assets,
+        target=assets,
         default_status=DefaultSensorStatus.RUNNING,
         minimum_interval_seconds=minimum_interval_seconds,
     )

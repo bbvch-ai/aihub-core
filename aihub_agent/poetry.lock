@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.57.0"
+version = "v0.63.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -96,8 +96,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.57.0"
-resolved_reference = "8204191acd2772ca87954df06282eddf5ee8fdea"
+reference = "v0.63.0"
+resolved_reference = "97617ca22d65e39bbb53ecd5c3f0a43c6030dc23"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -695,6 +695,21 @@ colorama = ["colorama (>=0.4.3)"]
 d = ["aiohttp (>=3.10)"]
 jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
+
+[[package]]
+name = "bson"
+version = "0.5.10"
+description = "BSON codec for Python"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "bson-0.5.10.tar.gz", hash = "sha256:d6511b2ab051139a9123c184de1a04227262173ad593429d21e443d6462d6590"},
+]
+
+[package.dependencies]
+python-dateutil = ">=2.4.0"
+six = ">=1.9.0"
 
 [[package]]
 name = "certifi"
@@ -5046,4 +5061,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "62d31610fee54c5e020d13bc6e4db3e06f27faf39807c490f7c946617e6c27b3"
+content-hash = "a4fd2641f6b647f228be687f6a378742e2aa1922ec336b1d90f309b4e6ddb312"
