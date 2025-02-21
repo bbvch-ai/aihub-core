@@ -11,31 +11,28 @@ Feature: Few-Shot Guard Validation
     Then structured_predict should be called
     And structured_predict should be called with prompt:
       """
-      You will be provided with a series of example user messages, each labeled with a success status and an explanation.
-      These examples define the types of queries the agent is allowed to answer.
-      - If a query is allowed, the success status is **true**.
-      - If a query is not allowed, the success status is **false**, along with a justification.
-      Your task is to determine whether a new user query is permissible based on these examples.
+      You will receive several examples showing which user requests are allowed and which are not. Each sample response consists of two keys:
+      “success": a Boolean (true or false) indicating whether the request is allowed.
+      "reasoning": a string containing the reasoning for this decision.
+      Important:
+      Your final output must be exclusively a JSON object with exactly the two keys “success” and “reasoning”. Do not repeat the entire JSON schema or add additional meta information.
+      Your task is to determine whether a new user request is allowed based on these examples.
       **Examples:**
       <Examples>
       <User>
       Example user query 1
       </User>
-      <Success>
-      True
-      </Success>
-      <Reason>
-      Valid query
-      </Reason>
+      <Agent>
+      ```{ "success": True,
+      "reasoning": "Valid query" }```
+      </Agent>
       <User>
       Example user query 2
       </User>
-      <Success>
-      False
-      </Success>
-      <Reason>
-      Out of scope query
-      </Reason>
+      <Agent>
+      ```{ "success": False,
+      "reasoning": "Out of scope query" }```
+      </Agent>
       </Examples>
       **User Query:**
       <UserQuery>
