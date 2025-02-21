@@ -31,11 +31,12 @@ agent_description_guard:
     </CronologiaConversazionePrecedente>
 few_shot_guard:
   prompt: |
-    Ti verrà fornita una serie di esempi di messaggi utente, ciascuno etichettato con uno stato di successo e una spiegazione.
-    Questi esempi definiscono i tipi di richieste a cui l'agente è autorizzato a rispondere.
+    Riceverete diversi esempi che mostrano quali richieste dell'utente sono consentite e quali no. Ogni risposta di esempio è composta da due chiavi:
 
-    - Se una richiesta è consentita, lo stato di successo è **true**.
-    - Se una richiesta non è consentita, lo stato di successo è **false**, accompagnato da una giustificazione.
+    “success": un booleano (vero o falso) che indica se la richiesta è consentita.
+    “reasoning": una stringa contenente la motivazione di questa decisione.
+    Importante:
+    L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
 
     Il tuo compito è determinare se una nuova richiesta dell'utente è consentita in base a questi esempi.
 
@@ -53,13 +54,11 @@ few_shot_guard:
     {user}
     </Utente>
   success_message: |
-    <Successo>
-    {success}
-    </Successo>
+    <Agente>
+    ```{ "success": {success},
   reason_message: |
-    <Motivo>
-    {reason}
-    </Motivo>
+    "reasoning": "{reason}" }```
+    </Agente>
   success: |
     true se la richiesta dell'utente è consentita, false se la richiesta non è permessa.
   reason: |

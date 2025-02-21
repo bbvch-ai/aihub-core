@@ -30,11 +30,12 @@ agent_description_guard:
     Datenmodel für die Enscheidung ob eine Antwort gegeben werden kann.
 few_shot_guard:
   prompt: |
-    Sie erhalten eine Reihe von Beispielbenutzernachrichten, die jeweils mit einem Erfolgsstatus und einer Erklärung versehen sind.
-    Diese Beispiele definieren die Arten von Anfragen, die der Agent beantworten darf.
+    Sie erhalten mehrere Beispiele, die zeigen, welche Benutzeranfragen erlaubt sind und welche nicht. Jede Beispielantwort besteht aus zwei Schlüsseln:
 
-    - Wenn eine Anfrage erlaubt ist, ist der Erfolgsstatus **true**.
-    - Wenn eine Anfrage nicht erlaubt ist, ist der Erfolgsstatus **false**, zusammen mit einer Begründung.
+    "success": ein Boolean (true oder false), der angibt, ob die Anfrage zulässig ist.
+    "reasoning": ein String, der die Begründung für diese Entscheidung enthält.
+    Wichtig:
+    Ihre finale Ausgabe muss ausschließlich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
 
     Ihre Aufgabe ist es, zu bestimmen, ob eine neue Benutzeranfrage basierend auf diesen Beispielen zulässig ist.
 
@@ -44,21 +45,19 @@ few_shot_guard:
     </Examples>
 
     **Benutzeranfrage:**
-    <UserQuery>
+    <Benutzer>
     {user_query}
-    </UserQuery>
+    </Benutzer>
   user_message: |
     <Benutzer>
     {user}
     </Benutzer>
   success_message: |
-    <Erfolg>
-    {success}
-    </Erfolg>
+    <Agent>
+    ```{ "success": {success},
   reason_message: |
-    <Begründung>
-    {reason}
-    </Begründung>
+    "reasoning": "{reason}" }```
+    </Agent>
   success: |
     true, wenn die Benutzeranfrage zulässig ist, false, wenn die Anfrage nicht erlaubt ist.
   reason: |
