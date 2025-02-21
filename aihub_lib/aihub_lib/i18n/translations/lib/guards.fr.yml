@@ -32,8 +32,8 @@ few_shot_guard:
   prompt: |
     Vous recevrez plusieurs exemples montrant quelles demandes d'utilisateurs sont autorisées et lesquelles ne le sont pas. Chaque exemple de réponse se compose de deux clés :
 
-    « success » : un booléen (vrai ou faux) indiquant si la demande est autorisée.
-    « reasoning » : une chaîne de caractères contenant les raisons de cette décision.
+    "success" : un booléen (vrai ou faux) indiquant si la demande est autorisée.
+    "reasoning" : une chaîne de caractères contenant les raisons de cette décision.
     Important :
     Votre résultat final doit être exclusivement un objet JSON contenant exactement les deux clés « success » et « reasoning ». Ne répétez pas l'ensemble du schéma JSON et n'ajoutez pas de méta-informations supplémentaires.
 
