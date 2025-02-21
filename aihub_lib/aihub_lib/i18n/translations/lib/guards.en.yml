@@ -30,7 +30,7 @@ few_shot_guard:
   prompt: |
     You will receive several examples showing which user requests are allowed and which are not. Each sample response consists of two keys:
 
-    “success": a Boolean (true or false) indicating whether the request is allowed.
+    "success": a Boolean (true or false) indicating whether the request is allowed.
     "reasoning": a string containing the reasoning for this decision.
     Important:
     Your final output must be exclusively a JSON object with exactly the two keys “success” and “reasoning”. Do not repeat the entire JSON schema or add additional meta information.

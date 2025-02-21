@@ -33,8 +33,8 @@ few_shot_guard:
   prompt: |
     Riceverete diversi esempi che mostrano quali richieste dell'utente sono consentite e quali no. Ogni risposta di esempio è composta da due chiavi:
 
-    “success": un booleano (vero o falso) che indica se la richiesta è consentita.
-    “reasoning": una stringa contenente la motivazione di questa decisione.
+    "success": un booleano (vero o falso) che indica se la richiesta è consentita.
+    "reasoning": una stringa contenente la motivazione di questa decisione.
     Importante:
     L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
 
