@@ -30,11 +30,12 @@ agent_description_guard:
     Modèle de données pour la décision concernant la possibilité de fournir une réponse.
 few_shot_guard:
   prompt: |
-    Vous recevrez une série d'exemples de messages utilisateur, chacun accompagné d'un statut de réussite et d'une explication.
-    Ces exemples définissent les types de requêtes que l'agent est autorisé à traiter.
+    Vous recevrez plusieurs exemples montrant quelles demandes d'utilisateurs sont autorisées et lesquelles ne le sont pas. Chaque exemple de réponse se compose de deux clés :
 
-    - Si une requête est autorisée, le statut de réussite est **true**.
-    - Si une requête n'est pas autorisée, le statut de réussite est **false**, accompagné d'une justification.
+    "success" : un booléen (vrai ou faux) indiquant si la demande est autorisée.
+    "reasoning" : une chaîne de caractères contenant les raisons de cette décision.
+    Important :
+    Votre résultat final doit être exclusivement un objet JSON contenant exactement les deux clés « success » et « reasoning ». Ne répétez pas l'ensemble du schéma JSON et n'ajoutez pas de méta-informations supplémentaires.
 
     Votre tâche est de déterminer si une nouvelle requête utilisateur est autorisée en vous basant sur ces exemples.
 
@@ -52,13 +53,11 @@ few_shot_guard:
     {user}
     </Utilisateur>
   success_message: |
-    <Succès>
-    {success}
-    </Succès>
+    <Agent>
+    ```{ "success": {success},
   reason_message: |
-    <Raison>
-    {reason}
-    </Raison>
+    "reasoning": "{reason}" }```
+    </Agent>
   success: |
     true si la requête utilisateur est autorisée, false si la requête n'est pas permise.
   reason: |
