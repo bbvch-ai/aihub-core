@@ -29,15 +29,17 @@
                 placeholder="Search"
                 autofocus
                 fluid
+                @keydown.enter="onEnter"
               />
             </IconField>
           </div>
-          <div class="flex p-5 gap-7 max-w-[430px] flex-wrap relative">
+          <div class="flex p-5 gap-7 max-w-[430px] flex-wrap relative mt-5">
             <nuxt-link-locale
               v-for="app in shownApps"
               :key="app.path"
               :to="app.path"
               class="h-[50px] flex items-center justify-center"
+              @click="toggle"
             >
               <div class="w-[80px] h-[60px]  flex flex-col gap-2 justify-center items-center ">
                 <span
@@ -83,6 +85,25 @@
     </div>
     <div class="w-full">
       <div class="h-[50px] px-2 w-full flex justify-between items-center">
+        <Breadcrumb
+          class="!bg-transparent"
+          :home="apps[0]"
+          :model="breadcrumbItems"
+        >
+          <template #item="{ item }">
+            <a
+              class="cursor-pointer"
+              :href="item.url"
+            >
+              <nuxt-link-locale
+                :to="item.path"
+                class="h-[50px] flex items-center justify-center"
+              >
+                <span>{{ item.label }}</span>
+              </nuxt-link-locale>
+            </a>
+          </template>
+        </Breadcrumb>
         <img
           :src="logo"
           alt="AI Hub"
@@ -100,39 +121,57 @@
 </template>
 
 <script setup lang="ts">
+import type { MenuItem } from 'primevue/menuitem'
 import logo from '../assets/images/logo.png'
 
 const localeRoute = useLocaleRoute()
+const router = useRouter()
+const route = useRoute()
 
 const search = ref('')
-const route = useRoute()
 watch(() => route.path, () => search.value = '')
 
-const apps = reactive([
-  { icon: 'pi pi-home', label: 'Home', path: '/' },
-  { icon: 'pi pi-th-large', label: 'Modules', path: '/module/webui' },
-  { icon: 'pi pi-th-large', label: 'Modules', path: '/module/webui' },
-  { icon: 'pi pi-th-large', label: 'Modules', path: '/module/webui' },
+const apps = reactive<MenuItem>([
+  { icon: 'pi pi-home', label: 'Hub', path: '/' },
+  { icon: 'pi pi-comments', label: 'Chat UI', path: '/module/webui' },
 ])
 const shownApps = computed(() => {
   return search.value ? apps.filter(app => app.label.toLowerCase().includes(search.value.toLowerCase())) : apps
 })
 
 const favorites = reactive([
-  'Home',
-  'Modules',
+  'Hub',
+  'Chat UI',
 ])
 
 const favoriteApps = computed(() => {
-  return apps.filter(app => favorites.includes(app.label))
+  return apps.filter((app: MenuItem) => favorites.includes(app.label))
 })
 
-const appIsActive = (app) => {
+const appIsActive = (app: MenuItem) => {
   return route.path === localeRoute(app.path)?.path
 }
+
+const activeApp = computed(() => {
+  return apps.find((app: MenuItem) => appIsActive(app))
+})
+
+const breadcrumbItems = computed(() => {
+  if (!activeApp.value || activeApp.value.path == '/') return []
+  return [activeApp.value]
+})
+
 const op = ref()
 const toggle = (event) => {
   op.value.toggle(event)
+}
+
+const onEnter = (event) => {
+  console.log('Enter')
+  if (shownApps.value.length > 0) {
+    router.push(localeRoute(shownApps.value[0].path))
+    toggle(event)
+  }
 }
 </script>
 

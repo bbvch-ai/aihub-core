@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-[calc(100vh-50px)]">
     <iframe
-      src="https://ai-hub.bbv.ch/"
+      src="http://localhost:5173"
       width="100%"
       height="100%"
       title="Open Web UI"
