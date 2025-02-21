@@ -12,7 +12,6 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     '@nuxtjs/robots',
     '@pinia/colada-nuxt',
-    // '@nuxtjs/storybook',
     '@primevue/nuxt-module',
     '@nuxt/eslint',
   ],

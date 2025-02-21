@@ -2,7 +2,7 @@
   <div>
     <h1>Thread {{ thread_id }}</h1>
     <h2>{{ $t('test') }}</h2>
-    <Chat :thread-id="thread_id" />
+    <ThreadChat :thread-id="thread_id" />
   </div>
 </template>
 

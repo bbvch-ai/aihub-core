@@ -26,7 +26,6 @@ class TokenAndOauth2Handler(AuthHandler):
         try:
             return await self.oauth2_handler(oauth_token)
         except HTTPException as exc:
-            print("Failed oauth strategy", exc)
             errors.append(f"OAuth2: {exc.detail}")
             if exc.status_code != 401:
                 raise exc
@@ -34,7 +33,6 @@ class TokenAndOauth2Handler(AuthHandler):
         try:
             return await self.bearer_handler(request, bearer_token)
         except HTTPException as exc:
-            print("Failed bearer strategy", exc)
             errors.append(f"Bearer: {exc.detail}")
             if exc.status_code != 401:
                 raise exc

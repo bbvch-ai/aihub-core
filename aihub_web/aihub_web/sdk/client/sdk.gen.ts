@@ -6,7 +6,7 @@ import {
   type TDataShape,
   type Client,
   formDataBodySerializer,
-} from "@hey-api/client-nuxt";
+} from '@hey-api/client-nuxt'
 import type {
   GetHealthData,
   GetHealthResponse,
@@ -68,12 +68,12 @@ import type {
   CreateTranscriptionError,
   CreateSpeechData,
   CreateSpeechError,
-} from "./types.gen";
-import { client as _heyApiClient } from "./client.gen";
+} from './types.gen'
+import { client as _heyApiClient } from './client.gen'
 import {
   listTokensEndpointResponseTransformer,
   createTokenEndpointResponseTransformer,
-} from "./transformers.gen";
+} from './transformers.gen'
 
 export type Options<
   TComposable extends Composable,
@@ -86,13 +86,13 @@ export type Options<
    * individual options. This might be also useful if you want to implement a
    * custom client.
    */
-  client?: Client;
+  client?: Client
   /**
    * You can pass arbitrary values through the `meta` object. This can be
    * used to access values that aren't defined as part of the SDK function.
    */
-  meta?: Record<string, unknown>;
-};
+  meta?: Record<string, unknown>
+}
 
 /**
  * Get Health
@@ -111,10 +111,10 @@ export const getHealth = <
     unknown,
     DefaultT
   >({
-    url: "/health/",
+    url: '/health/',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Get User
@@ -134,18 +134,18 @@ export const getUser = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/user/me",
+    url: '/user/me',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Get User Locale
@@ -165,18 +165,18 @@ export const getLocale = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/i18n/my-locale",
+    url: '/i18n/my-locale',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Get All Events
@@ -202,18 +202,18 @@ export const getAllEvents = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/event/",
+    url: '/event/',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * List User Threads
@@ -238,18 +238,18 @@ export const listUserThreads = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/",
+    url: '/thread/',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Create Thread
@@ -275,22 +275,22 @@ export const createThread = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/",
+    url: '/thread/',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Get Thread
@@ -311,18 +311,18 @@ export const getThread = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/{thread_id}",
+    url: '/thread/{thread_id}',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Add Agent To Thread
@@ -347,22 +347,22 @@ export const addAgentToThread = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/{thread_id}/agents",
+    url: '/thread/{thread_id}/agents',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Remove Agent From Thread
@@ -371,7 +371,7 @@ export const addAgentToThread = <
 export const removeAgentFromThread = <
   TComposable extends Composable,
   DefaultT extends
-    RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponse,
+  RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponse,
 >(
   options: Options<
     TComposable,
@@ -388,18 +388,18 @@ export const removeAgentFromThread = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/{thread_id}/agents/{agent_class}/{agent_id}",
+    url: '/thread/{thread_id}/agents/{agent_class}/{agent_id}',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Add User To Thread
@@ -424,22 +424,22 @@ export const addUserToThread = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/{thread_id}/users",
+    url: '/thread/{thread_id}/users',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Remove User From Thread
@@ -464,18 +464,18 @@ export const removeUserFromThread = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/thread/{thread_id}/users/{remove_user_id}",
+    url: '/thread/{thread_id}/users/{remove_user_id}',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Get Agent
@@ -495,18 +495,18 @@ export const getAgent = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/agent/{agent_class}/{agent_id}",
+    url: '/agent/{agent_class}/{agent_id}',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Discover Agents
@@ -531,18 +531,18 @@ export const discoverAgents = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/agent/discover",
+    url: '/agent/discover',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * List API Tokens
@@ -566,10 +566,10 @@ export const listTokensEndpoint = <
     DefaultT
   >({
     responseTransformer: listTokensEndpointResponseTransformer,
-    url: "/tokens/",
+    url: '/tokens/',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Create API Token
@@ -593,14 +593,14 @@ export const createTokenEndpoint = <
     DefaultT
   >({
     responseTransformer: createTokenEndpointResponseTransformer,
-    url: "/tokens/",
+    url: '/tokens/',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Revoke API Token
@@ -623,10 +623,10 @@ export const revokeTokenEndpoint = <
     RevokeTokenEndpointError,
     DefaultT
   >({
-    url: "/tokens/{token_id}",
+    url: '/tokens/{token_id}',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * List Models (including ai-hub assistants)
@@ -646,18 +646,18 @@ export const getModels = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/models",
+    url: '/openai/models',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Retrieve model (including ai-hub assistants)
@@ -677,18 +677,18 @@ export const getModel = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/models/{full_path}",
+    url: '/openai/models/{full_path}',
     ...options,
-  });
-};
+  })
+}
 
 /**
  * Create embeddings
@@ -713,22 +713,22 @@ export const getEmbeddings = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/embeddings",
+    url: '/openai/embeddings',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Create chat completion (including ai-hub assistants)
@@ -753,22 +753,22 @@ export const chatCompletion = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/chat/completions",
+    url: '/openai/chat/completions',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Create image
@@ -793,22 +793,22 @@ export const generateImage = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/images/generations",
+    url: '/openai/images/generations',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Create transcription
@@ -834,22 +834,22 @@ export const createTranscription = <
     ...formDataBodySerializer,
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/audio/transcriptions",
+    url: '/openai/audio/transcriptions',
     ...options,
     headers: {
-      "Content-Type": null,
+      'Content-Type': null,
       ...options?.headers,
     },
-  });
-};
+  })
+}
 
 /**
  * Create speech
@@ -869,19 +869,19 @@ export const createSpeech = <
   >({
     security: [
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
       {
-        scheme: "bearer",
-        type: "http",
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
-    url: "/openai/audio/speech",
+    url: '/openai/audio/speech',
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
+  })
+}
