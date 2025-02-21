@@ -3,30 +3,30 @@
 import type {
   ListTokensEndpointResponse,
   CreateTokenEndpointResponse,
-} from './types.gen'
+} from "./types.gen";
 
 const tokenResponseSchemaResponseTransformer = (data: any) => {
-  data.expiry_date = new Date(data.expiry_date)
-  return data
-}
+  data.expiry_date = new Date(data.expiry_date);
+  return data;
+};
 
 export const listTokensEndpointResponseTransformer = async (
   data: any,
 ): Promise<ListTokensEndpointResponse> => {
   data = data.map((item: any) => {
-    return tokenResponseSchemaResponseTransformer(item)
-  })
-  return data
-}
+    return tokenResponseSchemaResponseTransformer(item);
+  });
+  return data;
+};
 
 const createTokenResponseSchemaResponseTransformer = (data: any) => {
-  data.expiry_date = new Date(data.expiry_date)
-  return data
-}
+  data.expiry_date = new Date(data.expiry_date);
+  return data;
+};
 
 export const createTokenEndpointResponseTransformer = async (
   data: any,
 ): Promise<CreateTokenEndpointResponse> => {
-  data = createTokenResponseSchemaResponseTransformer(data)
-  return data
-}
+  data = createTokenResponseSchemaResponseTransformer(data);
+  return data;
+};

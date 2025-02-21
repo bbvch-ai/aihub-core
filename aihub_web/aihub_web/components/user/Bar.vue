@@ -3,9 +3,14 @@
     v-if="userStore.user"
     class="flex items-center gap-5 pr-5"
   >
-    <p class="text-xs">
-      {{ userName }}
-    </p>
+    <div>
+      <p class="text-xs font-bold">
+        {{ userName }}
+      </p>
+      <p class="text-xs">
+        {{ userEmail }}
+      </p>
+    </div>
     <OverlayBadge
       value="4"
       severity="danger"
@@ -13,7 +18,7 @@
       size="small"
     >
       <Avatar
-        :label="userInitials"
+        :image="userStore.user.profile_image"
         shape="circle"
         size="normal"
       />
@@ -28,6 +33,9 @@ const userStore = useUserStore()
 
 const userName = computed(() => {
   return userStore.user?.name
+})
+const userEmail = computed(() => {
+  return userStore.user?.email
 })
 
 const userInitials = computed(() => {

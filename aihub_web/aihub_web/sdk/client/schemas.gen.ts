@@ -3,80 +3,80 @@
 export const AddAgentRequestSchema = {
   properties: {
     agent_id: {
-      type: 'string',
-      title: 'Agent Id',
+      type: "string",
+      title: "Agent Id",
     },
     agent_class: {
-      type: 'string',
-      title: 'Agent Class',
+      type: "string",
+      title: "Agent Class",
     },
   },
-  type: 'object',
-  required: ['agent_id', 'agent_class'],
-  title: 'AddAgentRequest',
-} as const
+  type: "object",
+  required: ["agent_id", "agent_class"],
+  title: "AddAgentRequest",
+} as const;
 
 export const AddUserRequestSchema = {
   properties: {
     user_id: {
-      type: 'string',
-      title: 'User Id',
+      type: "string",
+      title: "User Id",
     },
   },
-  type: 'object',
-  required: ['user_id'],
-  title: 'AddUserRequest',
-} as const
+  type: "object",
+  required: ["user_id"],
+  title: "AddUserRequest",
+} as const;
 
 export const AgentConfigSchema = {
   properties: {
     agent_id: {
-      type: 'string',
-      title: 'Agent Id',
-      description: 'The id of the agent.',
+      type: "string",
+      title: "Agent Id",
+      description: "The id of the agent.",
     },
     name: {
-      $ref: '#/components/schemas/LocaleString',
-      description: 'The name of the agent.',
+      $ref: "#/components/schemas/LocaleString",
+      description: "The name of the agent.",
     },
     description: {
-      $ref: '#/components/schemas/LocaleString',
-      description: 'The description of the agent.',
+      $ref: "#/components/schemas/LocaleString",
+      description: "The description of the agent.",
     },
     system_prompt: {
-      $ref: '#/components/schemas/LocaleString',
-      description: 'The system prompt of the agent.',
+      $ref: "#/components/schemas/LocaleString",
+      description: "The system prompt of the agent.",
     },
     color: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Color',
-      description: 'The color of the agent UI theme.',
-      default: '#10A37F',
+      title: "Color",
+      description: "The color of the agent UI theme.",
+      default: "#10A37F",
     },
     voice: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Voice',
-      description: 'The TTS voice ID the agent uses.',
-      default: 'de-DE-ChristophNeural',
+      title: "Voice",
+      description: "The TTS voice ID the agent uses.",
+      default: "de-DE-ChristophNeural",
     },
   },
-  type: 'object',
-  required: ['agent_id', 'name', 'description', 'system_prompt'],
-  title: 'AgentConfig',
+  type: "object",
+  required: ["agent_id", "name", "description", "system_prompt"],
+  title: "AgentConfig",
   description: `Describes the configuration for an agent, including its identity, prompts, and style.
 
 ### Why AgentConfig?
@@ -108,61 +108,61 @@ Retrieving step configs:
 \`\`\`python
 step_configs = config.get_step_configs()
 \`\`\``,
-} as const
+} as const;
 
 export const AgentDTOSchema = {
   properties: {
     agent_class: {
-      type: 'string',
-      title: 'Agent Class',
-      description: 'The agent\'s class identifier (e.g., \'my_agent_class\').',
+      type: "string",
+      title: "Agent Class",
+      description: "The agent's class identifier (e.g., 'my_agent_class').",
     },
     agent_id: {
-      type: 'string',
-      title: 'Agent Id',
+      type: "string",
+      title: "Agent Id",
       description:
-        'Unique identifier for the agent instance (e.g., \'agent_123\').',
+        "Unique identifier for the agent instance (e.g., 'agent_123').",
     },
     agent_config: {
-      $ref: '#/components/schemas/AgentConfig',
+      $ref: "#/components/schemas/AgentConfig",
       description:
-        'Configuration details of the agent, including name, description, and prompts.',
+        "Configuration details of the agent, including name, description, and prompts.",
     },
     is_conversational: {
-      type: 'boolean',
-      title: 'Is Conversational',
+      type: "boolean",
+      title: "Is Conversational",
       description:
-        'Whether the agent can participate in a chat-based conversation',
+        "Whether the agent can participate in a chat-based conversation",
     },
     start_events: {
       items: {
-        $ref: '#/components/schemas/EventSpecs',
+        $ref: "#/components/schemas/EventSpecs",
       },
-      type: 'array',
-      title: 'Start Events',
+      type: "array",
+      title: "Start Events",
       description:
-        'A list of `EventSpecs` representing events that can start this agent\'s workflow.',
+        "A list of `EventSpecs` representing events that can start this agent's workflow.",
     },
     stop_events: {
       items: {
-        $ref: '#/components/schemas/EventSpecs',
+        $ref: "#/components/schemas/EventSpecs",
       },
-      type: 'array',
-      title: 'Stop Events',
+      type: "array",
+      title: "Stop Events",
       description:
-        'A list of `EventSpecs` representing events that can stop this agent\'s workflow.',
+        "A list of `EventSpecs` representing events that can stop this agent's workflow.",
     },
   },
-  type: 'object',
+  type: "object",
   required: [
-    'agent_class',
-    'agent_id',
-    'agent_config',
-    'is_conversational',
-    'start_events',
-    'stop_events',
+    "agent_class",
+    "agent_id",
+    "agent_config",
+    "is_conversational",
+    "start_events",
+    "stop_events",
   ],
-  title: 'AgentDTO',
+  title: "AgentDTO",
   description: `A data transfer object for representing agent information in responses.
 
 ### Why AgentDTO?
@@ -171,232 +171,232 @@ and subsequently to the API response. It helps maintain a clean separation betwe
 event models and the publicly exposed fields in HTTP responses.
 
 By using \`AgentDTO\`, the API can evolve independently from the internal event representations.`,
-} as const
+} as const;
 
-export const Body_create_transcription_openai_audio_transcriptions_postSchema
-  = {
+export const Body_create_transcription_openai_audio_transcriptions_postSchema =
+  {
     properties: {
       file: {
-        type: 'string',
-        format: 'binary',
-        title: 'File',
-        description: 'The audio file to transcribe',
+        type: "string",
+        format: "binary",
+        title: "File",
+        description: "The audio file to transcribe",
       },
       model: {
-        type: 'string',
-        title: 'Model',
-        description: 'ID of the model to use',
+        type: "string",
+        title: "Model",
+        description: "ID of the model to use",
       },
       language: {
         anyOf: [
           {
-            type: 'string',
+            type: "string",
           },
           {
-            type: 'null',
+            type: "null",
           },
         ],
-        title: 'Language',
-        description: 'ISO-639-1 language code',
+        title: "Language",
+        description: "ISO-639-1 language code",
       },
       prompt: {
         anyOf: [
           {
-            type: 'string',
+            type: "string",
           },
           {
-            type: 'null',
+            type: "null",
           },
         ],
-        title: 'Prompt',
-        description: 'Optional text prompt',
+        title: "Prompt",
+        description: "Optional text prompt",
       },
       response_format: {
         anyOf: [
           {
-            type: 'string',
+            type: "string",
           },
           {
-            type: 'null',
+            type: "null",
           },
         ],
-        title: 'Response Format',
-        description: 'Format of the response',
-        default: 'json',
+        title: "Response Format",
+        description: "Format of the response",
+        default: "json",
       },
       temperature: {
         anyOf: [
           {
-            type: 'number',
+            type: "number",
           },
           {
-            type: 'null',
+            type: "null",
           },
         ],
-        title: 'Temperature',
-        description: 'Sampling temperature between 0 and 1',
+        title: "Temperature",
+        description: "Sampling temperature between 0 and 1",
         default: 0,
       },
       timestamp_granularities: {
         anyOf: [
           {
             items: {
-              type: 'string',
-              enum: ['word', 'segment'],
+              type: "string",
+              enum: ["word", "segment"],
             },
-            type: 'array',
+            type: "array",
           },
           {
-            type: 'null',
+            type: "null",
           },
         ],
-        title: 'Timestamp Granularities',
+        title: "Timestamp Granularities",
         description:
-          'Timestamp granularities (e.g. \'word\' or \'segment\'); only used with verbose_json response_format',
+          "Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
       },
     },
-    type: 'object',
-    required: ['file', 'model'],
-    title: 'Body_create_transcription_openai_audio_transcriptions_post',
-  } as const
+    type: "object",
+    required: ["file", "model"],
+    title: "Body_create_transcription_openai_audio_transcriptions_post",
+  } as const;
 
 export const ChatCompletionSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
+      type: "string",
+      title: "Id",
     },
     choices: {
       items: {
-        $ref: '#/components/schemas/Choice',
+        $ref: "#/components/schemas/Choice",
       },
-      type: 'array',
-      title: 'Choices',
+      type: "array",
+      title: "Choices",
     },
     created: {
-      type: 'integer',
-      title: 'Created',
+      type: "integer",
+      title: "Created",
     },
     model: {
-      type: 'string',
-      title: 'Model',
+      type: "string",
+      title: "Model",
     },
     object: {
-      type: 'string',
-      const: 'chat.completion',
-      title: 'Object',
+      type: "string",
+      const: "chat.completion",
+      title: "Object",
     },
     service_tier: {
       anyOf: [
         {
-          type: 'string',
-          enum: ['scale', 'default'],
+          type: "string",
+          enum: ["scale", "default"],
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Service Tier',
+      title: "Service Tier",
     },
     system_fingerprint: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'System Fingerprint',
+      title: "System Fingerprint",
     },
     usage: {
       anyOf: [
         {
-          $ref: '#/components/schemas/CompletionUsage',
+          $ref: "#/components/schemas/CompletionUsage",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['id', 'choices', 'created', 'model', 'object'],
-  title: 'ChatCompletion',
-} as const
+  type: "object",
+  required: ["id", "choices", "created", "model", "object"],
+  title: "ChatCompletion",
+} as const;
 
 export const ChatCompletionAudioSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
+      type: "string",
+      title: "Id",
     },
     data: {
-      type: 'string',
-      title: 'Data',
+      type: "string",
+      title: "Data",
     },
     expires_at: {
-      type: 'integer',
-      title: 'Expires At',
+      type: "integer",
+      title: "Expires At",
     },
     transcript: {
-      type: 'string',
-      title: 'Transcript',
+      type: "string",
+      title: "Transcript",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['id', 'data', 'expires_at', 'transcript'],
-  title: 'ChatCompletionAudio',
-} as const
+  type: "object",
+  required: ["id", "data", "expires_at", "transcript"],
+  title: "ChatCompletionAudio",
+} as const;
 
 export const ChatCompletionMessageSchema = {
   properties: {
     content: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Content',
+      title: "Content",
     },
     refusal: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Refusal',
+      title: "Refusal",
     },
     role: {
-      type: 'string',
-      const: 'assistant',
-      title: 'Role',
+      type: "string",
+      const: "assistant",
+      title: "Role",
     },
     audio: {
       anyOf: [
         {
-          $ref: '#/components/schemas/ChatCompletionAudio',
+          $ref: "#/components/schemas/ChatCompletionAudio",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
     },
     function_call: {
       anyOf: [
         {
-          $ref: '#/components/schemas/FunctionCall',
+          $ref: "#/components/schemas/FunctionCall",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
     },
@@ -404,132 +404,132 @@ export const ChatCompletionMessageSchema = {
       anyOf: [
         {
           items: {
-            $ref: '#/components/schemas/ChatCompletionMessageToolCall',
+            $ref: "#/components/schemas/ChatCompletionMessageToolCall",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Tool Calls',
+      title: "Tool Calls",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['role'],
-  title: 'ChatCompletionMessage',
-} as const
+  type: "object",
+  required: ["role"],
+  title: "ChatCompletionMessage",
+} as const;
 
 export const ChatCompletionMessageToolCallSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
+      type: "string",
+      title: "Id",
     },
     function: {
-      $ref: '#/components/schemas/Function',
+      $ref: "#/components/schemas/Function",
     },
     type: {
-      type: 'string',
-      const: 'function',
-      title: 'Type',
+      type: "string",
+      const: "function",
+      title: "Type",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['id', 'function', 'type'],
-  title: 'ChatCompletionMessageToolCall',
-} as const
+  type: "object",
+  required: ["id", "function", "type"],
+  title: "ChatCompletionMessageToolCall",
+} as const;
 
 export const ChatCompletionRequestSchema = {
   properties: {
     model: {
-      type: 'string',
-      title: 'Model',
-      description: 'ID of the model to use for the chat completion.',
+      type: "string",
+      title: "Model",
+      description: "ID of the model to use for the chat completion.",
     },
     stream: {
-      type: 'boolean',
-      title: 'Stream',
-      description: 'Enable streaming response.',
+      type: "boolean",
+      title: "Stream",
+      description: "Enable streaming response.",
       default: false,
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['model'],
-  title: 'ChatCompletionRequest',
-} as const
+  type: "object",
+  required: ["model"],
+  title: "ChatCompletionRequest",
+} as const;
 
 export const ChatCompletionTokenLogprobSchema = {
   properties: {
     token: {
-      type: 'string',
-      title: 'Token',
+      type: "string",
+      title: "Token",
     },
     bytes: {
       anyOf: [
         {
           items: {
-            type: 'integer',
+            type: "integer",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Bytes',
+      title: "Bytes",
     },
     logprob: {
-      type: 'number',
-      title: 'Logprob',
+      type: "number",
+      title: "Logprob",
     },
     top_logprobs: {
       items: {
-        $ref: '#/components/schemas/TopLogprob',
+        $ref: "#/components/schemas/TopLogprob",
       },
-      type: 'array',
-      title: 'Top Logprobs',
+      type: "array",
+      title: "Top Logprobs",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['token', 'logprob', 'top_logprobs'],
-  title: 'ChatCompletionTokenLogprob',
-} as const
+  type: "object",
+  required: ["token", "logprob", "top_logprobs"],
+  title: "ChatCompletionTokenLogprob",
+} as const;
 
 export const ChoiceSchema = {
   properties: {
     finish_reason: {
-      type: 'string',
-      enum: ['stop', 'length', 'tool_calls', 'content_filter', 'function_call'],
-      title: 'Finish Reason',
+      type: "string",
+      enum: ["stop", "length", "tool_calls", "content_filter", "function_call"],
+      title: "Finish Reason",
     },
     index: {
-      type: 'integer',
-      title: 'Index',
+      type: "integer",
+      title: "Index",
     },
     logprobs: {
       anyOf: [
         {
-          $ref: '#/components/schemas/ChoiceLogprobs',
+          $ref: "#/components/schemas/ChoiceLogprobs",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
     },
     message: {
-      $ref: '#/components/schemas/ChatCompletionMessage',
+      $ref: "#/components/schemas/ChatCompletionMessage",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['finish_reason', 'index', 'message'],
-  title: 'Choice',
-} as const
+  type: "object",
+  required: ["finish_reason", "index", "message"],
+  title: "Choice",
+} as const;
 
 export const ChoiceLogprobsSchema = {
   properties: {
@@ -537,1058 +537,1073 @@ export const ChoiceLogprobsSchema = {
       anyOf: [
         {
           items: {
-            $ref: '#/components/schemas/ChatCompletionTokenLogprob',
+            $ref: "#/components/schemas/ChatCompletionTokenLogprob",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Content',
+      title: "Content",
     },
     refusal: {
       anyOf: [
         {
           items: {
-            $ref: '#/components/schemas/ChatCompletionTokenLogprob',
+            $ref: "#/components/schemas/ChatCompletionTokenLogprob",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Refusal',
+      title: "Refusal",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  title: 'ChoiceLogprobs',
-} as const
+  type: "object",
+  title: "ChoiceLogprobs",
+} as const;
 
 export const CompletionTokensDetailsSchema = {
   properties: {
     accepted_prediction_tokens: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Accepted Prediction Tokens',
+      title: "Accepted Prediction Tokens",
     },
     audio_tokens: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Audio Tokens',
+      title: "Audio Tokens",
     },
     reasoning_tokens: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Reasoning Tokens',
+      title: "Reasoning Tokens",
     },
     rejected_prediction_tokens: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Rejected Prediction Tokens',
+      title: "Rejected Prediction Tokens",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  title: 'CompletionTokensDetails',
-} as const
+  type: "object",
+  title: "CompletionTokensDetails",
+} as const;
 
 export const CompletionUsageSchema = {
   properties: {
     completion_tokens: {
-      type: 'integer',
-      title: 'Completion Tokens',
+      type: "integer",
+      title: "Completion Tokens",
     },
     prompt_tokens: {
-      type: 'integer',
-      title: 'Prompt Tokens',
+      type: "integer",
+      title: "Prompt Tokens",
     },
     total_tokens: {
-      type: 'integer',
-      title: 'Total Tokens',
+      type: "integer",
+      title: "Total Tokens",
     },
     completion_tokens_details: {
       anyOf: [
         {
-          $ref: '#/components/schemas/CompletionTokensDetails',
+          $ref: "#/components/schemas/CompletionTokensDetails",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
     },
     prompt_tokens_details: {
       anyOf: [
         {
-          $ref: '#/components/schemas/PromptTokensDetails',
+          $ref: "#/components/schemas/PromptTokensDetails",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['completion_tokens', 'prompt_tokens', 'total_tokens'],
-  title: 'CompletionUsage',
-} as const
+  type: "object",
+  required: ["completion_tokens", "prompt_tokens", "total_tokens"],
+  title: "CompletionUsage",
+} as const;
 
 export const CreateThreadRequestSchema = {
   properties: {
     name: {
-      type: 'string',
-      title: 'Name',
+      type: "string",
+      title: "Name",
     },
     user_ids: {
       items: {
-        type: 'string',
+        type: "string",
       },
-      type: 'array',
-      title: 'User Ids',
+      type: "array",
+      title: "User Ids",
     },
     agents: {
       items: {
-        $ref: '#/components/schemas/ThreadAgentDTO',
+        $ref: "#/components/schemas/ThreadAgentDTO",
       },
-      type: 'array',
-      title: 'Agents',
+      type: "array",
+      title: "Agents",
     },
   },
-  type: 'object',
-  required: ['name'],
-  title: 'CreateThreadRequest',
-} as const
+  type: "object",
+  required: ["name"],
+  title: "CreateThreadRequest",
+} as const;
 
 export const CreateTokenRequestSchema = {
   properties: {
     name: {
-      type: 'string',
+      type: "string",
       maxLength: 100,
       minLength: 1,
-      title: 'Name',
-      description: 'Token name between 1 and 100 characters',
-      example: 'My API Token',
+      title: "Name",
+      description: "Token name between 1 and 100 characters",
+      example: "My API Token",
     },
     expiry_date: {
-      type: 'string',
-      format: 'date-time',
-      title: 'Expiry Date',
-      description: 'Expiry date in ISO format (must be in the future)',
-      example: '2025-12-31T23:59:59Z',
+      type: "string",
+      format: "date-time",
+      title: "Expiry Date",
+      description: "Expiry date in ISO format (must be in the future)",
+      example: "2025-12-31T23:59:59Z",
     },
     roles: {
       items: {
-        type: 'string',
+        type: "string",
         minLength: 1,
       },
-      type: 'array',
+      type: "array",
       minItems: 1,
-      title: 'Roles',
-      description: 'Non-empty list of roles associated with the token',
-      example: ['read', 'write'],
+      title: "Roles",
+      description: "Non-empty list of roles associated with the token",
+      example: ["read", "write"],
     },
   },
-  type: 'object',
-  required: ['name', 'expiry_date', 'roles'],
-  title: 'CreateTokenRequest',
+  type: "object",
+  required: ["name", "expiry_date", "roles"],
+  title: "CreateTokenRequest",
   example: {
-    expiry_date: '2025-12-31T23:59:59Z',
-    name: 'My API Token',
-    roles: ['read', 'write'],
+    expiry_date: "2025-12-31T23:59:59Z",
+    name: "My API Token",
+    roles: ["read", "write"],
   },
-} as const
+} as const;
 
 export const CreateTokenResponseSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
-      description: 'The token ID',
-      example: '603d2f9c8a86f9b7f0e8f3c9',
+      type: "string",
+      title: "Id",
+      description: "The token ID",
+      example: "603d2f9c8a86f9b7f0e8f3c9",
     },
     name: {
-      type: 'string',
-      title: 'Name',
-      example: 'My API Token',
+      type: "string",
+      title: "Name",
+      example: "My API Token",
     },
     expiry_date: {
-      type: 'string',
-      format: 'date-time',
-      title: 'Expiry Date',
-      description: 'Expiry date',
+      type: "string",
+      format: "date-time",
+      title: "Expiry Date",
+      description: "Expiry date",
     },
     roles: {
       items: {
-        type: 'string',
+        type: "string",
       },
-      type: 'array',
-      title: 'Roles',
-      description: 'List of roles granted to the access token',
+      type: "array",
+      title: "Roles",
+      description: "List of roles granted to the access token",
     },
     token: {
-      type: 'string',
-      title: 'Token',
-      description: 'The generated API token, only returned at creation',
+      type: "string",
+      title: "Token",
+      description: "The generated API token, only returned at creation",
     },
   },
-  type: 'object',
-  required: ['id', 'name', 'expiry_date', 'roles', 'token'],
-  title: 'CreateTokenResponse',
-} as const
+  type: "object",
+  required: ["id", "name", "expiry_date", "roles", "token"],
+  title: "CreateTokenResponse",
+} as const;
 
 export const EmbeddingsSchema = {
   properties: {
     object: {
-      type: 'string',
-      title: 'Object',
-      description: 'The type of object.',
-      default: 'embeddings',
+      type: "string",
+      title: "Object",
+      description: "The type of object.",
+      default: "embeddings",
     },
     embedding: {
       items: {
-        type: 'number',
+        type: "number",
       },
-      type: 'array',
-      title: 'Embedding',
-      description: 'The list of embeddings.',
+      type: "array",
+      title: "Embedding",
+      description: "The list of embeddings.",
     },
     index: {
-      type: 'integer',
-      title: 'Index',
-      description: 'The index of the embedding.',
+      type: "integer",
+      title: "Index",
+      description: "The index of the embedding.",
     },
   },
-  type: 'object',
-  required: ['embedding', 'index'],
-  title: 'Embeddings',
-} as const
+  type: "object",
+  required: ["embedding", "index"],
+  title: "Embeddings",
+} as const;
 
 export const EmbeddingsRequestSchema = {
   properties: {
     input: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
           items: {
-            type: 'string',
+            type: "string",
           },
-          type: 'array',
+          type: "array",
         },
         {
           items: {
-            type: 'integer',
+            type: "integer",
           },
-          type: 'array',
+          type: "array",
         },
         {
           items: {
             items: {
-              type: 'integer',
+              type: "integer",
             },
-            type: 'array',
+            type: "array",
           },
-          type: 'array',
+          type: "array",
         },
       ],
-      title: 'Input',
+      title: "Input",
       description:
-        'Input text to embed. Can be a string, array of strings, or arrays of tokens. Must not exceed max input tokens.',
+        "Input text to embed. Can be a string, array of strings, or arrays of tokens. Must not exceed max input tokens.",
     },
     model: {
-      type: 'string',
-      title: 'Model',
-      description: 'ID of the model to use for generating embeddings.',
+      type: "string",
+      title: "Model",
+      description: "ID of the model to use for generating embeddings.",
     },
     encoding_format: {
       anyOf: [
         {
-          type: 'string',
-          enum: ['float', 'base64'],
+          type: "string",
+          enum: ["float", "base64"],
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Encoding Format',
-      description: 'Format of the returned embeddings. Defaults to \'float\'.',
-      default: 'float',
+      title: "Encoding Format",
+      description: "Format of the returned embeddings. Defaults to 'float'.",
+      default: "float",
     },
     dimensions: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Dimensions',
+      title: "Dimensions",
       description:
-        'Number of dimensions for output embeddings. Supported in text-embedding-3 and later models.',
+        "Number of dimensions for output embeddings. Supported in text-embedding-3 and later models.",
     },
     user: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'User',
+      title: "User",
       description:
-        'A unique identifier for the end-user to monitor and detect abuse.',
+        "A unique identifier for the end-user to monitor and detect abuse.",
     },
   },
-  type: 'object',
-  required: ['input', 'model'],
-  title: 'EmbeddingsRequest',
-} as const
+  type: "object",
+  required: ["input", "model"],
+  title: "EmbeddingsRequest",
+} as const;
 
 export const EmbeddingsResponseSchema = {
   properties: {
     object: {
-      type: 'string',
-      title: 'Object',
-      description: 'The type of object.',
-      default: 'list',
+      type: "string",
+      title: "Object",
+      description: "The type of object.",
+      default: "list",
     },
     model: {
-      type: 'string',
-      title: 'Model',
-      description: 'The model name.',
+      type: "string",
+      title: "Model",
+      description: "The model name.",
     },
     data: {
       items: {
-        $ref: '#/components/schemas/Embeddings',
+        $ref: "#/components/schemas/Embeddings",
       },
-      type: 'array',
-      title: 'Data',
-      description: 'The list of embeddings.',
+      type: "array",
+      title: "Data",
+      description: "The list of embeddings.",
     },
   },
-  type: 'object',
-  required: ['model', 'data'],
-  title: 'EmbeddingsResponse',
-} as const
+  type: "object",
+  required: ["model", "data"],
+  title: "EmbeddingsResponse",
+} as const;
 
 export const EventSpecsSchema = {
   properties: {
     event_type: {
-      type: 'string',
-      title: 'Event Type',
+      type: "string",
+      title: "Event Type",
       description:
-        'The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.',
+        "The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.",
     },
     event_schema: {
-      type: 'object',
-      title: 'Event Schema',
+      type: "object",
+      title: "Event Schema",
       description:
-        'A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent\'s workflow.',
+        "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.",
     },
   },
-  type: 'object',
-  required: ['event_type', 'event_schema'],
-  title: 'EventSpecs',
+  type: "object",
+  required: ["event_type", "event_schema"],
+  title: "EventSpecs",
   description:
-    'Defines a specification for a start event that an agent can handle.',
-} as const
+    "Defines a specification for a start event that an agent can handle.",
+} as const;
 
 export const FunctionSchema = {
   properties: {
     arguments: {
-      type: 'string',
-      title: 'Arguments',
+      type: "string",
+      title: "Arguments",
     },
     name: {
-      type: 'string',
-      title: 'Name',
+      type: "string",
+      title: "Name",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['arguments', 'name'],
-  title: 'Function',
-} as const
+  type: "object",
+  required: ["arguments", "name"],
+  title: "Function",
+} as const;
 
 export const FunctionCallSchema = {
   properties: {
     arguments: {
-      type: 'string',
-      title: 'Arguments',
+      type: "string",
+      title: "Arguments",
     },
     name: {
-      type: 'string',
-      title: 'Name',
+      type: "string",
+      title: "Name",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['arguments', 'name'],
-  title: 'FunctionCall',
-} as const
+  type: "object",
+  required: ["arguments", "name"],
+  title: "FunctionCall",
+} as const;
 
 export const HTTPValidationErrorSchema = {
   properties: {
     detail: {
       items: {
-        $ref: '#/components/schemas/ValidationError',
+        $ref: "#/components/schemas/ValidationError",
       },
-      type: 'array',
-      title: 'Detail',
+      type: "array",
+      title: "Detail",
     },
   },
-  type: 'object',
-  title: 'HTTPValidationError',
-} as const
+  type: "object",
+  title: "HTTPValidationError",
+} as const;
 
 export const HealthResponseSchema = {
   properties: {
     status: {
-      type: 'string',
-      title: 'Status',
-      description: 'The health status of the application.',
+      type: "string",
+      title: "Status",
+      description: "The health status of the application.",
     },
   },
-  type: 'object',
-  required: ['status'],
-  title: 'HealthResponse',
-} as const
+  type: "object",
+  required: ["status"],
+  title: "HealthResponse",
+} as const;
 
 export const ImageSchema = {
   properties: {
     b64_json: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'B64 Json',
+      title: "B64 Json",
     },
     revised_prompt: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Revised Prompt',
+      title: "Revised Prompt",
     },
     url: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Url',
+      title: "Url",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  title: 'Image',
-} as const
+  type: "object",
+  title: "Image",
+} as const;
 
 export const ImageGenerationRequestSchema = {
   properties: {
     prompt: {
-      type: 'string',
+      type: "string",
       maxLength: 4000,
       minLength: 1,
-      title: 'Prompt',
+      title: "Prompt",
       description:
-        'A text description of the desired image(s). Max 1000 characters for DALL-E 2, 4000 for DALL-E 3.',
+        "A text description of the desired image(s). Max 1000 characters for DALL-E 2, 4000 for DALL-E 3.",
     },
     model: {
       anyOf: [
         {
-          type: 'string',
-          enum: ['dall-e-2', 'dall-e-3'],
+          type: "string",
+          enum: ["dall-e-2", "dall-e-3"],
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Model',
+      title: "Model",
       description:
-        'The model to use for image generation. Defaults to dall-e-2.',
-      default: 'dall-e-2',
+        "The model to use for image generation. Defaults to dall-e-2.",
+      default: "dall-e-2",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['prompt'],
-  title: 'ImageGenerationRequest',
-} as const
+  type: "object",
+  required: ["prompt"],
+  title: "ImageGenerationRequest",
+} as const;
 
 export const ImagesResponseSchema = {
   properties: {
     created: {
-      type: 'integer',
-      title: 'Created',
+      type: "integer",
+      title: "Created",
     },
     data: {
       items: {
-        $ref: '#/components/schemas/Image',
+        $ref: "#/components/schemas/Image",
       },
-      type: 'array',
-      title: 'Data',
+      type: "array",
+      title: "Data",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['created', 'data'],
-  title: 'ImagesResponse',
-} as const
+  type: "object",
+  required: ["created", "data"],
+  title: "ImagesResponse",
+} as const;
 
 export const LocaleResponseSchema = {
   properties: {
     lang: {
-      type: 'string',
-      title: 'Lang',
-      description: 'The language code for the locale',
-      example: 'en',
+      type: "string",
+      title: "Lang",
+      description: "The language code for the locale",
+      example: "en",
     },
     test: {
-      type: 'string',
-      title: 'Test',
-      description: 'Test string in the specified language',
-      example: 'Your language is set to English.',
+      type: "string",
+      title: "Test",
+      description: "Test string in the specified language",
+      example: "Your language is set to English.",
     },
   },
-  type: 'object',
-  required: ['lang', 'test'],
-  title: 'LocaleResponse',
-  description: 'Represents language and test information for a locale.',
-} as const
+  type: "object",
+  required: ["lang", "test"],
+  title: "LocaleResponse",
+  description: "Represents language and test information for a locale.",
+} as const;
 
 export const LocaleStringSchema = {
   properties: {
     de: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'De',
+      title: "De",
     },
     en: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'En',
+      title: "En",
     },
     fr: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Fr',
+      title: "Fr",
     },
     it: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'It',
+      title: "It",
     },
   },
-  type: 'object',
-  title: 'LocaleString',
-} as const
+  type: "object",
+  title: "LocaleString",
+} as const;
 
 export const ModelDetailsSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
-      description: 'The ID of the model.',
+      type: "string",
+      title: "Id",
+      description: "The ID of the model.",
     },
     object: {
-      type: 'string',
-      title: 'Object',
-      description: 'The type of object.',
-      default: 'model',
+      type: "string",
+      title: "Object",
+      description: "The type of object.",
+      default: "model",
     },
     created: {
-      type: 'integer',
-      title: 'Created',
-      description: 'The Unix timestamp of when the model was created.',
+      type: "integer",
+      title: "Created",
+      description: "The Unix timestamp of when the model was created.",
     },
     owned_by: {
-      type: 'string',
-      title: 'Owned By',
-      description: 'The user ID of the owner.',
-      default: 'aihub',
+      type: "string",
+      title: "Owned By",
+      description: "The user ID of the owner.",
+      default: "aihub",
     },
   },
-  type: 'object',
-  required: ['id'],
-  title: 'ModelDetails',
-} as const
+  type: "object",
+  required: ["id"],
+  title: "ModelDetails",
+} as const;
 
 export const ModelResponseSchema = {
   properties: {
     object: {
-      type: 'string',
-      title: 'Object',
-      description: 'The type of object.',
-      default: 'list',
+      type: "string",
+      title: "Object",
+      description: "The type of object.",
+      default: "list",
     },
     data: {
       items: {
-        $ref: '#/components/schemas/ModelDetails',
+        $ref: "#/components/schemas/ModelDetails",
       },
-      type: 'array',
-      title: 'Data',
-      description: 'The list of models.',
+      type: "array",
+      title: "Data",
+      description: "The list of models.",
     },
   },
-  type: 'object',
-  required: ['data'],
-  title: 'ModelResponse',
-} as const
+  type: "object",
+  required: ["data"],
+  title: "ModelResponse",
+} as const;
 
 export const PromptTokensDetailsSchema = {
   properties: {
     audio_tokens: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Audio Tokens',
+      title: "Audio Tokens",
     },
     cached_tokens: {
       anyOf: [
         {
-          type: 'integer',
+          type: "integer",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Cached Tokens',
+      title: "Cached Tokens",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  title: 'PromptTokensDetails',
-} as const
+  type: "object",
+  title: "PromptTokensDetails",
+} as const;
 
 export const RevokeTokenResponseSchema = {
   properties: {
     detail: {
-      type: 'string',
-      title: 'Detail',
-      example: 'Token revoked successfully.',
+      type: "string",
+      title: "Detail",
+      example: "Token revoked successfully.",
     },
   },
-  type: 'object',
-  required: ['detail'],
-  title: 'RevokeTokenResponse',
-} as const
+  type: "object",
+  required: ["detail"],
+  title: "RevokeTokenResponse",
+} as const;
 
 export const TextToSpeechRequestSchema = {
   properties: {
     model: {
-      type: 'string',
-      enum: ['tts-1', 'tts-1-hd'],
-      title: 'Model',
+      type: "string",
+      enum: ["tts-1", "tts-1-hd"],
+      title: "Model",
       description:
-        'The TTS model to use. Available options: \'tts-1\' or \'tts-1-hd\'.',
+        "The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'.",
     },
     input: {
-      type: 'string',
+      type: "string",
       maxLength: 4096,
       minLength: 1,
-      title: 'Input',
+      title: "Input",
       description:
-        'The text to generate audio for. Maximum length is 4096 characters.',
+        "The text to generate audio for. Maximum length is 4096 characters.",
     },
     voice: {
-      type: 'string',
+      type: "string",
       enum: [
-        'alloy',
-        'ash',
-        'coral',
-        'echo',
-        'fable',
-        'onyx',
-        'nova',
-        'sage',
-        'shimmer',
+        "alloy",
+        "ash",
+        "coral",
+        "echo",
+        "fable",
+        "onyx",
+        "nova",
+        "sage",
+        "shimmer",
       ],
-      title: 'Voice',
-      description: 'The voice to use when generating audio.',
+      title: "Voice",
+      description: "The voice to use when generating audio.",
     },
     response_format: {
       anyOf: [
         {
-          type: 'string',
-          enum: ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm'],
+          type: "string",
+          enum: ["mp3", "opus", "aac", "flac", "wav", "pcm"],
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Response Format',
-      description: 'The format of the generated audio file. Defaults to \'mp3\'.',
-      default: 'mp3',
+      title: "Response Format",
+      description: "The format of the generated audio file. Defaults to 'mp3'.",
+      default: "mp3",
     },
     speed: {
       anyOf: [
         {
-          type: 'number',
+          type: "number",
           maximum: 4,
           minimum: 0.25,
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Speed',
+      title: "Speed",
       description:
-        'The speed of the generated audio. Defaults to 1.0. Range: 0.25 to 4.0.',
+        "The speed of the generated audio. Defaults to 1.0. Range: 0.25 to 4.0.",
       default: 1,
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['model', 'input', 'voice'],
-  title: 'TextToSpeechRequest',
-} as const
+  type: "object",
+  required: ["model", "input", "voice"],
+  title: "TextToSpeechRequest",
+} as const;
 
 export const ThreadAgentDTOSchema = {
   properties: {
     agent_id: {
-      type: 'string',
-      title: 'Agent Id',
+      type: "string",
+      title: "Agent Id",
     },
     agent_class: {
-      type: 'string',
-      title: 'Agent Class',
+      type: "string",
+      title: "Agent Class",
     },
   },
-  type: 'object',
-  required: ['agent_id', 'agent_class'],
-  title: 'ThreadAgentDTO',
-} as const
+  type: "object",
+  required: ["agent_id", "agent_class"],
+  title: "ThreadAgentDTO",
+} as const;
 
 export const ThreadResponseSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
+      type: "string",
+      title: "Id",
     },
     name: {
-      type: 'string',
-      title: 'Name',
+      type: "string",
+      title: "Name",
     },
     users: {
       items: {
-        $ref: '#/components/schemas/UserDTO',
+        $ref: "#/components/schemas/UserDTO",
       },
-      type: 'array',
-      title: 'Users',
+      type: "array",
+      title: "Users",
     },
     agents: {
       items: {
-        $ref: '#/components/schemas/AgentDTO',
+        $ref: "#/components/schemas/AgentDTO",
       },
-      type: 'array',
-      title: 'Agents',
+      type: "array",
+      title: "Agents",
     },
   },
-  type: 'object',
-  required: ['id', 'name', 'users', 'agents'],
-  title: 'ThreadResponse',
-} as const
+  type: "object",
+  required: ["id", "name", "users", "agents"],
+  title: "ThreadResponse",
+} as const;
 
 export const TokenResponseSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
-      description: 'The token ID',
-      example: '603d2f9c8a86f9b7f0e8f3c9',
+      type: "string",
+      title: "Id",
+      description: "The token ID",
+      example: "603d2f9c8a86f9b7f0e8f3c9",
     },
     name: {
-      type: 'string',
-      title: 'Name',
-      example: 'My API Token',
+      type: "string",
+      title: "Name",
+      example: "My API Token",
     },
     expiry_date: {
-      type: 'string',
-      format: 'date-time',
-      title: 'Expiry Date',
-      description: 'Expiry date',
+      type: "string",
+      format: "date-time",
+      title: "Expiry Date",
+      description: "Expiry date",
     },
     roles: {
       items: {
-        type: 'string',
+        type: "string",
       },
-      type: 'array',
-      title: 'Roles',
-      description: 'List of roles granted to the access token',
+      type: "array",
+      title: "Roles",
+      description: "List of roles granted to the access token",
     },
   },
-  type: 'object',
-  required: ['id', 'name', 'expiry_date', 'roles'],
-  title: 'TokenResponse',
-} as const
+  type: "object",
+  required: ["id", "name", "expiry_date", "roles"],
+  title: "TokenResponse",
+} as const;
 
 export const TopLogprobSchema = {
   properties: {
     token: {
-      type: 'string',
-      title: 'Token',
+      type: "string",
+      title: "Token",
     },
     bytes: {
       anyOf: [
         {
           items: {
-            type: 'integer',
+            type: "integer",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Bytes',
+      title: "Bytes",
     },
     logprob: {
-      type: 'number',
-      title: 'Logprob',
+      type: "number",
+      title: "Logprob",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['token', 'logprob'],
-  title: 'TopLogprob',
-} as const
+  type: "object",
+  required: ["token", "logprob"],
+  title: "TopLogprob",
+} as const;
 
 export const TranscriptionSchema = {
   properties: {
     text: {
-      type: 'string',
-      title: 'Text',
+      type: "string",
+      title: "Text",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['text'],
-  title: 'Transcription',
-} as const
+  type: "object",
+  required: ["text"],
+  title: "Transcription",
+} as const;
 
 export const TranscriptionSegmentSchema = {
   properties: {
     id: {
-      type: 'integer',
-      title: 'Id',
+      type: "integer",
+      title: "Id",
     },
     avg_logprob: {
-      type: 'number',
-      title: 'Avg Logprob',
+      type: "number",
+      title: "Avg Logprob",
     },
     compression_ratio: {
-      type: 'number',
-      title: 'Compression Ratio',
+      type: "number",
+      title: "Compression Ratio",
     },
     end: {
-      type: 'number',
-      title: 'End',
+      type: "number",
+      title: "End",
     },
     no_speech_prob: {
-      type: 'number',
-      title: 'No Speech Prob',
+      type: "number",
+      title: "No Speech Prob",
     },
     seek: {
-      type: 'integer',
-      title: 'Seek',
+      type: "integer",
+      title: "Seek",
     },
     start: {
-      type: 'number',
-      title: 'Start',
+      type: "number",
+      title: "Start",
     },
     temperature: {
-      type: 'number',
-      title: 'Temperature',
+      type: "number",
+      title: "Temperature",
     },
     text: {
-      type: 'string',
-      title: 'Text',
+      type: "string",
+      title: "Text",
     },
     tokens: {
       items: {
-        type: 'integer',
+        type: "integer",
       },
-      type: 'array',
-      title: 'Tokens',
+      type: "array",
+      title: "Tokens",
     },
   },
   additionalProperties: true,
-  type: 'object',
+  type: "object",
   required: [
-    'id',
-    'avg_logprob',
-    'compression_ratio',
-    'end',
-    'no_speech_prob',
-    'seek',
-    'start',
-    'temperature',
-    'text',
-    'tokens',
+    "id",
+    "avg_logprob",
+    "compression_ratio",
+    "end",
+    "no_speech_prob",
+    "seek",
+    "start",
+    "temperature",
+    "text",
+    "tokens",
   ],
-  title: 'TranscriptionSegment',
-} as const
+  title: "TranscriptionSegment",
+} as const;
 
 export const TranscriptionVerboseSchema = {
   properties: {
     duration: {
-      type: 'number',
-      title: 'Duration',
+      type: "number",
+      title: "Duration",
     },
     language: {
-      type: 'string',
-      title: 'Language',
+      type: "string",
+      title: "Language",
     },
     text: {
-      type: 'string',
-      title: 'Text',
+      type: "string",
+      title: "Text",
     },
     segments: {
       anyOf: [
         {
           items: {
-            $ref: '#/components/schemas/TranscriptionSegment',
+            $ref: "#/components/schemas/TranscriptionSegment",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Segments',
+      title: "Segments",
     },
     words: {
       anyOf: [
         {
           items: {
-            $ref: '#/components/schemas/TranscriptionWord',
+            $ref: "#/components/schemas/TranscriptionWord",
           },
-          type: 'array',
+          type: "array",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Words',
+      title: "Words",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['duration', 'language', 'text'],
-  title: 'TranscriptionVerbose',
-} as const
+  type: "object",
+  required: ["duration", "language", "text"],
+  title: "TranscriptionVerbose",
+} as const;
 
 export const TranscriptionWordSchema = {
   properties: {
     end: {
-      type: 'number',
-      title: 'End',
+      type: "number",
+      title: "End",
     },
     start: {
-      type: 'number',
-      title: 'Start',
+      type: "number",
+      title: "Start",
     },
     word: {
-      type: 'string',
-      title: 'Word',
+      type: "string",
+      title: "Word",
     },
   },
   additionalProperties: true,
-  type: 'object',
-  required: ['end', 'start', 'word'],
-  title: 'TranscriptionWord',
-} as const
+  type: "object",
+  required: ["end", "start", "word"],
+  title: "TranscriptionWord",
+} as const;
 
 export const UserDTOSchema = {
   properties: {
     id: {
-      type: 'string',
-      title: 'Id',
+      type: "string",
+      title: "Id",
+      description: "The user's unique identifier (OID).",
     },
     name: {
-      type: 'string',
-      title: 'Name',
+      type: "string",
+      title: "Name",
+      description: "The user's name.",
     },
     email: {
-      type: 'string',
-      title: 'Email',
+      type: "string",
+      title: "Email",
+      description: "The user's email address.",
+    },
+    profile_image: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Profile Image",
+      description: "User's profile image in base64.",
     },
   },
-  type: 'object',
-  required: ['id', 'name', 'email'],
-  title: 'UserDTO',
-} as const
+  type: "object",
+  required: ["id", "name", "email"],
+  title: "UserDTO",
+} as const;
 
 export const ValidationErrorSchema = {
   properties: {
@@ -1596,107 +1611,107 @@ export const ValidationErrorSchema = {
       items: {
         anyOf: [
           {
-            type: 'string',
+            type: "string",
           },
           {
-            type: 'integer',
+            type: "integer",
           },
         ],
       },
-      type: 'array',
-      title: 'Location',
+      type: "array",
+      title: "Location",
     },
     msg: {
-      type: 'string',
-      title: 'Message',
+      type: "string",
+      title: "Message",
     },
     type: {
-      type: 'string',
-      title: 'Error Type',
+      type: "string",
+      title: "Error Type",
     },
   },
-  type: 'object',
-  required: ['loc', 'msg', 'type'],
-  title: 'ValidationError',
-} as const
+  type: "object",
+  required: ["loc", "msg", "type"],
+  title: "ValidationError",
+} as const;
 
 export const WSServerEventSchema = {
   properties: {
     agent_class: {
-      type: 'string',
-      title: 'Agent Class',
-      description: 'The agent class responsible for this event.',
+      type: "string",
+      title: "Agent Class",
+      description: "The agent class responsible for this event.",
     },
     agent_id: {
-      type: 'string',
-      title: 'Agent Id',
+      type: "string",
+      title: "Agent Id",
       description:
-        'Unique identifier of the agent instance that produced the event.',
+        "Unique identifier of the agent instance that produced the event.",
     },
     thread_id: {
-      type: 'string',
-      title: 'Thread Id',
+      type: "string",
+      title: "Thread Id",
       description:
-        'Thread identifier linking events to a particular conversation or workflow.',
+        "Thread identifier linking events to a particular conversation or workflow.",
     },
     display_id: {
-      type: 'string',
-      title: 'Display Id',
-      description: 'Display session ID, used to group events for the UI.',
+      type: "string",
+      title: "Display Id",
+      description: "Display session ID, used to group events for the UI.",
     },
     run_id: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Run Id',
+      title: "Run Id",
       description:
-        'Optional run ID if the event is associated with a particular run.',
+        "Optional run ID if the event is associated with a particular run.",
     },
     event_type: {
       anyOf: [
         {
-          type: 'string',
+          type: "string",
         },
         {
-          type: 'null',
+          type: "null",
         },
       ],
-      title: 'Event Type',
-      description: 'Type of the event (default: \'display_event\').',
-      default: 'display_event',
+      title: "Event Type",
+      description: "Type of the event (default: 'display_event').",
+      default: "display_event",
     },
     event_name: {
-      type: 'string',
-      title: 'Event Name',
-      description: 'Name of the event, indicating its subtype or category.',
+      type: "string",
+      title: "Event Name",
+      description: "Name of the event, indicating its subtype or category.",
     },
     event_id: {
-      type: 'string',
-      title: 'Event Id',
-      description: 'Unique identifier of this event instance.',
+      type: "string",
+      title: "Event Id",
+      description: "Unique identifier of this event instance.",
     },
     event_data: {
-      type: 'object',
-      title: 'Event Data',
-      description: 'Payload of the event, containing detailed information.',
+      type: "object",
+      title: "Event Data",
+      description: "Payload of the event, containing detailed information.",
     },
   },
-  type: 'object',
+  type: "object",
   required: [
-    'agent_class',
-    'agent_id',
-    'thread_id',
-    'display_id',
-    'event_name',
-    'event_id',
-    'event_data',
+    "agent_class",
+    "agent_id",
+    "thread_id",
+    "display_id",
+    "event_name",
+    "event_id",
+    "event_data",
   ],
-  title: 'WSServerEvent',
+  title: "WSServerEvent",
   description: `Represents an event sent from the server to a user's WebSocket connection, encapsulating
 details necessary to identify and display the event in a client application.
 
@@ -1713,4 +1728,4 @@ debugging or logging outbound messages.
 ### Conversion from Persisted Events
 The \`from_persisted_event\` method rebuilds a \`WSServerEvent\` from a \`PersistedEventEntity\`,
 allowing previously stored events to be replayed or displayed to users.`,
-} as const
+} as const;

@@ -1,3 +1,5 @@
+import base64
+
 import httpx
 from azure.identity import DefaultAzureCredential
 
@@ -29,22 +31,37 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         self.scope = "https://graph.microsoft.com/.default"
 
     def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        """Fetch user information from Microsoft Graph using an OID."""
         # Acquire an access token from Azure Identity
         access_token = self.credential.get_token(self.scope).token
-
-        url = f"https://graph.microsoft.com/v1.0/users/{oid}"
         headers = {"Authorization": f"Bearer {access_token}"}
 
+        # Get basic user details
+        user_url = f"https://graph.microsoft.com/v1.0/users/{oid}"
         with httpx.Client() as client:
-            response = client.get(url, headers=headers)
-
-        if response.status_code == 200:
-            user_data = response.json()
-            return UserDTO(
-                id=user_data.get("id"),
-                name=user_data.get("displayName"),
-                email=user_data.get("mail") or user_data.get("userPrincipalName"),
-            )
-        else:
+            response = client.get(user_url, headers=headers)
+        if response.status_code != 200:
             raise ValueError(f"Failed to fetch user info. Status: {response.status_code}, Response: {response.text}")
+        user_data = response.json()
+
+        # Retrieve the profile image
+        image_url = f"https://graph.microsoft.com/v1.0/users/{oid}/photo/$value"
+        with httpx.Client() as client:
+            image_response = client.get(image_url, headers=headers)
+
+        if image_response.status_code == 200:
+            image_content = image_response.content
+            # Determine the MIME type from the response, defaulting to image/jpeg
+            content_type = image_response.headers.get("Content-Type", "image/jpeg")
+            # Encode image and prepend with the data URI scheme
+            base64_data = base64.b64encode(image_content).decode('utf-8')
+            data_url = f"data:{content_type};base64,{base64_data}"
+        else:
+            data_url = None
+
+        # Return user information with the base64 encoded profile image as a data URI
+        return UserDTO(
+            id=user_data.get("id"),
+            name=user_data.get("displayName"),
+            email=user_data.get("mail") or user_data.get("userPrincipalName"),
+            profile_image=data_url  # Ensure your UserDTO accepts this field.
+        )
