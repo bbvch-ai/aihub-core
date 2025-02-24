@@ -36,7 +36,7 @@ class UserService:
         Convert the `AuthenticatedUser` (provided by the auth layer) into a UserDTO.
         This usually includes fields like name, email, and OID.
         """
-        return UserDTO.from_authenticated_user(user)
+        return UserService.get_user_by_oid(user.oid)
 
     @staticmethod
     def get_user_by_oid(user_oid: str) -> UserDTO:
