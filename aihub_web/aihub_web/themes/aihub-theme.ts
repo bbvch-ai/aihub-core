@@ -51,4 +51,7 @@ const AIHubPreset = definePreset(Aura, {
 
 export default {
   preset: AIHubPreset,
+  options: {
+    darkModeSelector: '.dark',
+  },
 }

@@ -10,7 +10,6 @@
           <template #icon>
             <Icon
               name="bi:stack"
-              style="color: white"
               size="xl"
             />
           </template>
