@@ -4,12 +4,12 @@
   "version": "0.0.1",
   "main": "./nuxt.config.ts",
   "scripts": {
-    "dev": "nuxi dev .playground --port 8182",
-    "dev:prepare": "nuxt prepare .playground",
+    "dev": "nuxi prepare && nuxi dev .playground --port 8182",
+    "dev:prepare": "nuxi prepare && nuxt prepare .playground",
     "build": "nuxt build .playground",
     "generate": "nuxt generate .playground",
     "preview": "nuxt preview .playground",
-    "lint": "eslint . --fix",
+    "lint": "nuxi prepare && eslint . --fix",
     "storybook": "storybook dev --port 6006",
     "build-storybook": "storybook build",
     "generate-sdk": "openapi-ts"
