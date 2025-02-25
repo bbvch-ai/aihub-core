@@ -19,9 +19,6 @@ from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
 # Constants for the tests
 USER_ENDPOINT = "/api/v1/user/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
-TEST_OID = "test-oid"
-TEST_USER_NAME = "Test User"
-TEST_USER_EMAIL = "testuser@example.com"
 TOKEN_EXPIRY_MINUTES = 10
 
 
@@ -62,11 +59,11 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
     now = datetime.now(timezone.utc)
     exp = now + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
-        "name": TEST_USER_NAME,
-        "preferred_username": TEST_USER_EMAIL,
+        "name": "Melanie Musterfrau",
+        "preferred_username": "melanie.musterfrau@bbv.ch",
         "roles": ["user"],
         "aud": oauth2_config.CLIENT_ID,
-        "oid": TEST_OID,
+        "oid": "1234567890",
         "iss": f"{oauth2_config.AUTHORITY}/v2.0",
         "exp": exp,
     }
@@ -79,9 +76,10 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
 def expected_user_data():
     """Return the expected user data from token claims."""
     return {
-        "id": TEST_OID,
-        "name": TEST_USER_NAME,
-        "email": TEST_USER_EMAIL,
+        "id": "1234567890",
+        "name": "Melanie Musterfrau",
+        "email": "melanie.musterfrau@bbv.ch",
+        "profile_image": None,
     }
 
 
