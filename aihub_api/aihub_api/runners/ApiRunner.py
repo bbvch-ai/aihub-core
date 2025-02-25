@@ -1,14 +1,16 @@
 import logging
-from fastapi import FastAPI
 from random import seed
+from typing import List, Optional
+
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.routes.Controller import Controller
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
-from typing import List, Optional
 
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +126,9 @@ class ApiRunner:
         """
         for controller in controllers:
             controller.mount(self._api_app)
+        for route in self._api_app.routes:
+            if isinstance(route, APIRoute):
+                route.operation_id = route.name  # in this case, 'read_items'
         return self
 
     def mount_frontend(self, directory: str) -> "ApiRunner":

@@ -4,7 +4,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
@@ -67,7 +67,7 @@ class ThreadController(Controller):
         @self.router.get(route)
         async def list_user_threads(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> List[ThreadResponse]:
             """
             Returns all threads that the authenticated user is a member of.
@@ -81,7 +81,7 @@ class ThreadController(Controller):
         async def create_thread(
             req: CreateThreadRequest,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ThreadResponse:
             """
             Creates a new thread with the specified name, users, and agents.
@@ -101,7 +101,7 @@ class ThreadController(Controller):
         async def get_thread(
             thread_id: str,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ThreadResponse:
             """
             Retrieves details of a specific thread.
@@ -120,7 +120,7 @@ class ThreadController(Controller):
             thread_id: str,
             req: AddAgentRequest,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ThreadResponse:
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
@@ -144,7 +144,7 @@ class ThreadController(Controller):
             agent_class: str,
             agent_id: str,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ThreadResponse:
             """
             Removes an agent from the thread, if the user is part of that thread.
@@ -163,7 +163,7 @@ class ThreadController(Controller):
             thread_id: str,
             req: AddUserRequest,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ThreadResponse:
             """
             Adds another user to the thread, provided the current user is a member of the thread.
@@ -184,7 +184,7 @@ class ThreadController(Controller):
             thread_id: str,
             remove_user_id: str,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ThreadResponse:
             """
             Removes a user from the thread if the authenticated user is a member of the thread.

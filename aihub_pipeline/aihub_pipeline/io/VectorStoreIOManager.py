@@ -1,11 +1,11 @@
 from typing import List, Sequence, Union
 
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from aihub_pipeline.util.id_utils import uri_to_id
 
 

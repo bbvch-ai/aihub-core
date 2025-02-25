@@ -15,12 +15,17 @@ export const useAuth = () => {
     return await $auth.getUser()
   }
 
-  const getBearer = async () => {
+  const getToken = async () => {
     const user = await getUser()
     if (!user) {
       throw new Error('User not logged in')
     }
-    return `Bearer ${user.access_token}`
+    return user.access_token
+  }
+
+  const getBearer = async () => {
+    const token = await getToken()
+    return `Bearer ${token}`
   }
 
   const getHeaders = async (): Promise<Record<string, string>> => {
@@ -34,6 +39,7 @@ export const useAuth = () => {
     login,
     logout,
     getUser,
+    getToken,
     getBearer,
     getHeaders,
   }
