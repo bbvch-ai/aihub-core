@@ -47,7 +47,7 @@ use-local-core:
 	@echo "Switching to local cores..."
 	python switch_dependency.py local
 
-TAG ?= v0.65.0
+TAG ?= v0.66.0
 
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
