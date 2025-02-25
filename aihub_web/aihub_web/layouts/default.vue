@@ -166,7 +166,6 @@ const toggle = (event) => {
 }
 
 const onEnter = (event) => {
-  console.log('Enter')
   if (shownApps.value.length > 0) {
     router.push(localeRoute(shownApps.value[0].path))
     toggle(event)

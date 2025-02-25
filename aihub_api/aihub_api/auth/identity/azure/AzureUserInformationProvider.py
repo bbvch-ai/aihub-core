@@ -44,18 +44,22 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         user_data = response.json()
 
         # Retrieve the profile image
-        image_url = f"https://graph.microsoft.com/v1.0/users/{oid}/photo/$value"
-        with httpx.Client() as client:
-            image_response = client.get(image_url, headers=headers)
+        try:
+            image_url = f"https://graph.microsoft.com/v1.0/users/{oid}/photo/$value"
+            with httpx.Client() as client:
+                image_response = client.get(image_url, headers=headers)
 
-        if image_response.status_code == 200:
-            image_content = image_response.content
-            # Determine the MIME type from the response, defaulting to image/jpeg
-            content_type = image_response.headers.get("Content-Type", "image/jpeg")
-            # Encode image and prepend with the data URI scheme
-            base64_data = base64.b64encode(image_content).decode("utf-8")
-            data_url = f"data:{content_type};base64,{base64_data}"
-        else:
+            if image_response.status_code == 200:
+                image_content = image_response.content
+                # Determine the MIME type from the response, defaulting to image/jpeg
+                content_type = image_response.headers.get("Content-Type", "image/jpeg")
+                # Encode image and prepend with the data URI scheme
+                base64_data = base64.b64encode(image_content).decode("utf-8")
+                data_url = f"data:{content_type};base64,{base64_data}"
+            else:
+                data_url = None
+        except Exception as e:
+            print(f"Failed to fetch profile image: {e}")
             data_url = None
 
         # Return user information with the base64 encoded profile image as a data URI

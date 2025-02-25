@@ -18,8 +18,8 @@ class TokenAndOauth2Handler(AuthHandler):
     async def __call__(
         self,
         request: Request,
-        bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer()),
-        oauth_token: OAuth2AuthorizationCodeBearer | None = Security(OAuth2Config().SCHEMA),
+        bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
+        oauth_token: OAuth2AuthorizationCodeBearer | None = Security(OAuth2Config().OPTIONAL_SCHEMA),
     ) -> AuthenticatedUser:
         errors = []
 

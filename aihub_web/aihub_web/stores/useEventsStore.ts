@@ -44,17 +44,14 @@ export const useEventsStore = defineStore('events', () => {
 
   // Generic send event function
   const sendEvent = (event: WSUserEvent) => {
-    console.log('Sending', event)
     send(JSON.stringify(event))
   }
 
   watch(
     () => newEvent.value,
     (receivedEvent) => {
-      console.log('Received data', receivedEvent)
       if (receivedEvent) {
         const event = JSON.parse(receivedEvent) as WSServerEvent
-        console.log('Pushing new event')
         newEvents.value.push(event)
       }
     },
@@ -105,7 +102,6 @@ export const useEventsStore = defineStore('events', () => {
       )
     })
     if (lastHumanInTheLoopRequestEvent) {
-      console.log('Found last HumanInTheLoopRequestEvent', lastHumanInTheLoopRequestEvent)
       const humanInTheLoopResponseEvent: WSUserEvent = {
         thread_id,
         display_id: lastHumanInTheLoopRequestEvent.display_id,
