@@ -46,6 +46,8 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
 
     completion_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand completion tokens.")]
 
+    api_key: Annotated[str, Field(description="Use Azure OpenAI API Key instead of Azure AD.")] = None
+
     # Keeping Field() explicitly for default_factory
     default_parameter: AzureOpenAIParameter = Field(
         default_factory=lambda: AzureOpenAIParameter(),
@@ -72,23 +74,35 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
             completion_tokens_costs_per_thousand=self.completion_tokens_costs_per_thousand,
         )
 
-        token_provider = get_bearer_token_provider(
-            DefaultAzureCredential(),
-            "https://cognitiveservices.azure.com/.default",
-        )
-
         additional_kwargs = self.merge_model_params(model_parameter)
 
-        azure_open_ai = AzureOpenAI(
-            model=self.name,
-            azure_endpoint=self.base_url,
-            use_azure_ad=True,
-            azure_ad_token_provider=token_provider,
-            api_version=self.api_version,
-            temperature=additional_kwargs.pop("temperature"),
-            additional_kwargs=additional_kwargs,
-            callback_manager=CallbackManager([token_counter]),
-            engine=self.name,
-        )
+        if self.api_key:
+            azure_open_ai = AzureOpenAI(
+                model=self.name,
+                azure_endpoint=self.base_url,
+                use_azure_ad=False,
+                api_key=self.api_key,
+                api_version=self.api_version,
+                temperature=additional_kwargs.pop("temperature"),
+                additional_kwargs=additional_kwargs,
+                callback_manager=CallbackManager([token_counter]),
+                engine=self.name,
+            )
+        else:
+            token_provider = get_bearer_token_provider(
+                DefaultAzureCredential(),
+                "https://cognitiveservices.azure.com/.default",
+            )
+            azure_open_ai = AzureOpenAI(
+                model=self.name,
+                azure_endpoint=self.base_url,
+                use_azure_ad=True,
+                azure_ad_token_provider=token_provider,
+                api_version=self.api_version,
+                temperature=additional_kwargs.pop("temperature"),
+                additional_kwargs=additional_kwargs,
+                callback_manager=CallbackManager([token_counter]),
+                engine=self.name,
+            )
 
         return azure_open_ai, cost_tracker
