@@ -53,7 +53,7 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
             # Determine the MIME type from the response, defaulting to image/jpeg
             content_type = image_response.headers.get("Content-Type", "image/jpeg")
             # Encode image and prepend with the data URI scheme
-            base64_data = base64.b64encode(image_content).decode('utf-8')
+            base64_data = base64.b64encode(image_content).decode("utf-8")
             data_url = f"data:{content_type};base64,{base64_data}"
         else:
             data_url = None
@@ -63,5 +63,5 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
             id=user_data.get("id"),
             name=user_data.get("displayName"),
             email=user_data.get("mail") or user_data.get("userPrincipalName"),
-            profile_image=data_url  # Ensure your UserDTO accepts this field.
+            profile_image=data_url,  # Ensure your UserDTO accepts this field.
         )

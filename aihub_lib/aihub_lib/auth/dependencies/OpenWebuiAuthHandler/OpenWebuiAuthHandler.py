@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import HTTPException, Request, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
@@ -28,7 +28,9 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         This authentication handler is intended for use exclusively with open-webui as the frontend.
     """
 
-    async def __call__(self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())) -> AuthenticatedUser:
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+    ) -> AuthenticatedUser:
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")
 

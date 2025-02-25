@@ -1,5 +1,6 @@
-from dagster import AssetIn, AssetKey, AutomationCondition, Output, graph_asset
 from typing import List
+
+from dagster import AssetIn, AssetKey, AutomationCondition, Output, graph_asset
 
 from aihub_pipeline.ops.document.add_metadata_to_ref_docs import add_metadata_to_ref_docs
 from aihub_pipeline.ops.document.delete_removed_ref_docs_from_docstore import delete_removed_ref_docs_from_docstore

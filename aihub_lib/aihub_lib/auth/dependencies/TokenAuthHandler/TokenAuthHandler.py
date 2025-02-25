@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import HTTPException, Security, Request
+from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
@@ -28,7 +28,9 @@ class TokenAuthHandler(BearerAuthHandler):
         AuthenticatedUser: A user instance constructed from the token's associated API user details.
     """
 
-    async def __call__(self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())) -> AuthenticatedUser:
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+    ) -> AuthenticatedUser:
         token_str = bearer_token.credentials
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")

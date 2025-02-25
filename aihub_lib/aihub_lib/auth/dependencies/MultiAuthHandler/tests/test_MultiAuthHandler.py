@@ -94,7 +94,9 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> TokenAndOauth2Handle
 
 @when("I invoke the multi auth handler")
 @async_test
-async def invoke_multi_auth(multi_auth_instance: TokenAndOauth2Handler, multi_auth_result: dict, dummy_request: Request):
+async def invoke_multi_auth(
+    multi_auth_instance: TokenAndOauth2Handler, multi_auth_result: dict, dummy_request: Request
+):
     """Invoke the multi auth handler and store the returned user."""
     try:
         user = await multi_auth_instance(dummy_request)

@@ -12,7 +12,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
-from fastapi import Body, Depends, File, Form, UploadFile, Security
+from fastapi import Body, Depends, File, Form, Security, UploadFile
 from llama_index.llms.openai import OpenAI
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse

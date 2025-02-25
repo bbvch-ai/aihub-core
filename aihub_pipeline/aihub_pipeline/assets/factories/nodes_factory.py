@@ -1,6 +1,7 @@
+from typing import List
+
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 from llama_index.core.schema import TextNode
-from typing import List
 
 from aihub_pipeline.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_parser import (
     chunk_ref_doc_into_nodes_using_md_structural_node_parser,

@@ -1,7 +1,6 @@
+from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ConfigurableResource, InitResourceContext
-
-from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 
 
 class DataLakeClientResource(ConfigurableResource[FileSystemClient]):

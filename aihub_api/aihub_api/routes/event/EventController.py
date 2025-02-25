@@ -5,7 +5,7 @@ from typing import Any, Callable, List
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, WebSocket, Security
+from fastapi import Depends, HTTPException, Security, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent

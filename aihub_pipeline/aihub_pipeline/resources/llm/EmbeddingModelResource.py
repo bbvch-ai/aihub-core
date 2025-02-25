@@ -1,12 +1,11 @@
-from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
-from llama_index.core.base.embeddings.base import BaseEmbedding
-
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
 )
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
+from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
+from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
 class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):

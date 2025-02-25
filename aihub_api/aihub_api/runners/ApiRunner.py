@@ -1,15 +1,16 @@
 import logging
+from random import seed
+from typing import List, Optional
+
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.routes.Controller import Controller
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from random import seed
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
-from typing import List, Optional
 
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
 

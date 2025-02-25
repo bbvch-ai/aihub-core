@@ -46,7 +46,9 @@ class OAuth2AuthHandler(AuthHandler):
     def __init__(self):
         self.config = OAuth2Config()
 
-    async def __call__(self, oauth_token: OAuth2AuthorizationCodeBearer = Security(OAuth2Config().SCHEMA)) -> AuthenticatedUser:
+    async def __call__(
+        self, oauth_token: OAuth2AuthorizationCodeBearer = Security(OAuth2Config().SCHEMA)
+    ) -> AuthenticatedUser:
         print("auth handler", OAuth2Config())
 
         try:

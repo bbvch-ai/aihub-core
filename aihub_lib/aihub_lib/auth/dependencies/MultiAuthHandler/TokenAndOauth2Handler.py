@@ -16,10 +16,10 @@ class TokenAndOauth2Handler(AuthHandler):
         self.oauth2_handler = oauth2_handler
 
     async def __call__(
-            self,
-            request: Request,
-            bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer()),
-            oauth_token: OAuth2AuthorizationCodeBearer | None = Security(OAuth2Config().SCHEMA),
+        self,
+        request: Request,
+        bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer()),
+        oauth_token: OAuth2AuthorizationCodeBearer | None = Security(OAuth2Config().SCHEMA),
     ) -> AuthenticatedUser:
         errors = []
 
