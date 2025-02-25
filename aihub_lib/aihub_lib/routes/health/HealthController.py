@@ -1,10 +1,11 @@
 from typing import Any, Callable
 
-from fastapi import Depends
+from fastapi import Depends, Security
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
+from aihub_lib.routes.health.dto.HealthResponse import HealthResponse
 
 
 class HealthController(Controller):
@@ -40,12 +41,12 @@ class HealthController(Controller):
             route,
         )
         async def get_health(
-            user: AuthenticatedUser = Depends(self.auth),
-        ) -> dict[str, str]:
+            user: AuthenticatedUser = Security(self.auth),
+        ) -> HealthResponse:
             """
             A simple health check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.
             """
-            return {"status": "ok"}
+            return HealthResponse(status="ok")
 
         return self

@@ -7,14 +7,11 @@ export default defineNuxtRouteMiddleware(async (to, _) => {
     `/${$i18n.locale.value}/health`,
   ]
 
-  console.log('Checking auth for', to.path, noAuthPaths)
-
   if (noAuthPaths.includes(to.path)) {
     return
   }
 
   const user = await $auth.getUser()
-  console.log('user', user)
   if (user) {
     return
   }

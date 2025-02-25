@@ -1,7 +1,7 @@
+from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from dagster import ConfigurableResource
 from llama_index.core.node_parser import NodeParser
 
-from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 

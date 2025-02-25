@@ -5,7 +5,7 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends
+from fastapi import Depends, Security
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.i18n.dto.LocaleResponse import LocaleResponse
@@ -59,7 +59,7 @@ class I18nController(Controller):
             },
         )
         async def get_locale(
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> LocaleResponse:
             """

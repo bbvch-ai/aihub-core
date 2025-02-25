@@ -45,11 +45,11 @@ pr-ready:
 # Use local cores for development
 use-local-core:
 	@echo "Switching to local cores..."
-	python switch_dependency.py local
+	poetry run python switch_dependencies.py local
 
-TAG ?= v0.64.0
+TAG ?= v0.69.0
 
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
-	python switch_dependency.py remote --tag "$(TAG)"
+	poetry run python switch_dependencies.py remote --tag "$(TAG)"
 

@@ -3,12 +3,12 @@ from typing import Sequence
 
 from dagster import (
     AnchorBasedFilePathMapping,
+    AssetKey,
     AssetsDefinition,
-    link_code_references_to_git,
-    with_source_code_references,
     Definitions,
     DynamicPartitionsDefinition,
-    AssetKey,
+    link_code_references_to_git,
+    with_source_code_references,
 )
 
 from aihub_pipeline.assets.factories.documents_factory import documents_factory
@@ -18,10 +18,10 @@ from aihub_pipeline.assets.factories.removed_documents_factory import removed_do
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.jobs.factory import observe_source_job
 from aihub_pipeline.resources.factory import (
-    default_llm_resources,
-    default_io_manager_azure_datalake_resources,
-    mongo_aisearch_storage_context_resources,
     azure_data_lake_resources,
+    default_io_manager_azure_datalake_resources,
+    default_llm_resources,
+    mongo_aisearch_storage_context_resources,
 )
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource

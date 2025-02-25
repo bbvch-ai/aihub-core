@@ -12,7 +12,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
-from fastapi import Body, Depends, File, Form, UploadFile
+from fastapi import Body, Depends, File, Form, Security, UploadFile
 from llama_index.llms.openai import OpenAI
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
@@ -84,7 +84,7 @@ class OpenaiController(Controller):
             response_model=ModelResponse,
         )
         async def get_models(
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ModelResponse:
             return OpenaiService.get_models(self.chat_models)
 
@@ -99,7 +99,7 @@ class OpenaiController(Controller):
         )
         async def get_models(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ModelResponse:
             return await OpenaiService.get_models_with_assistants(self.chat_models, user, nc)
 
@@ -113,7 +113,7 @@ class OpenaiController(Controller):
         )
         async def get_model(
             full_path: str,
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ModelDetails:
             return OpenaiService.get_model(self.chat_models, model_name=full_path)
 
@@ -128,7 +128,7 @@ class OpenaiController(Controller):
         async def get_model(
             full_path: str,
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ModelDetails:
             return await OpenaiService.get_model_with_assistants(
                 self.chat_models, model_name=full_path, user=user, nc=nc
@@ -144,7 +144,7 @@ class OpenaiController(Controller):
         )
         async def get_embeddings(
             req: Annotated[EmbeddingsRequest, Body],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> EmbeddingsResponse:
             return OpenaiService.get_embeddings(
                 self.embedding_models,
@@ -165,7 +165,7 @@ class OpenaiController(Controller):
         )
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
             return await OpenaiService.chat_completion(
                 self.chat_models, completion_request.model, completion_request.model_dump()
@@ -184,7 +184,7 @@ class OpenaiController(Controller):
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
             return await OpenaiService.chat_completion_with_assistants(
                 self.chat_models, completion_request.model, completion_request, user, nc, ws_receiver
@@ -196,7 +196,7 @@ class OpenaiController(Controller):
         @self.router.post(route, summary="Create image", description="Creates an image given a prompt.")
         async def generate_image(
             generation_request: Annotated[ImageGenerationRequest, Body],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> ImagesResponse:
             return await OpenaiService.generate_image(
                 self.image_models, str(generation_request.model), generation_request.model_dump()
@@ -219,7 +219,7 @@ class OpenaiController(Controller):
                 None,
                 description="Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
             ),
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> Transcription | TranscriptionVerbose | str:
             return await OpenaiService.stt(
                 self.stt_models,
@@ -242,7 +242,7 @@ class OpenaiController(Controller):
         )
         async def create_speech(
             speech_request: Annotated[TextToSpeechRequest, Body],
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> StreamingResponse:
             tts_response = await OpenaiService.tts(
                 self.tts_models, speech_request.model, speech_request.input, speech_request.model_dump()

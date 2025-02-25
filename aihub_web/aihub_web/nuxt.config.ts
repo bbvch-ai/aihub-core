@@ -6,13 +6,11 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vee-validate/nuxt',
     '@nuxtjs/tailwindcss',
-    'shadcn-nuxt',
     '@nuxtjs/i18n',
     '@nuxt/icon',
     '@nuxt/fonts',
     '@nuxtjs/robots',
     '@pinia/colada-nuxt',
-    // '@nuxtjs/storybook',
     '@primevue/nuxt-module',
     '@nuxt/eslint',
   ],
@@ -24,6 +22,12 @@ export default defineNuxtConfig({
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
   ],
 
+  // You must configure the client application in azure accordingly
+  // https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Authentication/appId/<<<CLIENT_ID>>>/isMSAApp~/false
+  // Register the following Single-page application Redirect URIs
+  // http://localhost:8080/<<<LOCALE>>>/auth/refresh
+  // http://localhost:8080/<<<LOCALE>>>/auth/callback
+  // For all locales that you support
   runtimeConfig: {
     public: {
       oidc: {
@@ -81,9 +85,5 @@ export default defineNuxtConfig({
     importTheme: {
       from: fileURLToPath(new URL('./themes/aihub-theme.ts', import.meta.url)),
     },
-  },
-
-  shadcn: {
-    componentDir: fileURLToPath(new URL('./components/ui', import.meta.url)),
   },
 })

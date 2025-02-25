@@ -4,16 +4,18 @@
   "version": "0.0.1",
   "main": "./nuxt.config.ts",
   "scripts": {
-    "dev": "nuxi dev .playground --port 8080",
-    "dev:prepare": "nuxt prepare .playground",
+    "dev": "nuxi prepare && nuxi dev .playground --port 8182",
+    "dev:prepare": "nuxi prepare && nuxt prepare .playground",
     "build": "nuxt build .playground",
     "generate": "nuxt generate .playground",
     "preview": "nuxt preview .playground",
-    "lint": "eslint . --fix",
+    "lint": "nuxi prepare && eslint . --fix",
     "storybook": "storybook dev --port 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "generate-sdk": "openapi-ts"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.64.5",
     "@nuxt/eslint": "^0.7.1",
     "@nuxt/fonts": "^0.10.2",
     "@nuxt/icon": "^1.8.2",
@@ -36,16 +38,18 @@
     "eslint": "^9.15.0",
     "nuxt": "^3.14.1592",
     "oidc-client-ts": "^3.1.0",
-    "shadcn-nuxt": "^0.11.3",
     "storybook": "^8.4.5",
     "typescript": "^5.7.2",
     "vue": "latest"
   },
   "packageManager": "pnpm@9.14.2+sha512.6e2baf77d06b9362294152c851c4f278ede37ab1eba3a55fda317a4a17b209f4dbb973fb250a77abc463a341fcb1f17f17cfa24091c4eb319cda0d9b84278387",
   "dependencies": {
+    "@hey-api/client-fetch": "^0.8.1",
+    "@hey-api/client-nuxt": "^0.2.2",
     "@nuxtjs/color-mode": "^3.5.2",
-    "@pinia/colada": "^0.12.1",
+    "@pinia/colada": "^0.13.6",
     "@pinia/nuxt": "^0.7.0",
+    "@primeuix/themes": "1.0.0-rc.1",
     "@primevue/themes": "^4.2.5",
     "@vee-validate/nuxt": "^4.14.7",
     "bson-objectid": "^2.0.4",
@@ -53,12 +57,13 @@
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.460.0",
     "pinia": "^2.2.6",
+    "primeicons": "^7.0.0",
     "primevue": "^4.2.5",
     "quill": "^2.0.3",
     "radix-vue": "^1.9.10",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "tailwindcss-primeui": "^0.3.4"
+    "tailwindcss-primeui": "^0.4.0"
   }
 }

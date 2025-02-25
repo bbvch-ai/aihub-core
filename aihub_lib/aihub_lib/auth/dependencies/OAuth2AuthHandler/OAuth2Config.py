@@ -66,3 +66,17 @@ class OAuth2Config(BaseSettings):
             tokenUrl=self.TOKEN_URL,
             scopes={"User.Read": "Read user profile data"},
         )
+
+    @computed_field
+    @property
+    def OPTIONAL_SCHEMA(self) -> OAuth2AuthorizationCodeBearer:
+        """
+        Returns an OAuth2AuthorizationCodeBearer schema configured for Azure AD.
+        Raises no error when not authenticated, only use in when other auth methods are provided as well
+        """
+        return OAuth2AuthorizationCodeBearer(
+            authorizationUrl=f"{self.AUTHORITY}/oauth2/v2.0/authorize",
+            tokenUrl=self.TOKEN_URL,
+            scopes={"User.Read": "Read user profile data"},
+            auto_error=False,
+        )

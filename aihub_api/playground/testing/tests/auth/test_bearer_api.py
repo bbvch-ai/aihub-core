@@ -50,6 +50,7 @@ def expected_user_data():
         "id": os.getenv("OID", "1234567890"),
         "name": os.getenv("NAME", "Melanie Musterfrau"),
         "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
+        "profile_image": None,
     }
 
 

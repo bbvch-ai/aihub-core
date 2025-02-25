@@ -8,6 +8,8 @@ from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
@@ -29,7 +31,10 @@ enable_logging()
 async def main():
     runner = ApiTestRunner()
 
-    auth = OpenWebuiAuthHandler()
+    auth = TokenAndOauth2Handler(
+        OpenWebuiAuthHandler(),
+        OAuth2AuthHandler(),
+    )
 
     runner.mount(
         HealthController().get_health(),

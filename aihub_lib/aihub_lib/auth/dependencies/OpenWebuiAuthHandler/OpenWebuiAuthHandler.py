@@ -1,15 +1,16 @@
 import logging
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
 logger = logging.getLogger(__name__)
 
 
-class OpenWebuiAuthHandler(AuthHandler):
+class OpenWebuiAuthHandler(BearerAuthHandler):
     """
     A FastAPI dependency that implements authentication for the open-webui frontend.
 
@@ -27,15 +28,15 @@ class OpenWebuiAuthHandler(AuthHandler):
         This authentication handler is intended for use exclusively with open-webui as the frontend.
     """
 
-    async def __call__(self, request: Request) -> AuthenticatedUser:
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+    ) -> AuthenticatedUser:
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")
 
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization header format.")
-
-        token_str = auth_header[len("Bearer ") :].strip()
+        token_str = bearer_token.credentials
+        if not token_str:
+            raise HTTPException(status_code=401, detail="Token missing.")
 
         try:
             access_token = BearerToken.verify_token(token_str)

@@ -3,7 +3,8 @@ from typing import Annotated
 
 import httpx
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Security
+from fastapi.security import OAuth2AuthorizationCodeBearer
 from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError
 
@@ -45,7 +46,9 @@ class OAuth2AuthHandler(AuthHandler):
     def __init__(self):
         self.config = OAuth2Config()
 
-    async def __call__(self, token: Annotated[str, Depends(OAuth2Config().SCHEMA)]) -> AuthenticatedUser:
+    async def __call__(
+        self, oauth_token: OAuth2AuthorizationCodeBearer = Security(OAuth2Config().SCHEMA)
+    ) -> AuthenticatedUser:
         print("auth handler", OAuth2Config())
 
         try:
@@ -55,7 +58,7 @@ class OAuth2AuthHandler(AuthHandler):
                 jwks_response.raise_for_status()
                 jwks = jwks_response.json()
 
-            unverified_header = jwt.get_unverified_header(token)
+            unverified_header = jwt.get_unverified_header(oauth_token)
             rsa_key = None
 
             # Find the matching key in JWKS
@@ -69,7 +72,7 @@ class OAuth2AuthHandler(AuthHandler):
 
             # Decode and verify JWT signature and claims
             decoded_token = jwt.decode(
-                token,
+                oauth_token,
                 rsa_key,
                 algorithms=["RS256"],
                 audience=OAuth2Config().CLIENT_ID,

@@ -5,6 +5,7 @@ from typing import Generator
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException, Request
+from fastapi.security import HTTPBearer
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -159,7 +160,8 @@ async def invoke_token_auth_handler(token_context: dict, token_context_result: d
     request = create_dummy_request(headers)
     handler = TokenAuthHandler()
     try:
-        user = await handler(request)
+        security = await HTTPBearer()(request)
+        user = await handler(request, security)
     except HTTPException as e:
         pytest.fail(f"TokenAuthHandler raised an unexpected exception: {e.detail}")
     token_context_result["user"] = user
@@ -174,7 +176,8 @@ async def invoke_token_auth_handler_expect_error(token_context: dict, error_cont
     request = create_dummy_request(headers)
     handler = TokenAuthHandler()
     try:
-        await handler(request)
+        security = await HTTPBearer()(request)
+        await handler(request, security)
         pytest.fail("TokenAuthHandler did not raise an exception")
     except HTTPException as e:
         error_context["error"] = e.detail

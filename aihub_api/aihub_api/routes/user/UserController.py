@@ -1,9 +1,7 @@
-from typing import Any, Callable
-
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends
+from fastapi import Security
 
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.UserService import UserService
@@ -41,7 +39,7 @@ class UserController(Controller):
     def get_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route)
         async def get_user(
-            user: AuthenticatedUser = Depends(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
         ) -> UserDTO:
             """
             Returns a `UserDTO` representing the currently logged-in user.

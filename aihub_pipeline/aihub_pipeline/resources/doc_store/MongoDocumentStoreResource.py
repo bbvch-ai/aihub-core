@@ -1,7 +1,6 @@
+from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
-
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 
 
 class MongoDocumentStoreResource(ConfigurableResource[MongoDocumentStore]):
