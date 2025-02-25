@@ -53,7 +53,8 @@ class SelfHostedLLMConfig(ChatLLMConfig):
 
     @property
     def tokenizer(self) -> Callable[[str], List[int]]:
-        return AutoTokenizer.from_pretrained(self.name)
+        base_llm_name: str = self.name.replace("-GGUF", "").replace("-AWQ", "")
+        return AutoTokenizer.from_pretrained(base_llm_name).encode
 
     def to_llama_index(
         self, model_parameter: Optional[SelfHostedLLMParameter] = None
