@@ -138,3 +138,4 @@ class ApiRunner:
         """
         self._base_app.mount("/", StaticFiles(directory=directory, html=True), name="static")
         return self
+        
