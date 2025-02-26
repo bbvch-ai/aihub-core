@@ -83,13 +83,22 @@
               header="Class"
             />
             <Column
-              header="type"
-              style="min-width: 100px"
+              header="Typ"
             >
               <template #body="{ data }">
                 <Tag
-                  :value="data.agent_id"
+                  :value="data.agent_class"
                   severity="info"
+                />
+              </template>
+            </Column>
+            <Column
+              header="Conversable"
+            >
+              <template #body="{ data }">
+                <i
+                  :class="data.is_conversable ? 'pi-check-circle' : 'pi pi-times-circle'"
+                  style="font-size: 1rem"
                 />
               </template>
             </Column>
@@ -110,7 +119,6 @@
             </template>
           </DataTable>
         </div>
-        {{ agent }}
       </SplitterPanel>
       <SplitterPanel>
         <NuxtPage />
