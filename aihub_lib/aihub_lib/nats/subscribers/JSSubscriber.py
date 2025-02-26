@@ -4,6 +4,7 @@ import traceback
 from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 
 from nats.aio.client import Client as NATS
+from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
@@ -90,6 +91,8 @@ class JSSubscriber(Generic[TEvent]):
             logger.debug(f"Deserialized event: {event}")
             await msg.ack()
             asyncio.create_task(self._process(event, topic, msg))
+        except MsgAlreadyAckdError:
+            pass
         except Exception as e:
             logger.error(f"Error in message handler: {e}")
             traceback.print_exc()
