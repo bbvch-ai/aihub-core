@@ -1,6 +1,7 @@
 import asyncio
 from typing import List, Optional
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
 from nats.aio.client import Client as NATS
@@ -32,54 +33,54 @@ class ThreadService:
 
     @staticmethod
     async def create_thread(
-        nc: NATS, name: str, user_ids: List[str], agent_dtos: Optional[List[ThreadAgentDTO]] = None
+        nc: NATS, name: str, user_ids: List[str], t: LocaleHandler, agent_dtos: Optional[List[ThreadAgentDTO]] = None
     ) -> ThreadResponse:
         users = [User(user_id=uid) for uid in user_ids]
         agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
         created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
-        return await ThreadService.thread_response_from_entity(created_thread, nc)
+        return await ThreadService.thread_response_from_entity(created_thread, nc, t)
 
     @staticmethod
-    async def get_thread_by_id(nc: NATS, thread_id: str) -> ThreadResponse:
+    async def get_thread_by_id(nc: NATS, thread_id: str, t: LocaleHandler) -> ThreadResponse:
         if not ObjectId.is_valid(thread_id):
             raise ValueError("Invalid thread_id provided.")
         thread = ThreadEntity.get_thread_by_id(thread_id)
-        return await ThreadService.thread_response_from_entity(thread, nc)
+        return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def get_threads_for_user(nc: NATS, user_id: str) -> List[ThreadResponse]:
+    async def get_threads_for_user(nc: NATS, user_id: str, t: LocaleHandler) -> List[ThreadResponse]:
         threads = ThreadEntity.get_threads_by_user(user_id)
-        return [await ThreadService.thread_response_from_entity(t, nc) for t in threads]
+        return [await ThreadService.thread_response_from_entity(thread, nc, t) for thread in threads]
 
     @staticmethod
-    async def add_agent_to_thread(nc: NATS, thread_id: str, agent_id: str, agent_class: str) -> ThreadResponse:
+    async def add_agent_to_thread(nc: NATS, thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadResponse:
         agent = Agent(agent_id=agent_id, agent_class=agent_class)
         thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
-        return await ThreadService.thread_response_from_entity(thread, nc)
+        return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def remove_agent_from_thread(nc: NATS, thread_id: str, agent_class: str, agent_id: str) -> ThreadResponse:
+    async def remove_agent_from_thread(nc: NATS, thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadResponse:
         thread = ThreadEntity.remove_agent_from_thread(thread_id, agent_class, agent_id)
-        return await ThreadService.thread_response_from_entity(thread, nc)
+        return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def add_user_to_thread(nc: NATS, thread_id: str, user_id: str) -> ThreadResponse:
+    async def add_user_to_thread(nc: NATS, thread_id: str, user_id: str, t: LocaleHandler) -> ThreadResponse:
         user = User(user_id=user_id)
         thread = ThreadEntity.add_user_to_thread(thread_id, user)
-        return await ThreadService.thread_response_from_entity(thread, nc)
+        return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def remove_user_from_thread(nc: NATS, thread_id: str, user_id: str) -> ThreadResponse:
+    async def remove_user_from_thread(nc: NATS, thread_id: str, user_id: str, t: LocaleHandler) -> ThreadResponse:
         thread = ThreadEntity.remove_user_from_thread(thread_id, user_id)
-        return await ThreadService.thread_response_from_entity(thread, nc)
+        return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def delete_thread(nc: NATS, thread_id: str) -> ThreadResponse:
+    async def delete_thread(nc: NATS, thread_id: str, t: LocaleHandler) -> ThreadResponse:
         thread = ThreadEntity.delete_thread(thread_id)
-        return await ThreadService.thread_response_from_entity(thread, nc)
+        return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def thread_response_from_entity(entity: ThreadEntity, nc: NATS) -> ThreadResponse:
+    async def thread_response_from_entity(entity: ThreadEntity, nc: NATS, t: LocaleHandler) -> ThreadResponse:
         """
         Converts a ThreadEntity into a ThreadResponse:
         1. Fetch agent details (using AgentService).
@@ -87,7 +88,7 @@ class ThreadService:
         3. Construct a ThreadResponse DTO containing all details.
         """
         agents = await asyncio.gather(
-            *(AgentService.get_agent(nc, agent.agent_class, agent.agent_id) for agent in entity.agents)
+            *(AgentService.get_agent(nc, agent.agent_class, agent.agent_id, t) for agent in entity.agents)
         )
 
         return ThreadResponse(

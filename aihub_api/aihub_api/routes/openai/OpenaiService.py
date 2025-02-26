@@ -14,6 +14,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import HTTPException, UploadFile
@@ -63,14 +64,14 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS
+        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS, t: LocaleHandler
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
         chat_models = [ModelDetails(id=model.name) for model in chat_models]
-        agent_dtos = await AgentService.discover_agents(nc)
+        agent_dtos = await AgentService.discover_agents(nc, t)
         agent_dtos = [
             agent_dto
             for agent_dto in agent_dtos
@@ -95,7 +96,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_model_with_assistants(
-        chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS
+        chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS, t: LocaleHandler,
     ) -> ModelDetails:
         """
         Fetch details for a specific chat model or ai-hub assistant by name.
@@ -106,7 +107,7 @@ class OpenaiService:
         except HTTPException:
             pass
         agent_class, agent_id = model_name.split("/")
-        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id)
+        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
         if not user.has_access_to_agent(agent_class, agent_id):
@@ -182,6 +183,7 @@ class OpenaiService:
         user: AuthenticatedUser,
         nc: NATS,
         ws_receiver: WebSocketReceiver,
+        t: LocaleHandler,
     ) -> ChatCompletion | StreamingResponse:
         """
         Execute a chat completion request with an LLM or an assistant.
@@ -196,7 +198,7 @@ class OpenaiService:
         if not user.has_access_to_agent(agent_class, agent_id):
             raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
-        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id)
+        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")

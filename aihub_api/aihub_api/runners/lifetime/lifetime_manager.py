@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
-from aihub_api.persistance.EventPersister import EventPersister
+from aihub_api.persistance.events.EventPersister import EventPersister
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.receiver import WebSocketReceiver
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender

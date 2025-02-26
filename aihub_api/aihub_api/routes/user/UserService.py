@@ -1,3 +1,4 @@
+from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 
 from aihub_api.auth.identity.api.ApiTokenUserInformationProvider import ApiTokenUserInformationProvider
@@ -31,12 +32,18 @@ class UserService:
     )
 
     @staticmethod
-    def get_logged_in_user(user: AuthenticatedUser) -> UserDTO:
+    def get_logged_in_user(user: AuthenticatedUser) -> MyUserDTO:
         """
         Convert the `AuthenticatedUser` (provided by the auth layer) into a UserDTO.
         This usually includes fields like name, email, and OID.
         """
-        return UserService.get_user_by_oid(user.oid)
+        user = UserService.get_user_by_oid(user.oid)
+        return MyUserDTO(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            profile_image=user.profile_image,
+        )
 
     @staticmethod
     def get_user_by_oid(user_oid: str) -> UserDTO:

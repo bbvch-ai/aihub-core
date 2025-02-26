@@ -1,6 +1,6 @@
 from typing import List
 
-from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class AgentDTO(BaseModel):
 
     agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
     agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
-    agent_config: AgentConfig = Field(
+    agent_config: AgentConfigDTO = Field(
         ..., description="Configuration details of the agent, including name, description, and prompts."
     )
     is_conversational: bool = Field(..., description="Whether the agent can participate in a chat-based conversation")

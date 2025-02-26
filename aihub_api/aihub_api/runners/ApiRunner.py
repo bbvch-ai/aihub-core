@@ -1,7 +1,8 @@
 import logging
 from random import seed
-from typing import List, Optional
+from typing import List, Optional, Set
 
+from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from fastapi import FastAPI
@@ -70,6 +71,8 @@ class ApiRunner:
         # Mount the API under the specified path
         self._base_app.mount(api_path, self._api_app)
 
+        self.controllers: Set[Controller] = set()
+
     def get_app(self) -> FastAPI:
         """
         Returns the main FastAPI application instance, which can be run using an ASGI server.
@@ -125,10 +128,21 @@ class ApiRunner:
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
         for controller in controllers:
-            controller.mount(self._api_app)
+            controller.mount(self._api_app, self)
+            self.controllers.add(controller)
+
+        # Ensures that openapi docs are generated with the method name as the operation name
         for route in self._api_app.routes:
             if isinstance(route, APIRoute):
-                route.operation_id = route.name  # in this case, 'read_items'
+                route.operation_id = route.name
+
+        self._api_app.openapi_tags = [
+            {
+                "name": ApiLocaleHandler().extract(controller.name),
+                "description": ApiLocaleHandler().extract(controller.description),
+            }
+            for controller in controllers]
+
         return self
 
     def mount_frontend(self, directory: str) -> "ApiRunner":

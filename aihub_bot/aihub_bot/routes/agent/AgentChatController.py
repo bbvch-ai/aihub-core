@@ -29,8 +29,8 @@ class AgentChatController(Controller):
     ### Authentication & Access Control
     """
 
-    def __init__(self, route: str = "/agent/chat"):
-        super().__init__(route)
+    def __init__(self, route: str = "/agent/chat", is_admin_only=False):
+        super().__init__(route, is_admin_only=is_admin_only)
 
     def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "AgentChatController":
         """

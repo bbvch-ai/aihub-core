@@ -4,6 +4,7 @@ from typing import Any, Callable, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
 from starlette.websockets import WebSocketDisconnect
@@ -42,12 +43,15 @@ class EventController(Controller):
     If the user is not authorized or the token is invalid, the WebSocket is closed with an appropriate code.
     Any exceptions are caught, and `ExceptionEvent` may be sent back to the client as feedback.
     """
+    name = LocaleString(en="Events")
+    description = LocaleString(en="Inspect events in the system")
+    icon = "mdi:apache-kafka"
 
-    def __init__(self, route: str = "/event", auth: AuthHandler | None = None):
-        super().__init__(route, auth)
+    def __init__(self, route: str = "/event", auth: AuthHandler | None = None, is_admin_only=True):
+        super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def get_events(self, path: str = "/") -> "EventController":
-        @self.router.get(path)
+        @self.router.get(path, tags=self.tags)
         async def get_all_events(
             user: AuthenticatedUser = Security(self.auth),
         ) -> List[WSServerEvent]:

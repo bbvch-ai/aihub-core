@@ -3,6 +3,7 @@ from typing import Any, Callable
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, Security
@@ -41,9 +42,12 @@ class I18nController(Controller):
     When called, `GET /i18n/my-locale` returns something like `{"lang": "en", "test": "This is a test."}`
     depending on the user’s locale.
     """
+    name = LocaleString(en="Localization")
+    description = LocaleString(en="Localization service")
+    icon = "mdi:language"
 
-    def __init__(self, route: str = "/i18n", auth: AuthHandler | None = None):
-        super().__init__(route, auth)
+    def __init__(self, route: str = "/i18n", auth: AuthHandler | None = None, is_admin_only=True):
+        super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def get_my_locale(self, route: str = "/my-locale") -> "I18nController":
         @self.router.get(
@@ -53,10 +57,10 @@ class I18nController(Controller):
                 "Retrieves the current locale setting for the user's session and returns a test string "
                 "in the detected language."
             ),
-            tags=["Utility"],
             responses={
                 200: {"description": "Successful response with user locale information"},
             },
+            tags=self.tags
         )
         async def get_locale(
             user: AuthenticatedUser = Security(self.auth),

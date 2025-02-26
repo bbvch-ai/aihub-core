@@ -3,6 +3,7 @@ from typing import List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, status
@@ -15,8 +16,12 @@ from aihub_api.routes.token.TokenService import TokenService
 
 
 class TokenController(Controller):
-    def __init__(self, route: str = "/tokens", auth: AuthHandler | None = None):
-        super().__init__(route, auth)
+    name = LocaleString(en="Token")
+    description = LocaleString(en="Manage API Tokens")
+    icon = "solar:password-bold"
+
+    def __init__(self, route: str = "/tokens", auth: AuthHandler | None = None, is_admin_only=True):
+        super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def create_token(self, route: str = "/") -> "TokenController":
         @self.router.post(
@@ -24,6 +29,7 @@ class TokenController(Controller):
             summary="Create API Token",
             description="Creates a new API token.",
             status_code=status.HTTP_201_CREATED,
+            tags=self.tags
         )
         async def create_token_endpoint(
             token_data: CreateTokenRequest, user: AuthenticatedUser = Security(self.auth)
@@ -45,6 +51,7 @@ class TokenController(Controller):
             route,
             summary="List API Tokens",
             description="Lists all API tokens for the authenticated user. The token value is not returned.",
+            tags=self.tags
         )
         async def list_tokens_endpoint(user: User = Security(self.auth)) -> List[TokenResponse]:
             return TokenService.list_tokens(user)
@@ -56,6 +63,7 @@ class TokenController(Controller):
             route,
             summary="Revoke API Token",
             description="Revokes (deletes) an API token for the authenticated user.",
+            tags=self.tags
         )
         async def revoke_token_endpoint(token_id: str, user: User = Security(self.auth)) -> RevokeTokenResponse:
             try:

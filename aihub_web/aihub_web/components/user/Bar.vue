@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-row gap-5">
+  <div class="flex flex-row gap-5 items-center pr-3">
     <Button
       :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
       variant="text"
@@ -8,15 +8,35 @@
       @click="toggleDarkMode()"
     />
     <div
-      v-if="userStore.user"
+      v-if="loadingUser !== 'success'"
+      class="flex flex-row gap-2"
+    >
+      <div class="flex flex-col gap-1">
+        <Skeleton
+          width="6rem"
+          height="1rem"
+        />
+        <Skeleton
+          width="10rem"
+          height="1rem"
+        />
+      </div>
+      <Skeleton
+        shape="circle"
+        size="2.5rem"
+        class="mr-2"
+      />
+    </div>
+    <div
+      v-else
       class="flex items-center gap-5 pr-5"
     >
       <div>
         <p class="text-xs font-bold">
-          {{ userName }}
+          {{ user?.name }}
         </p>
         <p class="text-xs">
-          {{ userEmail }}
+          {{ user?.email }}
         </p>
       </div>
       <OverlayBadge
@@ -26,8 +46,8 @@
         size="small"
       >
         <Avatar
-          :image="userStore.user.profile_image"
-          :label="!userStore.user.profile_image ? userInitials : undefined"
+          :image="user?.profile_image ?? undefined"
+          :label="!user?.profile_image ? userInitials : undefined"
           shape="circle"
           size="normal"
         />
@@ -39,14 +59,12 @@
 <script setup lang="ts">
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
-import { useUserStore } from '@core/stores/userStore'
+import { useUserStore } from '@core/stores/useUserStore'
 
-const userStore = useUserStore()
+const { user, loadingUser } = storeToRefs(useUserStore())
 
-const userName = computed(() => userStore.user?.name)
-const userEmail = computed(() => userStore.user?.email)
 const userInitials = computed(() =>
-  userStore.user?.name?.split(' ').map(n => n[0]).join(''),
+  user?.name?.split(' ').map(n => n[0]).join(''),
 )
 
 // Initialize the dark mode reactive state with persistence

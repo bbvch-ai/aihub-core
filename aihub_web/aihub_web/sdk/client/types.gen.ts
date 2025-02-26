@@ -9,40 +9,7 @@ export type AddUserRequest = {
   user_id: string;
 };
 
-/**
- * Describes the configuration for an agent, including its identity, prompts, and style.
- *
- * ### Why AgentConfig?
- * An agent might need:
- * - Basic metadata (ID, name, description).
- * - System prompts defining its initial behavior.
- * - UI attributes (color, voice) to influence how it's presented or how it speaks.
- *
- * Storing these in a structured configuration object makes it easy for other
- * components—like frontends or orchestrators—to retrieve and apply these settings.
- *
- * ### Features
- * - **Agent Identity:** `agent_id`, `name`, and `description` define who the agent is.
- * - **Prompts & Voice:** `system_prompt` and `voice` control how the agent communicates.
- * - **Color:** A HEX color code for UI theming.
- * - **Step Configurations:** Dynamically retrieve all `StepConfig` instances attached to this agent.
- *
- * ### Example
- * ```python
- * config = AgentConfig(
- * agent_id="agent_123",
- * name=LocaleString(en="My Agent"),
- * description=LocaleString(en="Handles user queries"),
- * system_prompt=LocaleString(en="You are a helpful assistant."),
- * )
- * ```
- *
- * Retrieving step configs:
- * ```python
- * step_configs = config.get_step_configs()
- * ```
- */
-export type AgentConfig = {
+export type AgentConfigDto = {
   /**
    * The id of the agent.
    */
@@ -50,23 +17,27 @@ export type AgentConfig = {
   /**
    * The name of the agent.
    */
-  name: LocaleString;
+  name: string;
   /**
    * The description of the agent.
    */
-  description: LocaleString;
+  description: string;
   /**
    * The system prompt of the agent.
    */
-  system_prompt: LocaleString;
+  system_prompt: string;
   /**
    * The color of the agent UI theme.
    */
-  color?: string | null;
+  color?: string;
   /**
    * The TTS voice ID the agent uses.
    */
-  voice?: string | null;
+  voice?: string;
+  /**
+   * The icon representing the agent.
+   */
+  icon?: string;
 };
 
 /**
@@ -91,7 +62,7 @@ export type AgentDto = {
   /**
    * Configuration details of the agent, including name, description, and prompts.
    */
-  agent_config: AgentConfig;
+  agent_config: AgentConfigDto;
   /**
    * Whether the agent can participate in a chat-based conversation
    */
@@ -455,13 +426,6 @@ export type LocaleResponse = {
   test: string;
 };
 
-export type LocaleString = {
-  de?: string | null;
-  en?: string | null;
-  fr?: string | null;
-  it?: string | null;
-};
-
 export type ModelDetails = {
   /**
    * The ID of the model.
@@ -492,6 +456,25 @@ export type ModelResponse = {
   data: Array<ModelDetails>;
 };
 
+export type MyUserDto = {
+  /**
+   * The user's unique identifier (OID).
+   */
+  id: string;
+  /**
+   * The user's name.
+   */
+  name: string;
+  /**
+   * The user's email address.
+   */
+  email: string;
+  /**
+   * User's profile image in base64.
+   */
+  profile_image?: string | null;
+};
+
 export type PromptTokensDetails = {
   audio_tokens?: number | null;
   cached_tokens?: number | null;
@@ -500,6 +483,32 @@ export type PromptTokensDetails = {
 
 export type RevokeTokenResponse = {
   detail: string;
+};
+
+export type ServiceDto = {
+  /**
+   * The name of the service.
+   */
+  name: string;
+  /**
+   * A description of the service.
+   */
+  description: string;
+  /**
+   * The icon representing the service.
+   */
+  icon: string;
+  /**
+   * The path under which the service is callable in the frontend.
+   */
+  path: string;
+};
+
+export type SuiteDto = {
+  /**
+   * The services in the suite.
+   */
+  services: Array<ServiceDto>;
 };
 
 export type TextToSpeechRequest = {
@@ -728,21 +737,37 @@ export type GetHealthResponses = {
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
-export type GetUserData = {
+export type GetSuiteData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/suite/";
+};
+
+export type GetSuiteResponses = {
+  /**
+   * Successful Response
+   */
+  200: SuiteDto;
+};
+
+export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
+
+export type GetMyUserData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/user/me";
 };
 
-export type GetUserResponses = {
+export type GetMyUserResponses = {
   /**
    * Successful Response
    */
-  200: UserDto;
+  200: MyUserDto;
 };
 
-export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
 
 export type GetLocaleData = {
   body?: never;

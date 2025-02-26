@@ -10,8 +10,10 @@ import {
 import type {
   GetHealthData,
   GetHealthResponse,
-  GetUserData,
-  GetUserResponse,
+  GetSuiteData,
+  GetSuiteResponse,
+  GetMyUserData,
+  GetMyUserResponse,
   GetLocaleData,
   GetLocaleResponse,
   GetAllEventsData,
@@ -117,18 +119,38 @@ export const getHealth = <
 };
 
 /**
- * Get User
- * Returns a `UserDTO` representing the currently logged-in user.
+ * Get Suite
  */
-export const getUser = <
+export const getSuite = <
   TComposable extends Composable,
-  DefaultT extends GetUserResponse = GetUserResponse,
+  DefaultT extends GetSuiteResponse = GetSuiteResponse,
 >(
-  options: Options<TComposable, GetUserData, GetUserResponse, DefaultT>,
+  options: Options<TComposable, GetSuiteData, GetSuiteResponse, DefaultT>,
 ) => {
   return (options.client ?? _heyApiClient).get<
     TComposable,
-    GetUserResponse | DefaultT,
+    GetSuiteResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    url: "/suite/",
+    ...options,
+  });
+};
+
+/**
+ * Get My User
+ * Returns a `UserDTO` representing the currently logged-in user.
+ */
+export const getMyUser = <
+  TComposable extends Composable,
+  DefaultT extends GetMyUserResponse = GetMyUserResponse,
+>(
+  options: Options<TComposable, GetMyUserData, GetMyUserResponse, DefaultT>,
+) => {
+  return (options.client ?? _heyApiClient).get<
+    TComposable,
+    GetMyUserResponse | DefaultT,
     unknown,
     DefaultT
   >({

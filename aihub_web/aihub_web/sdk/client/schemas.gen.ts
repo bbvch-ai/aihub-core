@@ -28,7 +28,7 @@ export const AddUserRequestSchema = {
   title: "AddUserRequest",
 } as const;
 
-export const AgentConfigSchema = {
+export const AgentConfigDTOSchema = {
   properties: {
     agent_id: {
       type: "string",
@@ -36,78 +36,42 @@ export const AgentConfigSchema = {
       description: "The id of the agent.",
     },
     name: {
-      $ref: "#/components/schemas/LocaleString",
+      type: "string",
+      title: "Name",
       description: "The name of the agent.",
     },
     description: {
-      $ref: "#/components/schemas/LocaleString",
+      type: "string",
+      title: "Description",
       description: "The description of the agent.",
     },
     system_prompt: {
-      $ref: "#/components/schemas/LocaleString",
+      type: "string",
+      title: "System Prompt",
       description: "The system prompt of the agent.",
     },
     color: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
+      type: "string",
       title: "Color",
       description: "The color of the agent UI theme.",
       default: "#10A37F",
     },
     voice: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
+      type: "string",
       title: "Voice",
       description: "The TTS voice ID the agent uses.",
       default: "de-DE-ChristophNeural",
     },
+    icon: {
+      type: "string",
+      title: "Icon",
+      description: "The icon representing the agent.",
+      default: "meteor-icons:robot",
+    },
   },
   type: "object",
   required: ["agent_id", "name", "description", "system_prompt"],
-  title: "AgentConfig",
-  description: `Describes the configuration for an agent, including its identity, prompts, and style.
-
-### Why AgentConfig?
-An agent might need:
-- Basic metadata (ID, name, description).
-- System prompts defining its initial behavior.
-- UI attributes (color, voice) to influence how it's presented or how it speaks.
-
-Storing these in a structured configuration object makes it easy for other
-components—like frontends or orchestrators—to retrieve and apply these settings.
-
-### Features
-- **Agent Identity:** \`agent_id\`, \`name\`, and \`description\` define who the agent is.
-- **Prompts & Voice:** \`system_prompt\` and \`voice\` control how the agent communicates.
-- **Color:** A HEX color code for UI theming.
-- **Step Configurations:** Dynamically retrieve all \`StepConfig\` instances attached to this agent.
-
-### Example
-\`\`\`python
-config = AgentConfig(
-    agent_id="agent_123",
-    name=LocaleString(en="My Agent"),
-    description=LocaleString(en="Handles user queries"),
-    system_prompt=LocaleString(en="You are a helpful assistant."),
-)
-\`\`\`
-
-Retrieving step configs:
-\`\`\`python
-step_configs = config.get_step_configs()
-\`\`\``,
+  title: "AgentConfigDTO",
 } as const;
 
 export const AgentDTOSchema = {
@@ -124,7 +88,7 @@ export const AgentDTOSchema = {
         "Unique identifier for the agent instance (e.g., 'agent_123').",
     },
     agent_config: {
-      $ref: "#/components/schemas/AgentConfig",
+      $ref: "#/components/schemas/AgentConfigDTO",
       description:
         "Configuration details of the agent, including name, description, and prompts.",
     },
@@ -1098,57 +1062,6 @@ export const LocaleResponseSchema = {
   description: "Represents language and test information for a locale.",
 } as const;
 
-export const LocaleStringSchema = {
-  properties: {
-    de: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "De",
-    },
-    en: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "En",
-    },
-    fr: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Fr",
-    },
-    it: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "It",
-    },
-  },
-  type: "object",
-  title: "LocaleString",
-} as const;
-
 export const ModelDetailsSchema = {
   properties: {
     id: {
@@ -1201,6 +1114,41 @@ export const ModelResponseSchema = {
   title: "ModelResponse",
 } as const;
 
+export const MyUserDTOSchema = {
+  properties: {
+    id: {
+      type: "string",
+      title: "Id",
+      description: "The user's unique identifier (OID).",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The user's name.",
+    },
+    email: {
+      type: "string",
+      title: "Email",
+      description: "The user's email address.",
+    },
+    profile_image: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Profile Image",
+      description: "User's profile image in base64.",
+    },
+  },
+  type: "object",
+  required: ["id", "name", "email"],
+  title: "MyUserDTO",
+} as const;
+
 export const PromptTokensDetailsSchema = {
   properties: {
     audio_tokens: {
@@ -1242,6 +1190,51 @@ export const RevokeTokenResponseSchema = {
   type: "object",
   required: ["detail"],
   title: "RevokeTokenResponse",
+} as const;
+
+export const ServiceDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The name of the service.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "A description of the service.",
+    },
+    icon: {
+      type: "string",
+      title: "Icon",
+      description: "The icon representing the service.",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description:
+        "The path under which the service is callable in the frontend.",
+    },
+  },
+  type: "object",
+  required: ["name", "description", "icon", "path"],
+  title: "ServiceDTO",
+} as const;
+
+export const SuiteDTOSchema = {
+  properties: {
+    services: {
+      items: {
+        $ref: "#/components/schemas/ServiceDTO",
+      },
+      type: "array",
+      title: "Services",
+      description: "The services in the suite.",
+    },
+  },
+  type: "object",
+  required: ["services"],
+  title: "SuiteDTO",
 } as const;
 
 export const TextToSpeechRequestSchema = {
