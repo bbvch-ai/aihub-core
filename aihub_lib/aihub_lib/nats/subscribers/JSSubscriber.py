@@ -98,8 +98,8 @@ class JSSubscriber(Generic[TEvent]):
     async def _process_and_ack(self, event, topic, msg):
         """Process the event and acknowledge the message based on result"""
         try:
-            await self.handler(event, topic)
             await msg.ack()
+            await self.handler(event, topic)
         except Exception as e:
             logger.error(f"Error in async handler: {e}")
             traceback.print_exc()
