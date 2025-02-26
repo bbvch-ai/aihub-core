@@ -90,7 +90,7 @@ class WebSocketReceiver:
         """
         logger.debug(f"Handling start event for thread {ws_event.thread_id}")
 
-        if len(ws_event.event.messages) == 0:
+        if hasattr(ws_event.event, "messages") and len(ws_event.event.messages) == 0:
             ws_event.event.messages = PersistedEventEntity.to_message_history(str(thread.id))
             logger.debug(f"Assembled message history {ws_event.event.messages}")
 

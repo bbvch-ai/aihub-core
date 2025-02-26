@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.66.0"
+version = "v0.75.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -94,8 +94,11 @@ pyyaml = "^6.0.2"
 transformers = "^4.48.1"
 
 [package.source]
-type = "directory"
-url = "../aihub_lib"
+type = "git"
+url = "https://github.com/bbvch-ai/aihub-core.git"
+reference = "v0.75.0"
+resolved_reference = "0439610463e6d39247ad4546a0ed6f846c01e9c4"
+subdirectory = "aihub_lib"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -5935,4 +5938,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "f971e60401e9fd48cc0ea12fe6a225ac9bd5d02bb9def9edff529d2ef6f1e115"
+content-hash = "6ff4ddaf9a75303fa376f094918d1d85b1370ee7acd9e700ccfb0b7025cf1706"
