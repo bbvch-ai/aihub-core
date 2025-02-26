@@ -47,7 +47,7 @@ class RefDocDocument(Document):
     def add_metadata_from_data_lake_file(self, data_lake_file: "DataLakeFile") -> "RefDocDocument":
         """Enrich the document's metadata with information from a `DataLakeFile`."""
         self.id_ = data_lake_file.id_
-        uri_parts = self.uri.split("/")
+        uri_parts = data_lake_file.uri.split("/")
         document_title = uri_parts[-1]
         self.metadata = {
             **self.metadata,
