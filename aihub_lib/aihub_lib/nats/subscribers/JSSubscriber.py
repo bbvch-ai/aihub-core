@@ -88,23 +88,19 @@ class JSSubscriber(Generic[TEvent]):
             event_data = msg.data
             event = self.event_cls.deserialize_event(event_data)
             logger.debug(f"Deserialized event: {event}")
-            asyncio.create_task(self._process_and_ack(event, topic, msg))
+            await msg.ack()
+            asyncio.create_task(self._process(event, topic, msg))
         except Exception as e:
             logger.error(f"Error in message handler: {e}")
             traceback.print_exc()
-            if self.ack_on_fail:
-                await msg.ack()
 
-    async def _process_and_ack(self, event, topic, msg):
+    async def _process(self, event, topic, msg):
         """Process the event and acknowledge the message based on result"""
         try:
-            await msg.ack()
             await self.handler(event, topic)
         except Exception as e:
             logger.error(f"Error in async handler: {e}")
             traceback.print_exc()
-            if self.ack_on_fail:
-                await msg.ack()
 
     @classmethod
     def for_all_agent_events(
