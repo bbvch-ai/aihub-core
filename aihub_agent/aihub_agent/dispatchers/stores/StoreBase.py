@@ -66,18 +66,13 @@ class StoreBase:
                         bucket=f"{self.prefix}_{run_id}",
                         history=1,
                         ttl=timedelta(hours=1).seconds,
-                        storage=StorageType.FILE,
+                        storage=StorageType.MEMORY,
                     )
                 )
                 logger.debug(f"Created new KV store '{self.prefix}_{run_id}'")
-            except Exception as e:
-                if "already in use" in str(e).lower():
-                    # If the bucket already exists, we just retrieve it
-                    self._kv_stores[run_id] = await self.js.key_value(f"{self.prefix}_{run_id}")
-                    logger.debug(f"Using existing KV store '{self.prefix}_{run_id}'")
-                else:
-                    logger.error(f"Error creating KV store '{self.prefix}_{run_id}': {e}")
-                    raise
+            except Exception:
+                self._kv_stores[run_id] = await self.js.key_value(f"{self.prefix}_{run_id}")
+                logger.debug(f"Using existing KV store '{self.prefix}_{run_id}'")
 
         return self._kv_stores[run_id]
 
