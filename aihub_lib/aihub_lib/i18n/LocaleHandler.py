@@ -106,5 +106,5 @@ class LocaleHandler:
             locale=locale,
         )
 
-    def __call__(self, key: str, locale: Optional[str] = None) -> str:
-        return i18n.t(key, locale=self.get_locale(locale))
+    def __call__(self, key: str, locale: Optional[str] = None, **kwargs) -> str:
+        return i18n.t(key, locale=self.get_locale(locale), **kwargs)
