@@ -139,33 +139,3 @@ class StoreBase:
             return json.loads(value_bytes.decode())
 
         return await self.get_value(run_id, key, default_value, json_transform)
-
-    async def retry_operation(
-        self,
-        operation_func: Callable[[], Any],
-        max_attempts: int = None,
-    ) -> Any:
-        """
-        Executes an operation with retry logic for handling transient errors.
-
-        This is useful for operations that might have temporary failures in a distributed
-        environment but don't have built-in optimistic concurrency control.
-        """
-        attempts = 0
-        max_attempts = max_attempts or self.max_retries
-
-        while attempts < max_attempts:
-            try:
-                result = await operation_func()
-                return result
-            except Exception as e:
-                attempts += 1
-                if attempts >= max_attempts:
-                    logger.error(f"Operation failed after {attempts} attempts: {e}")
-                    return None
-
-                backoff = self.base_backoff * (2**attempts)
-                logger.debug(f"Operation failed, retrying ({attempts}/{max_attempts}) after {backoff:.4f}s: {e}")
-                await asyncio.sleep(backoff)
-
-        return None
