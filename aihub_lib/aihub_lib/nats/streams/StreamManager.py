@@ -50,7 +50,7 @@ class StreamManager:
                 config=api.StreamConfig(
                     name=stream_name,
                     subjects=[subject],
-                    storage=api.StorageType.FILE,
+                    storage=api.StorageType.MEMORY,
                     retention=api.RetentionPolicy.LIMITS,
                 )
             )
