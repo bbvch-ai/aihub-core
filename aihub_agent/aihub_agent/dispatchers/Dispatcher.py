@@ -309,7 +309,9 @@ class Dispatcher:
         - Logs the exception.
         - Publishes an ExceptionEvent if `_stop_on_error` is True.
         """
-        await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
+        max_executions = getattr(step_method, "_max_executions_per_run", None)
+        if max_executions is not None:
+            await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
 
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(step_method)
