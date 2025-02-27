@@ -4,9 +4,8 @@ from typing import Any, Dict, List
 
 import i18n
 import yaml
-from typing_extensions import Optional
-
 from aihub_lib.i18n.LocaleString import LocaleString
+from typing_extensions import Optional
 
 
 class LocaleHandler:
@@ -106,5 +105,5 @@ class LocaleHandler:
             locale=locale,
         )
 
-    def __call__(self, key: str, locale: Optional[str] = None) -> str:
-        return i18n.t(key, locale=self.get_locale(locale))
+    def __call__(self, key: str, locale: Optional[str] = None, **kwargs) -> str:
+        return i18n.t(key, locale=self.get_locale(locale), **kwargs)

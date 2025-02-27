@@ -3,8 +3,8 @@ import asyncio
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
-from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.RAGAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.RAGAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
     SelfHostedLLMConfig,
