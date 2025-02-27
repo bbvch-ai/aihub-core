@@ -91,7 +91,7 @@ class DistributedStepStore(StoreBase):
 
         if not success:
             # Emergency fallback
-            logger.warning(f"Failed to increment execution count for step '{step_name}'. Using emergency fallback.")
+            logger.error(f"Failed to increment execution count for step '{step_name}'. Using emergency fallback.")
             try:
                 current = await self.get_execution_count(run_id, step_name)
                 await self.put_json_value(run_id, step_name, current + 1)

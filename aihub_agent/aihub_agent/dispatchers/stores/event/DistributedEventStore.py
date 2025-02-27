@@ -79,7 +79,7 @@ class DistributedEventStore(StoreBase):
         success = await self.synchronized_update(run_id, event_type, update_event_list, default_value=[])
 
         if not success:
-            logger.warning(f"Failed to store event of type {event_type}")
+            logger.error(f"Failed to store event of type {event_type}")
 
     async def get_events_of_type(
         self,

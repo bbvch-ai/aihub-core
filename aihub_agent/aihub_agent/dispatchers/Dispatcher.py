@@ -163,9 +163,10 @@ class Dispatcher:
         tasks = []
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            if await self.is_step_ready(step_method, topic.run_id, event):
+            events = await self.event_store.get_all_events(topic.run_id, before=event.created_at)
+            if await self.is_step_ready(step_method, topic.run_id, events):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
-                task = asyncio.create_task(self.execute_step(event, step_method, run_context, thread_context, topic))
+                task = asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
                 tasks.append(task)
 
         if tasks:
@@ -175,7 +176,7 @@ class Dispatcher:
         self,
         step_method: Annotated[Callable, "The step method to check."],
         run_id: Annotated[str, "The current run ID."],
-        event: Annotated[ControlEvent, "The triggering event."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
     ) -> bool:
         """
         Checks if a step can be run given the current state (events available, max executions, etc.).
@@ -204,7 +205,6 @@ class Dispatcher:
         parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
 
-        events = await self.event_store.get_all_events(run_id, before=event.created_at)
         # For each parameter, check if we have enough events
         for argument_name, event_types in input_event_mapping.items():
             logger.debug(f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_types}")
@@ -291,6 +291,7 @@ class Dispatcher:
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
@@ -310,7 +311,6 @@ class Dispatcher:
 
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(step_method)
-        events = await self.event_store.get_all_events(topic.run_id)
         parameter_optional_map = getattr(step_method, "_parameter_optional_map", {})
 
         # Prepare arguments

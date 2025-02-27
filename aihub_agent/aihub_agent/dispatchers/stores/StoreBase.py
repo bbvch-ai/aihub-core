@@ -52,8 +52,8 @@ class StoreBase:
         self.js = js
         self.prefix = prefix
         self._kv_stores: Dict[str, Any] = {}
-        self.max_retries = 5
-        self.base_backoff = 0.01  # 10ms initial backoff
+        self.max_retries = 10  # Up to 1 second backoff
+        self.base_backoff = 0.001  # 1ms initial backoff
 
     async def _get_kv_store(
         self, run_id: Annotated[str, "The run identifier for which we need a KV store."]
@@ -85,6 +85,7 @@ class StoreBase:
         Use this at run completion to reclaim resources and maintain a clean state.
         """
         if run_id in self._kv_stores:
+            logger.debug(f"Deleting Distributed Event or Step store for run {run_id}")
             await self.js.delete_key_value(f"{self.prefix}_{run_id}")
             del self._kv_stores[run_id]
 
@@ -182,7 +183,7 @@ class StoreBase:
                     # Mutex already exists, wait and retry
                     attempts += 1
                     if attempts >= max_attempts:
-                        logger.warning(f"Failed to acquire mutex for key '{key}' after {attempts} attempts")
+                        logger.error(f"Failed to acquire mutex for key '{key}' after {attempts} attempts")
                         return False
 
                     backoff = self.base_backoff * (2**attempts)
