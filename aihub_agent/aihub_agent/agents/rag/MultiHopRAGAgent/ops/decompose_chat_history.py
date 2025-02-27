@@ -1,14 +1,13 @@
-from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.llms import LLM
-from openai import BaseModel
-from openai import NOT_GIVEN
-from pydantic import Field
 from typing import List, Type
 
 from aihub_lib.generative_ai.utils.condense_standalone_question import _messages_to_history_str
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from llama_index.core import PromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms import LLM
+from openai import NOT_GIVEN, BaseModel
+from pydantic import Field
 
 
 class DecomposeResult(BaseModel):

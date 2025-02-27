@@ -1,12 +1,13 @@
-from pydantic import Field
-from typing import Optional, List
+from typing import List, Optional
 
-from aihub_agent.agents.rag.RAGAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from pydantic import Field
+
+from aihub_agent.agents.rag.RAGAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 
 
 class MultiHopRAGAgentConfig(AgentConfig):

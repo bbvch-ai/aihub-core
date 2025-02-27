@@ -4,8 +4,9 @@ from typing import Any, Dict, List
 
 import i18n
 import yaml
-from aihub_lib.i18n.LocaleString import LocaleString
 from typing_extensions import Optional
+
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
 class LocaleHandler:

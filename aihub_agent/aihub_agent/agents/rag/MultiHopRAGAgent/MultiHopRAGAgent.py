@@ -22,7 +22,8 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import LLMEvent, StopEvent, ExceptionEvent
+from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_lib.nats.events import ExceptionEvent, LLMEvent, StopEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 
@@ -138,12 +139,14 @@ class MultiHopRAGAgent(Agent):
 
     @step()
     async def concatenation_step(
-        self, events: List[RetrieverEvent], agent_config: MultiHopRAGAgentConfig
+        self, events: List[RetrieverEvent], agent_config: MultiHopRAGAgentConfig, run_context: RunContext
     ) -> ConcatenationEvent | None:
         """
         Concatenates the nodes from 5 retrieval steps into one list of nodes.
         """
-        if len(events) < agent_config.hops:
+        # flag for only running the step one time once all events are present
+        concatenated = await run_context.get("concatenated", False)
+        if concatenated or len(events) < agent_config.hops:
             return None
 
         documents = []
@@ -156,6 +159,7 @@ class MultiHopRAGAgent(Agent):
                 unique_documents.append(doc)
                 seen_ids.add(doc.id)
 
+        await run_context.set("concatenated", True)
         return ConcatenationEvent(documents=unique_documents)
 
     @step()

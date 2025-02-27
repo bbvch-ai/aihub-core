@@ -1,7 +1,8 @@
+from typing import List
+
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.events.semantic.retriever import Document
 from pydantic import Field
-from typing import List
 
 
 class ConcatenationEvent(ControlEvent):
