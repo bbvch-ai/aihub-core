@@ -1,9 +1,8 @@
 import logging
-from typing import Annotated, Dict, List, Optional, Any
-
-from cachetools import TTLCache
+from typing import Annotated, Any, Dict, List, Optional
 
 from aihub_lib.nats.events import ControlEvent
+from cachetools import TTLCache
 from nats.js import JetStreamContext
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
@@ -41,6 +40,7 @@ class DistributedEventStore(StoreBase):
     If a run has multiple StartEvent and StopEvent instances, `store_event` appends them to their respective arrays.
     Later, `get_events_of_type(run_id, StartEvent)` returns all recorded start events for that run.
     """
+
     _cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(self, js: JetStreamContext):
