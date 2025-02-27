@@ -1,7 +1,8 @@
 import logging
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Optional
 
 from aihub_lib.nats.events import ControlEvent
+from cachetools import TTLCache
 from nats.js import JetStreamContext
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
@@ -38,11 +39,34 @@ class DistributedEventStore(StoreBase):
     ### Example
     If a run has multiple StartEvent and StopEvent instances, `store_event` appends them to their respective arrays.
     Later, `get_events_of_type(run_id, StartEvent)` returns all recorded start events for that run.
-
     """
+
+    _cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(self, js: JetStreamContext):
         super().__init__(js, prefix="events")
+
+    async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
+        """
+        Get a JSON value from the key-value store with caching.
+        Uses TTLCache to automatically expire entries after 5 minutes.
+        """
+        # Create a unique cache key combining run_id and key
+        cache_key = f"{run_id}:{key}"
+
+        # Check if the value is in cache
+        if cache_key in self._cache:
+            logger.debug(f"Cache hit for {cache_key}")
+            return self._cache[cache_key]
+
+        # If not in cache, get the value from the store
+        result = await super().get_json_value(run_id, key, default_value)
+
+        # Cache the result (TTLCache will automatically expire it after the TTL)
+        self._cache[cache_key] = result
+        logger.debug(f"Cached value for {cache_key}")
+
+        return result
 
     async def store_event(
         self,
