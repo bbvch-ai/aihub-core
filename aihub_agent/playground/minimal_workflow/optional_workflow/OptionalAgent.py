@@ -18,9 +18,9 @@ class OptionalAgent(Agent):
             print("[OptionalAgent.start_step] Only EventA")
             return [EventOptionalA()]
         print("[OptionalAgent.start_step] EventA & EventB")
-        return [EventOptionalA(), EventOptionalB()]
+        return [EventOptionalB(), EventOptionalA()]
 
-    @step()
+    @step(max_executions_per_run=1)
     async def optional_step(
         self, event: EventOptionalA, optional_event: Optional[EventOptionalB]
     ) -> EventOptionalC | EventOptionalD:
