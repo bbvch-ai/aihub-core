@@ -55,7 +55,7 @@ class ThreadContext(BaseContext):
                 bucket=f"thread_context_{thread_id}",
                 ttl=ttl_seconds,
                 history=1,
-                storage=StorageType.FILE,
+                storage=StorageType.MEMORY,
             )
             logger.debug(f"Created KV store 'thread_context_{thread_id}' with TTL of {ttl_seconds} seconds")
         except Exception as e:

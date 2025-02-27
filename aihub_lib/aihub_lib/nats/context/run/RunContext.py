@@ -54,7 +54,7 @@ class RunContext(BaseContext):
                     bucket=f"run_context_{thread_id}_{run_id}",
                     ttl=ttl_seconds,
                     history=1,
-                    storage=StorageType.FILE,
+                    storage=StorageType.MEMORY,
                 )
             )
             logger.debug(f"Created KV store 'run_context_{thread_id}_{run_id}' with TTL of {ttl_seconds} seconds")
