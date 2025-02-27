@@ -50,75 +50,99 @@ class DistributedEventStore(StoreBase):
         event: Annotated[ControlEvent, "The event instance to store."],
     ):
         """
-        Appends a new event to the run's event list for its type.
-        Uses synchronized_update to safely handle concurrent updates.
+        Stores an event using a direct key (ClassName.EventId).
+        This approach completely eliminates race conditions.
         """
         event_type = event.__class__.__name__
         event_data = event.model_dump()
         event_id = event_data["event_id"]
 
-        # Define update function for synchronized operation
-        def update_event_list(current_list):
-            # Start with empty list if none exists
-            if current_list is None:
-                current_list = []
+        # Create a unique key for this event
+        key = f"{event_type}.{event_id}"
 
-            # Check if this event ID already exists
-            existing_ids = {e["event_id"] for e in current_list}
+        # Store the event directly
+        success = await self.put_json_value(run_id, key, event_data)
 
-            # Only add if not a duplicate
-            if event_id not in existing_ids:
-                current_list.append(event_data)
-                logger.debug(f"Adding event {event_type} with ID {event_id}. " f"Total count: {len(current_list)}")
-            else:
-                logger.debug(f"Event {event_type} with ID {event_id} already exists, skipping")
-
-            return current_list
-
-        # Perform the synchronized update
-        success = await self.synchronized_update(run_id, event_type, update_event_list, default_value=[])
-
-        if not success:
-            logger.warning(f"Failed to store event of type {event_type}")
+        if success:
+            logger.debug(f"Stored event {event_type} with ID {event_id} using key {key}")
+        else:
+            logger.error(f"Failed to store event {event_type} with ID {event_id}")
 
     async def get_events_of_type(
         self,
         run_id: Annotated[str, "The run identifier."],
         class_name: Annotated[str, "The event subclass name to fetch."],
     ) -> List[ControlEvent]:
-        """Returns all events of the specified type for the given run."""
-        # Get the raw JSON data
-        event_list_data = await self.get_json_value(run_id, class_name, default_value=[])
+        """
+        Returns all events of the specified type by scanning for keys with the class name prefix.
+        """
+        kv = await self._get_kv_store(run_id)
+        events = []
 
-        # Convert to event objects
-        events = [ControlEvent.deserialize_event(data) for data in event_list_data]
-        logger.debug(f"Retrieved {len(events)} events of type {class_name}")
-        return events
+        try:
+            # Get all keys in the store
+            all_keys = await kv.keys()
+
+            # Filter keys that match the class_name prefix
+            prefix = f"{class_name}."
+            matching_keys = [key for key in all_keys if key.startswith(prefix)]
+
+            # Retrieve and deserialize each matching event
+            for key in matching_keys:
+                event_data = await self.get_json_value(run_id, key)
+                if event_data:
+                    events.append(ControlEvent.deserialize_event(event_data))
+
+            logger.debug(f"Retrieved {len(events)} events of type {class_name}")
+            return events
+
+        except Exception as e:
+            logger.error(f"Error fetching events of type {class_name}: {e}")
+            return []
 
     async def get_all_events(
         self,
         run_id: Annotated[str, "The run identifier."],
         before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None,
     ) -> Dict[str, List[ControlEvent]]:
-        """Retrieves all events for a run, organized by event type name."""
+        """
+        Retrieves all events for a run, organized by event type name.
+        Scans all keys and groups them by class name.
+        """
         kv = await self._get_kv_store(run_id)
         events: Dict[str, List[ControlEvent]] = {}
 
         try:
-            class_names = await kv.keys()
-            # Filter out mutex keys
-            class_names = [name for name in class_names if not name.startswith("mutex_")]
+            # Get all keys
+            all_keys = await kv.keys()
 
-            for class_name in class_names:
-                # Get events for this type
-                event_list = await self.get_events_of_type(run_id, class_name)
+            # Process each key that contains a dot (indicating it's an event key)
+            for key in all_keys:
+                if "." not in key:
+                    continue
+
+                class_name, _ = key.split(".", 1)
+
+                # Skip keys that aren't events (like utility keys)
+                if class_name.startswith("_"):
+                    continue
+
+                # Fetch the event data
+                event_data = await self.get_json_value(run_id, key)
+                if not event_data:
+                    continue
+
+                # Deserialize the event
+                event = ControlEvent.deserialize_event(event_data)
 
                 # Apply timestamp filter if provided
-                if before is not None:
-                    event_list = [evt for evt in event_list if evt.created_at <= before]
-                    logger.debug(f"After timestamp filtering, {len(event_list)} events of type {class_name} remain")
+                if before is not None and event.created_at > before:
+                    continue
 
-                events[class_name] = event_list
+                # Add to the appropriate list in the result dictionary
+                if class_name not in events:
+                    events[class_name] = []
+                events[class_name].append(event)
 
             # Log counts for debugging
             for class_name, event_list in events.items():
