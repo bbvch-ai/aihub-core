@@ -1,6 +1,11 @@
+import logging
+from typing import Annotated
+
 from nats.js import JetStreamContext
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class DistributedStepStore(StoreBase):
@@ -46,42 +51,51 @@ class DistributedStepStore(StoreBase):
     async def mark_run_as_crashed(self, run_id: str):
         """
         Flags the run as crashed by setting a 'crashed' key.
-        Once crashed, steps won't be executed further.
+        This is a simple put operation that doesn't need concurrency control.
         """
         kv = await self._get_kv_store(run_id)
         await kv.put("crashed", b"true")
 
     async def is_run_crashed(self, run_id: str) -> bool:
-        """
-        Checks if the run has been marked as crashed.
-        Returns True if so, False otherwise.
-        """
-        kv = await self._get_kv_store(run_id)
-        try:
-            entry = await kv.get("crashed")
-            return entry is not None
-        except Exception:
-            return False
+        """Checks if the run has been marked as crashed."""
+
+        # Using the generic get_value method with a transform function
+        def transform_to_bool(value):
+            return value is not None and value.decode() == "true"
+
+        return await self.get_value(run_id, "crashed", default_value=False, transform_func=transform_to_bool)
 
     async def get_execution_count(self, run_id: str, step_name: str) -> int:
-        """
-        Retrieves how many times a given step has executed for the specified run.
-        If no count is found, returns 0.
-        """
-        kv = await self._get_kv_store(run_id)
-        try:
-            entry = await kv.get(step_name)
-            count = int(entry.value.decode())
-            return count
-        except Exception:
-            return 0
+        """Retrieves how many times a given step has executed for the specified run."""
+        # Using JSON interface for simplicity, storing as a number
+        count = await self.get_json_value(run_id, step_name, default_value=0)
+        return count
 
-    async def increment_execution_count(self, run_id: str, step_name: str):
+    async def increment_execution_count(self, run_id: Annotated[str, "Run ID"], step_name: Annotated[str, "Step name"]):
         """
-        Increments the execution count for the given step in the run's store.
-        This is used to track how many times a step has been executed, aiding in enforcing limits.
+        Increments the execution count for the given step.
+        Uses synchronized_update to handle concurrent increments safely.
         """
-        kv = await self._get_kv_store(run_id)
-        count = await self.get_execution_count(run_id, step_name)
-        count += 1
-        await kv.put(step_name, str(count).encode())
+
+        # Define update function for synchronized increment
+        def increment_count(current_count):
+            if current_count is None:
+                current_count = 0
+
+            new_count = current_count + 1
+            logger.debug(f"Incrementing execution count for step '{step_name}' to {new_count}")
+            return new_count
+
+        # Perform synchronized update
+        success = await self.synchronized_update(run_id, step_name, increment_count, default_value=0)
+
+        if not success:
+            # Emergency fallback
+            logger.warning(f"Failed to increment execution count for step '{step_name}'. Using emergency fallback.")
+            try:
+                current = await self.get_execution_count(run_id, step_name)
+                await self.put_json_value(run_id, step_name, current + 1)
+            except Exception as e:
+                logger.error(f"Emergency fallback for step '{step_name}' also failed: {e}")
+                # Last resort - just set to 1
+                await self.put_json_value(run_id, step_name, 1)

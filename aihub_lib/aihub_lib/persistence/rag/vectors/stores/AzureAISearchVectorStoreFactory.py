@@ -19,7 +19,7 @@ def create_azure_ai_search_vector_store(
     vector_store_name: str,
     metadata_fields: List[str] | None = None,
     language: str = "de",
-    semantic_configuration_name: str | None = None,
+    semantic_configuration_name: str = "mySemanticConfig",
 ) -> AzureAISearchVectorStore:
     search_client_singleton = AISearchAccess()
     index_client = search_client_singleton.get_client()
@@ -30,30 +30,16 @@ def create_azure_ai_search_vector_store(
     except Exception:
         filterable_metadata_field_keys = metadata_fields or DEFAULT_METADATA_FIELDS
 
-    if semantic_configuration_name is not None:
-        return AzureAISearchVectorStore(
-            search_or_index_client=index_client,
-            index_name=vector_store_name,
-            filterable_metadata_field_keys=filterable_metadata_field_keys,
-            index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
-            id_field_key=NODE_ID,
-            chunk_field_key=NODE_CONTENT,
-            embedding_field_key=NODE_EMBEDDING,
-            metadata_string_field_key=NODE_METADATA,
-            doc_id_field_key=DOCUMENT_ID,
-            language_analyzer=f"{language}.microsoft",
-            semantic_configuration_name=semantic_configuration_name,
-        )
-    else:
-        return AzureAISearchVectorStore(
-            search_or_index_client=index_client,
-            index_name=vector_store_name,
-            filterable_metadata_field_keys=filterable_metadata_field_keys,
-            index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
-            id_field_key=NODE_ID,
-            chunk_field_key=NODE_CONTENT,
-            embedding_field_key=NODE_EMBEDDING,
-            metadata_string_field_key=NODE_METADATA,
-            doc_id_field_key=DOCUMENT_ID,
-            language_analyzer=f"{language}.microsoft",
-        )
+    return AzureAISearchVectorStore(
+        search_or_index_client=index_client,
+        index_name=vector_store_name,
+        filterable_metadata_field_keys=filterable_metadata_field_keys,
+        index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
+        id_field_key=NODE_ID,
+        chunk_field_key=NODE_CONTENT,
+        embedding_field_key=NODE_EMBEDDING,
+        metadata_string_field_key=NODE_METADATA,
+        doc_id_field_key=DOCUMENT_ID,
+        language_analyzer=f"{language}.microsoft",
+        semantic_configuration_name=semantic_configuration_name,
+    )
