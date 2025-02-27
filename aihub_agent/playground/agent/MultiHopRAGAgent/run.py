@@ -19,7 +19,9 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
+from aihub_lib.testing.logging.logger import enable_logging
 
+enable_logging()
 logging.getLogger("opentelemetry").setLevel(logging.ERROR)
 
 load_dotenv(Path(__file__).parent / ".env")
@@ -27,7 +29,7 @@ load_dotenv(Path(__file__).parent / ".env")
 
 async def main():
     vector_store = create_azure_ai_search_vector_store("development", semantic_configuration_name="default")
-    return AgentTestRunner(
+    runner = AgentTestRunner(
         agent_type=MultiHopRAGAgent,
         agent_config=MultiHopRAGAgentConfig(
             agent_id="multi_hop_rag_agent",
@@ -63,17 +65,7 @@ async def main():
                 ),
             ),
             number_of_input_tokens=100000,
-            hops=hops,
-            decompose_chat_history_prompt=LocaleString(
-                en="""
-                Given the following conversation between a user and an assistant and a follow-up question from the user,
-                rephrase the follow-up question into multiple questions.
-
-                Chat history:
-                {chat_history}
-                Follow-up input: {question}
-                Multiple questions:"""
-            ),
+            hops=3,
             context_prompt=LocaleString(
                 en="""
                 You are provided with some additional context information in form of structured documents with its general
