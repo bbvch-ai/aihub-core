@@ -10,8 +10,9 @@
         state-key="agents"
         state-storage="local"
       >
-        <div class="card">
+        <div class="left-splitter">
           <DataTable
+            v-if="showTable"
             v-model:filters="filters"
             v-model:selection="selectedAgent"
             striped-rows
@@ -73,16 +74,6 @@
               </template>
             </Column>
             <Column
-              sortable
-              field="agent_id"
-              header="ID"
-            />
-            <Column
-              sortable
-              field="agent_class"
-              header="Class"
-            />
-            <Column
               header="Typ"
             >
               <template #body="{ data }">
@@ -118,6 +109,9 @@
               />
             </template>
           </DataTable>
+          <div v-else>
+            V-else
+          </div>
         </div>
       </SplitterPanel>
       <SplitterPanel>
@@ -154,6 +148,15 @@ const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   agent_id: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
   agent_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+})
+
+const showTable = ref(true)
+const leftSplitter = useTemplateRef('left-splitter')
+useResizeObserver(leftSplitter, (entries) => {
+  const [entry] = entries
+  const { width } = entry.contentRect
+  showTable.value = width > 600
+  console.log(width)
 })
 </script>
 
