@@ -51,7 +51,7 @@ class StoreBase:
     ):
         self.js = js
         self.prefix = prefix
-        self._kv_stores: Dict[str, Any] = {}
+        self._kv_stores: Dict[str, KeyValue] = {}
         self.max_retries = 10  # Up to 1 second backoff
         self.base_backoff = 0.001  # 1ms initial backoff
 
@@ -69,9 +69,16 @@ class StoreBase:
                         storage=StorageType.FILE,
                     )
                 )
-            except Exception:
-                # If the bucket already exists, we just retrieve it
-                self._kv_stores[run_id] = await self.js.key_value(f"{self.prefix}_{run_id}")
+                logger.debug(f"Created new KV store '{self.prefix}_{run_id}'")
+            except Exception as e:
+                if "already in use" in str(e).lower():
+                    # If the bucket already exists, we just retrieve it
+                    self._kv_stores[run_id] = await self.js.key_value(f"{self.prefix}_{run_id}")
+                    logger.debug(f"Using existing KV store '{self.prefix}_{run_id}'")
+                else:
+                    logger.error(f"Error creating KV store '{self.prefix}_{run_id}': {e}")
+                    raise
+
         return self._kv_stores[run_id]
 
     async def delete_run_store(
@@ -81,13 +88,14 @@ class StoreBase:
         """
         Deletes the KV store for a specific run, removing all associated data.
         Also clears any cached references in _kv_stores.
-
-        Use this at run completion to reclaim resources and maintain a clean state.
         """
         if run_id in self._kv_stores:
-            logger.debug(f"Deleting Distributed Event or Step store for run {run_id}")
-            await self.js.delete_key_value(f"{self.prefix}_{run_id}")
-            del self._kv_stores[run_id]
+            try:
+                await self.js.delete_key_value(f"{self.prefix}_{run_id}")
+                del self._kv_stores[run_id]
+                logger.debug(f"Deleted KV store '{self.prefix}_{run_id}'")
+            except Exception as e:
+                logger.error(f"Error deleting KV store '{self.prefix}_{run_id}': {e}")
 
     async def get_value(
         self, run_id: str, key: str, default_value: T = None, transform_func: Callable[[bytes], T] = None
@@ -105,15 +113,23 @@ class StoreBase:
             logger.error(f"Error retrieving key '{key}': {e}")
             return default_value
 
-    async def put_json_value(self, run_id: str, key: str, value: Any) -> bool:
-        """Stores a JSON-serializable value in the KV store."""
+    async def put_value(self, run_id: str, key: str, value: bytes) -> bool:
+        """Stores a raw byte value in the KV store."""
         kv = await self._get_kv_store(run_id)
         try:
-            serialized = json.dumps(value).encode()
-            await kv.put(key, serialized)
+            await kv.put(key, value)
             return True
         except Exception as e:
-            logger.error(f"Error storing JSON value for key '{key}': {e}")
+            logger.error(f"Error storing value for key '{key}': {e}")
+            return False
+
+    async def put_json_value(self, run_id: str, key: str, value: Any) -> bool:
+        """Stores a JSON-serializable value in the KV store."""
+        try:
+            serialized = json.dumps(value).encode()
+            return await self.put_value(run_id, key, serialized)
+        except Exception as e:
+            logger.error(f"Error serializing JSON value for key '{key}': {e}")
             return False
 
     async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
@@ -124,9 +140,8 @@ class StoreBase:
 
         return await self.get_value(run_id, key, default_value, json_transform)
 
-    async def atomic_operation(
+    async def retry_operation(
         self,
-        run_id: str,
         operation_func: Callable[[], Any],
         max_attempts: int = None,
     ) -> Any:
@@ -154,62 +169,3 @@ class StoreBase:
                 await asyncio.sleep(backoff)
 
         return None
-
-    async def synchronized_update(
-        self, run_id: str, key: str, update_func: Callable[[Any], Any], default_value: Any = None
-    ) -> bool:
-        """
-        Performs a synchronized update on a JSON value using a mutex pattern.
-
-        Since the NATS JetStream KeyValue API doesn't appear to support native optimistic
-        concurrency control, we create a mutex key specifically for this operation.
-        """
-        # Create a mutex key to synchronize access
-        mutex_key = f"mutex_{key}"
-        kv = await self._get_kv_store(run_id)
-
-        # Try to acquire the mutex
-        max_attempts = 10
-        attempts = 0
-        mutex_acquired = False
-
-        while attempts < max_attempts and not mutex_acquired:
-            try:
-                # Try to create the mutex
-                try:
-                    await kv.create(mutex_key, b"locked")
-                    mutex_acquired = True
-                except Exception:
-                    # Mutex already exists, wait and retry
-                    attempts += 1
-                    if attempts >= max_attempts:
-                        logger.error(f"Failed to acquire mutex for key '{key}' after {attempts} attempts")
-                        return False
-
-                    backoff = self.base_backoff * (2**attempts)
-                    logger.debug(f"Waiting for mutex ({attempts}/{max_attempts}): {key}")
-                    await asyncio.sleep(backoff)
-            except Exception as e:
-                logger.error(f"Error acquiring mutex for key '{key}': {e}")
-                return False
-
-        if not mutex_acquired:
-            return False
-
-        try:
-            # Read current value
-            current_value = await self.get_json_value(run_id, key, default_value)
-
-            # Apply update function
-            new_value = update_func(current_value)
-
-            # Store updated value
-            success = await self.put_json_value(run_id, key, new_value)
-            return success
-
-        finally:
-            # Always release the mutex, even if the update fails
-            try:
-                await kv.delete(mutex_key)
-            except Exception as e:
-                logger.error(f"Error releasing mutex for key '{key}': {e}")

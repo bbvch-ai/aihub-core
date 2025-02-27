@@ -166,7 +166,9 @@ class Dispatcher:
             events = await self.event_store.get_all_events(topic.run_id, before=event.created_at)
             if await self.is_step_ready(step_method, topic.run_id, events):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
-                task = asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
+                task = asyncio.create_task(
+                    self.execute_step(event, step_method, events, run_context, thread_context, topic)
+                )
                 tasks.append(task)
 
         if tasks:
