@@ -1,6 +1,7 @@
+import asyncio
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from nats.js.client import JetStreamContext
 
@@ -34,6 +35,8 @@ class BaseContext:
         self.js = js
         self.store_name = store_name
         self._kv = None
+        self.max_retries = 5
+        self.base_backoff = 0.01  # 10ms initial backoff
 
     async def _ensure_kv_store(self):
         """
@@ -68,6 +71,60 @@ class BaseContext:
             logger.error(f"Error getting key '{key}': {e}")
             return default
 
+    async def synchronized_update(
+        self, key: str, update_func: Callable[[Any], Any], default_value: Any = None
+    ) -> bool | None:
+        """
+        Performs a synchronized update on a value using a mutex pattern.
+
+        This prevents race conditions when multiple processes are reading and
+        modifying the same key concurrently.
+        """
+        # Create a mutex key to synchronize access
+        mutex_key = f"mutex_{key}"
+        await self._ensure_kv_store()
+
+        # Try to acquire the mutex
+        max_attempts = 10
+        attempts = 0
+        mutex_acquired = False
+
+        while attempts < max_attempts and not mutex_acquired:
+            try:
+                # Try to create the mutex
+                try:
+                    await self._kv.create(mutex_key, b"locked")
+                    mutex_acquired = True
+                except Exception:
+                    # Mutex already exists, wait and retry
+                    attempts += 1
+                    if attempts >= max_attempts:
+                        logger.warning(f"Failed to acquire mutex for key '{key}' after {attempts} attempts")
+                        return False
+
+                    backoff = self.base_backoff * (2**attempts)
+                    logger.debug(f"Waiting for mutex ({attempts}/{max_attempts}): {key}")
+                    await asyncio.sleep(backoff)
+            except Exception as e:
+                logger.error(f"Error acquiring mutex for key '{key}': {e}")
+                return False
+
+        if not mutex_acquired:
+            return False
+
+        try:
+            current_value = await self.get(key, default_value)
+            new_value = update_func(current_value)
+            await self.set(key, new_value)
+            return True
+
+        finally:
+            # Always release the mutex, even if the update fails
+            try:
+                await self._kv.delete(mutex_key)
+            except Exception as e:
+                logger.error(f"Error releasing mutex for key '{key}': {e}")
+
     async def delete(self, key: str):
         """Remove a specific key from the store, ignoring errors if the key doesn't exist."""
         await self._ensure_kv_store()
@@ -98,6 +155,9 @@ class BaseContext:
             keys = await self._kv.keys()
             if not keys:
                 return {}
+
+            # Filter out mutex keys
+            keys = [k for k in keys if not k.startswith("mutex_")]
 
             all_data = {}
             for key in keys:

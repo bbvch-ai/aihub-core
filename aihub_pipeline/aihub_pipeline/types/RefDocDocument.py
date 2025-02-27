@@ -4,10 +4,12 @@ from typing import TYPE_CHECKING
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DATA_LAKE_URI,
+    DOCUMENT_TITLE,
     HASH,
     INSERTED_AT,
     NAMESPACE,
     NODE_TYPE_CONTENT,
+    SOURCE,
     TYPE,
     UPDATED_AT,
 )
@@ -45,6 +47,8 @@ class RefDocDocument(Document):
     def add_metadata_from_data_lake_file(self, data_lake_file: "DataLakeFile") -> "RefDocDocument":
         """Enrich the document's metadata with information from a `DataLakeFile`."""
         self.id_ = data_lake_file.id_
+        uri_parts = data_lake_file.uri.split("/")
+        document_title = uri_parts[-1]
         self.metadata = {
             **self.metadata,
             **data_lake_file.metadata,
@@ -55,5 +59,7 @@ class RefDocDocument(Document):
             INSERTED_AT: int(datetime.now().timestamp()),  # Convert to current timestamp
             TYPE: NODE_TYPE_CONTENT,
             DATA_LAKE_URI: data_lake_file.uri,
+            SOURCE: data_lake_file.uri,
+            DOCUMENT_TITLE: document_title,
         }
         return self

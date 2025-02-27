@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import traceback
 from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
@@ -71,7 +72,7 @@ class NCSubscriber(Generic[TEvent]):
     async def message_handler(self, msg: Msg) -> None:
         """
         Handle incoming messages. Deserializes the event, parses the subject into a Topic,
-        and calls the handler. Logs exceptions without crashing the subscriber.
+        and calls the handler without blocking.
         """
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data!r}")
@@ -79,9 +80,17 @@ class NCSubscriber(Generic[TEvent]):
             event_data = msg.data
             event = self.event_cls.deserialize_event(event_data)
             logger.debug(f"Deserialized event: {event}")
-            await self.handler(event, topic)
+            asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
         except Exception as e:
             logger.error(f"Error in message handler for subject '{msg.subject}': {e}")
+            traceback.print_exc()
+
+    async def _run_handler_with_error_handling(self, event, topic, subject):
+        """Helper method to run handler with proper error handling"""
+        try:
+            await self.handler(event, topic)
+        except Exception as e:
+            logger.error(f"Error in async handler for subject '{subject}': {e}")
             traceback.print_exc()
 
     @classmethod
