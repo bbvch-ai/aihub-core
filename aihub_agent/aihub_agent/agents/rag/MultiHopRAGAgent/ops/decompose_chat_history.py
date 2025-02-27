@@ -1,12 +1,14 @@
-from aihub_lib.generative_ai.utils.condense_standalone_question import _messages_to_history_str
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 from openai import BaseModel
+from openai import NOT_GIVEN
 from pydantic import Field
 from typing import List, Type
+
+from aihub_lib.generative_ai.utils.condense_standalone_question import _messages_to_history_str
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
 class DecomposeResult(BaseModel):
@@ -24,7 +26,7 @@ def decompose_result_factory(t: LocaleHandler, hops: int) -> Type[DecomposeResul
     return LocalizedDecomposeResult
 
 
-def decompose_chat_history(
+async def decompose_chat_history(
     message: str,
     chat_history: List[ChatMessage],
     t: LocaleHandler,
@@ -38,10 +40,15 @@ def decompose_chat_history(
     else:
         decompose_prompt_locale = t("lib.multi_hop_rag.decompose_chat_history.decompose_prompt")
     prompt = PromptTemplate(decompose_prompt_locale)
+
+    llm_kwargs = {}
+    if not llm.metadata.is_function_calling_model:
+        llm_kwargs["tool_choice"] = NOT_GIVEN
+
     response = llm.structured_predict(
-        output_cls=decompose_result_factory(t, hops=hops),
-        prompt=prompt,
-        llm_kwargs=None,
+        decompose_result_factory(t, hops=hops),
+        prompt,
+        llm_kwargs=llm_kwargs,
         chat_history=chat_history_str,
         question=message,
     )

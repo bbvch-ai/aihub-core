@@ -1,23 +1,10 @@
 import logging
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import LLMEvent, RetrieverEvent, UserMessageEvent
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pathlib import Path
 from pytest_bdd import scenarios, given, when, then, parsers
+from typing import List
 
 from aihub_agent.agents.basic.FewShotAgent.events.LimitChatHistoryWithContextEvent import (
     LimitChatHistoryWithContextEvent,
@@ -28,21 +15,48 @@ from aihub_agent.agents.rag.MultiHopRAGAgent.configs.MultiHopRAGAgentConfig impo
 from aihub_agent.agents.rag.MultiHopRAGAgent.events.ConcatenationEvent import ConcatenationEvent
 from aihub_agent.agents.rag.MultiHopRAGAgent.events.DecomposeQueryEvent import DecomposeQueryEvent
 from aihub_agent.agents.rag.RAGAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.RAGAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.rag.RAGAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.rag.RAGAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+    AzureOpenAIParameter,
+)
+from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
+    AzureOpenAIEmbeddingParameter,
+)
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import LLMEvent, RetrieverEvent, UserMessageEvent, ExceptionEvent
+from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
+from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 logging.getLogger("opentelemetry").setLevel(logging.ERROR)
 
 load_dotenv(Path(__file__).parent / ".env")
 
-scenarios("features/multi_hop_rag_agent.feature")
+scenarios("./features/multi_hop_rag_agent.feature")
+
+
+@given("the following guard examples:", target_fixture="guard_examples")
+def _(datatable):
+    guard_examples = []
+    for row in datatable[1:]:
+        guard_examples.append(
+            FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2]))
+        )
+    return guard_examples
 
 
 @given(
     parsers.parse('a MultiHopRAGAgent runner with a valid configuration with "{hops:d}" hops'),
     target_fixture="agent_runner",
 )
-def _(hops: int):
+def _(hops: int, guard_examples: List[FewShotGuardExample]):
     vector_store = create_azure_ai_search_vector_store("development", semantic_configuration_name="default")
     return AgentTestRunner(
         agent_type=MultiHopRAGAgent,
@@ -81,27 +95,18 @@ def _(hops: int):
             ),
             number_of_input_tokens=100000,
             hops=hops,
-            decompose_chat_history_prompt=LocaleString(
-                en="""
-                Given the following conversation between a user and an assistant and a follow-up question from the user,
-                rephrase the follow-up question into multiple questions.
-
-                Chat history:
-                {chat_history}
-                Follow-up input: {question}
-                Multiple questions:"""
-            ),
             context_prompt=LocaleString(
                 en="""
                 You are provided with some additional context information in form of structured documents with its general
-                structure and relevant information in more detail. Each document starts with an indicator <DOC_START [documentname]>
-                and ends with <DOC_END [documentname]>.
+                structure and relevant information in more detail. Each document starts with an indicator <DOCUMENT [documentname]>
+                and ends with </DOCUMENT>.
                 Here are the relevant documents for the context:
 
                 {context_str}
 
                 Instruction: Based on the above documents, provide a detailed answer for the user question below."""
             ),
+            few_shot_guard_examples=guard_examples,
         ),
     )
 
@@ -137,6 +142,17 @@ def _(agent_runner: AgentTestRunner, count: int):
     assert len(decompose_events) == count, f"Expected {count} decomposed questions found {len(decompose_events)}"
     assert decompose_events[0].decomposed_query.content, "No decomposed questions found"
     assert len(set(queries)) == count, "Queries are not all unique."
+
+
+@then(parsers.parse('"{count:d}" FewShotAcceptEvent are present'))
+def _(count: int, agent_runner: AgentTestRunner):
+    accept_events = agent_runner.get_events_of_type(FewShotAcceptEvent)
+    assert len(accept_events) == count, f"Expected {count} FewShotAcceptEvent found {len(accept_events)}"
+
+
+@then("a FewShotRejectEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_type(FewShotRejectEvent), "Agent did not receive FewShotRejectEvent"
 
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
@@ -179,3 +195,8 @@ def _(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
+
+
+@then("a ExceptionEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_type(ExceptionEvent), "Agent did not receive ExceptionEvent"

@@ -1,0 +1,22 @@
+decompose_chat_history:
+  decompose_prompt: |
+    Étant donné la conversation suivante entre un utilisateur et un assistant IA et une question de suivi de l'utilisateur
+    Si vous êtes un utilisateur, décomposez cette conversation en plusieurs questions.
+
+    <chat_history>
+    {chat_history}
+    </chat_history>
+    
+    <user_question>
+    {question}
+    </user_question>
+
+    Plusieurs questions de suivi:
+
+  decompose_result:
+    questions: |
+      Une liste de %{hops} questions qui peuvent être dérivées de la conversation.
+
+    docstring: |
+      Décomposer la conversation suivante entre un utilisateur et un assistant IA en plusieurs questions qui peuvent être utilisées pour rechercher des documents pertinents.
+      qui peuvent être utilisées pour rechercher des documents pertinents.
