@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.81.0"
+version = "v0.82.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -96,8 +96,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.81.0"
-resolved_reference = "a619e653fc346163246d17ab3a1ac0314b0e63b3"
+reference = "v0.82.0"
+resolved_reference = "7309fd78b6e8ad7360866386e6d0e067b3f94e7b"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -695,6 +695,18 @@ colorama = ["colorama (>=0.4.3)"]
 d = ["aiohttp (>=3.10)"]
 jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
+
+[[package]]
+name = "cachetools"
+version = "5.5.2"
+description = "Extensible memoizing collections and decorators"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "cachetools-5.5.2-py3-none-any.whl", hash = "sha256:d26a22bcc62eb95c3beabd9f1ee5e820d3d2704fe2967cbe350e20c8ffcd3f0a"},
+    {file = "cachetools-5.5.2.tar.gz", hash = "sha256:1a661caa9175d26759571b2e19580f9d6393969e5dfca11fdb1f947a23e640d4"},
+]
 
 [[package]]
 name = "certifi"
@@ -5046,4 +5058,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "403938bf4d7ce125815495dd571347e9657da05f51f21880e2ff4134c9b52647"
+content-hash = "acc37d6e70b90e8e7d7d81694527f2b6533139c72d5f4f187f9f5ac0a649415b"
