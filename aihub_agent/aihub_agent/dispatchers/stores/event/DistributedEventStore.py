@@ -40,7 +40,7 @@ class DistributedEventStore(StoreBase):
         Uses TTLCache to automatically expire entries after 5 minutes.
         """
         # Create a unique cache key combining run_id and key
-        cache_key = f"{run_id}:{key}"
+        cache_key = self._cache_key_from_key(run_id, key)
 
         # Check if the value is in cache
         if cache_key in self._cache:
@@ -56,6 +56,19 @@ class DistributedEventStore(StoreBase):
 
         return result
 
+    def _event_key(self, event_type: str, event_id: str) -> str:
+        """Builds a namespaced Redis key for an event."""
+        return f"{event_type}.{event_id}"
+
+    def _cache_key(self, event_type: str, event_id: str, run_id: str) -> str:
+        """Builds a unique cache key for a run and key."""
+        key = self._event_key(event_type, event_id)
+        return f"{run_id}:{key}"
+
+    def _cache_key_from_key(self, run_id: str, key: str) -> str:
+        """Builds a unique cache key for a run and key."""
+        return f"{run_id}:{key}"
+
     async def store_event(
         self,
         run_id: Annotated[str, "The identifier for the run."],
@@ -68,9 +81,9 @@ class DistributedEventStore(StoreBase):
         event_data = event.model_dump()
         event_id = event_data["event_id"]
 
-        key = f"{event_type}.{event_id}"
+        key = self._event_key(event_type, event_id)
+        cache_key = self._cache_key(event_type, event_id, run_id)
 
-        cache_key = f"{run_id}:{key}"
         self._cache[cache_key] = event_data
 
         # Store the event directly
