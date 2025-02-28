@@ -420,7 +420,6 @@ class Dispatcher:
                     await self.event_store.store_event(topic.run_id, event)
                     await self.publish_event(event, topic)
 
-
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
     ) -> AgentThreadTopicManager:
