@@ -39,7 +39,7 @@ async def main():
 
     runner.mount(
         HealthController().get_health(),
-        SuiteController().get_suite(),
+        SuiteController(auth=auth).get_suite(),
         UserController(auth=auth).get_my_user(),
         I18nController(auth=auth).get_my_locale(),
         EventController(auth=auth).ws().get_events(),

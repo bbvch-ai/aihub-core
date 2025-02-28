@@ -61,10 +61,11 @@ import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 import { useUserStore } from '@core/stores/useUserStore'
 
-const { user, loadingUser } = storeToRefs(useUserStore())
+const userStore = useUserStore()
+const { user, loadingUser } = storeToRefs(userStore)
 
 const userInitials = computed(() =>
-  user?.name?.split(' ').map(n => n[0]).join(''),
+  user.value?.name?.split(' ').map(n => n[0]).join(''),
 )
 
 // Initialize the dark mode reactive state with persistence

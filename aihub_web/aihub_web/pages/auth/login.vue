@@ -31,6 +31,7 @@
           label="Login with Microsoft"
           icon="pi pi-microsoft"
           icon-pos="right"
+          class="!text-black !bg-white"
           @click="login"
         />
       </div>

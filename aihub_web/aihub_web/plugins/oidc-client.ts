@@ -1,8 +1,13 @@
-import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
+import { UserManager, WebStorageStateStore, Log } from 'oidc-client-ts'
 import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin(async ({ $i18n }) => {
   const config = useRuntimeConfig()
+
+  // Enable logging for debugging (remove in production)
+  Log.setLogger(console)
+  Log.setLevel(Log.INFO)
+
   const auth = new UserManager({
     authority: `https://login.microsoftonline.com/${config.public.oidc.tenantId}/v2.0`,
     client_id: config.public.oidc.clientId,
@@ -13,8 +18,47 @@ export default defineNuxtPlugin(async ({ $i18n }) => {
     scope: `openid profile email api://${config.public.oidc.clientId}/access`,
     filterProtocolClaims: true,
     automaticSilentRenew: true,
+    silentRequestTimeoutInSeconds: 30, // Increase timeout
+    accessTokenExpiringNotificationTimeInSeconds: 120, // Notify 2 minutes before expiration
     userStore: new WebStorageStateStore({ store: window?.localStorage }),
   })
+
+  // Add event handlers for token lifecycle events
+  auth.events.addAccessTokenExpiring(() => {
+    console.log('Access token expiring, attempting silent renewal')
+  })
+
+  auth.events.addAccessTokenExpired(() => {
+    console.log('Access token expired')
+    // Redirect to login when token expires and cannot be renewed
+    const locale = $i18n.locale.value
+    window.location.assign(`/${locale}/auth/login`)
+  })
+
+  auth.events.addSilentRenewError((error) => {
+    console.error('Silent renew error:', error)
+    // You could implement a retry logic here or redirect to login
+  })
+
+  // Check for user session on startup
+  try {
+    const user = await auth.getUser()
+    if (user && !user.expired) {
+      console.log('User already logged in')
+    }
+    else if (user && user.expired) {
+      console.log('User session expired, attempting renewal')
+      try {
+        await auth.signinSilent()
+      }
+      catch (e) {
+        console.error('Failed to renew session:', e)
+      }
+    }
+  }
+  catch (e) {
+    console.error('Error checking initial user state:', e)
+  }
 
   return {
     provide: {

@@ -26,18 +26,7 @@
         </nuxt-link-locale>
       </div>
       <div>
-        <nuxt-link-locale
-          to="/settings"
-          class="w-full h-[50px] flex items-center justify-center"
-        >
-          <Button
-            icon="pi pi-cog"
-            aria-label="Settings"
-            variant="text"
-            size="large"
-            disabled
-          />
-        </nuxt-link-locale>
+        <UserSettings />
       </div>
     </div>
     <div class="w-full">

@@ -133,6 +133,16 @@ export const getSuite = <
     unknown,
     DefaultT
   >({
+    security: [
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/suite/",
     ...options,
   });

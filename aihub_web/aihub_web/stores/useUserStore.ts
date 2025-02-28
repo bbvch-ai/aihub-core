@@ -7,7 +7,7 @@ export const useUserStore = defineStore('user', () => {
     refresh: refreshUser,
     refetch: refetchUser,
   } = useQuery<MyUserDto>({
-    key: ['user'],
+    key: ['my_user'],
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {

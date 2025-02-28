@@ -82,7 +82,7 @@ const route = useRoute()
 const { loadingSuite, apps } = storeToRefs(useSuiteStore())
 
 const shownApps = computed(() => {
-  return search.value ? apps.value.filter((app: MenuItem) => app.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value
+  return search.value ? apps.value.filter((app: MenuItem) => app.value.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value
 })
 
 const search = ref('')
