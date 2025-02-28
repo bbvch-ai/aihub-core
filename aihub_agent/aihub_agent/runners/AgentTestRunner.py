@@ -227,7 +227,10 @@ class AgentTestRunner(AgentRunner):
         Returns the first observed event of the specified type.
         Raises StopIteration if no such event is found.
         """
-        return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+        try:
+            return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+        except StopIteration:
+            raise StopIteration(f"No event of type {event_type.__name__} was observed")
 
     async def wait_for_event(
         self,

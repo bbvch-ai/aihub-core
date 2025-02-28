@@ -125,24 +125,10 @@ class DistributedEventStore(StoreBase):
         Retrieves all events for a run, organized by event type name.
         Uses a combined pattern to fetch keys for all event types in a single operation.
         """
-        event_map: Dict[str, List[ControlEvent]] = {class_name: [] for class_name in class_names}
+        event_map: Dict[str, List[ControlEvent]] = {}
 
-        # Create a pattern that matches any of the specified class names
-        # Using Redis key pattern: {class_name1}.*|{class_name2}.*|...
-        combined_pattern = "|".join(f"{class_name}.*" for class_name in class_names)
-        all_matching_keys = await self.get_all_keys(run_id, combined_pattern)
+        for class_name in class_names:
+            events = await self.get_events_of_type(run_id, class_name)
+            event_map[class_name] = [event for event in events if before is None or event.created_at <= before]
 
-        # Retrieve all matching events in a single batch
-        for key in all_matching_keys:
-            event_data = await self.get_json_value(run_id, key)
-            if event_data:
-                event = ControlEvent.deserialize_event(event_data)
-                # Determine which class this event belongs to
-                for class_name in class_names:
-                    if key.startswith(f"{class_name}."):
-                        if before is None or event.created_at <= before:
-                            event_map[class_name].append(event)
-                        break
-
-        logger.debug(f"Retrieved events for types: {', '.join(class_names)}")
         return event_map

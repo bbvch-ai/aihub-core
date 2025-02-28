@@ -8,7 +8,7 @@ from aihub_lib.nats.events import StartEvent, StopEvent
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 
-N = 10
+N = 5
 
 start = time()
 

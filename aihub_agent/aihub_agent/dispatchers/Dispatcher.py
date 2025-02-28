@@ -170,7 +170,6 @@ class Dispatcher:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
             input_events = getattr(step_method, "_input_events", set())
             input_event_class_names = [event_type.__name__ for event_type in input_events]
-            rc = await run_context.to_json()
             events = await self.event_store.get_events_of_multiple_types(
                 topic.run_id, input_event_class_names, before=event.created_at
             )
