@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Callable, TypeVar
+from typing import Annotated, Any, Callable, List, TypeVar
 
 from redis.asyncio import Redis
 
@@ -13,17 +13,30 @@ class StoreBase:
     """
     A base class for run-specific storage in Redis with race condition protection.
 
+    ### Why StoreBase?
+    In workflows, run-specific data (such as events, step counts, or other metadata) must be preserved
+    between steps and even across server restarts. `StoreBase` provides a standardized way to manage
+    these per-run key-value stores:
+    - Creates a dedicated KV bucket for each run.
+    - Ensures data has a reasonable TTL to avoid indefinite growth.
+    - Simplifies cleanup at the end of a run.
+
     ### Key Concepts
     - **Per-Run Namespaces:** Each run gets its own Redis namespace (prefix:run_id:key)
     - **TTL:** Keys have TTL to ensure stale data is eventually cleaned up
     - **Local Cache:** Redis connections are cached for reuse
+
+    ### Lifecycle
+    - At run start, when data is first stored for that run, a KV bucket is created if not existing.
+    - During the run, data is written to this store.
+    - At run end (StopEvent), `delete_run_store` removes the bucket, freeing up space.
     """
 
     def __init__(
         self,
-        redis: Redis,
-        prefix: str,
-        default_ttl: int = 60 * 60 * 24,  # 24 hour in seconds
+        redis: Annotated[Redis, "Redis for KV storage"],
+        prefix: Annotated[str, "Prefix for Redis keys"],
+        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60 * 60 * 24,  # 24 hour in seconds
     ):
         self.redis = redis
         self.prefix = prefix
@@ -34,12 +47,10 @@ class StoreBase:
         return f"{self.prefix}:{run_id}:{key}"
 
     async def delete_run_store(self, run_id: str):
-        """
-        Deletes all keys for a specific run, removing all associated data.
-        """
+        """Deletes all keys for a specific run, removing all associated data."""
         try:
             pattern = f"{self.prefix}:{run_id}:*"
-            scan_iter = self.redis.scan_iter(match=pattern)
+            scan_iter = self.redis.scan_iter(match=pattern, count=10_000)
             keys_to_delete = []
 
             async for key in scan_iter:
@@ -95,12 +106,12 @@ class StoreBase:
 
         return await self.get_value(run_id, key, default_value, json_transform)
 
-    async def get_all_keys(self, run_id: str) -> list:
+    async def get_all_keys(self, run_id: str, pattern: str = "*") -> List[str]:
         """Get all keys for a run"""
-        pattern = f"{self.prefix}:{run_id}:*"
+        pattern = self._build_key(run_id, key=pattern)
         keys = []
 
-        async for key in self.redis.scan_iter(match=pattern):
+        async for key in self.redis.scan_iter(match=pattern, count=10_000):
             # Extract the original key part (remove prefix and run_id)
             original_key = key.decode().split(":", 2)[2]
             keys.append(original_key)

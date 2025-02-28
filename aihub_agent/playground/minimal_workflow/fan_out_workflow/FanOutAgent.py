@@ -1,3 +1,4 @@
+from time import time
 from typing import List
 
 from aihub_agent.agents.abstract.Agent import Agent
@@ -7,12 +8,15 @@ from aihub_lib.nats.events import StartEvent, StopEvent
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 
-N = 100
+N = 1000
+
+start = time()
 
 
 class FanOutAgent(Agent):
     @step()
     async def start_step(self, event: StartEvent) -> List[FanOutA]:
+        start = time()
         print("[FanOutAgent.start_step]", event)
         return [FanOutA(payload=str(i)) for i in range(N)]
 
@@ -24,4 +28,5 @@ class FanOutAgent(Agent):
     @step()
     async def stop_step(self, events: FixedList(FanOutB, N)) -> StopEvent:
         print("[FanOutAgent.stop_step]", events)
+        print("Time taken:", time() - start)
         return StopEvent()

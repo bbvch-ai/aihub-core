@@ -74,13 +74,8 @@ class DistributedStepStore(StoreBase):
         Retrieves how many times a given step has executed for the specified run
         by counting individual counter keys.
         """
-        all_keys = await self.get_all_keys(run_id)
-
-        # Filter keys for this step's counters
-        counter_prefix = f"{step_name}.counter."
-        counter_keys = [key for key in all_keys if key.startswith(counter_prefix)]
-        count = len(counter_keys)
-
+        all_keys = await self.get_all_keys(run_id, pattern=f"{step_name}.counter.*")
+        count = len(all_keys)
         logger.debug(f"Counted {count} executions for step '{step_name}'")
         return count
 

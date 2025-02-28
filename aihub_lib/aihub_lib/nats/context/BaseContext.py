@@ -92,7 +92,7 @@ class BaseContext:
             keys_to_delete = []
 
             while cursor:
-                cursor, keys = await self.redis.scan(cursor=cursor, match=pattern, count=100)
+                cursor, keys = await self.redis.scan(cursor=cursor, match=pattern, count=10_000)
                 keys_to_delete.extend(keys)
 
                 if cursor == b"0":
@@ -119,7 +119,7 @@ class BaseContext:
             keys = []
 
             while cursor:
-                cursor, batch = await self.redis.scan(cursor=cursor, match=pattern, count=1000)
+                cursor, batch = await self.redis.scan(cursor=cursor, match=pattern, count=10_000)
                 keys.extend(batch)
 
                 if cursor == b"0":

@@ -19,18 +19,6 @@ class DistributedEventStore(StoreBase):
     all events for a given run are persisted in a JetStream KV store, making them accessible across
     distributed environments and restarts.
 
-    ### Key Operations
-    - **store_event(run_id, event):**
-      Appends the new event to the list of events for its type, ensuring no duplicate `event_id` entries.
-      Stores events in a type-wise manner (e.g., all StartEvents together, all StopEvents together).
-
-    - **get_events_of_type(run_id, event_type):**
-      Fetches all events of a specific type for the given run, deserializing them into event objects.
-
-    - **get_all_events(run_id, before=None):**
-      Retrieves all events for a run, optionally filtered by a timestamp (only events created_at ≤ before).
-      Useful for determining whether enough events have occurred to trigger certain steps.
-
     ### Persistence Details
     - Each run has its own bucket (e.g. "events_RUNID").
     - Keys in the bucket correspond to event type names (e.g. "StartEvent").
@@ -100,11 +88,8 @@ class DistributedEventStore(StoreBase):
         Returns all events of the specified type by scanning for keys with the class name prefix.
         """
         events = []
-        all_keys = await self.get_all_keys(run_id)
-
-        # Filter keys that match the class_name prefix
-        prefix = f"{class_name}."
-        matching_keys = [key for key in all_keys if key.startswith(prefix)]
+        prefix = f"{class_name}.*"
+        matching_keys = await self.get_all_keys(run_id, prefix)
 
         # Retrieve and deserialize each matching event
         for key in matching_keys:
@@ -115,48 +100,34 @@ class DistributedEventStore(StoreBase):
         logger.debug(f"Retrieved {len(events)} events of type {class_name}")
         return events
 
-    async def get_all_events(
+    async def get_events_of_multiple_types(
         self,
         run_id: Annotated[str, "The run identifier."],
+        class_names: Annotated[List[str], "The event subclass names to fetch."],
         before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves all events for a run, organized by event type name.
-        Scans all keys and groups them by class name.
+        Uses a combined pattern to fetch keys for all event types in a single operation.
         """
-        events: Dict[str, List[ControlEvent]] = {}
-        all_keys = await self.get_all_keys(run_id)
+        event_map: Dict[str, List[ControlEvent]] = {class_name: [] for class_name in class_names}
 
-        # Process each key that contains a dot (indicating it's an event key)
-        for key in all_keys:
-            if "." not in key:
-                continue
+        # Create a pattern that matches any of the specified class names
+        # Using Redis key pattern: {class_name1}.*|{class_name2}.*|...
+        combined_pattern = "|".join(f"{class_name}.*" for class_name in class_names)
+        all_matching_keys = await self.get_all_keys(run_id, combined_pattern)
 
-            class_name, _ = key.split(".", 1)
-
-            # Skip keys that aren't events (like utility keys)
-            if class_name.startswith("_"):
-                continue
-
-            # Fetch the event data
+        # Retrieve all matching events in a single batch
+        for key in all_matching_keys:
             event_data = await self.get_json_value(run_id, key)
-            if not event_data:
-                continue
+            if event_data:
+                event = ControlEvent.deserialize_event(event_data)
+                # Determine which class this event belongs to
+                for class_name in class_names:
+                    if key.startswith(f"{class_name}."):
+                        if before is None or event.created_at <= before:
+                            event_map[class_name].append(event)
+                        break
 
-            # Deserialize the event
-            event = ControlEvent.deserialize_event(event_data)
-
-            # Apply timestamp filter if provided
-            if before is not None and event.created_at > before:
-                continue
-
-            # Add to the appropriate list in the result dictionary
-            if class_name not in events:
-                events[class_name] = []
-            events[class_name].append(event)
-
-        # Log counts for debugging
-        for class_name, event_list in events.items():
-            logger.debug(f"Retrieved {len(event_list)} total events of type {class_name}")
-
-        return events
+        logger.debug(f"Retrieved events for types: {', '.join(class_names)}")
+        return event_map

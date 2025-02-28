@@ -4,8 +4,6 @@ import logging
 import traceback
 from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin
 
-from cachetools import TTLCache
-
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -21,6 +19,7 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from bson import ObjectId
+from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
@@ -87,6 +86,7 @@ class Dispatcher:
     - **Publishers & Stores:** It uses JSPublisher to publish resulting events, and distributed stores to fetch/update events or steps info.
     - **Tracing & Localization:** Integrates with `RunTraceCoordinator` for metrics and `AgentLocaleHandler` for localized outputs.
     """
+
     _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(
@@ -168,7 +168,12 @@ class Dispatcher:
         tasks = []
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            events = await self.event_store.get_all_events(topic.run_id, before=event.created_at)
+            input_events = getattr(step_method, "_input_events", set())
+            input_event_class_names = [event_type.__name__ for event_type in input_events]
+            rc = await run_context.to_json()
+            events = await self.event_store.get_events_of_multiple_types(
+                topic.run_id, input_event_class_names, before=event.created_at
+            )
             if await self.is_step_ready(step_method, topic.run_id, events):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
                 task = asyncio.create_task(
@@ -208,7 +213,7 @@ class Dispatcher:
                 )
                 return False
 
-        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = step_method._input_event_mapping
+        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = getattr(step_method, "_input_event_mapping", {})
         parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
 
@@ -315,6 +320,7 @@ class Dispatcher:
         - Publishes an ExceptionEvent if `_stop_on_error` is True.
         """
         max_executions = getattr(step_method, "_max_executions_per_run", None)
+
         if max_executions is not None:
             await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
 
