@@ -396,6 +396,9 @@ class Dispatcher:
             if result:
                 if not isinstance(result, list):
                     result = [result]
+
+                await self.tracer.trace_step_stop(step_span, result)
+
                 for event in result:
                     if isinstance(event, HumanInTheLoopRequestEvent):
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
@@ -417,7 +420,6 @@ class Dispatcher:
                     await self.event_store.store_event(topic.run_id, event)
                     await self.publish_event(event, topic)
 
-            await self.tracer.trace_step_stop(step_span, result)
 
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]

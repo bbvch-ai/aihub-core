@@ -68,8 +68,10 @@ class DistributedEventStore(StoreBase):
         event_data = event.model_dump()
         event_id = event_data["event_id"]
 
-        # Create a unique key for this event
         key = f"{event_type}.{event_id}"
+
+        cache_key = f"{run_id}:{key}"
+        self._cache[cache_key] = event_data
 
         # Store the event directly
         success = await self.put_json_value(run_id, key, event_data)
