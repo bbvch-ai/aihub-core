@@ -110,7 +110,6 @@ class StoreBase:
         """Get all keys for a run"""
         pattern = self._build_key(run_id, key=pattern)
         keys = []
-        print("PATTERN", pattern)
 
         async for key in self.redis.scan_iter(match=pattern, count=10_000):
             # Extract the original key part (remove prefix and run_id)
