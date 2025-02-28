@@ -3,7 +3,7 @@ from typing import Annotated, Any, Dict, List, Optional
 
 from aihub_lib.nats.events import ControlEvent
 from cachetools import TTLCache
-from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
@@ -43,12 +43,12 @@ class DistributedEventStore(StoreBase):
 
     _cache = TTLCache(maxsize=10_000, ttl=300)
 
-    def __init__(self, js: JetStreamContext):
-        super().__init__(js, prefix="events")
+    def __init__(self, redis: Redis):
+        super().__init__(redis, prefix="events")
 
     async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
         """
-        Get a JSON value from the key-value store with caching.
+        Get a JSON value from Redis with caching.
         Uses TTLCache to automatically expire entries after 5 minutes.
         """
         # Create a unique cache key combining run_id and key
@@ -59,7 +59,7 @@ class DistributedEventStore(StoreBase):
             logger.debug(f"Cache hit for {cache_key}")
             return self._cache[cache_key]
 
-        # If not in cache, get the value from the store
+        # If not in cache, get the value from Redis
         result = await super().get_json_value(run_id, key, default_value)
 
         # Cache the result (TTLCache will automatically expire it after the TTL)
@@ -74,8 +74,7 @@ class DistributedEventStore(StoreBase):
         event: Annotated[ControlEvent, "The event instance to store."],
     ):
         """
-        Stores an event using a direct key (ClassName.EventId).
-        This approach completely eliminates race conditions.
+        Stores an event in Redis using a direct key (ClassName.EventId).
         """
         event_type = event.__class__.__name__
         event_data = event.model_dump()
@@ -100,29 +99,21 @@ class DistributedEventStore(StoreBase):
         """
         Returns all events of the specified type by scanning for keys with the class name prefix.
         """
-        kv = await self._get_kv_store(run_id)
         events = []
+        all_keys = await self.get_all_keys(run_id)
 
-        try:
-            # Get all keys in the store
-            all_keys = await kv.keys()
+        # Filter keys that match the class_name prefix
+        prefix = f"{class_name}."
+        matching_keys = [key for key in all_keys if key.startswith(prefix)]
 
-            # Filter keys that match the class_name prefix
-            prefix = f"{class_name}."
-            matching_keys = [key for key in all_keys if key.startswith(prefix)]
+        # Retrieve and deserialize each matching event
+        for key in matching_keys:
+            event_data = await self.get_json_value(run_id, key)
+            if event_data:
+                events.append(ControlEvent.deserialize_event(event_data))
 
-            # Retrieve and deserialize each matching event
-            for key in matching_keys:
-                event_data = await self.get_json_value(run_id, key)
-                if event_data:
-                    events.append(ControlEvent.deserialize_event(event_data))
-
-            logger.debug(f"Retrieved {len(events)} events of type {class_name}")
-            return events
-
-        except Exception as e:
-            logger.error(f"Error fetching events of type {class_name}: {e}")
-            return []
+        logger.debug(f"Retrieved {len(events)} events of type {class_name}")
+        return events
 
     async def get_all_events(
         self,
@@ -133,46 +124,39 @@ class DistributedEventStore(StoreBase):
         Retrieves all events for a run, organized by event type name.
         Scans all keys and groups them by class name.
         """
-        kv = await self._get_kv_store(run_id)
         events: Dict[str, List[ControlEvent]] = {}
+        all_keys = await self.get_all_keys(run_id)
 
-        try:
-            # Get all keys
-            all_keys = await kv.keys()
+        # Process each key that contains a dot (indicating it's an event key)
+        for key in all_keys:
+            if "." not in key:
+                continue
 
-            # Process each key that contains a dot (indicating it's an event key)
-            for key in all_keys:
-                if "." not in key:
-                    continue
+            class_name, _ = key.split(".", 1)
 
-                class_name, _ = key.split(".", 1)
+            # Skip keys that aren't events (like utility keys)
+            if class_name.startswith("_"):
+                continue
 
-                # Skip keys that aren't events (like utility keys)
-                if class_name.startswith("_"):
-                    continue
+            # Fetch the event data
+            event_data = await self.get_json_value(run_id, key)
+            if not event_data:
+                continue
 
-                # Fetch the event data
-                event_data = await self.get_json_value(run_id, key)
-                if not event_data:
-                    continue
+            # Deserialize the event
+            event = ControlEvent.deserialize_event(event_data)
 
-                # Deserialize the event
-                event = ControlEvent.deserialize_event(event_data)
+            # Apply timestamp filter if provided
+            if before is not None and event.created_at > before:
+                continue
 
-                # Apply timestamp filter if provided
-                if before is not None and event.created_at > before:
-                    continue
+            # Add to the appropriate list in the result dictionary
+            if class_name not in events:
+                events[class_name] = []
+            events[class_name].append(event)
 
-                # Add to the appropriate list in the result dictionary
-                if class_name not in events:
-                    events[class_name] = []
-                events[class_name].append(event)
-
-            # Log counts for debugging
-            for class_name, event_list in events.items():
-                logger.debug(f"Retrieved {len(event_list)} total events of type {class_name}")
-
-        except Exception as e:
-            logger.error(f"Error retrieving all events: {e}")
+        # Log counts for debugging
+        for class_name, event_list in events.items():
+            logger.debug(f"Retrieved {len(event_list)} total events of type {class_name}")
 
         return events

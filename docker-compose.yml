@@ -10,16 +10,23 @@ services:
     restart: always
 
   nats:
-    image: nats:alpine
+    image: nats:latest
     command: >
       -js
       -m 8222
+      -D
+      -V
     ports:
       - "4222:4222"  # Client connections
       - "8222:8222"  # HTTP monitoring interface
     restart: always
     healthcheck:
       test: wget --spider -q http://localhost:8222/healthz
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
 
   mongo:
     image: mongo:latest

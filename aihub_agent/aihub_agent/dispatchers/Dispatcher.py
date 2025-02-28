@@ -4,6 +4,8 @@ import logging
 import traceback
 from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin
 
+from cachetools import TTLCache
+
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -21,6 +23,7 @@ from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
@@ -83,8 +86,8 @@ class Dispatcher:
     - **Agent & Steps:** The Dispatcher uses the agent’s defined steps and their annotated metadata (like required events).
     - **Publishers & Stores:** It uses JSPublisher to publish resulting events, and distributed stores to fetch/update events or steps info.
     - **Tracing & Localization:** Integrates with `RunTraceCoordinator` for metrics and `AgentLocaleHandler` for localized outputs.
-
     """
+    _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(
         self,
@@ -95,6 +98,7 @@ class Dispatcher:
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
+        redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
@@ -102,12 +106,13 @@ class Dispatcher:
         self.agent_config = agent_config
         self.nc = nc
         self.js = js
+        self.redis = redis
         self.topic_manager = topic_manager
         self.locale_handler = locale_handler
 
         self.publisher = JSPublisher(self.js)
-        self.event_store = DistributedEventStore(js)
-        self.step_store = DistributedStepStore(js)
+        self.event_store = DistributedEventStore(redis)
+        self.step_store = DistributedStepStore(redis)
         self.tracer = RunTraceCoordinator(self.nc)
         self.step_configs = agent_config.get_step_configs()
 
@@ -130,8 +135,8 @@ class Dispatcher:
         await self.event_store.store_event(topic.run_id, event)
 
         # Retrieve contexts (run and thread)
-        run_context = await RunContext.create(self.js, topic.thread_id, topic.run_id)
-        thread_context = await ThreadContext.create(self.js, topic.thread_id)
+        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
+        thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if isinstance(event, StartEvent):
             logger.debug(f"Handling StartEvent: {event.__class__.__name__}")
@@ -363,7 +368,12 @@ class Dispatcher:
 
         # Instantiate the agent and run the step
         agent_instance = self.agent()
-        telemetry_headers = await run_context.get("telemetry_headers")
+        if topic.run_id not in self._telemetry_header_cache:
+            telemetry_headers = await run_context.get("telemetry_headers")
+            self._telemetry_header_cache[topic.run_id] = telemetry_headers
+        else:
+            telemetry_headers = self._telemetry_header_cache[topic.run_id]
+
         async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
             try:
                 result = await step_method(agent_instance, **kwargs)
