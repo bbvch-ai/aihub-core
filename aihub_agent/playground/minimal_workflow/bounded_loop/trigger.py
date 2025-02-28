@@ -4,15 +4,15 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from playground.minimal_workflow.bounded_iterative_loop.BoundedIterativeLoopAgent import BoundedIterativeLoopAgent
-from playground.minimal_workflow.bounded_iterative_loop.BoundedIterativeLoopAgentConfig import \
-    BoundedIterativeLoopAgentConfig
+from playground.minimal_workflow.bounded_loop.BoundedLoopAgent import BoundedLoopAgent
+from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import \
+    BoundedLoopAgentConfig
 
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=BoundedIterativeLoopAgent,
-        agent_config=BoundedIterativeLoopAgentConfig(
+        agent_type=BoundedLoopAgent,
+        agent_config=BoundedLoopAgentConfig(
             agent_id="bounded_iterative_loop_agent",
             name=LocaleString(en="Bounded Iterative Agent"),
             description=LocaleString(en="This is an agent that loops"),

@@ -1,4 +1,4 @@
 from aihub_lib.agents.AgentConfig import AgentConfig
 
-class BoundedIterativeLoopAgentConfig(AgentConfig):
+class BoundedLoopAgentConfig(AgentConfig):
     loop_max: int
