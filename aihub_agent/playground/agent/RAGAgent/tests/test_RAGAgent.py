@@ -32,7 +32,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
-from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store

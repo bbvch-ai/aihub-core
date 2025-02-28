@@ -16,6 +16,7 @@ start = time()
 class FanOutAgent(Agent):
     @step()
     async def start_step(self, event: StartEvent) -> List[FanOutA]:
+        global start
         start = time()
         print("[FanOutAgent.start_step]", event)
         return [FanOutA(payload=str(i)) for i in range(N)]

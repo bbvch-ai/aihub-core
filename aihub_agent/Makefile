@@ -29,5 +29,5 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                  -k "not azure"
 
-pr-ready: sort-imports format
+pr-ready: sort-imports lint format
 	@echo "Running full check (format, sort)..."

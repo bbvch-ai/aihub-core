@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 import jwt
 import pytest
-from pytest_bdd import given, parsers, scenario, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.testing.asyncio_utils.bdd import async_test

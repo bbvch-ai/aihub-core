@@ -3,7 +3,6 @@ from typing import Optional, Tuple
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from pydantic import Field
-from typing_extensions import Annotated
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMModelParameter
