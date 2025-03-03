@@ -25,17 +25,13 @@ class TokenAndOauth2Handler(AuthHandler):
 
         try:
             return await self.oauth2_handler(oauth_token)
-        except HTTPException as exc:
-            errors.append(f"OAuth2: {exc.detail}")
-            if exc.status_code != 401:
-                raise exc
+        except Exception:
+            pass
 
         try:
             return await self.bearer_handler(request, bearer_token)
-        except HTTPException as exc:
-            errors.append(f"Bearer: {exc.detail}")
-            if exc.status_code != 401:
-                raise exc
+        except Exception:
+            pass
 
         # If no strategy succeeded, raise an error with all failure details.
         raise HTTPException(status_code=401, detail=" | ".join(errors))
