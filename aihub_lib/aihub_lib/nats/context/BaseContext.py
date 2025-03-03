@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional, Annotated
+from typing import Annotated, Any, Optional
 
 from redis.asyncio import Redis
 
