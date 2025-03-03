@@ -1,8 +1,8 @@
 import asyncio
 import logging
+import uuid
 from typing import Generic, TypeVar
 
-from bson import ObjectId
 from nats.js import JetStreamContext
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
@@ -54,7 +54,7 @@ class JSPublisher(Generic[TEvent]):
                 f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
             )
 
-        message_id = event.event_id if hasattr(event, "event_id") else str(ObjectId())
+        message_id = str(uuid.uuid4())
         headers = {"Nats-Msg-Id": message_id}  # Deduplication
 
         for attempt in range(retries):
