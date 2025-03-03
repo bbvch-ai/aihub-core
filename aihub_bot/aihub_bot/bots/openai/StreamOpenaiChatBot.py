@@ -30,11 +30,6 @@ class StreamOpenaiChatBot(OpenaiChatBot):
                 return
             turn_context = OpenaiChatService.update_slack_turn_context(turn_context)
 
-        OpenaiChatService.get_system_message(
-            turn_context=turn_context,
-            path=self.path,
-        )
-
         response_generator: AsyncGenerator[str, None] = await OpenaiChatService.stream_chat_completion(
             turn_context=turn_context,
             path=self.path,
