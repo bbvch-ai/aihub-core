@@ -2,6 +2,8 @@ import asyncio
 from asyncio import sleep
 from typing import List, Optional
 
+from redis.asyncio import Redis
+
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -42,7 +44,7 @@ class AgentService:
     """
 
     @staticmethod
-    async def discover_agents(nc: NATS) -> List[AgentDTO]:
+    async def discover_agents(nc: NATS, redis: Redis) -> List[AgentDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -59,9 +61,9 @@ class AgentService:
             discovery_responses.append(event)
 
         topic_manager = TopicManager()
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(nc, redis)
         nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc, redis, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
 
@@ -90,7 +92,7 @@ class AgentService:
         return agents
 
     @staticmethod
-    async def get_agent(nc: NATS, agent_class: str, agent_id: str) -> AgentDTO:
+    async def get_agent(nc: NATS, redis: Redis, agent_class: str, agent_id: str) -> AgentDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -119,9 +121,9 @@ class AgentService:
             agent_found_event.set()
 
         topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(nc, redis)
         nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc, redis, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
 

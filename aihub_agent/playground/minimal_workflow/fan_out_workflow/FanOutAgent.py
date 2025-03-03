@@ -8,7 +8,7 @@ from aihub_lib.nats.events import StartEvent, StopEvent
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 
-N = 5
+N = 100
 
 start = time()
 
@@ -19,7 +19,8 @@ class FanOutAgent(Agent):
         global start
         start = time()
         print("[FanOutAgent.start_step]", event)
-        return [FanOutA(payload=str(i)) for i in range(N)]
+        payload = 'a' * 1024 * 512
+        return [FanOutA(payload=payload )for i in range(N)]
 
     @step()
     async def process_a(self, event: FanOutA) -> FanOutB:

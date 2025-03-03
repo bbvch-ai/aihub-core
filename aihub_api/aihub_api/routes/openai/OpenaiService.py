@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Literal, Optional, Tuple
 
+from redis.asyncio import Redis
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -63,14 +65,14 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS
+        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS, redis: Redis
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
         chat_models = [ModelDetails(id=model.name) for model in chat_models]
-        agent_dtos = await AgentService.discover_agents(nc)
+        agent_dtos = await AgentService.discover_agents(nc, redis)
         agent_dtos = [
             agent_dto
             for agent_dto in agent_dtos
@@ -95,7 +97,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_model_with_assistants(
-        chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS
+        chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS, redis: Redis,
     ) -> ModelDetails:
         """
         Fetch details for a specific chat model or ai-hub assistant by name.
@@ -106,7 +108,7 @@ class OpenaiService:
         except HTTPException:
             pass
         agent_class, agent_id = model_name.split("/")
-        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id)
+        agent_dto = await AgentService.get_agent(nc, redis, agent_class, agent_id)
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
         if not user.has_access_to_agent(agent_class, agent_id):
@@ -181,6 +183,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: AuthenticatedUser,
         nc: NATS,
+        redis: Redis,
         ws_receiver: WebSocketReceiver,
     ) -> ChatCompletion | StreamingResponse:
         """
@@ -196,17 +199,17 @@ class OpenaiService:
         if not user.has_access_to_agent(agent_class, agent_id):
             raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
-        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id)
+        agent_dto = await AgentService.get_agent(nc, redis, agent_class, agent_id)
 
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
 
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
-                agent_class, agent_id, chat_completion_request, user, nc, ws_receiver
+                agent_class, agent_id, chat_completion_request, user, nc, redis, ws_receiver
             )
 
-        return await OpenaiService.json_assistant(agent_class, agent_id, chat_completion_request, user, nc, ws_receiver)
+        return await OpenaiService.json_assistant(agent_class, agent_id, chat_completion_request, user, nc, redis, ws_receiver)
 
     @staticmethod
     async def json_assistant(
@@ -215,6 +218,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: AuthenticatedUser,
         nc: NATS,
+        redis: Redis,
         ws_receiver: WebSocketReceiver,
     ):
         resources: JsonResources = await ChatService.start_json_chat_interaction(
@@ -223,6 +227,7 @@ class OpenaiService:
             agent_id=agent_id,
             messages=chat_completion_request.messages,
             nc=nc,
+            redis=redis,
             ws_receiver=ws_receiver,
         )
         # Wait until all events are processed
@@ -257,6 +262,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: AuthenticatedUser,
         nc: NATS,
+        redis: Redis,
         ws_receiver: WebSocketReceiver,
     ):
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
@@ -265,6 +271,7 @@ class OpenaiService:
             agent_id=agent_id,
             messages=chat_completion_request.messages,
             nc=nc,
+            redis=redis,
             ws_receiver=ws_receiver,
         )
 

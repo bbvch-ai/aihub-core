@@ -6,6 +6,7 @@ from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
@@ -51,11 +52,13 @@ class JSSubscriber(Generic[TEvent]):
         queue_group: str,
         event_cls: Type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
+        redis: Redis,
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
         self.nc = nc
         self.js = js or nc.jetstream()
+        self.redis = redis
         self.subject = subject
         self.queue_group = queue_group
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
@@ -85,11 +88,11 @@ class JSSubscriber(Generic[TEvent]):
         """
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
-            topic = AgentTopic.from_subject(msg.subject)
-            event_data = msg.data
+            event_data = await self.redis.get(msg.subject)
             event = self.event_cls.deserialize_event(event_data)
             logger.debug(f"Deserialized event: {event}")
             await msg.ack()
+            topic = AgentTopic.from_subject(msg.subject)
             asyncio.create_task(self._process(event, topic, msg))
         except MsgAlreadyAckdError:
             pass
@@ -111,6 +114,7 @@ class JSSubscriber(Generic[TEvent]):
         nc: NATS,
         topic_manager: TopicManager,
         handler: Callable[[BaseEvent, Topic], Awaitable[None]],
+        redis: Redis,
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -131,6 +135,7 @@ class JSSubscriber(Generic[TEvent]):
             queue_group=queue_group,
             event_cls=BaseEvent,
             handler=handler,
+            redis=redis,
             js=js,
             ack_on_fail=ack_on_fail,
         )
@@ -141,6 +146,7 @@ class JSSubscriber(Generic[TEvent]):
         nc: NATS,
         topic_manager: TopicManager,
         handler: Callable[[ControlEvent, Topic], Awaitable[None]],
+        redis: Redis,
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -158,6 +164,7 @@ class JSSubscriber(Generic[TEvent]):
             queue_group=queue_group,
             event_cls=ControlEvent,
             handler=handler,
+            redis=redis,
             js=js,
             ack_on_fail=ack_on_fail,
         )
@@ -168,6 +175,7 @@ class JSSubscriber(Generic[TEvent]):
         nc: NATS,
         topic_manager: TopicManager,
         handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
+        redis: Redis,
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -185,6 +193,7 @@ class JSSubscriber(Generic[TEvent]):
             queue_group=queue_group,
             event_cls=DisplayEvent,
             handler=handler,
+            redis=redis,
             js=js,
             ack_on_fail=ack_on_fail,
         )
@@ -195,6 +204,7 @@ class JSSubscriber(Generic[TEvent]):
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[ControlEvent, Topic], Awaitable[None]],
+        redis: Redis,
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -212,6 +222,7 @@ class JSSubscriber(Generic[TEvent]):
             queue_group=queue_group,
             event_cls=ControlEvent,
             handler=handler,
+            redis=redis,
             js=js,
             ack_on_fail=ack_on_fail,
         )
@@ -222,6 +233,7 @@ class JSSubscriber(Generic[TEvent]):
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
+        redis: Redis,
         js: Optional[JetStreamContext] = None,
         ack_on_fail=True,
     ):
@@ -239,6 +251,7 @@ class JSSubscriber(Generic[TEvent]):
             queue_group=queue_group,
             event_cls=DisplayEvent,
             handler=handler,
+            redis=redis,
             js=js,
             ack_on_fail=ack_on_fail,
         )

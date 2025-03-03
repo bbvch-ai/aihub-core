@@ -4,6 +4,8 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
+from redis.asyncio import Redis
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.context.BaseContext import BaseContext
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent, UserMessageEvent
@@ -65,8 +67,9 @@ class RunTraceCoordinator:
     finalizes the run’s trace, ensuring all spans are ended properly.
     """
 
-    def __init__(self, nc: NATS):
+    def __init__(self, nc: NATS, redis: Redis):
         self.nc = nc
+        self.redis = redis
 
         endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
         auth_token = PhoenixConfig().PHOENIX_AUTH_TOKEN
@@ -131,6 +134,7 @@ class RunTraceCoordinator:
 
         subscriber = NCSubscriber.for_all_thread_events(
             nc=self.nc,
+            redis=self.redis,
             topic_manager=AgentThreadTopicManager.from_agent_topic(topic),
             handler=handler,
         )

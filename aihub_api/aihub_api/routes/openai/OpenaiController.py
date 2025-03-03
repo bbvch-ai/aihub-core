@@ -1,6 +1,8 @@
 import logging
 from typing import Annotated, Any, AsyncIterator, Callable, List, Literal, Optional
 
+from redis.asyncio import Redis
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
@@ -9,6 +11,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig i
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.redis.dependencies.use_redis import use_redis
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
@@ -99,9 +102,10 @@ class OpenaiController(Controller):
         )
         async def get_models(
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ModelResponse:
-            return await OpenaiService.get_models_with_assistants(self.chat_models, user, nc)
+            return await OpenaiService.get_models_with_assistants(self.chat_models, user, nc, redis)
 
         return self
 
@@ -128,10 +132,11 @@ class OpenaiController(Controller):
         async def get_model(
             full_path: str,
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ModelDetails:
             return await OpenaiService.get_model_with_assistants(
-                self.chat_models, model_name=full_path, user=user, nc=nc
+                self.chat_models, model_name=full_path, user=user, nc=nc, redis=redis,
             )
 
         return self
@@ -183,11 +188,12 @@ class OpenaiController(Controller):
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
             return await OpenaiService.chat_completion_with_assistants(
-                self.chat_models, completion_request.model, completion_request, user, nc, ws_receiver
+                self.chat_models, completion_request.model, completion_request, user, nc, redis, ws_receiver
             )
 
         return self

@@ -1,8 +1,11 @@
 import logging
 from typing import List, Optional
 
+from redis.asyncio import Redis, ConnectionPool
+
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.redis.RedisConfig import RedisConfig
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
@@ -74,6 +77,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.nc: Optional[NATS] = None
         self.js: Optional[JetStreamContext] = None
+        self.redis: Optional[Redis] = None
 
         self.agent_control_event_subscriber: Optional[JSSubscriber[ControlEvent]] = None
         self.js_publisher: Optional[JSPublisher] = None
@@ -173,22 +177,30 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.nc = NATS()
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
-        self.nc_publisher = NCPublisher(self.nc)
+        _, host, port = RedisConfig().REDIS_URL.split(":")
+        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+
+        self.nc_publisher = NCPublisher(self.nc, self.redis)
         self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+            self.nc,
+            self.redis,
+            TopicManager(),
+            self.discovery_handler
         )
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
+
         self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
+            redis=self.redis,
             js=self.js,
             handler=self.simulate_agent,
         )
         await self.agent_control_event_subscriber.start()
 
-        self.js_publisher = JSPublisher(self.js)
+        self.js_publisher = JSPublisher(self.js, self.redis)
 
     async def run(self):
         await self.start_simulation()

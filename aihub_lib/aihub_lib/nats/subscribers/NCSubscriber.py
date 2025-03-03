@@ -7,6 +7,7 @@ from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError
+from redis.asyncio import Redis
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -45,11 +46,13 @@ class NCSubscriber(Generic[TEvent]):
     def __init__(
         self,
         nc: NATS,
+        redis: Redis,
         subject: str,
         event_cls: Type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
     ):
         self.nc = nc
+        self.redis = redis
         self.subject = subject
         self.subscription: Optional[Subscription] = None
         self.event_cls = event_cls
@@ -77,7 +80,7 @@ class NCSubscriber(Generic[TEvent]):
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data!r}")
             topic = Topic.from_subject(msg.subject)
-            event_data = msg.data
+            event_data = await self.redis.get(msg.subject)
             event = self.event_cls.deserialize_event(event_data)
             logger.debug(f"Deserialized event: {event}")
             asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
@@ -97,6 +100,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_all_agent_control_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: TopicManager,
         handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
     ):
@@ -107,6 +111,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_subject_for_all_control_events_in_agent()
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
@@ -116,6 +121,7 @@ class NCSubscriber(Generic[TEvent]):
     def all_for_agent_display_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: TopicManager,
         handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
     ):
@@ -123,6 +129,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_subject_for_all_display_events_in_agent()
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
@@ -132,6 +139,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_thread_display_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
     ):
@@ -139,6 +147,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=DisplayEvent,
             handler=handler,
@@ -148,6 +157,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_thread_control_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[ControlEvent, Topic], Awaitable[None]],
     ):
@@ -155,6 +165,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=DisplayEvent,  # This seems like a potential bug: event_cls=DisplayEvent for control events?
             handler=handler,
@@ -164,6 +175,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_all_thread_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[ControlEvent, Topic], Awaitable[None]],
     ):
@@ -171,6 +183,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=BaseEvent,
             handler=handler,
@@ -180,6 +193,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_agent_discovery_request_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: TopicManager,
         handler: Callable[[BaseEvent, Topic], Awaitable[None]],
         call_id: str = "*",
@@ -188,6 +202,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_agent_discovery_subject_request(call_id)
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=BaseEvent,
             handler=handler,
@@ -197,6 +212,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_agent_discovery_response_events(
         cls,
         nc: NATS,
+        redis: Redis,
         topic_manager: TopicManager,
         handler: Callable[[BaseEvent, Topic], Awaitable[None]],
         call_id: str = "*",
@@ -205,6 +221,7 @@ class NCSubscriber(Generic[TEvent]):
         subject = topic_manager.get_agent_discovery_subject_response(call_id)
         return cls(
             nc=nc,
+            redis=redis,
             subject=subject,
             event_cls=BaseEvent,
             handler=handler,

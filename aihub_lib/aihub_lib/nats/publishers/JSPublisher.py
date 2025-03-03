@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import uuid
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Annotated
 
 from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -29,8 +30,15 @@ class JSPublisher(Generic[TEvent]):
       and warns if, for example, a control event is published to a display subject.
     """
 
-    def __init__(self, js: JetStreamContext):
+    def __init__(
+            self,
+            js: JetStreamContext,
+            redis: Redis,
+            default_ttl: Annotated[int, "How long to store event info in redis"] = 60 * 60, # 1 hour in seconds
+    ):
         self.js = js
+        self.redis = redis
+        self.default_ttl = default_ttl
 
     async def publish_event(self, event: TEvent, subject: str, retries=10):
         """
@@ -43,6 +51,8 @@ class JSPublisher(Generic[TEvent]):
         logger.debug(f"Publishing event {event.__class__.__name__} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
+
+        await self.redis.set(subject, serialized_event, ex=self.default_ttl)
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not isinstance(event, ControlEvent):
             logger.warning(
@@ -60,7 +70,7 @@ class JSPublisher(Generic[TEvent]):
         for attempt in range(retries):
             try:
                 future = await asyncio.wait_for(
-                    self.js.publish_async(subject, serialized_event.encode(), headers=headers), timeout=5
+                    self.js.publish_async(subject, b'', headers=headers), timeout=5
                 )
                 ack = await asyncio.wait_for(future, timeout=5)
                 logger.debug(f"Publish ACK received: {ack}")

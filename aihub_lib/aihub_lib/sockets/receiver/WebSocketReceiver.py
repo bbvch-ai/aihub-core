@@ -2,6 +2,7 @@ import logging
 
 from bson import ObjectId
 from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events import DisplayEvent, StartEvent
@@ -50,8 +51,8 @@ class WebSocketReceiver:
     - If it's a start event, publishes a start event to trigger agent processing.
     """
 
-    def __init__(self, js: JetStreamContext):
-        self.publisher = JSPublisher(js)
+    def __init__(self, js: JetStreamContext, redis: Redis):
+        self.publisher = JSPublisher(js, redis)
 
     async def receive_event(self, ws_event: WSUserEvent, user: AuthenticatedUser):
         """

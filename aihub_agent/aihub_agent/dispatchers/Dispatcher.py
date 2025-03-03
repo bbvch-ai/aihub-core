@@ -110,10 +110,10 @@ class Dispatcher:
         self.topic_manager = topic_manager
         self.locale_handler = locale_handler
 
-        self.publisher = JSPublisher(self.js)
+        self.publisher = JSPublisher(self.js, self.redis)
         self.event_store = DistributedEventStore(redis)
         self.step_store = DistributedStepStore(redis)
-        self.tracer = RunTraceCoordinator(self.nc)
+        self.tracer = RunTraceCoordinator(self.nc, redis)
         self.step_configs = agent_config.get_step_configs()
 
     async def handle_event(
@@ -488,6 +488,7 @@ class Dispatcher:
         logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
         event_subscriber = NCSubscriber.for_all_thread_events(
             nc=self.nc,
+            redis=self.redis,
             topic_manager=AgentThreadTopicManager.from_agent_topic(aitl_request_event.other_agent_topic),
             handler=convert_event_to_agent_in_the_loop_response,
         )

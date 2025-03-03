@@ -2,8 +2,11 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
+from redis.asyncio import Redis, ConnectionPool
+
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.redis.RedisConfig import RedisConfig
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import FastAPI
 from mongoengine import connect
@@ -26,7 +29,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
-        ws_receiver = WebSocketReceiver(js=js)
+        _, host, port = RedisConfig().REDIS_URL.split(":")
+        redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+        ws_receiver = WebSocketReceiver(js=js, redis=redis)
 
         # Store resources in app state
         app.state.nc = nc

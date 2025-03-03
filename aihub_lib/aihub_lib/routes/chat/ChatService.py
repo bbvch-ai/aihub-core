@@ -6,6 +6,7 @@ from typing import List, Tuple
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
+from redis.asyncio import Redis
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
@@ -86,6 +87,7 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
+        redis: Redis,
         ws_receiver: WebSocketReceiver,
     ) -> StreamingResources:
         """
@@ -108,6 +110,7 @@ class ChatService:
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
+            redis=redis,
             topic_manager=topic_manager,
             handler=response_aggregator,
         )
@@ -126,6 +129,7 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
+        redis: Redis,
         ws_receiver: WebSocketReceiver,
     ) -> JsonResources:
         """
@@ -160,6 +164,7 @@ class ChatService:
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
+            redis=redis,
             topic_manager=topic_manager,
             handler=response_aggregator,
         )

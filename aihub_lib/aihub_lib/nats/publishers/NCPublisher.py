@@ -1,7 +1,9 @@
 import logging
-from typing import Generic, TypeVar
+import lzma
+from typing import Generic, TypeVar, Annotated
 
 from nats.aio.client import Client as NATS
+from redis.asyncio import Redis
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -28,8 +30,15 @@ class NCPublisher(Generic[TEvent]):
       inconsistent naming conventions early.
     """
 
-    def __init__(self, nc: NATS):
+    def __init__(self,
+                 nc: NATS,
+                 redis: Redis,
+                 default_ttl: Annotated[int, "How long to store event info in redis"] = 60 * 60,  # 1 hour in seconds
+
+                 ):
         self.nc = nc
+        self.redis = redis
+        self.default_ttl = default_ttl
 
     async def publish_event(self, event: TEvent, subject: str):
         """
@@ -42,6 +51,8 @@ class NCPublisher(Generic[TEvent]):
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
 
+        await self.redis.set(subject, lzma.compress(serialized_event.encode()), ex=self.default_ttl)
+
         if f".{TopicManager.CONTROL_EVENT}." in subject and not isinstance(event, ControlEvent):
             logger.warning(
                 f"Control event {event.__class__.__name__} is being published to a non-control subject: {subject}"
@@ -52,4 +63,4 @@ class NCPublisher(Generic[TEvent]):
                 f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
             )
 
-        await self.nc.publish(subject, serialized_event.encode())
+        await self.nc.publish(subject, b'')

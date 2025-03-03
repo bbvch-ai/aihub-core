@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.redis.RedisConfig import RedisConfig
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -122,6 +122,7 @@ class AgentTestRunner(AgentRunner):
 
         event_subscriber = NCSubscriber.for_all_thread_events(
             nc=self.nc,
+            redis=self.redis,
             topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
                 self.topic_manager,
                 thread_id=thread_id,
@@ -134,6 +135,7 @@ class AgentTestRunner(AgentRunner):
 
         self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
+            redis=self.redis,
             topic_manager=TopicManager(),
             handler=self.observe_event,
         )
@@ -141,6 +143,7 @@ class AgentTestRunner(AgentRunner):
 
         self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
             nc=self.nc,
+            redis=self.redis,
             topic_manager=TopicManager(),
             handler=self.observe_event,
         )

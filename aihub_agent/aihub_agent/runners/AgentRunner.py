@@ -167,9 +167,9 @@ class AgentRunner:
             self.locale_handler,
         )
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(self.nc, self.redis)
         self.discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+            self.nc, self.redis, TopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
@@ -178,6 +178,7 @@ class AgentRunner:
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,
+            redis=self.redis,
             js=self.js,
         )
         await self.control_event_subscriber.start()
@@ -237,7 +238,7 @@ class AgentRunner:
 
         This allows external code to trigger a new run by injecting a start event.
         """
-        publisher = JSPublisher(self.js)
+        publisher = JSPublisher(self.js, self.redis)
         thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
             self.topic_manager,
             thread_id,

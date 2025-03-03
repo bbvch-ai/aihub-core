@@ -1,8 +1,11 @@
 from typing import Annotated, Any, Callable, List
 
+from redis.asyncio import Redis
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.redis.dependencies.use_redis import use_redis
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
@@ -51,12 +54,13 @@ class AgentController(Controller):
         @self.router.get(route)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all discovered agents. Filters out agents the user cannot access.
             """
-            agents = await AgentService.discover_agents(nc)
+            agents = await AgentService.discover_agents(nc, redis)
             return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
 
         return self
@@ -65,6 +69,7 @@ class AgentController(Controller):
         @self.router.get(route)
         async def get_agent(
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             agent_class: str,
             agent_id: str,
             user: AuthenticatedUser = Security(self.auth),
@@ -74,6 +79,6 @@ class AgentController(Controller):
             """
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-            return await AgentService.get_agent(nc, agent_class, agent_id)
+            return await AgentService.get_agent(nc, redis, agent_class, agent_id)
 
         return self

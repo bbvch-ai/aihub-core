@@ -1,6 +1,8 @@
 import logging
 from typing import List, Optional
 
+from redis.asyncio import Redis, ConnectionPool
+
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
@@ -9,6 +11,7 @@ from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDis
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.redis.RedisConfig import RedisConfig
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -73,6 +76,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
 
         self.nc: Optional[NATS] = None
         self.js: Optional[JetStreamContext] = None
+        self.redis: Optional[Redis] = None
 
         self.agent_control_event_subscriber: Optional[JSSubscriber[ControlEvent]] = None
         self.js_publisher: Optional[JSPublisher] = None
@@ -158,22 +162,26 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self.nc = NATS()
         await self.nc.connect(servers=["nats://localhost:4222"])
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(self.nc, self.redis)
         self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+            self.nc, self.redis, TopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
+        _, host, port = RedisConfig().REDIS_URL.split(":")
+        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+
         self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
+            redis=self.redis,
             js=self.js,
             handler=self.simulate_agent,
         )
         await self.agent_control_event_subscriber.start()
 
-        self.js_publisher = JSPublisher(self.js)
+        self.js_publisher = JSPublisher(self.js, self.redis)
 
     async def run(self):
         await self.start_simulation()

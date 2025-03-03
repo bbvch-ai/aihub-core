@@ -2,7 +2,10 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from redis.asyncio import Redis, ConnectionPool
+
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.nats.redis.RedisConfig import RedisConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -72,6 +75,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
+        _, host, port = RedisConfig().REDIS_URL.split(":")
+        redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
         topic_manager = TopicManager()
 
@@ -80,6 +85,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         persist_subscriber = JSSubscriber.for_all_agent_events(
             nc=nc,
             js=js,
+            redis=redis,
             topic_manager=topic_manager,
             handler=persister.persist_event,
             ack_on_fail=False,
@@ -91,12 +97,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         ws_sender = WebSocketSender(ws_manager=ws_manager)
         ws_subscriber = NCSubscriber.all_for_agent_display_events(
             nc=nc,
+            redis=redis,
             topic_manager=topic_manager,
             handler=ws_sender.send_event,
         )
         await ws_subscriber.start()
 
-        ws_receiver = WebSocketReceiver(js=js)
+        ws_receiver = WebSocketReceiver(js=js, redis=redis)
 
         # Store resources in app state
         app.state.nc = nc
