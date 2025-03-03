@@ -30,11 +30,6 @@ class StreamAgentChatBot(AgentChatBot):
                 return
             turn_context = AgentChatService.update_slack_turn_context(turn_context)
 
-        AgentChatService.get_system_message(
-            turn_context=turn_context,
-            path=self.path,
-        )
-
         response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat_completion(
             turn_context=turn_context,
             path=self.path,
