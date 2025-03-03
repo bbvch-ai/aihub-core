@@ -12,6 +12,7 @@ from aihub_agent.agents.basic.FewShotAgent.events.RightAgentEvent import RightAg
 from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
+from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -20,7 +21,6 @@ from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLM
     SelfHostedLLMConfig,
     SelfHostedLLMParameter,
 )
-from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
@@ -235,10 +235,10 @@ def then_llm_event(agent_runner: AgentTestRunner):
 
 
 @then("a StopEvent is present")
-def then_stop_event_present(agent_runner: AgentTestRunner):
+def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
 
 
 @then("a GuardRejectionEvent is present")
-def then_stop_event_present(agent_runner: AgentTestRunner):
+def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_event_of_type(GuardRejectionEvent), "Agent did not produce GuardRejectionEvent"

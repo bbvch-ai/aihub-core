@@ -2,7 +2,6 @@ import asyncio
 from os.path import abspath, join, dirname
 
 from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.chat.ChatController import ChatController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.openai.OpenaiController import OpenaiController

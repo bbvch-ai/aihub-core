@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Callable, List
+from typing import Annotated, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler

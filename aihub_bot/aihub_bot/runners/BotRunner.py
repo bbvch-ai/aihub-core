@@ -2,7 +2,6 @@ import logging
 from typing import List, Optional
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
 from aihub_lib.routes.Controller import Controller
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles

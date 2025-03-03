@@ -6,6 +6,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Dummy authentication handler implementations ---
@@ -88,8 +89,6 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
 def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":
-    from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
-
     """Build a MultiAuthHandler from the provided table."""
     headers = datatable[0]
     handlers: list[AuthHandler] = []
