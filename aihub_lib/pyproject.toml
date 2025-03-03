@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.86.0"
+version = "v0.87.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -51,6 +51,7 @@ fastapi = "^0.115.8"
 azure-mgmt-cognitiveservices = "^13.6.0"
 azure-storage-file-datalake = "^12.18.1"
 adlfs = "^2024.12.0"
+redis = "^5.2.1"
 
 
 [tool.poetry.group.dev.dependencies]

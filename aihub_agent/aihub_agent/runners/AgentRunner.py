@@ -16,6 +16,7 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from redis.asyncio import ConnectionPool, Redis
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.Dispatcher import Dispatcher
@@ -66,11 +67,13 @@ class AgentRunner:
     def __init__(
         self,
         servers: List[str],
+        redis_url: str,
         agent_type: Type[Agent],
         agent_config: AgentConfig,
         locale_paths: Optional[List[str]] = None,
     ):
         self.servers = servers
+        self.redis_url = redis_url
         self.agent_type = agent_type
         self.agent_config = agent_config
         self.running = False
@@ -147,6 +150,8 @@ class AgentRunner:
         await self.nc.connect(servers=self.servers)
 
         self.js = self.nc.jetstream()
+        _, host, port = self.redis_url.split(":")
+        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
         # Initialize dispatcher
         self.dispatcher = Dispatcher(
@@ -154,6 +159,7 @@ class AgentRunner:
             self.agent_config,
             self.nc,
             self.js,
+            self.redis,
             self.topic_manager,
             self.locale_handler,
         )
@@ -187,8 +193,13 @@ class AgentRunner:
         logger.debug(f"Shutting down {self.agent_class}...")
         self._stop_event.set()
         self.running = False
+
         if self.nc:
+            await self.nc.drain()
             await self.nc.close()
+
+        if self.redis:
+            await self.redis.close()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""

@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pytest_bdd import given, parsers, scenario, scenarios, then, when
+from fastapi.security import HTTPBearer
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler

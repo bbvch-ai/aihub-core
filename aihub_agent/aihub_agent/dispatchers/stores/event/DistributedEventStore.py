@@ -3,7 +3,7 @@ from typing import Annotated, Any, Dict, List, Optional
 
 from aihub_lib.nats.events import ControlEvent
 from cachetools import TTLCache
-from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
@@ -19,18 +19,6 @@ class DistributedEventStore(StoreBase):
     all events for a given run are persisted in a JetStream KV store, making them accessible across
     distributed environments and restarts.
 
-    ### Key Operations
-    - **store_event(run_id, event):**
-      Appends the new event to the list of events for its type, ensuring no duplicate `event_id` entries.
-      Stores events in a type-wise manner (e.g., all StartEvents together, all StopEvents together).
-
-    - **get_events_of_type(run_id, event_type):**
-      Fetches all events of a specific type for the given run, deserializing them into event objects.
-
-    - **get_all_events(run_id, before=None):**
-      Retrieves all events for a run, optionally filtered by a timestamp (only events created_at ≤ before).
-      Useful for determining whether enough events have occurred to trigger certain steps.
-
     ### Persistence Details
     - Each run has its own bucket (e.g. "events_RUNID").
     - Keys in the bucket correspond to event type names (e.g. "StartEvent").
@@ -43,23 +31,23 @@ class DistributedEventStore(StoreBase):
 
     _cache = TTLCache(maxsize=10_000, ttl=300)
 
-    def __init__(self, js: JetStreamContext):
-        super().__init__(js, prefix="events")
+    def __init__(self, redis: Redis):
+        super().__init__(redis, prefix="events")
 
     async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
         """
-        Get a JSON value from the key-value store with caching.
+        Get a JSON value from Redis with caching.
         Uses TTLCache to automatically expire entries after 5 minutes.
         """
         # Create a unique cache key combining run_id and key
-        cache_key = f"{run_id}:{key}"
+        cache_key = self._cache_key_from_key(run_id, key)
 
         # Check if the value is in cache
         if cache_key in self._cache:
             logger.debug(f"Cache hit for {cache_key}")
             return self._cache[cache_key]
 
-        # If not in cache, get the value from the store
+        # If not in cache, get the value from Redis
         result = await super().get_json_value(run_id, key, default_value)
 
         # Cache the result (TTLCache will automatically expire it after the TTL)
@@ -68,21 +56,35 @@ class DistributedEventStore(StoreBase):
 
         return result
 
+    def _event_key(self, event_type: str, event_id: str) -> str:
+        """Builds a namespaced Redis key for an event."""
+        return f"{event_type}.{event_id}"
+
+    def _cache_key(self, event_type: str, event_id: str, run_id: str) -> str:
+        """Builds a unique cache key for a run and key."""
+        key = self._event_key(event_type, event_id)
+        return f"{run_id}:{key}"
+
+    def _cache_key_from_key(self, run_id: str, key: str) -> str:
+        """Builds a unique cache key for a run and key."""
+        return f"{run_id}:{key}"
+
     async def store_event(
         self,
         run_id: Annotated[str, "The identifier for the run."],
         event: Annotated[ControlEvent, "The event instance to store."],
     ):
         """
-        Stores an event using a direct key (ClassName.EventId).
-        This approach completely eliminates race conditions.
+        Stores an event in Redis using a direct key (ClassName.EventId).
         """
         event_type = event.__class__.__name__
         event_data = event.model_dump()
         event_id = event_data["event_id"]
 
-        # Create a unique key for this event
-        key = f"{event_type}.{event_id}"
+        key = self._event_key(event_type, event_id)
+        cache_key = self._cache_key(event_type, event_id, run_id)
+
+        self._cache[cache_key] = event_data
 
         # Store the event directly
         success = await self.put_json_value(run_id, key, event_data)
@@ -100,79 +102,33 @@ class DistributedEventStore(StoreBase):
         """
         Returns all events of the specified type by scanning for keys with the class name prefix.
         """
-        kv = await self._get_kv_store(run_id)
         events = []
+        prefix = f"{class_name}.*"
+        matching_keys = await self.get_all_keys(run_id, prefix)
 
-        try:
-            # Get all keys in the store
-            all_keys = await kv.keys()
+        # Retrieve and deserialize each matching event
+        for key in matching_keys:
+            event_data = await self.get_json_value(run_id, key)
+            if event_data:
+                events.append(ControlEvent.deserialize_event(event_data))
 
-            # Filter keys that match the class_name prefix
-            prefix = f"{class_name}."
-            matching_keys = [key for key in all_keys if key.startswith(prefix)]
+        logger.debug(f"Retrieved {len(events)} events of type {class_name}")
+        return events
 
-            # Retrieve and deserialize each matching event
-            for key in matching_keys:
-                event_data = await self.get_json_value(run_id, key)
-                if event_data:
-                    events.append(ControlEvent.deserialize_event(event_data))
-
-            logger.debug(f"Retrieved {len(events)} events of type {class_name}")
-            return events
-
-        except Exception as e:
-            logger.error(f"Error fetching events of type {class_name}: {e}")
-            return []
-
-    async def get_all_events(
+    async def get_events_of_multiple_types(
         self,
         run_id: Annotated[str, "The run identifier."],
+        class_names: Annotated[List[str], "The event subclass names to fetch."],
         before: Annotated[Optional[int], "Filter timestamp; only include events created_at ≤ before."] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves all events for a run, organized by event type name.
-        Scans all keys and groups them by class name.
+        Uses a combined pattern to fetch keys for all event types in a single operation.
         """
-        kv = await self._get_kv_store(run_id)
-        events: Dict[str, List[ControlEvent]] = {}
+        event_map: Dict[str, List[ControlEvent]] = {}
 
-        try:
-            # Get all keys
-            all_keys = await kv.keys()
+        for class_name in class_names:
+            events = await self.get_events_of_type(run_id, class_name)
+            event_map[class_name] = [event for event in events if before is None or event.created_at <= before]
 
-            # Process each key that contains a dot (indicating it's an event key)
-            for key in all_keys:
-                if "." not in key:
-                    continue
-
-                class_name, _ = key.split(".", 1)
-
-                # Skip keys that aren't events (like utility keys)
-                if class_name.startswith("_"):
-                    continue
-
-                # Fetch the event data
-                event_data = await self.get_json_value(run_id, key)
-                if not event_data:
-                    continue
-
-                # Deserialize the event
-                event = ControlEvent.deserialize_event(event_data)
-
-                # Apply timestamp filter if provided
-                if before is not None and event.created_at > before:
-                    continue
-
-                # Add to the appropriate list in the result dictionary
-                if class_name not in events:
-                    events[class_name] = []
-                events[class_name].append(event)
-
-            # Log counts for debugging
-            for class_name, event_list in events.items():
-                logger.debug(f"Retrieved {len(event_list)} total events of type {class_name}")
-
-        except Exception as e:
-            logger.error(f"Error retrieving all events: {e}")
-
-        return events
+        return event_map
