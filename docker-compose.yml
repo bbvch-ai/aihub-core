@@ -10,7 +10,7 @@ services:
     restart: always
 
   nats:
-    image: nats:latest
+    image: nats:alpine
     command: >
       -js
       -m 8222

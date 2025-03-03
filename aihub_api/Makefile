@@ -29,5 +29,5 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                   || echo "No tests found. Skipping..."
 
-pr-ready: sort-imports lint format
+pr-ready: sort-imports format lint
 	@echo "Running full check (format, sort)..."
