@@ -73,4 +73,3 @@ class JSPublisher(Generic[TEvent]):
             await asyncio.sleep(1)  # Wait before retrying
 
         logger.error(f"Failed to publish event {event.__class__.__name__} after {retries} attempts")
-

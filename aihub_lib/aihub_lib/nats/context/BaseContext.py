@@ -34,7 +34,10 @@ class BaseContext:
         self,
         redis: Annotated[Redis, "Redis for KV storage"],
         store_name: Annotated[str, "Unique name under which all kv-pairs will be stored"],
-        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60 * 60 * 24 * 30,  # 30 days in seconds
+        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60
+        * 60
+        * 24
+        * 30,  # 30 days in seconds
     ):
         self.redis = redis
         self.store_name = store_name
