@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 

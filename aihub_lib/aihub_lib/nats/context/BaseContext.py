@@ -1,9 +1,8 @@
-import asyncio
 import json
 import logging
-from typing import Any, Callable, Optional
+from typing import Annotated, Any, Optional
 
-from nats.js.client import JetStreamContext
+from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
@@ -31,61 +30,81 @@ class BaseContext:
     consistency, making the solution robust against failures and restarts.
     """
 
-    def __init__(self, js: JetStreamContext, store_name: str):
-        self.js = js
+    def __init__(
+        self,
+        redis: Annotated[Redis, "Redis for KV storage"],
+        store_name: Annotated[str, "Unique name under which all kv-pairs will be stored"],
+        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60 * 60 * 24 * 30,  # 30 days in seconds
+    ):
+        self.redis = redis
         self.store_name = store_name
-        self._kv = None
+        self.default_ttl = default_ttl
 
-    async def _ensure_kv_store(self):
-        """
-        Lazily fetches the KV store reference from JetStream.
-        This avoids initializing the store prematurely and handles missing stores gracefully.
-        """
-        if self._kv is None:
-            self._kv = await self.js.key_value(self.store_name)
+    def _build_key(self, key: str) -> str:
+        """Build a namespaced Redis key"""
+        return f"{self.store_name}:{key}"
 
     async def set(self, key: str, value: Any):
         """
         Store a JSON-serializable value under the given key.
         Overwrites any existing value.
         """
-        await self._ensure_kv_store()
+        redis_key = self._build_key(key)
         serialized_value = json.dumps(value)
-        logger.debug(f"Storing key '{key}' with value: {serialized_value}")
-        await self._kv.put(key, serialized_value.encode())
+        logger.debug(f"Storing key '{redis_key}' with value: {serialized_value}")
+        await self.redis.set(redis_key, serialized_value, ex=self.default_ttl)
 
     async def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
         """
         Retrieve the value for `key`, returning `default` if not found or if there's an error.
         Deserializes the stored JSON string into a Python object.
         """
-        await self._ensure_kv_store()
+        redis_key = self._build_key(key)
         try:
-            entry = await self._kv.get(key)
-            val = json.loads(entry.value.decode())
-            logger.debug(f"Retrieved key '{key}' with value: {val}")
+            value = await self.redis.get(redis_key)
+            if value is None:
+                return default
+
+            val = json.loads(value.decode())
+            logger.debug(f"Retrieved key '{redis_key}' with value: {val}")
             return val
         except Exception as e:
-            logger.error(f"Error getting key '{key}': {e}")
+            logger.error(f"Error getting key '{redis_key}': {e}")
             return default
 
     async def delete(self, key: str):
         """Remove a specific key from the store, ignoring errors if the key doesn't exist."""
-        await self._ensure_kv_store()
+        redis_key = self._build_key(key)
         try:
-            await self._kv.delete(key)
-            logger.debug(f"Deleted key '{key}'")
+            await self.redis.delete(redis_key)
+            logger.debug(f"Deleted key '{redis_key}'")
         except Exception as e:
-            logger.error(f"Error deleting key '{key}': {e}")
+            logger.error(f"Error deleting key '{redis_key}': {e}")
 
     async def delete_all(self):
         """
-        Delete the entire KV bucket.
-        After this, the internal `_kv` reference is cleared, requiring a fresh initialization if needed again.
+        Delete all keys with the store's prefix.
         """
-        await self.js.delete_key_value(self.store_name)
-        logger.debug(f"Deleted entire store '{self.store_name}'")
-        self._kv = None
+        try:
+            pattern = f"{self.store_name}:*"
+            # Get all keys with the prefix
+            cursor = b"0"
+            keys_to_delete = []
+
+            while cursor:
+                cursor, keys = await self.redis.scan(cursor=cursor, match=pattern, count=10_000)
+                keys_to_delete.extend(keys)
+
+                if cursor == b"0":
+                    break
+
+            if keys_to_delete:
+                await self.redis.delete(*keys_to_delete)
+                logger.debug(f"Deleted {len(keys_to_delete)} keys from store '{self.store_name}'")
+        except Exception as e:
+            logger.error(f"Error deleting all keys for store '{self.store_name}': {e}")
+
+        # No need to clear _redis as we can reuse the connection
 
     async def get_all(self) -> dict:
         """
@@ -94,32 +113,39 @@ class BaseContext:
         Returns a dictionary mapping keys to deserialized values. If a key is unreadable,
         logs the error and skips it.
         """
-        await self._ensure_kv_store()
         try:
-            keys = await self._kv.keys()
+            pattern = f"{self.store_name}:*"
+            cursor = b"0"
+            keys = []
+
+            while cursor:
+                cursor, batch = await self.redis.scan(cursor=cursor, match=pattern, count=10_000)
+                keys.extend(batch)
+
+                if cursor == b"0":
+                    break
+
             if not keys:
                 return {}
-
-            # Filter out mutex keys
-            keys = [k for k in keys if not k.startswith("mutex_")]
 
             all_data = {}
             for key in keys:
                 try:
-                    entry = await self._kv.get(key)
-                    value = json.loads(entry.value.decode())
-                    all_data[key] = value
+                    value = await self.redis.get(key)
+                    if value:
+                        # Extract the original key (remove the store_name prefix)
+                        original_key = key.decode().split(":", 1)[1]
+                        all_data[original_key] = json.loads(value.decode())
                 except Exception as e:
-                    logger.error(f"Error retrieving value for key '{key}': {e}")
+                    logger.error(f"Error retrieving value for key '{key.decode()}': {e}")
             return all_data
         except Exception as e:
-            logger.error(f"Error retrieving all keys: {e}")
+            logger.error(f"Error retrieving all keys for store '{self.store_name}': {e}")
             return {}
 
     async def to_serializable(self) -> dict:
         """
-        Convert the entire context (store name and all key-value data) into a dictionary suitable for serialization.
-        Useful for exporting state or debugging.
+        Convert the entire context into a dictionary suitable for serialization.
         """
         return {
             "store_name": self.store_name,
@@ -128,8 +154,7 @@ class BaseContext:
 
     async def to_json(self) -> str:
         """
-        Serialize the context's entire state (including all keys and values) into a JSON string.
-        This can be used for logging, backups, or transferring context state between systems.
+        Serialize the context's entire state into a JSON string.
         """
         serializable_data = await self.to_serializable()
         return json.dumps(serializable_data)

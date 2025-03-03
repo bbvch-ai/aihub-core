@@ -1,9 +1,8 @@
 import logging
-from typing import Annotated
 
 import httpx
 import jwt
-from fastapi import Depends, HTTPException, Security
+from fastapi import HTTPException, Security
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError

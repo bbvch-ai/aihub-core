@@ -1,5 +1,5 @@
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import DiscoveryRequestEvent, AgentDiscoveryResponseEvent
+from aihub_lib.nats.events import DiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from bson import ObjectId
@@ -30,7 +30,7 @@ def _():
 @when(parsers.parse("a DiscoveryRequestEvent is sent"))
 @async_test
 async def _(agent_runner: AgentTestRunner):
-    async with agent_runner.test_run() as topic:
+    async with agent_runner.test_run():
         call_id = str(ObjectId())
         await agent_runner.nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),

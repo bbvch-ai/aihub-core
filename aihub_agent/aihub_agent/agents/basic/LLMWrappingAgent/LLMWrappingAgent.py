@@ -1,5 +1,5 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.events import LLMEvent, StartEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import LLMEvent, StopEvent, UserMessageEvent
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig

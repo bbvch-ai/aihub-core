@@ -1,9 +1,8 @@
 import logging
 import random
 import time
-from typing import Annotated
 
-from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
@@ -46,8 +45,8 @@ class DistributedStepStore(StoreBase):
     If we try again, we first `get_execution_count` to ensure we're not over the limit.
     """
 
-    def __init__(self, js: JetStreamContext):
-        super().__init__(js, prefix="steps")
+    def __init__(self, redis: Redis):
+        super().__init__(redis, prefix="steps")
 
     async def mark_run_as_crashed(self, run_id: str):
         """
@@ -72,29 +71,13 @@ class DistributedStepStore(StoreBase):
         """
         Retrieves how many times a given step has executed for the specified run
         by counting individual counter keys.
-
-        This method is always accurate because it directly counts the keys rather than
-        relying on a cached value.
         """
-        kv = await self._get_kv_store(run_id)
+        all_keys = await self.get_all_keys(run_id, pattern=f"{step_name}.counter.*")
+        count = len(all_keys)
+        logger.debug(f"Counted {count} executions for step '{step_name}'")
+        return count
 
-        try:
-            # Get all keys
-            all_keys = await kv.keys()
-
-            # Filter keys for this step's counters
-            counter_prefix = f"{step_name}.counter."
-            counter_keys = [key for key in all_keys if key.startswith(counter_prefix)]
-            count = len(counter_keys)
-
-            logger.debug(f"Counted {count} executions for step '{step_name}'")
-            return count
-
-        except Exception as e:
-            logger.error(f"Error counting executions for step '{step_name}': {e}")
-            return 0
-
-    async def increment_execution_count(self, run_id: Annotated[str, "Run ID"], step_name: Annotated[str, "Step name"]):
+    async def increment_execution_count(self, run_id: str, step_name: str):
         """
         Increments the execution count by creating a unique counter key for this execution.
         This approach completely avoids race conditions as each execution creates its own key.
