@@ -27,7 +27,7 @@ class DocumentIntelligenceLoader(BaseReader):
         with fs.open(file, "rb") as pdf_file:
             poller = self.document_intelligence_client.begin_analyze_document(
                 "prebuilt-layout",
-                analyze_request=pdf_file,
+                body=pdf_file,
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
             )
