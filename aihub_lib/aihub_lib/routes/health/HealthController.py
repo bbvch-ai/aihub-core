@@ -1,4 +1,3 @@
-
 from fastapi import Security
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
