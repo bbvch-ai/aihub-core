@@ -16,9 +16,7 @@ scenarios("./features/bounded_loop_agent.feature")
 
 
 @given(
-    parsers.parse(
-        'a BoundedLoopAgent runner with a loop_max value of "{loop_max:d}"'
-    ),
+    parsers.parse('a BoundedLoopAgent runner with a loop_max value of "{loop_max:d}"'),
     target_fixture="agent_runner",
 )
 def _(loop_max: int):
@@ -29,7 +27,7 @@ def _(loop_max: int):
             name=LocaleString(en="Bounded Iterative Agent"),
             description=LocaleString(en="This is an agent that loops"),
             system_prompt=LocaleString(en="You are an agent"),
-            loop_max=2
+            loop_max=2,
         ),
     )
 
@@ -61,6 +59,7 @@ def _(loop_max: int, agent_runner: AgentTestRunner):
 def _(loop_max: int, agent_runner: AgentTestRunner):
     received_loop_max = len(agent_runner.get_events_of_type(ProcessEvent))
     assert received_loop_max == loop_max, f"Agent received {received_loop_max} ProcessEvents, but expected {loop_max}"
+
 
 @then("a DecisionEvent is present")
 def _(agent_runner: AgentTestRunner):
