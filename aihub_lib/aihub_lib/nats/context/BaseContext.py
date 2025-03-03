@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Annotated
 
 from redis.asyncio import Redis
 
@@ -32,9 +32,9 @@ class BaseContext:
 
     def __init__(
         self,
-        redis: Redis,
-        store_name: str,
-        default_ttl: int = 60 * 60 * 24,  # 24 hour in seconds
+        redis: Annotated[Redis, "Redis for KV storage"],
+        store_name: Annotated[str, "Unique name under which all kv-pairs will be stored"],
+        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60 * 60 * 24 * 30,  # 30 days in seconds
     ):
         self.redis = redis
         self.store_name = store_name

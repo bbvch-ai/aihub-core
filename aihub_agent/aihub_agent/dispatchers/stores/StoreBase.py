@@ -36,7 +36,7 @@ class StoreBase:
         self,
         redis: Annotated[Redis, "Redis for KV storage"],
         prefix: Annotated[str, "Prefix for Redis keys"],
-        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60 * 60 * 24,  # 24 hour in seconds
+        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60 * 60 * 24 * 30,  # 30 days in seconds
     ):
         self.redis = redis
         self.prefix = prefix
