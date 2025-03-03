@@ -34,11 +34,6 @@ class OpenaiChatBot(ActivityHandler):
                 return
             turn_context = OpenaiChatService.update_slack_turn_context(turn_context)
 
-        OpenaiChatService.get_system_message(
-            turn_context=turn_context,
-            path=self.path,
-        )
-
         response = await OpenaiChatService.json_chat_completion(
             turn_context=turn_context,
             path=self.path,

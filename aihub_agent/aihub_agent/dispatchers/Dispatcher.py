@@ -19,8 +19,10 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from bson import ObjectId
+from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
@@ -83,8 +85,9 @@ class Dispatcher:
     - **Agent & Steps:** The Dispatcher uses the agent’s defined steps and their annotated metadata (like required events).
     - **Publishers & Stores:** It uses JSPublisher to publish resulting events, and distributed stores to fetch/update events or steps info.
     - **Tracing & Localization:** Integrates with `RunTraceCoordinator` for metrics and `AgentLocaleHandler` for localized outputs.
-
     """
+
+    _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(
         self,
@@ -95,6 +98,7 @@ class Dispatcher:
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
+        redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
@@ -102,12 +106,13 @@ class Dispatcher:
         self.agent_config = agent_config
         self.nc = nc
         self.js = js
+        self.redis = redis
         self.topic_manager = topic_manager
         self.locale_handler = locale_handler
 
         self.publisher = JSPublisher(self.js)
-        self.event_store = DistributedEventStore(js)
-        self.step_store = DistributedStepStore(js)
+        self.event_store = DistributedEventStore(redis)
+        self.step_store = DistributedStepStore(redis)
         self.tracer = RunTraceCoordinator(self.nc)
         self.step_configs = agent_config.get_step_configs()
 
@@ -130,8 +135,8 @@ class Dispatcher:
         await self.event_store.store_event(topic.run_id, event)
 
         # Retrieve contexts (run and thread)
-        run_context = await RunContext.create(self.js, topic.thread_id, topic.run_id)
-        thread_context = await ThreadContext.create(self.js, topic.thread_id)
+        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
+        thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if isinstance(event, StartEvent):
             logger.debug(f"Handling StartEvent: {event.__class__.__name__}")
@@ -163,7 +168,11 @@ class Dispatcher:
         tasks = []
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            events = await self.event_store.get_all_events(topic.run_id, before=event.created_at)
+            input_events = getattr(step_method, "_input_events", set())
+            input_event_class_names = [event_type.__name__ for event_type in input_events]
+            events = await self.event_store.get_events_of_multiple_types(
+                topic.run_id, input_event_class_names, before=event.created_at
+            )
             if await self.is_step_ready(step_method, topic.run_id, events):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
                 task = asyncio.create_task(
@@ -203,7 +212,7 @@ class Dispatcher:
                 )
                 return False
 
-        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = step_method._input_event_mapping
+        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = getattr(step_method, "_input_event_mapping", {})
         parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
 
@@ -310,6 +319,7 @@ class Dispatcher:
         - Publishes an ExceptionEvent if `_stop_on_error` is True.
         """
         max_executions = getattr(step_method, "_max_executions_per_run", None)
+
         if max_executions is not None:
             await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
 
@@ -363,7 +373,12 @@ class Dispatcher:
 
         # Instantiate the agent and run the step
         agent_instance = self.agent()
-        telemetry_headers = await run_context.get("telemetry_headers")
+        if topic.run_id not in self._telemetry_header_cache:
+            telemetry_headers = await run_context.get("telemetry_headers")
+            self._telemetry_header_cache[topic.run_id] = telemetry_headers
+        else:
+            telemetry_headers = self._telemetry_header_cache[topic.run_id]
+
         async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
             try:
                 result = await step_method(agent_instance, **kwargs)
@@ -380,6 +395,9 @@ class Dispatcher:
             if result:
                 if not isinstance(result, list):
                     result = [result]
+
+                await self.tracer.trace_step_stop(step_span, result)
+
                 for event in result:
                     if isinstance(event, HumanInTheLoopRequestEvent):
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
@@ -400,8 +418,6 @@ class Dispatcher:
 
                     await self.event_store.store_event(topic.run_id, event)
                     await self.publish_event(event, topic)
-
-            await self.tracer.trace_step_stop(step_span, result)
 
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]

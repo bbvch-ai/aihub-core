@@ -22,7 +22,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLM
 )
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, LLMEvent, UserMessageEvent
+from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
