@@ -50,6 +50,10 @@ class DistributedEventStore(StoreBase):
 
         # If not in cache, get the value from Redis
         event_data = await self.get_json_value(run_id, key, default_value)
+
+        if not event_data:
+            return default_value
+
         event = ControlEvent.deserialize_event(event_data)
 
         # Cache the result (TTLCache will automatically expire it after the TTL)

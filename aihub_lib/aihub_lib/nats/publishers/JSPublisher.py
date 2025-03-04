@@ -52,8 +52,6 @@ class JSPublisher(Generic[TEvent]):
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.__class__.__name__}")
 
-        await self.redis.set(subject, serialized_event, ex=self.default_ttl)
-
         if f".{TopicManager.CONTROL_EVENT}." in subject and not isinstance(event, ControlEvent):
             logger.warning(
                 f"Control event {event.__class__.__name__} is being published to a non-control subject: {subject}"

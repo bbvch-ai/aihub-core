@@ -20,7 +20,7 @@ enable_logging(level=30)
 
 
 # Function to run a single agent in its own process
-def run_agent(agent_id, is_primary=False, event_id=None, workflow_id=None, run_id=None):
+def run_agent(i, is_primary=False, event_id=None, workflow_id=None, run_id=None):
     async def _run():
         # Configure NATS servers
         servers = os.getenv("NATS_SERVERS", "nats://localhost:4222")
@@ -31,8 +31,8 @@ def run_agent(agent_id, is_primary=False, event_id=None, workflow_id=None, run_i
             servers=servers_list,
             agent_type=FanOutAgent,
             agent_config=FanOutAgentConfig(
-                agent_id=f"fan_out_agent_{agent_id}",
-                name=LocaleString(en=f"Fan Out Agent {agent_id}"),
+                agent_id="fan_out_agent",
+                name=LocaleString(en=f"Agent #{i}"),
                 description=LocaleString(en="This is an agent that fans out multiple steps"),
                 system_prompt=LocaleString(en="You are an agent"),
             ),
@@ -45,7 +45,7 @@ def run_agent(agent_id, is_primary=False, event_id=None, workflow_id=None, run_i
         # Send start event if this is the primary agent
         if is_primary and event_id and workflow_id and run_id:
             await runner.send_event(StartEvent(), event_id, workflow_id, run_id)
-            print(f"Primary agent {agent_id} sent start event")
+            print(f"Primary agent #{i} sent start event")
 
         # Keep the agent running for a while (can be adjusted based on your needs)
         try:
@@ -53,11 +53,11 @@ def run_agent(agent_id, is_primary=False, event_id=None, workflow_id=None, run_i
             while True:
                 await asyncio.sleep(1)
         except KeyboardInterrupt:
-            print(f"Agent {agent_id} received shutdown signal")
+            print(f"Agent {i} received shutdown signal")
         finally:
             # Ensure proper cleanup
             await runner.stop()
-            print(f"Agent {agent_id} stopped")
+            print(f"Agent {i} stopped")
 
     # Run the async function in the process
     asyncio.run(_run())
@@ -72,7 +72,7 @@ def main():
     processes = []
 
     # Create 100 agent processes
-    for i in range(1):
+    for i in range(30):
         # The first agent is designated as primary
         is_primary = (i == 0)
 
@@ -83,7 +83,6 @@ def main():
         )
         p.start()
         processes.append(p)
-        print(f"Started agent process {i}")
 
     try:
         # Wait for user to terminate the program

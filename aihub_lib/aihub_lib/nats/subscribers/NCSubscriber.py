@@ -10,8 +10,8 @@ from nats.errors import BadSubscriptionError
 from redis.asyncio import Redis
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 
 logger = logging.getLogger(__name__)
@@ -80,8 +80,7 @@ class NCSubscriber(Generic[TEvent]):
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data!r}")
             topic = Topic.from_subject(msg.subject)
-            event_data = await self.redis.get(msg.subject)
-            event = self.event_cls.deserialize_event(event_data)
+            event = self.event_cls.deserialize_event(msg.data)
             logger.debug(f"Deserialized event: {event}")
             asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
         except Exception as e:

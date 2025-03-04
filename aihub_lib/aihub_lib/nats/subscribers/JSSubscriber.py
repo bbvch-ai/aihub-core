@@ -10,8 +10,8 @@ from redis.asyncio import Redis
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
@@ -88,8 +88,7 @@ class JSSubscriber(Generic[TEvent]):
         """
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
-            event_data = await self.redis.get(msg.subject)
-            event = self.event_cls.deserialize_event(event_data)
+            event = self.event_cls.deserialize_event(msg.data)
             logger.debug(f"Deserialized event: {event}")
             await msg.ack()
             topic = AgentTopic.from_subject(msg.subject)
