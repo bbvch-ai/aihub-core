@@ -4,8 +4,9 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import AgentInTheLoopExceptionEvent, UserMessageEvent
-from aihub_lib.nats.events.agent_in_the_loop import (
+from aihub_lib.nats.events import (
+    AgentInTheLoopExceptionEvent,
+    UserMessageEvent,
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
 )
