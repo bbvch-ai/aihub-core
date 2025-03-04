@@ -1,9 +1,6 @@
-from typing import Any, Callable
-
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, Security
 

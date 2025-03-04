@@ -1,13 +1,12 @@
 import logging
 import random
+import time
 from typing import List
 
-import time
-
+from aihub_lib.nats.events import ControlEvent
 from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
-from aihub_lib.nats.events import ControlEvent
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +99,7 @@ class DistributedStepStore(StoreBase):
     async def was_called_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]) -> bool:
         """Checks if a step was called with a specific set of events."""
         key = self._events_to_key(step_name, events)
+
         def transform_to_bool(value):
             return value is not None and value.decode() == "true"
 

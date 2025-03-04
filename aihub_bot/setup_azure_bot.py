@@ -1,13 +1,11 @@
 import argparse
 import json
 import subprocess
-import webbrowser
 from typing import Optional
 
 import sys
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cosmosdb import CosmosDBManagementClient
-from azure.mgmt.resource import SubscriptionClient
 from pymongo import MongoClient
 
 

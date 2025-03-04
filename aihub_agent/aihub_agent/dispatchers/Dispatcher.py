@@ -378,7 +378,9 @@ class Dispatcher:
                 all_input_events.append(event_value)
 
         # Ensure step is not executed twice with the exact same input events
-        duplicated_run = await self.step_store.was_called_with_events(topic.run_id, step_method.__name__, all_input_events)
+        duplicated_run = await self.step_store.was_called_with_events(
+            topic.run_id, step_method.__name__, all_input_events
+        )
         if duplicated_run:
             logger.debug(f"Skipping step '{step_method.__name__}' as it has already been called with the same events.")
             return
