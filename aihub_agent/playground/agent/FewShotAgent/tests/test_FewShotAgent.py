@@ -235,10 +235,10 @@ def then_llm_event(agent_runner: AgentTestRunner):
 
 
 @then("a StopEvent is present")
-def _(agent_runner: AgentTestRunner):
+def then_stop_event_present(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
 
 
 @then("a GuardRejectionEvent is present")
-def _(agent_runner: AgentTestRunner):
+def then_guard_reject_event_present(agent_runner: AgentTestRunner):
     assert agent_runner.has_event_of_type(GuardRejectionEvent), "Agent did not produce GuardRejectionEvent"

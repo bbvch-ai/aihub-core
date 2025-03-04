@@ -9,9 +9,9 @@ from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
-from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
 )
@@ -21,6 +21,9 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.health.HealthController import HealthController
+from aihub_lib.testing.logging.logger import enable_logging
+
+enable_logging()
 
 
 async def main():
@@ -32,6 +35,8 @@ async def main():
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
     auth = NoAuthHandler()
+
+    OPENAI_URL = "https://aihub-dev-openai-swe-whisper.openai.azure.com"
 
     runner.mount(
         HealthController(auth=auth).get_health(),
@@ -56,7 +61,7 @@ async def main():
                 ),
                 AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url=OPENAI_URL,
                     api_version="2023-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                 ),
@@ -70,14 +75,14 @@ async def main():
                 ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url=OPENAI_URL,
                     api_version="2024-08-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
                 ),
                 AzureOpenAILLMConfig(
                     name="o1-mini",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url=OPENAI_URL,
                     api_version="2024-08-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
@@ -86,21 +91,21 @@ async def main():
             image_models=[
                 AzureOpenaiImageModelConfig(
                     name="dall-e-3",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url=OPENAI_URL,
                     api_version="2024-02-01",
                 )
             ],
             stt_models=[
                 AzureOpenaiSTTConfig(
                     name="whisper-1",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url=OPENAI_URL,
                     api_version="2024-06-01",
                 )
             ],
             tts_models=[
                 AzureOpenaiTTSConfig(
                     name="tts-1-hd",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url=OPENAI_URL,
                     api_version="2024-05-01-preview",
                 )
             ],

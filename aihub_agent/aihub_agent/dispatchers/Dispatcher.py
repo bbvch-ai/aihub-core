@@ -326,6 +326,7 @@ class Dispatcher:
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(step_method)
         parameter_optional_map = getattr(step_method, "_parameter_optional_map", {})
+        all_input_events: List[ControlEvent] = []
 
         # Prepare arguments
         for param in step_signature.parameters.values():
@@ -370,6 +371,21 @@ class Dispatcher:
                 kwargs[param.name] = event_value
             else:
                 raise ValueError(f"[{step_method.__name__}] Missing required event for parameter '{param.name}'")
+
+            if isinstance(event_value, list):
+                all_input_events.extend([event for event in event_value if isinstance(event, ControlEvent)])
+            elif isinstance(event_value, ControlEvent):
+                all_input_events.append(event_value)
+
+        # Ensure step is not executed twice with the exact same input events
+        duplicated_run = await self.step_store.was_called_with_events(
+            topic.run_id, step_method.__name__, all_input_events
+        )
+        if duplicated_run:
+            logger.debug(f"Skipping step '{step_method.__name__}' as it has already been called with the same events.")
+            return
+
+        await self.step_store.report_run_with_events(topic.run_id, step_method.__name__, all_input_events)
 
         # Instantiate the agent and run the step
         agent_instance = self.agent()

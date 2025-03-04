@@ -8,7 +8,6 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
-
 # --- Dummy authentication handler implementations ---
 
 
@@ -88,9 +87,10 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
-def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":
-    """Build a MultiAuthHandler from the provided table."""
+def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":  # noqa: F821
     from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+
+    """Build a MultiAuthHandler from the provided table."""
     headers = datatable[0]
     handlers: list[AuthHandler] = []
     for row in datatable[1:]:
@@ -112,7 +112,9 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
 @when("I invoke the multi auth handler")
 @async_test
 async def invoke_multi_auth(
-    multi_auth_instance: "TokenAndOauth2Handler", multi_auth_result: dict, dummy_request: Request
+    multi_auth_instance: "TokenAndOauth2Handler",  # noqa: F821
+    multi_auth_result: dict,
+    dummy_request: Request,  # noqa: F821
 ):
     """Invoke the multi auth handler and store the returned user."""
     try:

@@ -1,7 +1,9 @@
 import logging
 import random
 import time
+from typing import List
 
+from aihub_lib.nats.events import ControlEvent
 from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
@@ -93,3 +95,24 @@ class DistributedStepStore(StoreBase):
             logger.debug(f"Created execution counter {counter_key} for step '{step_name}'")
         else:
             logger.error(f"Failed to create execution counter for step '{step_name}'")
+
+    async def was_called_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]) -> bool:
+        """Checks if a step was called with a specific set of events."""
+        key = self._events_to_key(step_name, events)
+
+        def transform_to_bool(value):
+            return value is not None and value.decode() == "true"
+
+        return await self.get_value(run_id, key, default_value=False, transform_func=transform_to_bool)
+
+    async def report_run_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]):
+        """Reports that a run was called with a specific set of events."""
+        key = self._events_to_key(step_name, events)
+        await self.put_value(run_id, key, b"true")
+        logger.debug(f"Reported run {run_id} with events {key} for step {step_name}")
+
+    def _events_to_key(self, step_name: str, event: List[ControlEvent]) -> str:
+        """Builds a unique key for a step and a list of events."""
+        sorted_events = sorted(event, key=lambda e: e.event_id)
+        events_key = "_".join([event.event_id for event in sorted_events])
+        return f"{step_name}.parameters.{events_key}"

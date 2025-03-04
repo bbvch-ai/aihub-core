@@ -1,7 +1,7 @@
 from .agent_in_the_loop import AgentInTheLoop
-from .agent_in_the_loop.exception import AgentInTheLoopExceptionEvent
-from .agent_in_the_loop.request import AgentInTheLoopRequestEvent
-from .agent_in_the_loop.response import AgentInTheLoopResponseEvent
+from .agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInTheLoopExceptionEvent
+from .agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
+from .agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
 from .BaseEvent import BaseEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .cost import CostEvent, LLMCostEvent

@@ -18,7 +18,7 @@ sort-imports:
 	poetry run isort .
 
 # Run format, sort-imports, type-check, and test in sequence
-pr-ready: sort-imports lint format
+pr-ready: sort-imports format lint
 	@echo "Running full check (format, sort)..."
 
 test-cov:

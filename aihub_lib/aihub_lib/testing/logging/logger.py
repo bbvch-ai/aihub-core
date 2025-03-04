@@ -2,9 +2,20 @@ import logging
 
 import colorlog
 
+from aihub_lib.testing.logging.LoggingConfig import LoggingConfig
 
-def enable_logging(level=logging.DEBUG):
-    azure_loggers = [
+
+def enable_logging(level: str | int = logging.DEBUG, lib_level: str | int = logging.WARNING) -> logging.Logger:
+    """
+    The log level will ALWAYS be set to the LOG_LEVEL specified in the environment variables, if set.
+    """
+
+    config = LoggingConfig()
+    if config.LOG_LEVEL is not None:
+        level = config.LOG_LEVEL
+        lib_level = config.LOG_LEVEL
+
+    lib_loggers = [
         "azure.identity",
         "azure.core.pipeline",
         "azure.core.pipeline.policies",
@@ -14,8 +25,8 @@ def enable_logging(level=logging.DEBUG):
         "httpx",
     ]
 
-    for logger_name in azure_loggers:
-        logging.getLogger(logger_name).setLevel(logging.WARNING)
+    for logger_name in lib_loggers:
+        logging.getLogger(logger_name).setLevel(lib_level)
 
     handler = logging.StreamHandler()
     handler.setFormatter(
