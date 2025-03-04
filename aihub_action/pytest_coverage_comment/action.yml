@@ -27,6 +27,7 @@ runs:
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@main
       with:
+        unique-id-for-comment: ${{ inputs.working_directory }}
         junitxml-path: ${{ inputs.working_directory }}/pytest.xml
         pytest-xml-coverage-path: ${{ inputs.working_directory }}/coverage.xml
         coverage-path-prefix: ${{ inputs.working_directory }}
