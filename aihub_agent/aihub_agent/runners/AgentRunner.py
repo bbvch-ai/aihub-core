@@ -149,10 +149,7 @@ class AgentRunner:
         self.nc = NATS()
         await self.nc.connect(servers=self.servers)
 
-        self.js = self.nc.jetstream(
-            timeout=60,
-            publish_async_max_pending=10_000
-        )
+        self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         _, host, port = self.redis_url.split(":")
         self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
