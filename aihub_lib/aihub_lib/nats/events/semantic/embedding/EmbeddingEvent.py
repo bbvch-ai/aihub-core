@@ -24,4 +24,4 @@ class EmbeddingEvent(SemanticEvent):
             for i, embedding in enumerate(self.embeddings):
                 attributes = {**attributes, **embedding.to_semantic_convention(i)}
 
-        return attributes
+        return {k: v for k, v in attributes.items() if v is not None}
