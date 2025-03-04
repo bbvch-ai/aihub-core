@@ -132,6 +132,8 @@ runs:
       with:
         files: |
           ${{ inputs.working_directory }}/pytest.xml
+        check_name: ${{ inputs.working_directory }}
+        comment_title: Test results for ${{ inputs.working_directory }}
 
     - name: Check if Tests Failed
       if: env.TEST_FAIL == 'true'

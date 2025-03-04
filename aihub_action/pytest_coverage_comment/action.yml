@@ -31,6 +31,6 @@ runs:
         junitxml-path: ${{ inputs.working_directory }}/pytest.xml
         pytest-xml-coverage-path: ${{ inputs.working_directory }}/coverage.xml
         coverage-path-prefix: ${{ inputs.working_directory }}
-        title: Tests for ${{ inputs.working_directory }}
+        title: Coverage Report for ${{ inputs.working_directory }}
         default-branch: main
         report-only-changed-files: true
