@@ -31,8 +31,9 @@ cachetools = "^5.5.2"
 redis = "^5.2.1"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.89.0"
+subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
