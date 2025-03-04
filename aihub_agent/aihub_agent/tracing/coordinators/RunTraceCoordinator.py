@@ -4,13 +4,6 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.context.BaseContext import BaseContext
-from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent, UserMessageEvent
-from aihub_lib.nats.events.semantic import SemanticEvent
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from nats.aio.client import Client as NATS
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
@@ -18,12 +11,19 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
 from aihub_agent.tracing.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.nats.context.BaseContext import BaseContext
+from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events.semantic import SemanticEvent
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,14 @@ class RunTraceCoordinator:
         headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}
         tracer_provider = TracerProvider()
         set_tracer_provider(tracer_provider)
-        tracer_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint, headers=headers)))
+        tracer_provider.add_span_processor(
+            BatchSpanProcessor(
+                OTLPSpanExporter(endpoint, headers=headers),
+                max_queue_size=1024 * 512,
+                max_export_batch_size=1024 * 512,
+                schedule_delay_millis=30_000,
+            )
+        )
 
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
