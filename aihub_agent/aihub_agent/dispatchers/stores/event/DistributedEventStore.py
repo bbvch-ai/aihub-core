@@ -1,11 +1,11 @@
 import logging
 from typing import Annotated, Any, Dict, List, Optional
 
-from aihub_lib.nats.events import ControlEvent
 from cachetools import TTLCache
 from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
+from aihub_lib.nats.events import ControlEvent
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class DistributedEventStore(StoreBase):
     def __init__(self, redis: Redis):
         super().__init__(redis, prefix="events")
 
-    async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
+    async def get_event(self, run_id: str, key: str, default_value: Any = None) -> ControlEvent:
         """
         Get a JSON value from Redis with caching.
         Uses TTLCache to automatically expire entries after 5 minutes.
@@ -44,17 +44,19 @@ class DistributedEventStore(StoreBase):
 
         # Check if the value is in cache
         if cache_key in self._cache:
-            logger.debug(f"Cache hit for {cache_key}")
             return self._cache[cache_key]
 
+        logger.debug(f"Cache miss for {cache_key}")
+
         # If not in cache, get the value from Redis
-        result = await super().get_json_value(run_id, key, default_value)
+        event_data = await self.get_json_value(run_id, key, default_value)
+        event = ControlEvent.deserialize_event(event_data)
 
         # Cache the result (TTLCache will automatically expire it after the TTL)
-        self._cache[cache_key] = result
+        self._cache[cache_key] = event
         logger.debug(f"Cached value for {cache_key}")
 
-        return result
+        return event
 
     def _event_key(self, event_type: str, event_id: str) -> str:
         """Builds a namespaced Redis key for an event."""
@@ -84,7 +86,7 @@ class DistributedEventStore(StoreBase):
         key = self._event_key(event_type, event_id)
         cache_key = self._cache_key(event_type, event_id, run_id)
 
-        self._cache[cache_key] = event_data
+        self._cache[cache_key] = event
 
         # Store the event directly
         success = await self.put_json_value(run_id, key, event_data)
@@ -108,9 +110,9 @@ class DistributedEventStore(StoreBase):
 
         # Retrieve and deserialize each matching event
         for key in matching_keys:
-            event_data = await self.get_json_value(run_id, key)
-            if event_data:
-                events.append(ControlEvent.deserialize_event(event_data))
+            event = await self.get_event(run_id, key)
+            if event:
+                events.append(event)
 
         logger.debug(f"Retrieved {len(events)} events of type {class_name}")
         return events

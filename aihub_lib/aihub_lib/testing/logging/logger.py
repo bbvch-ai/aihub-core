@@ -1,9 +1,15 @@
 import logging
+import os
 
 import colorlog
 
 
 def enable_logging(level=logging.DEBUG):
+    if os.environ.get("DISABLE_LOGGING"):
+        logger = logging.getLogger()
+        logger.setLevel(logging.CRITICAL)
+        return logger
+
     azure_loggers = [
         "azure.identity",
         "azure.core.pipeline",
@@ -20,7 +26,7 @@ def enable_logging(level=logging.DEBUG):
     handler = logging.StreamHandler()
     handler.setFormatter(
         colorlog.ColoredFormatter(
-            "%(log_color)s[%(name)s.%(funcName)s] %(levelname)s: %(message)s",
+            "%(log_color)s[%(asctime)s.%(msecs)03d] [%(name)s.%(funcName)s] %(levelname)s: %(message)s",
             log_colors={
                 "DEBUG": "cyan",
                 "INFO": "green",
@@ -28,6 +34,7 @@ def enable_logging(level=logging.DEBUG):
                 "ERROR": "red",
                 "CRITICAL": "bold_red",
             },
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
 

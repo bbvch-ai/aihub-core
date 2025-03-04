@@ -1,5 +1,4 @@
 import logging
-import lzma
 from typing import Generic, TypeVar, Annotated
 
 from nats.aio.client import Client as NATS
@@ -49,9 +48,9 @@ class NCPublisher(Generic[TEvent]):
         """
         logger.debug(f"Publishing event {event.__class__.__name__} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)
-        logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
+        logger.debug(f"Serialized event: {event.__class__.__name__}")
 
-        await self.redis.set(subject, lzma.compress(serialized_event.encode()), ex=self.default_ttl)
+        await self.redis.set(subject, serialized_event.encode(), ex=self.default_ttl)
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not isinstance(event, ControlEvent):
             logger.warning(
@@ -63,4 +62,4 @@ class NCPublisher(Generic[TEvent]):
                 f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
             )
 
-        await self.nc.publish(subject, b'')
+        await self.nc.publish(subject, serialized_event.encode())
