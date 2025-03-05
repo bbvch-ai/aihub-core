@@ -235,7 +235,7 @@ async def main():
     # Define parameter ranges for test generation
     process_counts = [1]  # Number of processes to run
     event_counts = [100, 1_000, 10_000]  # Number of events per test
-    payload_sizes = [1, 10, 100, 1000]  # Payload size in KB
+    payload_sizes = [1, 10, 100]  # Payload size in KB
 
     # Generate all combinations of test configurations
     configurations = []
