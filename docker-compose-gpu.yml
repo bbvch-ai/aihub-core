@@ -1,0 +1,81 @@
+services:
+  phoenix:
+    image: arizephoenix/phoenix:version-7.0.1
+    ports:
+      - "6006:6006"  # Phoenix UI and OTLP HTTP collector
+      - "4317:4317"  # Phoenix OTLP gRPC collector
+    depends_on:
+      - mongo
+      - nats
+    restart: always
+
+  nats:
+    image: nats:alpine
+    command: >
+      -js
+      -m 8222
+      -D
+      -V
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring interface
+    restart: always
+    healthcheck:
+      test: wget --spider -q http://localhost:8222/healthz
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - "27017:27017"
+    restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+
+  llama.cpp:
+    image: ghcr.io/ggerganov/llama.cpp:server-cuda
+    platform: linux/amd64
+    ports:
+      - "8182:8182"
+    command: >
+      -hf unsloth/Llama-3.2-1B-Instruct-GGUF
+      --port 8182
+      -c 512
+      -ngl 17
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+
+  hf-TEI:
+    image: ghcr.io/huggingface/text-embeddings-inference:cuda-latest
+    ports:
+      - "8183:8183"
+    command: >
+      --port 8183
+      --model-id Alibaba-NLP/gte-base-en-v1.5
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]

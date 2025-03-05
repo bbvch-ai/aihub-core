@@ -31,7 +31,7 @@ def enable_logging(level: str | int = logging.DEBUG, lib_level: str | int = logg
     handler = logging.StreamHandler()
     handler.setFormatter(
         colorlog.ColoredFormatter(
-            "%(log_color)s[%(name)s.%(funcName)s] %(levelname)s: %(message)s",
+            "%(log_color)s[%(asctime)s.%(msecs)03d] [%(name)s.%(funcName)s] %(levelname)s: %(message)s",
             log_colors={
                 "DEBUG": "cyan",
                 "INFO": "green",
@@ -39,6 +39,7 @@ def enable_logging(level: str | int = logging.DEBUG, lib_level: str | int = logg
                 "ERROR": "red",
                 "CRITICAL": "bold_red",
             },
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
 

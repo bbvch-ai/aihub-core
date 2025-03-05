@@ -245,7 +245,6 @@ class RunTraceCoordinator:
                 span.set_attributes(semantic_event.to_semantic_convention())
 
         span.set_status(StatusCode.OK)
-        span.end()
 
     async def trace_step_error(self, span: Span, error: Exception):
         """

@@ -14,10 +14,11 @@ class ToolEvent(SemanticEvent):
     parameters: Optional[Dict[str, Any]] = Field(None, description="The parameters definition for invoking the tool")
 
     def to_semantic_convention(self) -> Dict[str, str]:
-        return {
+        attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.TOOL.value,
             SpanAttributes.TOOL_NAME: self.name,
             SpanAttributes.TOOL_DESCRIPTION: self.description,
             ToolAttributes.TOOL_JSON_SCHEMA: json.dumps(self.json_schema),
             SpanAttributes.TOOL_PARAMETERS: json.dumps(self.parameters),
         }
+        return {k: v for k, v in attributes.items() if v is not None}

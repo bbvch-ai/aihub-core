@@ -43,4 +43,4 @@ class RerankerEvent(SemanticEvent):
                     **doc.to_semantic_convention(RerankerAttributes.RERANKER_OUTPUT_DOCUMENTS, i),
                 }
 
-        return attributes
+        return {k: v for k, v in attributes.items() if v is not None}

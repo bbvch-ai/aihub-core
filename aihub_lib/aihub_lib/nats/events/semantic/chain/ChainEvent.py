@@ -15,7 +15,8 @@ class ChainEvent(SemanticEvent):
     )
 
     def to_semantic_convention(self) -> Dict[str, str]:
-        return {
+        attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.CHAIN.value,
             SpanAttributes.METADATA: json.dumps(self.metadata),
         }
+        return {k: v for k, v in attributes.items() if v is not None}

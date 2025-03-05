@@ -58,7 +58,7 @@ class AgentRunner:
 
     ### Example
     ```python
-    runner = AgentRunner(servers=[NatsConfig().NATS_ENDPOINT], agent_type=MyAgent, agent_config=my_config)
+    runner = AgentRunner(servers=[NatsConfig().NATS_ENDPOINT], redis_url=RedisConfig().REDIS_URL, agent_type=MyAgent, agent_config=my_config)
     await runner.run_forever()
     ```
     This code connects to NATS, listens for events, and processes them indefinitely until stopped.
