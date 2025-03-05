@@ -34,7 +34,7 @@ class DistributedEventStore(StoreBase):
     def __init__(self, redis: Redis):
         super().__init__(redis, prefix="events")
 
-    async def get_event(self, run_id: str, key: str, default_value: Any = None) -> ControlEvent:
+    async def get_event(self, run_id: str, key: str) -> Optional[ControlEvent]:
         """
         Get a JSON value from Redis with caching.
         Uses TTLCache to automatically expire entries after 5 minutes.
@@ -49,10 +49,10 @@ class DistributedEventStore(StoreBase):
         logger.debug(f"Cache miss for {cache_key}")
 
         # If not in cache, get the value from Redis
-        event_data = await self.get_json_value(run_id, key, default_value)
+        event_data = await self.get_json_value(run_id, key)
 
         if not event_data:
-            return default_value
+            return None
 
         event = ControlEvent.deserialize_event(event_data)
 
@@ -115,7 +115,7 @@ class DistributedEventStore(StoreBase):
         # Retrieve and deserialize each matching event
         for key in matching_keys:
             event = await self.get_event(run_id, key)
-            if event:
+            if event is not None:
                 events.append(event)
 
         logger.debug(f"Retrieved {len(events)} events of type {class_name}")
