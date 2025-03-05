@@ -1,15 +1,15 @@
 import asyncio
 from typing import AsyncGenerator, List
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import TurnContext
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.entities.ConversationEntity import Message
 from aihub_bot.routes.Service import Service
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class AgentChatService(Service):
@@ -81,7 +81,13 @@ class AgentChatService(Service):
             while True:
                 if resources.stop_event.is_set() and resources.chunk_queue.empty():
                     break
-                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=30)
+                try:
+                    chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=30)
+                except TimeoutError as e:
+                    if resources.stop_event.is_set():
+                        break
+                    raise e
+
                 yield chunk_event.content
                 resources.chunk_queue.task_done()
 
