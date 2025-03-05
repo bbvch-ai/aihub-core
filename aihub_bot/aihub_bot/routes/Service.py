@@ -1,15 +1,17 @@
+import asyncio
 import logging
 import re
+from asyncio import Future
 from typing import AsyncGenerator, List, Optional
 
-from aihub_lib.routes.chat.ChatService import ChatService
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity, Entity
+from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException
 from fastapi import Request
 
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
+from aihub_lib.routes.chat.ChatService import ChatService
 
 logger = logging.getLogger(__name__)
 
@@ -196,12 +198,58 @@ class Service(ChatService):
         - The response can be very long and should be sent in chunks.
         - The user can see the response while it is being generated.
         """
-        first_chunk = await anext(response_generator, "No response from the agent.")
-        message = await turn_context.send_activity(first_chunk)
-        activity = Activity(id=message.id, text=first_chunk)
+        response_text = await anext(response_generator, "No response from the agent.")
+        message = await turn_context.send_activity(response_text)
+        activity = Activity(id=message.id, text=response_text, type=ActivityTypes.message)
+
+        task: Optional[Future] = None
+        buffer = activity.text
+        sent_message = activity.text
         async for chunk in response_generator:
             if chunk is None:
                 break
-            activity.text += chunk
-            await turn_context.update_activity(activity)
-        return activity.text
+            buffer += chunk
+            response_text += chunk
+            if task is None or task.done():
+                task, buffer, sent_message, activity = await Service.handle_task_done(
+                    turn_context=turn_context,
+                    task=task,
+                    buffer=buffer,
+                    sent_message=sent_message,
+                    activity=activity,
+                )
+
+        # Ensure a final update after the loop
+        if task is not None:
+            await task
+        await Service.handle_task_done(
+            turn_context=turn_context,
+            task=task,
+            buffer=buffer,
+            sent_message=sent_message,
+            activity=activity,
+        )
+
+        return response_text
+
+    @staticmethod
+    async def handle_task_done(
+        turn_context: TurnContext, task: Optional[Future], buffer: str, sent_message: str, activity: Activity
+    ):
+        if task is not None:
+            exception = task.exception()
+            if exception is not None:
+                if isinstance(exception, ErrorResponseException) and "msg_too_long" in str(exception):
+                    buffer = buffer.replace(sent_message, "")
+                    message = await turn_context.send_activity(buffer)
+                    activity = Activity(id=message.id, text=buffer, type=ActivityTypes.message)
+                    sent_message = activity.text
+                    task = None
+                    return task, buffer, sent_message, activity
+                else:
+                    raise exception
+        else:
+            sent_message = activity.text
+        activity.text = buffer
+        task = asyncio.create_task(turn_context.update_activity(activity))
+        return task, buffer, sent_message, activity
