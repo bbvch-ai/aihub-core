@@ -1,4 +1,5 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
@@ -19,6 +20,8 @@ from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHist
 from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.events.ContextInsufficientEvent import ContextInsufficientEvent
+from aihub_agent.agents.rag.events.ContextSufficientEvent import ContextSufficientEvent
 from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
@@ -90,7 +93,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         if not agent_config.few_shot_guard_examples:
-            return FewShotAcceptEvent(success=True, reasoning=t("agent.thought.no_few_shot_examples"))
+            return FewShotAcceptEvent(reasoning=t("agent.thought.no_few_shot_examples"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await few_shot_guard(
@@ -157,10 +160,36 @@ class RAGAgent(Agent):
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
     @step()
+    async def context_sufficient_guard_step(
+        self,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        event: InOrderNodeCombinerEvent,
+        user_query_event: StandaloneQuestionCondenserEvent,
+    ) -> ContextSufficientEvent | ContextInsufficientEvent:
+        """
+        Guards the context to ensure it is sufficient for generating a response.
+        """
+        if not agent_config.check_context_sufficiency:
+            return ContextSufficientEvent()
+        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+            guard_result = await context_sufficient_guard(
+                llm=llm,
+                t=t,
+                user_query=user_query_event.condensed_chat_message.content,
+                context=event.context_message.content,
+            )
+        if not guard_result.success:
+            return ContextInsufficientEvent(reasoning=guard_result.reasoning)
+        return ContextSufficientEvent()
+
+    @step()
     async def limit_chat_history_with_context_step(
         self,
-        event: InOrderNodeCombinerEvent,
+        nodes_event: InOrderNodeCombinerEvent,
         chat_history_event: LimitChatHistoryEvent,
+        context_sufficient_event: ContextSufficientEvent,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
@@ -171,7 +200,7 @@ class RAGAgent(Agent):
         system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
         limited_chat_history = limit_chat_history_with_context(
             chat_history=chat_history_event.limited_history,
-            context_messages=[event.context_message],
+            context_messages=[nodes_event.context_message],
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
             tokenizer=agent_config.llm.tokenizer,
@@ -182,7 +211,7 @@ class RAGAgent(Agent):
     @step()
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent,
+        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientEvent,
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
@@ -191,7 +220,7 @@ class RAGAgent(Agent):
         """
         Generates a response using the configured LLM.
         """
-        if isinstance(event, FewShotRejectEvent):
+        if isinstance(event, FewShotRejectEvent) or isinstance(event, ContextInsufficientEvent):
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,

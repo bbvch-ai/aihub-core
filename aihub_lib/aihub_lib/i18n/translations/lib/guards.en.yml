@@ -61,5 +61,18 @@ few_shot_guard:
     Justification for the decision made.
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
-
-  
+context_sufficient_guard:
+  prompt: |
+    I will give you a context and a question.
+    If the question can be answered with the provided context, then the conversation may continue (success=True).
+    If answering the question is not possible with the context, then the conversation should be terminated (success=False).
+    First, think about how to decide, and then determine whether the conversation can be successfully continued or not.
+  message: |
+    Question:
+    <Question>
+    {user_query}
+    </Question>
+    Context:
+    <Context>
+    {context}
+    </Context>
