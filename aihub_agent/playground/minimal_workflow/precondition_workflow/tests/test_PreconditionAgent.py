@@ -1,0 +1,49 @@
+from pytest_bdd import scenarios, given, when, then, parsers
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import StartEvent
+from aihub_lib.testing.asyncio_utils.bdd import async_test
+from playground.minimal_workflow.precondition_workflow.PreconditionAgent import PreconditionAgent
+from playground.minimal_workflow.precondition_workflow.PreconditionAgentConfig import PreconditionAgentConfig
+from playground.minimal_workflow.precondition_workflow.events.ParallelEvent import ParallelEvent
+
+scenarios("../tests/features/precondition_agent.feature")
+
+
+@given(parsers.parse("a PreconditionAgent runner with {number_of_events:d} events"), target_fixture="agent_runner")
+def _(number_of_events):
+    return AgentTestRunner(
+        agent_type=PreconditionAgent,
+        agent_config=PreconditionAgentConfig(
+            agent_id="precondition_agent",
+            name=LocaleString(en="Agent with preconditions"),
+            description=LocaleString(en="This is an agent that has preconditions"),
+            system_prompt=LocaleString(en="You are an agent"),
+            number_of_events=number_of_events,
+        ),
+    )
+
+
+@when("the start event is sent")
+@async_test
+async def _(agent_runner: AgentTestRunner):
+    async with agent_runner.test_run() as topic:
+        await agent_runner.send_event_from_topic(
+            start_event=StartEvent(),
+            topic=topic,
+        )
+
+
+@then(parsers.parse('5 ParallelEvent events with payloads "{payloads}" are present'))
+def verify_parallel_events_payloads(agent_runner: AgentTestRunner, payloads: str):
+    expected_payloads = payloads.split(",")
+    events = agent_runner.get_events_of_type(ParallelEvent)
+    actual_payloads = [event.payload for event in events]
+    assert len(events) == 5, f"Expected 5 ParallelEvent events but found {len(events)}"
+    assert sorted(actual_payloads) == sorted(
+        expected_payloads
+    ), f"Expected ParallelEvent payloads {expected_payloads} but found {actual_payloads}"
+
+@then("a StopEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_stop_event, "StopEvent was not received"

@@ -6,7 +6,7 @@ from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-from nats.errors import BadSubscriptionError
+from nats.errors import BadSubscriptionError, ConnectionDrainingError
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -66,7 +66,7 @@ class NCSubscriber(Generic[TEvent]):
             try:
                 await self.subscription.unsubscribe()
                 logger.debug(f"Unsubscribed from '{self.subject}'.")
-            except BadSubscriptionError:
+            except (BadSubscriptionError, ConnectionDrainingError):
                 logger.debug(f"Subscription '{self.subject}' was already unsubscribed.")
 
     async def message_handler(self, msg: Msg) -> None:

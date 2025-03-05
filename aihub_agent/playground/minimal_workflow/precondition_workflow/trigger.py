@@ -1,0 +1,26 @@
+import asyncio
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events import StartEvent
+from playground.minimal_workflow.precondition_workflow.PreconditionAgent import PreconditionAgent
+from playground.minimal_workflow.precondition_workflow.PreconditionAgentConfig import PreconditionAgentConfig
+
+
+async def main():
+    runner = AgentTestRunner(
+        agent_type=PreconditionAgent,
+        agent_config=PreconditionAgentConfig(
+            agent_id="precondition_agent",
+            name=LocaleString(en="Agent with preconditions"),
+            description=LocaleString(en="This is an agent that has preconditions"),
+            system_prompt=LocaleString(en="You are an agent"),
+            number_of_events=10,
+        ),
+    )
+    async with runner.test_run() as topic:
+        await runner.send_event_from_topic(topic=topic, start_event=StartEvent())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
