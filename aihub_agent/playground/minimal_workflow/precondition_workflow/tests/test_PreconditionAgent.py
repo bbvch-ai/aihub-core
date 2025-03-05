@@ -44,6 +44,7 @@ def verify_parallel_events_payloads(agent_runner: AgentTestRunner, payloads: str
         expected_payloads
     ), f"Expected ParallelEvent payloads {expected_payloads} but found {actual_payloads}"
 
+
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "StopEvent was not received"

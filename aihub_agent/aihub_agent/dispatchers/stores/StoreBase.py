@@ -49,7 +49,7 @@ class StoreBase:
         """Build a namespaced Redis key"""
         return f"{self.prefix}:{run_id}:{key}"
 
-    async def delete_run_store(self, run_id: str):
+    async def delete_all(self, run_id: str):
         """Deletes all keys for a specific run, removing all associated data."""
         try:
             pattern = f"{self.prefix}:{run_id}:*"

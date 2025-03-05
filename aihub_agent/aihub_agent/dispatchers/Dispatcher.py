@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 import traceback
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin, Tuple
+from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -153,8 +153,8 @@ class Dispatcher:
             logger.debug(f"Handling StopEvent: {event.__class__.__name__}")
             # Clean up run-specific data
             await run_context.delete_all()
-            await self.event_store.delete_run_store(topic.run_id)
-            await self.step_store.delete_run_store(topic.run_id)
+            await self.event_store.delete_all(topic.run_id)
+            await self.step_store.delete_all(topic.run_id)
             return
 
         if isinstance(event, ExceptionEvent):
@@ -165,7 +165,6 @@ class Dispatcher:
 
         # Determine which steps need to be executed due to this event
         steps = self.agent.get_steps_waiting_for_event(type(event))
-        tasks = []
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
             input_events = getattr(step_method, "_input_events", set())
@@ -175,13 +174,9 @@ class Dispatcher:
             )
             if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
-                task = asyncio.create_task(
+                asyncio.create_task(
                     self.execute_step(event, step_method, events, run_context, thread_context, topic)
                 )
-                tasks.append(task)
-
-        if tasks:
-            await asyncio.gather(*tasks)
 
     async def is_step_ready(
         self,
@@ -245,7 +240,9 @@ class Dispatcher:
                 )
 
         if precondition_fn:
-            _, precondition_args = await self._build_method_kwargs(trigger_event, precondition_fn, events, run_context, thread_context, topic)
+            _, precondition_args = await self._build_method_kwargs(
+                trigger_event, precondition_fn, events, run_context, thread_context, topic
+            )
             is_ready = precondition_fn(**precondition_args)
             if not is_ready:
                 logger.debug(f"[{step_method.__name__}] Ready function returned False, skipping.")

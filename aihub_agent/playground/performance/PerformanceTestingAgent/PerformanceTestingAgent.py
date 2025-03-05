@@ -7,6 +7,7 @@ from aihub_lib.nats.events import StopEvent, StartEvent
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import PerformanceTestingAgentConfig
 from playground.performance.PerformanceTestingAgent.events.ParallelEvent import ParallelEvent
 
+
 @precondition()
 def ensure_enough_events(parallel_events: List[ParallelEvent], config: PerformanceTestingAgentConfig) -> bool:
     return len(parallel_events) == config.number_of_events
@@ -21,5 +22,3 @@ class PerformanceTestingAgent(Agent):
     @step(precondition=ensure_enough_events)
     async def stop_step(self, _: List[ParallelEvent]) -> StopEvent:
         return StopEvent()
-
-

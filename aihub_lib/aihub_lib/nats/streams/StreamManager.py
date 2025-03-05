@@ -54,8 +54,8 @@ class StreamManager:
                     retention=api.RetentionPolicy.LIMITS,
                     max_msgs=1_000_000,
                     discard=api.DiscardPolicy.OLD,
-                    max_age=60 * 60 * 24 * 30,
-                    duplicate_window=60 * 60,
+                    max_age=60 * 60,
+                    duplicate_window=60 * 5,
                 )
             )
 

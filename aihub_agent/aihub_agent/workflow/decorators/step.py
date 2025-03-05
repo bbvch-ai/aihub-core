@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Annotated, Optional, Callable
+from typing import Annotated, Callable, Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
