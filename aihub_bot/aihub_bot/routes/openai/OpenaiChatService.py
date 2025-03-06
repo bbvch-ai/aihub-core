@@ -152,10 +152,9 @@ class OpenaiChatService(Service):
             return "".join([c for c in normalized_str if not unicodedata.combining(c)])
 
         def clean_name(name: str) -> str:
-            openai_name_re = r"^[a-zA-Z0-9_-]+$"
-            name = name.replace(" ", "_")
+            # OpenAI Regex: r"^[a-zA-Z0-9_-]+$"
             name = remove_accents(name)
-            return re.sub(openai_name_re, "", name)
+            return re.sub("[^a-zA-Z0-9_-]", "_", name)
 
         match message.role:
             case "user":
@@ -165,7 +164,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=clean_name(message.name),
+                    name=clean_name(message.name) or None,
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
@@ -174,7 +173,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=clean_name(message.name),
+                    name=clean_name(message.name) or None,
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
