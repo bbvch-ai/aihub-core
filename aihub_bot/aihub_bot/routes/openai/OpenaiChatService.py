@@ -1,7 +1,6 @@
 import asyncio
 from typing import AsyncGenerator, List
 
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from botbuilder.core import TurnContext
 from openai import AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
@@ -11,10 +10,12 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
+    ChatCompletionContentPartTextParam,
 )
 
 from aihub_bot.persistence.entities.ConversationEntity import Message
 from aihub_bot.routes.Service import Service
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 
 
 class OpenaiChatService(Service):
@@ -150,17 +151,16 @@ class OpenaiChatService(Service):
             case "user":
                 return ChatCompletionUserMessageParam(
                     role="user",
-                    content=message.content,
+                    content=[ChatCompletionContentPartTextParam(text=message.content, type="text")],
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
                     role="assistant",
-                    content=message.content,
+                    content=[ChatCompletionContentPartTextParam(text=message.content, type="text")],
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
-                    role="system",
-                    content=message.content,
+                    role="system", content=[ChatCompletionContentPartTextParam(text=message.content, type="text")]
                 )
             case _:
                 raise ValueError(f"Unsupported message role: {message.role}")
