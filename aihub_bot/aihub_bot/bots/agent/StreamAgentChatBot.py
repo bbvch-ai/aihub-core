@@ -1,6 +1,9 @@
+import asyncio
+from asyncio import Task
 from typing import AsyncGenerator
 
 from botbuilder.core import TurnContext
+from botbuilder.schema import Activity, ActivityTypes
 from typing_extensions import override
 
 from aihub_bot.bots.agent.AgentChatBot import AgentChatBot
@@ -23,6 +26,8 @@ class StreamAgentChatBot(AgentChatBot):
         if turn_context.activity.channel_id == "webchat":
             return await super().on_message_activity(turn_context)
 
+        typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+
         AgentChatService.add_user_message_to_conversation(turn_context)
 
         if turn_context.activity.channel_id == "slack" and AgentChatService.is_slack_channel_message(turn_context):
@@ -39,6 +44,7 @@ class StreamAgentChatBot(AgentChatBot):
             ws_receiver=self.ws_receiver,
         )
 
+        await typing
         response = await AgentChatService.send_response_stream(
             turn_context=turn_context,
             response_generator=response_generator,

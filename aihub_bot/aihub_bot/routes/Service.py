@@ -198,8 +198,30 @@ class Service(ChatService):
         - The response can be very long and should be sent in chunks.
         - The user can see the response while it is being generated.
         """
+
+        async def _send_text(
+            _turn_context: TurnContext,
+            _buffer: str,
+            _activity: Optional[Activity] = None,
+            _sent_text: str = "",
+        ) -> Tuple[Activity, str]:
+            if _activity is None:
+                response = await _turn_context.send_activity(_buffer)
+                return Activity(id=response.id, text=_buffer, type=ActivityTypes.message), ""
+
+            _activity.text = _buffer
+            try:
+                await _turn_context.update_activity(_activity)
+                return _activity, ""
+            except ErrorResponseException as e:
+                if "msg_too_long" in str(e):
+                    new_text = _buffer.replace(_sent_text, "", 1)
+                    response = await _turn_context.send_activity(new_text)
+                    return Activity(id=response.id, text=new_text, type=ActivityTypes.message), _sent_text
+                raise e
+
         response = await anext(response_generator, "No response from the agent.")
-        task: Task = asyncio.create_task(Service.send_text(turn_context, response))
+        task: Task = asyncio.create_task(_send_text(turn_context, response))
 
         buffer = response
         sent_text = response
@@ -211,34 +233,12 @@ class Service(ChatService):
             if task.done():
                 activity, used_buffer = task.result()
                 buffer = buffer.replace(used_buffer, "", 1)
-                task = asyncio.create_task(Service.send_text(turn_context, buffer, activity, sent_text))
+                task = asyncio.create_task(_send_text(turn_context, buffer, activity, sent_text))
                 sent_text = buffer
 
         await task
         activity, used_buffer = task.result()
         buffer = buffer.replace(used_buffer, "", 1)
-        await Service.send_text(turn_context, buffer, activity, sent_text)
+        await _send_text(turn_context, buffer, activity, sent_text)
 
         return response
-
-    @staticmethod
-    async def send_text(
-        turn_context: TurnContext,
-        buffer: str,
-        activity: Optional[Activity] = None,
-        sent_text: str = "",
-    ) -> Tuple[Activity, str]:
-        if activity is None:
-            response = await turn_context.send_activity(buffer)
-            return Activity(id=response.id, text=buffer, type=ActivityTypes.message), ""
-
-        activity.text = buffer
-        try:
-            await turn_context.update_activity(activity)
-            return activity, ""
-        except ErrorResponseException as e:
-            if "msg_too_long" in str(e):
-                new_text = buffer.replace(sent_text, "", 1)
-                response = await turn_context.send_activity(new_text)
-                return Activity(id=response.id, text=new_text, type=ActivityTypes.message), sent_text
-            raise e
