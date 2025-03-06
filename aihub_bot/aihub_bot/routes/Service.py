@@ -4,12 +4,13 @@ import re
 from asyncio import Task
 from typing import AsyncGenerator, List, Optional, Tuple
 
+import httpx
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException
+from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException, Attachment
 from fastapi import Request
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message, Content
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 from aihub_lib.routes.chat.ChatService import ChatService
 
@@ -67,33 +68,40 @@ class Service(ChatService):
         system_message = system_message.format(username=username)
         return Message(
             user_id="system",
-            content=system_message,
+            content=[Content(text=system_message, type="text")],
             role="system",
         )
 
     @staticmethod
-    def is_slack_channel_message(turn_context: TurnContext) -> bool:
-        """
-        ### What
-        - Check if the message is from a Slack channel.
+    def handle_slack_message(turn_context: TurnContext) -> Optional[TurnContext]:
+        is_direct_message = Service.is_slack_direct_message(turn_context)
+        is_channel_message = Service.is_slack_channel_message(turn_context)
+        is_mentioned = Service.is_bot_mentioned(turn_context)
+        is_bot_thread = Service.is_mentioned_in_conversation(turn_context)
 
-        ### Why
-        - Slack channel messages need special handling.
-        """
-        assert turn_context.activity.channel_id == "slack"
+        if is_channel_message:
+            turn_context = Service.update_slack_turn_context(turn_context)
+            if is_mentioned:
+                Service.mark_conversation_as_mentioned(turn_context)
+        if not is_direct_message and not is_mentioned and not is_bot_thread:
+            return None
+
+        return turn_context
+
+    @staticmethod
+    def is_slack_channel_message(turn_context: TurnContext) -> bool:
         conversation_id: str = turn_context.activity.conversation.id
-        channel_id_regex = re.compile(r"^B[0-9A-Z]{10}:T[0-9A-Z]{10}:C[0-9A-Z]{10}$")
+        channel_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:C[0-9A-Z]+$")
         return channel_id_regex.match(conversation_id) is not None
 
     @staticmethod
-    def is_bot_mentioned(turn_context: TurnContext) -> bool:
-        """
-        ### What
-        - Check if the bot is mentioned in the user's message.
+    def is_slack_direct_message(turn_context: TurnContext) -> bool:
+        conversation_id: str = turn_context.activity.conversation.id
+        dm_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+:\d+[.]\d+$")
+        return dm_id_regex.match(conversation_id) is not None
 
-        ### Why
-        - The Bot may only respond if it is mentioned.
-        """
+    @staticmethod
+    def is_bot_mentioned(turn_context: TurnContext) -> bool:
         mentions: List[Entity] = turn_context.activity.get_mentions()
         return any(
             mention.additional_properties["mentioned"]["id"] == turn_context.activity.recipient.id
@@ -120,6 +128,16 @@ class Service(ChatService):
         return turn_context
 
     @staticmethod
+    def mark_conversation_as_mentioned(turn_context: TurnContext):
+        conversation_id: str = turn_context.activity.conversation.id
+        ConversationEntity.set_conversation_is_mentioned(conversation_id=conversation_id, is_mentioned=True)
+
+    @staticmethod
+    def is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
+        conversation_id: str = turn_context.activity.conversation.id
+        return ConversationEntity.get_conversation_is_mentioned(conversation_id)
+
+    @staticmethod
     def add_user_message_to_conversation(turn_context: TurnContext) -> ConversationEntity:
         """
         ### What
@@ -130,10 +148,43 @@ class Service(ChatService):
         """
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
-            content=turn_context.activity.text,
+            content=Service._activity_to_content(turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
         )
         return Service.add_messages_to_conversation(turn_context, user_message)
+
+    @staticmethod
+    def _activity_to_content(activity: Activity) -> List[Content]:
+        content: List[Content] = []
+        if activity.text:
+            content.append(Content(text=activity.text, type="text"))
+
+        if activity.attachments and len(activity.attachments) > 0:
+            content.extend(Service._attachments_to_content(activity.attachments))
+
+        return content
+
+    @staticmethod
+    def _attachments_to_content(attachments: List[Attachment]) -> List[Content]:
+        content = []
+        for attachment in attachments:
+            if attachment.content and attachment.content.download_url:
+                url = attachment.content.download_url
+            else:
+                url = attachment.content_url
+
+            if attachment.content_type.startswith("image/"):
+                content.append(Content(text=url, type="image_url"))
+            elif attachment.content_type == "text/plain":
+                content.append(Service._text_file_attachment_to_content(url, attachment.name))
+        return content
+
+    @staticmethod
+    def _text_file_attachment_to_content(url: str, file_name: str) -> Content:
+        response = httpx.get(url)
+        response.raise_for_status()
+        text = f"<file name='{file_name}'>{response.text}</file>"
+        return Content(text=text, type="text")
 
     @staticmethod
     def add_bot_message_to_conversation(turn_context: TurnContext, message: str) -> ConversationEntity:
@@ -146,7 +197,7 @@ class Service(ChatService):
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=message,
+            content=Service._activity_to_content(Activity(text=message)),
             role=turn_context.activity.recipient.role or "bot",
         )
         return Service.add_messages_to_conversation(turn_context, bot_message)
@@ -208,8 +259,8 @@ class Service(ChatService):
             if not _buffer:
                 return _activity, _sent_text
             if _activity is None:
-                response = await _turn_context.send_activity(_buffer)
-                return Activity(id=response.id, text=_buffer, type=ActivityTypes.message), ""
+                _response = await _turn_context.send_activity(_buffer)
+                return Activity(id=_response.id, text=_buffer, type=ActivityTypes.message), ""
 
             _activity.text = _buffer
             try:
@@ -218,8 +269,8 @@ class Service(ChatService):
             except ErrorResponseException as e:
                 if "msg_too_long" in str(e):
                     new_text = _buffer.replace(_sent_text, "", 1)
-                    response = await _turn_context.send_activity(new_text)
-                    return Activity(id=response.id, text=new_text, type=ActivityTypes.message), _sent_text
+                    _response = await _turn_context.send_activity(new_text)
+                    return Activity(id=_response.id, text=new_text, type=ActivityTypes.message), _sent_text
                 raise e
 
         response = await anext(response_generator, "No response from the agent.")

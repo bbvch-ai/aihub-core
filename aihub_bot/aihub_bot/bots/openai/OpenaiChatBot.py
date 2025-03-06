@@ -35,10 +35,10 @@ class OpenaiChatBot(ActivityHandler):
 
         OpenaiChatService.add_user_message_to_conversation(turn_context)
 
-        if turn_context.activity.channel_id == "slack" and OpenaiChatService.is_slack_channel_message(turn_context):
-            if not OpenaiChatService.is_bot_mentioned(turn_context):
+        if turn_context.activity.channel_id == "slack":
+            turn_context = OpenaiChatService.handle_slack_message(turn_context)
+            if turn_context is None:
                 return
-            turn_context = OpenaiChatService.update_slack_turn_context(turn_context)
 
         response = await OpenaiChatService.json_chat_completion(
             turn_context=turn_context,

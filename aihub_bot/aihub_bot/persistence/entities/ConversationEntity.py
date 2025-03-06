@@ -1,15 +1,20 @@
 from typing import List
 
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
+from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField, BooleanField
 
 
 class User(EmbeddedDocument):
     user_id = StringField(required=True)
 
 
+class Content(EmbeddedDocument):
+    text = StringField(required=True)
+    type = StringField(required=True)
+
+
 class Message(EmbeddedDocument):
     user_id = StringField(required=True)
-    content = StringField(required=True)
+    content = ListField(EmbeddedDocumentField(Content), required=True)
     role = StringField(required=True)
 
 
@@ -31,6 +36,7 @@ class ConversationEntity(Document):
         "collection": "conversations",
         "strict": True,
     }
+    is_mentioned = BooleanField(default=False)
     conversation_id = StringField(required=True)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
 
@@ -63,3 +69,14 @@ class ConversationEntity(Document):
     def get_messages_by_conversation_id(cls, conversation_id: str) -> ListField:
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         return conversation.messages
+
+    @classmethod
+    def get_conversation_is_mentioned(cls, conversation_id: str) -> bool:
+        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        return conversation.is_mentioned
+
+    @classmethod
+    def set_conversation_is_mentioned(cls, conversation_id: str, is_mentioned: bool) -> "ConversationEntity":
+        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation.is_mentioned = is_mentioned
+        return conversation.save()
