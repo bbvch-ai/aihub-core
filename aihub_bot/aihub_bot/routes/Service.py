@@ -6,7 +6,7 @@ from typing import AsyncGenerator, List, Optional, Tuple
 
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException
+from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException, Attachment
 from fastapi import Request
 
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message, Content
@@ -137,7 +137,23 @@ class Service(ChatService):
 
     @staticmethod
     def _activity_to_content(activity: Activity) -> List[Content]:
-        return [Content(text=activity.text, type="text")]
+        content = [Content(text=activity.text, type="text")]
+
+        if activity.attachments and len(activity.attachments) > 0:
+            content.extend(Service._attachments_to_content(activity.attachments))
+
+        return content
+
+    @staticmethod
+    def _attachments_to_content(attachments: List[Attachment]) -> List[Content]:
+        content = []
+        for attachment in attachments:
+            if attachment.content and attachment.content.download_url:
+                url = attachment.content.download_url
+            else:
+                url = attachment.content_url
+            content.append(Content(text=url, type="image_url"))
+        return content
 
     @staticmethod
     def add_bot_message_to_conversation(turn_context: TurnContext, message: str) -> ConversationEntity:
