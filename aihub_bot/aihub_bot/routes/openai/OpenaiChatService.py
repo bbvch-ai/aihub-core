@@ -151,6 +151,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
+                    name=message.name,
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
@@ -159,6 +160,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
+                    name=message.name,
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(

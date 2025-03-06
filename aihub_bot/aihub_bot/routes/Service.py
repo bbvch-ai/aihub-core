@@ -150,6 +150,7 @@ class Service(ChatService):
             user_id=turn_context.activity.from_property.id,
             content=Service._activity_to_content(turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
+            name=turn_context.activity.from_property.name,
         )
         return Service.add_messages_to_conversation(turn_context, user_message)
 
@@ -199,6 +200,7 @@ class Service(ChatService):
             user_id=turn_context.activity.recipient.id,
             content=Service._activity_to_content(Activity(text=message)),
             role=turn_context.activity.recipient.role or "bot",
+            name=turn_context.activity.recipient.name,
         )
         return Service.add_messages_to_conversation(turn_context, bot_message)
 
