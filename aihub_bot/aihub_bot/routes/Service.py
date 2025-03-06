@@ -83,7 +83,7 @@ class Service(ChatService):
         """
         assert turn_context.activity.channel_id == "slack"
         conversation_id: str = turn_context.activity.conversation.id
-        channel_id_regex = re.compile(r"^B[0-9A-Z]{10}:T[0-9A-Z]{10}:C[0-9A-Z]{10}$")
+        channel_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:C[0-9A-Z]+$")
         return channel_id_regex.match(conversation_id) is not None
 
     @staticmethod
