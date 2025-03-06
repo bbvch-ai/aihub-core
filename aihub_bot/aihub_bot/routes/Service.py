@@ -97,7 +97,7 @@ class Service(ChatService):
     @staticmethod
     def is_slack_direct_message(turn_context: TurnContext) -> bool:
         conversation_id: str = turn_context.activity.conversation.id
-        dm_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+.*$")
+        dm_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+:\d+[.]\d+$")
         return dm_id_regex.match(conversation_id) is not None
 
     @staticmethod
