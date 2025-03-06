@@ -73,28 +73,35 @@ class Service(ChatService):
         )
 
     @staticmethod
-    def is_slack_channel_message(turn_context: TurnContext) -> bool:
-        """
-        ### What
-        - Check if the message is from a Slack channel.
+    def handle_slack_message(turn_context: TurnContext) -> Optional[TurnContext]:
+        is_direct_message = Service.is_slack_direct_message(turn_context)
+        is_channel_message = Service.is_slack_channel_message(turn_context)
+        is_mentioned = Service.is_bot_mentioned(turn_context)
+        is_bot_thread = Service.is_mentioned_in_conversation(turn_context)
 
-        ### Why
-        - Slack channel messages need special handling.
-        """
-        assert turn_context.activity.channel_id == "slack"
+        if is_channel_message:
+            turn_context = Service.update_slack_turn_context(turn_context)
+            if is_mentioned:
+                Service.mark_conversation_as_mentioned(turn_context)
+        if not is_direct_message and not is_mentioned and not is_bot_thread:
+            return None
+
+        return turn_context
+
+    @staticmethod
+    def is_slack_channel_message(turn_context: TurnContext) -> bool:
         conversation_id: str = turn_context.activity.conversation.id
         channel_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:C[0-9A-Z]+$")
         return channel_id_regex.match(conversation_id) is not None
 
     @staticmethod
-    def is_bot_mentioned(turn_context: TurnContext) -> bool:
-        """
-        ### What
-        - Check if the bot is mentioned in the user's message.
+    def is_slack_direct_message(turn_context: TurnContext) -> bool:
+        conversation_id: str = turn_context.activity.conversation.id
+        dm_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+.*$")
+        return dm_id_regex.match(conversation_id) is not None
 
-        ### Why
-        - The Bot may only respond if it is mentioned.
-        """
+    @staticmethod
+    def is_bot_mentioned(turn_context: TurnContext) -> bool:
         mentions: List[Entity] = turn_context.activity.get_mentions()
         return any(
             mention.additional_properties["mentioned"]["id"] == turn_context.activity.recipient.id
@@ -119,6 +126,16 @@ class Service(ChatService):
         parent_messages: List[Message] = Service.get_messages_by_conversation_id(channel_conversation_id)
         Service.add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
+
+    @staticmethod
+    def mark_conversation_as_mentioned(turn_context: TurnContext):
+        conversation_id: str = turn_context.activity.conversation.id
+        ConversationEntity.set_conversation_is_mentioned(conversation_id=conversation_id, is_mentioned=True)
+
+    @staticmethod
+    def is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
+        conversation_id: str = turn_context.activity.conversation.id
+        return ConversationEntity.get_conversation_is_mentioned(conversation_id)
 
     @staticmethod
     def add_user_message_to_conversation(turn_context: TurnContext) -> ConversationEntity:

@@ -30,10 +30,10 @@ class StreamAgentChatBot(AgentChatBot):
 
         AgentChatService.add_user_message_to_conversation(turn_context)
 
-        if turn_context.activity.channel_id == "slack" and AgentChatService.is_slack_channel_message(turn_context):
-            if not AgentChatService.is_bot_mentioned(turn_context):
+        if turn_context.activity.channel_id == "slack":
+            turn_context = AgentChatService.handle_slack_message(turn_context)
+            if turn_context is None:
                 return
-            turn_context = AgentChatService.update_slack_turn_context(turn_context)
 
         response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat_completion(
             turn_context=turn_context,
