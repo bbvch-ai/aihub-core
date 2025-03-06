@@ -9,7 +9,7 @@ from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFramewo
 from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException
 from fastapi import Request
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message, Content
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 from aihub_lib.routes.chat.ChatService import ChatService
 
@@ -130,10 +130,14 @@ class Service(ChatService):
         """
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
-            content=turn_context.activity.text,
+            content=Service._activity_to_content(turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
         )
         return Service.add_messages_to_conversation(turn_context, user_message)
+
+    @staticmethod
+    def _activity_to_content(activity: Activity) -> List[Content]:
+        return [Content(text=activity.text, type="text")]
 
     @staticmethod
     def add_bot_message_to_conversation(turn_context: TurnContext, message: str) -> ConversationEntity:
@@ -146,7 +150,7 @@ class Service(ChatService):
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=message,
+            content=Service._activity_to_content(Activity(text=message)),
             role=turn_context.activity.recipient.role or "bot",
         )
         return Service.add_messages_to_conversation(turn_context, bot_message)
