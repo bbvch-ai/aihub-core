@@ -1,6 +1,8 @@
+import asyncio
 from typing import AsyncGenerator
 
 from botbuilder.core import TurnContext
+from botbuilder.schema import Activity, ActivityTypes
 from typing_extensions import override
 
 from aihub_bot.bots.openai.OpenaiChatBot import OpenaiChatBot
@@ -23,6 +25,8 @@ class StreamOpenaiChatBot(OpenaiChatBot):
         if turn_context.activity.channel_id == "webchat":
             return await super().on_message_activity(turn_context)
 
+        typing = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+
         OpenaiChatService.add_user_message_to_conversation(turn_context)
 
         if turn_context.activity.channel_id == "slack" and OpenaiChatService.is_slack_channel_message(turn_context):
@@ -37,6 +41,7 @@ class StreamOpenaiChatBot(OpenaiChatBot):
             client=self.client,
         )
 
+        await typing
         response = await OpenaiChatService.send_response_stream(
             turn_context=turn_context,
             response_generator=response_generator,

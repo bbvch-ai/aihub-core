@@ -1,4 +1,8 @@
+import asyncio
+from asyncio import Task
+
 from botbuilder.core import ActivityHandler, TurnContext
+from botbuilder.schema import Activity, ActivityTypes
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from typing_extensions import override
 
@@ -27,6 +31,8 @@ class OpenaiChatBot(ActivityHandler):
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
+        typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+
         OpenaiChatService.add_user_message_to_conversation(turn_context)
 
         if turn_context.activity.channel_id == "slack" and OpenaiChatService.is_slack_channel_message(turn_context):
@@ -41,9 +47,10 @@ class OpenaiChatBot(ActivityHandler):
             client=self.client,
         )
 
+        await typing
+        await turn_context.send_activity(response)
+
         OpenaiChatService.add_bot_message_to_conversation(
             turn_context=turn_context,
             message=response,
         )
-
-        return await turn_context.send_activity(response)
