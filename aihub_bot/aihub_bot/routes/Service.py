@@ -4,7 +4,7 @@ import re
 from asyncio import Task
 from typing import AsyncGenerator, List, Optional, Tuple
 
-import requests
+import httpx
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException, Attachment
@@ -164,7 +164,7 @@ class Service(ChatService):
 
     @staticmethod
     def _text_file_attachment_to_content(url: str, file_name: str) -> Content:
-        response = requests.get(url)
+        response = httpx.get(url)
         response.raise_for_status()
         text = f"<file name='{file_name}'>{response.text}</file>"
         return Content(text=text, type="text")
