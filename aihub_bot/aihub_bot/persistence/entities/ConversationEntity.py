@@ -7,9 +7,14 @@ class User(EmbeddedDocument):
     user_id = StringField(required=True)
 
 
+class Content(EmbeddedDocument):
+    text = StringField(required=True)
+    type = StringField(required=True)
+
+
 class Message(EmbeddedDocument):
     user_id = StringField(required=True)
-    content = StringField(required=True)
+    content = ListField(EmbeddedDocumentField(Content), required=True)
     role = StringField(required=True)
 
 
