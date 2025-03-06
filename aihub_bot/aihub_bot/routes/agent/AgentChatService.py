@@ -162,28 +162,19 @@ class AgentChatService(Service):
         role: MessageRole
         match message.role:
             case "user":
-                return ChatMessage(
-                    role=MessageRole.USER,
-                    content=message.content,
-                    name=message.name,
-                )
+                role = MessageRole.USER
             case "bot":
-                return ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content=message.content,
-                    name=message.name,
-                )
+                role = MessageRole.ASSISTANT
             case "system":
-                return ChatMessage(
-                    role=MessageRole.SYSTEM,
-                    content=message.content,
-                )
+                role = MessageRole.SYSTEM
             case _:
                 raise NotImplementedError(f"Role {message.role} not supported")
 
-        # return ChatMessage(
-        #     role=role, content=[AgentChatService._content_to_content_block(content) for content in message.content]
-        # )
+        return ChatMessage(
+            role=role,
+            content=[AgentChatService._content_to_content_block(content) for content in message.content],
+            name=message.name,
+        )
 
     @staticmethod
     def _content_to_content_block(content: Content) -> ContentBlock:

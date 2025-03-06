@@ -73,6 +73,7 @@ class Service(ChatService):
             user_id="system",
             content=[Content(text=system_message, type="text")],
             role="system",
+            name="system",
         )
 
     @staticmethod

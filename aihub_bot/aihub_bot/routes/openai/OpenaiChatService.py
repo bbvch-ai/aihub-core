@@ -151,10 +151,12 @@ class OpenaiChatService(Service):
             # Reconstruct string by ignoring diacritical marks
             return "".join([c for c in normalized_str if not unicodedata.combining(c)])
 
-        def clean_name(name: str) -> str:
+        def clean_name(_name: str) -> str:
             # OpenAI Regex: r"^[a-zA-Z0-9_-]+$"
-            name = remove_accents(name)
-            return re.sub("[^a-zA-Z0-9_-]", "_", name)
+            _name = remove_accents(_name)
+            return re.sub("[^a-zA-Z0-9_-]", "_", _name)
+
+        name = clean_name(message.name) or None
 
         match message.role:
             case "user":
@@ -164,7 +166,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=clean_name(message.name) or None,
+                    name=name
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
@@ -173,7 +175,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=clean_name(message.name) or None,
+                    name=name
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
@@ -182,6 +184,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
+                    name=name
                 )
             case _:
                 raise ValueError(f"Unsupported message role: {message.role}")
