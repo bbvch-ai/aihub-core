@@ -208,8 +208,8 @@ class Service(ChatService):
             if not _buffer:
                 return _activity, _sent_text
             if _activity is None:
-                response = await _turn_context.send_activity(_buffer)
-                return Activity(id=response.id, text=_buffer, type=ActivityTypes.message), ""
+                _response = await _turn_context.send_activity(_buffer)
+                return Activity(id=_response.id, text=_buffer, type=ActivityTypes.message), ""
 
             _activity.text = _buffer
             try:
@@ -218,8 +218,8 @@ class Service(ChatService):
             except ErrorResponseException as e:
                 if "msg_too_long" in str(e):
                     new_text = _buffer.replace(_sent_text, "", 1)
-                    response = await _turn_context.send_activity(new_text)
-                    return Activity(id=response.id, text=new_text, type=ActivityTypes.message), _sent_text
+                    _response = await _turn_context.send_activity(new_text)
+                    return Activity(id=_response.id, text=new_text, type=ActivityTypes.message), _sent_text
                 raise e
 
         response = await anext(response_generator, "No response from the agent.")
