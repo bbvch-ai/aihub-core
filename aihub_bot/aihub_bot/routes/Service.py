@@ -204,7 +204,9 @@ class Service(ChatService):
             _buffer: str,
             _activity: Optional[Activity] = None,
             _sent_text: str = "",
-        ) -> Tuple[Activity, str]:
+        ) -> Tuple[Optional[Activity], str]:
+            if not _buffer:
+                return _activity, _sent_text
             if _activity is None:
                 response = await _turn_context.send_activity(_buffer)
                 return Activity(id=response.id, text=_buffer, type=ActivityTypes.message), ""
