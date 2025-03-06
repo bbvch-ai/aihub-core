@@ -67,7 +67,7 @@ class Service(ChatService):
         system_message = system_message.format(username=username)
         return Message(
             user_id="system",
-            content=system_message,
+            content=[Content(text=system_message, type="text")],
             role="system",
         )
 

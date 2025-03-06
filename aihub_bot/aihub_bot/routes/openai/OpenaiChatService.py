@@ -147,16 +147,26 @@ class OpenaiChatService(Service):
             case "user":
                 return ChatCompletionUserMessageParam(
                     role="user",
-                    content=[ChatCompletionContentPartTextParam(text=message.content, type="text")],
+                    content=[
+                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        for content in message.content
+                    ],
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
                     role="assistant",
-                    content=[ChatCompletionContentPartTextParam(text=message.content, type="text")],
+                    content=[
+                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        for content in message.content
+                    ],
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
-                    role="system", content=[ChatCompletionContentPartTextParam(text=message.content, type="text")]
+                    role="system",
+                    content=[
+                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        for content in message.content
+                    ],
                 )
             case _:
                 raise ValueError(f"Unsupported message role: {message.role}")
