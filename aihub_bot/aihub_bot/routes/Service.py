@@ -55,6 +55,7 @@ class Service(ChatService):
         ### What
         - Returns the configured system message for the given path.
         - Replaces the placeholder `{username}` with the given username.
+        - Replaces the placeholder `{assistant_name}` with the given assistant name.
 
         ### Why
         - The system message can be configured in the database.
@@ -65,7 +66,9 @@ class Service(ChatService):
         if system_message is None:
             return None
         username = turn_context.activity.from_property.name
+        assistant_name = turn_context.activity.recipient.name
         system_message = system_message.format(username=username)
+        system_message = system_message.format(assistant_name=assistant_name)
         return Message(
             user_id="system",
             content=[Content(text=system_message, type="text")],
