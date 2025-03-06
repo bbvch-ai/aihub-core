@@ -4,6 +4,7 @@ import re
 from asyncio import Task
 from typing import AsyncGenerator, List, Optional, Tuple
 
+import requests
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException, Attachment
@@ -154,8 +155,19 @@ class Service(ChatService):
                 url = attachment.content.download_url
             else:
                 url = attachment.content_url
-            content.append(Content(text=url, type="image_url"))
+
+            if attachment.content_type.startswith("image/"):
+                content.append(Content(text=url, type="image_url"))
+            elif attachment.content_type == "text/plain":
+                content.append(Service._text_file_attachment_to_content(url, attachment.name))
         return content
+
+    @staticmethod
+    def _text_file_attachment_to_content(url: str, file_name: str) -> Content:
+        response = requests.get(url)
+        response.raise_for_status()
+        text = f"<file name='{file_name}'>{response.text}</file>"
+        return Content(text=text, type="text")
 
     @staticmethod
     def add_bot_message_to_conversation(turn_context: TurnContext, message: str) -> ConversationEntity:
