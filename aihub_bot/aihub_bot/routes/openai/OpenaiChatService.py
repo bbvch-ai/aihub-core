@@ -1,6 +1,8 @@
 import asyncio
+import re
 from typing import AsyncGenerator, List
 
+import unicodedata
 from botbuilder.core import TurnContext
 from openai import AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
@@ -143,6 +145,18 @@ class OpenaiChatService(Service):
 
     @staticmethod
     def _message_to_chat_completion_message_param(message: Message) -> ChatCompletionMessageParam:
+        def remove_accents(input_str: str) -> str:
+            # Normalize the string to decompose characters into base letters and diacritics
+            normalized_str = unicodedata.normalize("NFKD", input_str)
+            # Reconstruct string by ignoring diacritical marks
+            return "".join([c for c in normalized_str if not unicodedata.combining(c)])
+
+        def clean_name(name: str) -> str:
+            openai_name_re = r"^[a-zA-Z0-9_-]+$"
+            name = name.replace(" ", "_")
+            name = remove_accents(name)
+            return re.sub(openai_name_re, "", name)
+
         match message.role:
             case "user":
                 return ChatCompletionUserMessageParam(
@@ -151,7 +165,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=message.name,
+                    name=clean_name(message.name),
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
@@ -160,7 +174,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=message.name,
+                    name=clean_name(message.name),
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
