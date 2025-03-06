@@ -57,6 +57,7 @@ class ChatLLMConfig(LLMConfig):
         After the block, it reports costs to `displayer`.
         """
         llm, cost_tracker = self.to_llama_index(model_parameter)
-        llm.system_prompt = system_prompt
+        if system_prompt:
+            llm.system_prompt = system_prompt
         yield llm
         await displayer.display_llm_costs(self.name, cost_tracker)
