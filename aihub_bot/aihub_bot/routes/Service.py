@@ -137,7 +137,9 @@ class Service(ChatService):
 
     @staticmethod
     def _activity_to_content(activity: Activity) -> List[Content]:
-        content = [Content(text=activity.text, type="text")]
+        content: List[Content] = []
+        if activity.text:
+            content.append(Content(text=activity.text, type="text"))
 
         if activity.attachments and len(activity.attachments) > 0:
             content.extend(Service._attachments_to_content(activity.attachments))
