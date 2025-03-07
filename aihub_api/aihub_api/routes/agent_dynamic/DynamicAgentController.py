@@ -1,17 +1,19 @@
-from typing import Annotated, List
+from typing import Annotated, Dict, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security
+from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from fastapi import Body, Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent_dynamic.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent_dynamic.DynamicAgentService import AgentService
 
 
-class AgentController(Controller):
+class DynamicAgentController(Controller):
     """
     A controller managing endpoints related to agents, including discovery and retrieval.
 
@@ -47,7 +49,7 @@ class AgentController(Controller):
     def __init__(self, route: str = "/agent", auth: AuthHandler | None = None):
         super().__init__(route, auth)
 
-    def discover_agents(self, route: str = "/discover") -> "AgentController":
+    def discover_agents(self, route: str = "/discover") -> "DynamicAgentController":
         @self.router.get(route)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
@@ -61,7 +63,7 @@ class AgentController(Controller):
 
         return self
 
-    def get_agent(self, route: str = "/{agent_class}/{agent_id}") -> "AgentController":
+    def get_agent(self, route: str = "/{agent_class}/{agent_id}") -> "DynamicAgentController":
         @self.router.get(route)
         async def get_agent(
             nc: Annotated[NATS, Depends(use_nats)],
@@ -75,5 +77,24 @@ class AgentController(Controller):
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             return await AgentService.get_agent(nc, agent_class, agent_id)
+
+        return self
+
+    def interact_with_agent(self, route: str = "/{agent_class}/{agent_id}/send_event") -> "DynamicAgentController":
+        @self.router.post(route)
+        async def send_event(
+            nc: Annotated[NATS, Depends(use_nats)],
+            agent_class: str,
+            agent_id: str,
+            raw_event: Annotated[Dict, Body],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Security(self.auth),
+        ) -> AgentDTO:
+            """
+            Send an event to a specific agent. Raises 403 if the user lacks access.
+            """
+            if not user.has_access_to_agent(agent_class, agent_id):
+                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
+            return await AgentService.send_event(nc, ws_receiver, user, raw_event, agent_class, agent_id)
 
         return self

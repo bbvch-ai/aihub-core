@@ -26,7 +26,7 @@ from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from starlette.responses import StreamingResponse
 
-from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent_dynamic.DynamicAgentService import AgentService
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
@@ -226,7 +226,7 @@ class OpenaiService:
             ws_receiver=ws_receiver,
         )
         # Wait until all events are processed
-        await resources.stop_event.wait()
+        await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
         # Construct final JSON response
@@ -270,7 +270,7 @@ class OpenaiService:
 
         async def sse_event_generator():
             while True:
-                if resources.stop_event.is_set() and resources.chunk_queue.empty():
+                if resources.stop_signal.is_set() and resources.chunk_queue.empty():
                     logger.debug("Stop streaming due to stop_event and empty queue")
                     break
                 try:

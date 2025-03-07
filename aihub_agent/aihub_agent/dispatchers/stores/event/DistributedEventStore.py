@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Dict, List, Optional
 
 from aihub_lib.nats.events import ControlEvent
 from cachetools import TTLCache

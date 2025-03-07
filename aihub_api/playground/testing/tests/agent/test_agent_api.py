@@ -4,7 +4,7 @@ from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
 
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.agent_dynamic.DynamicAgentController import DynamicAgentController
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 
 AGENT_CLASS = "test_agent"
@@ -14,7 +14,7 @@ AGENT_ID = "test_agent_1"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def agent_api_client():
     auth = NoAuthHandler()
-    controller = AgentController(auth=auth).discover_agents().get_agent()
+    controller = DynamicAgentController(auth=auth).discover_agents().get_agent()
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()

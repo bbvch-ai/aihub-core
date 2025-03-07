@@ -2,6 +2,7 @@ import json
 
 from pydantic import BaseModel, Field
 
+from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
 
@@ -41,7 +42,9 @@ class WSUserEvent(BaseModel):
 
     thread_id: str = Field(..., description="ID of the thread this event is related to.")
     display_id: str = Field(..., description="Display session ID, grouping events in the UI.")
-    event: UserMessageEvent | HumanInTheLoopResponseEvent = Field(..., description="The user-originated event.")
+    event: StartEvent | UserMessageEvent | HumanInTheLoopResponseEvent = Field(
+        ..., description="The user-originated event."
+    )
 
     @classmethod
     def deserialize_event(cls, data: bytes | str | dict) -> "WSUserEvent":
