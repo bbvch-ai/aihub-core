@@ -96,10 +96,12 @@ class AgentController(Controller):
         Generates an endpoint to which an StartEvent can be send and the endpoint answers with the agents
         StopEvent.
         """
-        name = f"send_event_to_{snakecase(agent_class)}_{snakecase(agent_id)}"
+        agent_class_name = snakecase(agent_class)
+        agent_class_id = snakecase(agent_id)
+        name = f"send_event_to_{agent_class_name}_{agent_class_id}"
         start_event_input_type = create_input_model(start_event_type)
 
-        @self.router.post(f"/{agent_class}/{agent_id}/send_event", name=name)
+        @self.router.post(f"/{agent_class_name}/{agent_class_id}/send_event", name=name)
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],
