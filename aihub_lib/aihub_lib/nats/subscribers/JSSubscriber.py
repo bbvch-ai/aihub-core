@@ -102,7 +102,7 @@ class JSSubscriber(Generic[TEvent]):
     async def _process(self, event, topic, msg):
         """
         Process the event and acknowledge the message based on result.
-        Uses a semaphore to limit the number of concurrent processing to 100.
+        Uses a semaphore to limit the number of concurrent processing.
         """
         async with JSSubscriber._process_semaphore:
             try:

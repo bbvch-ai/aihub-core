@@ -85,6 +85,10 @@ class JetStreamEventStore:
         self.stream_name, self.stream_subject = self.topic_manager.get_stream_over_agent()
         self.control_subject = self.topic_manager.get_subject_for_all_control_events_in_agent()
 
+        uuid_hex = uuid.uuid4().hex
+        self.subscription_durable_name = f"event-store-{uuid_hex}"
+        self.replay_durable_name = f"event-store-replay-{uuid_hex}"
+
     async def start(self):
         """
         Initialize the event store by:
@@ -107,11 +111,9 @@ class JetStreamEventStore:
 
             # Step 2: Subscribe to new events
             # Generate a unique durable name for this instance
-            durable_name = f"event-store-{uuid.uuid4().hex}"
-
             self.subscription = await self.js.subscribe(
                 subject=self.control_subject,
-                durable=durable_name,
+                durable=self.subscription_durable_name,
                 stream=self.stream_name,
                 cb=self._handle_new_event,
             )
@@ -122,7 +124,7 @@ class JetStreamEventStore:
             try:
                 # Create a pull subscription for historical replay
                 replay_config = ConsumerConfig(
-                    name=f"event-store-replay-{id(self):x}",
+                    name=self.replay_durable_name,
                     filter_subject=self.control_subject,
                     ack_policy=AckPolicy.NONE,
                     deliver_policy=DeliverPolicy.ALL,
@@ -134,7 +136,7 @@ class JetStreamEventStore:
                 # Create a pull subscription
                 pull_sub = await self.js.pull_subscribe(
                     subject=self.control_subject,
-                    durable=f"event-store-replay-{id(self):x}",
+                    durable=self.replay_durable_name,
                     stream=self.stream_name,
                 )
 
@@ -165,7 +167,7 @@ class JetStreamEventStore:
 
                 # Clean up the temporary consumer
                 try:
-                    await self.js.delete_consumer(self.stream_name, f"event-store-replay-{id(self):x}")
+                    await self.js.delete_consumer(self.stream_name, self.replay_durable_name)
                 except Exception as e:
                     logger.warning(f"Error deleting temporary consumer: {e}")
 
@@ -295,27 +297,27 @@ class JetStreamEventStore:
         self,
         run_id: Annotated[str, "Unique identifier for the workflow run"],
         class_name: Annotated[str, "The event class name to retrieve"],
-        before: Annotated[Optional[int], "Only include events created before this timestamp"] = None,
+        until: Annotated[Optional[int], "Only include events created until this timestamp"] = None,
     ) -> List[ControlEvent]:
         """
         Retrieves all events of the specified type for a run.
-        If 'before' is specified, only returns events created before that timestamp.
+        If 'until' is specified, only returns events created until that timestamp.
         """
         run_store = self._get_run_store(run_id)
-        return run_store.get_events_of_type(class_name, before)
+        return run_store.get_events_of_type(class_name, until)
 
     async def get_events_of_multiple_types(
         self,
         run_id: Annotated[str, "Unique identifier for the workflow run"],
         class_names: Annotated[List[str], "List of event class names to retrieve"],
-        before: Annotated[Optional[int], "Only include events created before this timestamp"] = None,
+        until: Annotated[Optional[int], "Only include events created until this timestamp"] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves events for multiple types, organized by event type name.
         This is the primary method used by the Dispatcher.
         """
         run_store = self._get_run_store(run_id)
-        return run_store.get_events_of_multiple_types(class_names, before)
+        return run_store.get_events_of_multiple_types(class_names, until)
 
     async def delete_all(self, run_id: Annotated[str, "Unique identifier for the workflow run"]):
         """
