@@ -50,12 +50,12 @@ class StreamManager:
                 config=api.StreamConfig(
                     name=stream_name,
                     subjects=[subject],
-                    storage=api.StorageType.MEMORY,
+                    storage=api.StorageType.FILE,
                     retention=api.RetentionPolicy.LIMITS,
-                    max_msgs=1_000_000,
+                    max_msgs=10_000_000,
                     discard=api.DiscardPolicy.OLD,
                     max_age=60 * 60 * 24 * 30,
-                    duplicate_window=60 * 60,
+                    duplicate_window=60 * 1,
                 )
             )
 

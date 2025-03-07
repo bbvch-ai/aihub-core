@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import multiprocessing
+import os
+import signal
 from multiprocessing import Process
 from typing import List, Optional, Type
 
@@ -74,9 +76,31 @@ class MultiprocessAgentRunner:
         locale_paths: Optional[List[str]],
     ):
         """Static method that runs in each process to initialize and run an agent."""
-        import os
+
+        runner = None
+        stop_loop = asyncio.Event()
+
+        def signal_handler(sig, frame):
+            # Create an asyncio task to stop the runner when SIGTERM is received
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(shutdown_runner())
+            else:
+                # If no event loop is running, just set the event
+                stop_loop.set()
+
+        async def shutdown_runner():
+            """Gracefully shutdown the runner"""
+            logger.info(f"Process {process_index}: Received shutdown signal, stopping runner...")
+            if runner and hasattr(runner, "stop"):
+                await runner.stop()
+            stop_loop.set()
+
+        # Register signal handlers
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
 
         async def _run_agent():
+            nonlocal runner
             process_id = os.getpid()
             logger.info(f"Agent process {process_index} running with PID: {process_id}")
 
@@ -89,8 +113,21 @@ class MultiprocessAgentRunner:
                 locale_paths=locale_paths,
             )
 
-            # Use the runner's built-in run_forever method
-            await runner.run_forever()
+            # Start the runner
+            await runner.start()
+
+            try:
+                # Wait until we're signaled to stop
+                await stop_loop.wait()
+            except KeyboardInterrupt:
+                logger.info(f"Process {process_index}: Received KeyboardInterrupt")
+            except Exception as e:
+                logger.error(f"Process {process_index}: Error while running: {e}", exc_info=True)
+            finally:
+                # Ensure proper cleanup
+                if runner and hasattr(runner, "stop") and not stop_loop.is_set():
+                    logger.info(f"Process {process_index}: Stopping runner in finally block")
+                    await runner.stop()
 
         # Run the async function
         try:

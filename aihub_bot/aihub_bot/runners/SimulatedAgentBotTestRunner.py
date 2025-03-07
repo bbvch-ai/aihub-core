@@ -170,6 +170,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             self.topic_manager,
             js=self.js,
             handler=self.simulate_agent,
+            queue_group="simulated-agent-bot-runner-queue-group",
         )
         await self.agent_control_event_subscriber.start()
 
