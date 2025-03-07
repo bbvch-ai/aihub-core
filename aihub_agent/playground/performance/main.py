@@ -183,7 +183,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         run_id = str(ObjectId())
 
         # Setup event tracking
-        _stop_event = asyncio.Event()
+        _stop_signal = asyncio.Event()
 
         # Create topic managers
         topic_manager = AgentInstanceTopicManager(agent_type.__name__, agent_config.agent_id)
@@ -200,7 +200,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
                 parallel_events.append(event)
 
             if isinstance(event, StopEvent):
-                _stop_event.set()
+                _stop_signal.set()
 
         # Subscribe to events
         event_subscriber = NCSubscriber.for_all_thread_events(
@@ -227,7 +227,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         # Wait for completion
         timeout_duration = 60 * 60  # 5 minutes
         try:
-            await asyncio.wait_for(_stop_event.wait(), timeout=timeout_duration)
+            await asyncio.wait_for(_stop_signal.wait(), timeout=timeout_duration)
             await asyncio.sleep(1)
         except asyncio.TimeoutError:
             timed_out = True

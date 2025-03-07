@@ -77,7 +77,7 @@ class AgentRunner:
         self.agent_type = agent_type
         self.agent_config = agent_config
         self.running = False
-        self._stop_event = asyncio.Event()
+        self._stop_signal = asyncio.Event()
 
         self.agent_class = self.agent_type.__name__
         self.topic_manager = AgentInstanceTopicManager(self.agent_class, self.agent_config.agent_id)
@@ -144,7 +144,7 @@ class AgentRunner:
             return
 
         self.running = True
-        self._stop_event.clear()
+        self._stop_signal.clear()
 
         self.nc = NATS()
         await self.nc.connect(servers=self.servers)
@@ -193,7 +193,7 @@ class AgentRunner:
             return
 
         logger.debug(f"Shutting down {self.agent_class}...")
-        self._stop_event.set()
+        self._stop_signal.set()
         self.running = False
 
         await self.control_event_subscriber.stop()
@@ -208,7 +208,7 @@ class AgentRunner:
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""
         try:
-            while not self._stop_event.is_set():
+            while not self._stop_signal.is_set():
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             if self.nc:
@@ -222,7 +222,7 @@ class AgentRunner:
         logger.debug(f"Starting {self.agent_class}.{self.agent_config.agent_id}")
         await self.start()
         try:
-            await self._stop_event.wait()
+            await self._stop_signal.wait()
         except KeyboardInterrupt:
             await self.stop()
 

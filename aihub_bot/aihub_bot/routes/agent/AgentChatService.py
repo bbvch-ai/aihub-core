@@ -45,7 +45,7 @@ class AgentChatService(Service):
             stream=False,
         )
 
-        await resources.stop_event.wait()
+        await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
         return AgentChatService.build_json_response_content(resources.chunk_events)
@@ -79,12 +79,12 @@ class AgentChatService(Service):
 
         async def response_generator():
             while True:
-                if resources.stop_event.is_set() and resources.chunk_queue.empty():
+                if resources.stop_signal.is_set() and resources.chunk_queue.empty():
                     break
                 try:
                     chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=30)
                 except TimeoutError as e:
-                    if resources.stop_event.is_set():
+                    if resources.stop_signal.is_set():
                         break
                     raise e
 
