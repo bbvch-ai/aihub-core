@@ -1,13 +1,10 @@
 import asyncio
 import logging
 import uuid
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Dict, List, Optional, DefaultDict
+from typing import Annotated, Dict, List, Optional, Set
 
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from cachetools import TTLCache
@@ -15,61 +12,54 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
 
+from aihub_agent.dispatchers.stores.event.RunEventStore import RunEventStore
+
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class RunEventStore:
-    """Store for all events within a single run"""
-
-    # Maps event_type -> event_id -> event
-    events: DefaultDict[str, Dict[str, ControlEvent]] = None
-
-    def __post_init__(self):
-        if self.events is None:
-            self.events = defaultdict(dict)
-
-    def add_event(self, event: ControlEvent) -> None:
-        """Add an event to the store"""
-        event_type = event.__class__.__name__
-        event_id = event.event_id
-        self.events[event_type][event_id] = event
-
-    def get_events_of_type(self, event_type: str, before: Optional[int] = None) -> List[ControlEvent]:
-        """Get all events of a specific type, optionally filtered by timestamp"""
-        events = list(self.events.get(event_type, {}).values())
-
-        if before is not None:
-            events = [e for e in events if e.created_at <= before]
-
-        # Sort by creation time for consistent ordering
-        events.sort(key=lambda x: x.created_at)
-        return events
-
-    def get_events_of_multiple_types(
-        self, event_types: List[str], before: Optional[int] = None
-    ) -> Dict[str, List[ControlEvent]]:
-        """Get events of multiple types, organized by type name"""
-        result = {}
-        for event_type in event_types:
-            result[event_type] = self.get_events_of_type(event_type, before)
-        return result
 
 
 class JetStreamEventStore:
     """
-    A distributed event store implementation using NATS JetStream.
+    A distributed event store powered by NATS JetStream for reliable, consistent event management.
 
-    This store subscribes to events directly from JetStream and maintains them
-    in memory using a TTLCache, ensuring efficient access and automatic cleanup.
+    ### Why JetStreamEventStore?
+    In distributed workflows, events drive the progress of runs. These events need to be:
+    - Durably stored for reliability
+    - Quickly accessible for efficiency
+    - Consistently available across server restarts or outages
+    - Replayed in order when a service comes online
+
+    JetStreamEventStore solves these challenges by:
+    - Using NATS JetStream's persistent storage for durability
+    - Maintaining an in-memory cache for fast lookups
+    - Automatically replaying ALL historical messages when starting up
+    - Ensuring consistent event ordering based on timestamps
+    - Providing synchronization primitives for waiting on events
+
+    ### Key Features
+    1. **Full History Replay**: Automatically replays all historical events for this agent when starting up.
+    2. **In-Memory Caching**: Stores events in memory for fast access while maintaining JetStream as the authoritative source.
+    3. **Event Synchronization**: Provides mechanisms to wait for specific events to arrive.
+    4. **Run-Scoped Storage**: Organizes events by run ID for clean separation between workflows.
+    5. **Automatic Cleanup**: Uses TTLCache to automatically expire old runs after configurable periods.
+
+    ### Lifecycle
+    - **Initialization**: On startup, subscribes to JetStream and replays all historical events.
+    - **Operation**: Maintains events in memory, categorized by run and event type.
+    - **Cleanup**: Automatically expires old runs from memory after the configured TTL.
+
+    ### Integration Points
+    This store is designed to be a direct replacement for the Redis-based DistributedEventStore,
+    providing the same API but leveraging NATS JetStream for better durability and performance.
+    It integrates seamlessly with the `Dispatcher` to drive workflow execution.
     """
 
     def __init__(
         self,
-        nc: NATS,
-        js: JetStreamContext,
-        topic_manager: AgentInstanceTopicManager,
-        ttl_seconds: int = 60 * 60 * 24 * 30,  # 30 days default TTL
+        nc: Annotated[NATS, "NATS client for messaging"],
+        js: Annotated[JetStreamContext, "JetStream context for persistent storage"],
+        topic_manager: Annotated[AgentInstanceTopicManager, "Topic manager for this agent instance"],
+        ttl_seconds: Annotated[int, "Time-to-live for cached run data in seconds"] = 60 * 60 * 24 * 30,
+        # 30 days default TTL
     ):
         self.nc = nc
         self.js = js
@@ -79,13 +69,15 @@ class JetStreamEventStore:
         self.run_stores = TTLCache(maxsize=100_000, ttl=ttl_seconds)
 
         # Synchronization for events being processed
-        self.pending_events = set()
-        self.event_sync_conditions = {}
+        self.pending_events: Set[str] = set()
+        self.event_sync_conditions: Dict[str, asyncio.Condition] = {}
 
         # Subscription
         self.subscription = None
 
-        logger.debug(f"New JetStream Event Store created for agent {self.topic_manager.agent_class}.{self.topic_manager.agent_id}")
+        logger.debug(
+            f"New JetStream Event Store created for agent {self.topic_manager.agent_class}.{self.topic_manager.agent_id}"
+        )
         # Initialization flag
         self.is_initialized = False
         self.init_lock = asyncio.Lock()
@@ -246,7 +238,12 @@ class JetStreamEventStore:
             except Exception:
                 pass
 
-    async def ensure_event_stored(self, run_id: str, event: ControlEvent, timeout: float = 10.0) -> bool:
+    async def ensure_event_stored(
+        self,
+        run_id: Annotated[str, "Unique identifier for the workflow run"],
+        event: Annotated[ControlEvent, "The event to ensure is stored"],
+        timeout: Annotated[float, "Maximum time to wait in seconds"] = 10.0,
+    ) -> bool:
         """
         Ensures that the event is stored in the event store.
         If not already stored, waits until it is stored or the timeout expires.
@@ -294,8 +291,24 @@ class JetStreamEventStore:
                 if not condition._waiters:  # pylint: disable=protected-access
                     del self.event_sync_conditions[event_key]
 
+    async def get_events_of_type(
+        self,
+        run_id: Annotated[str, "Unique identifier for the workflow run"],
+        class_name: Annotated[str, "The event class name to retrieve"],
+        before: Annotated[Optional[int], "Only include events created before this timestamp"] = None,
+    ) -> List[ControlEvent]:
+        """
+        Retrieves all events of the specified type for a run.
+        If 'before' is specified, only returns events created before that timestamp.
+        """
+        run_store = self._get_run_store(run_id)
+        return run_store.get_events_of_type(class_name, before)
+
     async def get_events_of_multiple_types(
-        self, run_id: str, class_names: List[str], before: Optional[int] = None
+        self,
+        run_id: Annotated[str, "Unique identifier for the workflow run"],
+        class_names: Annotated[List[str], "List of event class names to retrieve"],
+        before: Annotated[Optional[int], "Only include events created before this timestamp"] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves events for multiple types, organized by event type name.
@@ -304,7 +317,7 @@ class JetStreamEventStore:
         run_store = self._get_run_store(run_id)
         return run_store.get_events_of_multiple_types(class_names, before)
 
-    async def delete_all(self, run_id: str):
+    async def delete_all(self, run_id: Annotated[str, "Unique identifier for the workflow run"]):
         """
         Removes all events for a specific run.
         """

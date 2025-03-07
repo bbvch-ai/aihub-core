@@ -7,11 +7,9 @@ from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
@@ -72,7 +70,9 @@ class JSSubscriber(Generic[TEvent]):
         Once started, the subscriber begins consuming messages from JetStream.
         """
         await self.stream_manager.ensure_agent_stream_exists()
-        self.js_subscription = await self.js.subscribe(self.subject, cb=self.message_handler, stream=self.stream_manager.stream_name, queue=self.queue_group)
+        self.js_subscription = await self.js.subscribe(
+            self.subject, cb=self.message_handler, stream=self.stream_manager.stream_name, queue=self.queue_group
+        )
         logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
 
     async def stop(self):
@@ -110,33 +110,6 @@ class JSSubscriber(Generic[TEvent]):
             except Exception as e:
                 logger.error(f"Error in async handler: {e}")
                 traceback.print_exc()
-
-    @classmethod
-    def for_all_agent_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, Topic], Awaitable[None]],
-        queue_group: str,
-        js: Optional[JetStreamContext] = None,
-    ):
-        """
-        Creates a JSSubscriber for all agent events.
-        Use this when you want a single subscriber to handle every agent event in the system.
-        """
-        subject = topic_manager.get_subject_for_all_events_in_agent()
-        stream_name, stream_subject = topic_manager.get_stream_over_all_agents()
-
-        return cls(
-            nc=nc,
-            subject=subject,
-            stream_subject=stream_subject,
-            stream_name=stream_name,
-            queue_group=queue_group,
-            event_cls=BaseEvent,
-            handler=handler,
-            js=js,
-        )
 
     @classmethod
     def for_agent_instance_events(

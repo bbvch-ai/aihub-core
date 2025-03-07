@@ -5,7 +5,6 @@ from typing import AsyncGenerator
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from fastapi import FastAPI
@@ -77,12 +76,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Persist all agent events
         persister = EventPersister("default")
-        persist_subscriber = JSSubscriber.for_all_agent_events(
-            nc=nc,
-            js=js,
-            topic_manager=topic_manager,
-            handler=persister.persist_event,
-            queue_group="api-persister"
+        persist_subscriber = NCSubscriber.for_all_agent_events(
+            nc=nc, topic_manager=topic_manager, handler=persister.persist_event
         )
         await persist_subscriber.start()
 

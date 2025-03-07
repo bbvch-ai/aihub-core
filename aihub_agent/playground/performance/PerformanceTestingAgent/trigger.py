@@ -14,7 +14,7 @@ async def main():
     runner = AgentTestRunner(
         agent_type=PerformanceTestingAgent,
         agent_config=PerformanceTestingAgentConfig(
-            agent_id=f"performance_testing_agent",
+            agent_id="performance_testing_agent",
             name=LocaleString(en="Performance Testing Agent"),
             description=LocaleString(en=""),
             system_prompt=LocaleString(en=""),
