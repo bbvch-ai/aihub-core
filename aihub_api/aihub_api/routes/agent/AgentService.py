@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import sleep
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events import StartEvent, StopEvent
@@ -12,6 +12,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
 from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
@@ -157,14 +158,25 @@ class AgentService:
         start_event: StartEvent,
         agent_class: str,
         agent_id: str,
+        thread_id: Optional[str] = None,
+        display_id: Optional[str] = None,
     ) -> StopEvent:
         """Sends an event to a specific agent."""
+        if thread_id:
+            thread = ThreadEntity.get_thread_by_id(thread_id)
+        else:
+            thread = ThreadEntity.create_thread(
+                "chat",
+                users=[User(user_id=user.oid)],
+                agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+            )
+
         topic_manager = AgentThreadTopicManager(
             agent_class=agent_class,
             agent_id=agent_id,
-            thread_id=str(ObjectId()),
-            display_id=str(ObjectId()),
-            run_id=str(ObjectId()),
+            thread_id=str(thread.id),
+            display_id=display_id or str(ObjectId()),
+            run_id="*",
         )
         ws_event = WSUserEvent(
             thread_id=topic_manager.thread_id,
