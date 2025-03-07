@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Tuple
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
@@ -82,18 +82,6 @@ class AgentInstanceTopicManager(TopicManager):
             call_id=call_id,
         )
 
-    def get_stream_name_for_all_events_within_agent(self) -> str:
-        """Returns a stream name dedicated to all events of this agent instance."""
-        return f"agent_{self.agent_class}_{self.agent_id}_stream"
-
-    def get_stream_group_for_all_control_events_within_agent(self) -> str:
-        """Returns a queue group name for consuming control events from this agent instance's stream."""
-        return f"{self.get_stream_name_for_all_events_within_agent()}_{self.CONTROL_EVENT}_queue_group"
-
-    def get_stream_group_for_all_display_events_within_agent(self) -> str:
-        """Returns a queue group name for consuming display events from this agent instance's stream."""
-        return f"{self.get_stream_name_for_all_events_within_agent()}_{self.DISPLAY_EVENT}_queue_group"
-
     def get_subject_for_specific_event_in_agent_instance(
         self,
         thread_id: Annotated[str, "Thread ID within this agent instance"],
@@ -147,3 +135,49 @@ class AgentInstanceTopicManager(TopicManager):
             event_name="*",
             event_id="*",
         )
+
+    def get_subject_for_all_events_in_agent(self) -> str:
+        """Returns a subject pattern matching all events from all agents."""
+        return self.get_subject_for_specific_event_in_agent(
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
+            thread_id="*",
+            display_id="*",
+            run_id="*",
+            event_type="*",
+            event_name="*",
+            event_id="*",
+        )
+
+    def get_subject_for_all_display_events_in_agent(self) -> str:
+        """Returns a subject pattern matching all display events from all agents."""
+        return self.get_subject_for_specific_event_in_agent(
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
+            thread_id="*",
+            display_id="*",
+            run_id="*",
+            event_type=self.DISPLAY_EVENT,
+            event_name="*",
+            event_id="*",
+        )
+
+    def get_subject_for_all_control_events_in_agent(self) -> str:
+        """Returns a subject pattern matching all control events from all agents."""
+        return self.get_subject_for_specific_event_in_agent(
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
+            thread_id="*",
+            display_id="*",
+            run_id="*",
+            event_type=self.CONTROL_EVENT,
+            event_name="*",
+            event_id="*",
+        )
+
+    def get_stream_over_agent(self) -> Tuple[str, str]:
+        return self._get_stream_name_for_all_events_within_agent(), self.get_subject_for_all_events_in_agent()
+
+    def _get_stream_name_for_all_events_within_agent(self) -> str:
+        """Returns the stream name used for all agent events."""
+        return f"{self.AGENT_TOPIC}_{self.agent_class}_{self.agent_id}_stream"

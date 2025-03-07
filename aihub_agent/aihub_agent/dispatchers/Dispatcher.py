@@ -13,6 +13,7 @@ from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent, Excepti
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -25,7 +26,7 @@ from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
 from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
+from aihub_agent.dispatchers.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
@@ -110,11 +111,33 @@ class Dispatcher:
         self.topic_manager = topic_manager
         self.locale_handler = locale_handler
 
-        self.publisher = JSPublisher(self.js)
-        self.event_store = DistributedEventStore(redis)
+        self.nc_publisher = NCPublisher(self.nc)
+        self.js_publisher = JSPublisher(self.js)
+        self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager)
         self.step_store = DistributedStepStore(redis)
         self.tracer = RunTraceCoordinator(self.nc)
         self.step_configs = agent_config.get_step_configs()
+
+        # Initialization flag
+        self._initialized = False
+        self._init_lock = asyncio.Lock()
+
+    async def start(self):
+        """
+        Initialize the dispatcher by starting the event store.
+        This must be called before the dispatcher can process any events.
+        """
+        async with self._init_lock:
+            if self._initialized:
+                return
+
+            # Initialize the event store
+            await self.event_store.start()
+            self._initialized = True
+            logger.info("Dispatcher initialized and ready to process events")
+
+    async def stop(self):
+        await self.event_store.stop()
 
     async def handle_event(
         self,
@@ -130,9 +153,12 @@ class Dispatcher:
 
         If steps are ready, it triggers their execution asynchronously.
         """
+        if not self._initialized:
+            await self.start()
+
         logger.debug(f"Handling event {event.__class__.__name__} for subject {topic}")
-        # Store the event for future reference
-        await self.event_store.store_event(topic.run_id, event)
+
+        await self.event_store.ensure_event_stored(topic.run_id, event)
 
         # Retrieve contexts (run and thread)
         run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
@@ -174,9 +200,7 @@ class Dispatcher:
             )
             if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
-                asyncio.create_task(
-                    self.execute_step(event, step_method, events, run_context, thread_context, topic)
-                )
+                asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
 
     async def is_step_ready(
         self,
@@ -395,7 +419,6 @@ class Dispatcher:
                         logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
                         await self.trigger_agent_in_the_loop(event, topic)
 
-                    await self.event_store.store_event(topic.run_id, event)
                     await self.publish_event(event, topic)
 
     async def _build_method_kwargs(
@@ -437,7 +460,7 @@ class Dispatcher:
             # Handle EventDisplayer
             if param.annotation == EventDisplayer:
                 kwargs[param.name] = EventDisplayer(
-                    self.publisher,
+                    self.js_publisher,
                     topic_manager=self.get_topic_manager_for_thread(topic),
                 )
                 continue
@@ -523,7 +546,7 @@ class Dispatcher:
 
         subject = aitl_request_event.other_agent_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
-        await self.publisher.publish_event(start_event, subject)
+        await self.js_publisher.publish_event(start_event, subject)
 
     async def publish_event(
         self,
@@ -537,7 +560,7 @@ class Dispatcher:
         topic_manager = self.get_topic_manager_for_thread(topic)
         if isinstance(event, ControlEvent):
             subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
-            await self.publisher.publish_event(event, subject)
+            await self.js_publisher.publish_event(event, subject)
         if isinstance(event, DisplayEvent):
             subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
-            await self.publisher.publish_event(event, subject)
+            await self.nc_publisher.publish_event(event, subject)

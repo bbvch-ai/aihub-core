@@ -93,24 +93,6 @@ class NCSubscriber(Generic[TEvent]):
             logger.error(f"Error in async handler for subject '{subject}': {e}")
             traceback.print_exc()
 
-    @classmethod
-    def for_all_agent_control_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
-    ):
-        """
-        Convenience constructor subscribing to all control events from all agents.
-        Useful for system-level orchestration or monitoring.
-        """
-        subject = topic_manager.get_subject_for_all_control_events_in_agent()
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=DisplayEvent,
-            handler=handler,
-        )
 
     @classmethod
     def all_for_agent_display_events(
@@ -144,21 +126,6 @@ class NCSubscriber(Generic[TEvent]):
             handler=handler,
         )
 
-    @classmethod
-    def for_thread_control_events(
-        cls,
-        nc: NATS,
-        topic_manager: AgentThreadTopicManager,
-        handler: Callable[[ControlEvent, Topic], Awaitable[None]],
-    ):
-        """Subscribe to all control events within a specific thread."""
-        subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=DisplayEvent,  # This seems like a potential bug: event_cls=DisplayEvent for control events?
-            handler=handler,
-        )
 
     @classmethod
     def for_all_thread_events(

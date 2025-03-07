@@ -82,7 +82,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             js=js,
             topic_manager=topic_manager,
             handler=persister.persist_event,
-            ack_on_fail=False,
+            queue_group="api-persister"
         )
         await persist_subscriber.start()
 

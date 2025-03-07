@@ -68,7 +68,7 @@ class StoreBase:
     async def get_value(
         self, run_id: str, key: str, default_value: T = None, transform_func: Callable[[bytes], T] = None
     ) -> T:
-        """Retrieves a value from the store, optionally transforming it with a provided function."""
+        """Retrieves a value from the store, optionally transforming it."""
         redis_key = self._build_key(run_id, key)
         try:
             value = await self.redis.get(redis_key)
@@ -81,6 +81,14 @@ class StoreBase:
         except Exception as e:
             logger.error(f"Error retrieving key '{redis_key}': {e}")
             return default_value
+
+    async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
+        """Retrieves and deserializes a JSON value from Redis."""
+
+        def json_transform(value_bytes):
+            return json.loads(value_bytes.decode())
+
+        return await self.get_value(run_id, key, default_value, json_transform)
 
     async def put_value(self, run_id: str, key: str, value: bytes) -> bool:
         """Stores a raw byte value in Redis."""
@@ -101,22 +109,53 @@ class StoreBase:
             logger.error(f"Error serializing JSON value for key '{key}': {e}")
             return False
 
-    async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
-        """Retrieves and deserializes a JSON value from Redis."""
+    async def append_to_list(self, run_id: str, key: str, value: bytes) -> bool:
+        """Appends a raw byte value to a Redis list."""
+        redis_key = self._build_key(run_id, key)
+        try:
+            await self.redis.rpush(redis_key, value)
+            await self.redis.expire(redis_key, self.default_ttl)
+            return True
+        except Exception as e:
+            logger.error(f"Error appending to list '{redis_key}': {e}")
+            return False
 
-        def json_transform(value_bytes):
-            return json.loads(value_bytes.decode())
+    async def append_json_to_list(self, run_id: str, key: str, value: Any) -> bool:
+        """Appends a JSON-serializable value to a Redis list."""
+        try:
+            serialized = json.dumps(value).encode()
+            return await self.append_to_list(run_id, key, serialized)
+        except Exception as e:
+            logger.error(f"Error serializing JSON value for list '{key}': {e}")
+            return False
 
-        return await self.get_value(run_id, key, default_value, json_transform)
+    async def get_list(self, run_id: str, key: str, transform_func: Callable[[bytes], T] = None) -> List[T]:
+        """Retrieves all items from a Redis list with optional transformation."""
+        redis_key = self._build_key(run_id, key)
+        result = []
+        try:
+            values = await self.redis.lrange(redis_key, 0, -1)
+            if not values:
+                return result
 
-    async def get_all_keys(self, run_id: str, pattern: str = "*") -> List[str]:
-        """Get all keys for a run"""
-        pattern = self._build_key(run_id, key=pattern)
-        keys = []
+            if transform_func:
+                for value in values:
+                    result.append(transform_func(value))
+            else:
+                result = values  # type: ignore
 
-        async for key in self.redis.scan_iter(match=pattern, count=10_000):
-            # Extract the original key part (remove prefix and run_id)
-            original_key = key.decode().split(":", 2)[2]
-            keys.append(original_key)
+            return result
+        except Exception as e:
+            logger.error(f"Error retrieving list '{redis_key}': {e}")
+            return result
 
-        return keys
+    async def increment_counter(self, run_id: str, key: str, amount: int = 1) -> int:
+        """Increments a counter stored in Redis."""
+        redis_key = self._build_key(run_id, key)
+        try:
+            count = await self.redis.incrby(redis_key, amount)
+            await self.redis.expire(redis_key, self.default_ttl)
+            return count
+        except Exception as e:
+            logger.error(f"Error incrementing counter '{redis_key}': {e}")
+            return 0

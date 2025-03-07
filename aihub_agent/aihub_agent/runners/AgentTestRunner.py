@@ -7,6 +7,7 @@ from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -74,6 +75,7 @@ class AgentTestRunner(AgentRunner):
             agent_config=agent_config,
             locale_paths=locale_paths,
         )
+        self.test_event_subscriber: Optional[JSSubscriber] = None
         self.observed_events: List[ObservedEvent] = []
         self.topic: Optional[PartialAgentTopic] = None
 
@@ -120,7 +122,7 @@ class AgentTestRunner(AgentRunner):
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
-        event_subscriber = NCSubscriber.for_all_thread_events(
+        self.test_event_subscriber = NCSubscriber.for_all_thread_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
                 self.topic_manager,
@@ -130,7 +132,7 @@ class AgentTestRunner(AgentRunner):
             ),
             handler=self.observe_event,
         )
-        await event_subscriber.start()
+        await self.test_event_subscriber.start()
 
         self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
@@ -156,6 +158,8 @@ class AgentTestRunner(AgentRunner):
         return self.topic
 
     async def test_run_stop(self):
+        await self.test_event_subscriber.stop()
+        await self.observe_discovery_event_subscriber.stop()
         await self.stop()
 
     @property

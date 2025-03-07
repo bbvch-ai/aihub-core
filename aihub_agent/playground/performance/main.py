@@ -1,17 +1,26 @@
 import asyncio
 import gc
+import json
+import os
 import random
 import time
-from typing import Dict
+import uuid
+from typing import Dict, Any
 
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 from bson import ObjectId
 from tabulate import tabulate
 from tqdm import tqdm
 
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
+# For NATS JS benchmarking
+import nats
+from nats.js.api import StreamConfig
 from nats.aio.client import Client as NATS
 
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events import BaseEvent, StopEvent, StartEvent
@@ -21,11 +30,114 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgent import PerformanceTestingAgent
-from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import PerformanceTestingAgentConfig
+from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import (
+    PerformanceTestingAgentConfig,
+)
 from playground.performance.PerformanceTestingAgent.events.ParallelEvent import ParallelEvent
 
 
-async def run_test(process_count: int, n_events: int, payload_kb: int) -> Dict[str, any]:
+# ====== NATS JetStream Benchmark ======
+async def benchmark_jetstream(n_events: int, payload_kb: int) -> Dict[str, Any]:
+    """
+    Benchmark NATS JetStream performance.
+
+    Args:
+        n_events: Number of events to publish
+        payload_kb: Size of each event payload in KB
+
+    Returns:
+        Dictionary with performance metrics
+    """
+    # Connect to NATS
+    nc = await nats.connect("nats://localhost:4222")
+    js = nc.jetstream()
+
+    # Create a random stream name
+    stream_name = f"benchmark-{uuid.uuid4().hex[:8]}"
+    subject = f"{stream_name}.events"
+
+    # Create the stream
+    stream_config = StreamConfig(name=stream_name, subjects=[subject])
+    await js.add_stream(stream_config)
+
+    # Create payload
+    payload = ("a" * 1024 * payload_kb).encode()
+    payload_size_bytes = len(payload)
+    total_data_bytes = payload_size_bytes * n_events
+
+    # Setup for receiving messages
+    received_count = 0
+    received_event = asyncio.Event()
+
+    async def message_handler(msg):
+        nonlocal received_count
+        received_count += 1
+        if received_count >= n_events:
+            received_event.set()
+
+    # Subscribe to the stream
+    sub = await js.subscribe(subject, cb=message_handler)
+
+    # Publish messages and time it
+    start_time = time.time()
+
+    for i in range(n_events):
+        await js.publish(subject, payload)
+
+    publish_time = time.time() - start_time
+
+    # Wait for all messages to be received
+    await asyncio.wait_for(received_event.wait(), timeout=30.0)
+
+    end_time = time.time()
+    total_time = end_time - start_time
+
+    # Clean up
+    await sub.unsubscribe()
+    await js.purge_stream(stream_name)
+    await js.delete_stream(stream_name)
+    await nc.close()
+
+    # Calculate metrics
+    throughput_kb_per_second = (total_data_bytes / 1024) / total_time
+    events_per_second = n_events / total_time
+    publish_events_per_second = n_events / publish_time if publish_time > 0 else 0
+
+    metrics = {
+        "n_events": n_events,
+        "payload_kb": payload_kb,
+        "total_time_seconds": total_time,
+        "publish_time_seconds": publish_time,
+        "throughput_kb_per_second": throughput_kb_per_second,
+        "events_per_second": events_per_second,
+        "publish_events_per_second": publish_events_per_second,
+        "total_data_mb": total_data_bytes / (1024 * 1024),
+    }
+
+    return metrics
+
+
+# ====== System Benchmark ======
+async def purge_jetstream(nc: NATS):
+    """Purge all JetStream data between test runs."""
+    js = nc.jetstream()
+
+    try:
+        # Get all streams
+        streams = await js.streams_info()
+
+        # Delete all streams
+        for stream in streams:
+            try:
+                await js.delete_stream(stream.config.name)
+            except Exception as e:
+                print(f"Error deleting stream {stream.config.name}: {e}")
+
+    except Exception as e:
+        print(f"Error purging JetStream: {e}")
+
+
+async def run_system_test(process_count: int, n_events: int, payload_kb: int) -> Dict[str, any]:
     """
     Run a performance test with the specified parameters.
 
@@ -110,14 +222,17 @@ async def run_test(process_count: int, n_events: int, payload_kb: int) -> Dict[s
             start_event.__class__.__name__, event_id=start_event.event_id
         )
 
+        await asyncio.sleep(1)
+
         # Start timing and send the event
         start_time = time.time()
         await publisher.publish_event(start_event, subject)
 
         # Wait for completion
-        timeout_duration = 60 * 5  # 5 minutes
+        timeout_duration = 60 * 60  # 5 minutes
         try:
             await asyncio.wait_for(_stop_event.wait(), timeout=timeout_duration)
+            await asyncio.sleep(1)
         except asyncio.TimeoutError:
             timed_out = True
 
@@ -152,8 +267,8 @@ async def run_test(process_count: int, n_events: int, payload_kb: int) -> Dict[s
                 await event_subscriber.stop()
 
             if nc:
+                await purge_jetstream(nc)
                 try:
-                    await nc.drain()
                     await nc.close()
                 except Exception as e:
                     print(f"Error closing NATS connection: {e}")
@@ -165,6 +280,7 @@ async def run_test(process_count: int, n_events: int, payload_kb: int) -> Dict[s
 
             # Force garbage collection to release any lingering resources
             gc.collect()
+            await asyncio.sleep(1)
 
         except Exception as cleanup_error:
             print(f"Error during cleanup: {cleanup_error}")
@@ -232,13 +348,60 @@ async def run_test(process_count: int, n_events: int, payload_kb: int) -> Dict[s
     }
 
 
+async def benchmark_theoretical_limits(config_list):
+    """Run raw NATS benchmarks to establish theoretical limits."""
+    theoretical_results = {}
+
+    print("Benchmarking theoretical limits...")
+    for config in tqdm(config_list, desc="Benchmarking limits"):
+        n_events, payload_kb = config
+
+        # Create a unique key for this configuration
+        config_key = f"{n_events}_{payload_kb}"
+
+        # Run NATS JetStream benchmark
+        try:
+            print(f"\nRunning NATS benchmark: {n_events} events, {payload_kb} KB")
+            nats_results = await benchmark_jetstream(n_events, payload_kb)
+            print(
+                f"NATS throughput: {nats_results['events_per_second']:.2f} evt/s, {nats_results['throughput_kb_per_second']:.2f} KB/s"
+            )
+        except Exception as e:
+            print(f"NATS benchmark failed: {e}")
+            nats_results = {"events_per_second": 0, "throughput_kb_per_second": 0}
+
+        # Store both results for this configuration
+        theoretical_results[config_key] = {
+            "nats": nats_results,
+            "n_events": n_events,
+            "payload_kb": payload_kb,
+            # Calculate the bottleneck (minimum of the two)
+            "min_events_per_second": nats_results["events_per_second"],
+            "min_throughput_kb_per_second": nats_results["throughput_kb_per_second"],
+        }
+
+    return theoretical_results
+
 async def main():
     # Define parameter ranges for test generation
-    process_counts = [1]  # Number of processes to run
-    event_counts = [100, 1_000, 10_000]  # Number of events per test
-    payload_sizes = [1, 10]  # Payload size in KB
+    process_counts = [1, 2, 3, 4, 5, 10]  # Number of processes to run
+    event_counts = [100, 1000, 10_000]  # Number of events per test
+    payload_sizes = [1, 10, 100]  # Payload size in KB
 
-    # Generate all combinations of test configurations
+    # Create a subset of configurations for theoretical limit testing
+    # We'll run these tests for both NATS to establish baselines
+    limit_configs = [(n, p) for n in event_counts for p in payload_sizes]
+
+    # Get theoretical limits first
+    print("Benchmarking theoretical limits of NATS...")
+    theoretical_limits = await benchmark_theoretical_limits(limit_configs)
+
+    # Save theoretical limits to a separate file
+    with open("results/theoretical_limits.json", "w") as f:
+        json.dump(theoretical_limits, f, indent=2)
+    print("Theoretical limits saved to theoretical_limits.json")
+
+    # Generate all combinations of test configurations for system tests
     configurations = []
     for process_count in process_counts:
         for event_count in event_counts:
@@ -246,14 +409,47 @@ async def main():
                 configurations.append((process_count, event_count, payload_size))
 
     results = []
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
 
+    print("Running system tests...")
     for i, config in tqdm(enumerate(configurations), total=len(configurations), desc="Running tests"):
         processes, events, payload_size = config
 
         try:
             # Run the test
-            result = await run_test(processes, events, payload_size)
+            result = await run_system_test(processes, events, payload_size)
+
+            # Add theoretical limit comparisons
+            config_key = f"{events}_{payload_size}"
+            if config_key in theoretical_limits:
+                limits = theoretical_limits[config_key]
+
+                # Add the raw limit values
+                result["nats_events_per_second"] = limits["nats"]["events_per_second"]
+                result["nats_throughput_kb"] = limits["nats"]["throughput_kb_per_second"]
+
+                # Add the bottleneck limits (minimum of NATS)
+                result["min_events_per_second"] = limits["min_events_per_second"]
+                result["min_throughput_kb"] = limits["min_throughput_kb_per_second"]
+
+                # Calculate percentages of theoretical maximum
+                if limits["min_events_per_second"] > 0:
+                    result["percent_of_max_events"] = (result["throughput"] / limits["min_events_per_second"]) * 100
+                else:
+                    result["percent_of_max_events"] = 0
+
+                if limits["min_throughput_kb_per_second"] > 0:
+                    result["percent_of_max_throughput"] = (
+                        result["throughput_kb"] / limits["min_throughput_kb_per_second"]
+                    ) * 100
+                else:
+                    result["percent_of_max_throughput"] = 0
+
             results.append(result)
+
+            # Save incremental results after each test to prevent data loss
+            with open(f"results/performance_results_{timestamp}_partial.json", "w") as f:
+                json.dump(results, f, indent=2)
 
         except Exception as e:
             print(f"Test failed with error: {e}")
@@ -275,13 +471,25 @@ async def main():
                     "duplicate_indices": 0,
                     "index_distribution": {"min_index": None, "max_index": None, "complete": False},
                     "success": False,
+                    # Add default theoretical comparison fields
+                    "nats_events_per_second": 0,
+                    "nats_throughput_kb": 0,
+                    "min_events_per_second": 0,
+                    "min_throughput_kb": 0,
+                    "percent_of_max_events": 0,
+                    "percent_of_max_throughput": 0,
                 }
             )
 
-    await asyncio.sleep(3)
-    gc.collect()
+        await asyncio.sleep(1)
+        gc.collect()
 
-    # Format and display the results table with simplified metrics
+    # Save final results to JSON file
+    with open(f"performance_results_{timestamp}.json", "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Results saved to performance_results_{timestamp}.json")
+
+    # Format and display the results table with theoretical limit comparisons
     table_data = []
     headers = [
         "Processes",
@@ -289,75 +497,266 @@ async def main():
         "Payload (KB)",
         "Duration (s)",
         "Throughput (evt/s)",
+        "NATS Max (evt/s)",
+        "% of Max (evt/s)",
         "Throughput (KB/s)",
+        "NATS Max (KB/s)",
+        "% of Max (KB/s)",
         "Success",
-        "Error",
     ]
 
     for r in results:
-        row_data = [
-            r["processes"],
-            r["events_requested"],
-            r["payload_kb"],
-            f"{r['duration']:.2f}",
-            f"{r['throughput']:.2f}",
-            f"{r['throughput_kb']:.2f}",
-            "✓" if r["success"] else "✗",
-            r["error"] if "error" in r else "",
-        ]
-        table_data.append(row_data)
+        if r["success"]:
+            row_data = [
+                r["processes"],
+                r["events_requested"],
+                r["payload_kb"],
+                f"{r['duration']:.2f}",
+                f"{r['throughput']:.2f}",
+                f"{r.get('nats_events_per_second', 0):.2f}",
+                f"{r.get('percent_of_max_events', 0):.2f}%",
+                f"{r['throughput_kb']:.2f}",
+                f"{r.get('nats_throughput_kb', 0):.2f}",
+                f"{r.get('percent_of_max_throughput', 0):.2f}%",
+                "✓",
+            ]
+            table_data.append(row_data)
+        else:
+            row_data = [
+                r["processes"],
+                r["events_requested"],
+                r["payload_kb"],
+                "N/A",
+                "N/A",
+                "N/A",
+                "N/A",
+                "N/A",
+                "N/A",
+                "N/A",
+                "✗",
+            ]
+            table_data.append(row_data)
+
+    # Sort table by process count, event count, then payload size
+    table_data.sort(key=lambda x: (x[0], x[1], x[2]))
+
+    print("\nPerformance Results with Theoretical Limits")
+    print("===========================================")
+    print(tabulate(table_data, headers=headers, tablefmt="grid"))
+
+    # Print summary of theoretical limits
+    print("\nTheoretical Limit Summary")
+    print("========================")
+    limit_table = []
+    limit_headers = [
+        "Events",
+        "Payload (KB)",
+        "NATS (evt/s)",
+        "Bottleneck (evt/s)",
+        "NATS (KB/s)",
+        "Bottleneck (KB/s)",
+    ]
+
+    for n_events in event_counts:
+        for payload_kb in payload_sizes:
+            config_key = f"{n_events}_{payload_kb}"
+            if config_key in theoretical_limits:
+                limits = theoretical_limits[config_key]
+                limit_row = [
+                    n_events,
+                    payload_kb,
+                    f"{limits['nats']['events_per_second']:.2f}",
+                    f"{limits['min_events_per_second']:.2f}",
+                    f"{limits['nats']['throughput_kb_per_second']:.2f}",
+                    f"{limits['min_throughput_kb_per_second']:.2f}",
+                ]
+                limit_table.append(limit_row)
+
+    limit_table.sort(key=lambda x: (x[0], x[1]))
+    print(tabulate(limit_table, headers=limit_headers, tablefmt="grid"))
 
     """
-    Date: 05.03.2025
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |   Processes |   Events |   Payload (KB) |   Duration (s) |   Throughput (evt/s) |   Throughput (KB/s) | Success   | Error   |
-    +=============+==========+================+================+======================+=====================+===========+=========+
-    |           1 |      100 |              1 |           0.11 |               942.43 |              942.43 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |      100 |             10 |           0.14 |               692.88 |             6928.78 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |      100 |            100 |           0.62 |               162.49 |            16249.2  | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |              1 |           4.4  |               227.51 |              227.51 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |             10 |           7.41 |               134.92 |             1349.25 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |            100 |          47.53 |                21.04 |             2103.98 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
+    Date: 07.03.2025
+    Performance Results with Theoretical Limits
+    ===========================================
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |   Processes |   Events |   Payload (KB) | Duration (s)   | Throughput (evt/s)   | NATS Max (evt/s)   | % of Max (evt/s)   | Throughput (KB/s)   | NATS Max (KB/s)   | % of Max (KB/s)   | Success   |
+    +=============+==========+================+================+======================+====================+====================+=====================+===================+===================+===========+
+    |           1 |      100 |              1 | 1.06           | 94.36                | 6376.36            | 1.48%              | 94.36               | 6376.36           | 1.48%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |      100 |             10 | 1.07           | 93.42                | 5968.08            | 1.57%              | 934.20              | 59680.76          | 1.57%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |      100 |            100 | 1.24           | 80.34                | 2396.80            | 3.35%              | 8034.46             | 239679.99         | 3.35%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |     1000 |              1 | 1.67           | 599.77               | 7741.11            | 7.75%              | 599.77              | 7741.11           | 7.75%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |     1000 |             10 | 1.82           | 550.29               | 6195.69            | 8.88%              | 5502.94             | 61956.92          | 8.88%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |     1000 |            100 | 3.36           | 297.70               | 2141.58            | 13.90%             | 29770.34            | 214157.69         | 13.90%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |    10000 |              1 | 26.97          | 370.78               | 7048.99            | 5.26%              | 370.78              | 7048.99           | 5.26%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |    10000 |             10 | 29.99          | 333.46               | 6941.06            | 4.80%              | 3334.60             | 69410.55          | 4.80%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |    10000 |            100 | 46.11          | 216.89               | 2982.53            | 7.27%              | 21689.11            | 298252.86         | 7.27%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |   100000 |              1 | 2454.96        | 40.73                | 6516.05            | N/A                | 40.733              | 6516.05           | N/A               | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |   100000 |             10 | 2414.96        | 41.40                | 6516.05            | N/A                | 414.08              | 6516.05           | N/A               | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           1 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |      100 |              1 | 1.05           | 95.32                | 6376.36            | 1.49%              | 95.32               | 6376.36           | 1.49%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |      100 |             10 | 1.06           | 94.23                | 5968.08            | 1.58%              | 942.34              | 59680.76          | 1.58%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |      100 |            100 | 1.21           | 82.34                | 2396.80            | 3.44%              | 8233.54             | 239679.99         | 3.44%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |     1000 |              1 | 1.47           | 678.72               | 7741.11            | 8.77%              | 678.72              | 7741.11           | 8.77%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |     1000 |             10 | 1.62           | 617.22               | 6195.69            | 9.96%              | 6172.24             | 61956.92          | 9.96%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |     1000 |            100 | 3.12           | 320.54               | 2141.58            | 14.97%             | 32053.80            | 214157.69         | 14.97%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |    10000 |              1 | 15.42          | 648.67               | 7048.99            | 9.20%              | 648.67              | 7048.99           | 9.20%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |    10000 |             10 | 17.04          | 587.02               | 6941.06            | 8.46%              | 5870.23             | 69410.55          | 8.46%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |    10000 |            100 | 31.73          | 315.17               | 2982.53            | 10.57%             | 31516.86            | 298252.86         | 10.57%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |   100000 |              1 | 1974.24        | 50.65                | 6516.05            | N/A                | 50.65               | 6516.05           | N/A               | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |   100000 |             10 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           2 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |      100 |              1 | 1.05           | 95.66                | 6376.36            | 1.50%              | 95.66               | 6376.36           | 1.50%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |      100 |             10 | 1.07           | 93.71                | 5968.08            | 1.57%              | 937.09              | 59680.76          | 1.57%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |      100 |            100 | 1.20           | 83.32                | 2396.80            | 3.48%              | 8332.32             | 239679.99         | 3.48%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |     1000 |              1 | 1.46           | 686.19               | 7741.11            | 8.86%              | 686.19              | 7741.11           | 8.86%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |     1000 |             10 | 1.60           | 624.08               | 6195.69            | 10.07%             | 6240.84             | 61956.92          | 10.07%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |     1000 |            100 | 3.12           | 320.38               | 2141.58            | 14.96%             | 32037.62            | 214157.69         | 14.96%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |    10000 |              1 | 12.27          | 814.86               | 7048.99            | 11.56%             | 814.86              | 7048.99           | 11.56%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |    10000 |             10 | 14.31          | 698.88               | 6941.06            | 10.07%             | 6988.78             | 69410.55          | 10.07%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |    10000 |            100 | 29.06          | 344.06               | 2982.53            | 11.54%             | 34406.30            | 298252.86         | 11.54%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |   100000 |              1 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |   100000 |             10 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           3 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |      100 |              1 | 1.05           | 94.80                | 6376.36            | 1.49%              | 94.80               | 6376.36           | 1.49%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |      100 |             10 | 1.06           | 94.40                | 5968.08            | 1.58%              | 944.01              | 59680.76          | 1.58%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |      100 |            100 | 1.20           | 83.09                | 2396.80            | 3.47%              | 8309.25             | 239679.99         | 3.47%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |     1000 |              1 | 1.49           | 670.30               | 7741.11            | 8.66%              | 670.30              | 7741.11           | 8.66%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |     1000 |             10 | 1.61           | 622.70               | 6195.69            | 10.05%             | 6227.03             | 61956.92          | 10.05%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |     1000 |            100 | 3.18           | 314.00               | 2141.58            | 14.66%             | 31400.24            | 214157.69         | 14.66%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |    10000 |              1 | 11.32          | 883.69               | 7048.99            | 12.54%             | 883.69              | 7048.99           | 12.54%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |    10000 |             10 | 12.91          | 774.61               | 6941.06            | 11.16%             | 7746.09             | 69410.55          | 11.16%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |    10000 |            100 | 27.87          | 358.85               | 2982.53            | 12.03%             | 35885.11            | 298252.86         | 12.03%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |   100000 |              1 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |   100000 |             10 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           4 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |      100 |              1 | 1.06           | 94.76                | 6376.36            | 1.49%              | 94.76               | 6376.36           | 1.49%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |      100 |             10 | 1.06           | 94.44                | 5968.08            | 1.58%              | 944.36              | 59680.76          | 1.58%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |      100 |            100 | 1.22           | 81.93                | 2396.80            | 3.42%              | 8193.45             | 239679.99         | 3.42%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |     1000 |              1 | 1.46           | 686.21               | 7741.11            | 8.86%              | 686.21              | 7741.11           | 8.86%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |     1000 |             10 | 1.61           | 620.27               | 6195.69            | 10.01%             | 6202.67             | 61956.92          | 10.01%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |     1000 |            100 | 3.21           | 311.05               | 2141.58            | 14.52%             | 31105.34            | 214157.69         | 14.52%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |    10000 |              1 | 10.38          | 963.38               | 7048.99            | 13.67%             | 963.38              | 7048.99           | 13.67%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |    10000 |             10 | 12.01          | 832.85               | 6941.06            | 12.00%             | 8328.51             | 69410.55          | 12.00%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |    10000 |            100 | 27.65          | 361.69               | 2982.53            | 12.13%             | 36168.62            | 298252.86         | 12.13%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |   100000 |              1 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |   100000 |             10 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |           5 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |      100 |              1 | 1.05           | 94.89                | 6376.36            | 1.49%              | 94.89               | 6376.36           | 1.49%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |      100 |             10 | 1.07           | 93.51                | 5968.08            | 1.57%              | 935.09              | 59680.76          | 1.57%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |      100 |            100 | 1.24           | 80.72                | 2396.80            | 3.37%              | 8071.91             | 239679.99         | 3.37%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |     1000 |              1 | 1.53           | 654.83               | 7741.11            | 8.46%              | 654.83              | 7741.11           | 8.46%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |     1000 |             10 | 1.71           | 586.32               | 6195.69            | 9.46%              | 5863.20             | 61956.92          | 9.46%             | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |     1000 |            100 | 3.35           | 298.94               | 2141.58            | 13.96%             | 29893.90            | 214157.69         | 13.96%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |    10000 |              1 | 9.14           | 1094.67              | 7048.99            | 15.53%             | 1094.67             | 7048.99           | 15.53%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |    10000 |             10 | 10.94          | 914.38               | 6941.06            | 13.17%             | 9143.78             | 69410.55          | 13.17%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |    10000 |            100 | 28.39          | 352.23               | 2982.53            | 11.81%             | 35223.24            | 298252.86         | 11.81%            | ✓         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |   100000 |              1 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |   100000 |             10 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
+    |          10 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
+    +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
     
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |   Processes |   Events |   Payload (KB) |   Duration (s) |   Throughput (evt/s) |   Throughput (KB/s) | Success   | Error   |
-    +=============+==========+================+================+======================+=====================+===========+=========+
-    |           1 |      100 |              1 |           0.1  |               984.67 |              984.67 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |      100 |             10 |           0.11 |               917.75 |             9177.49 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |      100 |            100 |           0.29 |               344.23 |            34423.2  | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |              1 |           3    |               333.01 |              333.01 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |             10 |           2.81 |               355.35 |             3553.5  | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |            100 |           5.2  |               192.18 |            19217.8  | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |   Processes |   Events |   Payload (KB) |   Duration (s) |   Throughput (evt/s) |   Throughput (KB/s) | Success   | Error   |
-    +=============+==========+================+================+======================+=====================+===========+=========+
-    |           1 |      100 |              1 |           0.09 |              1156.65 |             1156.65 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |      100 |             10 |           0.1  |              1035.46 |            10354.6  | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |              1 |           2.45 |               407.83 |              407.83 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |     1000 |             10 |           2.72 |               367.96 |             3679.55 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |    10000 |              1 |         218.66 |                45.73 |               45.73 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
-    |           1 |    10000 |             10 |         234.49 |                42.65 |              426.45 | ✓         |         |
-    +-------------+----------+----------------+----------------+----------------------+---------------------+-----------+---------+
+    Theoretical Limit Summary
+    ========================
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |   Events |   Payload (KB) |   NATS (evt/s) |   Bottleneck (evt/s) |   NATS (KB/s) |   Bottleneck (KB/s) |
+    +==========+================+================+======================+===============+=====================+
+    |      100 |              1 |        6376.36 |              6376.36 |       6376.36 |             6376.36 |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |      100 |             10 |        5968.08 |              5968.08 |      59680.8  |            59680.8  |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |      100 |            100 |        2396.8  |              2396.8  |     239680    |           239680    |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |     1000 |              1 |        7741.11 |              7741.11 |       7741.11 |             7741.11 |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |     1000 |             10 |        6195.69 |              6195.69 |      61956.9  |            61956.9  |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |     1000 |            100 |        2141.58 |              2141.58 |     214158    |           214158    |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |    10000 |              1 |        7048.99 |              7048.99 |       7048.99 |             7048.99 |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |    10000 |             10 |        6941.06 |              6941.06 |      69410.6  |            69410.6  |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |    10000 |            100 |        2982.53 |              2982.53 |     298253    |           298253    |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |   100000 |              1 |        8122.19 |              8122.19 |       8122.19 |             8122.19 |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |   100000 |             10 |        7074.76 |              7074.76 |      70747.6  |            70747.6  |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
+    |   100000 |            100 |        3082.06 |              3082.06 |     308206    |           308206    |
+    +----------+----------------+----------------+----------------------+---------------+---------------------+
     """
-    print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
 
 if __name__ == "__main__":
