@@ -3,7 +3,7 @@ from asyncio import sleep
 from typing import Dict, List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -20,7 +20,7 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.agent_dynamic.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
 DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
@@ -154,10 +154,10 @@ class AgentService:
         nc: NATS,
         ws_receiver: WebSocketReceiver,
         user: AuthenticatedUser,
-        raw_event: Dict,
+        start_event: StartEvent,
         agent_class: str,
         agent_id: str,
-    ) -> Dict:
+    ) -> StopEvent:
         """Sends an event to a specific agent."""
         topic_manager = AgentThreadTopicManager(
             agent_class=agent_class,
@@ -169,7 +169,7 @@ class AgentService:
         ws_event = WSUserEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
-            event=StartEvent.deserialize_event(data=raw_event),
+            event=start_event,
         )
         resources: JsonResources = await ChatService.start_json_event_interaction(
             user=user,
@@ -182,4 +182,4 @@ class AgentService:
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
-        return resources.stop_event.model_dump_json()
+        return resources.stop_event

@@ -26,7 +26,7 @@ from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from starlette.responses import StreamingResponse
 
-from aihub_api.routes.agent_dynamic.DynamicAgentService import AgentService
+from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse

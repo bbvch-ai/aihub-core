@@ -5,7 +5,7 @@ from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadE
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.agent_dynamic.DynamicAgentService import AgentService
+from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
 from aihub_api.routes.user.UserService import UserService

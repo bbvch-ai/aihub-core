@@ -1,6 +1,6 @@
 import asyncio
 
-from aihub_api.routes.agent_dynamic.DynamicAgentController import DynamicAgentController
+from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
@@ -49,7 +49,7 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        DynamicAgentController(auth=auth).get_agent().discover_agents(),
+        AgentController(auth=auth).get_agent().discover_agents(),
         TokenController().create_token().list_tokens().revoke_token(),
         OpenaiController(
             auth=auth,
