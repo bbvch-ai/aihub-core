@@ -3,7 +3,7 @@ from asyncio import Task
 
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import Activity, ActivityTypes
-from openai import AsyncAzureOpenAI, AsyncOpenAI
+from openai import AsyncAzureOpenAI, AsyncOpenAI, BadRequestError
 from typing_extensions import override
 
 from aihub_bot.routes.openai.OpenaiChatService import OpenaiChatService
@@ -40,15 +40,19 @@ class OpenaiChatBot(ActivityHandler):
             if turn_context is None:
                 return
 
-        response = await OpenaiChatService.json_chat_completion(
-            turn_context=turn_context,
-            path=self.path,
-            model_name=self.model_name,
-            client=self.client,
-        )
-
-        await typing
-        await turn_context.send_activity(response)
+        try:
+            response = await OpenaiChatService.json_chat_completion(
+                turn_context=turn_context,
+                path=self.path,
+                model_name=self.model_name,
+                client=self.client,
+            )
+            await typing
+            await turn_context.send_activity(response)
+        except BadRequestError as e:
+            response = e.body["message"]
+            await typing
+            await turn_context.send_activity(response)
 
         OpenaiChatService.add_bot_message_to_conversation(
             turn_context=turn_context,

@@ -16,6 +16,7 @@ class Message(EmbeddedDocument):
     user_id = StringField(required=True)
     content = ListField(EmbeddedDocumentField(Content), required=True)
     role = StringField(required=True)
+    name = StringField(required=True)
 
 
 class ConversationEntity(Document):

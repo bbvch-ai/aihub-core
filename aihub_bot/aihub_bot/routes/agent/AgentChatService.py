@@ -171,7 +171,9 @@ class AgentChatService(Service):
                 raise NotImplementedError(f"Role {message.role} not supported")
 
         return ChatMessage(
-            role=role, content=[AgentChatService._content_to_content_block(content) for content in message.content]
+            role=role,
+            content=[AgentChatService._content_to_content_block(content) for content in message.content],
+            name=message.name,
         )
 
     @staticmethod
