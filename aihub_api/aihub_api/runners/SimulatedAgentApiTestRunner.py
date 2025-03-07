@@ -180,11 +180,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
+        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_events(
             self.nc,
             self.topic_manager,
             js=self.js,
             handler=self.simulate_agent,
+            queue_group="simulated-agent-runner-queue-group",
         )
         await self.agent_control_event_subscriber.start()
 

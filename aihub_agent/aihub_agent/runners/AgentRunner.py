@@ -163,6 +163,7 @@ class AgentRunner:
             self.topic_manager,
             self.locale_handler,
         )
+        await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
@@ -176,6 +177,7 @@ class AgentRunner:
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
+            queue_group=f"agent_runner_{self.agent_class}_{self.agent_config.agent_id}",
         )
         await self.control_event_subscriber.start()
 
@@ -194,8 +196,10 @@ class AgentRunner:
         self._stop_event.set()
         self.running = False
 
+        await self.control_event_subscriber.stop()
+        await self.dispatcher.stop()
+
         if self.nc:
-            await self.nc.drain()
             await self.nc.close()
 
         if self.redis:

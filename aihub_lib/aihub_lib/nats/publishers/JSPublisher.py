@@ -66,7 +66,9 @@ class JSPublisher(Generic[TEvent]):
                 logger.debug(f"Publish ACK received: {ack}")
                 return  # Success, no retry needed
             except asyncio.TimeoutError:
-                logger.warning(f"Publish timeout ({attempt + 1}/{retries}) for {event.__class__.__name__}")
+                logger.warning(
+                    f"Publish timeout ({attempt + 1}/{retries}) for {event.__class__.__name__} to subject {subject}"
+                )
             except Exception as e:
                 logger.error(f"NATS error while publishing event: {e}")
 
