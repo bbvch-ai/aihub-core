@@ -128,6 +128,7 @@ def save_credentials_in_mongo(
     app_id: str,
     app_password: str,
     tenant_id: Optional[str],
+    system_message: Optional[str] = None,
 ):
     print("Saving credentials in MongoDB...")
     client = MongoClient(connection_string)
@@ -142,6 +143,8 @@ def save_credentials_in_mongo(
             "APP_TENANTID": tenant_id,
         },
     }
+    if system_message:
+        document["system_message"] = system_message
     _filter = {"path": api_path}
     payload = {"$set": document}
     collection.update_one(_filter, payload, upsert=True)
@@ -156,6 +159,7 @@ def save_credentials_in_cosmos(
     subscription_id: str,
     resource_group: str,
     tenant_id: Optional[str],
+    system_message: Optional[str] = None,
 ):
     print("Saving credentials in Cosmos DB...")
     credential = DefaultAzureCredential()
@@ -165,7 +169,7 @@ def save_credentials_in_cosmos(
     keys = database_accounts.list_connection_strings(resource_group, cosmos_name)
     connection_string = keys.connection_strings[0].connection_string
 
-    save_credentials_in_mongo(connection_string, api_path, app_id, app_password, tenant_id)
+    save_credentials_in_mongo(connection_string, api_path, app_id, app_password, tenant_id, system_message)
     print("Credentials successfully saved in Cosmos DB.")
 
 
@@ -192,12 +196,23 @@ def main():
     # MongoDB parameters
     parser.add_argument("--mongo-connection-string", "-mongo", required=False, help="MongoDB connection string.")
 
+    # System message
+    parser.add_argument("--system-message", "-sys", required=False, help="System message for the bot.")
+    parser.add_argument("--system-message-file", "-sysf", required=False, help="File containing the system message.")
+
     args = parser.parse_args()
 
     # Create the Azure AD app registration and reset its credentials.
     app_id = create_app_registration(bot_name=args.bot_name, tenant_id=args.tenant_id)
     app_password = reset_app_credentials(app_id=app_id)
     print(f"Using newly created app registration credentials:\n  App ID: {app_id}\n  Password: {app_password}")
+
+    system_message = None
+    if args.system_message:
+        system_message = args.system_message
+    elif args.system_message_file:
+        with open(args.system_message_file, "r") as f:
+            system_message = f.read()
 
     if args.mongo_connection_string:
         assert all(
@@ -210,6 +225,7 @@ def main():
             app_id=app_id,
             app_password=app_password,
             tenant_id=args.tenant_id,
+            system_message=system_message,
         )
     else:
         assert all(
@@ -224,6 +240,7 @@ def main():
             subscription_id=args.subscription_id,
             resource_group=args.resource_group,
             tenant_id=args.tenant_id,
+            system_message=system_message,
         )
 
     # Create the Azure Bot resource using a direct az command.

@@ -1,9 +1,13 @@
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+import asyncio
+from asyncio import Task
+
 from botbuilder.core import ActivityHandler, TurnContext
+from botbuilder.schema import Activity, ActivityTypes
 from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.routes.agent.AgentChatService import AgentChatService
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 
 class AgentChatBot(ActivityHandler):
@@ -26,12 +30,14 @@ class AgentChatBot(ActivityHandler):
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
+        typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+
         AgentChatService.add_user_message_to_conversation(turn_context)
 
-        if turn_context.activity.channel_id == "slack" and AgentChatService.is_slack_channel_message(turn_context):
-            if not AgentChatService.is_bot_mentioned(turn_context):
+        if turn_context.activity.channel_id == "slack":
+            turn_context = AgentChatService.handle_slack_message(turn_context)
+            if turn_context is None:
                 return
-            turn_context = AgentChatService.update_slack_turn_context(turn_context)
 
         response = await AgentChatService.json_chat_completion(
             turn_context=turn_context,
@@ -42,9 +48,10 @@ class AgentChatBot(ActivityHandler):
             ws_receiver=self.ws_receiver,
         )
 
+        await typing
+        await turn_context.send_activity(response)
+
         AgentChatService.add_bot_message_to_conversation(
             turn_context=turn_context,
             message=response,
         )
-
-        return await turn_context.send_activity(response)
