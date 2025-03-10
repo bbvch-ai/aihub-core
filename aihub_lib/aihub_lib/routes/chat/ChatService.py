@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
@@ -24,18 +24,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StreamingResources:
-    stop_event: asyncio.Event
+    stop_signal: asyncio.Event
     subscriber: NCSubscriber
     chunk_queue: asyncio.Queue
+    stop_event: Optional[StopEvent] = None  # Added field to store the final StopEvent
 
 
 @dataclass
 class JsonResources:
-    stop_event: asyncio.Event
+    stop_signal: asyncio.Event
     subscriber: NCSubscriber
     chunk_events: List[ChunkEvent]
     costs: LLMCosts
     model_name: str
+    stop_event: Optional[StopEvent] = None  # Added field to store the final StopEvent
 
 
 class ChatService:
@@ -93,8 +95,14 @@ class ChatService:
         """
         event, topic_manager = ChatService._initialize_interaction(user, agent_class, agent_id, messages)
 
-        stop_event = asyncio.Event()
+        stop_signal = asyncio.Event()
         chunk_queue = asyncio.Queue()
+        resources = StreamingResources(
+            stop_signal=stop_signal,
+            subscriber=None,  # Will be set after subscriber creation
+            chunk_queue=chunk_queue,
+            stop_event=None,
+        )
 
         async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
             logger.debug(f"Received display event: {display_event}")
@@ -103,21 +111,23 @@ class ChatService:
                 await chunk_queue.put(display_event)
             elif isinstance(display_event, StopEvent):
                 logger.debug("Received stop event. Stop streaming")
+                resources.stop_event = display_event
                 await subscriber.stop()
-                stop_event.set()
+                stop_signal.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
         )
+        resources.subscriber = subscriber
         await subscriber.start()
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
         await ws_receiver.receive_event(event, user)
 
-        return StreamingResources(stop_event=stop_event, subscriber=subscriber, chunk_queue=chunk_queue)
+        return resources
 
     @staticmethod
     async def start_json_chat_interaction(
@@ -131,19 +141,29 @@ class ChatService:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        event, topic_manager = ChatService._initialize_interaction(user, agent_class, agent_id, messages)
+        ws_event, topic_manager = ChatService._initialize_interaction(user, agent_class, agent_id, messages)
+        return await ChatService.start_json_event_interaction(user, ws_event, topic_manager, nc, ws_receiver)
 
-        stop_event = asyncio.Event()
+    @staticmethod
+    async def start_json_event_interaction(
+        user: AuthenticatedUser,
+        ws_event: WSUserEvent,
+        topic_manager: AgentThreadTopicManager,
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
+    ):
+        stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
         costs = LLMCosts.from_zero()
         model_name = "bbv-ai-hub"
 
         resources = JsonResources(
-            stop_event=stop_event,
+            stop_signal=stop_signal,
             subscriber=None,  # Will be set after subscriber creation.
             chunk_events=chunk_events,
             costs=costs,
             model_name=model_name,
+            stop_event=None,
         )
 
         async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
@@ -152,8 +172,9 @@ class ChatService:
                 resources.chunk_events.append(display_event)
             elif isinstance(display_event, StopEvent):
                 logger.debug("Received stop event. Stop streaming")
+                resources.stop_event = display_event
                 await resources.subscriber.stop()
-                resources.stop_event.set()
+                resources.stop_signal.set()
             elif isinstance(display_event, LLMCostEvent):
                 resources.costs += display_event
                 resources.model_name = display_event.llm_name
@@ -169,7 +190,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await ws_receiver.receive_event(event, user)
+        await ws_receiver.receive_event(ws_event, user)
 
         return resources
 

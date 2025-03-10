@@ -1,9 +1,9 @@
 import argparse
 import json
 import subprocess
+import sys
 from typing import Optional
 
-import sys
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cosmosdb import CosmosDBManagementClient
 from pymongo import MongoClient

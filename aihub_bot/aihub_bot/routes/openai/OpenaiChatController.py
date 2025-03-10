@@ -1,6 +1,8 @@
 import logging
 from typing import Annotated, Any, Callable, List
 
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
@@ -9,8 +11,6 @@ from aihub_bot.bots.openai.OpenaiChatBot import OpenaiChatBot
 from aihub_bot.bots.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.openai.OpenaiChatService import OpenaiChatService
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
 
