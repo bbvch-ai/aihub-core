@@ -90,23 +90,23 @@ class AgentController(Controller):
         return self
 
     def send_event_to(
-        self, agent_class, agent_id, start_event_type: Type[StartEvent], stop_event_type: Type[StopEvent], route="/"
+        self, agent_class, agent_id, start_event_type: Type[StartEvent], stop_event_type: Type[StopEvent], route_postfix="/send_event"
     ) -> "AgentController":
         """
         Generates an endpoint to which an StartEvent can be send and the endpoint answers with the agents
         StopEvent.
         """
         agent_class_name = snakecase(agent_class)
-        agent_class_id = snakecase(agent_id)
-        name = f"send_event_to_{agent_class_name}_{agent_class_id}"
+        agent_id = snakecase(agent_id)
+        name = f"send_event_to_{agent_class_name}_{agent_id}"
         start_event_input_type = create_input_model(start_event_type)
 
-        if not route.startswith("/"):
-            route = f"/{route}"
-        if not route.endswith("/"):
-            route = f"{route}/"
+        if not route_postfix.startswith("/"):
+            route_postfix = f"/{route_postfix}"
+        if route_postfix.endswith("/"):
+            route_postfix = route_postfix[:-1]
 
-        @self.router.post(f"/{agent_class_name}/{agent_class_id}{route}send_event", name=name)
+        @self.router.post(f"/{agent_class_name}/{agent_id}{route_postfix}", name=name)
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],

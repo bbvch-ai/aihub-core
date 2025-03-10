@@ -4496,6 +4496,17 @@ anyio = ">=3.6.2,<5"
 full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.18)", "pyyaml"]
 
 [[package]]
+name = "stringcase"
+version = "1.2.0"
+description = "String case converter."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "stringcase-1.2.0.tar.gz", hash = "sha256:48a06980661908efe8d9d34eab2b6c13aefa2163b3ced26972902e3bdfd87008"},
+]
+
+[[package]]
 name = "striprtf"
 version = "0.0.26"
 description = "A simple library to convert rtf to text"
@@ -5137,4 +5148,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "17adc5d05ea9b48e4cfe47379e7761f86a9d92421f396476292823782348134b"
+content-hash = "2573e59328c1a5bff5ca19883b03b3f406e60faf46c25b2e97226d43d2cf53a6"
