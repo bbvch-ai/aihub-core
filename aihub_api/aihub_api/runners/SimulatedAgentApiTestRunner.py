@@ -3,14 +3,21 @@ from typing import List, Optional
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent, \
-    UserMessageEvent
+from aihub_lib.nats.events import (
+    BaseEvent,
+    ChunkEvent,
+    ControlEvent,
+    DisplayEvent,
+    StartEvent,
+    StopEvent,
+    UserMessageEvent,
+)
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -115,7 +122,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             EventSpecs(
                 event_type=UserMessageEvent.__name__,
                 event_schema=UserMessageEvent.model_json_schema(),
-            )
+            ),
         ]
         stop_events = [
             EventSpecs(
@@ -125,7 +132,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             EventSpecs(
                 event_type=LLMStopEvent.__name__,
                 event_schema=LLMStopEvent.model_json_schema(),
-            )
+            ),
         ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,

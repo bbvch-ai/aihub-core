@@ -64,11 +64,14 @@ async def test_get_agent(agent_api_client):
     for key in ("agent_config", "start_events", "stop_events"):
         assert key in data
 
+
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
     """Test POST /agent/{agent_class}/{agent_id}/send_event returns correct agent details."""
     user_message = create_input_model(UserMessageEvent)(messages=[ChatMessage(role="user", content="Hey!")])
-    response = await agent_api_client.post(f"/agent/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json())
+    response = await agent_api_client.post(
+        f"/agent/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
+    )
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()

@@ -1,8 +1,6 @@
 import time
 from typing import Annotated, List, Type
 
-from fastapi.params import Query
-
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -13,6 +11,7 @@ from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_recei
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
+from fastapi.params import Query
 from nats.aio.client import Client as NATS
 from stringcase import snakecase
 
@@ -90,7 +89,12 @@ class AgentController(Controller):
         return self
 
     def send_event_to(
-        self, agent_class, agent_id, start_event_type: Type[StartEvent], stop_event_type: Type[StopEvent], route_postfix="/send_event"
+        self,
+        agent_class,
+        agent_id,
+        start_event_type: Type[StartEvent],
+        stop_event_type: Type[StopEvent],
+        route_postfix="/send_event",
     ) -> "AgentController":
         """
         Generates an endpoint to which an StartEvent can be send and the endpoint answers with the agents
@@ -128,6 +132,8 @@ class AgentController(Controller):
                 user=user,
                 locale=t.locale,
             )
-            return await AgentService.send_event(nc, ws_receiver, user, start_event, agent_class, agent_id, thread_id, display_id)
+            return await AgentService.send_event(
+                nc, ws_receiver, user, start_event, agent_class, agent_id, thread_id, display_id
+            )
 
         return self
