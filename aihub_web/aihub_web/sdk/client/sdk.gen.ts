@@ -43,6 +43,9 @@ import type {
   GetAgentError,
   DiscoverAgentsData,
   DiscoverAgentsResponse,
+  SendEventToLlmWrappingAgentDevAgentData,
+  SendEventToLlmWrappingAgentDevAgentResponse,
+  SendEventToLlmWrappingAgentDevAgentError,
   ListTokensEndpointData,
   ListTokensEndpointResponse,
   CreateTokenEndpointData,
@@ -573,6 +576,47 @@ export const discoverAgents = <
     ],
     url: "/agent/discover",
     ...options,
+  });
+};
+
+/**
+ * Send Event To L L M Wrapping Agent Dev Agent
+ * Send an event to a specific agent. Raises 403 if the user lacks access.
+ */
+export const sendEventToLLMWrappingAgentDevAgent = <
+  TComposable extends Composable,
+  DefaultT extends
+    SendEventToLlmWrappingAgentDevAgentResponse = SendEventToLlmWrappingAgentDevAgentResponse,
+>(
+  options: Options<
+    TComposable,
+    SendEventToLlmWrappingAgentDevAgentData,
+    SendEventToLlmWrappingAgentDevAgentResponse,
+    DefaultT
+  >,
+) => {
+  return (options.client ?? _heyApiClient).post<
+    TComposable,
+    SendEventToLlmWrappingAgentDevAgentResponse | DefaultT,
+    SendEventToLlmWrappingAgentDevAgentError,
+    DefaultT
+  >({
+    security: [
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+      {
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/agent/l_l_m_wrapping_agent/dev_agent/send_event",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
   });
 };
 

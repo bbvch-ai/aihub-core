@@ -10,6 +10,25 @@
         <p class="text-sm">
           {{ agent?.agent_config.description }}
         </p>
+        <div
+          v-for="startEvent in startEvents"
+          :key="startEvent.event_type"
+        >
+          <p class="text-lg font-bold">
+            {{ startEvent.event_type }}
+          </p>
+          <component
+            :is="startEventComponents[startEvent.event_type]"
+            v-if="startEvent.event_type in startEventComponents"
+          />
+        </div>
+        <p>
+          Workflow
+        </p>
+        <WorkflowVisualization
+          v-if="agent"
+          :graph-data="agent?.network_graph"
+        />
       </div>
     </div>
   </div>
@@ -17,7 +36,9 @@
 
 <script setup lang="ts">
 import { useAgentsStore } from '@core/stores/useAgentsStore'
-import type { AgentDto } from '@core/sdk/client'
+import type { AgentDto, EventSpecs } from '@core/sdk/client'
+
+import UserMessageEvent from '@core/components/event/form/UserMessageEvent.vue'
 
 const route = useRoute()
 
@@ -25,6 +46,16 @@ const agentStore = useAgentsStore()
 const { agents } = storeToRefs(agentStore)
 
 const agent = computed<AgentDto | undefined>(() => agents.value?.find(agent => agent.agent_id === route.params.agent_id && agent.agent_class === route.params.agent_class))
+
+const startEvents = computed<EventSpecs[]>(() => {
+  return agent.value?.start_events ?? []
+})
+
+const stopEvents = computed<EventSpecs[]>(() => {
+  return agent.value?.stop_events ?? []
+})
+
+const startEventComponents = { UserMessageEvent }
 </script>
 
 <style scoped>

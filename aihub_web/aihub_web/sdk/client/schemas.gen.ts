@@ -144,6 +144,119 @@ event models and the publicly exposed fields in HTTP responses.
 By using \`AgentDTO\`, the API can evolve independently from the internal event representations.`,
 } as const;
 
+export const AssistantChatMessageSchema = {
+  properties: {
+    role: {
+      $ref: "#/components/schemas/MessageRole",
+      default: "user",
+    },
+    additional_kwargs: {
+      type: "object",
+      title: "Additional Kwargs",
+    },
+    blocks: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/TextBlock",
+          },
+          {
+            $ref: "#/components/schemas/ImageBlock",
+          },
+          {
+            $ref: "#/components/schemas/AudioBlock",
+          },
+        ],
+        discriminator: {
+          propertyName: "block_type",
+          mapping: {
+            audio: "#/components/schemas/AudioBlock",
+            image: "#/components/schemas/ImageBlock",
+            text: "#/components/schemas/TextBlock",
+          },
+        },
+      },
+      type: "array",
+      title: "Blocks",
+    },
+    agent_id: {
+      type: "string",
+      title: "Agent Id",
+    },
+    agent_class: {
+      type: "string",
+      title: "Agent Class",
+    },
+  },
+  type: "object",
+  required: ["agent_id", "agent_class"],
+  title: "AssistantChatMessage",
+} as const;
+
+export const AudioBlockSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "audio",
+      title: "Block Type",
+      default: "audio",
+    },
+    audio: {
+      anyOf: [
+        {
+          type: "string",
+          format: "binary",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Audio",
+    },
+    path: {
+      anyOf: [
+        {
+          type: "string",
+          format: "file-path",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path",
+    },
+    url: {
+      anyOf: [
+        {
+          type: "string",
+          minLength: 1,
+          format: "uri",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Url",
+    },
+    format: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Format",
+    },
+  },
+  type: "object",
+  title: "AudioBlock",
+} as const;
+
 export const Body_create_transcription_openai_audio_transcriptions_postSchema =
   {
     properties: {
@@ -469,6 +582,47 @@ export const ChatCompletionTokenLogprobSchema = {
   type: "object",
   required: ["token", "logprob", "top_logprobs"],
   title: "ChatCompletionTokenLogprob",
+} as const;
+
+export const ChatMessageSchema = {
+  properties: {
+    role: {
+      $ref: "#/components/schemas/MessageRole",
+      default: "user",
+    },
+    additional_kwargs: {
+      type: "object",
+      title: "Additional Kwargs",
+    },
+    blocks: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/TextBlock",
+          },
+          {
+            $ref: "#/components/schemas/ImageBlock",
+          },
+          {
+            $ref: "#/components/schemas/AudioBlock",
+          },
+        ],
+        discriminator: {
+          propertyName: "block_type",
+          mapping: {
+            audio: "#/components/schemas/AudioBlock",
+            image: "#/components/schemas/ImageBlock",
+            text: "#/components/schemas/TextBlock",
+          },
+        },
+      },
+      type: "array",
+      title: "Blocks",
+    },
+  },
+  type: "object",
+  title: "ChatMessage",
+  description: "Chat message.",
 } as const;
 
 export const ChoiceSchema = {
@@ -996,6 +1150,81 @@ export const ImageSchema = {
   title: "Image",
 } as const;
 
+export const ImageBlockSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "image",
+      title: "Block Type",
+      default: "image",
+    },
+    image: {
+      anyOf: [
+        {
+          type: "string",
+          format: "binary",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Image",
+    },
+    path: {
+      anyOf: [
+        {
+          type: "string",
+          format: "file-path",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path",
+    },
+    url: {
+      anyOf: [
+        {
+          type: "string",
+          minLength: 1,
+          format: "uri",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Url",
+    },
+    image_mimetype: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Image Mimetype",
+    },
+    detail: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Detail",
+    },
+  },
+  type: "object",
+  title: "ImageBlock",
+} as const;
+
 export const ImageGenerationRequestSchema = {
   properties: {
     prompt: {
@@ -1048,6 +1277,201 @@ export const ImagesResponseSchema = {
   title: "ImagesResponse",
 } as const;
 
+export const LLMStopEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    input_messages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/Message",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Input Messages",
+      description: "List of messages sent to the LLM as input.",
+    },
+    output_messages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/Message",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Output Messages",
+      description: "List of messages received from the LLM as output.",
+    },
+    invocation_parameters: {
+      anyOf: [
+        {
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Invocation Parameters",
+      description: "Parameters used during the invocation of the LLM.",
+    },
+    chat_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Chat Model Name",
+      description: "The name of the language model being utilized.",
+    },
+    provider: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Provider",
+      description: "The hosting provider of the LLM, e.g., OpenAI, Azure.",
+    },
+    system: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "System",
+      description: "The AI product as identified by the client or server.",
+    },
+    prompt_template: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template",
+      description: "The prompt template as a Python f-string.",
+    },
+    prompt_template_variables: {
+      anyOf: [
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template Variables",
+      description: "A dictionary of input variables to the prompt template.",
+    },
+    prompt_template_version: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template Version",
+      description: "The version of the prompt template being used.",
+    },
+    token_count_prompt: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Prompt",
+      description: "The number of tokens in the prompt.",
+    },
+    token_count_completion: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Completion",
+      description: "The number of tokens in the completion.",
+    },
+    token_count_total: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Total",
+      description:
+        "The total number of tokens, including both prompt and completion.",
+    },
+    tools: {
+      anyOf: [
+        {
+          items: {
+            type: "object",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tools",
+      description:
+        "List of tools that are advertised to the LLM to be able to call.",
+    },
+    _type: {
+      type: "string",
+      title: "Type",
+      description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+Used during deserialization to decide which subclass to instantiate.`,
+      readOnly: true,
+    },
+  },
+  type: "object",
+  required: ["_type"],
+  title: "LLMStopEvent",
+} as const;
+
 export const LocaleResponseSchema = {
   properties: {
     lang: {
@@ -1067,6 +1491,104 @@ export const LocaleResponseSchema = {
   required: ["lang", "test"],
   title: "LocaleResponse",
   description: "Represents language and test information for a locale.",
+} as const;
+
+export const MessageSchema = {
+  properties: {
+    role: {
+      type: "string",
+      title: "Role",
+      description:
+        "The role of the message, such as 'user', 'assistant', or 'system'.",
+    },
+    content: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Content",
+      description: "The content of the message.",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "The name of the function or agent generating the message.",
+    },
+    tool_calls: {
+      anyOf: [
+        {
+          items: {
+            type: "object",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Calls",
+      description:
+        "List of tool calls generated by the model, such as function calls.",
+    },
+    function_call_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Function Call Name",
+      description: "The name of the function being called in the message.",
+    },
+    function_call_arguments_json: {
+      anyOf: [
+        {
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Function Call Arguments Json",
+      description:
+        "JSON representing arguments passed to the function during a function call.",
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description: "The ID of the tool call, if applicable.",
+    },
+  },
+  type: "object",
+  required: ["role"],
+  title: "Message",
+} as const;
+
+export const MessageRoleSchema = {
+  type: "string",
+  enum: ["system", "user", "assistant", "function", "tool", "chatbot", "model"],
+  title: "MessageRole",
+  description: "Message role.",
 } as const;
 
 export const ModelDetailsSchema = {
@@ -1242,6 +1764,24 @@ export const SuiteDTOSchema = {
   type: "object",
   required: ["services"],
   title: "SuiteDTO",
+} as const;
+
+export const TextBlockSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "text",
+      title: "Block Type",
+      default: "text",
+    },
+    text: {
+      type: "string",
+      title: "Text",
+    },
+  },
+  type: "object",
+  required: ["text"],
+  title: "TextBlock",
 } as const;
 
 export const TextToSpeechRequestSchema = {
@@ -1570,6 +2110,51 @@ export const TranscriptionWordSchema = {
   title: "TranscriptionWord",
 } as const;
 
+export const UserChatMessageSchema = {
+  properties: {
+    role: {
+      $ref: "#/components/schemas/MessageRole",
+      default: "user",
+    },
+    additional_kwargs: {
+      type: "object",
+      title: "Additional Kwargs",
+    },
+    blocks: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/TextBlock",
+          },
+          {
+            $ref: "#/components/schemas/ImageBlock",
+          },
+          {
+            $ref: "#/components/schemas/AudioBlock",
+          },
+        ],
+        discriminator: {
+          propertyName: "block_type",
+          mapping: {
+            audio: "#/components/schemas/AudioBlock",
+            image: "#/components/schemas/ImageBlock",
+            text: "#/components/schemas/TextBlock",
+          },
+        },
+      },
+      type: "array",
+      title: "Blocks",
+    },
+    user_id: {
+      type: "string",
+      title: "User Id",
+    },
+  },
+  type: "object",
+  required: ["user_id"],
+  title: "UserChatMessage",
+} as const;
+
 export const UserDTOSchema = {
   properties: {
     id: {
@@ -1603,6 +2188,32 @@ export const UserDTOSchema = {
   type: "object",
   required: ["id", "name", "email"],
   title: "UserDTO",
+} as const;
+
+export const UserMessageEventInputSchema = {
+  properties: {
+    messages: {
+      items: {
+        anyOf: [
+          {
+            $ref: "#/components/schemas/ChatMessage",
+          },
+          {
+            $ref: "#/components/schemas/UserChatMessage",
+          },
+          {
+            $ref: "#/components/schemas/AssistantChatMessage",
+          },
+        ],
+      },
+      type: "array",
+      title: "Messages",
+      description:
+        "A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
+    },
+  },
+  type: "object",
+  title: "UserMessageEventInput",
 } as const;
 
 export const ValidationErrorSchema = {

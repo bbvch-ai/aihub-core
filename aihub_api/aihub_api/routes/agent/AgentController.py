@@ -117,7 +117,7 @@ class AgentController(Controller):
         if route_postfix.endswith("/"):
             route_postfix = route_postfix[:-1]
 
-        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name)
+        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name, tags=self.tags)
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],

@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Type
 
-from aihub_agent.workflow.visualizers.NetworkXVisualizer import WorkflowVisualizer
+from aihub_agent.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
