@@ -3,7 +3,7 @@ import base64
 import logging
 import re
 from asyncio import Task
-from typing import AsyncGenerator, List, Optional, Tuple, cast
+from typing import AsyncGenerator, List, Optional, Tuple
 
 import httpx
 from botbuilder.core import TurnContext
@@ -241,9 +241,10 @@ class Service(ChatService):
     def _handle_teams_file_attachment(attachment: Attachment) -> Content:
         IMAGE_FILE_TYPES = ["png", "jpg", "jpeg", "gif", "bmp", "tiff", "webp"]
         TEXT_FILE_TYPES = ["txt", "log", "md", "csv", "json", "xml", "yaml", "yml", "html", "htm", "css", "js"]
-        teams_content: dict = cast(dict, attachment.content)
-        teams_url: str = teams_content["downloadUrl"]
-        teams_file_type: str = teams_content["fileType"]
+        if not isinstance(attachment.content, dict):
+            raise ValueError(f"Teams file attachment content is not a dict: {attachment.content}")
+        teams_url: str = attachment.content["downloadUrl"]
+        teams_file_type: str = attachment.content["fileType"]
         if teams_file_type in IMAGE_FILE_TYPES:
             return Content(text=teams_url, type="image_url")
         elif teams_file_type in TEXT_FILE_TYPES:
