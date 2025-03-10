@@ -55,3 +55,7 @@ class AgentDiscoveryResponseEvent(BaseEvent):
         ...,
         description="A list of `EventSpecs` objects, each describing a stop event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
     )
+    network_graph: Dict[str, Any] = Field(
+        ...,
+        description="A dictionary representing the network graph of the agent, showing how different components are connected and interact.",
+    )

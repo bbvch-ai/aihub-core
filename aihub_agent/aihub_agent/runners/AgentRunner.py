@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Type
 
+from aihub_agent.workflow.visualizers.NetworkXVisualizer import WorkflowVisualizer
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
@@ -121,6 +122,10 @@ class AgentRunner:
 
         stop_events = self.agent_type.get_stop_events()
         stop_event_specs = [EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in stop_events]
+
+        network_graph = WorkflowVisualizer(agent=self.agent_type)
+        network_graph.build_workflow_graph()
+
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
@@ -128,6 +133,7 @@ class AgentRunner:
             agent_config=self.agent_config,
             start_events=start_event_specs,
             stop_events=stop_event_specs,
+            network_graph=network_graph.to_dict(),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 

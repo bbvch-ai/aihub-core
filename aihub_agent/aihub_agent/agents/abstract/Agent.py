@@ -75,6 +75,16 @@ class Agent(abc.ABC):
 
     @classmethod
     @functools.cache
+    def get_output_events(cls) -> Set[Type[ControlEvent]]:
+        """
+        Aggregates all output event types produced by all steps.
+        This provides a global view of which events the agent can emit.
+        """
+        steps = cls.get_steps()
+        return set(event_type for method in steps for event_type in method._output_events)
+
+    @classmethod
+    @functools.cache
     def get_start_events(cls) -> Set[Type[StartEvent]]:
         """
         Returns all event types that are considered start events (subclasses of StartEvent).
@@ -90,5 +100,5 @@ class Agent(abc.ABC):
         Returns all event types that are considered stop events (subclasses of StopEvent).
         These events indicate how a run/workflow can terminate.
         """
-        input_events = cls.get_input_events()
-        return {event for event in input_events if issubclass(event, StopEvent)}
+        output_events = cls.get_output_events()
+        return {event for event in output_events if issubclass(event, StopEvent)}

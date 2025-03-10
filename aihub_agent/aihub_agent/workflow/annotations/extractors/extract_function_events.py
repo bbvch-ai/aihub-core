@@ -1,6 +1,7 @@
 import inspect
 from typing import Annotated, Callable, Dict, Optional, Set, Tuple, Type
 
+from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent
@@ -14,6 +15,7 @@ def extract_function_events(
         "A function or method whose parameters are to be analyzed for event types.",
     ],
 ) -> Tuple[
+    Set[Type[BaseEvent]],
     Set[Type[BaseEvent]],
     Dict[str, Set[Type[BaseEvent]]],
     Dict[str, bool],
@@ -45,11 +47,12 @@ def extract_function_events(
     ### Example
     Consider a step method:
     ```python
-    def my_step(event: SomeEvent | None, events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]):
+    def my_step(event: SomeEvent | None, events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]) -> StopEvent:
         ...
     ```
     This might produce:
     - input_events = {SomeEvent, AnotherEvent, YetAnotherEvent}
+    - output_events = {StopEvent}
     - input_event_mapping = {"event": {SomeEvent}, "events": {AnotherEvent}, "fixed": {YetAnotherEvent}}
     - parameter_optional_map = {"event": True, "events": False, "fixed": False}
     - size_requirements = {"event": None, "events": None, "fixed": 3}
@@ -60,6 +63,8 @@ def extract_function_events(
     input_event_mapping: Dict[str, Set[Type[BaseEvent]]] = {}
     parameter_optional_map: Dict[str, bool] = {}
     size_requirements: Dict[str, Optional[int]] = {}
+
+    output_events: Set[Type[BaseEvent]] = extract_return_events(func)
 
     for param in signature.parameters.values():
         if param.name == "self":
@@ -76,4 +81,5 @@ def extract_function_events(
             parameter_optional_map[param.name] = is_optional
             size_requirements[param.name] = required_size
 
-    return input_events, input_event_mapping, parameter_optional_map, size_requirements
+
+    return input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements

@@ -1,6 +1,9 @@
 import inspect
+from typing import Type
 
 import networkx as nx
+
+from aihub_agent.agents.abstract.Agent import Agent
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent, StartEvent, StopEvent
 
@@ -23,11 +26,11 @@ def is_end_event(cls) -> bool:
 
 
 class WorkflowVisualizer:
-    def __init__(self, cls: type, locale: str = "en"):
+    def __init__(self, agent: Type[Agent], locale: str = "en"):
         """
         Initialize the WorkflowVisualizer with a class and locale.
         """
-        self.cls = cls
+        self.agent = agent
         self.locale = locale
         self.graph = None
 
@@ -47,7 +50,7 @@ class WorkflowVisualizer:
         # Identify step methods
         steps = [
             (name, func)
-            for name, func in inspect.getmembers(self.cls, predicate=inspect.isfunction)
+            for name, func in inspect.getmembers(self.agent, predicate=inspect.isfunction)
             if getattr(func, "_is_step", False)
         ]
 
@@ -129,6 +132,14 @@ class WorkflowVisualizer:
                 for consumer_step in event_consumers.get(evt, set()):
                     if consumer_step != step_name:
                         G.add_edge(step_name, consumer_step)
+
+    def to_dict(self):
+        """
+        Convert the workflow graph to a JSON-serializable format.
+        """
+        if self.graph is None:
+            self.build_workflow_graph()
+        return nx.node_link_data(self.graph)
 
     def visualize(self):
         """
