@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
@@ -6,7 +5,7 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.records.User import User
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import HTTPException, Security, status
 
 from aihub_api.routes.token.dto.CreateTokenRequest import CreateTokenRequest
 from aihub_api.routes.token.dto.CreateTokenResponse import CreateTokenResponse

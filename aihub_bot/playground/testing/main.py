@@ -9,6 +9,9 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
 )
 from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
 from aihub_lib.routes.health.HealthController import HealthController
+from aihub_lib.testing.logging.logger import enable_logging
+
+enable_logging()
 
 
 async def main():

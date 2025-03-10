@@ -51,11 +51,18 @@ class ChatLLMConfig(LLMConfig):
         pass
 
     @asynccontextmanager
-    async def cost_reporting_llm(self, displayer: EventDisplayer, model_parameter: Optional[ChatLLMParameter] = None):
+    async def cost_reporting_llm(
+        self,
+        displayer: EventDisplayer,
+        model_parameter: Optional[ChatLLMParameter] = None,
+        system_prompt: Optional[str] = None,
+    ):
         """
-        Async context manager that yields an LLM configured with merged parameters.
+        Async context manager that yields an LLM configured with merged parameters and a system prompt.
         After the block, it reports costs to `displayer`.
         """
         llm, cost_tracker = self.to_llama_index(model_parameter)
+        if system_prompt:
+            llm.system_prompt = system_prompt
         yield llm
         await displayer.display_llm_costs(self.name, cost_tracker)

@@ -1,6 +1,4 @@
-from typing import Any, Callable
-
-from fastapi import Depends, Security
+from fastapi import Security
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler

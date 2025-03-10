@@ -14,7 +14,7 @@ sort-imports:
 	@echo "Sorting imports for pipelines..."
 	poetry run isort .
 
-pr-ready: sort-imports format
+pr-ready: sort-imports format lint
 	@echo "Running full check (format, sort)..."
 
 test-cov:

@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Optional
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
@@ -37,7 +38,7 @@ class LLMEvent(SemanticEvent):
     def to_semantic_convention(self) -> Dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
-            SpanAttributes.LLM_INVOCATION_PARAMETERS: self.invocation_parameters,
+            SpanAttributes.LLM_INVOCATION_PARAMETERS: json.dumps(self.invocation_parameters),
             SpanAttributes.LLM_MODEL_NAME: self.chat_model_name,
             SpanAttributes.LLM_PROVIDER: self.provider,
             SpanAttributes.LLM_SYSTEM: self.system,
@@ -64,4 +65,4 @@ class LLMEvent(SemanticEvent):
                     **message.to_semantic_convention(SpanAttributes.LLM_OUTPUT_MESSAGES, i),
                 }
 
-        return attributes
+        return {k: v for k, v in attributes.items() if v is not None}

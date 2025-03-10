@@ -3,7 +3,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, UserMessageEvent
+from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent

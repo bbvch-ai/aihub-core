@@ -1,7 +1,9 @@
+import hashlib
 import logging
-from typing import Annotated
+from typing import List
 
-from nats.js import JetStreamContext
+from aihub_lib.nats.events import ControlEvent
+from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
@@ -36,66 +38,63 @@ class DistributedStepStore(StoreBase):
     - Each run gets its own KV store (e.g. "steps_RUNID").
     - Keys include:
       - "crashed": Indicates if the run is crashed.
-      - A step's name as key, with an integer representing execution count.
+      - For execution counts, one key per execution with pattern: step_name.counter.{timestamp}.{random}
     - Default TTL and storage settings inherited from `StoreBase`.
 
     ### Example
     If a step `my_step` can only run 2 times, after executing once we call `increment_execution_count`.
     If we try again, we first `get_execution_count` to ensure we're not over the limit.
-
     """
 
-    def __init__(self, js: JetStreamContext):
-        super().__init__(js, prefix="steps")
+    def __init__(self, redis: Redis):
+        super().__init__(redis, prefix="steps")
 
     async def mark_run_as_crashed(self, run_id: str):
-        """
-        Flags the run as crashed by setting a 'crashed' key.
-        This is a simple put operation that doesn't need concurrency control.
-        """
-        kv = await self._get_kv_store(run_id)
-        await kv.put("crashed", b"true")
+        """Flags the run as crashed."""
+        await self.put_value(run_id, "crashed", b"true")
+        logger.debug(f"Marked run {run_id} as crashed")
 
     async def is_run_crashed(self, run_id: str) -> bool:
         """Checks if the run has been marked as crashed."""
 
-        # Using the generic get_value method with a transform function
         def transform_to_bool(value):
             return value is not None and value.decode() == "true"
 
         return await self.get_value(run_id, "crashed", default_value=False, transform_func=transform_to_bool)
 
     async def get_execution_count(self, run_id: str, step_name: str) -> int:
-        """Retrieves how many times a given step has executed for the specified run."""
-        # Using JSON interface for simplicity, storing as a number
-        count = await self.get_json_value(run_id, step_name, default_value=0)
+        """Retrieves how many times a given step has executed."""
+        counter_key = f"{step_name}.counter"
+        count = await self.get_value(
+            run_id, counter_key, default_value=0, transform_func=lambda v: int(v) if v is not None else 0
+        )
+        logger.debug(f"Retrieved execution count {count} for step '{step_name}'")
         return count
 
-    async def increment_execution_count(self, run_id: Annotated[str, "Run ID"], step_name: Annotated[str, "Step name"]):
-        """
-        Increments the execution count for the given step.
-        Uses synchronized_update to handle concurrent increments safely.
-        """
+    async def increment_execution_count(self, run_id: str, step_name: str):
+        """Increments the execution count using a Redis atomic counter."""
+        counter_key = f"{step_name}.counter"
+        count = await self.increment_counter(run_id, counter_key)
+        logger.debug(f"Incremented execution counter to {count} for step '{step_name}'")
 
-        # Define update function for synchronized increment
-        def increment_count(current_count):
-            if current_count is None:
-                current_count = 0
+    async def was_called_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]) -> bool:
+        """Checks if a step was called with a specific set of events."""
+        key = self._events_to_key(step_name, events)
 
-            new_count = current_count + 1
-            logger.debug(f"Incrementing execution count for step '{step_name}' to {new_count}")
-            return new_count
+        def transform_to_bool(value):
+            return value is not None and value.decode() == "true"
 
-        # Perform synchronized update
-        success = await self.synchronized_update(run_id, step_name, increment_count, default_value=0)
+        return await self.get_value(run_id, key, default_value=False, transform_func=transform_to_bool)
 
-        if not success:
-            # Emergency fallback
-            logger.warning(f"Failed to increment execution count for step '{step_name}'. Using emergency fallback.")
-            try:
-                current = await self.get_execution_count(run_id, step_name)
-                await self.put_json_value(run_id, step_name, current + 1)
-            except Exception as e:
-                logger.error(f"Emergency fallback for step '{step_name}' also failed: {e}")
-                # Last resort - just set to 1
-                await self.put_json_value(run_id, step_name, 1)
+    async def report_run_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]):
+        """Reports that a run was called with a specific set of events."""
+        key = self._events_to_key(step_name, events)
+        await self.put_value(run_id, key, b"true")
+        logger.debug(f"Reported run {run_id} with events {key} for step {step_name}")
+
+    def _events_to_key(self, step_name: str, events: List[ControlEvent]) -> str:
+        """Builds a unique key for a step and a list of events."""
+        sorted_events = sorted(events, key=lambda e: e.event_id)
+        events_list = "_".join([event.event_id for event in sorted_events])
+        md5_hash = hashlib.md5(events_list.encode()).hexdigest()
+        return f"{step_name}.parameters.{md5_hash}"

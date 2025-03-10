@@ -1,5 +1,4 @@
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.records.User import User
 
 from aihub_api.routes.i18n.dto.LocaleResponse import LocaleResponse
 

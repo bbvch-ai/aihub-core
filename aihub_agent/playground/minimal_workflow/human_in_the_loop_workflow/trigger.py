@@ -5,7 +5,7 @@ from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoo
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, UserMessageEvent
+from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (

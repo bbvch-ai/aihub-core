@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "v0.79.0"
+version = "v0.102.0"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -27,10 +27,12 @@ colorlog = "^6.9.0"
 llama-index-llms-openai = "^0.3.12"
 llama-index-llms-azure-openai = "^0.3.0"
 pytest-mock = "^3.14.0"
+cachetools = "^5.5.2"
+redis = "^5.2.1"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.79.0"
+tag = "v0.102.0"
 subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]
@@ -43,6 +45,9 @@ toml-sort = "^0.24.2"
 black = { extras = ["jupyter"], version = "^24.10.0" }
 pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
+tabulate = "^0.9.0"
+matplotlib = "^3.10.1"
+seaborn = "^0.13.2"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

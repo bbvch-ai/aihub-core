@@ -64,3 +64,19 @@ few_shot_guard:
     Begründung für die getroffene Entscheidung.
   docstring: |
     Datenmodell für die Entscheidung, ob die Anfrage akzeptabel ist oder nicht.
+context_sufficient_guard:
+  prompt: |
+    Ich werde dir einen Kontext und eine Frage geben.
+    Wenn die Frage mit dem bereitgestellten Kontext beantwortet werden kann, dann darf das Gespräch fortgesetzt werden (success=True).
+    Wenn die Beantwortung der Frage mit dem Kontext nicht möglich ist, sollte das Gespräch beendet werden (success=False).
+    Denke zuerst über die Entscheidungsfindung nach und bestimme dann, ob die Konversation erfolgreich fortgesetzt werden kann oder nicht.
+  message: |
+    Frage:
+    <Frage>
+    {user_query}
+    </Frage>
+    Kontext:
+    <Kontext>
+    {context}
+    </Kontext>
+

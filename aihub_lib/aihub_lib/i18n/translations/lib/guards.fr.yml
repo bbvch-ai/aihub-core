@@ -64,4 +64,19 @@ few_shot_guard:
     Justification de la décision prise.
   docstring: |
     Modèle de données pour la décision concernant l'acceptabilité de la requête.
+context_sufficient_guard:
+  prompt: |
+    Je vais te donner un contexte et une question.
+    Si la question peut être répondue avec le contexte fourni, alors la conversation peut continuer (success=True).
+    Si la réponse à la question est impossible avec le contexte, alors la conversation doit être terminée (success=False).
+    Réfléchis d'abord à la manière de décider, puis détermine si la conversation peut se poursuivre avec succès ou non.
+  message: |
+    Question :
+    <Question>
+    {user_query}
+    </Question>
+    Contexte :
+    <Contexte>
+    {context}
+    </Contexte>
 

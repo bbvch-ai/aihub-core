@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Callable, List
+from typing import Annotated, List
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser

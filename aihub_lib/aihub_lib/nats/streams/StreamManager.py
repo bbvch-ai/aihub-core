@@ -52,6 +52,10 @@ class StreamManager:
                     subjects=[subject],
                     storage=api.StorageType.FILE,
                     retention=api.RetentionPolicy.LIMITS,
+                    max_msgs=10_000_000,
+                    discard=api.DiscardPolicy.OLD,
+                    max_age=60 * 60 * 24 * 30,
+                    duplicate_window=60 * 1,
                 )
             )
 

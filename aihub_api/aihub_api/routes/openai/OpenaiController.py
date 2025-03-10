@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any, AsyncIterator, Callable, List, Literal, Optional
+from typing import Annotated, AsyncIterator, List, Literal, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler

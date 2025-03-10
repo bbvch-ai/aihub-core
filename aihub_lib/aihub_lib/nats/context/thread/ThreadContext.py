@@ -1,8 +1,6 @@
 import logging
-from datetime import timedelta
 
-from nats.js.api import StorageType
-from nats.js.client import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_lib.nats.context.BaseContext import BaseContext
 
@@ -31,39 +29,8 @@ class ThreadContext(BaseContext):
 
     """
 
-    def __init__(self, js: JetStreamContext, thread_id: str):
+    def __init__(self, redis: Redis, thread_id: str):
         self.thread_id = thread_id
         store_name = f"thread_context_{thread_id}"
         logger.debug(f"Initializing ThreadContext with store name '{store_name}'")
-        super().__init__(js, store_name)
-
-    @classmethod
-    async def create(cls, js: JetStreamContext, thread_id: str):
-        """
-        Create the KV store for the given thread_id if it doesn't already exist.
-
-        The store uses:
-        - A 30-day TTL to clean up old entries.
-        - A single history version for simplicity.
-        - File storage for durability.
-
-        If the KV bucket already exists, this is a no-op.
-        """
-        ttl_seconds = int(timedelta(days=30).total_seconds())
-        try:
-            await js.create_key_value(
-                bucket=f"thread_context_{thread_id}",
-                ttl=ttl_seconds,
-                history=1,
-                storage=StorageType.FILE,
-            )
-            logger.debug(f"Created KV store 'thread_context_{thread_id}' with TTL of {ttl_seconds} seconds")
-        except Exception as e:
-            if "already in use" in str(e).lower():
-                # Bucket already exists, just log and proceed
-                logger.debug(f"KV store 'thread_context_{thread_id}' already exists")
-            else:
-                # Something else went wrong
-                logger.error(f"Error creating KV store 'thread_context_{thread_id}': {e}")
-                raise e
-        return cls(js, thread_id)
+        super().__init__(redis, store_name, default_ttl=60 * 60 * 24 * 30)  # 30 days in seconds
