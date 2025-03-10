@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
@@ -28,4 +28,8 @@ class AgentDTO(BaseModel):
     )
     stop_events: List[EventSpecs] = Field(
         ..., description="A list of `EventSpecs` representing events that can stop this agent's workflow."
+    )
+    network_graph: Dict[str, Any] = Field(
+        ...,
+        description="A dictionary representing the network graph of the agent, showing how different components are connected and interact.",
     )

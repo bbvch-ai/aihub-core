@@ -116,6 +116,12 @@ export const AgentDTOSchema = {
       description:
         "A list of `EventSpecs` representing events that can stop this agent's workflow.",
     },
+    network_graph: {
+      type: "object",
+      title: "Network Graph",
+      description:
+        "A dictionary representing the network graph of the agent, showing how different components are connected and interact.",
+    },
   },
   type: "object",
   required: [
@@ -125,6 +131,7 @@ export const AgentDTOSchema = {
     "is_conversational",
     "start_events",
     "stop_events",
+    "network_graph",
   ],
   title: "AgentDTO",
   description: `A data transfer object for representing agent information in responses.

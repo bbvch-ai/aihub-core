@@ -1,16 +1,30 @@
 <template>
   <div
-    class="p-6"
+    class="p-1 flex flex-col gap-12"
   >
+    <div class="flex flex-col gap-2 p-6">
+      <p class="text-3xl font-bold">
+        Agents
+      </p>
+      <p class="text-sm">
+        Hier werden alle Agenten dargestellt, mit welchen kommuniziert werden kann
+      </p>
+    </div>
     <Splitter
-      style="height: 300px"
-      class="mb-8"
+      class="mb-8 !border-none"
+      :gutter-size="3"
     >
       <SplitterPanel
         state-key="agents"
         state-storage="local"
+        :min-size="25"
+        :size="25"
+        class="bg-gray-50 dark:bg-stone-950 border-none p-5"
       >
-        <div class="left-splitter">
+        <div
+          ref="leftsplitter"
+          class="border-gray-200 dark:border-gray-700 border rounded-lg overflow-auto"
+        >
           <DataTable
             v-if="showTable"
             v-model:filters="filters"
@@ -29,14 +43,6 @@
           >
             <template #header>
               <div class="flex justify-between">
-                <div>
-                  <p class="text-xl font-bold">
-                    Agents
-                  </p>
-                  <p class="text-sm">
-                    Hier werden alle Agenten dargestellt, mit welchen kommuniziert werden kann
-                  </p>
-                </div>
                 <IconField>
                   <InputIcon>
                     <i class="pi pi-search" />
@@ -63,22 +69,22 @@
               header="Agent"
               filter-field="agent_config.icon"
             >
-              <template #body="{ data }">
-                <div class="flex flex-row gap-2">
+              <template #body="{ data: agent }">
+                <div class="flex flex-row gap-2 font-bold">
                   <Icon
-                    :name="data.agent_config.icon"
+                    :name="agent.agent_config.icon"
                     size="xl"
                   />
-                  <span>{{ data.agent_config.name }}</span>
+                  <span>{{ agent.agent_config.name }}</span>
                 </div>
               </template>
             </Column>
             <Column
               header="Typ"
             >
-              <template #body="{ data }">
+              <template #body="{ data: agent }">
                 <Tag
-                  :value="data.agent_class"
+                  :value="agent.agent_class"
                   severity="info"
                 />
               </template>
@@ -86,9 +92,9 @@
             <Column
               header="Conversable"
             >
-              <template #body="{ data }">
+              <template #body="{ data: agent }">
                 <i
-                  :class="data.is_conversable ? 'pi-check-circle' : 'pi pi-times-circle'"
+                  :class="agent.is_conversational ? 'pi pi-check-circle' : 'pi pi-times-circle'"
                   style="font-size: 1rem"
                 />
               </template>
@@ -109,12 +115,67 @@
               />
             </template>
           </DataTable>
-          <div v-else>
-            V-else
-          </div>
+          <DataView
+            v-else
+            :value="agents"
+            class="p-3"
+            paginator
+            :rows="5"
+          >
+            <template #header>
+              <IconField>
+                <InputIcon>
+                  <i class="pi pi-search" />
+                </InputIcon>
+                <InputText
+                  v-model="filters['global'].value"
+                  placeholder="Keyword Search"
+                />
+              </IconField>
+            </template>
+            <template #list="{ items: agents }">
+              <div
+                v-for="(agent, index) in agents"
+                :key="agent.agent_id"
+              >
+                <div
+                  class="flex flex-row p-4 gap-4"
+                  :class="{
+                    'border-t border-surface-200 dark:border-surface-700': index !== 0,
+                    'bg-gray-50 dark:bg-gray-950': selectedAgent?.agent_id == agent.agent_id,
+                  }"
+                >
+                  <Checkbox
+                    binary
+                    :model-value="selectedAgent?.agent_id == agent.agent_id"
+                    variant="filled"
+                    @update:model-value="selectedAgent = selectedAgent?.agent_id == agent.agent_id ? null : agent"
+                  />
+                  <div
+                    class="flex flex-col gap-4 items-start"
+                  >
+                    <div class="flex flex-row gap-2 font-bold">
+                      <Icon
+                        :name="agent.agent_config.icon"
+                        size="xl"
+                      />
+                      <span>{{ agent.agent_config.name }}</span>
+                    </div>
+                    <Tag
+                      :value="agent.agent_class"
+                      severity="info"
+                    />
+                  </div>
+                </div>
+              </div>
+            </template>
+          </DataView>
         </div>
       </SplitterPanel>
-      <SplitterPanel>
+      <SplitterPanel
+        v-if="selectedAgent"
+        class="bg-gray-50 dark:bg-stone-950 border-none p-5"
+      >
         <NuxtPage />
       </SplitterPanel>
     </Splitter>
@@ -150,14 +211,9 @@ const filters = ref({
   agent_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 })
 
-const showTable = ref(true)
-const leftSplitter = useTemplateRef('left-splitter')
-useResizeObserver(leftSplitter, (entries) => {
-  const [entry] = entries
-  const { width } = entry.contentRect
-  showTable.value = width > 600
-  console.log(width)
-})
+const leftSplitter = useTemplateRef('leftsplitter')
+const { width: leftSplitterWidth } = useElementSize(leftSplitter)
+const showTable = computed(() => leftSplitterWidth.value > 500)
 </script>
 
 <style scoped>

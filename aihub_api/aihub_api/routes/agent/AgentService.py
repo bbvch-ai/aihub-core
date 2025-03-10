@@ -84,6 +84,7 @@ class AgentService:
                 is_conversational=response.is_conversational,
                 start_events=response.start_events,
                 stop_events=response.stop_events,
+                network_graph=response.network_graph,
             )
             for response in discovery_responses
         ]

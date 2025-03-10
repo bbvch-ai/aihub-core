@@ -1,7 +1,7 @@
 import { UserManager, WebStorageStateStore, Log } from 'oidc-client-ts'
 import { defineNuxtPlugin } from '#app'
 
-export default defineNuxtPlugin(async ({ $i18n }) => {
+export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   const config = useRuntimeConfig()
 
   // Enable logging for debugging (remove in production)
@@ -32,7 +32,7 @@ export default defineNuxtPlugin(async ({ $i18n }) => {
     console.log('Access token expired')
     // Redirect to login when token expires and cannot be renewed
     const locale = $i18n.locale.value
-    window.location.assign(`/${locale}/auth/login`)
+    $router.push(`/${locale}/auth/login`)
   })
 
   auth.events.addSilentRenewError((error) => {

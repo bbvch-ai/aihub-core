@@ -75,6 +75,12 @@ export type AgentDto = {
    * A list of `EventSpecs` representing events that can stop this agent's workflow.
    */
   stop_events: Array<EventSpecs>;
+  /**
+   * A dictionary representing the network graph of the agent, showing how different components are connected and interact.
+   */
+  network_graph: {
+    [key: string]: unknown;
+  };
 };
 
 export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
