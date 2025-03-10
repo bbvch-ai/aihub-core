@@ -30,6 +30,7 @@ class PathEntity(Document):
     path = StringField(required=True)
     credentials = EmbeddedDocumentField(Credentials, required=True)
     system_message = StringField(required=False)
+    slack_token = StringField(required=False)
 
     @classmethod
     def get_credentials_by_path(cls, path: str) -> Optional[Credentials]:
@@ -40,3 +41,8 @@ class PathEntity(Document):
     def get_system_message_by_path(cls, path: str) -> Optional[str]:
         doc = cls.objects().filter(path=path).first()
         return doc.system_message if doc else None
+
+    @classmethod
+    def get_slack_token_by_path(cls, path: str) -> Optional[str]:
+        doc = cls.objects().filter(path=path).first()
+        return doc.slack_token if doc else None

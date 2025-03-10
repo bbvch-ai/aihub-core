@@ -28,7 +28,10 @@ class StreamOpenaiChatBot(OpenaiChatBot):
 
         typing = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
 
-        OpenaiChatService.add_user_message_to_conversation(turn_context)
+        OpenaiChatService.add_user_message_to_conversation(
+            path=self.path,
+            turn_context=turn_context,
+        )
 
         if turn_context.activity.channel_id == "slack":
             turn_context = OpenaiChatService.handle_slack_message(turn_context)
@@ -53,6 +56,7 @@ class StreamOpenaiChatBot(OpenaiChatBot):
             await turn_context.send_activity(response)
 
         OpenaiChatService.add_bot_message_to_conversation(
+            path=self.path,
             turn_context=turn_context,
             message=response,
         )

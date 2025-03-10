@@ -1,9 +1,9 @@
 import argparse
 import json
 import subprocess
+import sys
 from typing import Optional
 
-import sys
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cosmosdb import CosmosDBManagementClient
 from pymongo import MongoClient
@@ -129,6 +129,7 @@ def save_credentials_in_mongo(
     app_password: str,
     tenant_id: Optional[str],
     system_message: Optional[str] = None,
+    slack_token: Optional[str] = None,
 ):
     print("Saving credentials in MongoDB...")
     client = MongoClient(connection_string)
@@ -145,6 +146,8 @@ def save_credentials_in_mongo(
     }
     if system_message:
         document["system_message"] = system_message
+    if slack_token:
+        document["slack_token"] = slack_token
     _filter = {"path": api_path}
     payload = {"$set": document}
     collection.update_one(_filter, payload, upsert=True)
@@ -160,6 +163,7 @@ def save_credentials_in_cosmos(
     resource_group: str,
     tenant_id: Optional[str],
     system_message: Optional[str] = None,
+    slack_token: Optional[str] = None,
 ):
     print("Saving credentials in Cosmos DB...")
     credential = DefaultAzureCredential()
@@ -169,7 +173,7 @@ def save_credentials_in_cosmos(
     keys = database_accounts.list_connection_strings(resource_group, cosmos_name)
     connection_string = keys.connection_strings[0].connection_string
 
-    save_credentials_in_mongo(connection_string, api_path, app_id, app_password, tenant_id, system_message)
+    save_credentials_in_mongo(connection_string, api_path, app_id, app_password, tenant_id, system_message, slack_token)
     print("Credentials successfully saved in Cosmos DB.")
 
 
@@ -200,6 +204,9 @@ def main():
     parser.add_argument("--system-message", "-sys", required=False, help="System message for the bot.")
     parser.add_argument("--system-message-file", "-sysf", required=False, help="File containing the system message.")
 
+    # Slack OAuth token
+    parser.add_argument("--slack-token", "-slack", required=False, help="Slack OAuth token for the bot.")
+
     args = parser.parse_args()
 
     # Create the Azure AD app registration and reset its credentials.
@@ -226,6 +233,7 @@ def main():
             app_password=app_password,
             tenant_id=args.tenant_id,
             system_message=system_message,
+            slack_token=args.slack_token,
         )
     else:
         assert all(
@@ -241,6 +249,7 @@ def main():
             resource_group=args.resource_group,
             tenant_id=args.tenant_id,
             system_message=system_message,
+            slack_token=args.slack_token,
         )
 
     # Create the Azure Bot resource using a direct az command.

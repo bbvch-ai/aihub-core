@@ -69,11 +69,15 @@ class WebSocketReceiver:
             logger.error(f"User {user_id} is not in thread {ws_event.thread_id}")
             raise Exception(f"User {user_id} is not in thread {ws_event.thread_id}")
 
-        if isinstance(ws_event.event, HumanInTheLoopResponseEvent):
-            run_id = ws_event.event.request_event.topic.run_id
-            await self._handle_human_in_the_loop_response(thread, ws_event)
-        else:
+        if isinstance(ws_event.event, StartEvent):
             run_id = str(ObjectId())
+        elif isinstance(ws_event.event, HumanInTheLoopResponseEvent):
+            run_id = ws_event.event.request_event.topic.run_id
+        else:
+            raise ValueError(f"Received event of unhandled type: {ws_event.event.__class__.__name__}")
+
+        if isinstance(ws_event.event, HumanInTheLoopResponseEvent):
+            await self._handle_human_in_the_loop_response(thread, ws_event)
 
         if isinstance(ws_event.event, DisplayEvent):
             await self._handle_display_message(ws_event, run_id, user_id)

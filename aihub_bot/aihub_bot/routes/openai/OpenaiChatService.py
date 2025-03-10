@@ -1,26 +1,26 @@
 import asyncio
 import re
+import unicodedata
 from typing import AsyncGenerator, List
 
-import unicodedata
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from botbuilder.core import TurnContext
 from openai import AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
+    ChatCompletionContentPartImageParam,
+    ChatCompletionContentPartParam,
+    ChatCompletionContentPartTextParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
-    ChatCompletionContentPartTextParam,
-    ChatCompletionContentPartParam,
-    ChatCompletionContentPartImageParam,
 )
 from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 
-from aihub_bot.persistence.entities.ConversationEntity import Message, Content
+from aihub_bot.persistence.entities.ConversationEntity import Content, Message
 from aihub_bot.routes.Service import Service
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 
 
 class OpenaiChatService(Service):
@@ -166,7 +166,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=name
+                    name=name,
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
@@ -175,7 +175,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=name
+                    name=name,
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
@@ -184,7 +184,7 @@ class OpenaiChatService(Service):
                         OpenaiChatService._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
-                    name=name
+                    name=name,
                 )
             case _:
                 raise ValueError(f"Unsupported message role: {message.role}")
