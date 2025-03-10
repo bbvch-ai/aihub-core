@@ -1,8 +1,9 @@
 import asyncio
+import base64
 import logging
 import re
 from asyncio import Task
-from typing import AsyncGenerator, List, Optional, Tuple
+from typing import AsyncGenerator, List, Optional, Tuple, cast
 
 import httpx
 from botbuilder.core import TurnContext
@@ -142,7 +143,7 @@ class Service(ChatService):
         return ConversationEntity.get_conversation_is_mentioned(conversation_id)
 
     @staticmethod
-    def add_user_message_to_conversation(turn_context: TurnContext) -> ConversationEntity:
+    def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
         """
         ### What
         - Add the user message to the persisted conversation.
@@ -152,47 +153,123 @@ class Service(ChatService):
         """
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
-            content=Service._activity_to_content(turn_context.activity),
+            content=Service._activity_to_content(path=path, activity=turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
             name=turn_context.activity.from_property.name,
         )
         return Service.add_messages_to_conversation(turn_context, user_message)
 
     @staticmethod
-    def _activity_to_content(activity: Activity) -> List[Content]:
+    def _activity_to_content(path: str, activity: Activity) -> List[Content]:
         content: List[Content] = []
+
         if activity.text:
             content.append(Content(text=activity.text, type="text"))
 
-        if activity.attachments and len(activity.attachments) > 0:
+        attachments_handled = False
+        if isinstance(activity.channel_data, dict):
+            files = activity.channel_data.get("SlackMessage", {}).get("event", {}).get("files")
+            if files:
+                slack_token = PathEntity.get_slack_token_by_path(path)
+                if slack_token:
+                    content.extend(Service._slack_files_to_content(files, slack_token))
+                    attachments_handled = True
+
+        if not attachments_handled and activity.attachments and len(activity.attachments) > 0:
             content.extend(Service._attachments_to_content(activity.attachments))
+
+        if len(content) == 0:
+            logger.warning(f"Activity has no content: {activity}")
+            content.append(Content(text="<no-content></no-content>", type="text"))
 
         return content
 
     @staticmethod
-    def _attachments_to_content(attachments: List[Attachment]) -> List[Content]:
-        content = []
-        for attachment in attachments:
-            if attachment.content and attachment.content.download_url:
-                url = attachment.content.download_url
-            else:
-                url = attachment.content_url
+    def _slack_files_to_content(
+        files: List[dict],
+        slack_token: str,
+    ) -> List[Content]:
+        content: List[Content] = []
+        for file in files:
 
-            if attachment.content_type.startswith("image/"):
+            if file.get("mimetype", "").startswith("image/"):
+                response = httpx.get(
+                    file["url_private_download"],
+                    headers={"Authorization": f"Bearer {slack_token}"},
+                )
+                response.raise_for_status()
+                image_bytes: bytes = response.content
+                image_base64: str = base64.b64encode(image_bytes).decode("utf-8")
+                content.append(
+                    Content(text=f"data:{response.headers['content-type']};base64,{image_base64}", type="image_url")
+                )
+            elif file.get("mimetype") == "text/plain":
+                response = httpx.get(
+                    file["url_private_download"],
+                    headers={"Authorization": f"Bearer {slack_token}"},
+                )
+                response.raise_for_status()
+                content.append(Service._text_file_content(file_name=file["name"], text=response.text))
+        return content
+
+    @staticmethod
+    def _attachments_to_content(attachments: List[Attachment]) -> List[Content]:
+        content: List[Content] = []
+        for attachment in attachments:
+            url = attachment.content_url
+            if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
+                content.append(Service._handle_teams_file_attachment(attachment))
+            elif attachment.content_type.startswith("image/"):
                 content.append(Content(text=url, type="image_url"))
             elif attachment.content_type == "text/plain":
                 content.append(Service._text_file_attachment_to_content(url, attachment.name))
+            elif attachment.content_type == "text/html":
+                logger.info(
+                    f"Ignoring HTML attachment. This is probably a Teams message. Teams messages always have a text/html attachment with the message content. Attachment: {attachment}"
+                )
+            else:
+                logger.warning(f"Attachment has unsupported content type: {attachment.content_type}.")
+                content.append(
+                    Content(
+                        text=f"<file name='{attachment.name}'>Unsupported content type: {attachment.content_type}</file>",
+                        type="text",
+                    )
+                )
         return content
+
+    @staticmethod
+    def _handle_teams_file_attachment(attachment: Attachment) -> Content:
+        IMAGE_FILE_TYPES = ["png", "jpg", "jpeg", "gif", "bmp", "tiff", "webp"]
+        TEXT_FILE_TYPES = ["txt", "log", "md", "csv", "json", "xml", "yaml", "yml", "html", "htm", "css", "js"]
+        teams_content: dict = cast(dict, attachment.content)
+        teams_url: str = teams_content["downloadUrl"]
+        teams_file_type: str = teams_content["fileType"]
+        if teams_file_type in IMAGE_FILE_TYPES:
+            return Content(text=teams_url, type="image_url")
+        elif teams_file_type in TEXT_FILE_TYPES:
+            return Service._text_file_attachment_to_content(teams_url, attachment.name)
+        else:
+            logger.warning(f"File {attachment.name} has unsupported file type {teams_file_type}.")
+            return Content(
+                text=f"<file name='{attachment.name}'>Unsupported file type: {teams_file_type}</file>", type="text"
+            )
 
     @staticmethod
     def _text_file_attachment_to_content(url: str, file_name: str) -> Content:
         response = httpx.get(url)
         response.raise_for_status()
-        text = f"<file name='{file_name}'>{response.text}</file>"
-        return Content(text=text, type="text")
+        return Service._text_file_content(file_name=file_name, text=response.text)
 
     @staticmethod
-    def add_bot_message_to_conversation(turn_context: TurnContext, message: str) -> ConversationEntity:
+    def _text_file_content(file_name: str, text: str) -> Content:
+        return Content(text=f"<file name='{file_name}'>{text}</file>", type="text")
+
+    @staticmethod
+    def add_bot_message_to_conversation(
+        path: str,
+        turn_context: TurnContext,
+        message: str,
+    ) -> ConversationEntity:
         """
         ### What
         - Add the bot message to the persisted conversation.
@@ -202,7 +279,7 @@ class Service(ChatService):
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=Service._activity_to_content(Activity(text=message)),
+            content=Service._activity_to_content(path=path, activity=Activity(text=message)),
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )
