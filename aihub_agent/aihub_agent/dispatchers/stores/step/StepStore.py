@@ -1,9 +1,9 @@
+import hashlib
 import logging
-import random
-import time
-from typing import Annotated
+from typing import List
 
-from nats.js import JetStreamContext
+from aihub_lib.nats.events import ControlEvent
+from redis.asyncio import Redis
 
 from aihub_agent.dispatchers.stores.StoreBase import StoreBase
 
@@ -46,22 +46,16 @@ class DistributedStepStore(StoreBase):
     If we try again, we first `get_execution_count` to ensure we're not over the limit.
     """
 
-    def __init__(self, js: JetStreamContext):
-        super().__init__(js, prefix="steps")
+    def __init__(self, redis: Redis):
+        super().__init__(redis, prefix="steps")
 
     async def mark_run_as_crashed(self, run_id: str):
-        """
-        Flags the run as crashed by setting a 'crashed' key.
-        Once crashed, steps won't be executed further.
-        """
+        """Flags the run as crashed."""
         await self.put_value(run_id, "crashed", b"true")
         logger.debug(f"Marked run {run_id} as crashed")
 
     async def is_run_crashed(self, run_id: str) -> bool:
-        """
-        Checks if the run has been marked as crashed.
-        Returns True if so, False otherwise.
-        """
+        """Checks if the run has been marked as crashed."""
 
         def transform_to_bool(value):
             return value is not None and value.decode() == "true"
@@ -69,44 +63,38 @@ class DistributedStepStore(StoreBase):
         return await self.get_value(run_id, "crashed", default_value=False, transform_func=transform_to_bool)
 
     async def get_execution_count(self, run_id: str, step_name: str) -> int:
-        """
-        Retrieves how many times a given step has executed for the specified run
-        by counting individual counter keys.
+        """Retrieves how many times a given step has executed."""
+        counter_key = f"{step_name}.counter"
+        count = await self.get_value(
+            run_id, counter_key, default_value=0, transform_func=lambda v: int(v) if v is not None else 0
+        )
+        logger.debug(f"Retrieved execution count {count} for step '{step_name}'")
+        return count
 
-        This method is always accurate because it directly counts the keys rather than
-        relying on a cached value.
-        """
-        kv = await self._get_kv_store(run_id)
+    async def increment_execution_count(self, run_id: str, step_name: str):
+        """Increments the execution count using a Redis atomic counter."""
+        counter_key = f"{step_name}.counter"
+        count = await self.increment_counter(run_id, counter_key)
+        logger.debug(f"Incremented execution counter to {count} for step '{step_name}'")
 
-        try:
-            # Get all keys
-            all_keys = await kv.keys()
+    async def was_called_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]) -> bool:
+        """Checks if a step was called with a specific set of events."""
+        key = self._events_to_key(step_name, events)
 
-            # Filter keys for this step's counters
-            counter_prefix = f"{step_name}.counter."
-            counter_keys = [key for key in all_keys if key.startswith(counter_prefix)]
-            count = len(counter_keys)
+        def transform_to_bool(value):
+            return value is not None and value.decode() == "true"
 
-            logger.debug(f"Counted {count} executions for step '{step_name}'")
-            return count
+        return await self.get_value(run_id, key, default_value=False, transform_func=transform_to_bool)
 
-        except Exception as e:
-            logger.error(f"Error counting executions for step '{step_name}': {e}")
-            return 0
+    async def report_run_with_events(self, run_id: str, step_name: str, events: List[ControlEvent]):
+        """Reports that a run was called with a specific set of events."""
+        key = self._events_to_key(step_name, events)
+        await self.put_value(run_id, key, b"true")
+        logger.debug(f"Reported run {run_id} with events {key} for step {step_name}")
 
-    async def increment_execution_count(self, run_id: Annotated[str, "Run ID"], step_name: Annotated[str, "Step name"]):
-        """
-        Increments the execution count by creating a unique counter key for this execution.
-        This approach completely avoids race conditions as each execution creates its own key.
-        """
-        # Create a unique counter key for this execution with timestamp and random component
-        unique_id = f"{int(time.time() * 1000)}.{random.randint(1000, 9999)}"
-        counter_key = f"{step_name}.counter.{unique_id}"
-
-        # Store the counter (value doesn't matter, just the existence of the key)
-        success = await self.put_value(run_id, counter_key, b"1")
-
-        if success:
-            logger.debug(f"Created execution counter {counter_key} for step '{step_name}'")
-        else:
-            logger.error(f"Failed to create execution counter for step '{step_name}'")
+    def _events_to_key(self, step_name: str, events: List[ControlEvent]) -> str:
+        """Builds a unique key for a step and a list of events."""
+        sorted_events = sorted(events, key=lambda e: e.event_id)
+        events_list = "_".join([event.event_id for event in sorted_events])
+        md5_hash = hashlib.md5(events_list.encode()).hexdigest()
+        return f"{step_name}.parameters.{md5_hash}"

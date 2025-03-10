@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pytest_bdd import given, parsers, scenario, scenarios, then, when
+from fastapi.security import HTTPBearer
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -87,7 +87,7 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
-def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":
+def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":  # noqa: F821
     from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 
     """Build a MultiAuthHandler from the provided table."""
@@ -112,7 +112,9 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
 @when("I invoke the multi auth handler")
 @async_test
 async def invoke_multi_auth(
-    multi_auth_instance: "TokenAndOauth2Handler", multi_auth_result: dict, dummy_request: Request
+    multi_auth_instance: "TokenAndOauth2Handler",  # noqa: F821
+    multi_auth_result: dict,
+    dummy_request: Request,  # noqa: F821
 ):
     """Invoke the multi auth handler and store the returned user."""
     try:

@@ -1,11 +1,12 @@
 import pytest
-from pytest_bdd import scenarios, given, when, then, parsers
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import AgentInTheLoopExceptionEvent, UserMessageEvent
-from aihub_lib.nats.events.agent_in_the_loop import (
+from aihub_lib.nats.events import (
+    AgentInTheLoopExceptionEvent,
+    UserMessageEvent,
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
 )
@@ -14,12 +15,11 @@ from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (
     OrchestrationResultEvent,
 )
-
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgent import OrchestratorAgent
-from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgent import WorkerAgent
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgentConfig import (
     OrchestratorAgentConfig,
 )
+from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgent import WorkerAgent
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgentConfig import WorkerAgentConfig
 
 # Link to feature file
@@ -88,14 +88,14 @@ def check_agent_in_loop_request(orchestrator_runner: AgentTestRunner):
 
 
 @then(parsers.parse("an AgentInTheLoopResponse with result {result} is received by the orchestrator"))
-def check_agent_in_loop_response(orchestrator_runner: AgentTestRunner, result: str):
+def check_agent_in_loop_response_with_result(orchestrator_runner: AgentTestRunner, result: str):
     assert orchestrator_runner.has_event_of_type(AgentInTheLoopResponseEvent)
     response_event = orchestrator_runner.get_events_of_type(AgentInTheLoopResponseEvent)[-1]
     assert response_event.stop_event.result == int(result)
 
 
 @then("an AgentInTheLoopResponse with exception is received by the orchestrator")
-def check_agent_in_loop_response(orchestrator_runner: AgentTestRunner):
+def check_agent_in_loop_response_with_exception(orchestrator_runner: AgentTestRunner):
     assert orchestrator_runner.has_event_of_type(AgentInTheLoopExceptionEvent)
     exception_event = orchestrator_runner.get_events_of_type(AgentInTheLoopExceptionEvent)[-1]
     assert exception_event.exception_event is not None

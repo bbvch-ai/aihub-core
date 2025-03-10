@@ -50,7 +50,7 @@ This unified approach not only simplifies the user experience—it also enhances
 
 The AI-Hub provides a Python setup script to help deploy your chatbot in an Azure environment with minimal local dependencies. While you can run most components locally, the Azure Bot Service remains essential for managing multi-channel communications.
 
-This [script](../aihub_bot/setup_azure_bot.py) automates several deployment tasks:
+This [script](../aihub_bot/aihub_bot/setup_azure_bot.py) automates several deployment tasks:
 - **Azure AD App Registration:** It creates an Azure AD application for the bot and resets its credentials to generate an `appId` and `app_password`.
 - **Bot Resource Creation:** Using the provided API URL and API path, the script configures the Azure Bot resource, specifying parameters such as resource group, bot name, location, and SKU.
 - **Credential Storage:** It saves the bot’s credentials in a MongoDB or Cosmos DB instance, which can later be used for authentication and authorization.

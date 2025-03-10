@@ -16,6 +16,7 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from redis.asyncio import ConnectionPool, Redis
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.Dispatcher import Dispatcher
@@ -57,7 +58,7 @@ class AgentRunner:
 
     ### Example
     ```python
-    runner = AgentRunner(servers=[NatsConfig().NATS_ENDPOINT], agent_type=MyAgent, agent_config=my_config)
+    runner = AgentRunner(servers=[NatsConfig().NATS_ENDPOINT], redis_url=RedisConfig().REDIS_URL, agent_type=MyAgent, agent_config=my_config)
     await runner.run_forever()
     ```
     This code connects to NATS, listens for events, and processes them indefinitely until stopped.
@@ -66,11 +67,13 @@ class AgentRunner:
     def __init__(
         self,
         servers: List[str],
+        redis_url: str,
         agent_type: Type[Agent],
         agent_config: AgentConfig,
         locale_paths: Optional[List[str]] = None,
     ):
         self.servers = servers
+        self.redis_url = redis_url
         self.agent_type = agent_type
         self.agent_config = agent_config
         self.running = False
@@ -146,7 +149,9 @@ class AgentRunner:
         self.nc = NATS()
         await self.nc.connect(servers=self.servers)
 
-        self.js = self.nc.jetstream()
+        self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
+        _, host, port = self.redis_url.split(":")
+        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
         # Initialize dispatcher
         self.dispatcher = Dispatcher(
@@ -154,9 +159,11 @@ class AgentRunner:
             self.agent_config,
             self.nc,
             self.js,
+            self.redis,
             self.topic_manager,
             self.locale_handler,
         )
+        await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
@@ -170,6 +177,7 @@ class AgentRunner:
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
+            queue_group=f"agent_runner_{self.agent_class}_{self.agent_config.agent_id}",
         )
         await self.control_event_subscriber.start()
 
@@ -187,8 +195,15 @@ class AgentRunner:
         logger.debug(f"Shutting down {self.agent_class}...")
         self._stop_event.set()
         self.running = False
+
+        await self.control_event_subscriber.stop()
+        await self.dispatcher.stop()
+
         if self.nc:
             await self.nc.close()
+
+        if self.redis:
+            await self.redis.close()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""

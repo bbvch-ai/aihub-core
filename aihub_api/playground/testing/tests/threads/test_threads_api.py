@@ -1,7 +1,6 @@
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
-from bson import ObjectId
 from typing import AsyncGenerator
 
 from httpx import AsyncClient, ASGITransport

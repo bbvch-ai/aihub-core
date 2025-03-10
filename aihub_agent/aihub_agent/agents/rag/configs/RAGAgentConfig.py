@@ -28,3 +28,7 @@ class RAGAgentConfig(AgentConfig):
     few_shot_guard_examples: List[FewShotGuardExample] = Field(
         default_factory=list, description="Examples for the few-shot guard to define which user requests are accepted."
     )
+    check_context_sufficiency: Optional[bool] = Field(
+        default=False,
+        description="Whether or not to check if the retrieved context is sufficient for generating a response.",
+    )

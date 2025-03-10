@@ -1,15 +1,15 @@
 import asyncio
 from typing import AsyncGenerator, List
 
+from botbuilder.core import TurnContext
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, ContentBlock, TextBlock, ImageBlock
+from nats.aio.client import Client as NATS
+
+from aihub_bot.persistence.entities.ConversationEntity import Message, Content
+from aihub_bot.routes.Service import Service
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
-from botbuilder.core import TurnContext
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from nats.aio.client import Client as NATS
-
-from aihub_bot.persistence.entities.ConversationEntity import Message
-from aihub_bot.routes.Service import Service
 
 
 class AgentChatService(Service):
@@ -81,7 +81,13 @@ class AgentChatService(Service):
             while True:
                 if resources.stop_event.is_set() and resources.chunk_queue.empty():
                     break
-                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=30)
+                try:
+                    chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=30)
+                except TimeoutError as e:
+                    if resources.stop_event.is_set():
+                        break
+                    raise e
+
                 yield chunk_event.content
                 resources.chunk_queue.task_done()
 
@@ -117,7 +123,7 @@ class AgentChatService(Service):
         if system_message is not None:
             persisted_messages.insert(0, system_message)
         chat_messages: List[ChatMessage] = [
-            AgentChatService.message_to_chat_message(message) for message in persisted_messages
+            AgentChatService._message_to_chat_message(message) for message in persisted_messages
         ]
         user = AuthenticatedUser(
             name=turn_context.activity.from_property.name,
@@ -145,7 +151,7 @@ class AgentChatService(Service):
             )
 
     @staticmethod
-    def message_to_chat_message(message: Message) -> ChatMessage:
+    def _message_to_chat_message(message: Message) -> ChatMessage:
         """
         ### What
         - Convert a message to a `ChatMessage`.
@@ -164,4 +170,16 @@ class AgentChatService(Service):
             case _:
                 raise NotImplementedError(f"Role {message.role} not supported")
 
-        return ChatMessage(role=role, content=message.content)
+        return ChatMessage(
+            role=role,
+            content=[AgentChatService._content_to_content_block(content) for content in message.content],
+            name=message.name,
+        )
+
+    @staticmethod
+    def _content_to_content_block(content: Content) -> ContentBlock:
+        match content.type:
+            case "text":
+                return TextBlock(text=content.text, block_type="text")
+            case "image_url":
+                return ImageBlock(url=content.text, block_type="image")

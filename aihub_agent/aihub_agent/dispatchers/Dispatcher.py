@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 import traceback
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin
+from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -13,17 +13,20 @@ from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent, Excepti
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from bson import ObjectId
+from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from redis.asyncio import Redis
 
 from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.dispatchers.stores.event.DistributedEventStore import DistributedEventStore
+from aihub_agent.dispatchers.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
@@ -83,8 +86,9 @@ class Dispatcher:
     - **Agent & Steps:** The Dispatcher uses the agent’s defined steps and their annotated metadata (like required events).
     - **Publishers & Stores:** It uses JSPublisher to publish resulting events, and distributed stores to fetch/update events or steps info.
     - **Tracing & Localization:** Integrates with `RunTraceCoordinator` for metrics and `AgentLocaleHandler` for localized outputs.
-
     """
+
+    _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(
         self,
@@ -95,6 +99,7 @@ class Dispatcher:
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
+        redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
@@ -102,14 +107,37 @@ class Dispatcher:
         self.agent_config = agent_config
         self.nc = nc
         self.js = js
+        self.redis = redis
         self.topic_manager = topic_manager
         self.locale_handler = locale_handler
 
-        self.publisher = JSPublisher(self.js)
-        self.event_store = DistributedEventStore(js)
-        self.step_store = DistributedStepStore(js)
+        self.nc_publisher = NCPublisher(self.nc)
+        self.js_publisher = JSPublisher(self.js)
+        self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager)
+        self.step_store = DistributedStepStore(redis)
         self.tracer = RunTraceCoordinator(self.nc)
         self.step_configs = agent_config.get_step_configs()
+
+        # Initialization flag
+        self._initialized = False
+        self._init_lock = asyncio.Lock()
+
+    async def start(self):
+        """
+        Initialize the dispatcher by starting the event store.
+        This must be called before the dispatcher can process any events.
+        """
+        async with self._init_lock:
+            if self._initialized:
+                return
+
+            # Initialize the event store
+            await self.event_store.start()
+            self._initialized = True
+            logger.info("Dispatcher initialized and ready to process events")
+
+    async def stop(self):
+        await self.event_store.stop()
 
     async def handle_event(
         self,
@@ -125,13 +153,16 @@ class Dispatcher:
 
         If steps are ready, it triggers their execution asynchronously.
         """
+        if not self._initialized:
+            await self.start()
+
         logger.debug(f"Handling event {event.__class__.__name__} for subject {topic}")
-        # Store the event for future reference
-        await self.event_store.store_event(topic.run_id, event)
+
+        await self.event_store.ensure_event_stored(topic.run_id, event)
 
         # Retrieve contexts (run and thread)
-        run_context = await RunContext.create(self.js, topic.thread_id, topic.run_id)
-        thread_context = await ThreadContext.create(self.js, topic.thread_id)
+        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
+        thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if isinstance(event, StartEvent):
             logger.debug(f"Handling StartEvent: {event.__class__.__name__}")
@@ -148,8 +179,8 @@ class Dispatcher:
             logger.debug(f"Handling StopEvent: {event.__class__.__name__}")
             # Clean up run-specific data
             await run_context.delete_all()
-            await self.event_store.delete_run_store(topic.run_id)
-            await self.step_store.delete_run_store(topic.run_id)
+            await self.event_store.delete_all(topic.run_id)
+            await self.step_store.delete_all(topic.run_id)
             return
 
         if isinstance(event, ExceptionEvent):
@@ -160,25 +191,25 @@ class Dispatcher:
 
         # Determine which steps need to be executed due to this event
         steps = self.agent.get_steps_waiting_for_event(type(event))
-        tasks = []
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            events = await self.event_store.get_all_events(topic.run_id, before=event.created_at)
-            if await self.is_step_ready(step_method, topic.run_id, events):
+            input_events = getattr(step_method, "_input_events", set())
+            input_event_class_names = [event_type.__name__ for event_type in input_events]
+            events = await self.event_store.get_events_of_multiple_types(
+                topic.run_id, input_event_class_names, until=event.created_at
+            )
+            if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
-                task = asyncio.create_task(
-                    self.execute_step(event, step_method, events, run_context, thread_context, topic)
-                )
-                tasks.append(task)
-
-        if tasks:
-            await asyncio.gather(*tasks)
+                asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
 
     async def is_step_ready(
         self,
+        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to check."],
-        run_id: Annotated[str, "The current run ID."],
         events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
     ) -> bool:
         """
         Checks if a step can be run given the current state (events available, max executions, etc.).
@@ -190,22 +221,23 @@ class Dispatcher:
 
         Returns True if the step can execute, False otherwise.
         """
-        if await self.step_store.is_run_crashed(run_id):
-            logger.warning(f"Run {run_id} is crashed; skipping step.")
+        if await self.step_store.is_run_crashed(topic.run_id):
+            logger.warning(f"Run {topic.run_id} is crashed; skipping step.")
             return False
 
         max_executions = getattr(step_method, "_max_executions_per_run", None)
         if max_executions is not None:
-            execution_count = await self.step_store.get_execution_count(run_id, step_method.__name__)
+            execution_count = await self.step_store.get_execution_count(topic.run_id, step_method.__name__)
             if execution_count >= max_executions:
                 logger.debug(
                     f"[{step_method.__name__}] Max executions reached ({execution_count}/{max_executions}), skipping."
                 )
                 return False
 
-        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = step_method._input_event_mapping
+        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = getattr(step_method, "_input_event_mapping", {})
         parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
+        precondition_fn: Optional[Callable[..., bool]] = getattr(step_method, "_precondition_fn", None)
 
         # For each parameter, check if we have enough events
         for argument_name, event_types in input_event_mapping.items():
@@ -231,11 +263,20 @@ class Dispatcher:
                     f"[{step_method.__name__}] Optional arg '{argument_name}' not provided, continuing anyway."
                 )
 
+        if precondition_fn:
+            _, precondition_args = await self._build_method_kwargs(
+                trigger_event, precondition_fn, events, run_context, thread_context, topic
+            )
+            is_ready = precondition_fn(**precondition_args)
+            if not is_ready:
+                logger.debug(f"[{step_method.__name__}] Ready function returned False, skipping.")
+                return False
+
         logger.debug(f"[{step_method.__name__}] All input requirements satisfied.")
         return True
 
-    async def _get_event_value(
-        self,
+    @staticmethod
+    def _get_event_value(
         param: Annotated[inspect.Parameter, "A parameter of the step method."],
         step_method: Annotated[Callable, "The step method we're preparing arguments for."],
         events: Annotated[
@@ -310,13 +351,89 @@ class Dispatcher:
         - Publishes an ExceptionEvent if `_stop_on_error` is True.
         """
         max_executions = getattr(step_method, "_max_executions_per_run", None)
+
         if max_executions is not None:
             await self.step_store.increment_execution_count(topic.run_id, step_method.__name__)
 
-        kwargs: Dict[str, Any] = {}
-        step_signature = inspect.signature(step_method)
-        parameter_optional_map = getattr(step_method, "_parameter_optional_map", {})
+        all_input_events, kwargs = await self._build_method_kwargs(
+            trigger_event,
+            step_method,
+            events,
+            run_context,
+            thread_context,
+            topic,
+        )
 
+        # Ensure step is not executed twice with the exact same input events
+        duplicated_run = await self.step_store.was_called_with_events(
+            topic.run_id, step_method.__name__, all_input_events
+        )
+        if duplicated_run:
+            logger.debug(f"Skipping step '{step_method.__name__}' as it has already been called with the same events.")
+            return
+
+        await self.step_store.report_run_with_events(topic.run_id, step_method.__name__, all_input_events)
+
+        # Instantiate the agent and run the step
+        agent_instance = self.agent()
+        if topic.run_id not in self._telemetry_header_cache:
+            telemetry_headers = await run_context.get("telemetry_headers")
+            self._telemetry_header_cache[topic.run_id] = telemetry_headers
+        else:
+            telemetry_headers = self._telemetry_header_cache[topic.run_id]
+
+        async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
+            try:
+                result = await step_method(agent_instance, **kwargs)
+            except Exception as e:
+                await self.tracer.trace_step_error(step_span, e)
+                if getattr(step_method, "_stop_on_error", False):
+                    event = ExceptionEvent(message=str(e))
+                    await self.publish_event(event, topic)
+                logger.error(f"Error executing step '{step_method.__name__}': {e}")
+                traceback.print_exc()
+                return
+
+            # If the step returns events, publish them
+            if result:
+                if not isinstance(result, list):
+                    result = [result]
+
+                await self.tracer.trace_step_stop(step_span, result)
+
+                for event in result:
+                    if isinstance(event, HumanInTheLoopRequestEvent):
+                        logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
+                        # Complete the event's topic info
+                        event.topic = AgentTopic.from_partial_topic(
+                            partial_topic=event.topic,
+                            agent_class=topic.agent_class,
+                            agent_id=topic.agent_id,
+                            run_id=topic.run_id,
+                            thread_id=topic.thread_id,
+                            display_id=topic.display_id,
+                            event_id=event.event_id,
+                        )
+
+                    if isinstance(event, AgentInTheLoopRequestEvent):
+                        logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
+                        await self.trigger_agent_in_the_loop(event, topic)
+
+                    await self.publish_event(event, topic)
+
+    async def _build_method_kwargs(
+        self,
+        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
+        method: Annotated[Callable, "The method to prepare the args for."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+    ) -> Tuple[List[ControlEvent], Dict[str, Any]]:
+        kwargs: Dict[str, Any] = {}
+        step_signature = inspect.signature(method)
+        parameter_optional_map = getattr(method, "_parameter_optional_map", {})
+        all_input_events: List[ControlEvent] = []
         # Prepare arguments
         for param in step_signature.parameters.values():
             if param.name == "self":
@@ -343,7 +460,7 @@ class Dispatcher:
             # Handle EventDisplayer
             if param.annotation == EventDisplayer:
                 kwargs[param.name] = EventDisplayer(
-                    self.publisher,
+                    self.js_publisher,
                     topic_manager=self.get_topic_manager_for_thread(topic),
                 )
                 continue
@@ -355,53 +472,17 @@ class Dispatcher:
                 continue
 
             # Handle event parameters
-            event_value = await self._get_event_value(param, step_method, events, trigger_event)
+            event_value = self._get_event_value(param, method, events, trigger_event)
             if event_value is not None or parameter_optional_map.get(param.name, False):
                 kwargs[param.name] = event_value
             else:
-                raise ValueError(f"[{step_method.__name__}] Missing required event for parameter '{param.name}'")
+                raise ValueError(f"[{method.__name__}] Missing required event for parameter '{param.name}'")
 
-        # Instantiate the agent and run the step
-        agent_instance = self.agent()
-        telemetry_headers = await run_context.get("telemetry_headers")
-        async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
-            try:
-                result = await step_method(agent_instance, **kwargs)
-            except Exception as e:
-                await self.tracer.trace_step_error(step_span, e)
-                if getattr(step_method, "_stop_on_error", False):
-                    event = ExceptionEvent(message=str(e))
-                    await self.publish_event(event, topic)
-                logger.error(f"Error executing step '{step_method.__name__}': {e}")
-                traceback.print_exc()
-                return
-
-            # If the step returns events, publish them
-            if result:
-                if not isinstance(result, list):
-                    result = [result]
-                for event in result:
-                    if isinstance(event, HumanInTheLoopRequestEvent):
-                        logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
-                        # Complete the event's topic info
-                        event.topic = AgentTopic.from_partial_topic(
-                            partial_topic=event.topic,
-                            agent_class=topic.agent_class,
-                            agent_id=topic.agent_id,
-                            run_id=topic.run_id,
-                            thread_id=topic.thread_id,
-                            display_id=topic.display_id,
-                            event_id=event.event_id,
-                        )
-
-                    if isinstance(event, AgentInTheLoopRequestEvent):
-                        logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
-                        await self.trigger_agent_in_the_loop(event, topic)
-
-                    await self.event_store.store_event(topic.run_id, event)
-                    await self.publish_event(event, topic)
-
-            await self.tracer.trace_step_stop(step_span, result)
+            if isinstance(event_value, list):
+                all_input_events.extend([event for event in event_value if isinstance(event, ControlEvent)])
+            elif isinstance(event_value, ControlEvent):
+                all_input_events.append(event_value)
+        return all_input_events, kwargs
 
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
@@ -465,7 +546,7 @@ class Dispatcher:
 
         subject = aitl_request_event.other_agent_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
-        await self.publisher.publish_event(start_event, subject)
+        await self.js_publisher.publish_event(start_event, subject)
 
     async def publish_event(
         self,
@@ -479,7 +560,7 @@ class Dispatcher:
         topic_manager = self.get_topic_manager_for_thread(topic)
         if isinstance(event, ControlEvent):
             subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
-            await self.publisher.publish_event(event, subject)
+            await self.js_publisher.publish_event(event, subject)
         if isinstance(event, DisplayEvent):
             subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
-            await self.publisher.publish_event(event, subject)
+            await self.nc_publisher.publish_event(event, subject)

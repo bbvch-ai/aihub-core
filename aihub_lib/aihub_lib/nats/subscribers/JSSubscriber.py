@@ -7,10 +7,9 @@ from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
@@ -42,6 +41,9 @@ class JSSubscriber(Generic[TEvent]):
     subscriber crashes, events remain in JetStream and can be reprocessed by another subscriber in the queue group.
     """
 
+    # Class-level semaphore to limit concurrent processing
+    _process_semaphore = asyncio.Semaphore(1000)
+
     def __init__(
         self,
         nc: NATS,
@@ -52,7 +54,6 @@ class JSSubscriber(Generic[TEvent]):
         event_cls: Type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
         js: Optional[JetStreamContext] = None,
-        ack_on_fail=True,
     ):
         self.nc = nc
         self.js = js or nc.jetstream()
@@ -62,7 +63,6 @@ class JSSubscriber(Generic[TEvent]):
         self.js_subscription: Optional[JetStreamContext.PushSubscription] = None
         self.event_cls = event_cls
         self.handler = handler
-        self.ack_on_fail = ack_on_fail
 
     async def start(self):
         """
@@ -70,7 +70,9 @@ class JSSubscriber(Generic[TEvent]):
         Once started, the subscriber begins consuming messages from JetStream.
         """
         await self.stream_manager.ensure_agent_stream_exists()
-        self.js_subscription = await self.js.subscribe(self.subject, cb=self.message_handler, queue=self.queue_group)
+        self.js_subscription = await self.js.subscribe(
+            self.subject, cb=self.message_handler, stream=self.stream_manager.stream_name, queue=self.queue_group
+        )
         logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
 
     async def stop(self):
@@ -98,57 +100,29 @@ class JSSubscriber(Generic[TEvent]):
             traceback.print_exc()
 
     async def _process(self, event, topic, msg):
-        """Process the event and acknowledge the message based on result"""
-        try:
-            await self.handler(event, topic)
-        except Exception as e:
-            logger.error(f"Error in async handler: {e}")
-            traceback.print_exc()
+        """
+        Process the event and acknowledge the message based on result.
+        Uses a semaphore to limit the number of concurrent processing.
+        """
+        async with JSSubscriber._process_semaphore:
+            try:
+                await self.handler(event, topic)
+            except Exception as e:
+                logger.error(f"Error in async handler: {e}")
+                traceback.print_exc()
 
     @classmethod
-    def for_all_agent_events(
+    def for_agent_instance_events(
         cls,
         nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, Topic], Awaitable[None]],
-        js: Optional[JetStreamContext] = None,
-        ack_on_fail=True,
-    ):
-        """
-        Creates a JSSubscriber for all agent events.
-        Use this when you want a single subscriber to handle every agent event in the system.
-        """
-        subject = topic_manager.get_subject_for_all_events_in_agent()
-        queue_group = topic_manager.get_stream_group_for_all_events_in_agent()
-        stream_name = topic_manager.get_stream_name_for_all_events_in_agent()
-        stream_subject = topic_manager.get_subject_for_all_events_in_agent()
-
-        return cls(
-            nc=nc,
-            subject=subject,
-            stream_subject=stream_subject,
-            stream_name=stream_name,
-            queue_group=queue_group,
-            event_cls=BaseEvent,
-            handler=handler,
-            js=js,
-            ack_on_fail=ack_on_fail,
-        )
-
-    @classmethod
-    def for_all_agent_control_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
+        topic_manager: AgentInstanceTopicManager,
         handler: Callable[[ControlEvent, Topic], Awaitable[None]],
+        queue_group: str,
         js: Optional[JetStreamContext] = None,
-        ack_on_fail=True,
     ):
-        """Subscribe to all control events from all agents."""
-        subject = topic_manager.get_subject_for_all_control_events_in_agent()
-        queue_group = topic_manager.get_stream_group_for_all_control_events_in_agent()
-        stream_name = topic_manager.get_stream_name_for_all_events_in_agent()
-        stream_subject = topic_manager.get_subject_for_all_events_in_agent()
+        """Subscribe to all control events within a specific agent instance."""
+        subject = topic_manager.get_subject_for_everything_within_agent_instance()
+        stream_name, stream_subject = topic_manager.get_stream_over_agent()
 
         return cls(
             nc=nc,
@@ -159,34 +133,6 @@ class JSSubscriber(Generic[TEvent]):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
-            ack_on_fail=ack_on_fail,
-        )
-
-    @classmethod
-    def all_for_agent_display_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
-        js: Optional[JetStreamContext] = None,
-        ack_on_fail=True,
-    ):
-        """Subscribe to all display events from all agents."""
-        subject = topic_manager.get_subject_for_all_display_events_in_agent()
-        queue_group = topic_manager.get_stream_group_for_all_display_events_in_agent()
-        stream_name = topic_manager.get_stream_name_for_all_events_in_agent()
-        stream_subject = topic_manager.get_subject_for_all_events_in_agent()
-
-        return cls(
-            nc=nc,
-            subject=subject,
-            stream_subject=stream_subject,
-            stream_name=stream_name,
-            queue_group=queue_group,
-            event_cls=DisplayEvent,
-            handler=handler,
-            js=js,
-            ack_on_fail=ack_on_fail,
         )
 
     @classmethod
@@ -195,14 +141,12 @@ class JSSubscriber(Generic[TEvent]):
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[ControlEvent, Topic], Awaitable[None]],
+        queue_group: str,
         js: Optional[JetStreamContext] = None,
-        ack_on_fail=True,
     ):
         """Subscribe to all control events within a specific agent instance."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_instance()
-        queue_group = topic_manager.get_stream_group_for_all_control_events_within_agent()
-        stream_name = topic_manager.get_stream_name_for_all_events_in_agent()
-        stream_subject = topic_manager.get_subject_for_all_events_in_agent()
+        stream_name, stream_subject = topic_manager.get_stream_over_agent()
 
         return cls(
             nc=nc,
@@ -213,32 +157,4 @@ class JSSubscriber(Generic[TEvent]):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
-            ack_on_fail=ack_on_fail,
-        )
-
-    @classmethod
-    def for_agent_instance_display_events(
-        cls,
-        nc: NATS,
-        topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
-        js: Optional[JetStreamContext] = None,
-        ack_on_fail=True,
-    ):
-        """Subscribe to all display events within a specific agent instance."""
-        subject = topic_manager.get_subject_for_all_display_events_within_agent_instance()
-        queue_group = topic_manager.get_stream_group_for_all_display_events_within_agent()
-        stream_name = topic_manager.get_stream_name_for_all_events_in_agent()
-        stream_subject = topic_manager.get_subject_for_all_events_in_agent()
-
-        return cls(
-            nc=nc,
-            subject=subject,
-            stream_subject=stream_subject,
-            stream_name=stream_name,
-            queue_group=queue_group,
-            event_cls=DisplayEvent,
-            handler=handler,
-            js=js,
-            ack_on_fail=ack_on_fail,
         )

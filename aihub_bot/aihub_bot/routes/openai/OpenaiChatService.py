@@ -1,7 +1,8 @@
 import asyncio
+import re
 from typing import AsyncGenerator, List
 
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+import unicodedata
 from botbuilder.core import TurnContext
 from openai import AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
@@ -11,10 +12,15 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
+    ChatCompletionContentPartTextParam,
+    ChatCompletionContentPartParam,
+    ChatCompletionContentPartImageParam,
 )
+from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 
-from aihub_bot.persistence.entities.ConversationEntity import Message
+from aihub_bot.persistence.entities.ConversationEntity import Message, Content
 from aihub_bot.routes.Service import Service
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 
 
 class OpenaiChatService(Service):
@@ -129,7 +135,7 @@ class OpenaiChatService(Service):
         if system_message is not None:
             persisted_messages.insert(0, system_message)
         chat_messages: List[ChatCompletionMessageParam] = [
-            OpenaiChatService.message_to_chat_completion_message_param(message) for message in persisted_messages
+            OpenaiChatService._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
         return await client.chat.completions.create(
             model=model_name,
@@ -138,29 +144,58 @@ class OpenaiChatService(Service):
         )
 
     @staticmethod
-    def message_to_chat_completion_message_param(message: Message) -> ChatCompletionMessageParam:
-        """
-        ### What
-        - Convert a message to a `ChatCompletionMessageParam`.
+    def _message_to_chat_completion_message_param(message: Message) -> ChatCompletionMessageParam:
+        def remove_accents(input_str: str) -> str:
+            # Normalize the string to decompose characters into base letters and diacritics
+            normalized_str = unicodedata.normalize("NFKD", input_str)
+            # Reconstruct string by ignoring diacritical marks
+            return "".join([c for c in normalized_str if not unicodedata.combining(c)])
 
-        ### Why
-        - The message must be converted to the correct format to send it to the OpenAI API.
-        """
+        def clean_name(_name: str) -> str:
+            # OpenAI Regex: r"^[a-zA-Z0-9_-]+$"
+            _name = remove_accents(_name)
+            return re.sub("[^a-zA-Z0-9_-]", "_", _name)
+
+        name = clean_name(message.name) or None
+
         match message.role:
             case "user":
                 return ChatCompletionUserMessageParam(
                     role="user",
-                    content=message.content,
+                    content=[
+                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        for content in message.content
+                    ],
+                    name=name
                 )
             case "bot":
                 return ChatCompletionAssistantMessageParam(
                     role="assistant",
-                    content=message.content,
+                    content=[
+                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        for content in message.content
+                    ],
+                    name=name
                 )
             case "system":
                 return ChatCompletionSystemMessageParam(
                     role="system",
-                    content=message.content,
+                    content=[
+                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        for content in message.content
+                    ],
+                    name=name
                 )
             case _:
                 raise ValueError(f"Unsupported message role: {message.role}")
+
+    @staticmethod
+    def _content_to_chat_completion_content_param(content: Content) -> ChatCompletionContentPartParam:
+        match content.type:
+            case "text":
+                return ChatCompletionContentPartTextParam(text=content.text, type="text")
+            case "image_url":
+                image_url: ImageURL = ImageURL(url=content.text, detail="auto")
+                return ChatCompletionContentPartImageParam(image_url=image_url, type="image_url")
+            case _:
+                raise ValueError(f"Unsupported content type: {content.type}")

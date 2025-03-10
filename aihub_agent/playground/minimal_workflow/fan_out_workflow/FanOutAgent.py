@@ -7,25 +7,20 @@ from aihub_lib.nats.events import StartEvent, StopEvent
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
 
+N = 5
+
 
 class FanOutAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent) -> List[FanOutA]:
-        print("[FanOutAgent.start_step]", event)
-        return [
-            FanOutA(payload="1"),
-            FanOutA(payload="2"),
-            FanOutA(payload="3"),
-            FanOutA(payload="4"),
-            FanOutA(payload="5"),
-        ]
+    async def start_step(self, _: StartEvent) -> List[FanOutA]:
+        print("[start_step]")
+        return [FanOutA(payload=str(i)) for i in range(N)]
 
     @step()
     async def process_a(self, event: FanOutA) -> FanOutB:
-        print("[FanOutAgent.process_a]", event)
         return FanOutB(payload=event.payload)
 
     @step()
-    async def stop_step(self, events: FixedList(FanOutB, 5)) -> StopEvent:
-        print("[FanOutAgent.stop_step]", events)
+    async def stop_step(self, _: FixedList(FanOutB, N)) -> StopEvent:
+        print("[stop_step]")
         return StopEvent()

@@ -3,9 +3,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -68,10 +70,12 @@ class AgentTestRunner(AgentRunner):
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
+            redis_url=RedisConfig().REDIS_URL,
             agent_type=agent_type,
             agent_config=agent_config,
             locale_paths=locale_paths,
         )
+        self.test_event_subscriber: Optional[JSSubscriber] = None
         self.observed_events: List[ObservedEvent] = []
         self.topic: Optional[PartialAgentTopic] = None
 
@@ -118,7 +122,7 @@ class AgentTestRunner(AgentRunner):
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
-        event_subscriber = NCSubscriber.for_all_thread_events(
+        self.test_event_subscriber = NCSubscriber.for_all_thread_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
                 self.topic_manager,
@@ -128,7 +132,7 @@ class AgentTestRunner(AgentRunner):
             ),
             handler=self.observe_event,
         )
-        await event_subscriber.start()
+        await self.test_event_subscriber.start()
 
         self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
@@ -154,6 +158,8 @@ class AgentTestRunner(AgentRunner):
         return self.topic
 
     async def test_run_stop(self):
+        await self.test_event_subscriber.stop()
+        await self.observe_discovery_event_subscriber.stop()
         await self.stop()
 
     @property
@@ -225,7 +231,10 @@ class AgentTestRunner(AgentRunner):
         Returns the first observed event of the specified type.
         Raises StopIteration if no such event is found.
         """
-        return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+        try:
+            return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+        except StopIteration:
+            raise StopIteration(f"No event of type {event_type.__name__} was observed")
 
     async def wait_for_event(
         self,

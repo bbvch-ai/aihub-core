@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Tuple
 
 
 class TopicManager:
@@ -120,18 +120,9 @@ class TopicManager:
             event_id="*",
         )
 
-    def get_stream_name_for_all_events_in_agent(self) -> str:
+    def get_stream_over_all_agents(self) -> Tuple[str, str]:
+        return self._get_stream_name_for_all_events_in_any_agent(), self.get_subject_for_all_events_in_agent()
+
+    def _get_stream_name_for_all_events_in_any_agent(self) -> str:
         """Returns the stream name used for all agent events."""
         return f"{self.AGENT_TOPIC}_stream"
-
-    def get_stream_group_for_all_events_in_agent(self) -> str:
-        """Returns a queue group name for all agent events."""
-        return f"{self.get_stream_name_for_all_events_in_agent()}_queue_group"
-
-    def get_stream_group_for_all_control_events_in_agent(self) -> str:
-        """Returns a queue group name for control events only."""
-        return f"{self.get_stream_name_for_all_events_in_agent()}_{self.CONTROL_EVENT}_queue_group"
-
-    def get_stream_group_for_all_display_events_in_agent(self) -> str:
-        """Returns a queue group name for display events only."""
-        return f"{self.get_stream_name_for_all_events_in_agent()}_{self.DISPLAY_EVENT}_queue_group"

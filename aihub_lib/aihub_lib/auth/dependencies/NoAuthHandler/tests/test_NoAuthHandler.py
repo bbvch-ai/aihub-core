@@ -1,6 +1,6 @@
 import pytest
 from fastapi import Request
-from pytest_bdd import given, parsers, scenario, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.testing.asyncio_utils.bdd import async_test

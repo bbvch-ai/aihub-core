@@ -29,7 +29,7 @@ async def main():
     )
 
     call_id = str(ObjectId())
-    async with runner.test_run() as topic:
+    async with runner.test_run():
         await runner.nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),
             subject=TopicManager().get_agent_discovery_subject_request(call_id=call_id),

@@ -27,7 +27,7 @@ class RetrieverEvent(SemanticEvent):
                     **doc.to_semantic_convention(SpanAttributes.RETRIEVAL_DOCUMENTS, i),
                 }
 
-        return attributes
+        return {k: v for k, v in attributes.items() if v is not None}
 
     @classmethod
     def from_nodes(cls, nodes: List[NodeWithScore]) -> "RetrieverEvent":

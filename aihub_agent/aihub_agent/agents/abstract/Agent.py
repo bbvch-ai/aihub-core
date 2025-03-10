@@ -1,4 +1,5 @@
 import abc
+import functools
 import inspect
 from typing import Set, Type
 
@@ -40,6 +41,7 @@ class Agent(abc.ABC):
     """
 
     @classmethod
+    @functools.cache
     def get_steps(cls):
         """
         Returns all methods on this agent class that are marked as steps.
@@ -52,6 +54,7 @@ class Agent(abc.ABC):
         ]
 
     @classmethod
+    @functools.cache
     def get_steps_waiting_for_event(cls, event_type: Type[ControlEvent]):
         """
         Given an event type, returns the steps that can handle it.
@@ -61,6 +64,7 @@ class Agent(abc.ABC):
         return [method for method in steps if event_type in method._input_events]
 
     @classmethod
+    @functools.cache
     def get_input_events(cls) -> Set[Type[ControlEvent]]:
         """
         Aggregates all input event types required by all steps.
@@ -70,6 +74,7 @@ class Agent(abc.ABC):
         return set(event_type for method in steps for event_type in method._input_events)
 
     @classmethod
+    @functools.cache
     def get_start_events(cls) -> Set[Type[StartEvent]]:
         """
         Returns all event types that are considered start events (subclasses of StartEvent).
@@ -79,6 +84,7 @@ class Agent(abc.ABC):
         return {event for event in input_events if issubclass(event, StartEvent)}
 
     @classmethod
+    @functools.cache
     def get_stop_events(cls) -> Set[Type[StopEvent]]:
         """
         Returns all event types that are considered stop events (subclasses of StopEvent).

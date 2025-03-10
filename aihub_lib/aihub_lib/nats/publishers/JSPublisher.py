@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import uuid
 from typing import Generic, TypeVar
 
 from nats.js import JetStreamContext
@@ -30,7 +32,7 @@ class JSPublisher(Generic[TEvent]):
     def __init__(self, js: JetStreamContext):
         self.js = js
 
-    async def publish_event(self, event: TEvent, subject: str):
+    async def publish_event(self, event: TEvent, subject: str, retries=10):
         """
         Publishes the given event to the specified JetStream subject, encoding it as JSON.
 
@@ -52,4 +54,24 @@ class JSPublisher(Generic[TEvent]):
                 f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
             )
 
-        await self.js.publish(subject, serialized_event.encode())
+        message_id = str(uuid.uuid4())
+        headers = {"Nats-Msg-Id": message_id}  # Deduplication
+
+        for attempt in range(retries):
+            try:
+                future = await asyncio.wait_for(
+                    self.js.publish_async(subject, serialized_event.encode(), headers=headers), timeout=5
+                )
+                ack = await asyncio.wait_for(future, timeout=5)
+                logger.debug(f"Publish ACK received: {ack}")
+                return  # Success, no retry needed
+            except asyncio.TimeoutError:
+                logger.warning(
+                    f"Publish timeout ({attempt + 1}/{retries}) for {event.__class__.__name__} to subject {subject}"
+                )
+            except Exception as e:
+                logger.error(f"NATS error while publishing event: {e}")
+
+            await asyncio.sleep(1)  # Wait before retrying
+
+        logger.error(f"Failed to publish event {event.__class__.__name__} after {retries} attempts")

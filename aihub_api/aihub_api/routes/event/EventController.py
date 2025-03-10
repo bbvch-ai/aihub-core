@@ -1,11 +1,11 @@
 import logging
 import traceback
-from typing import Any, Callable, List
+from typing import List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security, WebSocket
+from fastapi import HTTPException, Security, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
@@ -79,7 +79,7 @@ class EventController(Controller):
             # Validate token
             try:
                 user = await self.auth(token)
-            except HTTPException as e:
+            except HTTPException:
                 traceback.print_exc()
                 await websocket.close(code=4001, reason="Invalid token")
                 return
