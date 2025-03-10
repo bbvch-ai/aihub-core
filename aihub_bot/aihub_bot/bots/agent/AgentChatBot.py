@@ -32,7 +32,10 @@ class AgentChatBot(ActivityHandler):
     async def on_message_activity(self, turn_context: TurnContext):
         typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
 
-        AgentChatService.add_user_message_to_conversation(turn_context)
+        AgentChatService.add_user_message_to_conversation(
+            path=self.path,
+            turn_context=turn_context,
+        )
 
         if turn_context.activity.channel_id == "slack":
             turn_context = AgentChatService.handle_slack_message(turn_context)
@@ -52,6 +55,7 @@ class AgentChatBot(ActivityHandler):
         await turn_context.send_activity(response)
 
         AgentChatService.add_bot_message_to_conversation(
+            path=self.path,
             turn_context=turn_context,
             message=response,
         )

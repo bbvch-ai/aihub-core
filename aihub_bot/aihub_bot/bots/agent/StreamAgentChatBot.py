@@ -28,7 +28,10 @@ class StreamAgentChatBot(AgentChatBot):
 
         typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
 
-        AgentChatService.add_user_message_to_conversation(turn_context)
+        AgentChatService.add_user_message_to_conversation(
+            path=self.path,
+            turn_context=turn_context,
+        )
 
         if turn_context.activity.channel_id == "slack":
             turn_context = AgentChatService.handle_slack_message(turn_context)
@@ -51,6 +54,7 @@ class StreamAgentChatBot(AgentChatBot):
         )
 
         AgentChatService.add_bot_message_to_conversation(
+            path=self.path,
             turn_context=turn_context,
             message=response,
         )
