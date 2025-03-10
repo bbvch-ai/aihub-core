@@ -101,12 +101,12 @@ class AgentController(Controller):
         name = f"send_event_to_{agent_class_name}_{agent_id}"
         start_event_input_type = create_input_model(start_event_type)
 
-        if not route_postfix.startswith("/"):
-            route_postfix = f"/{route_postfix}"
+        if route_postfix.startswith("/"):
+            route_postfix = route_postfix[1:]
         if route_postfix.endswith("/"):
             route_postfix = route_postfix[:-1]
 
-        @self.router.post(f"/{agent_class_name}/{agent_id}{route_postfix}", name=name)
+        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name)
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],

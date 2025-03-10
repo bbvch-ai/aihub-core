@@ -8,12 +8,12 @@ T = TypeVar("T", bound=BaseEvent)
 
 def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
     """
-    Creates an input model for an event class by removing the event_id and created_at fields.
+    Creates an input model for an event class by removing fields with generated values.
     """
     # Get all fields from the original model
     fields = {}
     for name, field_info in event_class.model_fields.items():
-        # Skip event_id and created_at fields
+        # Skip fields with generated values
         if name not in ["event_id", "created_at", "user", "locale"]:
             fields[name] = (field_info.annotation, field_info)
 
