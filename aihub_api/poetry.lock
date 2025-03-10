@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.102.0"
+version = "v0.103.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -97,8 +97,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.102.0"
-resolved_reference = "9ea908a7dfbe925dc097d3f1733332a8b904af5f"
+reference = "v0.103.0"
+resolved_reference = "c76f369a4383d44c37160542cb75c2f22fdfe725"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -4496,6 +4496,17 @@ anyio = ">=3.6.2,<5"
 full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.18)", "pyyaml"]
 
 [[package]]
+name = "stringcase"
+version = "1.2.0"
+description = "String case converter."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "stringcase-1.2.0.tar.gz", hash = "sha256:48a06980661908efe8d9d34eab2b6c13aefa2163b3ced26972902e3bdfd87008"},
+]
+
+[[package]]
 name = "striprtf"
 version = "0.0.26"
 description = "A simple library to convert rtf to text"
@@ -5137,4 +5148,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "be6d70de2fa47ab55dca655f4307ff35cbc78f0e888a663590b3b3797ccb530b"
+content-hash = "9063f14c70777ea42408ccd57f930fa1a797de0bd93231a520c21120d48010d8"
