@@ -1,2 +1,5 @@
 __pycache__/
 *.py[cod]
+/aihub_agent/playground/agent/MultiHopRAGAgent/tests/.env
+/aihub_agent/playground/agent/MultiHopRAGAgent/.env
+/aihub_agent/playground/minimal_workflow/bounded_loop/tests/.env

@@ -5,14 +5,14 @@ from asyncio import Task
 from typing import AsyncGenerator, List, Optional, Tuple
 
 import httpx
+from aihub_lib.routes.chat.ChatService import ChatService
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity, Entity, ActivityTypes, ErrorResponseException, Attachment
+from botbuilder.schema import Activity, ActivityTypes, Attachment, Entity, ErrorResponseException
 from fastapi import Request
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message, Content
+from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
-from aihub_lib.routes.chat.ChatService import ChatService
 
 logger = logging.getLogger(__name__)
 

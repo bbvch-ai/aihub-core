@@ -1,6 +1,6 @@
 from typing import List
 
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField, BooleanField
+from mongoengine import BooleanField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
 
 class User(EmbeddedDocument):
