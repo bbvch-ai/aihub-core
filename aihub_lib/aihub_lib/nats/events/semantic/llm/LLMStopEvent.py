@@ -1,5 +1,5 @@
-from .LLMEvent import LLMEvent
 from ...control import StopEvent
+from .LLMEvent import LLMEvent
 
 
 class LLMStopEvent(LLMEvent, StopEvent):
