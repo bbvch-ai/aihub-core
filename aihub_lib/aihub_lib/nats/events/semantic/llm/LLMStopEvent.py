@@ -1,4 +1,5 @@
-from aihub_lib.nats.events import LLMEvent, StopEvent
+from .LLMEvent import LLMEvent
+from ...control import StopEvent
 
 
 class LLMStopEvent(LLMEvent, StopEvent):
