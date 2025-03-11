@@ -191,7 +191,6 @@ class Service(ChatService):
     ) -> List[Content]:
         content: List[Content] = []
         for file in files:
-
             if file.get("mimetype", "").startswith("image/"):
                 response = httpx.get(
                     file["url_private_download"],
