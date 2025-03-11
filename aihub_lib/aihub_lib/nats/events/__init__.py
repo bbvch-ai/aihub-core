@@ -7,6 +7,7 @@ from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .cost import CostEvent, LLMCostEvent
 from .discovery import AgentDiscoveryResponseEvent, DiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
+from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
@@ -51,4 +52,5 @@ __all__ = [
     "RetrieverEvent",
     "ToolEvent",
     "UserMessageEvent",
+    "GuardRejectionEvent",
 ]
