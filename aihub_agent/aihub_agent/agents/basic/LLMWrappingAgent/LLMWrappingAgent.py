@@ -1,10 +1,8 @@
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.events import LLMEvent, UserMessageEvent
-
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 from aihub_agent.workflow.decorators.step import step
-from playground.minimal_workflow.semantic_workflow.events.LLMStopEvent import LLMStopEvent
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.nats.events import LLMEvent, UserMessageEvent, LLMStopEvent
 
 
 class LLMWrappingAgent(Agent):
