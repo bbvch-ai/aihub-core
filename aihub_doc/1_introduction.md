@@ -61,8 +61,8 @@ The AI-Hub is built as a central pillar in bbv’s AI offerings, seamlessly brid
 ```mermaid
 flowchart TD
     A[Existing bbv IT Expertise] --> B[bbv AI-Hub Foundation]
-    B --> C[Basic AI Interaction (Language Models)]
-    B --> D[Extended Integrations (Teams, Slack, etc.)]
+    B --> C["Basic AI Interaction (Language Models)"]
+    B --> D["Extended Integrations (Teams, Slack, etc.)"]
     B --> E[Custom AI Assistants]
     B --> F[Autonomous AI Agents]
     C --> G[End-Users & Business Processes]
