@@ -2,12 +2,10 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent, RetrieverEvent, RerankerEvent
+from aihub_lib.nats.events import StartEvent, RetrieverEvent, RerankerEvent, LLMStopEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import SemanticEventAgent
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import SemanticEventAgentConfig
-from playground.minimal_workflow.semantic_workflow.events.LLMStopEvent import LLMStopEvent
 
 scenarios("../tests/features/semantic_event_agent.feature")
 
