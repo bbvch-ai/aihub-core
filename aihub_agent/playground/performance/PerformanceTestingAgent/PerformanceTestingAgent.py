@@ -9,7 +9,7 @@ from playground.performance.PerformanceTestingAgent.events.ParallelEvent import 
 
 
 @precondition()
-def ensure_enough_events(parallel_events: List[ParallelEvent], config: PerformanceTestingAgentConfig) -> bool:
+async def ensure_enough_events(parallel_events: List[ParallelEvent], config: PerformanceTestingAgentConfig) -> bool:
     return len(parallel_events) == config.number_of_events
 
 

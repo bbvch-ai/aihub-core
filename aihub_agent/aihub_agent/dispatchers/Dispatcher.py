@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 import traceback
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
+from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin, Awaitable
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -237,7 +237,7 @@ class Dispatcher:
         input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = getattr(step_method, "_input_event_mapping", {})
         parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
-        precondition_fn: Optional[Callable[..., bool]] = getattr(step_method, "_precondition_fn", None)
+        precondition_fn: Optional[Callable[..., Awaitable[bool]]] = getattr(step_method, "_precondition_fn", None)
 
         # For each parameter, check if we have enough events
         for argument_name, event_types in input_event_mapping.items():
@@ -267,7 +267,7 @@ class Dispatcher:
             _, precondition_args = await self._build_method_kwargs(
                 trigger_event, precondition_fn, events, run_context, thread_context, topic
             )
-            is_ready = precondition_fn(**precondition_args)
+            is_ready = await precondition_fn(**precondition_args)
             if not is_ready:
                 logger.debug(f"[{step_method.__name__}] Ready function returned False, skipping.")
                 return False

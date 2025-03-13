@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Annotated, Callable, Optional
+from typing import Annotated, Callable, Optional, Awaitable
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
@@ -18,7 +18,7 @@ def step(
     stop_on_error: Annotated[bool, "If True, the workflow stops on any error in this step"] = True,
     name: Annotated[Optional[LocaleString], "A localized name for the step, used in UI or logs"] = None,
     description: Annotated[Optional[LocaleString], "A localized description of what the step does"] = None,
-    precondition: Annotated[Optional[Callable[..., bool]], "A function to check if the step is ready to run"] = None,
+    precondition: Annotated[Optional[Callable[..., Awaitable[bool]]], "A function to check if the step is ready to run"] = None,
 ):
     """
     Decorator that marks a function as a workflow step, attaching metadata and analyzing its event inputs.
