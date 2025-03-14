@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 import httpx
 from botbuilder.schema import Activity, Attachment
+from botframework.connector import Channels
 
 from aihub_bot.persistence.entities.ConversationEntity import Content
 from aihub_bot.persistence.entities.PathEntity import PathEntity
@@ -15,8 +16,8 @@ logger = enable_logging(__name__)
 
 
 class FileSource(Enum):
-    SLACK = "slack"
-    TEAMS = "teams"
+    SLACK = Channels.slack
+    TEAMS = Channels.ms_teams
     GENERIC = "generic"
 
 
