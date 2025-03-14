@@ -63,11 +63,6 @@ class ContentExtractor:
         # Handle attachments (Teams and generic)
         if activity.attachments:
             for attachment in activity.attachments:
-                # Skip HTML attachments that are probably just Teams message content
-                if attachment.content_type == "text/html":
-                    logger.info("Ignoring HTML attachment from Teams message")
-                    continue
-
                 try:
                     # Process Teams file attachments
                     if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
