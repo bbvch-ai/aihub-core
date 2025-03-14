@@ -39,54 +39,81 @@ class ContentExtractor:
         """Extract all content (text and files) from an activity."""
         content = []
 
-        # Handle text content
-        if activity.text:
-            content.append(Content(text=activity.text, type="text"))
-
-        # Handle Slack files
-        if isinstance(activity.channel_data, dict):
-            slack_files = activity.channel_data.get("SlackMessage", {}).get("event", {}).get("files", [])
-            if slack_files:
-                slack_token = PathEntity.get_slack_token_by_path(path)
-                if slack_token:
-                    for file in slack_files:
-                        try:
-                            file_info = ContentExtractor._from_slack_file(file, slack_token)
-                            content.append(ContentExtractor._to_content(file_info))
-                        except Exception as e:
-                            logger.error(f"Error processing Slack file: {e}")
-
-        # Handle attachments (Teams and generic)
-        if activity.attachments:
-            for attachment in activity.attachments:
-                try:
-                    if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
-                        file_info = ContentExtractor._from_teams_file(attachment)
-                    elif (
-                        activity.channel_id == Channels.ms_teams
-                        and attachment.content_url is None
-                        and attachment.content_type == "text/html"
-                    ):
-                        # Teams always sends an HTML attachment with the message content
-                        # We skip this as it is not a file and already handled
-                        continue
-                    else:
-                        file_info = ContentExtractor._from_generic_attachment(attachment)
-
-                    content.append(ContentExtractor._to_content(file_info))
-                except Exception as e:
-                    logger.error(f"Error processing attachment: {e}")
-                    content.append(
-                        Content(
-                            text=f"<file name='{attachment.name or 'unknown'}'>Error processing file: {str(e)}</file>",
-                            type="text",
-                        )
-                    )
+        # Process different content types
+        content.extend(ContentExtractor._extract_text_content(activity))
+        content.extend(ContentExtractor._extract_slack_files(path, activity))
+        content.extend(ContentExtractor._extract_attachments(activity))
 
         # Ensure we have at least some content
         if not content:
             logger.warning(f"Activity has no content: {activity}")
             content.append(Content(text="<no-content></no-content>", type="text"))
+
+        return content
+
+    @staticmethod
+    def _extract_text_content(activity: Activity) -> List[Content]:
+        """Extract text content from activity."""
+        if activity.text:
+            return [Content(text=activity.text, type="text")]
+        return []
+
+    @staticmethod
+    def _extract_slack_files(path: str, activity: Activity) -> List[Content]:
+        """Extract files from Slack channel data."""
+        content = []
+
+        if not isinstance(activity.channel_data, dict):
+            return content
+
+        slack_files = activity.channel_data.get("SlackMessage", {}).get("event", {}).get("files", [])
+        if not slack_files:
+            return content
+
+        slack_token = PathEntity.get_slack_token_by_path(path)
+        if not slack_token:
+            return content
+
+        for file in slack_files:
+            try:
+                file_info = ContentExtractor._from_slack_file(file, slack_token)
+                content.append(ContentExtractor._to_content(file_info))
+            except Exception as e:
+                logger.error(f"Error processing Slack file: {e}")
+
+        return content
+
+    @staticmethod
+    def _extract_attachments(activity: Activity) -> List[Content]:
+        """Extract files from activity attachments."""
+        content = []
+
+        if not activity.attachments:
+            return content
+
+        for attachment in activity.attachments:
+            try:
+                # Skip Teams HTML content that's not a real file
+                if (activity.channel_id == Channels.ms_teams
+                        and attachment.content_url is None
+                        and attachment.content_type == "text/html"):
+                    continue
+
+                # Process based on attachment type
+                if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
+                    file_info = ContentExtractor._from_teams_file(attachment)
+                else:
+                    file_info = ContentExtractor._from_generic_attachment(attachment)
+
+                content.append(ContentExtractor._to_content(file_info))
+            except Exception as e:
+                logger.error(f"Error processing attachment: {e}")
+                content.append(
+                    Content(
+                        text=f"<file name='{attachment.name or 'unknown'}'>Error processing file: {str(e)}</file>",
+                        type="text",
+                    )
+                )
 
         return content
 
