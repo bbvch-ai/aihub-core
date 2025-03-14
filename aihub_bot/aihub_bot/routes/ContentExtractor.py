@@ -9,8 +9,9 @@ from botbuilder.schema import Activity, Attachment
 
 from aihub_bot.persistence.entities.ConversationEntity import Content
 from aihub_bot.persistence.entities.PathEntity import PathEntity
+from aihub_lib.testing.logging.logger import enable_logging
 
-logger = logging.getLogger(__name__)
+logger = enable_logging(__name__)
 
 
 class FileSource(Enum):
