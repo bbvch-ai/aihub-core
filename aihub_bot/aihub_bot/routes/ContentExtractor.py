@@ -1,11 +1,10 @@
+import base64
+import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, List, Optional
 
-import base64
 import httpx
-import logging
-
 from botbuilder.schema import Activity, Attachment
 
 from aihub_bot.persistence.entities.ConversationEntity import Content
