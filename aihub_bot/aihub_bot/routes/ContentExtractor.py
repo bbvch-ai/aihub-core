@@ -94,9 +94,11 @@ class ContentExtractor:
         for attachment in activity.attachments:
             try:
                 # Skip Teams HTML content that's not a real file
-                if (activity.channel_id == Channels.ms_teams
-                        and attachment.content_url is None
-                        and attachment.content_type == "text/html"):
+                if (
+                    activity.channel_id == Channels.ms_teams
+                    and attachment.content_url is None
+                    and attachment.content_type == "text/html"
+                ):
                     continue
 
                 # Process based on attachment type
