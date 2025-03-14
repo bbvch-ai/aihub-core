@@ -159,7 +159,7 @@ class ContentExtractor:
 
         elif file_info.content_type == "application/pdf":
             # PDF files are not supported, return a placeholder
-            return Content(text=f"<file name='{file_info.name}'>PDF file not supported</file>", type="text")
+            return Content(text=f"<file name='{file_info.name}'>PDF files are not supported yet</file>", type="text")
 
         elif file_info.content_type.startswith("text/") or file_info.content_type.startswith("application/"):
             try:
