@@ -143,6 +143,11 @@ class Service(ChatService):
         return ConversationEntity.get_conversation_is_mentioned(conversation_id)
 
     @staticmethod
+    def delete_conversation_if_exists(turn_context: TurnContext):
+        conversation_id: str = turn_context.activity.conversation.id
+        ConversationEntity.delete_conversation(conversation_id)
+
+    @staticmethod
     def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
         """
         ### What

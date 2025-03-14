@@ -1,6 +1,8 @@
 import asyncio
 from asyncio import Task
 
+from botframework.connector import Channels
+
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import Activity, ActivityTypes
@@ -27,6 +29,17 @@ class AgentChatBot(ActivityHandler):
         self.agent_class = agent_class
         self.agent_id = agent_id
         self.path = path
+
+    @override
+    async def on_conversation_update_activity(self, turn_context: TurnContext):
+        if (
+            turn_context.activity.channel_id == Channels.ms_teams
+            and turn_context.activity.members_added is not None
+            and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
+        ):
+            AgentChatService.delete_conversation_if_exists(turn_context=turn_context)
+
+        return super().on_conversation_update_activity(turn_context)
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):

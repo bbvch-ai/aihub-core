@@ -51,6 +51,11 @@ class ConversationEntity(Document):
         return conversation.save()
 
     @classmethod
+    def delete_conversation(cls, conversation_id: str) -> None:
+        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation.delete()
+
+    @classmethod
     def add_messages_to_conversation(
         cls,
         conversation_id: str,
