@@ -143,6 +143,11 @@ class Service(ChatService):
         return ConversationEntity.get_conversation_is_mentioned(conversation_id)
 
     @staticmethod
+    def delete_conversation_if_exists(turn_context: TurnContext):
+        conversation_id: str = turn_context.activity.conversation.id
+        ConversationEntity.delete_conversation(conversation_id)
+
+    @staticmethod
     def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
         """
         ### What
@@ -185,27 +190,35 @@ class Service(ChatService):
         return content
 
     @staticmethod
+    def _fetch_and_encode_to_base64(url: str, headers: dict = None) -> str:
+        """
+        ### What
+        - Fetches content from a URL and encodes it as a base64 data URL.
+        """
+        response = httpx.get(url, headers=headers)
+        response.raise_for_status()
+        content_type = response.headers.get("content-type", "application/octet-stream")
+        content_bytes = response.content
+        base64_str = base64.b64encode(content_bytes).decode("utf-8")
+        data_url = f"data:{content_type};base64,{base64_str}"
+        return data_url
+
+    @staticmethod
     def _slack_files_to_content(
         files: List[dict],
         slack_token: str,
     ) -> List[Content]:
         content: List[Content] = []
         for file in files:
+            headers = {"Authorization": f"Bearer {slack_token}"}
+
             if file.get("mimetype", "").startswith("image/"):
-                response = httpx.get(
-                    file["url_private_download"],
-                    headers={"Authorization": f"Bearer {slack_token}"},
-                )
-                response.raise_for_status()
-                image_bytes: bytes = response.content
-                image_base64: str = base64.b64encode(image_bytes).decode("utf-8")
-                content.append(
-                    Content(text=f"data:{response.headers['content-type']};base64,{image_base64}", type="image_url")
-                )
+                data_url = Service._fetch_and_encode_to_base64(file["url_private_download"], headers=headers)
+                content.append(Content(text=data_url, type="image_url"))
             elif file.get("mimetype") == "text/plain":
                 response = httpx.get(
                     file["url_private_download"],
-                    headers={"Authorization": f"Bearer {slack_token}"},
+                    headers=headers,
                 )
                 response.raise_for_status()
                 content.append(Service._text_file_content(file_name=file["name"], text=response.text))
@@ -219,7 +232,8 @@ class Service(ChatService):
             if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
                 content.append(Service._handle_teams_file_attachment(attachment))
             elif attachment.content_type.startswith("image/"):
-                content.append(Content(text=url, type="image_url"))
+                data_url = Service._fetch_and_encode_to_base64(url)
+                content.append(Content(text=data_url, type="image_url"))
             elif attachment.content_type == "text/plain":
                 content.append(Service._text_file_attachment_to_content(url, attachment.name))
             elif attachment.content_type == "text/html":
@@ -245,7 +259,8 @@ class Service(ChatService):
         teams_url: str = attachment.content["downloadUrl"]
         teams_file_type: str = attachment.content["fileType"]
         if teams_file_type in IMAGE_FILE_TYPES:
-            return Content(text=teams_url, type="image_url")
+            data_url = Service._fetch_and_encode_to_base64(teams_url)
+            return Content(text=data_url, type="image_url")
         elif teams_file_type in TEXT_FILE_TYPES:
             return Service._text_file_attachment_to_content(teams_url, attachment.name)
         else:
