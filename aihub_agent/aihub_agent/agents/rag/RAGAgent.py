@@ -1,3 +1,19 @@
+from llama_index.core import PromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.rag.events.ContextInsufficientEvent import ContextInsufficientEvent
+from aihub_agent.agents.rag.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
+from aihub_agent.agents.rag.events.ContextSufficientEvent import ContextSufficientEvent
+from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
@@ -8,25 +24,11 @@ from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.abstract.Agent import Agent
-from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.events.ContextInsufficientEvent import ContextInsufficientEvent
-from aihub_agent.agents.rag.events.ContextSufficientEvent import ContextSufficientEvent
-from aihub_agent.agents.rag.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
-from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
@@ -50,10 +52,12 @@ class RAGAgent(Agent):
         self,
         event: UserMessageEvent,
         agent_config: RAGAgentConfig,
+        run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit
         """
+        await run_context.set("hop_count", 1)
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
             number_of_input_tokens=agent_config.number_of_input_tokens,
@@ -87,7 +91,7 @@ class RAGAgent(Agent):
     @step()
     async def few_shot_guard_step(
         self,
-        event: StandaloneQuestionCondenserEvent,
+        event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -96,12 +100,20 @@ class RAGAgent(Agent):
             return FewShotAcceptEvent(reasoning=t("agent.thought.no_few_shot_examples"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            guard_result = await few_shot_guard(
-                llm=llm,
-                t=t,
-                user_query=event.condensed_chat_message.content,
-                examples=agent_config.few_shot_guard_examples,
-            )
+            if isinstance(event, StandaloneQuestionCondenserEvent):
+                guard_result = await few_shot_guard(
+                    llm=llm,
+                    t=t,
+                    user_query=event.condensed_chat_message.content,
+                    examples=agent_config.few_shot_guard_examples,
+                )
+            else:
+                guard_result = await few_shot_guard(
+                    llm=llm,
+                    t=t,
+                    user_query=event.new_query,
+                    examples=agent_config.few_shot_guard_examples,
+                )
 
         if not guard_result.success:
             return FewShotRejectEvent(reasoning=guard_result.reasoning)
@@ -167,29 +179,42 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
+        run_context: RunContext,
     ) -> ContextSufficientEvent | ContextInsufficientEvent:
         """
         Guards the context to ensure it is sufficient for generating a response.
         """
         if not agent_config.check_context_sufficiency:
             return ContextSufficientEvent()
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.llm.cost_reporting_llm(
+            displayer, system_prompt=t("lib.guards.context_sufficient_guard.message")
+        ) as llm:
             guard_result = await context_sufficient_guard(
                 llm=llm,
                 t=t,
                 user_query=user_query_event.condensed_chat_message.content,
                 context=event.context_message.content,
             )
-        if not guard_result.success:
+
+        if guard_result.success:
+            await displayer.display_thought(t("agent.thought.context_sufficient"))
+            return ContextSufficientEvent()
+
+        hop_count = await run_context.get("hop_count")
+        if hop_count < agent_config.max_hops:
+            await displayer.display_thought(t("agent.thought.max_hops_reached"))
             return ContextInsufficientEvent(reasoning=guard_result.reasoning)
-        return ContextSufficientEvent()
+
+        await run_context.set("hop_count", hop_count + 1)
+        await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
+        return ContextInsufficientWithQueryEvent(reasoning=guard_result.reasoning, new_query=guard_result.new_query)
 
     @step()
     async def limit_chat_history_with_context_step(
         self,
         nodes_event: InOrderNodeCombinerEvent,
         chat_history_event: LimitChatHistoryEvent,
-        context_sufficient_event: ContextSufficientEvent,
+        _: ContextSufficientEvent,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:

@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import pytest
+from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import scenarios, given, when, then, parsers
@@ -42,6 +45,7 @@ from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
 
 scenarios("../tests/features/rag_agent.feature")
+load_dotenv(Path(__file__).parent / ".env")
 
 
 def build_rag_agent_config(

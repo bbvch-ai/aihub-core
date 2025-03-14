@@ -50,3 +50,10 @@ Feature: RAG Agent
     When the start event is sent with a user query "What is AI?" and locale en
     Then the few shot guard should accept the user query
     * respond to the user with a generated response
+
+  @slow
+  Scenario: Test the RAGAgent with multiple retrieval hops
+    Given a RAGAgent runner with a valid azure configuration
+    When the start event is sent with a user query "How is the weather forecast made?" and locale en
+    Then the few shot guard should accept the user query
+    * respond to the user with a generated response

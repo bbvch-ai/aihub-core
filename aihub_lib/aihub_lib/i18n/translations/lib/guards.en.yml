@@ -62,6 +62,14 @@ few_shot_guard:
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
 context_sufficient_guard:
+  doc_string: |
+    Result from evaluating whether the context is sufficient to answer the user query.
+  reason: |
+    Reasoning explaining why the context is or is not sufficient.
+  success: |
+    Whether the context is sufficient to answer the query.
+  new_query: |
+    A refined query to get better search results if the context was insufficient.
   prompt: |
     I will give you a context and a question.
     If the question can be answered with the provided context, then the conversation may continue (success=True).
