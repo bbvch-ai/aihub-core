@@ -1,12 +1,11 @@
 import base64
-import logging
-from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
 
 import httpx
 from botbuilder.schema import Activity, Attachment
 from botframework.connector import Channels
+from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.ConversationEntity import Content
 from aihub_bot.persistence.entities.PathEntity import PathEntity
@@ -21,20 +20,15 @@ class FileSource(Enum):
     GENERIC = "generic"
 
 
-@dataclass
-class FileInfo:
+class FileInfo(BaseModel):
     """Normalized file information across different platforms."""
 
-    name: str
-    content_type: Optional[str] = None
-    url: Optional[str] = None
-    content_bytes: Optional[bytes] = None
-    headers: Optional[Dict[str, str]] = None
-    source: FileSource = FileSource.GENERIC
-
-    def __post_init__(self):
-        if self.headers is None:
-            self.headers = {}
+    name: str = Field(..., description="Name of the file")
+    content_type: str = Field(..., description="MIME type of the file")
+    url: str = Field(..., description="URL of the file")
+    content_bytes: Optional[bytes] = Field(None, description="Content of the file in bytes")
+    headers: Dict[str, str] = Field(default_factory=dict, description="HTTP headers for the file")
+    source: FileSource = Field(FileSource.GENERIC, description="Source of the file (e.g., Slack, Teams, etc.)")
 
 
 class ContentExtractor:
@@ -66,10 +60,16 @@ class ContentExtractor:
         if activity.attachments:
             for attachment in activity.attachments:
                 try:
-                    # Process Teams file attachments
                     if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
                         file_info = ContentExtractor._from_teams_file(attachment)
-                    # Process generic attachments
+                    elif (
+                        activity.channel_id == Channels.ms_teams
+                        and attachment.content_url is None
+                        and attachment.content_type == "text/html"
+                    ):
+                        # Teams always sends an HTML attachment with the message content
+                        # We skip this as it is not a file and already handled
+                        continue
                     else:
                         file_info = ContentExtractor._from_generic_attachment(attachment)
 
