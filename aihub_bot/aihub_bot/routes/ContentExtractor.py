@@ -6,7 +6,6 @@ import base64
 import httpx
 import logging
 
-from botbuilder.core import TurnContext
 from botbuilder.schema import Activity, Attachment
 
 from aihub_bot.persistence.entities.ConversationEntity import Content

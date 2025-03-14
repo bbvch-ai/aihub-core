@@ -12,7 +12,7 @@ from fastapi import Request
 
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
-from ContentExtractor import ContentExtractor
+from .ContentExtractor import ContentExtractor
 
 logger = logging.getLogger(__name__)
 
