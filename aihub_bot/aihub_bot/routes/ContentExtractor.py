@@ -24,7 +24,7 @@ class FileInfo(BaseModel):
     """Normalized file information across different platforms."""
 
     name: str = Field(..., description="Name of the file")
-    content_type: str = Field(..., description="MIME type of the file")
+    content_type: Optional[str] = Field(None, description="MIME type of the file")
     url: str = Field(..., description="URL of the file")
     content_bytes: Optional[bytes] = Field(None, description="Content of the file in bytes")
     headers: Dict[str, str] = Field(default_factory=dict, description="HTTP headers for the file")
@@ -95,7 +95,6 @@ class ContentExtractor:
         """Create FileInfo from a Slack file."""
         return FileInfo(
             name=file["name"],
-            content_type=file.get("mimetype", "application/octet-stream"),
             url=file["url_private_download"],
             headers={"Authorization": f"Bearer {slack_token}"},
             source=FileSource.SLACK,
@@ -109,7 +108,6 @@ class ContentExtractor:
 
         return FileInfo(
             name=attachment.name,
-            content_type=attachment.content_type,
             url=attachment.content["downloadUrl"],
             source=FileSource.TEAMS,
         )
@@ -119,29 +117,23 @@ class ContentExtractor:
         """Create FileInfo from a generic attachment."""
         return FileInfo(
             name=attachment.name,
-            content_type=attachment.content_type,
             url=attachment.content_url,
             source=FileSource.GENERIC,
         )
 
     @staticmethod
     def _fetch_file(file_info: FileInfo) -> FileInfo:
-        """Fetch file content if only URL is provided."""
-        if file_info.content_bytes is None and file_info.url is not None:
-            try:
-                response = httpx.get(file_info.url, headers=file_info.headers)
-                response.raise_for_status()
+        try:
+            response = httpx.get(file_info.url, headers=file_info.headers)
+            response.raise_for_status()
 
-                # Update file info with fetched content
-                file_info.content_bytes = response.content
+            # Update file info with fetched content
+            file_info.content_bytes = response.content
+            file_info.content_type = response.headers.get("content-type")
 
-                # Use server-provided content type if original wasn't specified
-                if not file_info.content_type or file_info.content_type == "application/octet-stream":
-                    file_info.content_type = response.headers.get("content-type", "application/octet-stream")
-
-            except Exception as e:
-                logger.error(f"Error fetching file {file_info.name}: {e}")
-                raise
+        except Exception as e:
+            logger.error(f"Error fetching file {file_info.name}: {e}")
+            raise
 
         return file_info
 
