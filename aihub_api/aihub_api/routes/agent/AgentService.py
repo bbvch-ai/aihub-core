@@ -204,4 +204,3 @@ class AgentService:
         """
         DISCOVER_AGENTS_CACHE.clear()
         GET_AGENT_CACHE.clear()
-        

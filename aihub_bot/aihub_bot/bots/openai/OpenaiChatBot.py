@@ -1,9 +1,8 @@
 import asyncio
 from asyncio import Task
-from typing import List
 
 from botbuilder.core import ActivityHandler, TurnContext
-from botbuilder.schema import Activity, ActivityTypes, ChannelAccount
+from botbuilder.schema import Activity, ActivityTypes
 from botframework.connector import Channels
 from openai import AsyncAzureOpenAI, AsyncOpenAI, BadRequestError
 from typing_extensions import override

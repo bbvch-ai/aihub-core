@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 import traceback
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin, Awaitable
+from typing import Annotated, Any, Awaitable, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
