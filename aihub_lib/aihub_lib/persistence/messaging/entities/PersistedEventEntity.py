@@ -1,11 +1,15 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
+from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
-from mongoengine import DictField, Document, StringField
+from mongoengine import DictField, Document, StringField, ListField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
+if TYPE_CHECKING:
+    from aihub_lib.nats.events import BaseEvent
+    from aihub_lib.nats.topics import AgentTopic
 
 class PersistedEventEntity(Document):
     meta = {
@@ -21,6 +25,25 @@ class PersistedEventEntity(Document):
     event_type = StringField(required=True)
     event_name = StringField(required=True)
     event_data = DictField(required=True)
+    event_parents = ListField(StringField(), required=True)
+
+    @classmethod
+    def persist_event(cls, event: "BaseEvent", topic: "AgentTopic", db: str):
+        persisted_entity = cls(
+            id=ObjectId(),
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            run_id=topic.run_id,
+            event_id=event.event_id,
+            event_type=topic.event_type,
+            event_name=topic.event_name,
+            event_data=event.model_dump(),
+            event_parents=event.parent_class_names
+        )
+        persisted_entity.switch_db(db)
+        persisted_entity.save()
 
     @classmethod
     def display_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
@@ -50,7 +73,7 @@ class PersistedEventEntity(Document):
     def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
         return list(
             cls.objects()
-            .filter(thread_id=thread_id, event_name="HumanInTheLoopRequestEvent")
+            .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
             .order_by("event_data__created_at")
         )
 
@@ -59,7 +82,7 @@ class PersistedEventEntity(Document):
         return list(
             cls.objects()
             .filter(
-                thread_id=thread_id, event_name="HumanInTheLoopResponseEvent", event_type=TopicManager.CONTROL_EVENT
+                thread_id=thread_id, event_parents__contains="HumanInTheLoopResponseEvent", event_type=TopicManager.CONTROL_EVENT
             )
             .order_by("event_data__created_at")
         )
@@ -72,7 +95,7 @@ class PersistedEventEntity(Document):
             .filter(
                 thread_id=thread_id,
                 event_type=TopicManager.DISPLAY_EVENT,
-                event_name__in=[
+                event_parents__in=[
                     "ChunkEvent",
                     "UserMessageEvent",
                     "HumanInTheLoopRequestEvent",
