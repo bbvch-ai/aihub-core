@@ -198,3 +198,12 @@ class AgentService:
         await resources.subscriber.stop()
 
         return resources.stop_event
+
+    @staticmethod
+    def clear_cache() -> None:
+        """
+        Clears the in-memory caches used for agent discovery. Useful for testing purposes to ensure fresh discovery
+        requests.
+        """
+        DISCOVER_AGENTS_CACHE.clear()
+        GET_AGENT_CACHE.clear()

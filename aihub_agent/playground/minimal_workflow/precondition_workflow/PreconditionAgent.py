@@ -9,7 +9,7 @@ from playground.minimal_workflow.precondition_workflow.events.ParallelEvent impo
 
 
 @precondition()
-def ensure_enough_events(parallel_events: List[ParallelEvent], config: PreconditionAgentConfig) -> bool:
+async def ensure_enough_events(parallel_events: List[ParallelEvent], config: PreconditionAgentConfig) -> bool:
     return len(parallel_events) == config.number_of_events
 
 

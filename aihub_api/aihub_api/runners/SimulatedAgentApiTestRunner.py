@@ -8,6 +8,7 @@ from aihub_lib.nats.events import (
     ChunkEvent,
     ControlEvent,
     DisplayEvent,
+    LLMStopEvent,
     StartEvent,
     StopEvent,
     UserMessageEvent,
@@ -16,7 +17,6 @@ from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.semantic import Message
-from aihub_lib.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
