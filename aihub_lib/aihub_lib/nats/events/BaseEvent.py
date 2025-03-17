@@ -67,7 +67,7 @@ class BaseEvent(BaseModel):
     def __str__(self):
         return f"{self.__class__.__name__}({super().__str__()})"
 
-    @computed_field  # makes _type a computed property
+    @computed_field
     @property
     def _type(self) -> str:
         """
@@ -78,7 +78,8 @@ class BaseEvent(BaseModel):
 
     @computed_field
     @property
-    def parent_class_names(self) -> List[str]:
+    def _parent_class_names(self) -> List[str]:
+        """Contains the names of all parent classes up until BaseEvent."""
         return [self.__class__.__name__] + list(get_parent_classes_until_base(self.__class__, BaseEvent))
 
     @classmethod

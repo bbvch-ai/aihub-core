@@ -40,7 +40,7 @@ class PersistedEventEntity(Document):
             event_type=topic.event_type,
             event_name=topic.event_name,
             event_data=event.model_dump(),
-            event_parents=event.parent_class_names
+            event_parents=event._parent_class_names
         )
         persisted_entity.switch_db(db)
         persisted_entity.save()
