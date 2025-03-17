@@ -20,3 +20,9 @@ class ImageGenerationRequest(BaseModel):
         Optional[Literal["dall-e-2", "dall-e-3"]],
         Field(description="The model to use for image generation. Defaults to dall-e-2."),
     ] = "dall-e-2"
+
+    n: Optional[int] = None
+    quality: Optional[Literal["standard", "hd"]] = None
+    response_format: Optional[Literal["url", "b64_json"]] = None
+    size: Optional[Literal["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"]] = None
+    style: Optional[Literal["vivid", "natural"]] = None

@@ -24,15 +24,45 @@ class PersistedEventEntity(Document):
 
     @classmethod
     def display_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
-        return cls.objects().filter(thread_id=thread_id, event_type=TopicManager.DISPLAY_EVENT)
+        return (
+            cls.objects()
+            .filter(thread_id=thread_id, event_type=TopicManager.DISPLAY_EVENT)
+            .order_by("event_data__created_at")
+        )
 
     @classmethod
     def display_events_for_threads(cls, thread_ids: List[str]) -> List["PersistedEventEntity"]:
-        return cls.objects().filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
+        return (
+            cls.objects()
+            .filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
+            .order_by("event_data__created_at")
+        )
 
     @classmethod
     def display_events_for_agent(cls, agent_id: str) -> List["PersistedEventEntity"]:
-        return cls.objects().filter(agent_id=agent_id, event_type=TopicManager.DISPLAY_EVENT)
+        return (
+            cls.objects()
+            .filter(agent_id=agent_id, event_type=TopicManager.DISPLAY_EVENT)
+            .order_by("event_data__created_at")
+        )
+
+    @classmethod
+    def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
+        return list(
+            cls.objects()
+            .filter(thread_id=thread_id, event_name="HumanInTheLoopRequestEvent")
+            .order_by("event_data__created_at")
+        )
+
+    @classmethod
+    def human_in_the_loop_response_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
+        return list(
+            cls.objects()
+            .filter(
+                thread_id=thread_id, event_name="HumanInTheLoopResponseEvent", event_type=TopicManager.CONTROL_EVENT
+            )
+            .order_by("event_data__created_at")
+        )
 
     @classmethod
     def to_message_history(cls, thread_id: str) -> List[UserChatMessage | AssistantChatMessage]:
@@ -42,7 +72,12 @@ class PersistedEventEntity(Document):
             .filter(
                 thread_id=thread_id,
                 event_type=TopicManager.DISPLAY_EVENT,
-                event_name__in=["ChunkEvent", "UserMessageEvent"],
+                event_name__in=[
+                    "ChunkEvent",
+                    "UserMessageEvent",
+                    "HumanInTheLoopRequestEvent",
+                    "HumanInTheLoopResponseEvent",
+                ],
             )
             .order_by("event_data__created_at")
             .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
@@ -55,7 +90,7 @@ class PersistedEventEntity(Document):
         current_agent_class = None
 
         for event in events:
-            if event.event_name == "UserMessageEvent":
+            if event.event_name in ["UserMessageEvent", "HumanInTheLoopResponseEvent"]:
                 # Finalize any ongoing assistant message
                 if assistant_content_buffer:
                     message_history.append(
@@ -72,7 +107,7 @@ class PersistedEventEntity(Document):
                     current_agent_class = None
 
                 # Create and append user message
-                content = event.event_data.get("content", "")
+                content = event.event_data.get("content", "") or event.event_data.get("response", "")
                 message_history.append(
                     UserChatMessage(
                         role=MessageRole.USER,
@@ -81,10 +116,12 @@ class PersistedEventEntity(Document):
                     )
                 )
 
-            elif event.event_name == "ChunkEvent":
+            elif event.event_name in ["ChunkEvent", "HumanInTheLoopRequestEvent"]:
                 # Check if we are continuing the same assistant message
                 if current_run_id == event.run_id and current_agent_id == event.agent_id:
-                    assistant_content_buffer += event.event_data.get("content", "")
+                    assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get(
+                        "question", ""
+                    )
                 else:
                     # Finalize previous assistant message if it exists
                     if assistant_content_buffer:
@@ -97,7 +134,9 @@ class PersistedEventEntity(Document):
                             )
                         )
                     # Start a new assistant message
-                    assistant_content_buffer = event.event_data.get("content", "")
+                    assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get(
+                        "question", ""
+                    )
                     current_run_id = event.run_id
                     current_agent_id = event.agent_id
                     current_agent_class = event.agent_class
