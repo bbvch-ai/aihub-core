@@ -91,7 +91,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await ws_subscriber.start()
 
-        ws_receiver = WebSocketReceiver(js=js)
+        ws_receiver = WebSocketReceiver(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc

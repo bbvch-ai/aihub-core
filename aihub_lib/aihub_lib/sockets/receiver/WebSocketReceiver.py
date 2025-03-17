@@ -2,11 +2,13 @@ import logging
 
 from bson import ObjectId
 from nats.js import JetStreamContext
+from nats.aio.client import Client as NATS
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events import DisplayEvent, StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
@@ -50,8 +52,9 @@ class WebSocketReceiver:
     - If it's a start event, publishes a start event to trigger agent processing.
     """
 
-    def __init__(self, js: JetStreamContext):
-        self.publisher = JSPublisher(js)
+    def __init__(self, nc: NATS, js: JetStreamContext):
+        self.nc_publisher = NCPublisher(nc)
+        self.js_publisher = JSPublisher(js)
 
     async def receive_event(self, ws_event: WSUserEvent, user: AuthenticatedUser):
         """
@@ -110,7 +113,7 @@ class WebSocketReceiver:
                 event_name=ws_event.event.__class__.__name__,
                 event_id=ws_event.event.event_id,
             )
-            await self.publisher.publish_event(ws_event.event, subject)
+            await self.js_publisher.publish_event(ws_event.event, subject)
 
     async def _handle_display_message(self, ws_event: WSUserEvent, run_id: str, user_id: str):
         """
@@ -131,7 +134,7 @@ class WebSocketReceiver:
             event_name=ws_event.event.__class__.__name__,
             event_id=ws_event.event.event_id,
         )
-        await self.publisher.publish_event(ws_event.event, subject)
+        await self.nc_publisher.publish_event(ws_event.event, subject)
 
     async def _handle_human_in_the_loop_response(self, thread: ThreadEntity, ws_event: WSUserEvent):
         """
@@ -163,4 +166,4 @@ class WebSocketReceiver:
             event_name=ws_event.event.__class__.__name__,
             event_id=ws_event.event.event_id,
         )
-        await self.publisher.publish_event(ws_event.event, subject)
+        await self.js_publisher.publish_event(ws_event.event, subject)
