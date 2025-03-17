@@ -1,8 +1,8 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
-from mongoengine import DictField, Document, StringField, ListField
+from mongoengine import DictField, Document, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -10,6 +10,7 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
     from aihub_lib.nats.topics import AgentTopic
+
 
 class PersistedEventEntity(Document):
     meta = {
@@ -40,7 +41,7 @@ class PersistedEventEntity(Document):
             event_type=topic.event_type,
             event_name=topic.event_name,
             event_data=event.model_dump(),
-            event_parents=event._parent_class_names
+            event_parents=event._parent_class_names,
         )
         persisted_entity.switch_db(db)
         persisted_entity.save()
@@ -82,7 +83,9 @@ class PersistedEventEntity(Document):
         return list(
             cls.objects()
             .filter(
-                thread_id=thread_id, event_parents__contains="HumanInTheLoopResponseEvent", event_type=TopicManager.CONTROL_EVENT
+                thread_id=thread_id,
+                event_parents__contains="HumanInTheLoopResponseEvent",
+                event_type=TopicManager.CONTROL_EVENT,
             )
             .order_by("event_data__created_at")
         )
