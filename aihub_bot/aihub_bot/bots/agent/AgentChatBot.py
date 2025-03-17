@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import Task
 
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import Activity, ActivityTypes
@@ -61,6 +62,7 @@ class AgentChatBot(ActivityHandler):
             agent_id=self.agent_id,
             nc=self.nc,
             ws_receiver=self.ws_receiver,
+            thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
         )
 
         await typing
