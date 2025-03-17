@@ -90,7 +90,7 @@ class PersistedEventEntity(Document):
         current_agent_class = None
 
         for event in events:
-            if event.event_name in ["UserMessageEvent", "HumanInTheLoopRequestEvent"]:
+            if event.event_name in ["UserMessageEvent", "HumanInTheLoopResponseEvent"]:
                 # Finalize any ongoing assistant message
                 if assistant_content_buffer:
                     message_history.append(
@@ -116,7 +116,7 @@ class PersistedEventEntity(Document):
                     )
                 )
 
-            elif event.event_name in ["ChunkEvent", "HumanInTheLoopResponseEvent"]:
+            elif event.event_name in ["ChunkEvent", "HumanInTheLoopRequestEvent"]:
                 # Check if we are continuing the same assistant message
                 if current_run_id == event.run_id and current_agent_id == event.agent_id:
                     assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get(
