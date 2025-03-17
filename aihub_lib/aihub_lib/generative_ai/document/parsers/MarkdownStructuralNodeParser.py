@@ -99,6 +99,7 @@ class MarkdownContentSplitter:
                 next_header_line = len(lines)
 
             header_content = "\n".join(lines[header.line_number : next_header_line])
+            # TODO add reference handling if specified
             splits.append(
                 Split(
                     metadata=self.metadata
