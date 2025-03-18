@@ -26,7 +26,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
-        ws_receiver = WebSocketReceiver(js=js)
+        ws_receiver = WebSocketReceiver(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc

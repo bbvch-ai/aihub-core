@@ -167,6 +167,7 @@ class OpenaiController(Controller):
             completion_request: Annotated[ChatCompletionRequest, Body],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
+            completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion(
                 self.chat_models, completion_request.model, completion_request.model_dump()
             )
@@ -186,6 +187,7 @@ class OpenaiController(Controller):
             ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
+            completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion_with_assistants(
                 self.chat_models, completion_request.model, completion_request, user, nc, ws_receiver
             )
