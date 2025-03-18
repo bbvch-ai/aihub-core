@@ -111,8 +111,8 @@ class ChatService:
         logger.debug(f"Created event: {event}")
 
         topic_manager = AgentThreadTopicManager(
-            agent_class=agent_class,
-            agent_id=agent_id,
+            agent_class="*",
+            agent_id="*",
             thread_id=event.thread_id,
             display_id=event.display_id,
             run_id="*",
