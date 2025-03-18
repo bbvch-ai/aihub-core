@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
+from bs4 import BeautifulSoup
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
@@ -15,6 +16,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INDEX,
     SECTION_END_LINE,
     SECTION_START_LINE,
+    REFERENCE,
 )
 
 
@@ -99,13 +101,20 @@ class MarkdownContentSplitter:
                 next_header_line = len(lines)
 
             header_content = "\n".join(lines[header.line_number : next_header_line])
-            # TODO add reference handling if specified
+
+            reference = None
+            soup = BeautifulSoup(header_content, "html.parser")
+            sources = soup.find_all("quelle")
+            if sources:
+                reference = sources[0].get("url")
+
             splits.append(
                 Split(
                     metadata=self.metadata
                     | {
                         SECTION_START_LINE: header.line_number,
                         SECTION_END_LINE: next_header_line - 1,
+                        REFERENCE: reference,
                     },
                     content=header_content,
                     level=header.level,
@@ -149,6 +158,7 @@ class NodeCreatorFromSplits:
         self.sentence_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.id_func = None
         self.current_index = 0  # Initialize the index counter
+        self.header_references = {}
 
     def create_nodes_from_splits(
         self,
@@ -161,15 +171,61 @@ class NodeCreatorFromSplits:
         self.include_metadata = include_metadata
         self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
         self.id_func = id_func
+
         nodes = []
         last_nodes_stack = []
+
         for split in splits:
+            # Update reference tracking for this header level
+            self._update_header_references(split)
+
+            # Apply the inherited reference to the split metadata if needed
+            if not split.metadata.get(REFERENCE):
+                inherited_reference = self._find_inherited_reference(split.metadata, split.level)
+                if inherited_reference:
+                    split.metadata[REFERENCE] = inherited_reference
+
             split_texts = self.sentence_splitter.split_text(split.content)
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
         return nodes
+
+    def _update_header_references(self, split: Split) -> None:
+        """
+        Store references associated with headers in the current split.
+        """
+        # If this split has a reference, store it for each header in its metadata
+        if split.metadata.get(REFERENCE):
+            reference = split.metadata[REFERENCE]
+
+            # Store reference for each header that's present in the metadata
+            for i in range(1, 7):
+                header_key = f"h{i}"
+                if header_key in split.metadata and split.metadata[header_key] is not None:
+                    header_value = split.metadata[header_key]
+                    if header_value:  # Ensure header has content
+                        self.header_references[(i, header_value)] = reference
+
+    def _find_inherited_reference(self, metadata: Dict[str, any], current_level: int) -> Optional[str]:
+        """
+        Find a reference to inherit by checking parent headers in this split's metadata.
+        Only go up levels from the current level until a reference is found.
+        """
+        # Start checking from one level up from the current level
+        for level in range(current_level - 1, current_level - 3, -1):
+            header_key = f"h{level}"
+            if header_key in metadata and metadata[header_key] is not None:
+                header_value = metadata[header_key]
+                if header_value and (level, header_value) in self.header_references:
+                    return self.header_references[(level, header_value)]
+
+        # If no reference is found in parent headers, check level 0 (root)
+        if (0, "") in self.header_references:
+            return self.header_references[(0, "")]
+
+        return None
 
     def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
         node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
