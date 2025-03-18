@@ -6,8 +6,7 @@ from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.context.BaseContext import BaseContext
-from aihub_lib.nats.events import BaseEvent, ChunkEvent, ExceptionEvent, StartEvent, StopEvent, UserMessageEvent
-from aihub_lib.nats.events.semantic import SemanticEvent
+from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -95,7 +94,7 @@ class RunTraceCoordinator:
 
         Returns a dict of telemetry headers to pass along for consistent parent-child relationships in spans.
         """
-        user_input = event.user_query if isinstance(event, UserMessageEvent) else ""
+        user_input = event.user_query if event.is_user_message_event else ""
         with self.tracer.start_as_current_span(
             name=f"🤖 {topic.agent_class}",
             kind=trace.SpanKind.SERVER,
@@ -128,10 +127,10 @@ class RunTraceCoordinator:
 
         async def handler(event: BaseEvent, t: AgentTopic):
             nonlocal response_aggregate
-            if isinstance(event, ChunkEvent):
+            if event.is_chunk_event:
                 logger.debug("Received ChunkEvent in tracing coordinator")
                 response_aggregate += event.content
-            if isinstance(event, StopEvent) or isinstance(event, ExceptionEvent):
+            if event.is_stop_event or event.is_exception_event:
                 logger.debug("Received StopEvent/ExceptionEvent in tracing coordinator")
                 self.trace_run_stop(span, event, content=response_aggregate)
                 await subscriber.stop()
@@ -151,7 +150,7 @@ class RunTraceCoordinator:
         """
         logger.debug("Stopping span due to StopEvent/ExceptionEvent")
 
-        if isinstance(event, ExceptionEvent):
+        if event.is_exception_event:
             span.set_status(StatusCode.ERROR, event.message)
         else:
             span.set_status(StatusCode.OK)
@@ -240,7 +239,7 @@ class RunTraceCoordinator:
                     SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                 }
             )
-            semantic_event = next((ev for ev in output_events if isinstance(ev, SemanticEvent)), None)
+            semantic_event = next((ev for ev in output_events if ev.is_semantic_event), None)
             if semantic_event:
                 span.set_attributes(semantic_event.to_semantic_convention())
 

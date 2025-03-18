@@ -18,7 +18,6 @@ from aihub_lib.nats.events import (
     HumanInTheLoopResponseEvent,
     StopEvent,
 )
-from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -149,18 +148,18 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
-            logger.debug(f"Received display event: {display_event}")
-            if isinstance(display_event, ChunkEvent):
-                logger.debug(f"Received chunk event: {display_event}")
-                await chunk_queue.put(display_event)
-            elif isinstance(display_event, HumanInTheLoopRequestEvent):
-                resources.stop_event = display_event
+        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+            logger.debug(f"Received event: {event}")
+            if event.is_chunk_event:
+                logger.debug(f"Received chunk event: {event}")
+                await chunk_queue.put(event)
+            elif event.is_hitl_request_event:
+                resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
-            elif isinstance(display_event, StopEvent):
+            elif event.is_stop_event:
                 logger.debug("Received stop event. Stop streaming")
-                resources.stop_event = display_event
+                resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
 
@@ -222,22 +221,22 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
-            logger.debug(f"Received display event: {display_event}")
-            if isinstance(display_event, ChunkEvent):
-                resources.chunk_events.append(display_event)
-            elif isinstance(display_event, HumanInTheLoopRequestEvent):
-                resources.stop_event = display_event
+        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+            logger.debug(f"Received display event: {event}")
+            if event.is_chunk_event:
+                resources.chunk_events.append(event)
+            elif event.is_hitl_request_event:
+                resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
-            elif isinstance(display_event, StopEvent):
+            elif event.is_stop_event:
                 logger.debug("Received stop event. Stop streaming")
-                resources.stop_event = display_event
+                resources.stop_event = event
                 await resources.subscriber.stop()
                 resources.stop_signal.set()
-            elif isinstance(display_event, LLMCostEvent):
-                resources.costs += display_event
-                resources.model_name = display_event.llm_name
+            elif event.is_llm_cost_event:
+                resources.costs += event
+                resources.model_name = event.llm_name
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
@@ -263,6 +262,6 @@ class ChatService:
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         content = "".join(chunk.content for chunk in sorted_chunks)
-        if isinstance(stop_event, HumanInTheLoopRequestEvent):
+        if stop_event.is_hitl_request_event:
             content += stop_event.question
         return content
