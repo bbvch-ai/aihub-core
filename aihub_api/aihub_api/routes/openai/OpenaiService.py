@@ -299,7 +299,7 @@ class OpenaiService:
                     break
 
             # Send a final "stop" chunk at the end
-            if isinstance(resources.stop_event, HumanInTheLoopRequestEvent):
+            if resources.stop_event.is_hitl_request_event:
                 content = resources.stop_event.question
             else:
                 content = ""

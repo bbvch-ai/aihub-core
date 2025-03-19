@@ -72,20 +72,20 @@ class ExternalEventDistributor:
             logger.error(f"User {user_id} is not in thread {external_event.thread_id}")
             raise Exception(f"User {user_id} is not in thread {external_event.thread_id}")
 
-        if isinstance(external_event.event, StartEvent):
+        if external_event.event.is_start_event:
             run_id = str(ObjectId())
-        elif isinstance(external_event.event, HumanInTheLoopResponseEvent):
+        elif external_event.event.is_hitl_response_event:
             run_id = external_event.event.request_event.topic.run_id
         else:
             raise ValueError(f"Received event of unhandled type: {external_event.event.__class__.__name__}")
 
-        if isinstance(external_event.event, HumanInTheLoopResponseEvent):
+        if external_event.event.is_hitl_response_event:
             await self._handle_human_in_the_loop_response(thread, external_event)
 
-        if isinstance(external_event.event, DisplayEvent):
+        if external_event.event.is_display_event:
             await self._handle_display_message(external_event, run_id, user_id)
 
-        if isinstance(external_event.event, StartEvent):
+        if external_event.event.is_start_event:
             await self._handle_start_event(thread, external_event, run_id)
 
     async def _handle_start_event(self, thread: ThreadEntity, external_event: ExternalEvent, run_id: str):
