@@ -4,63 +4,14 @@ import os
 import threading
 import time
 from datetime import datetime
-from functools import cache
 from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 
+from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
+
 logger = logging.getLogger(__name__)
-
-
-def get_parent_classes_until_base(cls: Type, base_class: Type):
-    """Returns a set of parent class names up until the given base class (excluding the base itself)."""
-    parents = set()
-    if cls.__name__ == base_class.__name__:
-        return parents
-    for base in cls.__bases__:
-        if base is base_class:
-            continue  # Stop at the given base class
-        parents.add(base.__name__)
-        parents.update(get_parent_classes_until_base(base, base_class))
-    return parents
-
-
-@cache
-def get_inheritance_depth(event_class: Type, base_class: Type = None) -> int:
-    """
-    Calculate how many inheritance steps a class is from a base class.
-    Higher values indicate more specific classes.
-    """
-    # Default to BaseEvent if no base_class specified
-    if base_class is None:
-        # This will be set to the BaseEvent class when used within BaseEvent
-        base_class = BaseEvent
-
-    if event_class == base_class:
-        return 0
-
-    depth = 0
-    classes_to_check = [event_class]
-    checked_classes = set()
-
-    while classes_to_check:
-        current_class = classes_to_check.pop(0)
-
-        if current_class == base_class:
-            return depth
-
-        if current_class in checked_classes:
-            continue
-
-        checked_classes.add(current_class)
-
-        # Add all base classes to check
-        classes_to_check.extend(current_class.__bases__)
-        depth += 1
-
-    # If we get here, the class doesn't inherit from the base_class
-    return -1
 
 
 class BaseEvent(BaseModel):
