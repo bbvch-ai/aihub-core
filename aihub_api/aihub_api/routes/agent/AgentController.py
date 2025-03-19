@@ -103,7 +103,7 @@ class AgentController(Controller):
         """
         agent_class_name = snakecase(agent_class)
         agent_id = snakecase(agent_id)
-        name = f"send_event_to_{agent_class_name}_{agent_id}_{route_postfix}"
+        name = f"send_event_to_{agent_class_name}_{agent_id}_{route_postfix.replace('/', '_')}"
         start_event_input_type = create_input_model(start_event_type)
         stop_event_output_type = create_output_model(stop_event_type)
 
