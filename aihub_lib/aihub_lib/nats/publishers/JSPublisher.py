@@ -5,7 +5,7 @@ from typing import Generic, TypeVar
 
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
+from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 logger = logging.getLogger(__name__)
@@ -44,12 +44,12 @@ class JSPublisher(Generic[TEvent]):
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
 
-        if f".{TopicManager.CONTROL_EVENT}." in subject and not isinstance(event, ControlEvent):
+        if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
             logger.warning(
                 f"Control event {event.__class__.__name__} is being published to a non-control subject: {subject}"
             )
 
-        if f".{TopicManager.DISPLAY_EVENT}." in subject and not isinstance(event, DisplayEvent):
+        if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
             logger.warning(
                 f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
             )
