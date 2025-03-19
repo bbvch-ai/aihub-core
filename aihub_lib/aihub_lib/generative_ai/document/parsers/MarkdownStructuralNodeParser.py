@@ -1,14 +1,13 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Sequence, Annotated
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
-from pydantic import BeforeValidator
+from pydantic import Field, ConfigDict, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
 from aihub_lib.generative_ai.document.parsers.Split import Split
@@ -21,15 +20,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     REFERENCE_NAME,
     REFERENCE_URL,
 )
-
-
-def set_node_builder(v, values):
-    if v is None:
-        return NodeCreatorFromSplits(
-            chunk_size=values.get("chunk_size", 512),
-            chunk_overlap=values.get("chunk_overlap", 20),
-        )
-    return v
 
 
 @dataclass
@@ -316,8 +306,8 @@ class MarkdownStructuralNodeParser(NodeParser):
     chunk_overlap: int = Field(default=20, description="Number of overlapping tokens between chunks.")
     include_prev_next_rel: bool = Field(default=False, description="Include prev/next node relationships.")
 
-    metadata_extractor: MetadataExtractor = Field(
-        default_factory=MetadataExtractor, description="MetadataExtractor used to extract metadata."
+    metadata_extractor: Optional[MetadataExtractor] = Field(
+        default=None, description="MetadataExtractor used to extract metadata."
     )
 
     markdown_splitter: MarkdownContentSplitter = Field(
@@ -325,13 +315,21 @@ class MarkdownStructuralNodeParser(NodeParser):
         description="Markdown content splitter to use for splitting content into smaller nodes.",
     )
 
-    node_builder_from_splits: Annotated[NodeCreatorFromSplits, BeforeValidator(set_node_builder)] = Field(
-        default_factory=NodeCreatorFromSplits,
+    node_builder_from_splits: Optional[NodeCreatorFromSplits] = Field(
+        default=None,
         description="Node creator from splits.",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @model_validator(mode="before")
+    def set_node_builder(cls, values):
+        if isinstance(values, dict) and values.get("node_builder_from_splits") is None:
+            values["node_builder_from_splits"] = NodeCreatorFromSplits(
+                chunk_size=values.get("chunk_size", 512),
+                chunk_overlap=values.get("chunk_overlap", 20),
+            )
+        return values
 
     @classmethod
     def from_defaults(
@@ -377,7 +375,8 @@ class MarkdownStructuralNodeParser(NodeParser):
         """
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         splits = self.markdown_splitter.split_content(text, self.metadata)
-        splits = self.metadata_extractor.extract(splits)
+        if self.metadata_extractor:
+            splits = self.metadata_extractor.extract(splits)
         return self.node_builder_from_splits.create_nodes_from_splits(
             splits, node, self.include_metadata, self.metadata, self.id_func
         )
