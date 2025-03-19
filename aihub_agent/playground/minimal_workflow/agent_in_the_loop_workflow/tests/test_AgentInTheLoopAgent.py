@@ -1,3 +1,4 @@
+import copy
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
@@ -9,6 +10,7 @@ from aihub_lib.nats.events import (
     UserMessageEvent,
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
+    BaseEvent,
 )
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
@@ -19,6 +21,7 @@ from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Or
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgentConfig import (
     OrchestratorAgentConfig,
 )
+from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.WorkerStopEvent import WorkerStopEvent
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgent import WorkerAgent
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgentConfig import WorkerAgentConfig
 
@@ -62,6 +65,19 @@ def _(worker_config):
     )
 
 
+@given("WorkerStopEvent is removed from the registry", target_fixture="original_registry")
+def remove_worker_stop_event_from_registry():
+    # Save the original registry
+    original_registry = copy.deepcopy(BaseEvent._event_registry)
+
+    # Remove WorkerStopEvent from the registry
+    if WorkerStopEvent.__name__ in BaseEvent._event_registry:
+        del BaseEvent._event_registry[WorkerStopEvent.__name__]
+
+    # Return the original registry so we can restore it later
+    return original_registry
+
+
 @when(parsers.parse('a start event with message "{message}" is sent to the orchestrator'))
 @async_test
 async def send_start_to_orchestrator(
@@ -101,8 +117,30 @@ def check_agent_in_loop_response_with_exception(orchestrator_runner: AgentTestRu
     assert exception_event.exception_event is not None
 
 
+@then("an AgentInTheLoopResponse with unknown event type is received by the orchestrator")
+def check_agent_in_loop_response_with_unknown_event(orchestrator_runner: AgentTestRunner):
+    assert orchestrator_runner.has_event_of_type(AgentInTheLoopResponseEvent)
+    response_event = orchestrator_runner.get_events_of_type(AgentInTheLoopResponseEvent)[-1]
+
+    # Check if the stop_event is an instance of BaseEvent (fallback) but still has the right data
+    assert not isinstance(response_event.stop_event, WorkerStopEvent)
+    assert isinstance(response_event.stop_event, BaseEvent)
+    assert hasattr(response_event.stop_event, "result")
+    assert response_event.stop_event.result == 16
+
+    # Verify the unknown type information is preserved
+    assert response_event.stop_event._unknown_type == WorkerStopEvent.__name__
+
+
 @then(parsers.parse("an OrchestrationResultEvent with result {result} is received by the orchestrator"))
 def check_orchestrator_result(orchestrator_runner: AgentTestRunner, result: str):
     assert orchestrator_runner.has_stop_event
     result_event = orchestrator_runner.get_events_of_type(OrchestrationResultEvent)[-1]
     assert result_event.result == int(result)
+
+
+@then("WorkerStopEvent is restored to the registry")
+def restore_worker_stop_event_to_registry(original_registry):
+    # Restore the original registry
+    BaseEvent._event_registry.clear()
+    BaseEvent._event_registry.update(original_registry)

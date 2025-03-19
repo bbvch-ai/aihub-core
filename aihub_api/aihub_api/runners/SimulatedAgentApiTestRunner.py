@@ -7,7 +7,6 @@ from aihub_lib.nats.events import (
     BaseEvent,
     ChunkEvent,
     ControlEvent,
-    DisplayEvent,
     LLMStopEvent,
     StartEvent,
     StopEvent,
@@ -101,10 +100,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         This simulates an agent run, where after receiving a start signal, the agent responds
         with chunks, cost events, etc., and finally a stop signal.
         """
-        if isinstance(event, StartEvent):
+        if event.is_start_event:
             for sim_event in self.simulated_events:
                 await self.publish_event(sim_event, topic)
-            if not any(isinstance(e, StopEvent) for e in self.simulated_events):
+            if not any(e.is_stop_event for e in self.simulated_events):
                 await self.publish_event(StopEvent(), topic)
 
     async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
@@ -164,14 +163,14 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             display_id=topic.display_id,
             run_id=topic.run_id,
         )
-        if isinstance(event, ControlEvent):
+        if event.is_control_event:
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
             logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
-        if isinstance(event, DisplayEvent):
+        if event.is_display_event:
             subject = thread_topic_manager.get_subject_for_display_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
