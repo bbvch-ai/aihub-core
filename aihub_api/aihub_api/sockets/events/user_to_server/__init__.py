@@ -1,5 +1,5 @@
-from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 
 __all__ = [
-    "WSUserEvent",
+    "ExternalEvent",
 ]
