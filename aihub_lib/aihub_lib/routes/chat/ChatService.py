@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Annotated
+from typing import Annotated, List, Optional, Tuple
 
 import mongoengine.errors
 from bson import ObjectId
@@ -61,7 +61,9 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         thread_id: Optional[str] = None,
-        subscribe_to_thread: Annotated[bool, "Receive all events in thread, not just the ones from the specified agents"] = False
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
     ) -> Tuple[WSUserEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
@@ -200,9 +202,11 @@ class ChatService:
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
-            subscribe_to_thread=True
+            subscribe_to_thread=True,
         )
-        return await ChatService.start_json_event_interaction(user, agent_class, agent_id, ws_event, topic_manager, nc, ws_receiver)
+        return await ChatService.start_json_event_interaction(
+            user, agent_class, agent_id, ws_event, topic_manager, nc, ws_receiver
+        )
 
     @staticmethod
     async def start_json_event_interaction(
