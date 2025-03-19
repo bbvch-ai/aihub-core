@@ -14,7 +14,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.nats.events import HumanInTheLoopRequestEvent
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
@@ -297,7 +296,7 @@ class OpenaiService:
                     break
 
             # Send a final "stop" chunk at the end
-            if isinstance(resources.stop_event, HumanInTheLoopRequestEvent):
+            if resources.stop_event.is_hitl_request_event:
                 content = resources.stop_event.question
             else:
                 content = ""

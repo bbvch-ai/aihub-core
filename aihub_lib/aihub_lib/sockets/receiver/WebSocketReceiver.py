@@ -5,8 +5,6 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.nats.events import DisplayEvent, StartEvent
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -72,20 +70,20 @@ class WebSocketReceiver:
             logger.error(f"User {user_id} is not in thread {ws_event.thread_id}")
             raise Exception(f"User {user_id} is not in thread {ws_event.thread_id}")
 
-        if isinstance(ws_event.event, StartEvent):
+        if ws_event.event.is_start_event:
             run_id = str(ObjectId())
-        elif isinstance(ws_event.event, HumanInTheLoopResponseEvent):
+        elif ws_event.event.is_hitl_response_event:
             run_id = ws_event.event.request_event.topic.run_id
         else:
             raise ValueError(f"Received event of unhandled type: {ws_event.event.__class__.__name__}")
 
-        if isinstance(ws_event.event, HumanInTheLoopResponseEvent):
+        if ws_event.event.is_hitl_response_event:
             await self._handle_human_in_the_loop_response(thread, ws_event)
 
-        if isinstance(ws_event.event, DisplayEvent):
+        if ws_event.event.is_display_event:
             await self._handle_display_message(ws_event, run_id, user_id)
 
-        if isinstance(ws_event.event, StartEvent):
+        if ws_event.event.is_start_event:
             await self._handle_start_event(thread, ws_event, run_id)
 
     async def _handle_start_event(self, thread: ThreadEntity, ws_event: WSUserEvent, run_id: str):
