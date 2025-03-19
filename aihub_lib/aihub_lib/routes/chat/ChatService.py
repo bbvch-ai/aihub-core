@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Annotated
 
 import mongoengine.errors
 from bson import ObjectId
@@ -61,6 +61,7 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         thread_id: Optional[str] = None,
+        subscribe_to_thread: Annotated[bool, "Receive all events in thread, not just the ones from the specified agents"] = False
     ) -> Tuple[WSUserEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
@@ -111,8 +112,8 @@ class ChatService:
         logger.debug(f"Created event: {event}")
 
         topic_manager = AgentThreadTopicManager(
-            agent_class="*",
-            agent_id="*",
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
             thread_id=event.thread_id,
             display_id=event.display_id,
             run_id="*",
@@ -138,6 +139,7 @@ class ChatService:
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            subscribe_to_thread=True,
         )
 
         stop_signal = asyncio.Event()
@@ -150,6 +152,7 @@ class ChatService:
         )
 
         async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
+            is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             logger.debug(f"Received display event: {display_event}")
             if isinstance(display_event, ChunkEvent):
                 logger.debug(f"Received chunk event: {display_event}")
@@ -158,7 +161,7 @@ class ChatService:
                 resources.stop_event = display_event
                 await subscriber.stop()
                 stop_signal.set()
-            elif isinstance(display_event, StopEvent):
+            elif isinstance(display_event, StopEvent) and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
                 resources.stop_event = display_event
                 await subscriber.stop()
@@ -197,6 +200,7 @@ class ChatService:
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            subscribe_to_thread=True
         )
         return await ChatService.start_json_event_interaction(user, ws_event, topic_manager, nc, ws_receiver)
 
@@ -211,7 +215,7 @@ class ChatService:
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
         costs = LLMCosts.from_zero()
-        model_name = "bbv-ai-hub"
+        model_name = f"{topic_manager.agent_class}/{topic_manager.agent_id}"
 
         resources = JsonResources(
             stop_signal=stop_signal,
@@ -224,13 +228,14 @@ class ChatService:
 
         async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
             logger.debug(f"Received display event: {display_event}")
+            is_primary_agent = topic.agent_class == topic_manager.agent_class and topic.agent_id == topic_manager.agent_id
             if isinstance(display_event, ChunkEvent):
                 resources.chunk_events.append(display_event)
             elif isinstance(display_event, HumanInTheLoopRequestEvent):
                 resources.stop_event = display_event
                 await subscriber.stop()
                 stop_signal.set()
-            elif isinstance(display_event, StopEvent):
+            elif isinstance(display_event, StopEvent) and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
                 resources.stop_event = display_event
                 await resources.subscriber.stop()
