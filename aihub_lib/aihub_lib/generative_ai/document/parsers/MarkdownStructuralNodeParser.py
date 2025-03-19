@@ -17,8 +17,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INDEX,
     SECTION_END_LINE,
     SECTION_START_LINE,
-    REFERENCE_NAME,
-    REFERENCE_URL,
 )
 
 
@@ -164,58 +162,12 @@ class NodeCreatorFromSplits:
         last_nodes_stack = []
 
         for split in splits:
-            # Update reference tracking for this header level
-            self._update_header_references(split)
-
-            # Apply the inherited reference to the split metadata if needed
-            if not split.metadata.get(REFERENCE_NAME):
-                inherited_references = self._find_inherited_reference(split.metadata, split.level)
-                if inherited_references:
-                    split.metadata[REFERENCE_NAME] = inherited_references[0]
-                    split.metadata[REFERENCE_URL] = inherited_references[1]
-
             split_texts = self.sentence_splitter.split_text(split.content)
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
         return nodes
-
-    def _update_header_references(self, split: Split) -> None:
-        """
-        Store references associated with headers in the current split.
-        """
-        # If this split has a reference, store it for each header in its metadata
-        if split.metadata.get(REFERENCE_NAME):
-            reference_name = split.metadata[REFERENCE_NAME]
-            reference_url = split.metadata[REFERENCE_URL]
-
-            # Store reference for each header that's present in the metadata
-            for i in range(1, 7):
-                header_key = f"h{i}"
-                if header_key in split.metadata and split.metadata[header_key] is not None:
-                    header_value = split.metadata[header_key]
-                    if header_value:  # Ensure header has content
-                        self.header_references[(i, header_value)] = (reference_name, reference_url)
-
-    def _find_inherited_reference(self, metadata: Dict[str, any], current_level: int) -> Optional[tuple]:
-        """
-        Find a reference to inherit by checking parent headers in this split's metadata.
-        Only go up levels from the current level until a reference is found.
-        """
-        # Start checking from one level up from the current level
-        for level in range(current_level - 1, current_level - 3, -1):
-            header_key = f"h{level}"
-            if header_key in metadata and metadata[header_key] is not None:
-                header_value = metadata[header_key]
-                if header_value and (level, header_value) in self.header_references:
-                    return self.header_references[(level, header_value)]
-
-        # If no reference is found in parent headers, check level 0 (root)
-        if (0, "") in self.header_references:
-            return self.header_references[(0, "")]
-
-        return None
 
     def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
         node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
