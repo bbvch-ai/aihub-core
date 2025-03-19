@@ -4,10 +4,13 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAgent import CustomStartStopEventAgent
-from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAgentConfig import \
-    CustomStartStopEventAgentConfig
-from playground.minimal_workflow.custom_start_stop_events.events.CustomStartEvent import CustomStartEvent, \
-    PydanticPayload
+from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAgentConfig import (
+    CustomStartStopEventAgentConfig,
+)
+from playground.minimal_workflow.custom_start_stop_events.events.CustomStartEvent import (
+    CustomStartEvent,
+    PydanticPayload,
+)
 from playground.minimal_workflow.custom_start_stop_events.events.CustomStopEvent import CustomStopEvent
 
 scenarios("../tests/features/custom_start_stop_agent.feature")
@@ -31,9 +34,7 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=CustomStartEvent(
-                payload=PydanticPayload(payload=payload)
-            ),
+            start_event=CustomStartEvent(payload=PydanticPayload(payload=payload)),
             topic=topic,
         )
 
