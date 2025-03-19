@@ -202,11 +202,13 @@ class ChatService:
             thread_id=thread_id,
             subscribe_to_thread=True
         )
-        return await ChatService.start_json_event_interaction(user, ws_event, topic_manager, nc, ws_receiver)
+        return await ChatService.start_json_event_interaction(user, agent_class, agent_id, ws_event, topic_manager, nc, ws_receiver)
 
     @staticmethod
     async def start_json_event_interaction(
         user: AuthenticatedUser,
+        agent_class: str,
+        agent_id: str,
         ws_event: WSUserEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
@@ -228,7 +230,7 @@ class ChatService:
 
         async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
             logger.debug(f"Received display event: {display_event}")
-            is_primary_agent = topic.agent_class == topic_manager.agent_class and topic.agent_id == topic_manager.agent_id
+            is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if isinstance(display_event, ChunkEvent):
                 resources.chunk_events.append(display_event)
             elif isinstance(display_event, HumanInTheLoopRequestEvent):

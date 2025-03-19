@@ -185,6 +185,8 @@ class AgentService:
         )
         resources: JsonResources = await ChatService.start_json_event_interaction(
             user=user,
+            agent_class=agent_class,
+            agent_id=agent_id,
             ws_event=ws_event,
             topic_manager=topic_manager,
             nc=nc,
