@@ -11,6 +11,8 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import (
     ChunkEvent,
     DisplayEvent,
@@ -24,8 +26,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         thread_id: Optional[str] = None,
-    ) -> Tuple[WSUserEvent, AgentThreadTopicManager]:
+    ) -> Tuple[ExternalEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
@@ -102,7 +102,7 @@ class ChatService:
                 user=user,
             )
 
-        event = WSUserEvent(
+        event = ExternalEvent(
             thread_id=thread_id,
             display_id=display_id,
             event=event,
@@ -125,13 +125,13 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[str] = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
-        ws_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -173,7 +173,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await ws_receiver.receive_event(ws_event, user)
+        await external_event_distributor.distribute_event(external_event, user)
 
         return resources
 
@@ -184,28 +184,30 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[str] = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        ws_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
         )
-        return await ChatService.start_json_event_interaction(user, ws_event, topic_manager, nc, ws_receiver)
+        return await ChatService.start_json_event_interaction(
+            user, external_event, topic_manager, nc, external_event_distributor
+        )
 
     @staticmethod
     async def start_json_event_interaction(
         user: AuthenticatedUser,
-        ws_event: WSUserEvent,
+        external_event: ExternalEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
     ):
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
@@ -249,7 +251,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await ws_receiver.receive_event(ws_event, user)
+        await external_event_distributor.distribute_event(external_event, user)
 
         return resources
 

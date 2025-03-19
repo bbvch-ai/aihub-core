@@ -14,9 +14,10 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.events import HumanInTheLoopRequestEvent
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
@@ -183,7 +184,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: AuthenticatedUser,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
     ) -> ChatCompletion | StreamingResponse:
         """
         Execute a chat completion request with an LLM or an assistant.
@@ -205,10 +206,12 @@ class OpenaiService:
 
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
-                agent_class, agent_id, chat_completion_request, user, nc, ws_receiver
+                agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
             )
 
-        return await OpenaiService.json_assistant(agent_class, agent_id, chat_completion_request, user, nc, ws_receiver)
+        return await OpenaiService.json_assistant(
+            agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
+        )
 
     @staticmethod
     async def json_assistant(
@@ -217,7 +220,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: AuthenticatedUser,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
     ):
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -225,7 +228,7 @@ class OpenaiService:
             agent_id=agent_id,
             messages=chat_completion_request.messages,
             nc=nc,
-            ws_receiver=ws_receiver,
+            external_event_distributor=external_event_distributor,
             thread_id=ThreadEntity.to_thread_id(chat_completion_request.chat_id),
         )
         # Wait until all events are processed
@@ -260,7 +263,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: AuthenticatedUser,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
     ):
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
@@ -268,7 +271,7 @@ class OpenaiService:
             agent_id=agent_id,
             messages=chat_completion_request.messages,
             nc=nc,
-            ws_receiver=ws_receiver,
+            external_event_distributor=external_event_distributor,
             thread_id=ThreadEntity.to_thread_id(chat_completion_request.chat_id),
         )
 

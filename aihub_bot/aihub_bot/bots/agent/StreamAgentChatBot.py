@@ -45,7 +45,7 @@ class StreamAgentChatBot(AgentChatBot):
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             nc=self.nc,
-            ws_receiver=self.ws_receiver,
+            external_event_distributor=self.external_event_distributor,
             thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
         )
 

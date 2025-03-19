@@ -3,6 +3,8 @@ from asyncio import sleep
 from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
@@ -14,8 +16,6 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
-from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
@@ -153,7 +153,7 @@ class AgentService:
     @staticmethod
     async def send_event(
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         user: AuthenticatedUser,
         start_event: StartEvent,
         agent_class: str,
@@ -178,17 +178,17 @@ class AgentService:
             display_id=display_id or str(ObjectId()),
             run_id="*",
         )
-        ws_event = WSUserEvent(
+        external_event = ExternalEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
             event=start_event,
         )
         resources: JsonResources = await ChatService.start_json_event_interaction(
             user=user,
-            ws_event=ws_event,
+            external_event=external_event,
             topic_manager=topic_manager,
             nc=nc,
-            ws_receiver=ws_receiver,
+            external_event_distributor=external_event_distributor,
         )
 
         await resources.stop_signal.wait()

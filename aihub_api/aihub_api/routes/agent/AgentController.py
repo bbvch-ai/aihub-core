@@ -5,10 +5,10 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
-from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
 from fastapi.params import Query
@@ -116,7 +116,7 @@ class AgentController(Controller):
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],
-            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
             user: AuthenticatedUser = Security(self.auth),
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
@@ -135,7 +135,7 @@ class AgentController(Controller):
                 locale=t.locale,
             )
             return await AgentService.send_event(
-                nc, ws_receiver, user, start_event, agent_class, agent_id, thread_id, display_id
+                nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
             )
 
         return self
