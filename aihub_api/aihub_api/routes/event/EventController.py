@@ -105,7 +105,7 @@ class EventController(Controller):
                     event = ExternalEvent.deserialize_event(data)
 
                     # Handle the received event
-                    await EventService.handle_ws_event(event, user.oid, external_event_distributor, ws_sender)
+                    await EventService.handle_external_event(event, user.oid, external_event_distributor, ws_sender)
 
             except WebSocketDisconnect as e:
                 logging.error(f"Websocket disconnected: {e}")

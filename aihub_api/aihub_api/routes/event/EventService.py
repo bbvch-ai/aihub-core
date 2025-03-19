@@ -32,7 +32,7 @@ class EventService:
 
     ### Key Operations
     - `get_user_events`: Returns all events relevant to a user’s threads.
-    - `handle_ws_event`: Receives a `WSUserEvent`, processes it, and sends out responses or errors as needed.
+    - `handle_external_event`: Receives a `WSUserEvent`, processes it, and sends out responses or errors as needed.
 
     ### Error Handling
     If an exception occurs while handling a user event, an `ExceptionEvent` is sent back through the WebSocket,
@@ -53,7 +53,7 @@ class EventService:
         return [WSServerEvent.from_persisted_event(event) for event in persisted_events]
 
     @staticmethod
-    async def handle_ws_event(
+    async def handle_external_event(
         event: ExternalEvent,
         user_oid: str,
         external_event_distributor: ExternalEventDistributor,

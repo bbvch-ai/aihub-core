@@ -178,14 +178,14 @@ class AgentService:
             display_id=display_id or str(ObjectId()),
             run_id="*",
         )
-        ws_event = ExternalEvent(
+        external_event = ExternalEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
             event=start_event,
         )
         resources: JsonResources = await ChatService.start_json_event_interaction(
             user=user,
-            ws_event=ws_event,
+            external_event=external_event,
             topic_manager=topic_manager,
             nc=nc,
             external_event_distributor=external_event_distributor,

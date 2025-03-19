@@ -132,7 +132,7 @@ class ChatService:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
-        ws_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -174,7 +174,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await external_event_distributor.distribute_event(ws_event, user)
+        await external_event_distributor.distribute_event(external_event, user)
 
         return resources
 
@@ -191,7 +191,7 @@ class ChatService:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        ws_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -199,13 +199,13 @@ class ChatService:
             thread_id=thread_id,
         )
         return await ChatService.start_json_event_interaction(
-            user, ws_event, topic_manager, nc, external_event_distributor
+            user, external_event, topic_manager, nc, external_event_distributor
         )
 
     @staticmethod
     async def start_json_event_interaction(
         user: AuthenticatedUser,
-        ws_event: ExternalEvent,
+        external_event: ExternalEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
@@ -252,7 +252,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await external_event_distributor.distribute_event(ws_event, user)
+        await external_event_distributor.distribute_event(external_event, user)
 
         return resources
 
