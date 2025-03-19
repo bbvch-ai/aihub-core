@@ -8,6 +8,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
+from typing_extensions import override
 
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
@@ -240,6 +241,7 @@ class BaseEvent(BaseModel):
         event_dict["created_at"] = created_datetime.strftime("%Y-%m-%d %H:%M:%S.%f") + f"{created_at % 1_000:03d}"
         return event_dict
 
+    @override
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         """
         Serializes the event into a dictionary. If this event was originally unknown,
@@ -257,3 +259,11 @@ class BaseEvent(BaseModel):
             **self._unknown_data,
             **data,
         }
+
+    @override
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """
+        Serializes the event into a JSON string. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        return json.dumps(self.model_dump(**kwargs), default=str)
