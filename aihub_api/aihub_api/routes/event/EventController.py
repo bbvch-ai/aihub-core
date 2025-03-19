@@ -28,19 +28,6 @@ class EventController(Controller):
     - Maintain a live WebSocket connection for sending commands and receiving updates in real-time.
 
     The `EventController` provides HTTP and WebSocket endpoints to handle these use cases.
-
-    ### Endpoints
-    - `GET /event/`: Returns all events associated with the authenticated user.
-    - `WEBSOCKET /event/ws`: Establishes a real-time, stateful connection allowing the client to send
-      `WSUserEvent` messages and receive server updates (`WSServerEvent`), including errors and progress notifications.
-
-    ### Authentication
-    Events typically contain sensitive user or agent data. Authentication ensures only authorized users
-    access their events and send commands over the WebSocket.
-
-    ### Error Handling
-    If the user is not authorized or the token is invalid, the WebSocket is closed with an appropriate code.
-    Any exceptions are caught, and `ExceptionEvent` may be sent back to the client as feedback.
     """
 
     def __init__(self, route: str = "/event", auth: AuthHandler | None = None):
@@ -64,7 +51,7 @@ class EventController(Controller):
         async def websocket_endpoint(websocket: WebSocket):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can send `WSUserEvent`s and receive responses (WSServerEvent or errors).
+            If the token is valid, the user can send `ExternalEvent`s and receive responses (WSServerEvent or errors).
             """
             await websocket.accept()  # Accept the connection first
 

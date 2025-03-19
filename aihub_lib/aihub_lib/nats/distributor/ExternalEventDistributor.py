@@ -58,7 +58,7 @@ class ExternalEventDistributor:
 
     async def distribute_event(self, external_event: ExternalEvent, user: AuthenticatedUser):
         """
-        Entry point for receiving a user event (WSUserEvent) from the WebSocket layer.
+        Entry point for distributing an external event (ExternalEvent) to agents or other systems through NATs.
 
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.

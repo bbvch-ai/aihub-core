@@ -32,10 +32,10 @@ class EventService:
 
     ### Key Operations
     - `get_user_events`: Returns all events relevant to a user’s threads.
-    - `handle_external_event`: Receives a `WSUserEvent`, processes it, and sends out responses or errors as needed.
+    - `handle_external_event`: Receives a `ExternalEvent`, processes it, and sends out responses or errors as needed.
 
     ### Error Handling
-    If an exception occurs while handling a user event, an `ExceptionEvent` is sent back through the WebSocket,
+    If an exception occurs while handling an external event, an `ExceptionEvent` is sent back through the WebSocket,
     ensuring that clients receive diagnostic feedback rather than silent failures.
     """
 
