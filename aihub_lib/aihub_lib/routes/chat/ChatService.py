@@ -210,9 +210,9 @@ class ChatService:
     @staticmethod
     async def start_json_event_interaction(
         user: AuthenticatedUser,
-        agent_class: str,
-        agent_id: str,
-        external_event: ExternalEvent,
+            agent_class: str,
+            agent_id: str,
+            external_event: ExternalEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
