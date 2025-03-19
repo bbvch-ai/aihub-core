@@ -1,3 +1,3 @@
-from aihub_lib.generative_ai.document.extractors.ReferenceExtractor import ReferenceExtractor, Reference
+from aihub_lib.generative_ai.document.extractors.MetadataExtractor import MetadataExtractor
 
-__all__ = ["ReferenceExtractor", "Reference"]
+__all__ = ["MetadataExtractor"]

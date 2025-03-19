@@ -23,7 +23,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
     VERSION,
-    REFERENCE,
+    REFERENCE_NAME,
+    REFERENCE_URL,
 )
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
@@ -135,7 +136,8 @@ def nodes_metadata_table(nodes: List[TextNode]):
         TableColumn(H4, "string"),
         TableColumn(H5, "string"),
         TableColumn(H6, "string"),
-        TableColumn(REFERENCE, "string"),
+        TableColumn(REFERENCE_NAME, "string"),
+        TableColumn(REFERENCE_URL, "string"),
     ]
     records = [TableRecord(node_table_row(node)) for node in nodes]
     table_schema = TableSchema(columns=columns)

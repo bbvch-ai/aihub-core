@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Annotated
 
-from bs4 import BeautifulSoup
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
@@ -9,22 +8,28 @@ from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
+from pydantic import BeforeValidator
 
+from aihub_lib.generative_ai.document.extractors import MetadataExtractor
+from aihub_lib.generative_ai.document.parsers.Split import Split
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
     INDEX,
     SECTION_END_LINE,
     SECTION_START_LINE,
-    REFERENCE,
+    REFERENCE_NAME,
+    REFERENCE_URL,
 )
 
 
-@dataclass
-class Split:
-    content: str
-    metadata: Dict[str, str]
-    level: int
+def set_node_builder(v, values):
+    if v is None:
+        return NodeCreatorFromSplits(
+            chunk_size=values.get("chunk_size", 512),
+            chunk_overlap=values.get("chunk_overlap", 20),
+        )
+    return v
 
 
 @dataclass
@@ -102,19 +107,12 @@ class MarkdownContentSplitter:
 
             header_content = "\n".join(lines[header.line_number : next_header_line])
 
-            reference = None
-            soup = BeautifulSoup(header_content, "html.parser")
-            sources = soup.find_all("quelle")
-            if sources:
-                reference = sources[0].get("url")
-
             splits.append(
                 Split(
                     metadata=self.metadata
                     | {
                         SECTION_START_LINE: header.line_number,
                         SECTION_END_LINE: next_header_line - 1,
-                        REFERENCE: reference,
                     },
                     content=header_content,
                     level=header.level,
@@ -180,10 +178,11 @@ class NodeCreatorFromSplits:
             self._update_header_references(split)
 
             # Apply the inherited reference to the split metadata if needed
-            if not split.metadata.get(REFERENCE):
-                inherited_reference = self._find_inherited_reference(split.metadata, split.level)
-                if inherited_reference:
-                    split.metadata[REFERENCE] = inherited_reference
+            if not split.metadata.get(REFERENCE_NAME):
+                inherited_references = self._find_inherited_reference(split.metadata, split.level)
+                if inherited_references:
+                    split.metadata[REFERENCE_NAME] = inherited_references[0]
+                    split.metadata[REFERENCE_URL] = inherited_references[1]
 
             split_texts = self.sentence_splitter.split_text(split.content)
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
@@ -197,8 +196,9 @@ class NodeCreatorFromSplits:
         Store references associated with headers in the current split.
         """
         # If this split has a reference, store it for each header in its metadata
-        if split.metadata.get(REFERENCE):
-            reference = split.metadata[REFERENCE]
+        if split.metadata.get(REFERENCE_NAME):
+            reference_name = split.metadata[REFERENCE_NAME]
+            reference_url = split.metadata[REFERENCE_URL]
 
             # Store reference for each header that's present in the metadata
             for i in range(1, 7):
@@ -206,9 +206,9 @@ class NodeCreatorFromSplits:
                 if header_key in split.metadata and split.metadata[header_key] is not None:
                     header_value = split.metadata[header_key]
                     if header_value:  # Ensure header has content
-                        self.header_references[(i, header_value)] = reference
+                        self.header_references[(i, header_value)] = (reference_name, reference_url)
 
-    def _find_inherited_reference(self, metadata: Dict[str, any], current_level: int) -> Optional[str]:
+    def _find_inherited_reference(self, metadata: Dict[str, any], current_level: int) -> Optional[tuple]:
         """
         Find a reference to inherit by checking parent headers in this split's metadata.
         Only go up levels from the current level until a reference is found.
@@ -314,24 +314,24 @@ class MarkdownStructuralNodeParser(NodeParser):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata to include in the nodes.")
     chunk_size: int = Field(default=512, description="Maximum number of tokens in a chunk.")
     chunk_overlap: int = Field(default=20, description="Number of overlapping tokens between chunks.")
+    include_prev_next_rel: bool = Field(default=False, description="Include prev/next node relationships.")
+
+    metadata_extractor: MetadataExtractor = Field(
+        default_factory=MetadataExtractor, description="MetadataExtractor used to extract metadata."
+    )
 
     markdown_splitter: MarkdownContentSplitter = Field(
         default_factory=MarkdownContentSplitter,
         description="Markdown content splitter to use for splitting content into smaller nodes.",
     )
 
-    node_builder_from_splits: NodeCreatorFromSplits = Field(
-        default=None,
+    node_builder_from_splits: Annotated[NodeCreatorFromSplits, BeforeValidator(set_node_builder)] = Field(
+        default_factory=NodeCreatorFromSplits,
         description="Node creator from splits.",
     )
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data, include_prev_next_rel=False)
-        if self.node_builder_from_splits is None:
-            self.node_builder_from_splits = NodeCreatorFromSplits(
-                chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap,
-            )
+    class Config:
+        arbitrary_types_allowed = True
 
     @classmethod
     def from_defaults(
@@ -377,6 +377,7 @@ class MarkdownStructuralNodeParser(NodeParser):
         """
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         splits = self.markdown_splitter.split_content(text, self.metadata)
+        splits = self.metadata_extractor.extract(splits)
         return self.node_builder_from_splits.create_nodes_from_splits(
             splits, node, self.include_metadata, self.metadata, self.id_func
         )
