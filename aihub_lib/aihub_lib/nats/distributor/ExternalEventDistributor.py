@@ -13,18 +13,18 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 
 logger = logging.getLogger(__name__)
 
 
-class WebSocketReceiver:
+class ExternalEventDistributor:
     """
     Processes events received from the user via WebSockets, transforming them into NATS/JetStream
     events that the rest of the system can consume. This class essentially bridges user actions
     back into the event-driven architecture.
 
-    ### Why WebSocketReceiver?
+    ### Why ExternalEventDistributor?
     Users might send messages, start commands, or respond to human-in-the-loop prompts via WebSockets.
     The server must:
     - Validate the user's thread membership.
@@ -46,7 +46,7 @@ class WebSocketReceiver:
 
     ### Example
     Suppose the user sends a message from the frontend UI. The frontend dispatches a `WSUserEvent` to the server.
-    `WebSocketReceiver` then:
+    `ExternalEventDistributor` then:
     - Verifies the user is in the thread.
     - If it's a display event, publishes it so other agents or components can see the user input.
     - If it's a start event, publishes a start event to trigger agent processing.
@@ -56,7 +56,7 @@ class WebSocketReceiver:
         self.nc_publisher = NCPublisher(nc)
         self.js_publisher = JSPublisher(js)
 
-    async def receive_event(self, ws_event: WSUserEvent, user: AuthenticatedUser):
+    async def distribute_event(self, ws_event: ExternalEvent, user: AuthenticatedUser):
         """
         Entry point for receiving a user event (WSUserEvent) from the WebSocket layer.
 
@@ -88,7 +88,7 @@ class WebSocketReceiver:
         if isinstance(ws_event.event, StartEvent):
             await self._handle_start_event(thread, ws_event, run_id)
 
-    async def _handle_start_event(self, thread: ThreadEntity, ws_event: WSUserEvent, run_id: str):
+    async def _handle_start_event(self, thread: ThreadEntity, ws_event: ExternalEvent, run_id: str):
         """
         Handle a StartEvent from the user.
 
@@ -115,7 +115,7 @@ class WebSocketReceiver:
             )
             await self.js_publisher.publish_event(ws_event.event, subject)
 
-    async def _handle_display_message(self, ws_event: WSUserEvent, run_id: str, user_id: str):
+    async def _handle_display_message(self, ws_event: ExternalEvent, run_id: str, user_id: str):
         """
         Handle a DisplayEvent from the user.
 
@@ -136,7 +136,7 @@ class WebSocketReceiver:
         )
         await self.nc_publisher.publish_event(ws_event.event, subject)
 
-    async def _handle_human_in_the_loop_response(self, thread: ThreadEntity, ws_event: WSUserEvent):
+    async def _handle_human_in_the_loop_response(self, thread: ThreadEntity, ws_event: ExternalEvent):
         """
         Handle a HumanInTheLoopResponseEvent.
 

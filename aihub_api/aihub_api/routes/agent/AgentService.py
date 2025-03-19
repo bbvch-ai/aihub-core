@@ -14,8 +14,8 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
-from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
@@ -153,7 +153,7 @@ class AgentService:
     @staticmethod
     async def send_event(
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         user: AuthenticatedUser,
         start_event: StartEvent,
         agent_class: str,
@@ -178,7 +178,7 @@ class AgentService:
             display_id=display_id or str(ObjectId()),
             run_id="*",
         )
-        ws_event = WSUserEvent(
+        ws_event = ExternalEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
             event=start_event,
@@ -188,7 +188,7 @@ class AgentService:
             ws_event=ws_event,
             topic_manager=topic_manager,
             nc=nc,
-            ws_receiver=ws_receiver,
+            external_event_distributor=external_event_distributor,
         )
 
         await resources.stop_signal.wait()

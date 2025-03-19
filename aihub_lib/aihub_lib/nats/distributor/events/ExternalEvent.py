@@ -7,15 +7,15 @@ from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
 
 
-class WSUserEvent(BaseModel):
+class ExternalEvent(BaseModel):
     """
-    Represents an event received from a user over a WebSocket connection. It includes:
+    Represents an event received from an external system like websockets or bot framework. It includes:
     - The `thread_id` and `display_id` indicating where this event should be routed.
     - A `UserMessageEvent` or `HumanInTheLoopResponseEvent` that the user sent.
 
     ### Why WSUserEvent?
-    Users interact with the system via the frontend UI. Their actions—like sending messages, responding
-    to prompts, or initiating runs—arrive at the server as raw data. `WSUserEvent`:
+    Users interact with the system via some service. Their actions—like sending messages, responding
+    to prompts, or initiating runs—arrive at the server as raw data. `ExternalEvent`:
     - Parses and validates the incoming JSON or binary data.
     - Identifies the event type and instantiates the appropriate event class.
     - Provides a consistent structure for the server to understand user intentions.
@@ -47,7 +47,7 @@ class WSUserEvent(BaseModel):
     )
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict) -> "WSUserEvent":
+    def deserialize_event(cls, data: bytes | str | dict) -> "ExternalEvent":
         """
         Deserialize incoming raw data (JSON string, bytes, or dict) into a WSUserEvent.
 

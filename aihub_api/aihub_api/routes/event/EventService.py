@@ -10,8 +10,8 @@ from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server import WSUserEvent
-from aihub_api.sockets.receiver import WebSocketReceiver
+from aihub_api.sockets.events.user_to_server import ExternalEvent
+from aihub_api.sockets.receiver import ExternalEventDistributor
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class EventService:
     By isolating event logic in a service, the controller remains clean and easy to maintain.
     The service deals with:
     - Database retrieval of persisted events.
-    - Handling user commands/events and relaying them to the correct subsystem (via WebSocketReceiver).
+    - Handling user commands/events and relaying them to the correct subsystem (via ExternalEventDistributor).
     - Sending errors back to the user if something goes wrong.
 
     ### Key Operations
@@ -54,9 +54,9 @@ class EventService:
 
     @staticmethod
     async def handle_ws_event(
-        event: WSUserEvent,
+        event: ExternalEvent,
         user_oid: str,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         ws_sender: WebSocketSender,
     ):
         """
@@ -65,7 +65,7 @@ class EventService:
         """
         try:
             logger.debug(f"Handling event: {event}")
-            await ws_receiver.receive_event(event, user_oid)
+            await external_event_distributor.distribute_event(event, user_oid)
         except Exception as e:
             traceback.print_exc()
             # If there's an error, notify the user with an ExceptionEvent

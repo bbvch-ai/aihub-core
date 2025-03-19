@@ -9,7 +9,7 @@ from fastapi import HTTPException, Security, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server import WSUserEvent
+from aihub_api.sockets.events.user_to_server import ExternalEvent
 
 from .EventService import EventService
 
@@ -91,7 +91,7 @@ class EventController(Controller):
             # User is authenticated at this point
             ws_manager = websocket.app.state.ws_manager
             ws_sender = websocket.app.state.ws_sender
-            ws_receiver = websocket.app.state.ws_receiver
+            external_event_distributor = websocket.app.state.external_event_distributor
 
             logger.debug(f"User {user.oid} connected to websocket")
             await ws_manager.connect(websocket, user.oid)
@@ -102,10 +102,10 @@ class EventController(Controller):
                 while True:
                     data = await websocket.receive_json()
                     logger.debug(f"Received data: {data}")
-                    event = WSUserEvent.deserialize_event(data)
+                    event = ExternalEvent.deserialize_event(data)
 
                     # Handle the received event
-                    await EventService.handle_ws_event(event, user.oid, ws_receiver, ws_sender)
+                    await EventService.handle_ws_event(event, user.oid, external_event_distributor, ws_sender)
 
             except WebSocketDisconnect as e:
                 logging.error(f"Websocket disconnected: {e}")
