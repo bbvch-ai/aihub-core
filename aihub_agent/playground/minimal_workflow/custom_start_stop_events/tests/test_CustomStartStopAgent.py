@@ -7,11 +7,11 @@ from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAg
 from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAgentConfig import (
     CustomStartStopEventAgentConfig,
 )
-from playground.minimal_workflow.custom_start_stop_events.events.CustomStartEvent import (
-    CustomStartEvent,
+from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStartEvent import (
+    MyCustomStartEvent,
     PydanticPayload,
 )
-from playground.minimal_workflow.custom_start_stop_events.events.CustomStopEvent import CustomStopEvent
+from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStopEvent import MyCustomStopEvent
 
 scenarios("../tests/features/custom_start_stop_agent.feature")
 
@@ -34,16 +34,16 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=CustomStartEvent(payload=PydanticPayload(payload=payload)),
+            start_event=MyCustomStartEvent(payload=PydanticPayload(payload=payload)),
             topic=topic,
         )
 
 
-@then(parsers.parse('a CustomStartEvent is present with payload "{payload}"'))
+@then(parsers.parse('a MyCustomStartEvent is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
 
 
-@then(parsers.parse('an CustomStopEvent event is present with payload "{payload}"'))
+@then(parsers.parse('an MyCustomStopEvent event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.get_event_of_type(CustomStopEvent).payload.payload == payload, "Agent received incorrect data"
+    assert agent_runner.get_event_of_type(MyCustomStopEvent).payload.payload == payload, "Agent received incorrect data"

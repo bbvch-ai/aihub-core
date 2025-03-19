@@ -7,5 +7,5 @@ class PydanticPayload(BaseModel):
     payload: str
 
 
-class CustomStartEvent(StartEvent):
+class MyCustomStartEvent(StartEvent):
     payload: PydanticPayload
