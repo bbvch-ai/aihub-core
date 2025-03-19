@@ -6,8 +6,6 @@ from nats.js import JetStreamContext
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.events import DisplayEvent, StartEvent
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
