@@ -1,7 +1,7 @@
 from .agent import AgentEvent
 from .chain import ChainEvent
 from .embedding import Embedding, EmbeddingEvent
-from .llm import LLMEvent, Message
+from .llm import LLMEvent, LLMStopEvent, Message
 from .reranker import RerankerEvent
 from .retriever import RetrieverEvent
 from .SemanticEvent import SemanticEvent
@@ -12,6 +12,7 @@ __all__ = [
     "ChainEvent",
     "EmbeddingEvent",
     "LLMEvent",
+    "LLMStopEvent",
     "RerankerEvent",
     "RetrieverEvent",
     "SemanticEvent",

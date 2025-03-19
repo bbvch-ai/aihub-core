@@ -2,10 +2,13 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
+from llama_index.core.base.llms.types import ChatMessage
 
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from aihub_api.events.create_input_model import create_input_model
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
@@ -14,7 +17,17 @@ AGENT_ID = "test_agent_1"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def agent_api_client():
     auth = NoAuthHandler()
-    controller = AgentController(auth=auth).discover_agents().get_agent()
+    controller = (
+        AgentController(auth=auth)
+        .discover_agents()
+        .get_agent()
+        .send_event_to(
+            AGENT_CLASS,
+            AGENT_ID,
+            start_event_type=UserMessageEvent,
+            stop_event_type=LLMStopEvent,
+        )
+    )
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()
@@ -48,3 +61,19 @@ async def test_get_agent(agent_api_client):
     assert data.get("agent_id") == AGENT_ID
     for key in ("agent_config", "start_events", "stop_events"):
         assert key in data
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_send_event_to_agent(agent_api_client):
+    """Test POST /agent/{agent_class}/{agent_id}/send_event returns correct agent details."""
+    user_message = create_input_model(UserMessageEvent)(messages=[ChatMessage(role="user", content="Hey!")])
+    response = await agent_api_client.post(
+        f"/agent/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
+    )
+    assert response.status_code == 200, f"Response: {response.text}"
+
+    data = response.json()
+    assert data.get("output_messages")
+    assert len(data.get("output_messages")) == 1
+    assert data.get("output_messages")[0].get("role") == "assistant"
+    assert data.get("output_messages")[0].get("content") == "First chunk.\nSecond chunk"

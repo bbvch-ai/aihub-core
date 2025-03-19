@@ -4,12 +4,25 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Dict, Optional, Type, Union
+from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 
 logger = logging.getLogger(__name__)
+
+
+def get_parent_classes_until_base(cls: Type, base_class: Type):
+    """Returns a set of parent class names up until the given base class (excluding the base itself)."""
+    parents = set()
+    if cls.__name__ == base_class.__name__:
+        return parents
+    for base in cls.__bases__:
+        if base is base_class:
+            continue  # Stop at the given base class
+        parents.add(base.__name__)
+        parents.update(get_parent_classes_until_base(base, base_class))
+    return parents
 
 
 class BaseEvent(BaseModel):
@@ -54,7 +67,7 @@ class BaseEvent(BaseModel):
     def __str__(self):
         return f"{self.__class__.__name__}({super().__str__()})"
 
-    @computed_field  # makes _type a computed property
+    @computed_field
     @property
     def _type(self) -> str:
         """
@@ -62,6 +75,12 @@ class BaseEvent(BaseModel):
         Used during deserialization to decide which subclass to instantiate.
         """
         return self._unknown_type or self.__class__.__name__
+
+    @computed_field
+    @property
+    def _parent_class_names(self) -> List[str]:
+        """Contains the names of all parent classes up until BaseEvent."""
+        return [self.__class__.__name__] + list(get_parent_classes_until_base(self.__class__, BaseEvent))
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:

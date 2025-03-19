@@ -1,5 +1,5 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.events import LLMEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import LLMEvent, LLMStopEvent, UserMessageEvent
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
@@ -18,5 +18,5 @@ class LLMWrappingAgent(Agent):
             return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
 
     @step()
-    async def stop_step(self, event: LLMEvent) -> StopEvent:
-        return StopEvent()
+    async def stop_step(self, event: LLMEvent) -> LLMStopEvent:
+        return LLMStopEvent(**event.model_dump())

@@ -4,15 +4,16 @@ import re
 from asyncio import Task
 from typing import AsyncGenerator, List, Optional, Tuple
 
-import httpx
 from aihub_lib.routes.chat.ChatService import ChatService
 from botbuilder.core import TurnContext
 from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity, ActivityTypes, Attachment, Entity, ErrorResponseException
+from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
 from fastapi import Request
 
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
+
+from .ContentExtractor import ContentExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +143,12 @@ class Service(ChatService):
         return ConversationEntity.get_conversation_is_mentioned(conversation_id)
 
     @staticmethod
-    def add_user_message_to_conversation(turn_context: TurnContext) -> ConversationEntity:
+    def delete_conversation_if_exists(turn_context: TurnContext):
+        conversation_id: str = turn_context.activity.conversation.id
+        ConversationEntity.delete_conversation(conversation_id)
+
+    @staticmethod
+    def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
         """
         ### What
         - Add the user message to the persisted conversation.
@@ -152,47 +158,18 @@ class Service(ChatService):
         """
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
-            content=Service._activity_to_content(turn_context.activity),
+            content=ContentExtractor.extract_content_from_activity(path=path, activity=turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
             name=turn_context.activity.from_property.name,
         )
         return Service.add_messages_to_conversation(turn_context, user_message)
 
     @staticmethod
-    def _activity_to_content(activity: Activity) -> List[Content]:
-        content: List[Content] = []
-        if activity.text:
-            content.append(Content(text=activity.text, type="text"))
-
-        if activity.attachments and len(activity.attachments) > 0:
-            content.extend(Service._attachments_to_content(activity.attachments))
-
-        return content
-
-    @staticmethod
-    def _attachments_to_content(attachments: List[Attachment]) -> List[Content]:
-        content = []
-        for attachment in attachments:
-            if attachment.content and attachment.content.download_url:
-                url = attachment.content.download_url
-            else:
-                url = attachment.content_url
-
-            if attachment.content_type.startswith("image/"):
-                content.append(Content(text=url, type="image_url"))
-            elif attachment.content_type == "text/plain":
-                content.append(Service._text_file_attachment_to_content(url, attachment.name))
-        return content
-
-    @staticmethod
-    def _text_file_attachment_to_content(url: str, file_name: str) -> Content:
-        response = httpx.get(url)
-        response.raise_for_status()
-        text = f"<file name='{file_name}'>{response.text}</file>"
-        return Content(text=text, type="text")
-
-    @staticmethod
-    def add_bot_message_to_conversation(turn_context: TurnContext, message: str) -> ConversationEntity:
+    def add_bot_message_to_conversation(
+        path: str,
+        turn_context: TurnContext,
+        message: str,
+    ) -> ConversationEntity:
         """
         ### What
         - Add the bot message to the persisted conversation.
@@ -202,7 +179,7 @@ class Service(ChatService):
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=Service._activity_to_content(Activity(text=message)),
+            content=ContentExtractor.extract_content_from_activity(path=path, activity=Activity(text=message)),
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )

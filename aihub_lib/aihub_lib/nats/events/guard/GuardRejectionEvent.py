@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from aihub_lib.nats.events import StopEvent
+from ..control import StopEvent
 
 
 class GuardRejectionEvent(StopEvent):

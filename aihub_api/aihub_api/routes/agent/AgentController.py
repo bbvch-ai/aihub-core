@@ -1,12 +1,22 @@
-from typing import Annotated, List
+import time
+from typing import Annotated, List, Type
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security
+from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from bson import ObjectId
+from fastapi import Body, Depends, HTTPException, Security
+from fastapi.params import Query
 from nats.aio.client import Client as NATS
+from stringcase import snakecase
 
+from aihub_api.events.create_input_model import create_input_model
+from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
@@ -75,5 +85,55 @@ class AgentController(Controller):
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             return await AgentService.get_agent(nc, agent_class, agent_id)
+
+        return self
+
+    def send_event_to(
+        self,
+        agent_class,
+        agent_id,
+        start_event_type: Type[StartEvent],
+        stop_event_type: Type[StopEvent],
+        route_postfix="/send_event",
+    ) -> "AgentController":
+        """
+        Generates an endpoint to which an StartEvent can be send and the endpoint answers with the agents
+        StopEvent.
+        """
+        agent_class_name = snakecase(agent_class)
+        agent_id = snakecase(agent_id)
+        name = f"send_event_to_{agent_class_name}_{agent_id}"
+        start_event_input_type = create_input_model(start_event_type)
+
+        if route_postfix.startswith("/"):
+            route_postfix = route_postfix[1:]
+        if route_postfix.endswith("/"):
+            route_postfix = route_postfix[:-1]
+
+        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name)
+        async def send_event(
+            nc: Annotated[NATS, Depends(use_nats)],
+            start_event_input: Annotated[start_event_input_type, Body],
+            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            user: AuthenticatedUser = Security(self.auth),
+            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            t: LocaleHandler = Depends(use_locale),
+        ) -> stop_event_type:
+            """
+            Send an event to a specific agent. Raises 403 if the user lacks access.
+            """
+            if not user.has_access_to_agent(agent_class, agent_id):
+                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
+            start_event = start_event_type(
+                event_id=str(ObjectId()),
+                created_at=time.time_ns(),
+                **start_event_input.model_dump(),
+                user=user,
+                locale=t.locale,
+            )
+            return await AgentService.send_event(
+                nc, ws_receiver, user, start_event, agent_class, agent_id, thread_id, display_id
+            )
 
         return self

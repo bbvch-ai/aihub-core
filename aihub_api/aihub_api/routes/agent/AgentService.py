@@ -2,13 +2,20 @@ import asyncio
 from asyncio import sleep
 from typing import List, Optional
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
+from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
+from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
@@ -142,3 +149,58 @@ class AgentService:
             return agent
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
+
+    @staticmethod
+    async def send_event(
+        nc: NATS,
+        ws_receiver: WebSocketReceiver,
+        user: AuthenticatedUser,
+        start_event: StartEvent,
+        agent_class: str,
+        agent_id: str,
+        thread_id: Optional[str] = None,
+        display_id: Optional[str] = None,
+    ) -> StopEvent:
+        """Sends an event to a specific agent."""
+        if thread_id:
+            thread = ThreadEntity.get_thread_by_id(thread_id)
+        else:
+            thread = ThreadEntity.create_thread(
+                "chat",
+                users=[User(user_id=user.oid)],
+                agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+            )
+
+        topic_manager = AgentThreadTopicManager(
+            agent_class=agent_class,
+            agent_id=agent_id,
+            thread_id=str(thread.id),
+            display_id=display_id or str(ObjectId()),
+            run_id="*",
+        )
+        ws_event = WSUserEvent(
+            thread_id=topic_manager.thread_id,
+            display_id=topic_manager.display_id,
+            event=start_event,
+        )
+        resources: JsonResources = await ChatService.start_json_event_interaction(
+            user=user,
+            ws_event=ws_event,
+            topic_manager=topic_manager,
+            nc=nc,
+            ws_receiver=ws_receiver,
+        )
+
+        await resources.stop_signal.wait()
+        await resources.subscriber.stop()
+
+        return resources.stop_event
+
+    @staticmethod
+    def clear_cache() -> None:
+        """
+        Clears the in-memory caches used for agent discovery. Useful for testing purposes to ensure fresh discovery
+        requests.
+        """
+        DISCOVER_AGENTS_CACHE.clear()
+        GET_AGENT_CACHE.clear()
