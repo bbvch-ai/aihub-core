@@ -1,8 +1,8 @@
 from typing import Annotated
 
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
@@ -111,7 +111,9 @@ class AgentChatController(Controller):
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
         ) -> Response:
             path: str = AgentChatService.get_path(request)
-            chat_bot: StreamAgentChatBot = StreamAgentChatBot(nc, external_event_distributor, agent_class, agent_id, path)
+            chat_bot: StreamAgentChatBot = StreamAgentChatBot(
+                nc, external_event_distributor, agent_class, agent_id, path
+            )
             adapter: CloudAdapter = AgentChatService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 

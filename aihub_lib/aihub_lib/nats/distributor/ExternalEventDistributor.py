@@ -5,6 +5,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.events import DisplayEvent, StartEvent
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -13,7 +14,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 
 logger = logging.getLogger(__name__)
 

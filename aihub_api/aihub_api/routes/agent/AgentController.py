@@ -5,10 +5,10 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.events import StartEvent, StopEvent
-from aihub_lib.routes.Controller import Controller
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.routes.Controller import Controller
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
 from fastapi.params import Query

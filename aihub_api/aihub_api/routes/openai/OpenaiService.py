@@ -14,10 +14,10 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import HumanInTheLoopRequestEvent
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
@@ -209,7 +209,9 @@ class OpenaiService:
                 agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
             )
 
-        return await OpenaiService.json_assistant(agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor)
+        return await OpenaiService.json_assistant(
+            agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
+        )
 
     @staticmethod
     async def json_assistant(

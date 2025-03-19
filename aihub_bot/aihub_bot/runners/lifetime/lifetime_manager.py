@@ -3,12 +3,11 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
 from fastapi import FastAPI
 from mongoengine import connect
 from nats.aio.client import Client as NATS
-
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 
 
 @asynccontextmanager

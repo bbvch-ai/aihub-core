@@ -11,6 +11,8 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import (
     ChunkEvent,
     DisplayEvent,
@@ -25,8 +27,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,9 @@ class ChatService:
             messages=messages,
             thread_id=thread_id,
         )
-        return await ChatService.start_json_event_interaction(user, ws_event, topic_manager, nc, external_event_distributor)
+        return await ChatService.start_json_event_interaction(
+            user, ws_event, topic_manager, nc, external_event_distributor
+        )
 
     @staticmethod
     async def start_json_event_interaction(

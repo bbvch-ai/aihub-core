@@ -23,7 +23,9 @@ class AgentChatBot(ActivityHandler):
     - Compared to the `OpenaiChatBot`, Agents can have advanced functionality (e.g. RAG).
     """
 
-    def __init__(self, nc: NATS, external_event_distributor: ExternalEventDistributor, agent_class: str, agent_id: str, path: str):
+    def __init__(
+        self, nc: NATS, external_event_distributor: ExternalEventDistributor, agent_class: str, agent_id: str, path: str
+    ):
         self.nc = nc
         self.external_event_distributor = external_event_distributor
         self.agent_class = agent_class
