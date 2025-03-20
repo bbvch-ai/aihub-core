@@ -234,7 +234,9 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_completion_request.chat_id),
+            thread_id=ThreadEntity.to_thread_id(
+                chat_completion_request.chat_id or chat_completion_request.metadata.get("chat_id")
+            ),
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -277,7 +279,9 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_completion_request.chat_id),
+            thread_id=ThreadEntity.to_thread_id(
+                chat_completion_request.chat_id or chat_completion_request.metadata.get("chat_id")
+            ),
         )
 
         async def sse_event_generator():

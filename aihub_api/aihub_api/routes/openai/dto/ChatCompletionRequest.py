@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, List, Optional, Union
 
-from openai.types import ChatModel, Metadata
+from openai.types import ChatModel
 from openai.types.chat import (
     ChatCompletionAudioParam,
     ChatCompletionMessageParam,
@@ -36,7 +36,7 @@ class ChatCompletionRequest(BaseModel):
     logprobs: Optional[bool] = None
     max_completion_tokens: Optional[int] = None
     max_tokens: Optional[int] = None
-    metadata: Optional[Metadata] = None
+    metadata: Optional[Dict] = None
     modalities: Optional[List[ChatCompletionModality]] = None
     n: Optional[int] = None
     parallel_tool_calls: Optional[bool] = None

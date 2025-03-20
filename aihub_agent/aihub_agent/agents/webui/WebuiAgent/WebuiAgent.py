@@ -66,8 +66,6 @@ class WebuiAgent(Agent):
         if buffer:
             await displayer.display_chunk(buffer, model_name=agent_config.assistant_name)
 
-        print("FINISH")
-
         # Create and return the stop event
         return LLMStopEvent(
             input_messages=[Message(role=msg.role, content=msg.content) for msg in event.messages],

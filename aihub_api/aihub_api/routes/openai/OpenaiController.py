@@ -189,6 +189,7 @@ class OpenaiController(Controller):
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
+            print(completion_request.metadata)
             completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion_with_assistants(
                 self.chat_models, completion_request.model, completion_request, user, nc, external_event_distributor
