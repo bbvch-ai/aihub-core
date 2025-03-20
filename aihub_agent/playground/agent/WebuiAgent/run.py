@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from aihub_agent.agents.webui.WebuiAgent.WebuiAgent import WebuiAgent
 from aihub_agent.agents.webui.WebuiAgent.WebuiAgentConfig import WebuiAgentConfig, WebuiFeatures
@@ -14,11 +15,11 @@ async def main():
         agent_type=WebuiAgent,
         agent_config=WebuiAgentConfig(
             agent_id="deepseek",
-            name=LocaleString(en="Dev Agent"),
-            description=LocaleString(en="This is an agent that can be used to develop the frontend"),
+            name=LocaleString(en="Webui Agent"),
+            description=LocaleString(en="This is an agent that wraps an openai webui assistant"),
             system_prompt=LocaleString(en="You are an agent"),
             webui_base_url="http://localhost:8080",
-            webui_bearer_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMzYyMjYwLTk5YzEtNDFjZC1hYmU4LTcyN2JhOWM2ZGFhMCJ9.dnIaLs4OdwQ6ZsEgKaWpNFeQyfOSHCIT2wu83ZeKZgE",
+            webui_bearer_token=os.environ.get("WEBUI_BEARER_TOKEN"),
             assistant_name="deepseek",
             features=WebuiFeatures(web_search=False),
         ),
