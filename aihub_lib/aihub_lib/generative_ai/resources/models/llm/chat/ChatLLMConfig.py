@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, AsyncIterator
 
 from llama_index.core.llms import LLM
 from pydantic import Field
@@ -56,7 +56,7 @@ class ChatLLMConfig(LLMConfig):
         displayer: EventDisplayer,
         model_parameter: Optional[ChatLLMParameter] = None,
         system_prompt: Optional[str] = None,
-    ):
+    ) -> AsyncIterator[LLM]:
         """
         Async context manager that yields an LLM configured with merged parameters and a system prompt.
         After the block, it reports costs to `displayer`.

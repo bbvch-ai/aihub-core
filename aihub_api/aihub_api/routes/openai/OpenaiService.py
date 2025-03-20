@@ -162,6 +162,7 @@ class OpenaiService:
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
         del function_args["chat_id"]
+        function_args = {k: v for k, v in function_args.items() if v is not None}
         if function_args.get("stream", False):
 
             async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:

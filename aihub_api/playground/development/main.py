@@ -86,14 +86,14 @@ async def main():
                 AzureOpenAILLMConfig(
                     name="gpt-4o",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
-                    api_version="2024-08-01-preview",
+                    api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
                 ),
                 AzureOpenAILLMConfig(
                     name="o1-mini",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
-                    api_version="2024-08-01-preview",
+                    api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
                 ),
