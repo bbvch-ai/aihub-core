@@ -1,4 +1,4 @@
-from typing import Optional, Type
+from typing import Optional, Type, List
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -29,9 +29,11 @@ async def context_sufficient_guard(
     t: LocaleHandler,
     user_query: str,
     context: str,
+    prev_queries: List[str],
 ) -> ContextGuardResult:
     sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.message"))
-
+    if prev_queries:
+        prev_queries = "\n".join(prev_queries)
     llm_kwargs = {}
     if not llm.metadata.is_function_calling_model:
         llm_kwargs["tool_choice"] = NOT_GIVEN
@@ -42,6 +44,7 @@ async def context_sufficient_guard(
         llm_kwargs=llm_kwargs,
         user_query=user_query,
         context=context,
+        prev_queries=prev_queries,
     )
 
     guard_result = ContextGuardResult.model_validate(result)

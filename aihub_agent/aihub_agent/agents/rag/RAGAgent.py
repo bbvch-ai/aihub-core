@@ -58,6 +58,7 @@ class RAGAgent(Agent):
         Truncates incoming chat messages to fit within the configured token limit
         """
         await run_context.set("hop_count", 1)
+        await run_context.set("prev_queries", [])
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
             number_of_input_tokens=agent_config.number_of_input_tokens,
@@ -95,6 +96,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        run_context: RunContext,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         if not agent_config.few_shot_guard_examples:
             return FewShotAcceptEvent(reasoning=t("agent.thought.no_few_shot_examples"))
@@ -108,6 +110,8 @@ class RAGAgent(Agent):
                     examples=agent_config.few_shot_guard_examples,
                 )
             else:
+                prev_queries = await run_context.get("prev_queries", [])
+                await run_context.set("prev_queries", prev_queries.append(event.new_query))
                 guard_result = await few_shot_guard(
                     llm=llm,
                     t=t,
@@ -183,17 +187,22 @@ class RAGAgent(Agent):
     ) -> ContextSufficientEvent | ContextInsufficientEvent:
         """
         Guards the context to ensure it is sufficient for generating a response.
+        If it is insufficient a new query is generated to find more data in order
+        to generate the response.
         """
         if not agent_config.check_context_sufficiency:
             return ContextSufficientEvent()
+
+        prev_queries = await run_context.get("prev_queries", [])
         async with agent_config.llm.cost_reporting_llm(
-            displayer, system_prompt=t("lib.guards.context_sufficient_guard.message")
+            displayer, system_prompt=t("lib.guards.context_sufficient_guard.prompt")
         ) as llm:
             guard_result = await context_sufficient_guard(
                 llm=llm,
                 t=t,
                 user_query=user_query_event.condensed_chat_message.content,
                 context=event.context_message.content,
+                prev_queries=prev_queries,
             )
 
         if guard_result.success:
@@ -201,7 +210,7 @@ class RAGAgent(Agent):
             return ContextSufficientEvent()
 
         hop_count = await run_context.get("hop_count")
-        if hop_count < agent_config.max_hops:
+        if hop_count == agent_config.max_hops:
             await displayer.display_thought(t("agent.thought.max_hops_reached"))
             return ContextInsufficientEvent(reasoning=guard_result.reasoning)
 

@@ -2,21 +2,24 @@ import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
-    SelfHostedLLMConfig,
-    SelfHostedLLMParameter,
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
+    AzureOpenAILLMConfig,
+    AzureOpenAIParameter,
 )
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StartEvent
+from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
 
@@ -33,17 +36,13 @@ async def main():
             system_prompt=LocaleString(
                 en="You're an agent answering user requests. Only use the context information provided."
             ),
-            llm=SelfHostedLLMConfig(
-                name="unsloth/Llama-3.2-1B-Instruct",
-                base_url="http://localhost:8182/v1",
-                api_key=None,
-                context_size=512,
-                is_chat_model=True,
-                is_function_calling_model=False,
-                default_parameter=SelfHostedLLMParameter(
-                    logit_bias=None,
-                    logprobs=None,
-                ),
+            llm=AzureOpenAILLMConfig(
+                name="gpt-4o",
+                base_url="https://aihub-dev-openai-che.openai.azure.com/",
+                api_version="2024-08-01-preview",
+                prompt_tokens_costs_per_thousand=0.0045,
+                completion_tokens_costs_per_thousand=0.0133,
+                default_parameter=AzureOpenAIParameter(temperature=0.0),
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=SelfHostedEmbeddingConfig(
@@ -88,6 +87,15 @@ async def main():
                 "\n"
                 "Instruction: Based on the above documents, provide a detailed answer for the user question below."
             ),
+            check_context_sufficiency=True,
+            max_hops=3,
+            few_shot_guard_examples=[
+                FewShotGuardExample(
+                    user=LocaleString(en="", de="", fr="", it=""),
+                    success=True,
+                    reason=LocaleString(en="", de="", fr="", it=""),
+                )
+            ],
         ),
     )
 
@@ -99,14 +107,8 @@ async def main():
     async with runner.test_run(delay_before_stop=60) as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(
-                messages=[
-                    ChatMessage(
-                        content="You're an agent answering user requests. Only use the context information provided.",
-                        role=MessageRole.SYSTEM,
-                    ),
-                    ChatMessage(content="Hey! What is AI?", role=MessageRole.USER),
-                ]
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(content="Hey. What is AI?", role=MessageRole.USER)], user=fake_user(), locale="en"
             ),
         )
 

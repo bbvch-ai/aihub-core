@@ -71,10 +71,11 @@ context_sufficient_guard:
   new_query: |
     A refined query to get better search results if the context was insufficient.
   prompt: |
-    I will give you a context and a question.
+    I will give you a context, a question, and previous queries if any have been generated.
     If the question can be answered with the provided context, then the conversation may continue (success=True).
     If answering the question is not possible with the context, then the conversation should be terminated (success=False).
-    First, think about how to decide, and then determine whether the conversation can be successfully continued or not.
+    First, think about how to decide, and then determine whether the conversation can be successfully continued or not. 
+    Second, make sure your new query is unique enough compared to the previous ones.
   message: |
     Question:
     <Question>
@@ -84,3 +85,7 @@ context_sufficient_guard:
     <Context>
     {context}
     </Context>
+    Previous Queries:
+    <Previous_Queries>
+    {prev_queries}
+    <\Previous_Queries>
