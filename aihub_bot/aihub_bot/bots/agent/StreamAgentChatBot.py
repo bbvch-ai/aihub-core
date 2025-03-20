@@ -2,6 +2,7 @@ import asyncio
 from asyncio import Task
 from typing import AsyncGenerator
 
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity, ActivityTypes
 from typing_extensions import override
@@ -44,7 +45,8 @@ class StreamAgentChatBot(AgentChatBot):
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             nc=self.nc,
-            ws_receiver=self.ws_receiver,
+            external_event_distributor=self.external_event_distributor,
+            thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
         )
 
         await typing

@@ -1,7 +1,6 @@
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
-from bson import ObjectId
 
 
 class EventPersister:
@@ -31,17 +30,4 @@ class EventPersister:
 
     async def persist_event(self, event: BaseEvent, topic: AgentTopic) -> None:
         """Persist the given event along with its topic metadata into MongoDB."""
-        persisted_entity = PersistedEventEntity(
-            id=ObjectId(),
-            agent_class=topic.agent_class,
-            agent_id=topic.agent_id,
-            thread_id=topic.thread_id,
-            display_id=topic.display_id,
-            run_id=topic.run_id,
-            event_id=event.event_id,
-            event_type=topic.event_type,
-            event_name=topic.event_name,
-            event_data=event.model_dump(),
-        )
-        persisted_entity.switch_db(self.db)
-        persisted_entity.save()
+        PersistedEventEntity.persist_event(event, topic, self.db)

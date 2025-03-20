@@ -2,16 +2,15 @@ import asyncio
 import inspect
 import logging
 import traceback
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin, Awaitable
+from typing import Annotated, Any, Awaitable, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
-from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent, ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -164,7 +163,7 @@ class Dispatcher:
         run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
         thread_context = ThreadContext(self.redis, topic.thread_id)
 
-        if isinstance(event, StartEvent):
+        if event.is_start_event:
             logger.debug(f"Handling StartEvent: {event.__class__.__name__}")
             telemetry_headers = self.tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
@@ -175,7 +174,7 @@ class Dispatcher:
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
-        if isinstance(event, StopEvent):
+        if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.__class__.__name__}")
             # Clean up run-specific data
             await run_context.delete_all()
@@ -183,7 +182,7 @@ class Dispatcher:
             await self.step_store.delete_all(topic.run_id)
             return
 
-        if isinstance(event, ExceptionEvent):
+        if event.is_exception_event:
             logger.debug(f"Handling ExceptionEvent: {event.__class__.__name__}")
             # Mark run as crashed so no further steps are executed
             await self.step_store.mark_run_as_crashed(topic.run_id)
@@ -402,7 +401,7 @@ class Dispatcher:
                 await self.tracer.trace_step_stop(step_span, result)
 
                 for event in result:
-                    if isinstance(event, HumanInTheLoopRequestEvent):
+                    if event.is_hitl_request_event:
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
                         event.topic = AgentTopic.from_partial_topic(
@@ -415,7 +414,7 @@ class Dispatcher:
                             event_id=event.event_id,
                         )
 
-                    if isinstance(event, AgentInTheLoopRequestEvent):
+                    if event.is_aitl_request_event:
                         logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
                         await self.trigger_agent_in_the_loop(event, topic)
 
@@ -479,8 +478,8 @@ class Dispatcher:
                 raise ValueError(f"[{method.__name__}] Missing required event for parameter '{param.name}'")
 
             if isinstance(event_value, list):
-                all_input_events.extend([event for event in event_value if isinstance(event, ControlEvent)])
-            elif isinstance(event_value, ControlEvent):
+                all_input_events.extend([event for event in event_value if event.is_control_event])
+            elif isinstance(event_value, BaseEvent) and event_value.is_control_event:
                 all_input_events.append(event_value)
         return all_input_events, kwargs
 
@@ -514,12 +513,12 @@ class Dispatcher:
         start_event = aitl_request_event.start_event
 
         async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
-            if isinstance(aitl_event, StopEvent):
+            if aitl_event.is_stop_event:
                 aitl_response = response_event_type(stop_event=aitl_event)
                 logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
                 await event_subscriber.stop()
                 await self.publish_event(aitl_response, topic)
-            if isinstance(aitl_event, ExceptionEvent):
+            if aitl_event.is_exception_event:
                 aitl_exception = exception_event_type(exception_event=aitl_event)
                 logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
                 await event_subscriber.stop()
@@ -558,9 +557,9 @@ class Dispatcher:
         Uses the per-thread topic manager to form the right event subject and publishes via JSPublisher.
         """
         topic_manager = self.get_topic_manager_for_thread(topic)
-        if isinstance(event, ControlEvent):
+        if event.is_control_event:
             subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
             await self.js_publisher.publish_event(event, subject)
-        if isinstance(event, DisplayEvent):
+        if event.is_display_event:
             subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
             await self.nc_publisher.publish_event(event, subject)

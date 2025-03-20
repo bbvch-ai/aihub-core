@@ -9,9 +9,9 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig i
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.Controller import Controller
-from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import Body, Depends, File, Form, Security, UploadFile
 from llama_index.llms.openai import OpenAI
 from nats.aio.client import Client as NATS
@@ -167,6 +167,7 @@ class OpenaiController(Controller):
             completion_request: Annotated[ChatCompletionRequest, Body],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
+            completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion(
                 self.chat_models, completion_request.model, completion_request.model_dump()
             )
@@ -183,11 +184,12 @@ class OpenaiController(Controller):
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
-            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
+            completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion_with_assistants(
-                self.chat_models, completion_request.model, completion_request, user, nc, ws_receiver
+                self.chat_models, completion_request.model, completion_request, user, nc, external_event_distributor
             )
 
         return self

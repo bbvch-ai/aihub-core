@@ -5,7 +5,6 @@ from aihub_lib.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoo
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (
     OrchestrationResultEvent,
 )
-from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.WorkerStopEvent import WorkerStopEvent
 
 
 class OrchestratorAgent(Agent):
@@ -17,9 +16,7 @@ class OrchestratorAgent(Agent):
     @step()
     async def end_step(self, response: AgentInTheLoop.response) -> OrchestrationResultEvent:
         print("[OrchestratorAgent.end_step]", response.stop_event)
-        if isinstance(response.stop_event, WorkerStopEvent):
-            return OrchestrationResultEvent(result=response.stop_event.result)
-        raise ValueError("Unexpected stop event")
+        return OrchestrationResultEvent(result=response.stop_event.result)
 
     @step()
     async def exception_step(self, response: AgentInTheLoop.exception) -> OrchestrationResultEvent:

@@ -9,7 +9,7 @@ from fastapi import HTTPException, Security, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server import WSUserEvent
+from aihub_api.sockets.events.user_to_server import ExternalEvent
 
 from .EventService import EventService
 
@@ -28,19 +28,6 @@ class EventController(Controller):
     - Maintain a live WebSocket connection for sending commands and receiving updates in real-time.
 
     The `EventController` provides HTTP and WebSocket endpoints to handle these use cases.
-
-    ### Endpoints
-    - `GET /event/`: Returns all events associated with the authenticated user.
-    - `WEBSOCKET /event/ws`: Establishes a real-time, stateful connection allowing the client to send
-      `WSUserEvent` messages and receive server updates (`WSServerEvent`), including errors and progress notifications.
-
-    ### Authentication
-    Events typically contain sensitive user or agent data. Authentication ensures only authorized users
-    access their events and send commands over the WebSocket.
-
-    ### Error Handling
-    If the user is not authorized or the token is invalid, the WebSocket is closed with an appropriate code.
-    Any exceptions are caught, and `ExceptionEvent` may be sent back to the client as feedback.
     """
 
     def __init__(self, route: str = "/event", auth: AuthHandler | None = None):
@@ -64,7 +51,7 @@ class EventController(Controller):
         async def websocket_endpoint(websocket: WebSocket):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can send `WSUserEvent`s and receive responses (WSServerEvent or errors).
+            If the token is valid, the user can send `ExternalEvent`s and receive responses (WSServerEvent or errors).
             """
             await websocket.accept()  # Accept the connection first
 
@@ -91,7 +78,7 @@ class EventController(Controller):
             # User is authenticated at this point
             ws_manager = websocket.app.state.ws_manager
             ws_sender = websocket.app.state.ws_sender
-            ws_receiver = websocket.app.state.ws_receiver
+            external_event_distributor = websocket.app.state.external_event_distributor
 
             logger.debug(f"User {user.oid} connected to websocket")
             await ws_manager.connect(websocket, user.oid)
@@ -102,10 +89,10 @@ class EventController(Controller):
                 while True:
                     data = await websocket.receive_json()
                     logger.debug(f"Received data: {data}")
-                    event = WSUserEvent.deserialize_event(data)
+                    event = ExternalEvent.deserialize_event(data)
 
                     # Handle the received event
-                    await EventService.handle_ws_event(event, user.oid, ws_receiver, ws_sender)
+                    await EventService.handle_external_event(event, user.oid, external_event_distributor, ws_sender)
 
             except WebSocketDisconnect as e:
                 logging.error(f"Websocket disconnected: {e}")

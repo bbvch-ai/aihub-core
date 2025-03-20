@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, DisplayEvent, StartEvent, StopEvent
+from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
@@ -90,7 +90,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         This simulates an agent run, where after receiving a start signal, the agent responds
         with chunks, cost events, etc., and finally a stop signal.
         """
-        if isinstance(event, StartEvent):
+        if event.is_start_event:
             for sim_event in self.simulated_events:
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
@@ -130,14 +130,14 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
             self.topic_manager, thread_id=topic.thread_id, display_id=topic.display_id, run_id=topic.run_id
         )
-        if isinstance(event, ControlEvent):
+        if event.is_control_event:
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(
                 event.__class__.__name__, event.event_id
             )
             logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
-        if isinstance(event, DisplayEvent):
+        if event.is_display_event:
             subject = thread_topic_manager.get_subject_for_display_event_in_thread(
                 event.__class__.__name__, event.event_id
             )

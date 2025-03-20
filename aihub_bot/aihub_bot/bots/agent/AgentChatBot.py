@@ -1,9 +1,11 @@
 import asyncio
 from asyncio import Task
 
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import Activity, ActivityTypes
+from botframework.connector import Channels
 from nats.aio.client import Client as NATS
 from typing_extensions import override
 
@@ -21,12 +23,25 @@ class AgentChatBot(ActivityHandler):
     - Compared to the `OpenaiChatBot`, Agents can have advanced functionality (e.g. RAG).
     """
 
-    def __init__(self, nc: NATS, ws_receiver: WebSocketReceiver, agent_class: str, agent_id: str, path: str):
+    def __init__(
+        self, nc: NATS, external_event_distributor: ExternalEventDistributor, agent_class: str, agent_id: str, path: str
+    ):
         self.nc = nc
-        self.ws_receiver = ws_receiver
+        self.external_event_distributor = external_event_distributor
         self.agent_class = agent_class
         self.agent_id = agent_id
         self.path = path
+
+    @override
+    async def on_conversation_update_activity(self, turn_context: TurnContext):
+        if (
+            turn_context.activity.channel_id == Channels.ms_teams
+            and turn_context.activity.members_added is not None
+            and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
+        ):
+            AgentChatService.delete_conversation_if_exists(turn_context=turn_context)
+
+        return super().on_conversation_update_activity(turn_context)
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
@@ -48,7 +63,8 @@ class AgentChatBot(ActivityHandler):
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             nc=self.nc,
-            ws_receiver=self.ws_receiver,
+            external_event_distributor=self.external_event_distributor,
+            thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
         )
 
         await typing
