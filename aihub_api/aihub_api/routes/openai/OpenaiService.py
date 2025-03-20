@@ -166,7 +166,6 @@ class OpenaiService:
         chat_model, _ = chat_model_config.to_llama_index()
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
-        del function_args["chat_id"]
         function_args = {k: v for k, v in function_args.items() if v is not None}
         if function_args.get("stream", False):
 
@@ -227,6 +226,7 @@ class OpenaiService:
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
     ):
+        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -234,9 +234,7 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(
-                chat_completion_request.chat_id or chat_completion_request.metadata.get("chat_id")
-            ),
+            thread_id=ThreadEntity.to_thread_id(chat_id),
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -272,6 +270,7 @@ class OpenaiService:
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
     ):
+        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -279,9 +278,7 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(
-                chat_completion_request.chat_id or chat_completion_request.metadata.get("chat_id")
-            ),
+            thread_id=ThreadEntity.to_thread_id(chat_id),
         )
 
         async def sse_event_generator():

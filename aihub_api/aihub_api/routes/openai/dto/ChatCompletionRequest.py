@@ -18,8 +18,6 @@ from typing_extensions import Annotated, Literal
 
 class ChatCompletionRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
-    chat_id: Annotated[Optional[str], Field(description="ID of the chat to complete.")] = None
-
     messages: Annotated[
         Optional[List[ChatCompletionMessageParam]], Field(description="Messages to complete the chat with.")
     ]
