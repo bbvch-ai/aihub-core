@@ -13,14 +13,14 @@ async def main():
     runner = AgentTestRunner(
         agent_type=WebuiAgent,
         agent_config=WebuiAgentConfig(
-            agent_id="dev_agent",
+            agent_id="deepseek",
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             system_prompt=LocaleString(en="You are an agent"),
             webui_base_url="http://localhost:8080",
             webui_bearer_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMzYyMjYwLTk5YzEtNDFjZC1hYmU4LTcyN2JhOWM2ZGFhMCJ9.dnIaLs4OdwQ6ZsEgKaWpNFeQyfOSHCIT2wu83ZeKZgE",
             assistant_name="deepseek",
-            features=WebuiFeatures(web_search=False)
+            features=WebuiFeatures(web_search=False),
         ),
     )
 

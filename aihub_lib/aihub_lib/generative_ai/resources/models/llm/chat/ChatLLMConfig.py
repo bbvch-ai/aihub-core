@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from typing import Callable, List, Optional, Tuple, AsyncIterator
+from typing import AsyncIterator, Callable, List, Optional, Tuple
 
 from llama_index.core.llms import LLM
 from pydantic import Field

@@ -64,7 +64,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS
+        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS, exclude_webui_agents: bool
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
@@ -77,6 +77,11 @@ class OpenaiService:
             for agent_dto in agent_dtos
             if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))
         ]
+
+        # Ensures we have no recursive webui agent discovery
+        if exclude_webui_agents:
+            agent_dtos = [agent_dto for agent_dto in agent_dtos if agent_dto.agent_class != "WebuiAgent"]
+
         assistants = [
             ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
             for agent_dto in agent_dtos

@@ -517,7 +517,7 @@ async def main():
                 f"{r.get('nats_throughput_kb', 0):.2f}",
                 f"{r.get('percent_of_max_throughput', 0):.2f}%",
                 "✓",
-                ""
+                "",
             ]
             table_data.append(row_data)
         else:

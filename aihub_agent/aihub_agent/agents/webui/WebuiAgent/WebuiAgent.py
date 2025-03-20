@@ -1,106 +1,81 @@
+import httpx
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.nats.events import LLMEvent, LLMStopEvent, UserMessageEvent
+from aihub_lib.nats.events.semantic import Message
+
 from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.webui.WebuiAgent.utils import _display_streamed_content, _parse_sse_chunk
 from aihub_agent.agents.webui.WebuiAgent.WebuiAgentConfig import WebuiAgentConfig
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.events import UserMessageEvent, LLMEvent, LLMStopEvent
-from aihub_lib.nats.events.semantic import Message
-import httpx
-import json
 
 
 class WebuiAgent(Agent):
-
     @step()
     async def start_step(
-            self,
-            agent_config: WebuiAgentConfig,
-            event: UserMessageEvent,
-            displayer: EventDisplayer,
+        self,
+        agent_config: WebuiAgentConfig,
+        event: UserMessageEvent,
+        displayer: EventDisplayer,
     ) -> LLMEvent:
+        # Initialize response tracking
         aggregate = ""
         buffer = ""
         max_buffer_length = 500
 
-        messages = event.messages
-
-        # Iterate over streamed chunks from the LLM
+        # Prepare request data
         url = f"{agent_config.webui_base_url}/api/chat/completions"
-        token = agent_config.webui_bearer_token
-        body = {
+        headers = {"Authorization": f"Bearer {agent_config.webui_bearer_token}"}
+
+        # Format messages for the API
+        formatted_messages = [{"role": msg.role, "content": msg.content} for msg in event.messages]
+
+        # Prepare request body
+        request_body = {
             "stream": True,
             "model": agent_config.assistant_name,
-            "messages": [{"role": msg.role, "content": msg.content} for msg in messages],
+            "messages": formatted_messages,
             "features": {
                 "image_generation": False,
                 "code_interpreter": False,
                 "web_search": agent_config.features.web_search,
             },
-            "model_item": {
-                "id": agent_config.assistant_name
-            }
+            "model_item": {"id": agent_config.assistant_name},
         }
 
+        usage = {"completion_tokens": -1, "prompt_tokens": -1, "total_tokens": -1}
+
+        # Stream response from API
         async with httpx.AsyncClient() as client:
-            async with client.stream(
-                    "POST",
-                    url,
-                    json=body,
-                    headers={"Authorization": f"Bearer {token}"},
-                    timeout=60.0
-            ) as response:
+            async with client.stream("POST", url, json=request_body, headers=headers, timeout=60.0) as response:
                 response.raise_for_status()
 
-                # Process the streaming response
+                # Process each line of the streaming response
                 async for line in response.aiter_lines():
-                    # Skip empty lines
-                    if not line.strip():
-                        continue
+                    content_or_usage = await _parse_sse_chunk(line)
 
-                    # Check for SSE format (data: prefix)
-                    if line.startswith("data: "):
-                        # Remove the "data: " prefix
-                        data = line[6:]
+                    if type(content_or_usage) is str:
+                        aggregate += content_or_usage
+                        buffer = await _display_streamed_content(
+                            content_or_usage, buffer, max_buffer_length, displayer, agent_config.assistant_name
+                        )
 
-                        # Check for end of stream marker
-                        if data == "[DONE]":
-                            break
+                    if type(content_or_usage) is dict:
+                        usage = content_or_usage
 
-                        try:
-                            # Parse the JSON data
-                            chunk_data = json.loads(data)
-
-                            # Extract content from the chunk
-                            content = ""
-                            if "choices" in chunk_data and chunk_data["choices"]:
-                                delta = chunk_data["choices"][0].get("delta", {})
-                                content = delta.get("content", "")
-
-                            if content:
-                                aggregate += content
-                                buffer += content
-
-                                # Flush buffer at newline boundaries
-                                while "\n" in buffer:
-                                    section, buffer = buffer.split("\n", 1)
-                                    await displayer.display_chunk(section + "\n", model_name=agent_config.assistant_name)
-
-                                # If no newline but buffer large, flush to avoid delays
-                                if len(buffer) > max_buffer_length:
-                                    await displayer.display_chunk(buffer, model_name=agent_config.assistant_name)
-                                    buffer = ""
-
-                        except json.JSONDecodeError:
-                            # Handle malformed JSON
-                            continue
-
-        # Flush remaining buffer after streaming finishes
+        # Flush any remaining content in buffer
         if buffer:
             await displayer.display_chunk(buffer, model_name=agent_config.assistant_name)
 
+        print("FINISH")
+
+        # Create and return the stop event
         return LLMStopEvent(
-            input_messages=[Message(role=msg.role, content=msg.content) for msg in messages],
+            input_messages=[Message(role=msg.role, content=msg.content) for msg in event.messages],
             output_messages=[Message(role="assistant", content=aggregate)],
-            invocation_parameters=body,
+            invocation_parameters=request_body,
             chat_model_name=agent_config.assistant_name,
             provider="open-webui",
+            token_count_prompt=usage["prompt_tokens"],
+            token_count_completion=usage["completion_tokens"],
+            token_count_total=usage["total_tokens"],
         )

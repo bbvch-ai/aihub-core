@@ -120,7 +120,7 @@ async def main():
                 )
             ],
         )
-        .get_models_with_assistants()
+        .get_models_with_assistants(exclude_webui_agents=True)
         .get_model_with_assistants()
         .get_embeddings()
         .chat_completion_with_assistants()
