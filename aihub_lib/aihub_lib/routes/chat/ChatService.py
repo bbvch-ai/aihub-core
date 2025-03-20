@@ -19,6 +19,7 @@ from aihub_lib.nats.events import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StopEvent,
+    ExceptionEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -45,7 +46,9 @@ class JsonResources:
     chunk_events: List[ChunkEvent]
     costs: LLMCosts
     model_name: str
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent] = None  # Added field to store the final StopEvent
+    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = (
+        None  # Added field to store the final StopEvent
+    )
 
 
 class ChatService:
@@ -167,6 +170,11 @@ class ChatService:
                 resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
@@ -248,6 +256,11 @@ class ChatService:
             elif event.is_llm_cost_event:
                 resources.costs += event
                 resources.model_name = event.llm_name
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await resources.subscriber.stop()
+                resources.stop_signal.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
