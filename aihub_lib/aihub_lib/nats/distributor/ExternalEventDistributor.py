@@ -146,13 +146,6 @@ class ExternalEventDistributor:
 
         assert str(thread.id) == topic.thread_id, f"Thread ID mismatch: {thread.id} != {topic.thread_id}"
 
-        # Check if agent is in the thread
-        for agent in thread.agents:
-            if agent.agent_id == topic.agent_id and agent.agent_class == topic.agent_class:
-                break
-        else:
-            raise Exception(f"Agent {topic.agent_id} of class {topic.agent_class} is not in thread {topic.thread_id}")
-
         topic_manager = AgentThreadTopicManager(
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,

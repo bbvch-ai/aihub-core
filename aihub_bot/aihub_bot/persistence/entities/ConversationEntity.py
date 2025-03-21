@@ -34,7 +34,7 @@ class ConversationEntity(Document):
     """
 
     meta = {
-        "collection": "conversations",
+        "collection": "bot_conversations",
         "strict": True,
     }
     is_mentioned = BooleanField(default=False)

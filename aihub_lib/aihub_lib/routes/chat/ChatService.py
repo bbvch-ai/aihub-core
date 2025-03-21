@@ -90,14 +90,17 @@ class ChatService:
         logger.debug(f"Created thread: {thread.id}")
 
         hitl_requests = PersistedEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
+        logger.debug(f"hitl_requests: {hitl_requests}")
+
         hitl_responses = PersistedEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
+        logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
 
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = hitl_requests[-1]
             event = HumanInTheLoopResponseEvent(
-                response=messages[-1]["content"],
+                response=messages[-1].content,
                 request_event=HumanInTheLoopRequestEvent.deserialize_event(open_hitl_request.event_data),
             )
             display_id = event.request_event.topic.display_id

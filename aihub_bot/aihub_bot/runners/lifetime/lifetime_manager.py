@@ -18,7 +18,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db="aihub_bot",
+        db="aihub",
         host=CosmosAccess().get_connection_string(),
     )
 
