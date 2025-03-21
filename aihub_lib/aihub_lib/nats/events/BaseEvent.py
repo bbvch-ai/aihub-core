@@ -8,6 +8,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
+from typing_extensions import override
 
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
@@ -48,10 +49,18 @@ class BaseEvent(BaseModel):
     _unknown_data: Optional[Dict[str, Any]] = PrivateAttr(None)
     _unknown_parent_classes: Optional[List[str]] = PrivateAttr(None)
 
+    _jetstream_sequence: Optional[int] = PrivateAttr(None)
+
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     def __str__(self):
         return f"{self.__class__.__name__}({super().__str__()})"
+
+    @property
+    def sequence_number(self):
+        if self._jetstream_sequence is None:
+            raise ValueError("Sequence number is not set for this event.")
+        return self._jetstream_sequence
 
     @computed_field
     @property
@@ -240,6 +249,7 @@ class BaseEvent(BaseModel):
         event_dict["created_at"] = created_datetime.strftime("%Y-%m-%d %H:%M:%S.%f") + f"{created_at % 1_000:03d}"
         return event_dict
 
+    @override
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         """
         Serializes the event into a dictionary. If this event was originally unknown,
@@ -257,3 +267,11 @@ class BaseEvent(BaseModel):
             **self._unknown_data,
             **data,
         }
+
+    @override
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """
+        Serializes the event into a JSON string. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        return json.dumps(self.model_dump(**kwargs), default=str)

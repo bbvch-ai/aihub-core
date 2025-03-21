@@ -153,6 +153,7 @@ class JetStreamEventStore:
                             try:
                                 topic = AgentTopic.from_subject(msg.subject)
                                 event = ControlEvent.deserialize_event(msg.data)
+                                event._jetstream_sequence = msg.metadata.sequence.stream
                                 self._add_event_to_store(topic.run_id, event)
                                 msg_count += 1
                             except Exception as e:
@@ -226,6 +227,7 @@ class JetStreamEventStore:
             topic = AgentTopic.from_subject(msg.subject)
             run_id = topic.run_id
             event = ControlEvent.deserialize_event(msg.data)
+            event._jetstream_sequence = msg.metadata.sequence.stream
 
             # Add the event to the store
             self._add_event_to_store(run_id, event)
@@ -297,27 +299,27 @@ class JetStreamEventStore:
         self,
         run_id: Annotated[str, "Unique identifier for the workflow run"],
         class_name: Annotated[str, "The event class name to retrieve"],
-        until: Annotated[Optional[int], "Only include events created until this timestamp"] = None,
+        until_event: Annotated[Optional[ControlEvent], "Only include events created until this event was received"] = None,
     ) -> List[ControlEvent]:
         """
         Retrieves all events of the specified type for a run.
         If 'until' is specified, only returns events created until that timestamp.
         """
         run_store = self._get_run_store(run_id)
-        return run_store.get_events_of_type(class_name, until)
+        return run_store.get_events_of_type(class_name, until_event)
 
     async def get_events_of_multiple_types(
         self,
         run_id: Annotated[str, "Unique identifier for the workflow run"],
         class_names: Annotated[List[str], "List of event class names to retrieve"],
-        until: Annotated[Optional[int], "Only include events created until this timestamp"] = None,
+        until_event: Annotated[Optional[ControlEvent], "Only include events created until this event was received"] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves events for multiple types, organized by event type name.
         This is the primary method used by the Dispatcher.
         """
         run_store = self._get_run_store(run_id)
-        return run_store.get_events_of_multiple_types(class_names, until)
+        return run_store.get_events_of_multiple_types(class_names, until_event)
 
     async def delete_all(self, run_id: Annotated[str, "Unique identifier for the workflow run"]):
         """
