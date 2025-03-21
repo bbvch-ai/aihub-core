@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -29,6 +30,10 @@ class AgentChatController(Controller):
     ### Authentication & Access Control
     """
 
+    name = LocaleString(en="Agent Chat")
+    description = LocaleString(en="Chat with agents")
+    icon = "mage:we-chat"
+
     def __init__(self, route: str = "/agent/chat", is_admin_only=False):
         super().__init__(route, is_admin_only=is_admin_only)
 
@@ -46,7 +51,7 @@ class AgentChatController(Controller):
             route,
             summary="Synchronous chat completions",
             description="Handles chat completions by sending a single response Activity to the Azure Bot Service.",
-            tags=["Chat"],
+            tags=self.tags,
             response_model=None,
             responses={
                 200: {
@@ -88,7 +93,7 @@ class AgentChatController(Controller):
             route,
             summary="Asynchronous chat completions",
             description="Handles chat completions by updating the response Activity as responses are produced.",
-            tags=["Chat"],
+            tags=self.tags,
             response_model=None,
             responses={
                 200: {

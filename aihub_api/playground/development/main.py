@@ -38,7 +38,6 @@ async def main():
         OpenWebuiAuthHandler(),
         OAuth2AuthHandler(),
     )
-    auth = NoAuthHandler()
 
     runner.mount(
         HealthController().get_health(),

@@ -1,11 +1,13 @@
 import inspect
 import logging
-from typing import Dict, Set, Type, Tuple, List, Any, Optional, DefaultDict
+from types import UnionType
+from typing import Type, get_origin, get_args, Union
 from collections import defaultdict
 
 import networkx as nx
 
 from aihub_agent.agents.abstract.Agent import Agent
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent, StartEvent, StopEvent
 
@@ -56,14 +58,14 @@ class WorkflowVisualizer:
         # Add special nodes
         G.add_node(
             START_NODE,
-            type="special",
+            type="start",
             node_id="start",
             label=LocaleString(de="Start", en="Start", fr="Début", it="Inizio").in_locale(self.locale)
         )
 
         G.add_node(
             END_NODE,
-            type="special",
+            type="stop",
             node_id="end",
             label=LocaleString(de="Ende", en="End", fr="Fin", it="Fine").in_locale(self.locale)
         )
@@ -76,6 +78,7 @@ class WorkflowVisualizer:
         for step_name, step_method in step_names.items():
             step_name_localized = self._get_localized_step_name(step_method, step_name)
             step_description = self._get_localized_step_description(step_method)
+            step_icon = getattr(step_method, "_step_icon", None)
 
             # Extract input and output event info
             input_events = self._get_step_input_events(step_method)
@@ -87,6 +90,7 @@ class WorkflowVisualizer:
                 node_id=f"step_{step_name}",
                 label=step_name_localized,
                 description=step_description,
+                icon=step_icon,
                 input_events=input_events,
                 output_events=output_events,
                 max_executions=getattr(step_method, "_max_executions_per_run", None),
@@ -112,7 +116,7 @@ class WorkflowVisualizer:
         """
         step_name_locale_str = getattr(step_method, "_step_name", None)
         if step_name_locale_str and isinstance(step_name_locale_str, LocaleString):
-            return step_name_locale_str.in_locale(self.locale) or default_name
+            return LocaleHandler(self.locale).extract(step_name_locale_str) or default_name
         return default_name
 
     def _get_localized_step_description(self, step_method):
@@ -126,7 +130,7 @@ class WorkflowVisualizer:
             str: The localized step description or None
         """
         step_description_locale_str = getattr(step_method, "_step_description", None)
-        return step_description_locale_str.in_locale(self.locale) if step_description_locale_str else None
+        return LocaleHandler(self.locale).extract(step_description_locale_str) if step_description_locale_str else None
 
     def _get_step_input_events(self, step_method):
         """
@@ -201,6 +205,8 @@ class WorkflowVisualizer:
         Returns:
             dict: Dictionary containing payload field information
         """
+        from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
+
         payload_info = {}
 
         # Check if the class has annotations (Pydantic model fields)
@@ -210,44 +216,84 @@ class WorkflowVisualizer:
                 if field_name.startswith('_'):
                     continue
 
-                # Get field description if available
-                field_info = None
+                # Get human-readable type description
+                type_desc = self._get_human_readable_type(field_type)
 
-                # Try Pydantic v2 approach first
+                # Get field description if available from Pydantic model
+                description = None
                 if hasattr(event_class, "model_fields") and field_name in event_class.model_fields:
                     field = event_class.model_fields[field_name]
-                    field_info = {
-                        "type": str(field_type.__name__ if hasattr(field_type, "__name__") else field_type),
-                        "description": field.description if hasattr(field, "description") else None
-                    }
-                # Fallback to Pydantic v1 approach
-                elif hasattr(event_class, "__fields__") and field_name in event_class.__fields__:
-                    try:
-                        field = event_class.__fields__[field_name]
-                        description = None
-                        if hasattr(field, "field_info") and hasattr(field.field_info, "description"):
-                            description = field.field_info.description
+                    description = field.description if hasattr(field, "description") else None
 
-                        field_info = {
-                            "type": str(field_type.__name__ if hasattr(field_type, "__name__") else field_type),
-                            "description": description
-                        }
-                    except Exception:
-                        # Handle any errors in accessing v1 field info
-                        field_info = {
-                            "type": str(field_type.__name__ if hasattr(field_type, "__name__") else field_type),
-                            "description": None
-                        }
-                else:
-                    # Fallback if neither approach works
-                    field_info = {
-                        "type": str(field_type.__name__ if hasattr(field_type, "__name__") else field_type),
-                        "description": None
-                    }
+                field_info = {
+                    "type": type_desc,
+                    "description": description
+                }
 
                 payload_info[field_name] = field_info
 
         return payload_info
+
+    def _get_human_readable_type(self, type_annotation):
+        """
+        Create a human-readable string representation of a type annotation.
+
+        Args:
+            type_annotation: A type annotation (can be a complex typing construct)
+
+        Returns:
+            str: A human-readable representation of the type
+        """
+        from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
+        import typing
+
+        # Handle primitive types directly
+        if type_annotation in (str, int, float, bool, dict, list):
+            return type_annotation.__name__
+
+        # Get origin and args for complex types
+        origin = get_origin(type_annotation)
+        args = get_args(type_annotation)
+
+        # Handle Optional types (Union with None)
+        if origin is Union or origin is UnionType:
+            if type(None) in args:
+                # It's an Optional type
+                non_none_args = [arg for arg in args if arg is not type(None)]
+                if len(non_none_args) == 1:
+                    # Simple Optional[X]
+                    return self._get_human_readable_type(non_none_args[0])
+                else:
+                    # Union with multiple types and None
+                    return " | ".join(self._get_human_readable_type(arg) for arg in non_none_args)
+            else:
+                # Regular Union without None
+                return " | ".join(self._get_human_readable_type(arg) for arg in args)
+
+        # Handle List types
+        elif origin in (list, typing.List):
+            if args:
+                elem_type = args[0]
+                return f"{self._get_human_readable_type(elem_type)}[]"
+            return "List"
+
+        # Handle Dict types
+        elif origin in (dict, typing.Dict):
+            if len(args) == 2:
+                key_type, value_type = args
+                return f"Dict[{self._get_human_readable_type(key_type)}, {self._get_human_readable_type(value_type)}]"
+            return "Dict"
+
+        # Handle classes
+        elif inspect.isclass(type_annotation):
+            # Check if it's a BaseEvent
+            from aihub_lib.nats.events import BaseEvent
+            if issubclass(type_annotation, BaseEvent):
+                return type_annotation.__name__
+            return type_annotation.__name__
+
+        # Fallback for anything else
+        return str(type_annotation)
 
     def _create_event_mappings(self, G, step_names, START_NODE, END_NODE):
         """

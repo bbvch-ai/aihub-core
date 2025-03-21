@@ -68,7 +68,7 @@ class AgentController(Controller):
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
-                t: LocaleHandler = Depends(use_locale),
+            t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all discovered agents. Filters out agents the user cannot access.
@@ -120,7 +120,7 @@ class AgentController(Controller):
         if route_postfix.endswith("/"):
             route_postfix = route_postfix[:-1]
 
-        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name, tags=self.tags)
+        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name, tags=[agent_class])
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],

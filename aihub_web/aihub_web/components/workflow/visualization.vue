@@ -13,14 +13,25 @@
       <Controls />
       <MiniMap />
 
-      <!-- Custom node template -->
-      <template #node-default="nodeProps">
-        <div
-          class="node-default"
-          :class="getNodeClass(nodeProps.data)"
-        >
-          {{ nodeProps.data.label }}
-        </div>
+      <template #node-start="{ id, data }">
+        <WorkflowStartNode
+          :id="id"
+          :data="data"
+        />
+      </template>
+
+      <template #node-step="{ id, data }">
+        <WorkflowStepNode
+          :id="id"
+          :data="data"
+        />
+      </template>
+
+      <template #node-stop="{ id, data }">
+        <WorkflowStopNode
+          :id="id"
+          :data="data"
+        />
       </template>
     </VueFlow>
   </div>
@@ -28,7 +39,7 @@
 
 <script setup>
 import { ref, watchEffect } from 'vue'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
+import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
@@ -58,14 +69,6 @@ const { fitView } = useVueFlow()
 const nodes = ref([])
 const edges = ref([])
 
-// Function to get node class based on node data
-const getNodeClass = (data) => {
-  if (data.type === 'special') {
-    return data.node_id === 'start' ? 'start-node' : 'end-node'
-  }
-  return 'step-node'
-}
-
 // Transform the networkx graph to vue-flow format
 const transformGraphData = () => {
   // Create Vue Flow nodes
@@ -73,7 +76,7 @@ const transformGraphData = () => {
     const nodeId = node.id || node.node_id || node.label
     return {
       id: nodeId,
-      type: 'default',
+      type: node.type,
       position: { x: 0, y: 0 }, // Initial position, will be calculated by dagre
       data: {
         ...node,
@@ -93,6 +96,7 @@ const transformGraphData = () => {
       animated: true,
       label: link.event_type || '',
       data: link,
+      markerEnd: MarkerType.Arrow,
     }
   })
 
@@ -103,7 +107,7 @@ const transformGraphData = () => {
 
   // Add nodes to dagre
   graphNodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 200, height: 60 })
+    dagreGraph.setNode(node.id, { width: 600, height: 250 })
   })
 
   // Add edges to dagre
@@ -152,37 +156,11 @@ watchEffect(() => {
 <style scoped>
 .vue-flow-wrapper {
   width: 100%;
-  height: 800px;
+  height: 600px;
 }
 
 .graph-flow {
   width: 100%;
   height: 100%;
-}
-
-.node-default {
-  padding: 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  text-align: center;
-  width: 180px;
-  min-height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  word-break: break-word;
-}
-
-.start-node {
-  background-color: #4CAF50;
-}
-
-.end-node {
-  background-color: #F44336;
-}
-
-.step-node {
-  background-color: #2196F3;
 }
 </style>

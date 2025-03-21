@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any, Callable, List
 
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query, Request, Response
@@ -16,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class OpenaiChatController(Controller):
+    name = LocaleString(en="LLM Chat")
+    description = LocaleString(en="Chat with LLMs")
+    icon = "material-symbols-light:chat-outline"
+
     def __init__(
         self,
         route: str = "/openai/chat",
@@ -35,7 +40,7 @@ class OpenaiChatController(Controller):
         self,
         route: str = "/completions/json",
     ) -> "OpenaiChatController":
-        @self.router.post(route)
+        @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
             _: Annotated[ActivityModel, Body],
@@ -53,7 +58,7 @@ class OpenaiChatController(Controller):
         self,
         route: str = "/completions/stream",
     ) -> "OpenaiChatController":
-        @self.router.post(route)
+        @self.router.post(route, tags=self.tags)
         async def stream_chat_completion(
             request: Request,
             _: Annotated[ActivityModel, Body],

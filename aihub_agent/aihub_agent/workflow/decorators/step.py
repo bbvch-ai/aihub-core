@@ -17,6 +17,7 @@ def step(
     ] = None,
     stop_on_error: Annotated[bool, "If True, the workflow stops on any error in this step"] = True,
     name: Annotated[Optional[LocaleString], "A localized name for the step, used in UI or logs"] = None,
+    icon: Annotated[Optional[str], "An icon name for the step from iconify.design, used in UI"] = None,
     description: Annotated[Optional[LocaleString], "A localized description of what the step does"] = None,
     precondition: Annotated[
         Optional[Callable[..., Awaitable[bool]]], "A function to check if the step is ready to run"
@@ -78,6 +79,7 @@ def step(
         setattr(func, "_stop_on_error", stop_on_error)
         setattr(func, "_step_name", name)
         setattr(func, "_step_description", description)
+        setattr(func, "_step_icon", icon)
         setattr(func, "__signature__", inspect.signature(func))
 
         logger.debug(f"Decorated step: {func.__name__} with input events: {input_events}")

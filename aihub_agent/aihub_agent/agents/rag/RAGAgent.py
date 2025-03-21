@@ -8,6 +8,7 @@ from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
@@ -45,7 +46,11 @@ class RAGAgent(Agent):
 
     """
 
-    @step()
+    @step(
+        name=LocaleString(en="Limit Chat History"),
+        description=LocaleString(en="Truncates incoming chat messages to fit within the configured token limit"),
+        icon="iconoir:cut"
+    )
     async def limit_chat_history_step(
         self,
         event: UserMessageEvent,

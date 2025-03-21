@@ -1,0 +1,69 @@
+<template>
+  <div class="bg-stone-50 rounded-md shadow-md border border-gray-100 overflow-hidden w-[500px]">
+    <div class="h-1 w-full bg-red-500" />
+    <div class="flex flex-row gap-3 p-3">
+      <div class="rounded-full bg-gray-200 w-8 h-8 flex items-center justify-center mt-1">
+        <Icon
+          :name="props.data.icon ?? 'mingcute:ai-fill'"
+          size="0.8em"
+        />
+      </div>
+      <div class="flex flex-col">
+        <span class="font-bold">{{ props.data.label }}</span>
+        <span class="text-xs">{{ props.data.description }}</span>
+      </div>
+
+      <Handle
+        type="target"
+        :position="Position.Left"
+      />
+      <Handle
+        type="source"
+        :position="Position.Right"
+        :connectable="false"
+      />
+    </div>
+    <div class="w-full flex flex-row gap-2 p-3">
+      <div class="w-1/2 w-1/2 flex flex-col gap-2">
+        <div
+          v-for="(event_specs, event_name) in props.data.input_events"
+          :key="event_name"
+          class="flex flex-col gap-2"
+        >
+          <EventSpecs
+            :events="event_specs.event_types"
+            type="input"
+          />
+        </div>
+      </div>
+      <div class="w-1/2 flex flex-col gap-2">
+        <EventSpecs
+          :events="props.data.output_events"
+          type="output"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { Handle, Position } from '@vue-flow/core'
+import EventSpecs from '@core/components/workflow/EventSpecs.vue'
+
+const props = defineProps({
+  id: {
+    type: String,
+    required: true,
+  },
+  data: {
+    type: Object,
+    required: true,
+  },
+})
+</script>
+
+<script>
+export default {
+  inheritAttrs: false,
+}
+</script>
