@@ -5,7 +5,7 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 
 
 async def _parse_sse_chunk(line: str) -> Optional[str | dict]:
-    """Parse a single SSE line and extract content if available."""
+    """Parse a single Server-Side Event (SSE) line and extract content if available."""
     # Skip empty lines
     if not line.strip() or not line.startswith("data: "):
         return None

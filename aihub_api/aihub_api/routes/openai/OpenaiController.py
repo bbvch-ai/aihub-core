@@ -90,7 +90,11 @@ class OpenaiController(Controller):
 
         return self
 
-    def get_models_with_assistants(self, route: str = "/models", exclude_webui_agents=False) -> "OpenaiController":
+    def get_models_with_assistants(
+        self,
+        route: str = "/models",
+        exclude_webui_agents: Annotated[bool, "Ensures WebUI assistants are not returned to prevent recursion"] = False,
+    ) -> "OpenaiController":
         @self.router.get(
             route,
             summary="List Models (including ai-hub assistants)",
@@ -189,7 +193,6 @@ class OpenaiController(Controller):
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
-            print(completion_request.metadata)
             completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion_with_assistants(
                 self.chat_models, completion_request.model, completion_request, user, nc, external_event_distributor
