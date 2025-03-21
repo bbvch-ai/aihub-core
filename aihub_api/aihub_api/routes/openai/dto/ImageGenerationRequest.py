@@ -19,7 +19,7 @@ class ImageGenerationRequest(BaseModel):
     model: Annotated[
         Optional[Literal["dall-e-2", "dall-e-3"]],
         Field(description="The model to use for image generation. Defaults to dall-e-2."),
-    ] = "dall-e-2"
+    ] = "dall-e-3"
 
     n: Optional[int] = None
     quality: Optional[Literal["standard", "hd"]] = None

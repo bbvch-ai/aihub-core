@@ -2114,14 +2114,14 @@ files = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.14"
+version = "0.12.25"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_core-0.12.14-py3-none-any.whl", hash = "sha256:6fdb30e3fadf98e7df75f9db5d06f6a7f8503ca545a71e048d786ff88012bd50"},
-    {file = "llama_index_core-0.12.14.tar.gz", hash = "sha256:378bbf5bf4d1a8c692d3a980c1a6ed3be7a9afb676a4960429dea15f62d06cd3"},
+    {file = "llama_index_core-0.12.25-py3-none-any.whl", hash = "sha256:affd0b240daf3c1200ad8ca86696ce339f411c3028981b0b5b71b59d78f281ae"},
+    {file = "llama_index_core-0.12.25.tar.gz", hash = "sha256:e0145617f0ab5358c30a7a716fa46dd3c40183bad1b87dd0cbfd3d196fbee8c4"},
 ]
 
 [package.dependencies]
@@ -2183,14 +2183,14 @@ openai = ">=1.1.0"
 
 [[package]]
 name = "llama-index-embeddings-text-embeddings-inference"
-version = "0.3.1"
+version = "0.3.2"
 description = "llama-index embeddings text embeddings inference integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_embeddings_text_embeddings_inference-0.3.1-py3-none-any.whl", hash = "sha256:cbe45fc61671d4d428c8322cbdd22af4a0adc183e2412332503dcdd78f623929"},
-    {file = "llama_index_embeddings_text_embeddings_inference-0.3.1.tar.gz", hash = "sha256:169b2c022894172809c999470744659013bf3ed04b0f15e1127109c719f2286f"},
+    {file = "llama_index_embeddings_text_embeddings_inference-0.3.2-py3-none-any.whl", hash = "sha256:7ee41709df258d1f13bb47b31dc8bf05ce4580a19360d2e96515a0e4f0833352"},
+    {file = "llama_index_embeddings_text_embeddings_inference-0.3.2.tar.gz", hash = "sha256:e379767cb95d4fba02612c0d681d98df96563f24b508bad1835c04b6fe744ab6"},
 ]
 
 [package.dependencies]
@@ -2234,14 +2234,14 @@ openai = ">=1.58.1,<2.0.0"
 
 [[package]]
 name = "llama-index-llms-openai-like"
-version = "0.3.3"
+version = "0.3.4"
 description = "llama-index llms openai like integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_llms_openai_like-0.3.3-py3-none-any.whl", hash = "sha256:20051625720053e5d511d3771affee17b5373cc055b86ecbfc267c631c2dc406"},
-    {file = "llama_index_llms_openai_like-0.3.3.tar.gz", hash = "sha256:bea042017291d933ac93a0c487c8daad25a70e6f6bf2a5440150f6c18b246df6"},
+    {file = "llama_index_llms_openai_like-0.3.4-py3-none-any.whl", hash = "sha256:628fc6308d7a6da3e6b158fb1b94d627d7885bb541e5c46d97f156e9c4de9e14"},
+    {file = "llama_index_llms_openai_like-0.3.4.tar.gz", hash = "sha256:6cb8d574d89c46b0bda07e7f9747b6428f70a7335606922b43187da99d96751d"},
 ]
 
 [package.dependencies]
@@ -3003,14 +3003,14 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.60.2"
+version = "1.67.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "openai-1.60.2-py3-none-any.whl", hash = "sha256:993bd11b96900b9098179c728026f016b4982ded7ee30dfcf4555eab1171fff9"},
-    {file = "openai-1.60.2.tar.gz", hash = "sha256:a8f843e10f2855713007f491d96afb2694b11b5e02cb97c7d01a0be60bc5bb51"},
+    {file = "openai-1.67.0-py3-none-any.whl", hash = "sha256:dbbb144f38739fc0e1d951bc67864647fca0b9ffa05aef6b70eeea9f71d79663"},
+    {file = "openai-1.67.0.tar.gz", hash = "sha256:3b386a866396daa4bf80e05a891c50a7746ecd7863b8a27423b62136e3b8f6bc"},
 ]
 
 [package.dependencies]
@@ -5373,4 +5373,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "098b18b24eb24841da6164a7b1ed554c2d7c9bbedf8d21c7804e6dd031ae6f91"
+content-hash = "ac3befe7fc3440cb0839f6adc53cd803c8979b85e9a70d3dd7c8d4121b2df969"

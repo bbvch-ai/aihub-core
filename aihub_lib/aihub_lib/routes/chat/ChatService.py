@@ -231,7 +231,7 @@ class ChatService:
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
         costs = LLMCosts.from_zero()
-        model_name = f"{topic_manager.agent_class}/{topic_manager.agent_id}"
+        model_name = f"{agent_class}/{agent_id}"
 
         resources = JsonResources(
             stop_signal=stop_signal,
