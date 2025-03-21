@@ -10,6 +10,7 @@ from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 from typing_extensions import override
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,8 @@ class BaseEvent(BaseModel):
         default_factory=time.time_ns,
         description="The time (in ns since epoch) the event was stored in the event store",
     )
+    locale: Optional[str] = Field(default=None, description="The locale of the event.")
+    user: Optional[AuthenticatedUser] = Field(default=None, description="The user who triggered the event.")
 
     # Private attributes to handle unknown event types
     _unknown_type: Optional[str] = PrivateAttr(None)
