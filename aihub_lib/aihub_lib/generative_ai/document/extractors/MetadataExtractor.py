@@ -6,12 +6,12 @@ from aihub_lib.generative_ai.document.parsers.Split import Split
 
 class MetadataExtractor(ABC):
     """
-    Abstract class for extracting references from markdown content.
+    Abstract class for extracting metadata from markdown content.
     """
 
     @abstractmethod
     def extract(self, splits: List[Split]) -> List[Split]:
         """
-        Extract references from markdown content.
+        Extract metadata from markdown content.
         """
         return splits

@@ -7,7 +7,7 @@ from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
-from pydantic import Field, ConfigDict, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
 from aihub_lib.generative_ai.document.parsers.Split import Split

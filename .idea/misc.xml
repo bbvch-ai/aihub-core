@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
-    <option name="sdkName" value="Poetry (aihub_agent)" />
+    <option name="sdkName" value="Poetry (aihub-core)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (aihub-core)" project-jdk-type="Python SDK" />
 </project>
