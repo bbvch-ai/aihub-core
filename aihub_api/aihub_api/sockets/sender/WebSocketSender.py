@@ -49,7 +49,7 @@ class WebSocketSender:
         logger.debug(f"Sending event {event} to thread {topic.thread_id}")
         thread = ThreadEntity.get_thread_by_id(topic.thread_id)
         users = thread.users
-        ws_event = WSServerEvent(
+        external_event = WSServerEvent(
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,
             thread_id=topic.thread_id,
@@ -61,4 +61,4 @@ class WebSocketSender:
             event_data=event.model_dump(),
         )
         for user in users:
-            await self.ws_manager.send_event(ws_event, user.user_id)
+            await self.ws_manager.send_event(external_event, user.user_id)

@@ -7,10 +7,10 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
-from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
 from fastapi.params import Query
@@ -18,6 +18,7 @@ from nats.aio.client import Client as NATS
 from stringcase import snakecase
 
 from aihub_api.events.create_input_model import create_input_model
+from aihub_api.events.create_output_model import create_output_model
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
@@ -109,8 +110,10 @@ class AgentController(Controller):
         """
         agent_class_name = snakecase(agent_class)
         agent_id = snakecase(agent_id)
-        name = f"send_event_to_{agent_class_name}_{agent_id}"
+        postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
+        name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
         start_event_input_type = create_input_model(start_event_type)
+        stop_event_output_type = create_output_model(stop_event_type)
 
         if route_postfix.startswith("/"):
             route_postfix = route_postfix[1:]
@@ -121,12 +124,12 @@ class AgentController(Controller):
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],
-            ws_receiver: Annotated[WebSocketReceiver, Depends(use_ws_receiver)],
+            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
             user: AuthenticatedUser = Security(self.auth),
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             t: LocaleHandler = Depends(use_locale),
-        ) -> stop_event_type:
+        ) -> stop_event_output_type:
             """
             Send an event to a specific agent. Raises 403 if the user lacks access.
             """
@@ -140,7 +143,7 @@ class AgentController(Controller):
                 locale=t.locale,
             )
             return await AgentService.send_event(
-                nc, ws_receiver, user, start_event, agent_class, agent_id, thread_id, display_id
+                nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
             )
 
         return self

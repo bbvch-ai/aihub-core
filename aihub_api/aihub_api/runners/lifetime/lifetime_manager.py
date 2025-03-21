@@ -13,7 +13,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.persistance.events.EventPersister import EventPersister
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
-from aihub_api.sockets.receiver import WebSocketReceiver
+from aihub_api.sockets.receiver import ExternalEventDistributor
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 
@@ -38,10 +38,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     3. **Event Persistence Subscriber:**
        Sets up a `JSSubscriber` that listens to all agent events, using `EventPersister` to store them.
     4. **WebSocket Setup:**
-       Initializes a `WebSocketManager`, `WebSocketSender`, and `WebSocketReceiver`.
+       Initializes a `WebSocketManager`, `WebSocketSender`, and `ExternalEventDistributor`.
        Then subscribes to display events via `NCSubscriber` and sends them to connected websockets.
     5. **App State Initialization:**
-       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `ws_receiver`) in `app.state`,
+       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_event_distributor`) in `app.state`,
        making them accessible throughout the app.
     6. **Cleanup on Exit:**
        On shutdown, it stops the subscribers and closes the NATS connection.
@@ -91,14 +91,14 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await ws_subscriber.start()
 
-        ws_receiver = WebSocketReceiver(js=js)
+        external_event_distributor = ExternalEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
-        app.state.ws_receiver = ws_receiver
+        app.state.external_event_distributor = external_event_distributor
 
         # Yield control back to FastAPI to start serving requests
         yield

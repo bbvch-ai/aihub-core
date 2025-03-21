@@ -1,5 +1,6 @@
+import hashlib
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
@@ -25,8 +26,10 @@ class ThreadEntity(Document):
     agents = ListField(EmbeddedDocumentField(Agent))
 
     @classmethod
-    def create_thread(cls, name: str, users: List[User], agents: List[Agent]) -> "ThreadEntity":
-        thread = cls(name=name, users=users, agents=agents, created_at=datetime.now())
+    def create_thread(
+        cls, name: str, users: List[User], agents: List[Agent], thread_id: Optional[ObjectId] = None
+    ) -> "ThreadEntity":
+        thread = cls(id=thread_id or ObjectId(), name=name, users=users, agents=agents, created_at=datetime.now())
         thread.save()
         return thread
 
@@ -77,3 +80,10 @@ class ThreadEntity(Document):
         thread = cls.get_thread_by_id(thread_id)
         thread.delete()
         return thread
+
+    @staticmethod
+    def to_thread_id(context_id: Optional[str]):
+        if not context_id:
+            return ObjectId()
+        hashed = hashlib.md5(context_id.encode()).digest()[:12]
+        return ObjectId(hashed)

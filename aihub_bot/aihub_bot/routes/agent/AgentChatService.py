@@ -1,9 +1,9 @@
 import asyncio
-from typing import AsyncGenerator, List
+from typing import AsyncGenerator, List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from botbuilder.core import TurnContext
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from nats.aio.client import Client as NATS
@@ -25,7 +25,8 @@ class AgentChatService(Service):
         agent_class: str,
         agent_id: str,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
+        thread_id: Optional[str] = None,
     ) -> str:
         """
         ### What
@@ -41,14 +42,15 @@ class AgentChatService(Service):
             agent_class=agent_class,
             agent_id=agent_id,
             nc=nc,
-            ws_receiver=ws_receiver,
+            external_event_distributor=external_event_distributor,
+            thread_id=thread_id,
             stream=False,
         )
 
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
-        return AgentChatService.build_json_response_content(resources.chunk_events)
+        return AgentChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
 
     @staticmethod
     async def stream_chat_completion(
@@ -57,7 +59,8 @@ class AgentChatService(Service):
         agent_class: str,
         agent_id: str,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
+        thread_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """
         ### What
@@ -73,7 +76,8 @@ class AgentChatService(Service):
             agent_class=agent_class,
             agent_id=agent_id,
             nc=nc,
-            ws_receiver=ws_receiver,
+            external_event_distributor=external_event_distributor,
+            thread_id=thread_id,
             stream=True,
         )
 
@@ -100,7 +104,8 @@ class AgentChatService(Service):
         agent_class: str,
         agent_id: str,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
+        thread_id: Optional[str] = None,
         stream: bool = False,
     ) -> StreamingResources | JsonResources:
         """
@@ -138,7 +143,8 @@ class AgentChatService(Service):
                 agent_id=agent_id,
                 messages=chat_messages,
                 nc=nc,
-                ws_receiver=ws_receiver,
+                external_event_distributor=external_event_distributor,
+                thread_id=thread_id,
             )
         else:
             return await Service.start_json_chat_interaction(
@@ -147,7 +153,8 @@ class AgentChatService(Service):
                 agent_id=agent_id,
                 messages=chat_messages,
                 nc=nc,
-                ws_receiver=ws_receiver,
+                external_event_distributor=external_event_distributor,
+                thread_id=thread_id,
             )
 
     @staticmethod

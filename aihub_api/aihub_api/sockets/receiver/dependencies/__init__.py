@@ -1,5 +1,5 @@
-from aihub_lib.sockets.receiver.dependencies.use_ws_receiver import use_ws_receiver
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 
 __all__ = [
-    "use_ws_receiver",
+    "use_external_event_distributor",
 ]
