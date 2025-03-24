@@ -17,7 +17,7 @@
   >
     <div
       v-focustrap
-      class="p-5 flex flex-col gap-4"
+      class="flex flex-col gap-4 p-5"
     >
       <div>
         <h2 class="text-xl">
@@ -43,7 +43,7 @@
         />
       </IconField>
     </div>
-    <div class="flex p-5 gap-10 max-w-[460px] flex-wrap relative">
+    <div class="relative flex max-w-[460px] flex-wrap gap-10 p-5">
       <template v-if="loadingSuite !== 'success'">
         <skeleton
           v-for="i in 6"
@@ -59,14 +59,14 @@
           v-for="app in shownApps"
           :key="app.path"
           :to="app.path"
-          class="h-[50px] flex items-center justify-center"
+          class="flex h-[50px] items-center justify-center"
           @click="toggle"
         >
-          <div class="w-[80px] h-[60px]  flex flex-col gap-2 justify-center items-center ">
+          <div class="flex h-[60px]  w-[80px] flex-col items-center justify-center gap-2 ">
             <Icon
               :name="app.icon"
               style="color: #9c9c9c"
-              class="w-[2rem] h-[2rem]"
+              class="size-8"
             />
             <p>
               {{ app.label }}
@@ -79,8 +79,9 @@
 </template>
 
 <script setup lang="ts">
-import type { MenuItem } from 'primevue/menuitem'
 import { useSuiteStore } from '@core/stores/useSuiteStore'
+
+import type { MenuItem } from 'primevue/menuitem'
 
 const router = useRouter()
 const localeRoute = useLocaleRoute()

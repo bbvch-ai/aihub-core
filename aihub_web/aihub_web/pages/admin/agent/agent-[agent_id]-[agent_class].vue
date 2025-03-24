@@ -1,6 +1,6 @@
 <template>
   <div
-    class="border-stone-200 dark:border-stone-700 border rounded-lg overflow-auto"
+    class="overflow-auto rounded-lg border border-stone-200 dark:border-stone-700"
   >
     <div class="bg-white dark:bg-stone-900">
       <div class="flex flex-col gap-6 p-6">
@@ -47,7 +47,7 @@
             :graph-data="agent.network_graph"
           />
         </Drawer>
-        <div class="w-full h-[400px]">
+        <div class="h-[400px] w-full">
           <WorkflowVisualization
             v-if="agent"
             :graph-data="agent.network_graph"
@@ -59,10 +59,10 @@
 </template>
 
 <script setup lang="ts">
-import { useAgentsStore } from '@core/stores/useAgentsStore'
-import type { AgentDto, EventSpecs } from '@core/sdk/client'
-
 import UserMessageEvent from '@core/components/Event/Form/UserMessageEvent.vue'
+import { useAgentsStore } from '@core/stores/useAgentsStore'
+
+import type { AgentDto, EventSpecs } from '@core/sdk/client'
 
 const route = useRoute()
 

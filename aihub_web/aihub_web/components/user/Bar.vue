@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-row gap-5 items-center pr-3">
+  <div class="flex flex-row items-center gap-5 pr-3">
     <Button
       :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
       variant="text"
@@ -57,9 +57,9 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@core/stores/useUserStore'
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
-import { useUserStore } from '@core/stores/useUserStore'
 
 const userStore = useUserStore()
 const { user, loadingUser } = storeToRefs(userStore)

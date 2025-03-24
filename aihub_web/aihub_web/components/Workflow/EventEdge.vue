@@ -13,7 +13,7 @@
       :style="{
         transform: `translate(-50%, -50%) translate(${path[1]}px,${path[2]}px)`,
       }"
-      class="absolute px-4 py-2 bg-stone-50 dark:bg-stone-950 rounded-md shadow-md border border-dashed border-stone-400 dark:border-stone-400 overflow-hidden"
+      class="absolute overflow-hidden rounded-md border border-dashed border-stone-400 bg-stone-50 px-4 py-2 shadow-md dark:border-stone-400 dark:bg-stone-950"
     >
       {{ data.event_type }}
     </div>
@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@vue-flow/core'
 import { computed } from 'vue'
+
 import type { EdgeData } from '@core/sdk/client'
 
 const props = defineProps<{

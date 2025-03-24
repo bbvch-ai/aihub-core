@@ -1,4 +1,5 @@
 import { UserManager, WebStorageStateStore, Log } from 'oidc-client-ts'
+
 import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin(async ({ $i18n, $router }) => {

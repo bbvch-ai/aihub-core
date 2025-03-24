@@ -5,7 +5,7 @@
     :default-viewport="{ zoom: 1 }"
     :min-zoom="0.2"
     :max-zoom="4"
-    class="graph-flow"
+    class="size-full"
     fit-view-on-init
   >
     <Background />
@@ -40,7 +40,7 @@
         :target-y="customEdgeProps.targetY"
         :source-position="customEdgeProps.sourcePosition"
         :target-position="customEdgeProps.targetPosition"
-        :data="customEdgeProps.data"
+        :data="customEdgeProps.data satisfies EdgeData"
         :marker-end="customEdgeProps.markerEnd"
         :style="customEdgeProps.style"
       />
@@ -49,23 +49,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
-import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
-import { Background } from '@vue-flow/background'
 import dagre from '@dagrejs/dagre'
+import { Background } from '@vue-flow/background'
+import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
+import { ref, watchEffect } from 'vue'
+
+import type { Node, Edge } from '@vue-flow/core'
 
 // Import styles
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
-import type { WorkflowGraph } from '@core/sdk/client'
+import type { WorkflowGraph, NodeData, EdgeData } from '@core/sdk/client'
 
 const props = defineProps<{
   graphData: WorkflowGraph
 }>()
 
 const { fitView } = useVueFlow()
-const nodes = ref([])
-const edges = ref([])
+const nodes = ref<Node<NodeData>[]>([])
+const edges = ref<Edge<EdgeData>[]>([])
 
 // Transform the networkx graph to vue-flow format
 const transformGraphData = () => {
@@ -151,10 +153,3 @@ watchEffect(() => {
   }
 })
 </script>
-
-<style scoped>
-.graph-flow {
-  width: 100%;
-  height: 100%;
-}
-</style>

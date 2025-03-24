@@ -1,13 +1,13 @@
 <template>
-  <div class="flex flex-col md:flex-row h-screen">
-    <div class="md:order-1 order-2 h-3/5 md:h-auto md:w-3/5 w-full flex items-center justify-center bg-neutral-950 p-10 text-stone-300 text-4xl">
+  <div class="flex h-screen flex-col md:flex-row">
+    <div class="order-2 flex h-3/5 w-full items-center justify-center bg-neutral-950 p-10 text-4xl text-stone-300 md:order-1 md:h-auto md:w-3/5">
       <span>Erleben Sie die Zukunft der künstlichen Intelligenz</span>
     </div>
 
     <!-- Right Panel: Login -->
-    <div class="md:order-2 order-1 h-2/5 md:h-full md:w-2/5 w-full flex flex-col items-center justify-between bg-zinc-900 p-6">
+    <div class="order-1 flex h-2/5 w-full flex-col items-center justify-between bg-zinc-900 p-6 md:order-2 md:h-full md:w-2/5">
       <div />
-      <div class="flex flex-col gap-8 items-center">
+      <div class="flex flex-col items-center gap-8">
         <a
           href="https://ai-hub.bbv.ch"
           target="_blank"
@@ -16,7 +16,7 @@
           <img
             :src="logo"
             alt="Logo of company"
-            class="w-32 lg:w-32 rounded"
+            class="w-32 rounded lg:w-32"
           >
         </a>
         <div class="flex flex-col gap-2 text-center">
@@ -31,7 +31,7 @@
           label="Login with Microsoft"
           icon="pi pi-microsoft"
           icon-pos="right"
-          class="!text-black !bg-white"
+          class="!bg-white !text-black"
           @click="login"
         />
       </div>
@@ -39,7 +39,7 @@
         href="https://bbv.ch/services/generative-ai/"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-stone-400 hidden sm:block"
+        class="hidden text-stone-400 sm:block"
       >
         Individuelle KI-Lösungen für Ihr Unternehmen
       </a>

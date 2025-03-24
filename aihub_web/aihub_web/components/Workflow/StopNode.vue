@@ -3,7 +3,7 @@
     type="target"
     :position="Position.Left"
   />
-  <div class="bg-red-500 text-white rounded-md shadow-md border border-stone-100 overflow-hidden p-6 text-lg font-bold">
+  <div class="overflow-hidden rounded-md border border-stone-100 bg-red-500 p-6 text-lg font-bold text-white shadow-md">
     {{ props.id }}
   </div>
   <Handle
@@ -14,6 +14,7 @@
 
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+
 import type { NodeData } from '@core/sdk/client'
 
 const props = defineProps<{

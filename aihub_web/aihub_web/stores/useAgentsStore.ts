@@ -1,7 +1,7 @@
+import { type AgentDto, discoverAgents } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
-import { type AgentDto, discoverAgents } from '@core/sdk/client'
 
 export const useAgentsStore = defineStore('agents', () => {
   // Fetch all agents from the discovery endpoint

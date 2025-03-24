@@ -1,5 +1,7 @@
 import { getSuite, type ServiceDto, type SuiteDto } from '@core/sdk/client'
+
 import type { MenuItem } from 'primevue/menuitem'
+
 import { useLocalePath } from '#i18n'
 
 export const useSuiteStore = defineStore('suite', () => {

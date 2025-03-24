@@ -1,20 +1,20 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
+  <div class="flex min-h-screen items-center justify-center bg-zinc-900 text-white">
     <div
       v-if="loading"
       class="text-center"
     >
-      <h1 class="text-2xl mb-4">
+      <h1 class="mb-4 text-2xl">
         Logging you in...
       </h1>
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mx-auto" />
+      <div class="mx-auto size-12 animate-spin rounded-full border-y-2 border-white" />
     </div>
 
     <div
       v-else-if="error"
       class="text-center"
     >
-      <h1 class="text-2xl mb-4 text-red-500">
+      <h1 class="mb-4 text-2xl text-red-500">
         Login Error
       </h1>
       <p>{{ error }}</p>

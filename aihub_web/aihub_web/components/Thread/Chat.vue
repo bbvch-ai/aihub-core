@@ -3,19 +3,19 @@
     <div
       v-for="display in hierarchy"
       :key="display.display_id"
-      class="p-4 mt-4 bg-red-600"
+      class="mt-4 bg-red-600 p-4"
     >
       <p>Display ID: {{ display.display_id }}</p>
       <div
         v-for="run in display.runs"
         :key="run.run_id"
-        class="p-4 mt-4 bg-blue-600"
+        class="mt-4 bg-blue-600 p-4"
       >
         <p>Run ID: {{ run.run_id }}</p>
         <div
           v-for="event in run.events"
           :key="event.event_data.event_id"
-          class="p-4 mt-4 bg-yellow-600"
+          class="mt-4 bg-yellow-600 p-4"
         >
           <p><strong>Agent Class: {{ event.agent_class }}</strong></p>
           <p>Event ID: {{ event.event_data.event_id }}</p>

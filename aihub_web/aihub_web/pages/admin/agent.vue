@@ -1,6 +1,6 @@
 <template>
   <div
-    class="p-1 flex flex-col gap-18 mt-12"
+    class="gap-18 mt-12 flex flex-col p-1"
   >
     <div class="flex flex-col gap-2 p-6">
       <p class="text-3xl font-bold">
@@ -19,11 +19,11 @@
         state-storage="local"
         :min-size="25"
         :size="25"
-        class="bg-stone-50 dark:bg-stone-950 border-none p-5"
+        class="border-none bg-stone-50 p-5 dark:bg-stone-950"
       >
         <div
           ref="leftsplitter"
-          class="border-stone-200 dark:border-stone-700 border rounded-lg overflow-auto"
+          class="overflow-auto rounded-lg border border-stone-200 dark:border-stone-700"
         >
           <DataTable
             v-if="showTable"
@@ -118,7 +118,7 @@
           <DataView
             v-else
             :value="agents"
-            class="p-3 bg-white dark:bg-stone-900"
+            class="bg-white p-3 dark:bg-stone-900"
             paginator
             :rows="5"
           >
@@ -139,7 +139,7 @@
                 :key="agent.agent_id"
               >
                 <div
-                  class="flex flex-row p-4 gap-4"
+                  class="flex flex-row gap-4 p-4"
                   :class="{
                     'border-t border-surface-200 dark:border-surface-700': index !== 0,
                     'bg-stone-50 dark:bg-stone-950': selectedAgent?.agent_id == agent.agent_id,
@@ -152,7 +152,7 @@
                     @update:model-value="selectedAgent = selectedAgent?.agent_id == agent.agent_id ? null : agent"
                   />
                   <div
-                    class="flex flex-col gap-4 items-start"
+                    class="flex flex-col items-start gap-4"
                   >
                     <div class="flex flex-row gap-2 font-bold">
                       <Icon
@@ -174,7 +174,7 @@
       </SplitterPanel>
       <SplitterPanel
         v-if="selectedAgent"
-        class="bg-stone-50 dark:bg-stone-950 border-none p-5"
+        class="border-none bg-stone-50 p-5 dark:bg-stone-950"
       >
         <NuxtPage />
       </SplitterPanel>
@@ -183,10 +183,11 @@
 </template>
 
 <script setup lang="ts">
+import { useAgentsStore } from '@core/stores/useAgentsStore'
 import { FilterMatchMode } from '@primevue/core/api'
 
-import { useAgentsStore } from '@core/stores/useAgentsStore'
 import type { AgentDto } from '@core/sdk/client'
+
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()

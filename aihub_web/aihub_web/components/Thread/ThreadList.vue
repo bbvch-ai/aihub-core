@@ -16,9 +16,9 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { useThreadStore } from '@core/stores/useThreadStore'
 import { useActiveThread } from '@core/composables/useActiveThread'
+import { useThreadStore } from '@core/stores/useThreadStore'
+import { storeToRefs } from 'pinia'
 
 const { threads, threadsLoadingState } = storeToRefs(useThreadStore())
 const { activeThreadId } = useActiveThread()
