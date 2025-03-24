@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-stone-50 dark:bg-stone-900 rounded-md shadow-md border border-stone-100 dark:border-stone-800 overflow-hidden w-[500px]">
+  <div class="bg-stone-50 dark:bg-stone-950 rounded-md shadow-md border border-stone-100 dark:border-stone-800 overflow-hidden w-[500px]">
     <div class="h-1 w-full bg-red-500" />
     <div class="flex flex-row gap-3 p-3">
       <div class="rounded-full bg-stone-200 dark:bg-stone-600 w-8 h-8 flex items-center justify-center mt-1">
@@ -24,7 +24,7 @@
       />
     </div>
     <div class="w-full flex flex-row gap-2 p-3">
-      <div class="w-1/2 w-1/2 flex flex-col gap-2">
+      <div class="w-1/2 flex flex-col gap-2">
         <div
           v-for="(event_specs, event_name) in props.data.input_events"
           :key="event_name"
@@ -38,6 +38,7 @@
       </div>
       <div class="w-1/2 flex flex-col gap-2">
         <EventSpecs
+          v-if="props.data.output_events"
           :events="props.data.output_events"
           type="output"
         />
@@ -46,24 +47,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+import type { NodeData } from '@core/sdk/client'
 import EventSpecs from '@core/components/Workflow/EventSpecs.vue'
 
-const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
-  data: {
-    type: Object,
-    required: true,
-  },
-})
-</script>
-
-<script>
-export default {
-  inheritAttrs: false,
-}
+const props = defineProps<{
+  id: string
+  data: NodeData
+}>()
 </script>

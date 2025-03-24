@@ -26,7 +26,7 @@
               <span class="text-[9px] font-bold">{{ payload_name }}</span>
               <span class="text-[9px] italic text-stone-400">{{ payload_value.type }}</span>
             </div>
-            <span class="text-[9px] border-stone-200  border-l-2 pl-2">{{ payload_value.description }}</span>
+            <span class="text-[9px] border-stone-200 dark:border-stone-700 border-l-2 pl-2">{{ payload_value.description }}</span>
           </div>
         </div>
       </AccordionContent>
@@ -35,11 +35,10 @@
 </template>
 
 <script setup lang="ts">
+import type { EventInfo } from '@core/sdk/client'
+
 const props = defineProps<{
-  events: {
-    name: string
-    payload: { [key: string]: { type: string, description: string } }
-  }[]
+  events: EventInfo[]
   type: string
 }>()
 </script>

@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel, Field
 
@@ -30,7 +31,7 @@ class AgentDTO(BaseModel):
     stop_events: List[EventSpecs] = Field(
         ..., description="A list of `EventSpecs` representing events that can stop this agent's workflow."
     )
-    network_graph: Dict[str, Any] = Field(
+    network_graph: WorkflowGraph = Field(
         ...,
-        description="A dictionary representing the network graph of the agent, showing how different components are connected and interact.",
+        description="A network graph of the agent, showing how different components are connected and interact.",
     )

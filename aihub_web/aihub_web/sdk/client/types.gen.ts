@@ -76,11 +76,9 @@ export type AgentDto = {
      */
     stop_events: Array<EventSpecs>;
     /**
-     * A dictionary representing the network graph of the agent, showing how different components are connected and interact.
+     * A network graph of the agent, showing how different components are connected and interact.
      */
-    network_graph: {
-        [key: string]: unknown;
-    };
+    network_graph: WorkflowGraph;
 };
 
 export type AssistantChatMessage = {
@@ -248,10 +246,6 @@ export type ChatCompletionPredictionContentParam = {
 
 export type ChatCompletionRequest = {
     /**
-     * ID of the chat to complete.
-     */
-    chat_id?: string | null;
-    /**
      * Messages to complete the chat with.
      */
     messages: Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null;
@@ -275,7 +269,7 @@ export type ChatCompletionRequest = {
     max_completion_tokens?: number | null;
     max_tokens?: number | null;
     metadata?: {
-        [key: string]: string;
+        [key: string]: unknown;
     } | null;
     modalities?: Array<'text' | 'audio'> | null;
     n?: number | null;
@@ -294,10 +288,10 @@ export type ChatCompletionRequest = {
     tools?: Array<ChatCompletionToolParam> | null;
     top_logprobs?: number | null;
     top_p?: number | null;
-    [key: string]: unknown | (string | null) | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
     } | null) | (boolean | null) | (number | null) | (number | null) | ({
-        [key: string]: string;
+        [key: string]: unknown;
     } | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonObject | ResponseFormatJsonSchema | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
 
@@ -425,6 +419,46 @@ export type CreateTokenResponse = {
     token: string;
 };
 
+/**
+ * Data for an edge in the workflow graph.
+ */
+export type EdgeData = {
+    /**
+     * ID of the source node
+     */
+    source: string;
+    /**
+     * ID of the target node
+     */
+    target: string;
+    /**
+     * Unique identifier for the edge
+     */
+    edge_id: number;
+    /**
+     * Type of event represented by this edge
+     */
+    event_type: string;
+    /**
+     * Fully qualified name of the event
+     */
+    event_full_name: string;
+    /**
+     * Whether this edge represents a start event
+     */
+    is_start_event: boolean;
+    /**
+     * Whether this edge represents a stop event
+     */
+    is_stop_event: boolean;
+    /**
+     * Payload information for the event
+     */
+    payload: {
+        [key: string]: EventPayloadField;
+    };
+};
+
 export type Embeddings = {
     /**
      * The type of object.
@@ -476,6 +510,48 @@ export type EmbeddingsResponse = {
      * The list of embeddings.
      */
     data: Array<Embeddings>;
+};
+
+/**
+ * Information about an event.
+ */
+export type EventInfo = {
+    /**
+     * The name of the event class
+     */
+    name: string;
+    /**
+     * The fully qualified name of the event class
+     */
+    full_name: string;
+    /**
+     * Whether this is a start event
+     */
+    is_start_event: boolean;
+    /**
+     * Whether this is a stop event
+     */
+    is_stop_event: boolean;
+    /**
+     * Information about the event payload fields
+     */
+    payload: {
+        [key: string]: EventPayloadField;
+    };
+};
+
+/**
+ * Information about an event payload field.
+ */
+export type EventPayloadField = {
+    /**
+     * The human-readable type of the payload field
+     */
+    type: string;
+    /**
+     * Description of the payload field, if available
+     */
+    description: string | null;
 };
 
 /**
@@ -578,6 +654,20 @@ export type ImagesResponse = {
 export type InputAudio = {
     data: string;
     format: 'wav' | 'mp3';
+};
+
+/**
+ * Information about an input event for a step.
+ */
+export type InputEventInfo = {
+    /**
+     * The types of events that can be accepted
+     */
+    event_types: Array<EventInfo>;
+    /**
+     * Whether this input is optional
+     */
+    optional: boolean;
 };
 
 export type JsonSchema = {
@@ -764,6 +854,54 @@ export type MyUserDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
+};
+
+/**
+ * Data for a node in the workflow graph.
+ */
+export type NodeData = {
+    /**
+     * Unique identifier for the node
+     */
+    id: string;
+    /**
+     * Type of node (step, start, stop)
+     */
+    type: string;
+    /**
+     * Internal identifier for the node
+     */
+    node_id: string;
+    /**
+     * Display label for the node
+     */
+    label: string;
+    /**
+     * Description of the node, if available
+     */
+    description?: string | null;
+    /**
+     * Icon for the node, if available
+     */
+    icon?: string | null;
+    /**
+     * Input events required by this node
+     */
+    input_events?: {
+        [key: string]: InputEventInfo;
+    } | null;
+    /**
+     * Output events produced by this node
+     */
+    output_events?: Array<EventInfo> | null;
+    /**
+     * Maximum number of times this node can be executed
+     */
+    max_executions?: number | null;
+    /**
+     * Whether workflow should stop on error in this node
+     */
+    stop_on_error?: boolean | null;
 };
 
 export type PromptTokensDetails = {
@@ -1018,6 +1156,34 @@ export type WsServerEvent = {
     event_data: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Complete workflow graph representation.
+ */
+export type WorkflowGraph = {
+    /**
+     * Whether the graph is directed
+     */
+    directed: boolean;
+    /**
+     * Whether the graph is a multigraph
+     */
+    multigraph: boolean;
+    /**
+     * Graph-level attributes
+     */
+    graph: {
+        [key: string]: unknown;
+    };
+    /**
+     * List of nodes in the graph
+     */
+    nodes: Array<NodeData>;
+    /**
+     * List of edges in the graph
+     */
+    links: Array<EdgeData>;
 };
 
 export type OpenaiTypesChatChatCompletionMessageToolCallParamFunction = {

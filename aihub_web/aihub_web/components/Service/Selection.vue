@@ -11,15 +11,22 @@
       />
     </template>
   </Button>
-  <Popover ref="op">
+  <Popover
+    ref="op"
+    class="bg-white dark:bg-stone-900"
+  >
     <div
       v-focustrap
       class="p-5 flex flex-col gap-4"
     >
-      <h2 class="text-xl">
-        Services
-      </h2>
-      <p>Here are all the services listed that you have activated</p>
+      <div>
+        <h2 class="text-xl">
+          Services
+        </h2>
+        <p class="text-sm">
+          Here are all the services listed that you have activated
+        </p>
+      </div>
       <IconField>
         <InputIcon>
           <i class="pi pi-search" />
@@ -82,7 +89,7 @@ const route = useRoute()
 const { loadingSuite, apps } = storeToRefs(useSuiteStore())
 
 const shownApps = computed(() => {
-  return search.value ? apps.value.filter((app: MenuItem) => app.value.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value
+  return search.value ? apps.value.filter((app: MenuItem) => app.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value
 })
 
 const search = ref('')

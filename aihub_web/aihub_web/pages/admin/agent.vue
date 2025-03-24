@@ -1,6 +1,6 @@
 <template>
   <div
-    class="p-1 flex flex-col gap-12"
+    class="p-1 flex flex-col gap-18 mt-12"
   >
     <div class="flex flex-col gap-2 p-6">
       <p class="text-3xl font-bold">
@@ -11,7 +11,7 @@
       </p>
     </div>
     <Splitter
-      class="mb-8 !border-none"
+      class="mb-8 !border-none "
       :gutter-size="3"
     >
       <SplitterPanel
@@ -118,7 +118,7 @@
           <DataView
             v-else
             :value="agents"
-            class="p-3"
+            class="p-3 bg-white dark:bg-stone-900"
             paginator
             :rows="5"
           >

@@ -1,56 +1,54 @@
 <template>
-  <div class="vue-flow-wrapper">
-    <VueFlow
-      v-model:nodes="nodes"
-      v-model:edges="edges"
-      :default-viewport="{ zoom: 1 }"
-      :min-zoom="0.2"
-      :max-zoom="4"
-      class="graph-flow"
-      fit-view-on-init
-    >
-      <Background />
+  <VueFlow
+    v-model:nodes="nodes"
+    v-model:edges="edges"
+    :default-viewport="{ zoom: 1 }"
+    :min-zoom="0.2"
+    :max-zoom="4"
+    class="graph-flow"
+    fit-view-on-init
+  >
+    <Background />
 
-      <template #node-start="{ id, data }">
-        <WorkflowStartNode
-          :id="id"
-          :data="data"
-        />
-      </template>
+    <template #node-start="{ id, data }">
+      <WorkflowStartNode
+        :id="id"
+        :data="data"
+      />
+    </template>
 
-      <template #node-step="{ id, data }">
-        <WorkflowStepNode
-          :id="id"
-          :data="data"
-        />
-      </template>
+    <template #node-step="{ id, data }">
+      <WorkflowStepNode
+        :id="id"
+        :data="data"
+      />
+    </template>
 
-      <template #node-stop="{ id, data }">
-        <WorkflowStopNode
-          :id="id"
-          :data="data"
-        />
-      </template>
+    <template #node-stop="{ id, data }">
+      <WorkflowStopNode
+        :id="id"
+        :data="data"
+      />
+    </template>
 
-      <template #edge-custom="customEdgeProps">
-        <WorkflowEventEdge
-          :id="customEdgeProps.id"
-          :source-x="customEdgeProps.sourceX"
-          :source-y="customEdgeProps.sourceY"
-          :target-x="customEdgeProps.targetX"
-          :target-y="customEdgeProps.targetY"
-          :source-position="customEdgeProps.sourcePosition"
-          :target-position="customEdgeProps.targetPosition"
-          :data="customEdgeProps.data"
-          :marker-end="customEdgeProps.markerEnd"
-          :style="customEdgeProps.style"
-        />
-      </template>
-    </VueFlow>
-  </div>
+    <template #edge-custom="customEdgeProps">
+      <WorkflowEventEdge
+        :id="customEdgeProps.id"
+        :source-x="customEdgeProps.sourceX"
+        :source-y="customEdgeProps.sourceY"
+        :target-x="customEdgeProps.targetX"
+        :target-y="customEdgeProps.targetY"
+        :source-position="customEdgeProps.sourcePosition"
+        :target-position="customEdgeProps.targetPosition"
+        :data="customEdgeProps.data"
+        :marker-end="customEdgeProps.markerEnd"
+        :style="customEdgeProps.style"
+      />
+    </template>
+  </VueFlow>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -59,13 +57,11 @@ import dagre from '@dagrejs/dagre'
 // Import styles
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
+import type { WorkflowGraph } from '@core/sdk/client'
 
-const props = defineProps({
-  graphData: {
-    type: Object,
-    required: true,
-  },
-})
+const props = defineProps<{
+  graphData: WorkflowGraph
+}>()
 
 const { fitView } = useVueFlow()
 const nodes = ref([])
@@ -157,11 +153,6 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-.vue-flow-wrapper {
-  width: 100%;
-  height: 600px;
-}
-
 .graph-flow {
   width: 100%;
   height: 100%;

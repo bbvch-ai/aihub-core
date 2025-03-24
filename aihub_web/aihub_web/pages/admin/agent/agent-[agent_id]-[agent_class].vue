@@ -2,33 +2,57 @@
   <div
     class="border-stone-200 dark:border-stone-700 border rounded-lg overflow-auto"
   >
-    <div class="bg-white dark:bg-black">
-      <div class="flex flex-col gap-2 p-6">
-        <p class="text-3xl font-bold">
-          {{ agent?.agent_config.name }}
-        </p>
-        <p class="text-sm">
-          {{ agent?.agent_config.description }}
-        </p>
-        <div
-          v-for="startEvent in startEvents"
-          :key="startEvent.event_type"
-        >
-          <p class="text-lg font-bold">
-            {{ startEvent.event_type }}
+    <div class="bg-white dark:bg-stone-900">
+      <div class="flex flex-col gap-6 p-6">
+        <div>
+          <p class="text-2xl font-bold">
+            {{ agent?.agent_config.name }}
           </p>
-          <component
-            :is="startEventComponents[startEvent.event_type]"
-            v-if="startEvent.event_type in startEventComponents"
+          <p class="text-sm">
+            {{ agent?.agent_config.description }}
+          </p>
+        </div>
+        <div>
+          <p class="text-xl font-bold">
+            Events
+          </p>
+          <div
+            v-for="startEvent in startEvents"
+            :key="startEvent.event_type"
+          >
+            <component
+              :is="startEventComponents[startEvent.event_type]"
+              v-if="startEvent.event_type in startEventComponents"
+            />
+          </div>
+        </div>
+        <div>
+          <p class="text-xl font-bold">
+            Workflow
+            <Button
+              rounded
+              variant="text"
+              icon="pi pi-window-maximize"
+              @click="workflowFullscreen = true"
+            />
+          </p>
+        </div>
+        <Drawer
+          v-model:visible="workflowFullscreen"
+          header="Workflow"
+          position="full"
+        >
+          <WorkflowVisualization
+            v-if="agent"
+            :graph-data="agent.network_graph"
+          />
+        </Drawer>
+        <div class="w-full h-[400px]">
+          <WorkflowVisualization
+            v-if="agent"
+            :graph-data="agent.network_graph"
           />
         </div>
-        <p>
-          Workflow
-        </p>
-        <WorkflowVisualization
-          v-if="agent"
-          :graph-data="agent?.network_graph"
-        />
       </div>
     </div>
   </div>
@@ -52,6 +76,8 @@ const startEvents = computed<EventSpecs[]>(() => {
 })
 
 const startEventComponents = { UserMessageEvent }
+
+const workflowFullscreen = ref(false)
 </script>
 
 <style scoped>

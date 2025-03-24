@@ -12,23 +12,12 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+import type { NodeData } from '@core/sdk/client'
 
-const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
-  data: {
-    type: Object,
-    required: true,
-  },
-})
-</script>
-
-<script>
-export default {
-  inheritAttrs: false,
-}
+const props = defineProps<{
+  id: string
+  data: NodeData
+}>()
 </script>

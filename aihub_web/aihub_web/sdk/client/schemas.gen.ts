@@ -112,9 +112,8 @@ export const AgentDTOSchema = {
             description: "A list of `EventSpecs` representing events that can stop this agent's workflow."
         },
         network_graph: {
-            type: 'object',
-            title: 'Network Graph',
-            description: 'A dictionary representing the network graph of the agent, showing how different components are connected and interact.'
+            '$ref': '#/components/schemas/WorkflowGraph',
+            description: 'A network graph of the agent, showing how different components are connected and interact.'
         }
     },
     type: 'object',
@@ -821,18 +820,6 @@ export const ChatCompletionPredictionContentParamSchema = {
 
 export const ChatCompletionRequestSchema = {
     properties: {
-        chat_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Chat Id',
-            description: 'ID of the chat to complete.'
-        },
         messages: {
             anyOf: [
                 {
@@ -997,9 +984,6 @@ export const ChatCompletionRequestSchema = {
         metadata: {
             anyOf: [
                 {
-                    additionalProperties: {
-                        type: 'string'
-                    },
                     type: 'object'
                 },
                 {
@@ -1697,6 +1681,58 @@ export const CreateTokenResponseSchema = {
     title: 'CreateTokenResponse'
 } as const;
 
+export const EdgeDataSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'ID of the source node'
+        },
+        target: {
+            type: 'string',
+            title: 'Target',
+            description: 'ID of the target node'
+        },
+        edge_id: {
+            type: 'integer',
+            title: 'Edge Id',
+            description: 'Unique identifier for the edge'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type',
+            description: 'Type of event represented by this edge'
+        },
+        event_full_name: {
+            type: 'string',
+            title: 'Event Full Name',
+            description: 'Fully qualified name of the event'
+        },
+        is_start_event: {
+            type: 'boolean',
+            title: 'Is Start Event',
+            description: 'Whether this edge represents a start event'
+        },
+        is_stop_event: {
+            type: 'boolean',
+            title: 'Is Stop Event',
+            description: 'Whether this edge represents a stop event'
+        },
+        payload: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/EventPayloadField'
+            },
+            type: 'object',
+            title: 'Payload',
+            description: 'Payload information for the event'
+        }
+    },
+    type: 'object',
+    required: ['source', 'target', 'edge_id', 'event_type', 'event_full_name', 'is_start_event', 'is_stop_event', 'payload'],
+    title: 'EdgeData',
+    description: 'Data for an edge in the workflow graph.'
+} as const;
+
 export const EmbeddingsSchema = {
     properties: {
         object: {
@@ -1830,6 +1866,69 @@ export const EmbeddingsResponseSchema = {
     type: 'object',
     required: ['model', 'data'],
     title: 'EmbeddingsResponse'
+} as const;
+
+export const EventInfoSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the event class'
+        },
+        full_name: {
+            type: 'string',
+            title: 'Full Name',
+            description: 'The fully qualified name of the event class'
+        },
+        is_start_event: {
+            type: 'boolean',
+            title: 'Is Start Event',
+            description: 'Whether this is a start event'
+        },
+        is_stop_event: {
+            type: 'boolean',
+            title: 'Is Stop Event',
+            description: 'Whether this is a stop event'
+        },
+        payload: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/EventPayloadField'
+            },
+            type: 'object',
+            title: 'Payload',
+            description: 'Information about the event payload fields'
+        }
+    },
+    type: 'object',
+    required: ['name', 'full_name', 'is_start_event', 'is_stop_event', 'payload'],
+    title: 'EventInfo',
+    description: 'Information about an event.'
+} as const;
+
+export const EventPayloadFieldSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            title: 'Type',
+            description: 'The human-readable type of the payload field'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Description of the payload field, if available'
+        }
+    },
+    type: 'object',
+    required: ['type', 'description'],
+    title: 'EventPayloadField',
+    description: 'Information about an event payload field.'
 } as const;
 
 export const EventSpecsSchema = {
@@ -2096,7 +2195,7 @@ export const ImageGenerationRequestSchema = {
             ],
             title: 'Model',
             description: 'The model to use for image generation. Defaults to dall-e-2.',
-            default: 'dall-e-2'
+            default: 'dall-e-3'
         },
         n: {
             anyOf: [
@@ -2216,6 +2315,28 @@ export const InputAudioSchema = {
     type: 'object',
     required: ['data', 'format'],
     title: 'InputAudio'
+} as const;
+
+export const InputEventInfoSchema = {
+    properties: {
+        event_types: {
+            items: {
+                '$ref': '#/components/schemas/EventInfo'
+            },
+            type: 'array',
+            title: 'Event Types',
+            description: 'The types of events that can be accepted'
+        },
+        optional: {
+            type: 'boolean',
+            title: 'Optional',
+            description: 'Whether this input is optional'
+        }
+    },
+    type: 'object',
+    required: ['event_types', 'optional'],
+    title: 'InputEventInfo',
+    description: 'Information about an input event for a step.'
 } as const;
 
 export const JSONSchemaSchema = {
@@ -2625,6 +2746,113 @@ export const MyUserDTOSchema = {
     type: 'object',
     required: ['id', 'name', 'email'],
     title: 'MyUserDTO'
+} as const;
+
+export const NodeDataSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the node'
+        },
+        type: {
+            type: 'string',
+            title: 'Type',
+            description: 'Type of node (step, start, stop)'
+        },
+        node_id: {
+            type: 'string',
+            title: 'Node Id',
+            description: 'Internal identifier for the node'
+        },
+        label: {
+            type: 'string',
+            title: 'Label',
+            description: 'Display label for the node'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Description of the node, if available'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon',
+            description: 'Icon for the node, if available'
+        },
+        input_events: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        '$ref': '#/components/schemas/InputEventInfo'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Events',
+            description: 'Input events required by this node'
+        },
+        output_events: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/EventInfo'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Events',
+            description: 'Output events produced by this node'
+        },
+        max_executions: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Executions',
+            description: 'Maximum number of times this node can be executed'
+        },
+        stop_on_error: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Stop On Error',
+            description: 'Whether workflow should stop on error in this node'
+        }
+    },
+    type: 'object',
+    required: ['id', 'type', 'node_id', 'label'],
+    title: 'NodeData',
+    description: 'Data for a node in the workflow graph.'
 } as const;
 
 export const PromptTokensDetailsSchema = {
@@ -3293,6 +3521,46 @@ debugging or logging outbound messages.
 ### Conversion from Persisted Events
 The \`from_persisted_event\` method rebuilds a \`WSServerEvent\` from a \`PersistedEventEntity\`,
 allowing previously stored events to be replayed or displayed to users.`
+} as const;
+
+export const WorkflowGraphSchema = {
+    properties: {
+        directed: {
+            type: 'boolean',
+            title: 'Directed',
+            description: 'Whether the graph is directed'
+        },
+        multigraph: {
+            type: 'boolean',
+            title: 'Multigraph',
+            description: 'Whether the graph is a multigraph'
+        },
+        graph: {
+            type: 'object',
+            title: 'Graph',
+            description: 'Graph-level attributes'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/NodeData'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'List of nodes in the graph'
+        },
+        links: {
+            items: {
+                '$ref': '#/components/schemas/EdgeData'
+            },
+            type: 'array',
+            title: 'Links',
+            description: 'List of edges in the graph'
+        }
+    },
+    type: 'object',
+    required: ['directed', 'multigraph', 'graph', 'nodes', 'links'],
+    title: 'WorkflowGraph',
+    description: 'Complete workflow graph representation.'
 } as const;
 
 export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
