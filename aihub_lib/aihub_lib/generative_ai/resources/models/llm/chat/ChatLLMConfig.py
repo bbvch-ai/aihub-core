@@ -37,6 +37,7 @@ class ChatLLMConfig(LLMConfig):
     With ChatLLMConfig, we integrate these parameters and the cost tracking mechanism in one place.
     """
 
+    timeout: Optional[float] = Field(None, description="Timeout for the model request in seconds (default: 60.0).")
     default_parameter: ChatLLMParameter = Field(
         ..., description="Default parameters for the chat-based LLM.", default_factory=lambda: ChatLLMParameter()
     )
