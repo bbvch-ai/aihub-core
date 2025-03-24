@@ -87,6 +87,7 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
                 additional_kwargs=additional_kwargs,
                 callback_manager=CallbackManager([token_counter]),
                 engine=self.name,
+                timeout=self.timeout,
             )
         else:
             token_provider = get_bearer_token_provider(
@@ -103,6 +104,7 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
                 additional_kwargs=additional_kwargs,
                 callback_manager=CallbackManager([token_counter]),
                 engine=self.name,
+                timeout=self.timeout,
             )
 
         return azure_open_ai, cost_tracker
