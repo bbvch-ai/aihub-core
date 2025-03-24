@@ -54,12 +54,12 @@ import { Background } from '@vue-flow/background'
 import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
 import { ref, watchEffect } from 'vue'
 
-import type { Node, Edge } from '@vue-flow/core'
-
 // Import styles
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
+
 import type { WorkflowGraph, NodeData, EdgeData } from '@core/sdk/client'
+import type { Node, Edge } from '@vue-flow/core'
 
 const props = defineProps<{
   graphData: WorkflowGraph

@@ -2,6 +2,7 @@ import asyncio
 from asyncio import sleep
 from typing import List, Optional
 
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
@@ -125,6 +126,7 @@ class AgentService:
                 is_conversational=event.is_conversational,
                 start_events=event.start_events,
                 stop_events=event.stop_events,
+                network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             )
             agent_found_event.set()
 

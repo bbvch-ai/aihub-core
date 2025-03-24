@@ -21,7 +21,7 @@ from redis.asyncio import ConnectionPool, Redis
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.Dispatcher import Dispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from aihub_lib.agents.visualizers.WorkflowVisualizer import WorkflowVisualizer
+from aihub_agent.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 
 logger = logging.getLogger(__name__)
 

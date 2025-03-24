@@ -6,6 +6,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, FastAPI, Security
+from typing_extensions import override
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
@@ -34,6 +35,7 @@ class SuiteController(Controller):
 
         return self
 
+    @override
     def mount(self, app: FastAPI, runner: "ApiRunner"):
         super().mount(app, runner)
         self._runner = runner

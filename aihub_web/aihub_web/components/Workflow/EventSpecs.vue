@@ -5,11 +5,11 @@
     value="0"
   >
     <AccordionPanel
-      class="rounded-md border-stone-300 bg-white p-1 pl-2 dark:border-stone-600 dark:bg-stone-900"
+      class="rounded-md border-surface-300 bg-white p-1 pl-2 dark:border-surface-600 dark:bg-surface-900"
       :class="{ 'border-l-2': props.type == 'input', 'border-r-2': props.type == 'output' }"
       :value="event.name"
     >
-      <AccordionHeader class="p-1 pb-0 pl-0 text-xs font-normal text-stone-900 dark:text-stone-100">
+      <AccordionHeader class="p-1 pb-0 pl-0 text-xs font-normal text-surface-900 dark:text-surface-100">
         {{ event.name }}
       </AccordionHeader>
       <AccordionContent
@@ -24,9 +24,9 @@
           >
             <div class="flex flex-row gap-1">
               <span class="text-[9px] font-bold">{{ payload_name }}</span>
-              <span class="text-[9px] italic text-stone-400">{{ payload_value.type }}</span>
+              <span class="text-[9px] italic text-surface-400">{{ payload_value.type }}</span>
             </div>
-            <span class="border-l-2 border-stone-200 pl-2 text-[9px] dark:border-stone-700">{{ payload_value.description }}</span>
+            <span class="border-l-2 border-surface-200 pl-2 text-[9px] dark:border-surface-700">{{ payload_value.description }}</span>
           </div>
         </div>
       </AccordionContent>

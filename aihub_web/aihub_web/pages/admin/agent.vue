@@ -1,6 +1,6 @@
 <template>
   <div
-    class="gap-18 mt-12 flex flex-col p-1"
+    class="mt-12 flex flex-col gap-16 p-1"
   >
     <div class="flex flex-col gap-2 p-6">
       <p class="text-3xl font-bold">
@@ -19,11 +19,11 @@
         state-storage="local"
         :min-size="25"
         :size="25"
-        class="border-none bg-stone-50 p-5 dark:bg-stone-950"
+        class="border-none bg-surface-50 p-5 dark:bg-surface-950"
       >
         <div
           ref="leftsplitter"
-          class="overflow-auto rounded-lg border border-stone-200 dark:border-stone-700"
+          class="overflow-auto rounded-lg border border-surface-200 dark:border-surface-700"
         >
           <DataTable
             v-if="showTable"
@@ -118,7 +118,7 @@
           <DataView
             v-else
             :value="agents"
-            class="bg-white p-3 dark:bg-stone-900"
+            class="bg-white p-3 dark:bg-surface-900"
             paginator
             :rows="5"
           >
@@ -142,7 +142,7 @@
                   class="flex flex-row gap-4 p-4"
                   :class="{
                     'border-t border-surface-200 dark:border-surface-700': index !== 0,
-                    'bg-stone-50 dark:bg-stone-950': selectedAgent?.agent_id == agent.agent_id,
+                    'bg-surface-50 dark:bg-surface-950': selectedAgent?.agent_id == agent.agent_id,
                   }"
                 >
                   <Checkbox
@@ -174,7 +174,7 @@
       </SplitterPanel>
       <SplitterPanel
         v-if="selectedAgent"
-        class="border-none bg-stone-50 p-5 dark:bg-stone-950"
+        class="border-none bg-surface-50 p-5 dark:bg-surface-950"
       >
         <NuxtPage />
       </SplitterPanel>

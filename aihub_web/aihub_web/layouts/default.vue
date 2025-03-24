@@ -1,6 +1,6 @@
 <template>
-  <div class="flex min-h-screen w-full flex-row bg-stone-50 dark:bg-stone-950">
-    <div class="fixed flex h-screen w-[50px] flex-col items-center justify-between bg-white shadow-md shadow-stone-500 dark:bg-stone-900">
+  <div class="flex min-h-screen w-full flex-row bg-surface-50 dark:bg-surface-950">
+    <div class="fixed flex h-screen w-[50px] flex-col items-center justify-between bg-white shadow-md shadow-surface-500 dark:bg-surface-900">
       <div class="flex h-[50px] w-full items-center justify-center">
         <ServiceSelection />
       </div>

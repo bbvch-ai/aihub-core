@@ -7,6 +7,7 @@ from aihub_lib.agents.visualizers.types.EventPayloadField import EventPayloadFie
 
 class EventInfo(BaseModel):
     """Information about an event."""
+
     name: Annotated[str, Field(description="The name of the event class")]
     full_name: Annotated[str, Field(description="The fully qualified name of the event class")]
     is_start_event: Annotated[bool, Field(description="Whether this is a start event")]

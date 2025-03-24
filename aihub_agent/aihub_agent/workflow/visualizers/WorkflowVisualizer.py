@@ -5,7 +5,6 @@ from types import UnionType
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, get_args, get_origin
 
 import networkx as nx
-
 from aihub_lib.agents.visualizers.types.EdgeData import EdgeData
 from aihub_lib.agents.visualizers.types.EventInfo import EventInfo
 from aihub_lib.agents.visualizers.types.EventPayloadField import EventPayloadField
@@ -132,10 +131,7 @@ class WorkflowVisualizer:
             event_info_list = [self._get_event_info(et) for et in event_types]
 
             # Create InputEventInfo model
-            input_event_info = InputEventInfo(
-                event_types=event_info_list,
-                optional=is_optional
-            )
+            input_event_info = InputEventInfo(event_types=event_info_list, optional=is_optional)
 
             result[param_name] = input_event_info
 
@@ -161,7 +157,7 @@ class WorkflowVisualizer:
             full_name=f"{event_class.__module__}.{event_class.__name__}",
             is_start_event=issubclass(event_class, StartEvent),
             is_stop_event=issubclass(event_class, StopEvent),
-            payload=payload_info
+            payload=payload_info,
         )
 
         return event_info
@@ -184,10 +180,7 @@ class WorkflowVisualizer:
                 field = event_class.model_fields[field_name]
                 description = field.description if hasattr(field, "description") else None
 
-            payload_field = EventPayloadField(
-                type=type_desc,
-                description=description
-            )
+            payload_field = EventPayloadField(type=type_desc, description=description)
 
             payload_info[field_name] = payload_field
 
@@ -235,8 +228,10 @@ class WorkflowVisualizer:
         self._add_event_edges(G, event_producers, event_consumers, START_NODE, END_NODE)
 
     def _build_event_mappings(
-            self, step_names: Dict[str, Any], event_producers: Dict[EventType, Set[str]],
-            event_consumers: Dict[EventType, Set[str]]
+        self,
+        step_names: Dict[str, Any],
+        event_producers: Dict[EventType, Set[str]],
+        event_consumers: Dict[EventType, Set[str]],
     ) -> None:
         """Build mappings between events and their producers/consumers."""
         for step_name, step_method in step_names.items():
@@ -253,8 +248,12 @@ class WorkflowVisualizer:
                     event_producers[event_type].add(step_name)
 
     def _add_event_edges(
-            self, G: nx.DiGraph, event_producers: Dict[EventType, Set[str]], event_consumers: Dict[EventType, Set[str]],
-            START_NODE: str, END_NODE: str
+        self,
+        G: nx.DiGraph,
+        event_producers: Dict[EventType, Set[str]],
+        event_consumers: Dict[EventType, Set[str]],
+        START_NODE: str,
+        END_NODE: str,
     ) -> None:
         """Add edges to the graph based on event flow."""
         for event_type in set(event_producers.keys()) | set(event_consumers.keys()):
@@ -380,10 +379,4 @@ class WorkflowVisualizer:
             links.append(edge_model)
 
         # Create and return the workflow graph model
-        return WorkflowGraph(
-            directed=True,
-            multigraph=False,
-            graph={},
-            nodes=nodes,
-            links=links
-        )
+        return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)

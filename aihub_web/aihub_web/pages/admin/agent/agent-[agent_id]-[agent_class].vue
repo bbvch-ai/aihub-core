@@ -1,8 +1,8 @@
 <template>
   <div
-    class="overflow-auto rounded-lg border border-stone-200 dark:border-stone-700"
+    class="overflow-auto rounded-lg border border-surface-200 dark:border-surface-700"
   >
-    <div class="bg-white dark:bg-stone-900">
+    <div class="bg-white dark:bg-surface-900">
       <div class="flex flex-col gap-6 p-6">
         <div>
           <p class="text-2xl font-bold">

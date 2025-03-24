@@ -3,7 +3,7 @@
     type="target"
     :position="Position.Left"
   />
-  <div class="overflow-hidden rounded-md border border-stone-100 bg-red-500 p-6 text-lg font-bold text-white shadow-md">
+  <div class="overflow-hidden rounded-md border border-surface-100 bg-red-500 p-6 text-lg font-bold text-white shadow-md">
     {{ props.id }}
   </div>
   <Handle

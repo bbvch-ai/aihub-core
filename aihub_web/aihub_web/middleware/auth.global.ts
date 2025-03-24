@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware(async (to, _) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const { $auth, $i18n } = useNuxtApp()
   const noAuthPaths = [
     `/${$i18n.locale.value}/auth/login`,

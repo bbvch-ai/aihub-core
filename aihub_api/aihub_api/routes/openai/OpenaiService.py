@@ -65,7 +65,11 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS, t: LocaleHandler, exclude_webui_agents: bool
+        chat_models: List[ChatLLMConfig],
+        user: AuthenticatedUser,
+        nc: NATS,
+        t: LocaleHandler,
+        exclude_webui_agents: bool,
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs

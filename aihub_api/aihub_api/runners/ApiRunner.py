@@ -1,13 +1,12 @@
 import logging
 from random import seed
-from typing import List, Optional, Set
+from typing import AsyncContextManager, List, Optional
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
+from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
-from starlette.staticfiles import StaticFiles
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 seed(0)
 
 
-class ApiRunner:
+class ApiRunner(Runner):
     """
     A utility class for constructing and running a FastAPI-based API application,
     integrating multiple controllers, middleware, and optional frontend static files.
@@ -58,51 +57,18 @@ class ApiRunner:
         origins: Optional[List[str]] = None,
         debug: bool = False,
     ):
-        self.title = title
-        self.description = description
-        self.origins = origins
-        self.debug = debug
+        super().__init__(api_path, title, description, origins, debug)
 
-        # Create the base and API apps
-        self._base_app = self._get_base_app()
-        self._api_app = self._get_api_app()
-        self._api_app.state = self._base_app.state
-
-        # Mount the API under the specified path
-        self._base_app.mount(api_path, self._api_app)
-
-        self.controllers: Set[Controller] = set()
-
-    def get_app(self) -> FastAPI:
-        """
-        Returns the main FastAPI application instance, which can be run using an ASGI server.
-        """
-        return self._base_app
-
-    def _get_base_app(self) -> FastAPI:
-        """
-        Creates the base FastAPI application, responsible for app lifecycle management (lifespan),
-        possibly serving static files, and holding shared state.
-        """
-        return FastAPI(
-            title=self.title,
-            description=self.description,
-            version=ApiConfig().VERSION or ".dev",
-            lifespan=lifetime_manager,
-            debug=self.debug,
-        )
+    @property
+    def lifetime_manager(self) -> AsyncContextManager:
+        return lifetime_manager
 
     def _get_api_app(self) -> FastAPI:
         """
         Creates the API FastAPI application that will be mounted under `api_path`.
         Applies middleware like CORS and i18n. The controllers are mounted onto this app.
         """
-        app = FastAPI(
-            title=self.title,
-            description=self.description,
-            version=ApiConfig().VERSION or ".dev",
-            debug=self.debug,
-        )
+        app = super()._get_api_app()
 
         origins = self.origins or ["http://localhost:8080"]
         if ApiConfig().FRONTEND_ORIGIN:
@@ -127,14 +93,7 @@ class ApiRunner:
         Mounts one or more controllers (each subclass of Controller) onto the API application.
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
-        for controller in controllers:
-            controller.mount(self._api_app, self)
-            self.controllers.add(controller)
-
-        # Ensures that openapi docs are generated with the method name as the operation name
-        for route in self._api_app.routes:
-            if isinstance(route, APIRoute):
-                route.operation_id = route.name
+        super().mount(*controllers)
 
         self._api_app.openapi_tags = [
             {
@@ -144,12 +103,4 @@ class ApiRunner:
             for controller in controllers
         ]
 
-        return self
-
-    def mount_frontend(self, directory: str) -> "ApiRunner":
-        """
-        Mount a static frontend (e.g., a React build directory) at the base "/" path of the app.
-        This allows serving the SPA directly from the same server that handles API requests.
-        """
-        self._base_app.mount("/", StaticFiles(directory=directory, html=True), name="static")
         return self

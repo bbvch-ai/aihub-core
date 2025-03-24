@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-screen flex-col md:flex-row">
-    <div class="order-2 flex h-3/5 w-full items-center justify-center bg-neutral-950 p-10 text-4xl text-stone-300 md:order-1 md:h-auto md:w-3/5">
+    <div class="order-2 flex h-3/5 w-full items-center justify-center bg-neutral-950 p-10 text-4xl text-surface-300 md:order-1 md:h-auto md:w-3/5">
       <span>Erleben Sie die Zukunft der künstlichen Intelligenz</span>
     </div>
 
@@ -23,7 +23,7 @@
           <h2 class="text-xl text-white">
             Willkommen im AI Hub von {{ companyName }}
           </h2>
-          <p class="text-stone-400">
+          <p class="text-surface-400">
             Bitte loggen Sie sich ein
           </p>
         </div>
@@ -39,7 +39,7 @@
         href="https://bbv.ch/services/generative-ai/"
         target="_blank"
         rel="noopener noreferrer"
-        class="hidden text-stone-400 sm:block"
+        class="hidden text-surface-400 sm:block"
       >
         Individuelle KI-Lösungen für Ihr Unternehmen
       </a>
