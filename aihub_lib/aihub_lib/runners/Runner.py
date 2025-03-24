@@ -11,6 +11,39 @@ from aihub_lib.routes.Controller import Controller
 
 
 class Runner(abc.ABC):
+    """
+    An abstract base class for constructing and running FastAPI-based applications
+    with consistent patterns for mounting controllers and managing application lifecycle.
+
+    ### Why Use Runner?
+    The `Runner` class provides a standardized foundation for creating API services with FastAPI.
+    It handles common patterns like:
+    - Creating a base application and a nested API application
+    - Applying middleware and configuration
+    - Mounting controllers under a specified API path
+    - Managing application lifecycle through an abstract lifetime manager
+    - Optionally serving static frontend files
+
+    ### Key Features
+    - **Dual Application Architecture:** Distinguishes between a base application (for static files or other mounts)
+      and the API application (serving routes under a given prefix).
+    - **Integration with Config:** Pulls version info and other details from `ApiConfig`.
+    - **Easy Controller Mounting:** Controllers that subclass `Controller` can be attached with a simple `.mount()` call.
+    - **Abstract Lifetime Management:** Each implementation must provide a `lifetime_manager` for handling async startup/shutdown.
+    - **Optional Frontend Integration:** Serve a frontend directly by calling `.mount_frontend(directory)`.
+
+    ### Usage
+    ```python
+    # Typically you'd use a concrete implementation like ApiRunner or BotRunner
+    runner = ConcreteRunner(api_path="/api/v1", title="My API", debug=True)
+    runner.mount(MyController())  # Mounting a controller
+    runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
+    app = runner.get_app()  # This is the main FastAPI instance to run
+    ```
+
+    You can then run `app` using `uvicorn` or another ASGI server.
+    """
+
     def __init__(
         self,
         api_path: str = "/api/v1",

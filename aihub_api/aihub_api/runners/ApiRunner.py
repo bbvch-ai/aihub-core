@@ -19,34 +19,32 @@ seed(0)
 
 class ApiRunner(Runner):
     """
-    A utility class for constructing and running a FastAPI-based API application,
-    integrating multiple controllers, middleware, and optional frontend static files.
+    A concrete implementation of Runner for standard API services with
+    internationalization and CORS support.
 
     ### Why Use ApiRunner?
-    Instead of manually piecing together a FastAPI application, CORS middleware,
-    internationalization layers, and controllers, `ApiRunner` centralizes this setup.
-    It:
-    - Builds a base app and a nested API app.
-    - Applies CORS and i18n middleware.
-    - Mounts controllers under a specified API path.
-    - Optionally serves a frontend directly from the same server, simplifying deployment.
+    `ApiRunner` extends the base `Runner` class with specific features for standard HTTP APIs:
+    - Configures CORS middleware with sensible defaults
+    - Integrates internationalization (i18n) for API responses
+    - Applies tag-based OpenAPI documentation organization
+    - Provides a lifecycle manager tailored for API services
 
     ### Key Features
-    - **Separation of Concerns:** Distinguishes between a base application (for static files or other mounts)
-      and the API application (serving JSON routes under a given prefix).
-    - **Integration with Config:** Pulls version info, allowed origins, and other details from `BaseConfig`.
-    - **Easy Controller Mounting:** Controllers that subclass `Controller` can be attached with a simple `.mount()` call.
-    - **Optional Frontend Integration:** Serve a React or Vue frontend directly by calling `.mount_frontend(directory)`.
+    - **CORS Configuration:** Automatically configures Cross-Origin Resource Sharing with
+      appropriate origins from configuration.
+    - **Internationalization:** Integrates with `I18nMiddleware` for multilingual support.
+    - **Enhanced Documentation:** Generates OpenAPI tags and descriptions from controllers.
+    - **Lifecycle Management:** Uses the API-specific lifetime manager.
 
     ### Usage
     ```python
     runner = ApiRunner(api_path="/api/v1", title="My API", debug=True)
-    runner.mount(MyController())  # Mounting a controller
-    runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
-    app = runner.get_app()  # This is the main FastAPI instance to run
+    runner.mount(UserController(), ProductController())  # Mount controllers
+    runner.mount_frontend("path/to/frontend/dist")  # Optional: serve frontend
+    app = runner.get_app()  # Get the FastAPI instance
     ```
 
-    You can then run `app` using `uvicorn` or another ASGI server.
+    Run the resulting `app` using `uvicorn` or another ASGI server.
     """
 
     def __init__(
