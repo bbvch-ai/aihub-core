@@ -31,6 +31,8 @@ H4 = "h4"
 H5 = "h5"
 H6 = "h6"
 HEADING_LEVEL = "heading_level"
+REFERENCE_NAME = "reference_name"
+REFERENCE_URL = "reference_url"
 
 # Allowed node types
 NODE_TYPE_CONTENT = "content"
@@ -62,6 +64,8 @@ DEFAULT_METADATA = {
     H5: None,
     H6: None,
     HEADING_LEVEL: 0,
+    REFERENCE_NAME: None,
+    REFERENCE_URL: None,
 }
 
 DEFAULT_METADATA_FIELDS = {
@@ -84,4 +88,6 @@ DEFAULT_METADATA_FIELDS = {
     H5: (H5, MetadataIndexFieldType.STRING),
     H6: (H6, MetadataIndexFieldType.STRING),
     HEADING_LEVEL: (HEADING_LEVEL, MetadataIndexFieldType.INT32),
+    REFERENCE_NAME: (REFERENCE_NAME, MetadataIndexFieldType.STRING),
+    REFERENCE_URL: (REFERENCE_URL, MetadataIndexFieldType.STRING),
 }

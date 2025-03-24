@@ -65,7 +65,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS, t: LocaleHandler
+        chat_models: List[ChatLLMConfig], user: AuthenticatedUser, nc: NATS, t: LocaleHandler, exclude_webui_agents: bool
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
@@ -78,6 +78,11 @@ class OpenaiService:
             for agent_dto in agent_dtos
             if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))
         ]
+
+        # Ensures we have no recursive webui agent discovery
+        if exclude_webui_agents:
+            agent_dtos = [agent_dto for agent_dto in agent_dtos if agent_dto.agent_class != "WebuiAgent"]
+
         assistants = [
             ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
             for agent_dto in agent_dtos
@@ -166,7 +171,7 @@ class OpenaiService:
         chat_model, _ = chat_model_config.to_llama_index()
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
-        del function_args["chat_id"]
+        function_args = {k: v for k, v in function_args.items() if v is not None}
         if function_args.get("stream", False):
 
             async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:
@@ -227,6 +232,7 @@ class OpenaiService:
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
     ):
+        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -234,7 +240,7 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_completion_request.chat_id),
+            thread_id=ThreadEntity.to_thread_id(chat_id),
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -270,6 +276,7 @@ class OpenaiService:
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
     ):
+        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -277,7 +284,7 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_completion_request.chat_id),
+            thread_id=ThreadEntity.to_thread_id(chat_id),
         )
 
         async def sse_event_generator():

@@ -8,7 +8,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import StartEvent, StopEvent, ExceptionEvent
 from aihub_lib.routes.Controller import Controller
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
@@ -142,8 +142,13 @@ class AgentController(Controller):
                 user=user,
                 locale=t.locale,
             )
-            return await AgentService.send_event(
+            stop_event = await AgentService.send_event(
                 nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
             )
+
+            if isinstance(stop_event, ExceptionEvent):
+                raise HTTPException(status_code=500, detail=stop_event.message)
+
+            return stop_event
 
         return self

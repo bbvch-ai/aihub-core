@@ -99,7 +99,11 @@ class OpenaiController(Controller):
 
         return self
 
-    def get_models_with_assistants(self, route: str = "/models") -> "OpenaiController":
+    def get_models_with_assistants(
+        self,
+        route: str = "/models",
+        exclude_webui_agents: Annotated[bool, "Ensures WebUI assistants are not returned to prevent recursion"] = False,
+    ) -> "OpenaiController":
         @self.router.get(
             route,
             summary="List Models (including ai-hub assistants)",
@@ -112,7 +116,9 @@ class OpenaiController(Controller):
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ModelResponse:
-            return await OpenaiService.get_models_with_assistants(self.chat_models, user, nc, t)
+            return await OpenaiService.get_models_with_assistants(
+                self.chat_models, user, nc, t, exclude_webui_agents=exclude_webui_agents
+            )
 
         return self
 
