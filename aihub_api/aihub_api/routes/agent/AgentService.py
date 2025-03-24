@@ -3,11 +3,10 @@ from asyncio import sleep
 from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import StartEvent, StopEvent
-from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -23,6 +22,7 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
 # In-memory caches to avoid repeatedly querying NATS for agent info

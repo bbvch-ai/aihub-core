@@ -14,9 +14,9 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
@@ -97,7 +97,11 @@ class OpenaiService:
 
     @staticmethod
     async def get_model_with_assistants(
-        chat_models: List[ChatLLMConfig], model_name: str, user: AuthenticatedUser, nc: NATS, t: LocaleHandler,
+        chat_models: List[ChatLLMConfig],
+        model_name: str,
+        user: AuthenticatedUser,
+        nc: NATS,
+        t: LocaleHandler,
     ) -> ModelDetails:
         """
         Fetch details for a specific chat model or ai-hub assistant by name.

@@ -28,7 +28,7 @@ class TokenController(Controller):
             summary="Create API Token",
             description="Creates a new API token.",
             status_code=status.HTTP_201_CREATED,
-            tags=self.tags
+            tags=self.tags,
         )
         async def create_token_endpoint(
             token_data: CreateTokenRequest, user: AuthenticatedUser = Security(self.auth)
@@ -50,7 +50,7 @@ class TokenController(Controller):
             route,
             summary="List API Tokens",
             description="Lists all API tokens for the authenticated user. The token value is not returned.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def list_tokens_endpoint(user: User = Security(self.auth)) -> List[TokenResponse]:
             return TokenService.list_tokens(user)
@@ -62,7 +62,7 @@ class TokenController(Controller):
             route,
             summary="Revoke API Token",
             description="Revokes (deletes) an API token for the authenticated user.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def revoke_token_endpoint(token_id: str, user: User = Security(self.auth)) -> RevokeTokenResponse:
             try:

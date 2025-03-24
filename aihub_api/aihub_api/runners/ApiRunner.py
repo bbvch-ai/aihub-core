@@ -2,7 +2,6 @@ import logging
 from random import seed
 from typing import List, Optional, Set
 
-from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from fastapi import FastAPI
@@ -10,6 +9,7 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
+from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
 
@@ -141,7 +141,8 @@ class ApiRunner:
                 "name": ApiLocaleHandler().extract(controller.name),
                 "description": ApiLocaleHandler().extract(controller.description),
             }
-            for controller in controllers]
+            for controller in controllers
+        ]
 
         return self
 

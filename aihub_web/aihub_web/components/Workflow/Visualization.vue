@@ -10,8 +10,6 @@
       fit-view-on-init
     >
       <Background />
-      <Controls />
-      <MiniMap />
 
       <template #node-start="{ id, data }">
         <WorkflowStartNode
@@ -33,6 +31,21 @@
           :data="data"
         />
       </template>
+
+      <template #edge-custom="customEdgeProps">
+        <WorkflowEventEdge
+          :id="customEdgeProps.id"
+          :source-x="customEdgeProps.sourceX"
+          :source-y="customEdgeProps.sourceY"
+          :target-x="customEdgeProps.targetX"
+          :target-y="customEdgeProps.targetY"
+          :source-position="customEdgeProps.sourcePosition"
+          :target-position="customEdgeProps.targetPosition"
+          :data="customEdgeProps.data"
+          :marker-end="customEdgeProps.markerEnd"
+          :style="customEdgeProps.style"
+        />
+      </template>
     </VueFlow>
   </div>
 </template>
@@ -41,27 +54,16 @@
 import { ref, watchEffect } from 'vue'
 import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
-import { MiniMap } from '@vue-flow/minimap'
 import dagre from '@dagrejs/dagre'
 
 // Import styles
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
-import '@vue-flow/controls/dist/style.css'
-import '@vue-flow/minimap/dist/style.css'
 
 const props = defineProps({
   graphData: {
     type: Object,
     required: true,
-    default: () => ({
-      directed: true,
-      multigraph: false,
-      graph: {},
-      nodes: [],
-      links: [],
-    }),
   },
 })
 
@@ -97,6 +99,7 @@ const transformGraphData = () => {
       label: link.event_type || '',
       data: link,
       markerEnd: MarkerType.Arrow,
+      type: 'custom',
     }
   })
 
@@ -107,7 +110,7 @@ const transformGraphData = () => {
 
   // Add nodes to dagre
   graphNodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 600, height: 250 })
+    dagreGraph.setNode(node.id, { width: 700, height: 350 })
   })
 
   // Add edges to dagre

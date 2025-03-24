@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-stone-50 rounded-md shadow-md border border-gray-100 overflow-hidden w-[500px]">
+  <div class="bg-stone-50 dark:bg-stone-900 rounded-md shadow-md border border-stone-100 dark:border-stone-800 overflow-hidden w-[500px]">
     <div class="h-1 w-full bg-red-500" />
     <div class="flex flex-row gap-3 p-3">
-      <div class="rounded-full bg-gray-200 w-8 h-8 flex items-center justify-center mt-1">
+      <div class="rounded-full bg-stone-200 dark:bg-stone-600 w-8 h-8 flex items-center justify-center mt-1">
         <Icon
           :name="props.data.icon ?? 'mingcute:ai-fill'"
           size="0.8em"
@@ -48,7 +48,7 @@
 
 <script setup>
 import { Handle, Position } from '@vue-flow/core'
-import EventSpecs from '@core/components/workflow/EventSpecs.vue'
+import EventSpecs from '@core/components/Workflow/EventSpecs.vue'
 
 const props = defineProps({
   id: {

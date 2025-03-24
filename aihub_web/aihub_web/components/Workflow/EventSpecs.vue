@@ -5,11 +5,11 @@
     value="0"
   >
     <AccordionPanel
-      class="bg-white p-1 pl-2 rounded-md border-gray-300"
+      class="bg-white dark:bg-stone-900 p-1 pl-2 rounded-md border-stone-300 dark:border-stone-600"
       :class="{ 'border-l-2': props.type == 'input', 'border-r-2': props.type == 'output' }"
       :value="event.name"
     >
-      <AccordionHeader class="text-xs p-1 pl-0 pb-0 text-stone-900 font-normal">
+      <AccordionHeader class="text-xs p-1 pl-0 pb-0 text-stone-900 dark:text-stone-100 font-normal">
         {{ event.name }}
       </AccordionHeader>
       <AccordionContent
@@ -26,7 +26,7 @@
               <span class="text-[9px] font-bold">{{ payload_name }}</span>
               <span class="text-[9px] italic text-stone-400">{{ payload_value.type }}</span>
             </div>
-            <span class="text-[9px] border-gray-200  border-l-2 pl-2">{{ payload_value.description }}</span>
+            <span class="text-[9px] border-stone-200  border-l-2 pl-2">{{ payload_value.description }}</span>
           </div>
         </div>
       </AccordionContent>
@@ -36,7 +36,10 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-  events: object[]
+  events: {
+    name: string
+    payload: { [key: string]: { type: string, description: string } }
+  }[]
   type: string
 }>()
 </script>

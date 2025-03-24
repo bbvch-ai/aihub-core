@@ -49,7 +49,7 @@ class RAGAgent(Agent):
     @step(
         name=LocaleString(en="Limit Chat History"),
         description=LocaleString(en="Truncates incoming chat messages to fit within the configured token limit"),
-        icon="iconoir:cut"
+        icon="iconoir:cut",
     )
     async def limit_chat_history_step(
         self,

@@ -3,7 +3,7 @@
     type="target"
     :position="Position.Left"
   />
-  <div class="bg-red-500 text-white rounded-md shadow-md border border-gray-100 overflow-hidden p-6 text-lg font-bold">
+  <div class="bg-red-500 text-white rounded-md shadow-md border border-stone-100 overflow-hidden p-6 text-lg font-bold">
     {{ props.id }}
   </div>
   <Handle

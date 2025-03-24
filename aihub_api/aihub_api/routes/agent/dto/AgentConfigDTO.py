@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field
-
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from pydantic import BaseModel, Field
 
 
 class AgentConfigDTO(BaseModel):

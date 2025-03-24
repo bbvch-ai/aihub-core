@@ -299,7 +299,9 @@ class JetStreamEventStore:
         self,
         run_id: Annotated[str, "Unique identifier for the workflow run"],
         class_name: Annotated[str, "The event class name to retrieve"],
-        until_event: Annotated[Optional[ControlEvent], "Only include events created until this event was received"] = None,
+        until_event: Annotated[
+            Optional[ControlEvent], "Only include events created until this event was received"
+        ] = None,
     ) -> List[ControlEvent]:
         """
         Retrieves all events of the specified type for a run.
@@ -312,7 +314,9 @@ class JetStreamEventStore:
         self,
         run_id: Annotated[str, "Unique identifier for the workflow run"],
         class_names: Annotated[List[str], "List of event class names to retrieve"],
-        until_event: Annotated[Optional[ControlEvent], "Only include events created until this event was received"] = None,
+        until_event: Annotated[
+            Optional[ControlEvent], "Only include events created until this event was received"
+        ] = None,
     ) -> Dict[str, List[ControlEvent]]:
         """
         Retrieves events for multiple types, organized by event type name.

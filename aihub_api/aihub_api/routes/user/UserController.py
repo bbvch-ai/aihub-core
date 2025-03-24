@@ -1,10 +1,10 @@
-from fastapi import Security
-
-from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import Security
+
+from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.UserService import UserService
 
 
@@ -33,6 +33,7 @@ class UserController(Controller):
 
     Once mounted, calling `GET /user/me` returns user data like name, email, etc., depending on `UserDTO`.
     """
+
     name = LocaleString(en="User")
     description = LocaleString(en="Manage own user")
     icon = "solar:password-bold"

@@ -19,11 +19,11 @@
         state-storage="local"
         :min-size="25"
         :size="25"
-        class="bg-gray-50 dark:bg-stone-950 border-none p-5"
+        class="bg-stone-50 dark:bg-stone-950 border-none p-5"
       >
         <div
           ref="leftsplitter"
-          class="border-gray-200 dark:border-gray-700 border rounded-lg overflow-auto"
+          class="border-stone-200 dark:border-stone-700 border rounded-lg overflow-auto"
         >
           <DataTable
             v-if="showTable"
@@ -133,16 +133,16 @@
                 />
               </IconField>
             </template>
-            <template #list="{ items: agents }">
+            <template #list="{ items: agentList }">
               <div
-                v-for="(agent, index) in agents"
+                v-for="(agent, index) in agentList"
                 :key="agent.agent_id"
               >
                 <div
                   class="flex flex-row p-4 gap-4"
                   :class="{
                     'border-t border-surface-200 dark:border-surface-700': index !== 0,
-                    'bg-gray-50 dark:bg-gray-950': selectedAgent?.agent_id == agent.agent_id,
+                    'bg-stone-50 dark:bg-stone-950': selectedAgent?.agent_id == agent.agent_id,
                   }"
                 >
                   <Checkbox
@@ -174,7 +174,7 @@
       </SplitterPanel>
       <SplitterPanel
         v-if="selectedAgent"
-        class="bg-gray-50 dark:bg-stone-950 border-none p-5"
+        class="bg-stone-50 dark:bg-stone-950 border-none p-5"
       >
         <NuxtPage />
       </SplitterPanel>

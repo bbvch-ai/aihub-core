@@ -1,12 +1,12 @@
 import inspect
 from typing import Annotated, Callable, Dict, Optional, Set, Tuple, Type
 
-from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent
 
 from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
+from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 
 def extract_function_events(
@@ -80,6 +80,5 @@ def extract_function_events(
             input_event_mapping[param.name] = event_types
             parameter_optional_map[param.name] = is_optional
             size_requirements[param.name] = required_size
-
 
     return input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements

@@ -22,6 +22,7 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
+from ...i18n.dependencies.use_locale import use_locale
 from .dto.ChatCompletionRequest import ChatCompletionRequest
 from .dto.EmbeddingsRequest import EmbeddingsRequest
 from .dto.EmbeddingsResponse import EmbeddingsResponse
@@ -30,7 +31,6 @@ from .dto.ModelDetails import ModelDetails
 from .dto.ModelResponse import ModelResponse
 from .dto.TextToSpeechRequest import TextToSpeechRequest
 from .OpenaiService import OpenaiService
-from ...i18n.dependencies.use_locale import use_locale
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ class OpenaiController(Controller):
     This setup ensures that your backend exposes a fully OpenAI-compatible API interface, allowing customers to plug in the
     OpenAI SDKs directly against AI Hub.
     """
+
     name = LocaleString(en="OpenAI")
     description = LocaleString(en="OpenAI Compatible API")
     icon = "simple-icons:openai"
@@ -89,7 +90,7 @@ class OpenaiController(Controller):
             summary="List Models",
             description="Lists the currently available models, and provides basic information about each one such as the owner and availability.",
             response_model=ModelResponse,
-            tags=self.tags
+            tags=self.tags,
         )
         async def get_models(
             user: AuthenticatedUser = Security(self.auth),
@@ -104,7 +105,7 @@ class OpenaiController(Controller):
             summary="List Models (including ai-hub assistants)",
             description="Lists the currently available models and ai-hub assistants, and provides basic information about each one such as the owner and availability.",
             response_model=ModelResponse,
-            tags=self.tags
+            tags=self.tags,
         )
         async def get_models(
             nc: Annotated[NATS, Depends(use_nats)],
@@ -120,7 +121,7 @@ class OpenaiController(Controller):
             route,
             summary="Retrieve model",
             description="Retrieves a model instance, providing basic information about the model such as the owner and permissioning.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def get_model(
             full_path: str,
@@ -135,7 +136,7 @@ class OpenaiController(Controller):
             route,
             summary="Retrieve model (including ai-hub assistants)",
             description="Retrieves a model or ai-hub assistant instance, providing basic information about the model such as the owner and permissioning.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def get_model(
             full_path: str,
@@ -154,7 +155,7 @@ class OpenaiController(Controller):
             route,
             summary="Create embeddings",
             description="Creates an embedding vector representing the input text.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def get_embeddings(
             req: Annotated[EmbeddingsRequest, Body],
@@ -176,7 +177,7 @@ class OpenaiController(Controller):
             response_model=ChatCompletion,
             summary="Create chat completion",
             description="Creates a model response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
@@ -195,7 +196,7 @@ class OpenaiController(Controller):
             response_model=ChatCompletion,
             summary="Create chat completion (including ai-hub assistants)",
             description="Creates a model or ai-hub assistant response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
-            tags=self.tags
+            tags=self.tags,
         )
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
@@ -225,7 +226,10 @@ class OpenaiController(Controller):
 
     def stt(self, route: str = "/audio/transcriptions") -> "OpenaiController":
         @self.router.post(
-            route, summary="Create transcription", description="Transcribes audio into the input language.", tags=self.tags
+            route,
+            summary="Create transcription",
+            description="Transcribes audio into the input language.",
+            tags=self.tags,
         )
         async def create_transcription(
             file: UploadFile = File(..., description="The audio file to transcribe"),
@@ -255,10 +259,7 @@ class OpenaiController(Controller):
 
     def tts(self, route: str = "/audio/speech") -> "OpenaiController":
         @self.router.post(
-            route,
-            summary="Create speech",
-            description="Generates audio from the input text.",
-            tags=self.tags
+            route, summary="Create speech", description="Generates audio from the input text.", tags=self.tags
         )
         async def create_speech(
             speech_request: Annotated[TextToSpeechRequest, Body],

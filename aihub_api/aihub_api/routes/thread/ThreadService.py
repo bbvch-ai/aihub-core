@@ -53,13 +53,17 @@ class ThreadService:
         return [await ThreadService.thread_response_from_entity(thread, nc, t) for thread in threads]
 
     @staticmethod
-    async def add_agent_to_thread(nc: NATS, thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadResponse:
+    async def add_agent_to_thread(
+        nc: NATS, thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler
+    ) -> ThreadResponse:
         agent = Agent(agent_id=agent_id, agent_class=agent_class)
         thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
         return await ThreadService.thread_response_from_entity(thread, nc, t)
 
     @staticmethod
-    async def remove_agent_from_thread(nc: NATS, thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadResponse:
+    async def remove_agent_from_thread(
+        nc: NATS, thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler
+    ) -> ThreadResponse:
         thread = ThreadEntity.remove_agent_from_thread(thread_id, agent_class, agent_id)
         return await ThreadService.thread_response_from_entity(thread, nc, t)
 

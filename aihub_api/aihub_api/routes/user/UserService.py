@@ -1,10 +1,10 @@
-from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 
 from aihub_api.auth.identity.api.ApiTokenUserInformationProvider import ApiTokenUserInformationProvider
 from aihub_api.auth.identity.azure.AzureUserInformationProvider import AzureUserInformationProvider
 from aihub_api.auth.identity.development.DevUserInformationProvider import DevUserInformationProvider
 from aihub_api.auth.identity.MultiStrategyUserInformationProvider import MultiStrategyUserInformationProvider
+from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 
 

@@ -1,9 +1,9 @@
 import abc
 from typing import TYPE_CHECKING
 
+from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from fastapi import APIRouter, FastAPI
 
-from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -46,9 +46,10 @@ class Controller(abc.ABC):
 
     This sets up all routes defined in `MyController` under `/my-endpoints`.
     """
+
     name = LocaleString(en="Unnamed Controller")
     description = LocaleString(en="This controller has no description.")
-    icon = "lsicon:service-filled" # https://icon-sets.iconify.design/
+    icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
 
     def __init__(self, route: str, auth: AuthHandler | None = None, is_admin_only=False):
         self.base_route: str = route
@@ -67,4 +68,3 @@ class Controller(abc.ABC):
         This final step exposes all endpoints defined in this controller to incoming requests.
         """
         app.include_router(self.router, prefix=self.base_route)
-

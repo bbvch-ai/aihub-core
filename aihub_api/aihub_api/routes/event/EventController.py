@@ -30,6 +30,7 @@ class EventController(Controller):
 
     The `EventController` provides HTTP and WebSocket endpoints to handle these use cases.
     """
+
     name = LocaleString(en="Events")
     description = LocaleString(en="Inspect events in the system")
     icon = "mdi:apache-kafka"

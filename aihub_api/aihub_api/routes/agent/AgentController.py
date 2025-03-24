@@ -1,7 +1,6 @@
 import time
 from typing import Annotated, List, Type
 
-from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -56,6 +55,7 @@ class AgentController(Controller):
 
     This sets up `/agent/discover` and `/agent/{agent_class}/{agent_id}` endpoints.
     """
+
     name = LocaleString(en="Agents")
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"

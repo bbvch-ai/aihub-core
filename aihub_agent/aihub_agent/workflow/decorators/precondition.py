@@ -28,7 +28,9 @@ def precondition():
 
     def decorator(func):
         # Extract the event types and parameter requirements from the function signature
-        input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements = extract_function_events(func)
+        input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements = (
+            extract_function_events(func)
+        )
 
         # Mark the function as a step and store extracted metadata
         setattr(func, "_is_step", True)

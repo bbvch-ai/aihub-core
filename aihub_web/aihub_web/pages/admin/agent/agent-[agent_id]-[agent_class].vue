@@ -1,6 +1,6 @@
 <template>
   <div
-    class="border-gray-200 dark:border-gray-700 border rounded-lg overflow-auto"
+    class="border-stone-200 dark:border-stone-700 border rounded-lg overflow-auto"
   >
     <div class="bg-white dark:bg-black">
       <div class="flex flex-col gap-2 p-6">
@@ -38,7 +38,7 @@
 import { useAgentsStore } from '@core/stores/useAgentsStore'
 import type { AgentDto, EventSpecs } from '@core/sdk/client'
 
-import UserMessageEvent from '@core/components/event/form/UserMessageEvent.vue'
+import UserMessageEvent from '@core/components/Event/Form/UserMessageEvent.vue'
 
 const route = useRoute()
 
@@ -49,10 +49,6 @@ const agent = computed<AgentDto | undefined>(() => agents.value?.find(agent => a
 
 const startEvents = computed<EventSpecs[]>(() => {
   return agent.value?.start_events ?? []
-})
-
-const stopEvents = computed<EventSpecs[]>(() => {
-  return agent.value?.stop_events ?? []
 })
 
 const startEventComponents = { UserMessageEvent }

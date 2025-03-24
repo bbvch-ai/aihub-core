@@ -31,6 +31,7 @@ class HealthController(Controller):
 
     Now calling `GET /health` returns a JSON response indicating the application status.
     """
+
     name = LocaleString(en="Health")
     description = LocaleString(en="Health Controller")
     icon = "solar:health-bold"

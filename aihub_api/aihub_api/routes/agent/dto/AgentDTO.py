@@ -1,8 +1,9 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel, Field
+
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 
 
 class AgentDTO(BaseModel):

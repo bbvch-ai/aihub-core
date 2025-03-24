@@ -1,15 +1,15 @@
 from typing import TYPE_CHECKING
 
-from fastapi import Security, FastAPI, Depends
-
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.suite.SuiteService import SuiteService
-from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import Depends, FastAPI, Security
+
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
+from aihub_api.routes.suite.SuiteService import SuiteService
 
 if TYPE_CHECKING:
     from aihub_api.runners.ApiRunner import ApiRunner
