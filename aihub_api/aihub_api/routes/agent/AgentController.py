@@ -7,7 +7,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import StartEvent, StopEvent, ExceptionEvent
+from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
