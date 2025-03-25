@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import Event, Task
 from typing import AsyncGenerator
 
 from botbuilder.core import TurnContext
@@ -26,7 +27,13 @@ class StreamOpenaiChatBot(OpenaiChatBot):
         if turn_context.activity.channel_id == "webchat":
             return await super().on_message_activity(turn_context)
 
-        typing = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+        typing_stop_signal = Event()
+        typing: Task = asyncio.create_task(
+            OpenaiChatService.send_typing_activity(
+                turn_context=turn_context,
+                signal=typing_stop_signal,
+            )
+        )
 
         OpenaiChatService.add_user_message_to_conversation(
             path=self.path,
@@ -45,6 +52,8 @@ class StreamOpenaiChatBot(OpenaiChatBot):
                 model_name=self.model_name,
                 client=self.client,
             )
+
+            typing_stop_signal.set()
             await typing
             response = await OpenaiChatService.send_response_stream(
                 turn_context=turn_context,

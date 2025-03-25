@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import Task
+from asyncio import Task, Event
 from typing import AsyncGenerator
 
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
@@ -27,8 +27,13 @@ class StreamAgentChatBot(AgentChatBot):
         if turn_context.activity.channel_id == "webchat":
             return await super().on_message_activity(turn_context)
 
-        typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
-
+        typing_stop_signal = Event()
+        typing: Task = asyncio.create_task(
+            AgentChatService.send_typing_activity(
+                turn_context=turn_context,
+                signal=typing_stop_signal,
+            )
+        )
         AgentChatService.add_user_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
@@ -49,6 +54,7 @@ class StreamAgentChatBot(AgentChatBot):
             thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
         )
 
+        typing_stop_signal.set()
         await typing
         response = await AgentChatService.send_response_stream(
             turn_context=turn_context,

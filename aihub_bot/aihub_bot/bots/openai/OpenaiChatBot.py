@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import Task
+from asyncio import Task, Event
 
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import Activity, ActivityTypes
@@ -43,7 +43,13 @@ class OpenaiChatBot(ActivityHandler):
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
-        typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+        typing_stop_signal = Event()
+        typing: Task = asyncio.create_task(
+            OpenaiChatService.send_typing_activity(
+                turn_context=turn_context,
+                signal=typing_stop_signal,
+            )
+        )
 
         OpenaiChatService.add_user_message_to_conversation(
             path=self.path,
@@ -62,6 +68,8 @@ class OpenaiChatBot(ActivityHandler):
                 model_name=self.model_name,
                 client=self.client,
             )
+
+            typing_stop_signal.set()
             await typing
             await turn_context.send_activity(response)
         except BadRequestError as e:

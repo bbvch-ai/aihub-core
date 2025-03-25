@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from asyncio import Task
+from asyncio import Task, Event
 from typing import AsyncGenerator, List, Optional, Tuple
 
 from aihub_lib.routes.chat.ChatService import ChatService
@@ -278,3 +278,9 @@ class Service(ChatService):
         await _send_text(turn_context, buffer, activity, sent_text)
 
         return response
+
+    @staticmethod
+    async def send_typing_activity(turn_context: TurnContext, signal: Event):
+        while not signal.is_set():
+            await turn_context.send_activity(Activity(type=ActivityTypes.typing))
+            await asyncio.sleep(2)
