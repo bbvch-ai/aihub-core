@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from asyncio import Task, Event
+from asyncio import Event, Task
 from typing import AsyncGenerator, List, Optional, Tuple
 
 from aihub_lib.routes.chat.ChatService import ChatService

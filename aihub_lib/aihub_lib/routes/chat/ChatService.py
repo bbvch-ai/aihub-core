@@ -16,10 +16,10 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.nats.events import (
     ChunkEvent,
     DisplayEvent,
+    ExceptionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StopEvent,
-    ExceptionEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber

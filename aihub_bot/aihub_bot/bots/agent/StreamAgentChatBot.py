@@ -1,10 +1,9 @@
 import asyncio
-from asyncio import Task, Event
+from asyncio import Event, Task
 from typing import AsyncGenerator
 
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from botbuilder.core import TurnContext
-from botbuilder.schema import Activity, ActivityTypes
 from typing_extensions import override
 
 from aihub_bot.bots.agent.AgentChatBot import AgentChatBot

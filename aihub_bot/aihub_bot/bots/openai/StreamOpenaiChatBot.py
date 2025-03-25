@@ -3,7 +3,6 @@ from asyncio import Event, Task
 from typing import AsyncGenerator
 
 from botbuilder.core import TurnContext
-from botbuilder.schema import Activity, ActivityTypes
 from openai import BadRequestError
 from typing_extensions import override
 

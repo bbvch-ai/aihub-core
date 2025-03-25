@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import Task, Event
+from asyncio import Event, Task
 
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
