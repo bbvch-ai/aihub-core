@@ -1,4 +1,4 @@
-from typing import Optional, Type, List
+from typing import List, Optional, Type
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM

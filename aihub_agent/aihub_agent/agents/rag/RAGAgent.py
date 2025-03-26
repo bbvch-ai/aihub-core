@@ -1,3 +1,18 @@
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
+from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
+from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
+from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
+from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_lib.nats.events.control.stop import StopEvent
+from aihub_lib.nats.events.semantic.llm import LLMEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -14,21 +29,6 @@ from aihub_agent.agents.rag.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.rag.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
-from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
-from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
-from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
-from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.events.control.stop import StopEvent
-from aihub_lib.nats.events.semantic.llm import LLMEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.nats.events.user import UserMessageEvent
 
 
 class RAGAgent(Agent):
@@ -110,8 +110,9 @@ class RAGAgent(Agent):
                     examples=agent_config.few_shot_guard_examples,
                 )
             else:
-                prev_queries = await run_context.get("prev_queries", [])
-                await run_context.set("prev_queries", prev_queries.append(event.new_query))
+                prev_queries = await run_context.get("prev_queries")
+                prev_queries.append(event.new_query)
+                await run_context.set("prev_queries", prev_queries)
                 guard_result = await few_shot_guard(
                     llm=llm,
                     t=t,
@@ -193,7 +194,7 @@ class RAGAgent(Agent):
         if not agent_config.check_context_sufficiency:
             return ContextSufficientEvent()
 
-        prev_queries = await run_context.get("prev_queries", [])
+        prev_queries = await run_context.get("prev_queries")
         async with agent_config.llm.cost_reporting_llm(
             displayer, system_prompt=t("lib.guards.context_sufficient_guard.prompt")
         ) as llm:

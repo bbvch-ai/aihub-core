@@ -69,7 +69,8 @@ context_sufficient_guard:
   success: |
     Whether the context is sufficient to answer the query.
   new_query: |
-    A refined query to get better search results if the context was insufficient.
+    A revised query to get better search results if the context was insufficient, make sure to differentiate it enough 
+    from the existing queries.
   prompt: |
     I will give you a context, a question, and previous queries if any have been generated.
     If the question can be answered with the provided context, then the conversation may continue (success=True).

@@ -51,9 +51,11 @@ Feature: RAG Agent
     Then the few shot guard should accept the user query
     * respond to the user with a generated response
 
-  @slow
+  @azure
   Scenario: Test the RAGAgent with multiple retrieval hops
     Given a RAGAgent runner with a valid azure configuration
-    When the start event is sent with a user query "How is the weather forecast made?" and locale en
-    Then the few shot guard should accept the user query
-    * respond to the user with a generated response
+    * check_context_sufficiency set to "True" and max_hops to "3"
+    When the start event is sent with a user query "What is AI?" and locale en
+    Then "3" RetrieverEvent are present
+    * an LLMEvent is present with a generated response
+    * a StopEvent is present

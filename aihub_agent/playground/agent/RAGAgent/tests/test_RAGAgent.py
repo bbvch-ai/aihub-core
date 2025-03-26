@@ -105,7 +105,11 @@ def azure_agent_config():
         embedding_tokens_costs_per_thousand=0.0,
         default_parameter=AzureOpenAIEmbeddingParameter(),
     )
-    vector_store = create_azure_ai_search_vector_store("development")
+    vector_store = create_azure_ai_search_vector_store(
+        # needed for embedding field
+        vector_store_name="development",
+        semantic_configuration_name="mySemanticConfig",
+    )
 
     return build_rag_agent_config(
         llm_config=llm_config,
@@ -177,6 +181,12 @@ def _(azure_agent_config):
     )
 
 
+@given(parsers.parse('check_context_sufficiency set to "{flag}" and max_hops to "{max_hops:d}"'))
+def _(flag: bool, max_hops: int, agent_runner: AgentTestRunner):
+    agent_runner.agent_config.check_context_sufficiency = flag
+    agent_runner.agent_config.max_hops = max_hops
+
+
 @pytest.mark.usefixtures("self_hosted_agent_config")
 @given("a RAGAgent runner with a valid self hosted configuration", target_fixture="agent_runner")
 def _(self_hosted_agent_config):
@@ -221,6 +231,12 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_type(RetrieverEvent)
     assert retriever_event.documents, "RetrieverEvent did not produce documents"
+
+
+@then(parsers.parse('"{count:d}" RetrieverEvent are present'))
+def _(count: int, agent_runner: AgentTestRunner):
+    retriever_events = len(agent_runner.get_events_of_type(RetrieverEvent, "control_event"))
+    assert retriever_events == count, f"Expected {count} RetrieverEvents, got {retriever_events}"
 
 
 @then("an InOrderNodeCombinerEvent is present with ordered context message")
