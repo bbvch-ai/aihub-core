@@ -14,6 +14,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    REFERENCE_NAME,
+    REFERENCE_URL,
     SECTION_END_LINE,
     SECTION_START_LINE,
     SOURCE,
@@ -134,6 +136,8 @@ def nodes_metadata_table(nodes: List[TextNode]):
         TableColumn(H4, "string"),
         TableColumn(H5, "string"),
         TableColumn(H6, "string"),
+        TableColumn(REFERENCE_NAME, "string"),
+        TableColumn(REFERENCE_URL, "string"),
     ]
     records = [TableRecord(node_table_row(node)) for node in nodes]
     table_schema = TableSchema(columns=columns)

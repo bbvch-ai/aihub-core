@@ -16,6 +16,7 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.nats.events import (
     ChunkEvent,
     DisplayEvent,
+    ExceptionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StopEvent,
@@ -45,7 +46,9 @@ class JsonResources:
     chunk_events: List[ChunkEvent]
     costs: LLMCosts
     model_name: str
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent] = None  # Added field to store the final StopEvent
+    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = (
+        None  # Added field to store the final StopEvent
+    )
 
 
 class ChatService:
@@ -87,14 +90,17 @@ class ChatService:
         logger.debug(f"Created thread: {thread.id}")
 
         hitl_requests = PersistedEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
+        logger.debug(f"hitl_requests: {hitl_requests}")
+
         hitl_responses = PersistedEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
+        logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
 
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = hitl_requests[-1]
             event = HumanInTheLoopResponseEvent(
-                response=messages[-1]["content"],
+                response=messages[-1].content,
                 request_event=HumanInTheLoopRequestEvent.deserialize_event(open_hitl_request.event_data),
             )
             display_id = event.request_event.topic.display_id
@@ -167,6 +173,11 @@ class ChatService:
                 resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
@@ -220,7 +231,7 @@ class ChatService:
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
         costs = LLMCosts.from_zero()
-        model_name = f"{topic_manager.agent_class}/{topic_manager.agent_id}"
+        model_name = f"{agent_class}/{agent_id}"
 
         resources = JsonResources(
             stop_signal=stop_signal,
@@ -248,6 +259,11 @@ class ChatService:
             elif event.is_llm_cost_event:
                 resources.costs += event
                 resources.model_name = event.llm_name
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await resources.subscriber.stop()
+                resources.stop_signal.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,

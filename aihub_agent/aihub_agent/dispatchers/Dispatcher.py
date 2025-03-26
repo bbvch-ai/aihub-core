@@ -195,7 +195,7 @@ class Dispatcher:
             input_events = getattr(step_method, "_input_events", set())
             input_event_class_names = [event_type.__name__ for event_type in input_events]
             events = await self.event_store.get_events_of_multiple_types(
-                topic.run_id, input_event_class_names, until=event.created_at
+                topic.run_id, input_event_class_names, until_event=event
             )
             if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")

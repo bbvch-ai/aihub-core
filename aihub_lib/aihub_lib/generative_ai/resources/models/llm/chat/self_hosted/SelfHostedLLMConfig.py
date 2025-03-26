@@ -80,6 +80,7 @@ class SelfHostedLLMConfig(ChatLLMConfig):
             is_chat_model=self.is_chat_model,
             is_function_calling_model=self.is_function_calling_model,
             callback_manager=CallbackManager([token_counter]),
+            timeout=self.timeout,
         )
 
         return open_ai_like, cost_tracker

@@ -49,10 +49,18 @@ class BaseEvent(BaseModel):
     _unknown_data: Optional[Dict[str, Any]] = PrivateAttr(None)
     _unknown_parent_classes: Optional[List[str]] = PrivateAttr(None)
 
+    _jetstream_sequence: Optional[int] = PrivateAttr(None)
+
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     def __str__(self):
         return f"{self.__class__.__name__}({super().__str__()})"
+
+    @property
+    def sequence_number(self):
+        if self._jetstream_sequence is None:
+            raise ValueError("Sequence number is not set for this event.")
+        return self._jetstream_sequence
 
     @computed_field
     @property
