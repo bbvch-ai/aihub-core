@@ -185,7 +185,7 @@ class RAGAgent(Agent):
         event: InOrderNodeCombinerEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
         run_context: RunContext,
-    ) -> ContextSufficientEvent | ContextInsufficientEvent:
+    ) -> ContextSufficientEvent | ContextInsufficientEvent | ContextInsufficientWithQueryEvent:
         """
         Guards the context to ensure it is sufficient for generating a response.
         If it is insufficient a new query is generated to find more data in order
