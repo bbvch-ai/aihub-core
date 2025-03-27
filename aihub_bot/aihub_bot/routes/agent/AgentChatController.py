@@ -12,7 +12,6 @@ from nats.aio.client import Client as NATS
 from aihub_bot.bots.agent.AgentChatBot import AgentChatBot
 from aihub_bot.bots.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
-from aihub_bot.routes.agent.AgentChatService import AgentChatService
 
 
 class AgentChatController(Controller):
@@ -73,9 +72,9 @@ class AgentChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
         ) -> Response:
-            path: str = AgentChatService.get_path(request)
+            path: str = Service.get_path(request)
             chat_bot: AgentChatBot = AgentChatBot(nc, external_event_distributor, agent_class, agent_id, path)
-            adapter: CloudAdapter = AgentChatService.get_adapter(path)
+            adapter: CloudAdapter = Service.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -115,11 +114,11 @@ class AgentChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
         ) -> Response:
-            path: str = AgentChatService.get_path(request)
+            path: str = Service.get_path(request)
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(
                 nc, external_event_distributor, agent_class, agent_id, path
             )
-            adapter: CloudAdapter = AgentChatService.get_adapter(path)
+            adapter: CloudAdapter = Service.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
