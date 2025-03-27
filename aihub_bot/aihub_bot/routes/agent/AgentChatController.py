@@ -12,6 +12,7 @@ from nats.aio.client import Client as NATS
 from aihub_bot.bots.agent.AgentChatBot import AgentChatBot
 from aihub_bot.bots.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
+from aihub_bot.routes.RoutesService import Service
 
 
 class AgentChatController(Controller):

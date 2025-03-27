@@ -1,19 +1,18 @@
 import logging
 from typing import Annotated, Any, Callable, List
 
-from openai import AsyncOpenAI, AsyncAzureOpenAI
-
-from aihub_bot.routes.RoutesService import RoutesService
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from aihub_bot.bots.openai.OpenaiChatBot import OpenaiChatBot
 from aihub_bot.bots.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
 from aihub_bot.routes.activity_model import ActivityModel
+from aihub_bot.routes.RoutesService import RoutesService
 
 logger = logging.getLogger(__name__)
 

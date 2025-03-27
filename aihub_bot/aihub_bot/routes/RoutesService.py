@@ -6,7 +6,6 @@ from fastapi import Request
 
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 
-
 logger = logging.getLogger(__name__)
 
 

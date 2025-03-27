@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Event, Task
-from typing import Type, Dict, Any
+from typing import Any, Dict
 
 from botbuilder.core import ActivityHandler, TurnContext
 from botframework.connector import Channels
