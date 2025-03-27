@@ -1,28 +1,27 @@
 import asyncio
 import logging
 import re
-from asyncio import Task, Event
+import unicodedata
+from asyncio import Event, Task
 from typing import AsyncGenerator, List
 
-import unicodedata
-
+from botbuilder.core import TurnContext
+from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
-    ChatCompletionChunk,
-    ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
-    ChatCompletionSystemMessageParam,
     ChatCompletionAssistantMessageParam,
+    ChatCompletionChunk,
     ChatCompletionContentPartParam,
     ChatCompletionContentPartTextParam,
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
 )
-from openai.types.chat.chat_completion_content_part_image_param import ImageURL, ChatCompletionContentPartImageParam
+from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
 from typing_extensions import override
 
 from aihub_bot.bots.BaseChatBot import CompletionHandler
-from aihub_bot.persistence.entities.ConversationEntity import Message, Content
-from botbuilder.core import TurnContext
-from openai import AsyncOpenAI, AsyncAzureOpenAI, AsyncStream, BadRequestError, APIStatusError
+from aihub_bot.persistence.entities.ConversationEntity import Content, Message
 
 logger = logging.getLogger(__name__)
 

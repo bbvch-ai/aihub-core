@@ -1,18 +1,17 @@
 import asyncio
 from typing import AsyncGenerator, List, Optional
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, ContentBlock, TextBlock, ImageBlock
-
-from aihub_bot.bots.BaseChatBot import CompletionHandler
-from aihub_bot.persistence.entities.ConversationEntity import Message, Content
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from botbuilder.core import TurnContext
+from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from nats.aio.client import Client as NATS
 
-from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources, ChatService
+from aihub_bot.bots.BaseChatBot import CompletionHandler
+from aihub_bot.persistence.entities.ConversationEntity import Content, Message
 
 
 class AgentCompletionHandler(CompletionHandler):
