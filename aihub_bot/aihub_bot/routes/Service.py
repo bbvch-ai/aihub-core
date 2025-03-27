@@ -288,7 +288,7 @@ class Service(ChatService):
             await asyncio.sleep(2)
 
         if not signal.is_set():
-            logger.error(f"Timeout while waiting for a response to {turn_context.activity}")
+            logger.error(f"Timeout while waiting for a response to Activity:\n{turn_context.activity}")
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,
