@@ -24,7 +24,7 @@ class PathEntity(Document):
     """
 
     meta = {
-        "collection": "paths",
+        "collection": "bot_paths",
         "strict": True,
     }
     path = StringField(required=True)

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from typing import Callable, List, Optional, Tuple
+from typing import AsyncIterator, Callable, List, Optional, Tuple
 
 from llama_index.core.llms import LLM
 from pydantic import Field
@@ -37,6 +37,7 @@ class ChatLLMConfig(LLMConfig):
     With ChatLLMConfig, we integrate these parameters and the cost tracking mechanism in one place.
     """
 
+    timeout: float = Field(30.0, description="Timeout for the model request in seconds (default: 30.0s).")
     default_parameter: ChatLLMParameter = Field(
         ..., description="Default parameters for the chat-based LLM.", default_factory=lambda: ChatLLMParameter()
     )
@@ -56,7 +57,7 @@ class ChatLLMConfig(LLMConfig):
         displayer: EventDisplayer,
         model_parameter: Optional[ChatLLMParameter] = None,
         system_prompt: Optional[str] = None,
-    ):
+    ) -> AsyncIterator[LLM]:
         """
         Async context manager that yields an LLM configured with merged parameters and a system prompt.
         After the block, it reports costs to `displayer`.

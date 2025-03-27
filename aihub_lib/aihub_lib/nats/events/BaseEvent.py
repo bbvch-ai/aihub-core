@@ -8,21 +8,11 @@ from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
+from typing_extensions import override
+
+from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 logger = logging.getLogger(__name__)
-
-
-def get_parent_classes_until_base(cls: Type, base_class: Type):
-    """Returns a set of parent class names up until the given base class (excluding the base itself)."""
-    parents = set()
-    if cls.__name__ == base_class.__name__:
-        return parents
-    for base in cls.__bases__:
-        if base is base_class:
-            continue  # Stop at the given base class
-        parents.add(base.__name__)
-        parents.update(get_parent_classes_until_base(base, base_class))
-    return parents
 
 
 class BaseEvent(BaseModel):
@@ -57,15 +47,20 @@ class BaseEvent(BaseModel):
     # Private attributes to handle unknown event types
     _unknown_type: Optional[str] = PrivateAttr(None)
     _unknown_data: Optional[Dict[str, Any]] = PrivateAttr(None)
+    _unknown_parent_classes: Optional[List[str]] = PrivateAttr(None)
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        populate_by_name=True,
-        use_enum_values=True,
-    )
+    _jetstream_sequence: Optional[int] = PrivateAttr(None)
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     def __str__(self):
         return f"{self.__class__.__name__}({super().__str__()})"
+
+    @property
+    def sequence_number(self):
+        if self._jetstream_sequence is None:
+            raise ValueError("Sequence number is not set for this event.")
+        return self._jetstream_sequence
 
     @computed_field
     @property
@@ -80,7 +75,69 @@ class BaseEvent(BaseModel):
     @property
     def _parent_class_names(self) -> List[str]:
         """Contains the names of all parent classes up until BaseEvent."""
+        if self._unknown_parent_classes is not None:
+            return self._unknown_parent_classes
         return [self.__class__.__name__] + list(get_parent_classes_until_base(self.__class__, BaseEvent))
+
+    @property
+    def is_display_event(self) -> bool:
+        return "DisplayEvent" in self._parent_class_names
+
+    @property
+    def is_control_event(self) -> bool:
+        return "ControlEvent" in self._parent_class_names
+
+    @property
+    def is_exception_event(self) -> bool:
+        return "ExceptionEvent" in self._parent_class_names
+
+    @property
+    def is_start_event(self) -> bool:
+        return "StartEvent" in self._parent_class_names
+
+    @property
+    def is_stop_event(self) -> bool:
+        return "StopEvent" in self._parent_class_names
+
+    @property
+    def is_user_message_event(self) -> bool:
+        return "UserMessageEvent" in self._parent_class_names
+
+    @property
+    def is_semantic_event(self) -> bool:
+        return "SemanticEvent" in self._parent_class_names
+
+    @property
+    def is_hitl_request_event(self) -> bool:
+        return "HumanInTheLoopRequestEvent" in self._parent_class_names
+
+    @property
+    def is_hitl_response_event(self) -> bool:
+        return "HumanInTheLoopResponseEvent" in self._parent_class_names
+
+    @property
+    def is_aitl_request_event(self) -> bool:
+        return "AgentInTheLoopRequestEvent" in self._parent_class_names
+
+    @property
+    def is_aitl_response_event(self) -> bool:
+        return "AgentInTheLoopResponseEvent" in self._parent_class_names
+
+    @property
+    def is_aitl_exception_event(self) -> bool:
+        return "AgentInTheLoopExceptionEvent" in self._parent_class_names
+
+    @property
+    def is_chunk_event(self) -> bool:
+        return "ChunkEvent" in self._parent_class_names
+
+    @property
+    def is_thought_event(self) -> bool:
+        return "ThoughtEvent" in self._parent_class_names
+
+    @property
+    def is_llm_cost_event(self) -> bool:
+        return "LLMCostEvent" in self._parent_class_names
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -97,15 +154,11 @@ class BaseEvent(BaseModel):
     @classmethod
     def deserialize_event(cls, data: Union[bytes, str, Dict[str, Any]]) -> "BaseEvent":
         """
-        Given raw event data (JSON string, bytes, or dict), attempts to:
-        1. Parse it into a dictionary.
-        2. Identify the event type (_type).
-        3. Instantiate the corresponding event class, falling back to BaseEvent if unknown.
-
-        This lets you handle arbitrary events from the wire without manually selecting the event class.
+        Given raw event data, deserializes it into the most specific event class possible
+        based on inheritance hierarchy, while preserving original type information.
         """
         if isinstance(data, dict):
-            json_data = data
+            json_data = data.copy()
         elif isinstance(data, str):
             json_data = json.loads(data)
         elif isinstance(data, bytes):
@@ -113,19 +166,69 @@ class BaseEvent(BaseModel):
         else:
             raise ValueError(f"Cannot deserialize data of type {type(data)}")
 
+        # First, process any nested events recursively
+        for key, value in list(json_data.items()):
+            if isinstance(value, dict) and "_type" in value:
+                json_data[key] = cls.deserialize_event(value)
+
+        # Get event type and parent classes
         event_type = json_data.get("_type")
+        parent_classes = json_data.get("_parent_class_names", [])
+
+        # If the exact class is registered, try to instantiate it and propagate any validation errors
         if event_type and isinstance(event_type, str):
             event_class = cls._event_registry.get(event_type)
             if event_class:
-                for key, value in json_data.items():
-                    if isinstance(value, dict) and "_type" in value:
-                        json_data[key] = cls.deserialize_event(value)
+                # For known event types, we should not catch validation errors
+                # This ensures validation failures propagate to the caller
                 return event_class(**json_data)
 
-        logger.warning(
-            f"Unknown event type: {event_type}. Using BaseEvent. Known types: {list(BaseEvent._event_registry.keys())}"
-        )
-        return cls(_unknown_type=event_type, **json_data, _unknown_data=json_data)
+        # If we get here, either:
+        # 1. The event type wasn't in our registry, or
+        # 2. The event type was null/invalid
+
+        # Try to find the most specific parent class
+        candidates = []
+        if parent_classes and isinstance(parent_classes, list):
+            for class_name, event_class in cls._event_registry.items():
+                # Check if this class is in the parent classes list
+                if class_name in parent_classes:
+                    # Get inheritance depth (higher means more specific)
+                    depth = get_inheritance_depth(event_class, BaseEvent)
+                    if depth >= 0:  # Only consider classes that inherit from BaseEvent
+                        candidates.append((event_class, depth))
+
+        # Sort candidates by depth (most specific/deepest first)
+        candidates.sort(key=lambda x: x[1], reverse=True)
+
+        # Try to instantiate candidates in order of specificity
+        for candidate_class, depth in candidates:
+            try:
+                # Create the instance with the parent class
+                event = candidate_class(**json_data)
+
+                # Set the private attributes since this isn't the exact original class
+                event._unknown_type = event_type
+                event._unknown_data = json_data
+                event._unknown_parent_classes = parent_classes
+
+                logger.warning(f"{event_type} not found in registry. Using closest parent {candidate_class.__name__}.")
+
+                return event
+            except Exception as e:
+                logger.warning(f"Failed to create {candidate_class.__name__} instance: {e}. Trying next candidate.")
+
+        # If all else fails, fall back to BaseEvent
+        logger.warning(f"{event_type} not found in registry. Using fallback {cls.__name__}.")
+
+        event = cls(**json_data)
+
+        # Set private attributes for BaseEvent fallback
+        event._unknown_type = event_type
+        event._unknown_data = json_data
+        event._unknown_parent_classes = parent_classes
+
+        return event
 
     def to_trace_dict(self) -> Dict[str, Any]:
         """
@@ -146,6 +249,7 @@ class BaseEvent(BaseModel):
         event_dict["created_at"] = created_datetime.strftime("%Y-%m-%d %H:%M:%S.%f") + f"{created_at % 1_000:03d}"
         return event_dict
 
+    @override
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         """
         Serializes the event into a dictionary. If this event was originally unknown,
@@ -158,7 +262,16 @@ class BaseEvent(BaseModel):
 
         if not self._unknown_data:
             return data
+
         return {
             **self._unknown_data,
             **data,
         }
+
+    @override
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """
+        Serializes the event into a JSON string. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        return json.dumps(self.model_dump(**kwargs), default=str)

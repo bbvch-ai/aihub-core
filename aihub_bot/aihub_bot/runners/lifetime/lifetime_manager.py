@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 from fastapi import FastAPI
 from mongoengine import connect
 from nats.aio.client import Client as NATS
@@ -18,7 +18,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db="aihub_bot",
+        db="aihub",
         host=CosmosAccess().get_connection_string(),
     )
 
@@ -26,12 +26,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
-        ws_receiver = WebSocketReceiver(nc=nc, js=js)
+        external_event_distributor = ExternalEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
-        app.state.ws_receiver = ws_receiver
+        app.state.external_event_distributor = external_event_distributor
 
         # Yield control back to FastAPI to start serving requests
         yield

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Annotated, List, Optional, Tuple
 
 import mongoengine.errors
 from bson import ObjectId
@@ -11,22 +11,22 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import (
     ChunkEvent,
     DisplayEvent,
+    ExceptionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StopEvent,
 )
-from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from aihub_lib.sockets.events.user_to_server.WSUserEvent import WSUserEvent
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,9 @@ class JsonResources:
     chunk_events: List[ChunkEvent]
     costs: LLMCosts
     model_name: str
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent] = None  # Added field to store the final StopEvent
+    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = (
+        None  # Added field to store the final StopEvent
+    )
 
 
 class ChatService:
@@ -61,7 +63,10 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         thread_id: Optional[str] = None,
-    ) -> Tuple[WSUserEvent, AgentThreadTopicManager]:
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> Tuple[ExternalEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
@@ -85,16 +90,18 @@ class ChatService:
         logger.debug(f"Created thread: {thread.id}")
 
         hitl_requests = PersistedEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
+        logger.debug(f"hitl_requests: {hitl_requests}")
+
         hitl_responses = PersistedEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
+        logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
-        display_id = str(ObjectId())
 
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = hitl_requests[-1]
             event = HumanInTheLoopResponseEvent(
-                response=messages[-1]["content"],
-                request_event=HumanInTheLoopRequestEvent(**open_hitl_request.event_data),
+                response=messages[-1].content,
+                request_event=HumanInTheLoopRequestEvent.deserialize_event(open_hitl_request.event_data),
             )
             display_id = event.request_event.topic.display_id
         else:
@@ -102,8 +109,9 @@ class ChatService:
                 messages=messages,
                 user=user,
             )
+            display_id = str(ObjectId())
 
-        event = WSUserEvent(
+        event = ExternalEvent(
             thread_id=thread_id,
             display_id=display_id,
             event=event,
@@ -111,8 +119,8 @@ class ChatService:
         logger.debug(f"Created event: {event}")
 
         topic_manager = AgentThreadTopicManager(
-            agent_class=agent_class,
-            agent_id=agent_id,
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
             thread_id=event.thread_id,
             display_id=event.display_id,
             run_id="*",
@@ -126,18 +134,19 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[str] = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
-        ws_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            subscribe_to_thread=True,
         )
 
         stop_signal = asyncio.Event()
@@ -149,18 +158,24 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
-            logger.debug(f"Received display event: {display_event}")
-            if isinstance(display_event, ChunkEvent):
-                logger.debug(f"Received chunk event: {display_event}")
-                await chunk_queue.put(display_event)
-            elif isinstance(display_event, HumanInTheLoopRequestEvent):
-                resources.stop_event = display_event
+        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+            is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
+            logger.debug(f"Received display event: {event}")
+            if event.is_chunk_event:
+                logger.debug(f"Received chunk event: {event}")
+                await chunk_queue.put(event)
+            elif event.is_hitl_request_event:
+                resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
-            elif isinstance(display_event, StopEvent):
+            elif event.is_stop_event and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
-                resources.stop_event = display_event
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
 
@@ -174,7 +189,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await ws_receiver.receive_event(ws_event, user)
+        await external_event_distributor.distribute_event(external_event, user)
 
         return resources
 
@@ -185,33 +200,38 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[str] = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        ws_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            subscribe_to_thread=True,
         )
-        return await ChatService.start_json_event_interaction(user, ws_event, topic_manager, nc, ws_receiver)
+        return await ChatService.start_json_event_interaction(
+            user, agent_class, agent_id, external_event, topic_manager, nc, external_event_distributor
+        )
 
     @staticmethod
     async def start_json_event_interaction(
         user: AuthenticatedUser,
-        ws_event: WSUserEvent,
+        agent_class: str,
+        agent_id: str,
+        external_event: ExternalEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
-        ws_receiver: WebSocketReceiver,
+        external_event_distributor: ExternalEventDistributor,
     ):
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
         costs = LLMCosts.from_zero()
-        model_name = "bbv-ai-hub"
+        model_name = f"{agent_class}/{agent_id}"
 
         resources = JsonResources(
             stop_signal=stop_signal,
@@ -222,22 +242,28 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(display_event: DisplayEvent, topic: AgentTopic):
-            logger.debug(f"Received display event: {display_event}")
-            if isinstance(display_event, ChunkEvent):
-                resources.chunk_events.append(display_event)
-            elif isinstance(display_event, HumanInTheLoopRequestEvent):
-                resources.stop_event = display_event
+        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+            logger.debug(f"Received display event: {event}")
+            is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
+            if event.is_chunk_event:
+                resources.chunk_events.append(event)
+            elif event.is_hitl_request_event:
+                resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
-            elif isinstance(display_event, StopEvent):
+            elif event.is_stop_event and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
-                resources.stop_event = display_event
+                resources.stop_event = event
                 await resources.subscriber.stop()
                 resources.stop_signal.set()
-            elif isinstance(display_event, LLMCostEvent):
-                resources.costs += display_event
-                resources.model_name = display_event.llm_name
+            elif event.is_llm_cost_event:
+                resources.costs += event
+                resources.model_name = event.llm_name
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await resources.subscriber.stop()
+                resources.stop_signal.set()
 
         subscriber = NCSubscriber.for_thread_display_events(
             nc=nc,
@@ -250,7 +276,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await ws_receiver.receive_event(ws_event, user)
+        await external_event_distributor.distribute_event(external_event, user)
 
         return resources
 
@@ -263,6 +289,6 @@ class ChatService:
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         content = "".join(chunk.content for chunk in sorted_chunks)
-        if isinstance(stop_event, HumanInTheLoopRequestEvent):
+        if stop_event.is_hitl_request_event:
             content += stop_event.question
         return content

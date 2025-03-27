@@ -90,6 +90,7 @@ class JSSubscriber(Generic[TEvent]):
             topic = AgentTopic.from_subject(msg.subject)
             event_data = msg.data
             event = self.event_cls.deserialize_event(event_data)
+            event._jetstream_sequence = msg.metadata.sequence.stream
             logger.debug(f"Deserialized event: {event}")
             await msg.ack()
             asyncio.create_task(self._process(event, topic, msg))

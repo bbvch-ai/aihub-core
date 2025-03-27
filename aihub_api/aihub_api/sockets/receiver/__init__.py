@@ -1,5 +1,5 @@
-from aihub_lib.sockets.receiver.WebSocketReceiver import WebSocketReceiver
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 
 __all__ = [
-    "WebSocketReceiver",
+    "ExternalEventDistributor",
 ]
