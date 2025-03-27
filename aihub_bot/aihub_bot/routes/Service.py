@@ -295,3 +295,17 @@ class Service(ChatService):
                     text="Sorry, I am taking too long to respond. Please try again.",
                 )
             )
+
+    @staticmethod
+    async def handle_exception(
+        turn_context: TurnContext, exception: Exception, typing: Task, typing_stop_signal: Event
+    ):
+        logger.error(f"Exception: {exception}\nTurnContext: {turn_context}")
+        typing_stop_signal.set()
+        await typing
+        await turn_context.send_activity(
+            Activity(
+                type=ActivityTypes.message,
+                text="Sorry, something went wrong. Please try again.",
+            )
+        )
