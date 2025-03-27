@@ -1,54 +1,36 @@
 import asyncio
 import logging
 import re
-from asyncio import Event, Task
-from typing import AsyncGenerator, List, Optional, Tuple
+from asyncio import Task, Event
+from typing import AsyncGenerator, Tuple, Optional, List
 
-from aihub_lib.routes.chat.ChatService import ChatService
 from botbuilder.core import TurnContext
-from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
-from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
-from fastapi import Request
+from botbuilder.schema import Activity, ActivityTypes, ErrorResponseException, Entity
 
-from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
-from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
-
-from .ContentExtractor import ContentExtractor
+from aihub_bot.bots.ContentExtractor import ContentExtractor
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, Message, Content
+from aihub_bot.persistence.entities.PathEntity import PathEntity
 
 logger = logging.getLogger(__name__)
 
 
-class Service(ChatService):
+class CompletionHandler:
     """
-    ### What
-    - Shared functionality for all ChatControllers and ChatBots.
+    Strategy pattern for handling different types of completions.
+
+    This abstract base class defines the interface for handling
+    chat completions, whether streaming or non-streaming.
     """
 
     @staticmethod
-    def get_path(request: Request) -> str:
-        """
-        ### What
-        - Returns the path/endpoint of the request.
-
-        ### Why
-        - Each endpoint can be configured in the database.
-        - The path is the key to access this configuration.
-        - See `PathEntity`.
-        """
-        return str(request.url).replace(str(request.base_url), "/")
+    async def get_completion(**kwargs) -> str:
+        """Get a chat completion as a single response."""
+        raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
-    def get_adapter(path: str) -> CloudAdapter:
-        """
-        ### What
-        - Returns the adapter for the given path.
-
-        ### Why
-        - Each path has a unique set of credentials.
-        - The credential is needed to verify that requests are coming from the correct bot service.
-        """
-        credentials: Credentials = PathEntity.get_credentials_by_path(path)
-        return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
+    async def get_stream_completion(**kwargs) -> AsyncGenerator[str, None]:
+        """Get a chat completion as a stream of chunks."""
+        raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
     def get_system_message(turn_context: TurnContext, path: str) -> Optional[Message]:
@@ -79,15 +61,15 @@ class Service(ChatService):
 
     @staticmethod
     def handle_slack_message(turn_context: TurnContext) -> Optional[TurnContext]:
-        is_direct_message = Service.is_slack_direct_message(turn_context)
-        is_channel_message = Service.is_slack_channel_message(turn_context)
-        is_mentioned = Service.is_bot_mentioned(turn_context)
-        is_bot_thread = Service.is_mentioned_in_conversation(turn_context)
+        is_direct_message = CompletionHandler.is_slack_direct_message(turn_context)
+        is_channel_message = CompletionHandler.is_slack_channel_message(turn_context)
+        is_mentioned = CompletionHandler.is_bot_mentioned(turn_context)
+        is_bot_thread = CompletionHandler.is_mentioned_in_conversation(turn_context)
 
         if is_channel_message:
-            turn_context = Service.update_slack_turn_context(turn_context)
+            turn_context = CompletionHandler.update_slack_turn_context(turn_context)
             if is_mentioned:
-                Service.mark_conversation_as_mentioned(turn_context)
+                CompletionHandler.mark_conversation_as_mentioned(turn_context)
         if not is_direct_message and not is_mentioned and not is_bot_thread:
             return None
 
@@ -128,8 +110,8 @@ class Service(ChatService):
         channel_data = turn_context.activity.channel_data
         ts: str = channel_data["SlackMessage"]["event"]["ts"]
         turn_context.activity.conversation.id = channel_conversation_id + f":{ts}"
-        parent_messages: List[Message] = Service.get_messages_by_conversation_id(channel_conversation_id)
-        Service.add_messages_to_conversation(turn_context, parent_messages)
+        parent_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(channel_conversation_id)
+        CompletionHandler.add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
 
     @staticmethod
@@ -162,7 +144,7 @@ class Service(ChatService):
             role=turn_context.activity.from_property.role or "user",
             name=turn_context.activity.from_property.name,
         )
-        return Service.add_messages_to_conversation(turn_context, user_message)
+        return CompletionHandler.add_messages_to_conversation(turn_context, user_message)
 
     @staticmethod
     def add_bot_message_to_conversation(
@@ -183,7 +165,7 @@ class Service(ChatService):
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )
-        return Service.add_messages_to_conversation(turn_context, bot_message)
+        return CompletionHandler.add_messages_to_conversation(turn_context, bot_message)
 
     @staticmethod
     def add_messages_to_conversation(
@@ -298,14 +280,11 @@ class Service(ChatService):
 
     @staticmethod
     async def handle_exception(
-        turn_context: TurnContext, exception: Exception, typing: Task, typing_stop_signal: Event
-    ):
+        turn_context: TurnContext, exception: Exception, typing_task: Task, typing_stop_signal: Event
+    ) -> str:
         logger.error(f"Exception: {exception}\nTurnContext: {turn_context}")
         typing_stop_signal.set()
-        await typing
-        await turn_context.send_activity(
-            Activity(
-                type=ActivityTypes.message,
-                text="Sorry, something went wrong. Please try again.",
-            )
-        )
+        await typing_task
+        response = "Sorry, something went wrong. Please try again."
+        await turn_context.send_activity(Activity(type=ActivityTypes.message, text=response))
+        return response

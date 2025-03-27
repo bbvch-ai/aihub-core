@@ -1,69 +1,42 @@
 import asyncio
+import logging
 import re
-import unicodedata
+from asyncio import Task, Event
 from typing import AsyncGenerator, List
 
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from botbuilder.core import TurnContext
-from openai import AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
+import unicodedata
+
 from openai.types.chat import (
     ChatCompletion,
-    ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
-    ChatCompletionContentPartImageParam,
+    ChatCompletionMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionAssistantMessageParam,
     ChatCompletionContentPartParam,
     ChatCompletionContentPartTextParam,
-    ChatCompletionMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
 )
-from openai.types.chat.chat_completion_content_part_image_param import ImageURL
+from openai.types.chat.chat_completion_content_part_image_param import ImageURL, ChatCompletionContentPartImageParam
+from typing_extensions import override
 
-from aihub_bot.persistence.entities.ConversationEntity import Content, Message
-from aihub_bot.routes.Service import Service
+from aihub_bot.bots.BaseChatBot import CompletionHandler
+from aihub_bot.persistence.entities.ConversationEntity import Message, Content
+from botbuilder.core import TurnContext
+from openai import AsyncOpenAI, AsyncAzureOpenAI, AsyncStream, BadRequestError, APIStatusError
+
+logger = logging.getLogger(__name__)
 
 
-class OpenaiChatService(Service):
+class OpenaiCompletionHandler(CompletionHandler):
     """
-    ### What
-    - Shared functionality for the OpenaiChatController and OpenaiChatBots.
+    Strategy for handling OpenAI completions.
     """
 
     @staticmethod
-    def get_client(
-        models: List[ChatLLMConfig],
-        model_name: str,
-    ) -> AsyncOpenAI | AsyncAzureOpenAI:
-        """
-        ### What
-        - Get the asynchronous `OpenAI` client for the specified model.
-
-        ### Why
-        - The client is needed to fetch completions from the OpenAI API.
-        """
-        matches = [model for model in models if model.name == model_name]
-        if len(matches) == 0:
-            raise ValueError(f"Model {model_name} not found.")
-        model_config = matches[0]
-        llm, _ = model_config.to_llama_index()
-        return llm._get_aclient()
-
-    @staticmethod
-    async def json_chat_completion(
-        turn_context: TurnContext,
-        path: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
-        model_name: str,
+    async def get_completion(
+        turn_context: TurnContext, path: str, model_name: str, client: AsyncOpenAI | AsyncAzureOpenAI, **kwargs
     ) -> str:
-        """
-        ### What
-        - Fetch a single completion from the OpenAI API.
-
-        ### Why
-        - Send the response in one single message.
-        - Some channels (e.g. webchat) do not support streaming.
-        """
-        chat_completion: ChatCompletion = await OpenaiChatService.chat_completion(
+        chat_completion: ChatCompletion = await OpenaiCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
             model_name=model_name,
@@ -73,21 +46,14 @@ class OpenaiChatService(Service):
         return chat_completion.choices[0].message.content
 
     @staticmethod
-    async def stream_chat_completion(
+    async def get_stream_completion(
         turn_context: TurnContext,
         path: str,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
     ) -> AsyncGenerator[str, None]:
-        """
-        ### What
-        - Fetch completions from the OpenAI API in a stream.
-        - Return a generator that yields the response in chunks.
-
-        ### Why
-        - Send the response in multiple chunks by updating the message for each chunk.
-        """
-        chat_completion: AsyncStream[ChatCompletionChunk] = await OpenaiChatService.chat_completion(
+        """Get a streaming OpenAI completion."""
+        chat_completion: AsyncStream[ChatCompletionChunk] = await OpenaiCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
             model_name=model_name,
@@ -125,17 +91,17 @@ class OpenaiChatService(Service):
         - The messages must be converted to the correct format to send them to the OpenAI API.
         - The context is needed to generate the completion.
         """
-        persisted_messages: List[Message] = Service.get_messages_by_conversation_id(
+        persisted_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
-        system_message: Message = Service.get_system_message(
+        system_message: Message = CompletionHandler.get_system_message(
             turn_context=turn_context,
             path=path,
         )
         if system_message is not None:
             persisted_messages.insert(0, system_message)
         chat_messages: List[ChatCompletionMessageParam] = [
-            OpenaiChatService._message_to_chat_completion_message_param(message) for message in persisted_messages
+            OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
         return await client.chat.completions.create(
             model=model_name,
@@ -163,7 +129,7 @@ class OpenaiChatService(Service):
                 return ChatCompletionUserMessageParam(
                     role="user",
                     content=[
-                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        OpenaiCompletionHandler._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
                     name=name,
@@ -172,7 +138,7 @@ class OpenaiChatService(Service):
                 return ChatCompletionAssistantMessageParam(
                     role="assistant",
                     content=[
-                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        OpenaiCompletionHandler._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
                     name=name,
@@ -181,7 +147,7 @@ class OpenaiChatService(Service):
                 return ChatCompletionSystemMessageParam(
                     role="system",
                     content=[
-                        OpenaiChatService._content_to_chat_completion_content_param(content)
+                        OpenaiCompletionHandler._content_to_chat_completion_content_param(content)
                         for content in message.content
                     ],
                     name=name,
@@ -199,3 +165,25 @@ class OpenaiChatService(Service):
                 return ChatCompletionContentPartImageParam(image_url=image_url, type="image_url")
             case _:
                 raise ValueError(f"Unsupported content type: {content.type}")
+
+    @staticmethod
+    @override
+    async def handle_exception(
+        turn_context: TurnContext, exception: Exception, typing_task: Task, typing_stop_signal: Event
+    ) -> str:
+        if isinstance(exception, APIStatusError):
+            logger.warning(f"APIStatusError: {exception}\nTurnContext: {turn_context}")
+            typing_stop_signal.set()
+            await typing_task
+            if exception.body and isinstance(exception.body, dict) and "message" in exception.body:
+                response = exception.body["message"]
+            else:
+                response = exception.message
+            return response
+        else:
+            return await super().handle_exception(
+                turn_context=turn_context,
+                exception=exception,
+                typing_task=typing_task,
+                typing_stop_signal=typing_stop_signal,
+            )
