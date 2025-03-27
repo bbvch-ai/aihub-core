@@ -67,7 +67,7 @@ context_sufficient_guard:
   reason: |
     Reasoning explaining why the context is or is not sufficient.
   success: |
-    Whether the context is sufficient to answer the query.
+    true if the context is sufficient to answer the user query, false if it is not.
   new_query: |
     A revised query to get better search results if the context was insufficient, make sure to differentiate it enough 
     from the existing queries.

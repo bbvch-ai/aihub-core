@@ -65,18 +65,33 @@ few_shot_guard:
   docstring: |
     Datenmodell für die Entscheidung, ob die Anfrage akzeptabel ist oder nicht.
 context_sufficient_guard:
+  doc_string: |
+    Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten.
+  reason: |
+    Begründung, warum der Kontext ausreichend ist oder nicht.
+  success: |
+    true, wenn der Kontext für die Beantwortung der Benutzeranfrage ausreicht, false, wenn er nicht ausreicht.
+  new_query: |
+    Eine überarbeitete Abfrage, um bessere Suchergebnisse zu erhalten, wenn der Kontext unzureichend war, wobei darauf zu achten ist, dass sich die Abfrage ausreichend 
+    von den bestehenden Abfragen unterscheiden.
   prompt: |
-    Ich werde dir einen Kontext und eine Frage geben.
-    Wenn die Frage mit dem bereitgestellten Kontext beantwortet werden kann, dann darf das Gespräch fortgesetzt werden (success=True).
-    Wenn die Beantwortung der Frage mit dem Kontext nicht möglich ist, sollte das Gespräch beendet werden (success=False).
-    Denke zuerst über die Entscheidungsfindung nach und bestimme dann, ob die Konversation erfolgreich fortgesetzt werden kann oder nicht.
+    Ich gebe Ihnen einen Kontext, eine Frage und frühere Abfragen, falls welche erstellt wurden.
+    Wenn die Frage mit dem angegebenen Kontext beantwortet werden kann, kann die Konversation fortgesetzt werden (success=True).
+    Ist die Beantwortung der Frage mit dem Kontext nicht möglich, sollte die Konversation beendet werden (success=False).
+    Überlegen Sie zunächst, wie Sie entscheiden sollen, und bestimmen Sie dann, ob die Konversation erfolgreich fortgesetzt werden kann oder nicht. 
+    Stellen Sie zweitens sicher, dass Ihre neue Abfrage im Vergleich zu den vorherigen eindeutig genug ist.
   message: |
     Frage:
-    <Frage>
+    <Question>
     {user_query}
-    </Frage>
+    </Question>
     Kontext:
-    <Kontext>
+    <Context>
     {context}
-    </Kontext>
+    </Context>
+    Vorherige Abfragen:
+    <Previous_Queries>
+    {prev_queries}
+    <\Previous_Queries>
+
 

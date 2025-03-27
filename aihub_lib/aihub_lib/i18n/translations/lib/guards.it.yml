@@ -66,17 +66,31 @@ few_shot_guard:
   docstring: |
     Modello di dati per la decisione sull'accettabilità della richiesta.
 context_sufficient_guard:
+  doc_string: |
+    Risultato della valutazione se il contesto è sufficiente per rispondere alla domanda dell'utente.
+  reason: |
+    Motivo che spiega perché il contesto è o non è sufficiente.
+  success: |
+    true se il contesto è sufficiente per rispondere alla domanda dell'utente, false se non lo è.
+  new_query: |
+    Una query rielaborata per ottenere risultati di ricerca migliori se il contesto era insufficiente, assicurarsi di differenziarla abbastanza 
+    dalle query esistenti.
   prompt: |
-    Ti fornirò un contesto e una domanda.
-    Se la domanda può essere risolta con il contesto fornito, allora la conversazione può continuare (success=True).
-    Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere terminata (success=False).
-    Pensa prima a come decidere, quindi determina se la conversazione può continuare con successo o meno.
+    Fornirò un contesto, una domanda e le query precedenti, se sono state generate.
+    Se è possibile rispondere alla domanda con il contesto fornito, la conversazione può continuare (success=True).
+    Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere interrotta (success=False).
+    Per prima cosa, si deve pensare a come decidere e quindi determinare se la conversazione può essere continuata con successo o meno. 
+    In secondo luogo, assicurarsi che la nuova domanda sia sufficientemente unica rispetto alle precedenti.
   message: |
     Domanda:
     <Domanda>
     {user_query}
-    </Domanda>
+    </Questione>
     Contesto:
     <Contesto>
     {context}
     </Contesto>
+    Quesiti precedenti:
+    <Questioni_precedenti>
+    {prev_queries}
+    <Questioni_precedenti>
