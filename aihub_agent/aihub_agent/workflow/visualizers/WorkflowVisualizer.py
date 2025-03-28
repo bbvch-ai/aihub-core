@@ -299,7 +299,7 @@ class WorkflowVisualizer:
         # If there's already an edge between these nodes, make this a multi-edge
         if G.has_edge(source, target):
             # Get existing edges between these nodes
-            existing_edges = [data for _, _, data in G.edges(data=True) if _ == source and target == target]
+            existing_edges = [data for _, _, data in G.edges(data=True) if _ == source]
 
             # Add counter to edge ID to make it unique
             edge_id = len(existing_edges)
