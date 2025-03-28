@@ -3,6 +3,7 @@ from typing import List
 from dagster import Backoff, ResourceParam, RetryPolicy, op
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.schema import TextNode
+from pydantic_core import ValidationError
 
 
 @op(
@@ -14,7 +15,20 @@ def embed_nodes(
     embedding_model: ResourceParam[BaseEmbedding],
 ) -> List[TextNode]:
     """Adds vector embeddings to a list of TextNodes using the provided embedding model."""
-    embeddings = embedding_model.get_text_embedding_batch([node.get_text() for node in nodes])
+    texts = [node.get_text() for node in nodes]
+
+    def embed_text_batch(_texts: List[str]) -> List[List[float]]:
+        try:
+            return embedding_model.get_text_embedding_batch(_texts)
+        except ValidationError as _:
+            if len(_texts) == 1:
+                raise
+            batch_one = embed_text_batch(_texts[: len(_texts) // 2])
+            batch_two = embed_text_batch(_texts[len(_texts) // 2 :])
+            return batch_one + batch_two
+
+    embeddings = embed_text_batch(texts)
+
     for node, embedding in zip(nodes, embeddings):
         node.embedding = embedding
 

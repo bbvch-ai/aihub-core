@@ -1,10 +1,9 @@
 import asyncio
-from asyncio import Task
+from asyncio import Event, Task
 
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from botbuilder.core import ActivityHandler, TurnContext
-from botbuilder.schema import Activity, ActivityTypes
 from botframework.connector import Channels
 from nats.aio.client import Client as NATS
 from typing_extensions import override
@@ -45,7 +44,13 @@ class AgentChatBot(ActivityHandler):
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
-        typing: Task = asyncio.create_task(turn_context.send_activity(Activity(type=ActivityTypes.typing)))
+        typing_stop_signal = Event()
+        typing: Task = asyncio.create_task(
+            AgentChatService.send_typing_activity(
+                turn_context=turn_context,
+                signal=typing_stop_signal,
+            )
+        )
 
         AgentChatService.add_user_message_to_conversation(
             path=self.path,
@@ -67,6 +72,7 @@ class AgentChatBot(ActivityHandler):
             thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
         )
 
+        typing_stop_signal.set()
         await typing
         await turn_context.send_activity(response)
 
