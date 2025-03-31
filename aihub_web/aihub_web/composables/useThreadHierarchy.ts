@@ -1,5 +1,6 @@
-import { computed } from 'vue'
 import { useThread } from '@core/composables/useThread'
+import { computed } from 'vue'
+
 import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
 
 interface HierarchyRun {

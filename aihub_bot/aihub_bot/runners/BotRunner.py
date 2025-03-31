@@ -1,17 +1,40 @@
 import logging
-from typing import List, Optional
+from typing import AsyncContextManager, List, Optional
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.routes.Controller import Controller
-from fastapi import FastAPI
-from starlette.staticfiles import StaticFiles
+from aihub_lib.runners.Runner import Runner
 
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
 
 
-class BotRunner:
+class BotRunner(Runner):
+    """
+    A concrete implementation of Runner specialized for bot frameworks and conversational services.
+
+    ### Why Use BotRunner?
+    `BotRunner` extends the base `Runner` class with features specific to bot services:
+    - Uses a dedicated bot lifetime manager for handling bot-specific startup/shutdown
+    - Provides appropriate defaults for bot service titles and descriptions
+    - Maintains the same consistent API as other runners
+
+    ### Key Features
+    - **Bot Lifecycle Management:** Uses a bot-specific lifetime manager that handles bot connections
+      and resources.
+    - **Consistent Interface:** Follows the same patterns as other runners for mounting controllers
+      and configuring the application.
+    - **Specialized Defaults:** Pre-configured with appropriate titles and settings for bot services.
+
+    ### Usage
+    ```python
+    runner = BotRunner(api_path="/api/v1", title="My Bot Service", debug=True)
+    runner.mount(BotController())  # Mount bot controllers
+    app = runner.get_app()  # Get the FastAPI instance
+    ```
+
+    Run the resulting `app` using `uvicorn` or another ASGI server.
+    """
+
     def __init__(
         self,
         api_path: str = "/api/v1",
@@ -20,65 +43,8 @@ class BotRunner:
         origins: Optional[List[str]] = None,
         debug: bool = False,
     ):
-        self.title = title
-        self.description = description
-        self.origins = origins
-        self.debug = debug
+        super().__init__(api_path, title, description, origins, debug)
 
-        # Create the base and API apps
-        self._base_app = self._get_base_app()
-        self._api_app = self._get_api_app()
-        self._api_app.state = self._base_app.state
-
-        # Mount the API under the specified path
-        self._base_app.mount(api_path, self._api_app)
-
-    def get_app(self) -> FastAPI:
-        """
-        Returns the main FastAPI application instance, which can be run using an ASGI server.
-        """
-        return self._base_app
-
-    def _get_base_app(self) -> FastAPI:
-        """
-        Creates the base FastAPI application, responsible for app lifecycle management (lifespan),
-        possibly serving static files, and holding shared state.
-        """
-        return FastAPI(
-            title=self.title,
-            description=self.description,
-            version=ApiConfig().VERSION or ".dev",
-            lifespan=lifetime_manager,
-            debug=self.debug,
-        )
-
-    def _get_api_app(self) -> FastAPI:
-        """
-        Creates the API FastAPI application that will be mounted under `api_path`.
-        Applies middleware like CORS and i18n. The controllers are mounted onto this app.
-        """
-        app = FastAPI(
-            title=self.title,
-            description=self.description,
-            version=ApiConfig().VERSION or ".dev",
-            debug=self.debug,
-        )
-
-        return app
-
-    def mount(self, *controllers: Controller) -> "BotRunner":
-        """
-        Mounts one or more controllers (each subclass of Controller) onto the API application.
-        This attaches the controller’s routes under the prefix defined in the controller itself.
-        """
-        for controller in controllers:
-            controller.mount(self._api_app)
-        return self
-
-    def mount_frontend(self, directory: str) -> "BotRunner":
-        """
-        Mount a static frontend (e.g., a React build directory) at the base "/" path of the app.
-        This allows serving the SPA directly from the same server that handles API requests.
-        """
-        self._base_app.mount("/", StaticFiles(directory=directory, html=True), name="static")
-        return self
+    @property
+    def lifetime_manager(self) -> AsyncContextManager:
+        return lifetime_manager

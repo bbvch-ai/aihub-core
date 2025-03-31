@@ -1,7 +1,8 @@
-import { computed } from 'vue'
 import { useEventsStore } from '@core/stores/useEventsStore'
-import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
 import { useThreadStore } from '@core/stores/useThreadStore'
+import { computed } from 'vue'
+
+import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
 
 export const useThread = (thread_id: string) => {
   const eventsStore = useEventsStore()

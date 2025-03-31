@@ -1,18 +1,54 @@
-<script setup lang="ts">
-const { $auth } = useNuxtApp()
-
-$auth.signinRedirectCallback()
-  .then(() => {
-    navigateTo('/')
-  })
-</script>
-
 <template>
-  <div>
-    <h1>Logging you in...</h1>
+  <div class="flex min-h-screen items-center justify-center bg-zinc-900 text-white">
+    <div
+      v-if="loading"
+      class="text-center"
+    >
+      <h1 class="mb-4 text-2xl">
+        Logging you in...
+      </h1>
+      <div class="mx-auto size-12 animate-spin rounded-full border-y-2 border-white" />
+    </div>
+
+    <div
+      v-else-if="error"
+      class="text-center"
+    >
+      <h1 class="mb-4 text-2xl text-red-500">
+        Login Error
+      </h1>
+      <p>{{ error }}</p>
+      <p class="mt-4">
+        Redirecting to login page...
+      </p>
+    </div>
   </div>
 </template>
 
-<style scoped>
+<script setup lang="ts">
+const { $auth, $i18n } = useNuxtApp()
+const error = ref(null)
+const loading = ref(true)
 
-</style>
+definePageMeta({
+  layout: 'anonymous',
+})
+
+// Add proper error handling
+$auth.signinRedirectCallback()
+  .then(() => {
+    console.log('Successfully processed authentication callback')
+    navigateTo('/')
+  })
+  .catch((err) => {
+    console.error('Error during authentication callback:', err)
+    error.value = err.message || 'An error occurred during login. Please try again.'
+    // After 3 seconds, redirect to login page
+    setTimeout(() => {
+      navigateTo(`/${$i18n.locale.value}/auth/login`)
+    }, 3000)
+  })
+  .finally(() => {
+    loading.value = false
+  })
+</script>

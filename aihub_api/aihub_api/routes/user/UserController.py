@@ -1,9 +1,10 @@
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Security
 
-from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.UserService import UserService
 
 
@@ -26,21 +27,25 @@ class UserController(Controller):
     ```python
     app = FastAPI()
     UserController(auth=some_auth_dependency)
-        .get_user()
+        .get_my_user()
         .mount(app)
     ```
 
     Once mounted, calling `GET /user/me` returns user data like name, email, etc., depending on `UserDTO`.
     """
 
-    def __init__(self, route: str = "/user", auth: AuthHandler | None = None):
-        super().__init__(route, auth)
+    name = LocaleString(en="User")
+    description = LocaleString(en="Manage own user")
+    icon = "solar:password-bold"
 
-    def get_user(self, route: str = "/me") -> "UserController":
-        @self.router.get(route)
-        async def get_user(
+    def __init__(self, route: str = "/user", auth: AuthHandler | None = None, is_admin_only=False):
+        super().__init__(route, auth, is_admin_only=is_admin_only)
+
+    def get_my_user(self, route: str = "/me") -> "UserController":
+        @self.router.get(route, tags=self.tags)
+        async def get_my_user(
             user: AuthenticatedUser = Security(self.auth),
-        ) -> UserDTO:
+        ) -> MyUserDTO:
             """
             Returns a `UserDTO` representing the currently logged-in user.
             """

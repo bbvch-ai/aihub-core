@@ -4,6 +4,7 @@ from typing import Annotated, List, Type
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -55,37 +56,43 @@ class AgentController(Controller):
     This sets up `/agent/discover` and `/agent/{agent_class}/{agent_id}` endpoints.
     """
 
-    def __init__(self, route: str = "/agent", auth: AuthHandler | None = None):
-        super().__init__(route, auth)
+    name = LocaleString(en="Agents")
+    description = LocaleString(en="Interacts with agents")
+    icon = "meteor-icons:robot"
+
+    def __init__(self, route: str = "/agent", auth: AuthHandler | None = None, is_admin_only=True):
+        super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def discover_agents(self, route: str = "/discover") -> "AgentController":
-        @self.router.get(route)
+        @self.router.get(route, tags=self.tags)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all discovered agents. Filters out agents the user cannot access.
             """
-            agents = await AgentService.discover_agents(nc)
+            agents = await AgentService.discover_agents(nc, t)
             return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
 
         return self
 
     def get_agent(self, route: str = "/{agent_class}/{agent_id}") -> "AgentController":
-        @self.router.get(route)
+        @self.router.get(route, tags=self.tags)
         async def get_agent(
             nc: Annotated[NATS, Depends(use_nats)],
             agent_class: str,
             agent_id: str,
             user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> AgentDTO:
             """
             Retrieve details for a specific agent. Raises 403 if the user lacks access.
             """
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-            return await AgentService.get_agent(nc, agent_class, agent_id)
+            return await AgentService.get_agent(nc, agent_class, agent_id, t)
 
         return self
 
@@ -113,7 +120,7 @@ class AgentController(Controller):
         if route_postfix.endswith("/"):
             route_postfix = route_postfix[:-1]
 
-        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name)
+        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name, tags=[agent_class])
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],

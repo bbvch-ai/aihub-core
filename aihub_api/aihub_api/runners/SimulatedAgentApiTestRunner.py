@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     BaseEvent,
@@ -145,6 +146,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             is_conversational=True,
             start_events=start_events,
             stop_events=stop_events,
+            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 

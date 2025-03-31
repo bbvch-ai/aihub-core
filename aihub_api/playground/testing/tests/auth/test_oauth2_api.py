@@ -87,7 +87,7 @@ def oauth2_api_client():
     """Return a TestClient with OAuth2AuthHandler and UserController mounted."""
     runner = ApiTestRunner()
     auth = OAuth2AuthHandler()
-    runner.mount(UserController(auth=auth).get_user())
+    runner.mount(UserController(auth=auth).get_my_user())
     return TestClient(runner.get_app())
 
 

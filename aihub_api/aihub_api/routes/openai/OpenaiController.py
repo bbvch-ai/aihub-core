@@ -8,6 +8,8 @@ from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import Chat
 from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -20,6 +22,7 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
+from ...i18n.dependencies.use_locale import use_locale
 from .dto.ChatCompletionRequest import ChatCompletionRequest
 from .dto.EmbeddingsRequest import EmbeddingsRequest
 from .dto.EmbeddingsResponse import EmbeddingsResponse
@@ -53,17 +56,22 @@ class OpenaiController(Controller):
     OpenAI SDKs directly against AI Hub.
     """
 
+    name = LocaleString(en="OpenAI")
+    description = LocaleString(en="OpenAI Compatible API")
+    icon = "simple-icons:openai"
+
     def __init__(
         self,
         route: str = "/openai",
         auth: AuthHandler | None = None,
+        is_admin_only=False,
         embedding_models: List[EmbeddingLLMConfig] = None,
         chat_models: List[ChatLLMConfig] = None,
         image_models: List[AzureOpenaiImageModelConfig] = None,
         stt_models: List[AzureOpenaiSTTConfig] = None,
         tts_models: List[AzureOpenaiTTSConfig] = None,
     ):
-        super().__init__(route, auth)
+        super().__init__(route, auth, is_admin_only=is_admin_only)
         self.embedding_models = embedding_models or []
         self.chat_models = chat_models or []
         self.image_models = image_models or []
@@ -82,6 +90,7 @@ class OpenaiController(Controller):
             summary="List Models",
             description="Lists the currently available models, and provides basic information about each one such as the owner and availability.",
             response_model=ModelResponse,
+            tags=self.tags,
         )
         async def get_models(
             user: AuthenticatedUser = Security(self.auth),
@@ -100,13 +109,15 @@ class OpenaiController(Controller):
             summary="List Models (including ai-hub assistants)",
             description="Lists the currently available models and ai-hub assistants, and provides basic information about each one such as the owner and availability.",
             response_model=ModelResponse,
+            tags=self.tags,
         )
         async def get_models(
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> ModelResponse:
             return await OpenaiService.get_models_with_assistants(
-                self.chat_models, user, nc, exclude_webui_agents=exclude_webui_agents
+                self.chat_models, user, nc, t, exclude_webui_agents=exclude_webui_agents
             )
 
         return self
@@ -116,6 +127,7 @@ class OpenaiController(Controller):
             route,
             summary="Retrieve model",
             description="Retrieves a model instance, providing basic information about the model such as the owner and permissioning.",
+            tags=self.tags,
         )
         async def get_model(
             full_path: str,
@@ -130,14 +142,16 @@ class OpenaiController(Controller):
             route,
             summary="Retrieve model (including ai-hub assistants)",
             description="Retrieves a model or ai-hub assistant instance, providing basic information about the model such as the owner and permissioning.",
+            tags=self.tags,
         )
         async def get_model(
             full_path: str,
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> ModelDetails:
             return await OpenaiService.get_model_with_assistants(
-                self.chat_models, model_name=full_path, user=user, nc=nc
+                self.chat_models, model_name=full_path, user=user, nc=nc, t=t
             )
 
         return self
@@ -147,6 +161,7 @@ class OpenaiController(Controller):
             route,
             summary="Create embeddings",
             description="Creates an embedding vector representing the input text.",
+            tags=self.tags,
         )
         async def get_embeddings(
             req: Annotated[EmbeddingsRequest, Body],
@@ -168,6 +183,7 @@ class OpenaiController(Controller):
             response_model=ChatCompletion,
             summary="Create chat completion",
             description="Creates a model response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
+            tags=self.tags,
         )
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
@@ -186,22 +202,24 @@ class OpenaiController(Controller):
             response_model=ChatCompletion,
             summary="Create chat completion (including ai-hub assistants)",
             description="Creates a model or ai-hub assistant response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
+            tags=self.tags,
         )
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
             user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion_with_assistants(
-                self.chat_models, completion_request.model, completion_request, user, nc, external_event_distributor
+                self.chat_models, completion_request.model, completion_request, user, nc, external_event_distributor, t
             )
 
         return self
 
     def generate_image(self, route: str = "/images/generations") -> "OpenaiController":
-        @self.router.post(route, summary="Create image", description="Creates an image given a prompt.")
+        @self.router.post(route, summary="Create image", description="Creates an image given a prompt.", tags=self.tags)
         async def generate_image(
             generation_request: Annotated[ImageGenerationRequest, Body],
             user: AuthenticatedUser = Security(self.auth),
@@ -214,7 +232,10 @@ class OpenaiController(Controller):
 
     def stt(self, route: str = "/audio/transcriptions") -> "OpenaiController":
         @self.router.post(
-            route, summary="Create transcription", description="Transcribes audio into the input language."
+            route,
+            summary="Create transcription",
+            description="Transcribes audio into the input language.",
+            tags=self.tags,
         )
         async def create_transcription(
             file: UploadFile = File(..., description="The audio file to transcribe"),
@@ -244,9 +265,7 @@ class OpenaiController(Controller):
 
     def tts(self, route: str = "/audio/speech") -> "OpenaiController":
         @self.router.post(
-            route,
-            summary="Create speech",
-            description="Generates audio from the input text.",
+            route, summary="Create speech", description="Generates audio from the input text.", tags=self.tags
         )
         async def create_speech(
             speech_request: Annotated[TextToSpeechRequest, Body],

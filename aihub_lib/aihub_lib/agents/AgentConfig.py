@@ -63,6 +63,7 @@ class AgentConfig(BaseModel):
     system_prompt: LocaleString = Field(..., description="The system prompt of the agent.")
     color: Optional[str] = Field("#10A37F", description="The color of the agent UI theme.")
     voice: Optional[str] = Field("de-DE-ChristophNeural", description="The TTS voice ID the agent uses.")
+    icon: Optional[str] = Field("meteor-icons:robot", description="The icon representing the agent.")
 
     def get_step_configs(self) -> Dict[Type[StepConfig], StepConfig]:
         """

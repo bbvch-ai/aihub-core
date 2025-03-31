@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-[calc(100vh-50px)]">
+  <div class="h-[calc(100vh-50px)] w-full">
     <iframe
       src="http://localhost:5173"
       width="100%"
