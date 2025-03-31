@@ -59,7 +59,7 @@ def token_api_client():
     """Create a TestClient with UserController mounted using TokenAuthHandler."""
     runner = ApiTestRunner()
     auth = TokenAuthHandler()
-    runner.mount(UserController(auth=auth).get_user())
+    runner.mount(UserController(auth=auth).get_my_user())
     return TestClient(runner.get_app())
 
 

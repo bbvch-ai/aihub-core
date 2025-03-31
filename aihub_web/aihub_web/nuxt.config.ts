@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'url'
 
+import { defineNuxtConfig } from 'nuxt/config'
+
 export default defineNuxtConfig({
   modules: [
     '@vueuse/nuxt',

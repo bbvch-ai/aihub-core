@@ -1,11 +1,12 @@
-import { defineStore } from 'pinia'
 import { useQuery } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import ObjectID from 'bson-objectid'
-import type { WSUserEvent } from '@core/types/Events/WSEvent/WSUserEvent'
+import { defineStore } from 'pinia'
+
 import type { HumanInTheLoopResponseEvent } from '@core/types/Events/HumanInTheLoopEvents/HumanInTheLoopResponseEvent'
 import type { UserMessageEvent } from '@core/types/Events/UserEvents/UserMessageEvent'
 import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
+import type { WSUserEvent } from '@core/types/Events/WSEvent/WSUserEvent'
 
 export const useEventsStore = defineStore('events', () => {
   const { getHeaders, getBearer } = useAuth()

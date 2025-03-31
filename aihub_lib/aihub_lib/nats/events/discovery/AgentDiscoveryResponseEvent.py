@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Field
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events import BaseEvent
 
 
@@ -54,4 +55,8 @@ class AgentDiscoveryResponseEvent(BaseEvent):
     stop_events: List[EventSpecs] = Field(
         ...,
         description="A list of `EventSpecs` objects, each describing a stop event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
+    )
+    network_graph: WorkflowGraph = Field(
+        ...,
+        description="A network graph of the agent, showing how different components are connected and interact.",
     )

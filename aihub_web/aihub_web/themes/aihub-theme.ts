@@ -1,42 +1,42 @@
-import { definePreset } from '@primevue/themes'
-import Aura from '@primevue/themes/aura'
+import { definePreset } from '@primeuix/themes'
+import Aura from '@primeuix/themes/aura'
 
 const AIHubPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '{zinc.50}',
-      100: '{zinc.100}',
-      200: '{zinc.200}',
-      300: '{zinc.300}',
-      400: '{zinc.400}',
-      500: '{zinc.500}',
-      600: '{zinc.600}',
-      700: '{zinc.700}',
-      800: '{zinc.800}',
-      900: '{zinc.900}',
-      950: '{zinc.950}',
+      50: '{red.50}',
+      100: '{red.100}',
+      200: '{stone.200}',
+      300: '{red.300}',
+      400: '{red.400}',
+      500: '{red.500}',
+      600: '{red.600}',
+      700: '{red.700}',
+      800: '{red.800}',
+      900: '{red.900}',
+      950: '{red.950}',
     },
     colorScheme: {
       light: {
         primary: {
-          color: '{zinc.950}',
+          color: '{stone.950}',
           inverseColor: '#ffffff',
-          hoverColor: '{zinc.900}',
-          activeColor: '{zinc.800}',
+          hoverColor: '{stone.900}',
+          activeColor: '{stone.800}',
         },
         highlight: {
-          background: '{zinc.950}',
-          focusBackground: '{zinc.700}',
+          background: '{stone.950}',
+          focusBackground: '{stone.700}',
           color: '#ffffff',
           focusColor: '#ffffff',
         },
       },
       dark: {
         primary: {
-          color: '{zinc.50}',
-          inverseColor: '{zinc.950}',
-          hoverColor: '{zinc.100}',
-          activeColor: '{zinc.200}',
+          color: '{stone.50}',
+          inverseColor: '{stone.950}',
+          hoverColor: '{stone.100}',
+          activeColor: '{stone.200}',
         },
         highlight: {
           background: 'rgba(250, 250, 250, .16)',

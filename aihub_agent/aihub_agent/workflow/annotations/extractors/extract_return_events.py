@@ -37,8 +37,8 @@ def extract_return_events(
     ```
     This would return `{SomeEvent}` indicating that it may return a `SomeEvent` or `None`.
     """
-
-    return_annotation = func.__signature__.return_annotation
+    signature = inspect.signature(func)
+    return_annotation = signature.return_annotation
     if return_annotation is inspect._empty:
         return set()
 
