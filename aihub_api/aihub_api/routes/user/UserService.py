@@ -34,7 +34,7 @@ class UserService:
     @staticmethod
     def get_logged_in_user(user: AuthenticatedUser) -> MyUserDTO:
         """
-        Convert the `AuthenticatedUser` (provided by the auth layer) into a UserDTO.
+        Convert the `AuthenticatedUser` (provided by the auth layer) into a MyUserDTO.
         This usually includes fields like name, email, and OID.
         """
         user = UserService.get_user_by_oid(user.oid)
