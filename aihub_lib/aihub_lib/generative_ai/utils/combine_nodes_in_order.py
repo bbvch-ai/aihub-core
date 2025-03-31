@@ -17,13 +17,9 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     H5,
     H6,
     INSERTED_AT,
-    LANGUAGE,
-    NAMESPACE,
     SECTION_START_LINE,
     SOURCE,
-    TYPE,
-    UPDATED_AT,
-    VERSION,
+    UPDATED_AT, DEFAULT_METADATA,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
@@ -65,20 +61,22 @@ def combine_nodes_in_order(
     for key, nodes in nodes_per_document.items():
         metadata = nodes[0].metadata
 
-        metadata_fields = {
-            "source": key,
-            "namespace": metadata.get(NAMESPACE),
-            "type": metadata.get(TYPE),
-            "language": metadata.get(LANGUAGE),
-            "version": metadata.get(VERSION),
-            "created_at": format_unix_timestamp(metadata.get(CREATED_AT)),
-            "updated_at": format_unix_timestamp(metadata.get(UPDATED_AT)),
-            "inserted_at": format_unix_timestamp(metadata.get(INSERTED_AT)),
-        }
+        metadata_fields = {}
+        for field in DEFAULT_METADATA:
+            value = metadata.get(field)
+            if value is None:
+                continue
+            if field in {CREATED_AT, UPDATED_AT, INSERTED_AT}:
+                value = format_unix_timestamp(value)
+                if value is None:
+                    continue
+            metadata_fields[field] = value
 
-        metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
+        metadata_fields[SOURCE] = key
 
-        metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
+        metadata_string = " ".join(
+            f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items()
+        )
 
         doc_header = f"<DOCUMENT {metadata_string}>\n\n"
 
