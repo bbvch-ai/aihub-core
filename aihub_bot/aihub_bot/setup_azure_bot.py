@@ -133,8 +133,8 @@ def save_credentials_in_mongo(
 ):
     print("Saving credentials in MongoDB...")
     client = MongoClient(connection_string)
-    database = client["aihub_bot"]
-    collection = database.get_collection("paths")
+    database = client["aihub"]
+    collection = database.get_collection("bot_paths")
     document = {
         "path": api_path,
         "credentials": {
