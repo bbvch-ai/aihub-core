@@ -266,7 +266,7 @@ class CompletionHandler:
     async def send_typing_activity(
         turn_context: TurnContext,
         signal: Event,
-        locale_handler: LocaleHandler,
+        t: LocaleHandler,
     ):
         for _ in range(30):
             if signal.is_set():
@@ -279,7 +279,7 @@ class CompletionHandler:
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,
-                    text=locale_handler.t_object("bot.error.timeout"),
+                    text=t("bot.error.response_timeout"),
                 )
             )
 
@@ -289,12 +289,12 @@ class CompletionHandler:
         exception: Exception,
         typing_task: Task,
         typing_stop_signal: Event,
-        locale_handler: LocaleHandler,
+        t: LocaleHandler,
     ) -> str:
         logger.error(f"Exception: {exception}\nTurnContext: {turn_context}")
         typing_stop_signal.set()
         await typing_task
-        response = locale_handler.t_object("bot.error.generic_error")
+        response = t("bot.error.generic_error")
         await turn_context.send_activity(
             Activity(
                 type=ActivityTypes.message,

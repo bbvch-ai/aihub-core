@@ -56,7 +56,7 @@ class BaseChatBot(ActivityHandler):
         await self._process_message(turn_context, is_streaming=False)
 
     def _get_locale_handler(self, turn_context: TurnContext) -> LocaleHandler:
-        locale = self.locale_handler.get_locale(turn_context.activity.locale)
+        locale = self.locale_handler.get_locale(turn_context.activity.locale.split("-")[0])
         return self.locale_handler.in_locale(locale)
 
     async def _process_message(self, turn_context: TurnContext, is_streaming: bool = False):
@@ -68,7 +68,7 @@ class BaseChatBot(ActivityHandler):
             self.completion_handler.send_typing_activity(
                 turn_context=turn_context,
                 signal=typing_stop_signal,
-                locale_handler=locale_handler,
+                t=locale_handler,
             )
         )
 
@@ -100,7 +100,7 @@ class BaseChatBot(ActivityHandler):
                 exception=e,
                 typing_task=typing_task,
                 typing_stop_signal=typing_stop_signal,
-                locale_handler=locale_handler,
+                t=locale_handler,
             )
 
         # Persist bot response
