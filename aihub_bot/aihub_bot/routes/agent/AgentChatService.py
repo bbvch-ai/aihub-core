@@ -3,6 +3,7 @@ from typing import AsyncGenerator, List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
 from botbuilder.core import TurnContext
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
@@ -47,6 +48,9 @@ class AgentChatService(Service):
             stream=False,
         )
 
+        if isinstance(resources.stop_event, ExceptionEvent):
+            raise RuntimeError(resources.stop_event.message)
+
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
@@ -80,6 +84,9 @@ class AgentChatService(Service):
             thread_id=thread_id,
             stream=True,
         )
+
+        if isinstance(resources.stop_event, ExceptionEvent):
+            raise RuntimeError(resources.stop_event.message)
 
         async def response_generator():
             while True:

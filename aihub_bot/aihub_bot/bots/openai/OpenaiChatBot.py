@@ -75,6 +75,13 @@ class OpenaiChatBot(ActivityHandler):
             response = e.body["message"]
             await typing
             await turn_context.send_activity(response)
+        except Exception as e:
+            await OpenaiChatService.handle_exception(
+                turn_context=turn_context,
+                exception=e,
+                typing=typing,
+                typing_stop_signal=typing_stop_signal,
+            )
 
         OpenaiChatService.add_bot_message_to_conversation(
             path=self.path,

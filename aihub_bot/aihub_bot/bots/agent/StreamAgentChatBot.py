@@ -43,22 +43,27 @@ class StreamAgentChatBot(AgentChatBot):
             if turn_context is None:
                 return
 
-        response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat_completion(
-            turn_context=turn_context,
-            path=self.path,
-            agent_class=self.agent_class,
-            agent_id=self.agent_id,
-            nc=self.nc,
-            external_event_distributor=self.external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
-        )
+        try:
+            response_generator: AsyncGenerator[str, None] = await AgentChatService.stream_chat_completion(
+                turn_context=turn_context,
+                path=self.path,
+                agent_class=self.agent_class,
+                agent_id=self.agent_id,
+                nc=self.nc,
+                external_event_distributor=self.external_event_distributor,
+                thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
+            )
 
-        typing_stop_signal.set()
-        await typing
-        response = await AgentChatService.send_response_stream(
-            turn_context=turn_context,
-            response_generator=response_generator,
-        )
+            typing_stop_signal.set()
+            await typing
+            response = await AgentChatService.send_response_stream(
+                turn_context=turn_context,
+                response_generator=response_generator,
+            )
+        except Exception as e:
+            await AgentChatService.handle_exception(
+                turn_context=turn_context, exception=e, typing=typing, typing_stop_signal=typing_stop_signal
+            )
 
         AgentChatService.add_bot_message_to_conversation(
             path=self.path,

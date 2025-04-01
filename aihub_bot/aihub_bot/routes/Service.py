@@ -281,6 +281,31 @@ class Service(ChatService):
 
     @staticmethod
     async def send_typing_activity(turn_context: TurnContext, signal: Event):
-        while not signal.is_set():
+        for _ in range(30):
+            if signal.is_set():
+                break
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
             await asyncio.sleep(2)
+
+        if not signal.is_set():
+            logger.error(f"Timeout while waiting for a response to Activity:\n{turn_context.activity}")
+            await turn_context.send_activity(
+                Activity(
+                    type=ActivityTypes.message,
+                    text="Sorry, I am taking too long to respond. Please try again.",
+                )
+            )
+
+    @staticmethod
+    async def handle_exception(
+        turn_context: TurnContext, exception: Exception, typing: Task, typing_stop_signal: Event
+    ):
+        logger.error(f"Exception: {exception}\nTurnContext: {turn_context}")
+        typing_stop_signal.set()
+        await typing
+        await turn_context.send_activity(
+            Activity(
+                type=ActivityTypes.message,
+                text="Sorry, something went wrong. Please try again.",
+            )
+        )

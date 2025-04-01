@@ -62,19 +62,24 @@ class AgentChatBot(ActivityHandler):
             if turn_context is None:
                 return
 
-        response = await AgentChatService.json_chat_completion(
-            turn_context=turn_context,
-            path=self.path,
-            agent_class=self.agent_class,
-            agent_id=self.agent_id,
-            nc=self.nc,
-            external_event_distributor=self.external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
-        )
+        try:
+            response = await AgentChatService.json_chat_completion(
+                turn_context=turn_context,
+                path=self.path,
+                agent_class=self.agent_class,
+                agent_id=self.agent_id,
+                nc=self.nc,
+                external_event_distributor=self.external_event_distributor,
+                thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
+            )
 
-        typing_stop_signal.set()
-        await typing
-        await turn_context.send_activity(response)
+            typing_stop_signal.set()
+            await typing
+            await turn_context.send_activity(response)
+        except Exception as e:
+            await AgentChatService.handle_exception(
+                turn_context=turn_context, exception=e, typing=typing, typing_stop_signal=typing_stop_signal
+            )
 
         AgentChatService.add_bot_message_to_conversation(
             path=self.path,
