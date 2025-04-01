@@ -147,7 +147,7 @@ class AgentController(Controller):
             )
 
             if isinstance(stop_event, ExceptionEvent):
-                raise HTTPException(status_code=500, detail=stop_event.message)
+                raise HTTPException(status_code=stop_event.http_status_code, detail=stop_event.message)
 
             return stop_event
 
