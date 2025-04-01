@@ -86,7 +86,7 @@ class LocaleHandler:
             return getattr(locale_data, available_locales[0])
         raise ValueError("No language keys available")
 
-    def t_object(self, key: str, locale: str) -> Any:
+    def t_object(self, key: str, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         folder, filename, *path = key.split(".")
         current_file_directory = Path(__file__).resolve().parent

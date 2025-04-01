@@ -4,40 +4,35 @@ from typing import AsyncGenerator, List, Optional
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
-from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from botbuilder.core import TurnContext
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from nats.aio.client import Client as NATS
 
+from aihub_bot.bots.BaseChatBot import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import Content, Message
-from aihub_bot.routes.Service import Service
 
 
-class AgentChatService(Service):
+class AgentCompletionHandler(CompletionHandler):
     """
-    ### What
-    - Shared functionality for the AgentChatController and AgentChatBots.
+    Strategy for handling Agent completions.
     """
 
     @staticmethod
-    async def json_chat_completion(
+    async def get_completion(
         turn_context: TurnContext,
         path: str,
         agent_class: str,
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        **kwargs,
     ) -> str:
-        """
-        ### What
-        - Start a chat interaction with an Agent and return the response as a single string.
+        """Get a non-streaming Agent completion."""
+        thread_id = ThreadEntity.to_thread_id(turn_context.activity.conversation.id)
 
-        ### Why
-        - Send the response in one single message.
-        - Some channels (e.g. webchat) do not support streaming.
-        """
-        resources: JsonResources = await AgentChatService.chat_completion(
+        resources: JsonResources = await AgentCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
             agent_class=agent_class,
@@ -54,27 +49,22 @@ class AgentChatService(Service):
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
-        return AgentChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        return ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
 
     @staticmethod
-    async def stream_chat_completion(
+    async def get_stream_completion(
         turn_context: TurnContext,
         path: str,
         agent_class: str,
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """
-        ### What
-        - Start a chat interaction with an Agent.
-        - Return a generator that yields the response in chunks.
+        """Get a streaming Agent completion."""
+        thread_id = ThreadEntity.to_thread_id(turn_context.activity.conversation.id)
 
-        ### Why
-        - Send the response in multiple chunks by updating the message for each chunk.
-        """
-        resources: StreamingResources = await AgentChatService.chat_completion(
+        resources: StreamingResources = await AgentCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
             agent_class=agent_class,
@@ -125,17 +115,17 @@ class AgentChatService(Service):
         - The messages must be converted to the correct format to send them to the Agent.
         - The context is needed to generate the completion.
         """
-        persisted_messages: List[Message] = Service.get_messages_by_conversation_id(
+        persisted_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
-        system_message: Message = Service.get_system_message(
+        system_message: Message = CompletionHandler.get_system_message(
             turn_context=turn_context,
             path=path,
         )
         if system_message is not None:
             persisted_messages.insert(0, system_message)
         chat_messages: List[ChatMessage] = [
-            AgentChatService._message_to_chat_message(message) for message in persisted_messages
+            AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
         user = AuthenticatedUser(
             name=turn_context.activity.from_property.name,
@@ -144,7 +134,7 @@ class AgentChatService(Service):
             roles=[],
         )
         if stream:
-            return await Service.start_stream_chat_interaction(
+            return await ChatService.start_stream_chat_interaction(
                 user=user,
                 agent_class=agent_class,
                 agent_id=agent_id,
@@ -154,7 +144,7 @@ class AgentChatService(Service):
                 thread_id=thread_id,
             )
         else:
-            return await Service.start_json_chat_interaction(
+            return await ChatService.start_json_chat_interaction(
                 user=user,
                 agent_class=agent_class,
                 agent_id=agent_id,
@@ -186,7 +176,7 @@ class AgentChatService(Service):
 
         return ChatMessage(
             role=role,
-            content=[AgentChatService._content_to_content_block(content) for content in message.content],
+            content=[AgentCompletionHandler._content_to_content_block(content) for content in message.content],
             name=message.name,
         )
 
