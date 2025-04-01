@@ -10,6 +10,7 @@ from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseExce
 from aihub_bot.bots.ContentExtractor import ContentExtractor
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import PathEntity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +263,11 @@ class CompletionHandler:
         return response
 
     @staticmethod
-    async def send_typing_activity(turn_context: TurnContext, signal: Event):
+    async def send_typing_activity(
+        turn_context: TurnContext,
+        signal: Event,
+        locale_handler: LocaleHandler,
+    ):
         for _ in range(30):
             if signal.is_set():
                 break
@@ -274,17 +279,26 @@ class CompletionHandler:
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,
-                    text="Sorry, I am taking too long to respond. Please try again.",
+                    text=locale_handler.t_object("bot.error.timeout"),
                 )
             )
 
     @staticmethod
     async def handle_exception(
-        turn_context: TurnContext, exception: Exception, typing_task: Task, typing_stop_signal: Event
+        turn_context: TurnContext,
+        exception: Exception,
+        typing_task: Task,
+        typing_stop_signal: Event,
+        locale_handler: LocaleHandler,
     ) -> str:
         logger.error(f"Exception: {exception}\nTurnContext: {turn_context}")
         typing_stop_signal.set()
         await typing_task
-        response = "Sorry, something went wrong. Please try again."
-        await turn_context.send_activity(Activity(type=ActivityTypes.message, text=response))
+        response = locale_handler.t_object("bot.error.generic_error")
+        await turn_context.send_activity(
+            Activity(
+                type=ActivityTypes.message,
+                text=response,
+            )
+        )
         return response
