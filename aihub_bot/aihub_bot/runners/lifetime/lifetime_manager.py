@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
+from aihub_lib.infrastructure.BotConfig import BotConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
@@ -18,7 +19,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db="aihub",
+        db=BotConfig().BOT_DB_NAME,
         host=CosmosAccess().get_connection_string(),
     )
 
