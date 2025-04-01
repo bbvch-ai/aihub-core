@@ -7,6 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class BotConfig(BaseSettings):
     BOT_DB_NAME: str = Field(
         "aihub_bot",
-        pattern=r"^[A-Za-z]+$",
+        pattern=r"^[A-Za-z_]+$",
         description="Database holding conversations and configurations for the bot",
     )
