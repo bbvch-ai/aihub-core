@@ -1,3 +1,4 @@
+import html
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
@@ -326,6 +327,8 @@ class MarkdownStructuralNodeParser(NodeParser):
         @return: List of TextNodes.
         """
         text = node.get_content(metadata_mode=MetadataMode.NONE)
+        text = html.unescape(text)
+
         splits = self.markdown_splitter.split_content(text, self.metadata)
         if self.metadata_extractor:
             splits = self.metadata_extractor.extract(splits)
