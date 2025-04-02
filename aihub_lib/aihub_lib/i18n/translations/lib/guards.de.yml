@@ -27,7 +27,7 @@ agent_description_guard:
   success: |
     true wenn die Antwort gegeben werden kann, false wenn nicht
   docstring: |
-    Datenmodel für die Enscheidung ob eine Antwort gegeben werden kann.
+    Datenmodel für die Entscheidung ob eine Antwort gegeben werden kann.
 few_shot_guard:
   prompt: |
     Sie erhalten mehrere Beispiele, die zeigen, welche Benutzeranfragen erlaubt sind und welche nicht. Jede Beispielantwort besteht aus zwei Schlüsseln:
@@ -70,7 +70,6 @@ context_sufficient_guard:
     Wenn die Frage mit dem bereitgestellten Kontext beantwortet werden kann, dann darf das Gespräch fortgesetzt werden (success=True).
     Wenn die Beantwortung der Frage mit dem Kontext nicht möglich ist, sollte das Gespräch beendet werden (success=False).
     Denke zuerst über die Entscheidungsfindung nach und bestimme dann, ob die Konversation erfolgreich fortgesetzt werden kann oder nicht.
-  message: |
     Frage:
     <Frage>
     {user_query}
@@ -79,4 +78,9 @@ context_sufficient_guard:
     <Kontext>
     {context}
     </Kontext>
-
+  reason: |
+    Begründung der getroffenen Entscheidung.
+  success: |
+    true wenn die Antwort gegeben werden kann, false wenn nicht
+  docstring: |
+    Datenmodel für die Entscheidung ob eine Antwort gegeben werden kann.

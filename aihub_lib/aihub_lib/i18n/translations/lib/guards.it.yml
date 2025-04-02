@@ -71,7 +71,6 @@ context_sufficient_guard:
     Se la domanda può essere risolta con il contesto fornito, allora la conversazione può continuare (success=True).
     Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere terminata (success=False).
     Pensa prima a come decidere, quindi determina se la conversazione può continuare con successo o meno.
-  message: |
     Domanda:
     <Domanda>
     {user_query}
@@ -80,3 +79,9 @@ context_sufficient_guard:
     <Contesto>
     {context}
     </Contesto>
+  reason: |
+    Motivazione della decisione presa.
+  success: |
+    true se la risposta può essere fornita, false altrimenti
+  docstring: |
+    Modello di dati per la decisione se è possibile fornire una risposta.
