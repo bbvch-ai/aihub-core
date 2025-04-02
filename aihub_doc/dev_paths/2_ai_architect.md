@@ -14,7 +14,7 @@ Bewandt und erfahren. Ein Performer.
 - **Agenten-Design**: Definiert sophistizierte Strukturen und Kommunikationsparadigmen von KI-Agenten. Entwickelt Blueprints für moderne, skalierbare Agenten-basierte Systeme.
 - **Risikomanagement**: Bewertet und adressiert KI-spezifische Risiken mit tiefem Verständnis der Ursachen. Entwickelt proaktive Strategien zur Risikominimierung und -überwachung.
 - **KI-Qualitätsattribute**: Definiert und operationalisiert messbare Qualitätsattribute für KI-Systeme. Etabliert Nachvollziehbarkeit, Robustheit und Adaptivität als überprüfbare Merkmale.
-- **Architektur-Tradeoffs**: Identifiziert und bewertet komplexe Tradeoffs in KI-Architekturen wie Dateneffizienz vs. Modellgröße oder Latenz vs. Genauigkeit.
+- **Architektur-Tradeoffs**: Identifiziert und bewertet komplexe Tradeoffs in KI-Architekturen wie Dateneffizienz vs. Modellgrösse oder Latenz vs. Genauigkeit.
 - **Ethik und Governance**: Entwickelt umfassende Governance-Frameworks für verantwortungsvolle KI. Integriert Fairness- und Transparenz-Metriken in Architekturentscheidungen.
 
 ### Technologie

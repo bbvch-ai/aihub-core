@@ -10,7 +10,6 @@ Gut ausgebildet. Eine solide Grundlage. Die Routine fehlt.
 
 ### Methodik
 - **KI-Agenten-Workflows**: Versteht und implementiert vorgegebene Agenten-Workflows. Kann die Konzepte von Event-basierten Agentensystemen nachvollziehen und anwenden.
-- **Event-Driven Development**: Erkennt und handhabt verschiedene Event-Typen (Control Events, Semantic Events) und versteht deren Rolle im KI-System.
 - **Testing**: Entwickelt Unit-Tests für KI-Komponenten. Kann einfache Testszenarien für Agenten implementieren.
 - **Debugging**: Fehlersuche in eigenem Code und einfachen Agentenprozessen. Kann Logs und Traces nachvollziehen.
 - **Pair Programming**: Arbeitet effektiv in Pair-Programming-Sessions, besonders für KI-spezifische Aufgaben.
@@ -23,6 +22,7 @@ Gut ausgebildet. Eine solide Grundlage. Die Routine fehlt.
 - **KI-Pipelines**: Versteht grundlegende Datenpipelines für KI-Anwendungen. Kann existierende Dagster-Pipelines bedienen und einfache Änderungen vornehmen.
 - **Retrieval-Augmented Generation**: Grundlegendes Verständnis von RAG, kann vorgegebene RAG-Pipelines implementieren und einfache Anpassungen vornehmen.
 - **Vector Embeddings**: Kennt das Konzept von Embeddings und deren Anwendung für semantische Suche und RAG.
+- **Event-Driven Development**: Erkennt und handhabt verschiedene Event-Typen (Control Events, Semantic Events) und versteht deren Rolle im KI-System.
 
 ### Tools
 - **Entwicklungsumgebung**: Beherrscht die vollständige Setup-Prozedur (Docker, Poetry, PNPM) für KI-Entwicklung.
@@ -39,7 +39,7 @@ Bewandt und erfahren. Ein Performer.
 - **Agenten-Design**: Entwickelt eigenständig Agenten mit komplexen Step-Flows und Events. Kann intelligente Entscheidungswege in Workflows abbilden.
 - **Multi-Agent-Interaktion**: Implementiert Kommunikation zwischen mehreren Agenten. Gestaltet koordinierte Agentengruppen für komplexe Aufgaben.
 - **Context-Handling**: Nutzt ThreadContext und RunContext effektiv für zustandsbehaftete Szenarien. Implementiert persistentes Wissen zwischen Sessions.
-- **Testing-Strategien**: Entwickelt umfassende Test-Strategien für KI-Systeme, einschließlich Mocking von LLM-Antworten und Simulation von Nutzerinteraktionen.
+- **Testing-Strategien**: Entwickelt umfassende Test-Strategien für KI-Systeme, einschliesslich Mocking von LLM-Antworten und Simulation von Nutzerinteraktionen.
 - **Debugging**: Führt Verhaltensanalysen in komplexen Agentenabläufen durch. Kann Probleme in verteilten KI-Systemen identifizieren und beheben.
 - **Refactoring**: Erkennt Verbesserungspotenziale in KI-Workflows und implementiert Optimierungen.
 - **Pair Programming**: Bietet aktive Unterstützung in Pair-Programming-Sessions und kann bei KI-spezifischen Herausforderungen anleiten.
@@ -50,7 +50,7 @@ Bewandt und erfahren. Ein Performer.
 - **Retrieval-Augmented Generation**: Entwickelt fortgeschrittene RAG-Lösungen mit optimierten Chunking-Strategien, Reranking und Metadaten-Nutzung.
 - **Embeddings**: Versteht verschiedene Embedding-Modelle und deren Anwendungsszenarien. Implementiert domänenspezifische Embedding-Strategien.
 - **Event-Driven Architecture**: Tiefes Verständnis der Event-basierten Kommunikation in KI-Systemen. Gestaltet robuste Event-Flows für komplexe Use Cases.
-- **Python-Ecosystem für KI**: Fortgeschrittene Kenntnisse relevanter Python-Frameworks (LangChain, OpenTelemetry, FastAPI, Pydantic, AsyncIO).
+- **Python-Ecosystem für KI**: Fortgeschrittene Kenntnisse relevanter Python-Frameworks (Llama-Index, OpenTelemetry, FastAPI, Pydantic, AsyncIO).
 - **KI-Sicherheit**: Implementiert robuste Sicherheitskonzepte gegen Prompt-Injection, Halluzinationen und andere KI-spezifische Risiken.
 - **Frontend für KI-Anwendungen**: Erstellt intuitive UIs für KI-Anwendungen mit Nuxt 3, Vue.js und TailwindCSS. Implementiert Echtzeit-Feedback für Agenten-Interaktionen.
 
@@ -68,8 +68,8 @@ Lead und bildet aus. Ein Meister.
 ### Methodik
 - **KI-System-Design**: Entwirft komplexe KI-Systeme mit multiplen, spezialisierten Agenten. Gestaltet Systeme, die über den aktuellen AI-Hub-Standard hinausgehen.
 - **Workflow-Innovation**: Entwickelt neue Konzepte für Agenten-Workflows, die erweiterte Autonomie und Adaptivität bieten. Führt neue Workflow-Patterns ein.
-- **Human-in-the-Loop**: Entwirft fortschrittliche HITL-Patterns, die die Zusammenarbeit von Menschen und KI optimieren und Vertrauen fördern.
-- **Test-Driven KI-Entwicklung**: Leitet Test-Strategien, die KI-spezifische Herausforderungen addressieren. Definiert Qualitätsstandards für KI-Systeme.
+- **Human-in-the-Loop**: Entwirft fortschrittliche HITL-Patterns (HITL = Human-in-the-Loop), die die Zusammenarbeit von Menschen und KI optimieren und Vertrauen fördern.
+- **Test-Driven KI-Entwicklung**: Leitet Test-Strategien, die KI-spezifische Herausforderungen adressieren. Definiert Qualitätsstandards für KI-Systeme.
 - **Team-Leadership**: Leitet technische Teams, führt Code-Reviews durch, implementiert technische Standards für KI-Entwicklung.
 - **Problem-Lösung**: Analysiert komplexe KI-Anforderungen und entwickelt neuartige Lösungsansätze. Überwindet Einschränkungen aktueller KI-Technologien.
 
