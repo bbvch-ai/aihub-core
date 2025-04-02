@@ -1,6 +1,6 @@
 <template>
-  <div class="flex min-h-screen w-full flex-row bg-surface-50 dark:bg-surface-950">
-    <div class="fixed flex h-screen w-[50px] flex-col items-center justify-between bg-white shadow-md shadow-surface-500 dark:bg-surface-900">
+  <div class="flex min-h-screen w-full flex-row bg-white dark:bg-surface-900">
+    <div class="fixed flex h-screen w-[50px] flex-col items-center justify-between bg-surface-50 dark:bg-surface-950">
       <div class="flex h-[50px] w-full items-center justify-center">
         <ServiceSelection />
       </div>
@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="w-full pl-[50px]">
-      <div class="flex h-[50px] w-full items-center justify-between px-2 ">
+      <div class="flex h-[50px] w-full items-center justify-between px-2 bg-surface-50 dark:bg-surface-950">
         <Breadcrumb
           class="!bg-transparent"
           :home="apps[0]"

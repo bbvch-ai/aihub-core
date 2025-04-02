@@ -1,7 +1,13 @@
 import logging
 import traceback
-from typing import List
+from typing import List, Optional
 
+from starlette.websockets import WebSocket, WebSocketDisconnect
+
+from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -10,8 +16,6 @@ from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server import ExternalEvent
-from aihub_api.sockets.receiver import ExternalEventDistributor
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)
@@ -40,22 +44,28 @@ class EventService:
     """
 
     @staticmethod
-    def get_user_events(user_oid: str) -> List[WSServerEvent]:
+    def get_user_events(user_oid: str, thread_id: Optional[ObjectId] = None, display_id: Optional[ObjectId] = None) -> List[WSServerEvent]:
         """
         Retrieves all events for a given user by:
         1. Finding all threads the user is part of.
         2. Querying the persistence layer for display events in those threads.
         3. Converting them into `WSServerEvent`s for consistent client-facing output.
         """
-        user_threads = ThreadEntity.get_threads_by_user(user_oid)
-        thread_ids = [str(thread.id) for thread in user_threads]
-        persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids)
+        if thread_id is None:
+            user_threads = ThreadEntity.get_threads_by_user(user_oid)
+            thread_ids = [str(thread.id) for thread in user_threads]
+            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids)
+        else:
+            persisted_events = PersistedEventEntity.display_events_for_thread(
+                thread_id=str(thread_id),
+                display_id=str(display_id) if display_id is not None else None,
+            )
         return [WSServerEvent.from_persisted_event(event) for event in persisted_events]
 
     @staticmethod
     async def handle_external_event(
         event: ExternalEvent,
-        user_oid: str,
+        user: AuthenticatedUser,
         external_event_distributor: ExternalEventDistributor,
         ws_sender: WebSocketSender,
     ):
@@ -65,7 +75,7 @@ class EventService:
         """
         try:
             logger.debug(f"Handling event: {event}")
-            await external_event_distributor.distribute_event(event, user_oid)
+            await external_event_distributor.distribute_event(event, user)
         except Exception as e:
             traceback.print_exc()
             # If there's an error, notify the user with an ExceptionEvent
@@ -73,7 +83,7 @@ class EventService:
                 ExceptionEvent(message=str(e)),
                 topic=AgentTopic(
                     agent_class="ExceptionAgent",
-                    agent_id=user_oid,
+                    agent_id=user.oid,
                     run_id=str(ObjectId()),
                     thread_id=event.thread_id,
                     display_id=event.display_id,
@@ -82,3 +92,31 @@ class EventService:
                     event_id=str(ObjectId()),
                 ),
             )
+
+    @staticmethod
+    async def event_websocket_connection(
+            websocket: WebSocket,
+            ws_sender: WebSocketSender,
+            ws_manager: WebSocketManager,
+            external_event_distributor: ExternalEventDistributor,
+            user: AuthenticatedUser
+    ):
+        logger.debug(f"User {user.oid} connected to websocket")
+        await ws_manager.connect(websocket, user.oid)
+
+        # Process incoming messages
+        try:
+            logger.debug(f"Receiving events for User {user.oid}")
+            while True:
+                data = await websocket.receive_json()
+                logger.debug(f"Received data: {data}")
+                event = ExternalEvent.deserialize_event(data)
+
+                # Handle the received event
+                await EventService.handle_external_event(event, user, external_event_distributor, ws_sender)
+
+        except WebSocketDisconnect as e:
+            logging.error(f"Websocket disconnected: {e}")
+            traceback.print_exc()
+            logger.debug(f"User {user.oid} disconnected from websocket")
+            await ws_manager.disconnect(websocket, user.oid)

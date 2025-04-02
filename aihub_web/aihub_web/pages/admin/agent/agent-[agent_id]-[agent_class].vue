@@ -2,7 +2,7 @@
   <div
     class="overflow-auto rounded-lg border border-surface-200 dark:border-surface-700"
   >
-    <div class="bg-white dark:bg-surface-900">
+    <div class="">
       <div class="flex flex-col gap-6 p-6">
         <div>
           <p class="text-2xl font-bold">

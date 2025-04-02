@@ -1,33 +1,45 @@
 <template>
   <div class="flex flex-row">
-    <div class="w-full h-[calc(100vh-50px)]">
+    <div class="h-[calc(100vh-50px)] w-full">
       <iframe
-        src="http://localhost:5173"
+        src="http://localhost:8080"
         width="100%"
         height="100%"
         title="Open Web UI"
       />
     </div>
-    <div
-      ref="sources"
-      class="w-0 overflow-y-hidden transition-all"
-      :class="{ 'w-1/3': showSources }"
+    <Drawer
+      v-model:visible="showSources"
+      header="Sources"
+      position="right"
+      class="!w-[50vw]"
     >
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-      <pre>
-        {{ sourceInfo }}
-      </pre>
-    </div>
+      <EventList :events="eventsInThread" />
+    </Drawer>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useEventsStore } from '@core/stores/useEventsStore'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+
+import type { WsServerEvent } from '@core/sdk/client'
 
 // State for the overlay
 const showSources = ref(false)
 const sourceInfo = ref({})
 const sourcesPannel = useTemplateRef<HTMLElement>('sources')
+
+const { events } = storeToRefs(useEventsStore())
+const activeThreadId = ref<string>('')
+const activeDisplayId = ref<string>('')
+
+const eventsInThread = computed<WsServerEvent[]>(() => {
+  return events.value.filter((event) => {
+    return event.thread_id === activeThreadId.value
+      && (!activeDisplayId.value || event.display_id === activeDisplayId.value)
+  })
+})
 
 onClickOutside(sourcesPannel, () => {
   showSources.value = false
@@ -38,11 +50,13 @@ const handleMessage = (event: MessageEvent) => {
   console.log('Received message:', event)
   // Since we're in development, the origin will be localhost
   // In production, you'd check for your app's actual domain
-  if (event.origin === 'http://localhost:5173') {
+  if (event.origin === 'http://localhost:8080') {
     const data = event.data
 
     // Check if it's the overlay command
     if (data.type === 'show-sources') {
+      activeThreadId.value = data.thread_id
+      activeDisplayId.value = data.display_id
       showSources.value = !showSources.value
       sourceInfo.value = data
     }

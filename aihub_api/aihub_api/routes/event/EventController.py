@@ -1,18 +1,26 @@
 import logging
 import traceback
-from typing import List
+from typing import List, Annotated
+
+from fastapi.params import Query
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor, \
+    use_external_event_distributor_ws
+from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Security, WebSocket
-from starlette.websockets import WebSocketDisconnect
+from fastapi import HTTPException, Security, WebSocket, Depends
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from aihub_api.sockets.events.user_to_server import ExternalEvent
 
 from .EventService import EventService
+from ...sockets.manager.WebSocketManager import WebSocketManager
+from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager, use_ws_manager_ws
+from ...sockets.sender.WebSocketSender import WebSocketSender
+from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender, use_ws_sender_ws
 
 logger = logging.getLogger(__name__)
 
@@ -40,20 +48,34 @@ class EventController(Controller):
 
     def get_events(self, path: str = "/") -> "EventController":
         @self.router.get(path, tags=self.tags)
-        async def get_all_events(
+        async def get_events(
+            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             user: AuthenticatedUser = Security(self.auth),
         ) -> List[WSServerEvent]:
             """
             Returns all persisted events visible to the authenticated user.
             Useful for clients who want a snapshot of what has happened so far.
             """
-            return EventService.get_user_events(user.oid)
+            if display_id is not None and thread_id is None:
+                raise HTTPException(status_code=400, detail="If display_id is provided, thread_id must also be provided.")
+            return EventService.get_user_events(
+                user.oid,
+                str_to_object_id(thread_id) if thread_id else None,
+                str_to_object_id(display_id) if display_id else None,
+            )
 
         return self
 
+
     def ws(self, path: str = "/ws") -> "EventController":
         @self.router.websocket(path)
-        async def websocket_endpoint(websocket: WebSocket):
+        async def websocket_endpoint(
+            websocket: WebSocket,
+            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor_ws)],
+            ws_sender: Annotated[WebSocketSender, Depends(use_ws_sender_ws)],
+            ws_manager: Annotated[WebSocketManager, Depends(use_ws_manager_ws)],
+        ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
             If the token is valid, the user can send `ExternalEvent`s and receive responses (WSServerEvent or errors).
@@ -62,47 +84,34 @@ class EventController(Controller):
 
             # Receive initial auth message
             first_message = await websocket.receive_json()
-            token = first_message.get("token")[7:]  # Extract token after "Bearer "
+            token = first_message.get("token")
+
+            # Handle "Bearer " prefix if present
+            if token.startswith("Bearer "):
+                token = token[7:]  # Extract token after "Bearer "
 
             if not token:
                 await websocket.close(code=4000, reason="No token provided")
                 return
 
-            # Validate token
+            # Validate token using the new method
             try:
-                user = await self.auth(token)
-            except HTTPException:
+                user = await self.auth.authenticate_token(token)
+            except HTTPException as e:
                 traceback.print_exc()
-                await websocket.close(code=4001, reason="Invalid token")
+                await websocket.close(code=4001, reason=f"Invalid token: {e.detail}")
                 return
             except Exception as e:
                 logger.exception(e)
                 await websocket.close(code=4002, reason="Token validation error")
                 return
 
-            # User is authenticated at this point
-            ws_manager = websocket.app.state.ws_manager
-            ws_sender = websocket.app.state.ws_sender
-            external_event_distributor = websocket.app.state.external_event_distributor
-
-            logger.debug(f"User {user.oid} connected to websocket")
-            await ws_manager.connect(websocket, user.oid)
-
-            # Process incoming messages
-            try:
-                logger.debug(f"Receiving events for User {user.oid}")
-                while True:
-                    data = await websocket.receive_json()
-                    logger.debug(f"Received data: {data}")
-                    event = ExternalEvent.deserialize_event(data)
-
-                    # Handle the received event
-                    await EventService.handle_external_event(event, user.oid, external_event_distributor, ws_sender)
-
-            except WebSocketDisconnect as e:
-                logging.error(f"Websocket disconnected: {e}")
-                traceback.print_exc()
-                logger.debug(f"User {user.oid} disconnected from websocket")
-                await ws_manager.disconnect(user.oid)
+            await EventService.event_websocket_connection(
+                websocket,
+                ws_sender,
+                ws_manager,
+                external_event_distributor,
+                user,
+            )
 
         return self

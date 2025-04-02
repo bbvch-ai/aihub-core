@@ -62,7 +62,8 @@ class ChatService:
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -73,13 +74,14 @@ class ChatService:
         thread = None
         if thread_id:
             try:
-                thread = ThreadEntity.get_thread_by_id(thread_id)
+                thread = ThreadEntity.get_thread_by_id(str(thread_id))
                 if not thread:
                     raise mongoengine.errors.DoesNotExist()
                 if user.oid not in [u.user_id for u in thread.users]:
                     raise HTTPException(status_code=403, detail="User not part of the thread")
             except mongoengine.errors.DoesNotExist:
                 pass
+
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",
@@ -96,6 +98,7 @@ class ChatService:
         logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
+        display_id = display_id or str(ObjectId())
 
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = hitl_requests[-1]
@@ -109,11 +112,10 @@ class ChatService:
                 messages=messages,
                 user=user,
             )
-            display_id = str(ObjectId())
 
         event = ExternalEvent(
-            thread_id=thread_id,
-            display_id=display_id,
+            thread_id=str(thread_id),
+            display_id=str(display_id),
             event=event,
         )
         logger.debug(f"Created event: {event}")
@@ -135,17 +137,22 @@ class ChatService:
         messages: List[ChatMessage],
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
+        print("THREAD ID", thread_id)
+        print("DISPLAY ID", display_id)
+
         external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            display_id=display_id,
             subscribe_to_thread=True,
         )
 
@@ -201,7 +208,8 @@ class ChatService:
         messages: List[ChatMessage],
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
@@ -212,6 +220,7 @@ class ChatService:
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            display_id=display_id,
             subscribe_to_thread=True,
         )
         return await ChatService.start_json_event_interaction(

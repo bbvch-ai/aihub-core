@@ -1,6 +1,8 @@
 import asyncio
 from typing import AsyncGenerator, List, Optional
 
+from bson import ObjectId
+
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.chat.ChatService import JsonResources, StreamingResources
@@ -26,7 +28,8 @@ class AgentChatService(Service):
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
     ) -> str:
         """
         ### What
@@ -44,6 +47,7 @@ class AgentChatService(Service):
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=thread_id,
+            display_id=display_id,
             stream=False,
         )
 
@@ -60,7 +64,8 @@ class AgentChatService(Service):
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
     ) -> AsyncGenerator[str, None]:
         """
         ### What
@@ -78,6 +83,7 @@ class AgentChatService(Service):
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=thread_id,
+            display_id=thread_id,
             stream=True,
         )
 
@@ -105,7 +111,8 @@ class AgentChatService(Service):
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
         stream: bool = False,
     ) -> StreamingResources | JsonResources:
         """
@@ -145,6 +152,7 @@ class AgentChatService(Service):
                 nc=nc,
                 external_event_distributor=external_event_distributor,
                 thread_id=thread_id,
+                display_id=display_id,
             )
         else:
             return await Service.start_json_chat_interaction(
@@ -155,6 +163,7 @@ class AgentChatService(Service):
                 nc=nc,
                 external_event_distributor=external_event_distributor,
                 thread_id=thread_id,
+                display_id=display_id,
             )
 
     @staticmethod

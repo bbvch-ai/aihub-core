@@ -163,12 +163,12 @@ class AgentService:
         start_event: StartEvent,
         agent_class: str,
         agent_id: str,
-        thread_id: Optional[str] = None,
-        display_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
     ) -> StopEvent:
         """Sends an event to a specific agent."""
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(thread_id)
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
         else:
             thread = ThreadEntity.create_thread(
                 "chat",

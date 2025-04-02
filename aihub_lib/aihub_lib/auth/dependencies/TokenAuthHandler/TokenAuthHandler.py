@@ -29,9 +29,16 @@ class TokenAuthHandler(BearerAuthHandler):
     """
 
     async def __call__(
-        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+            self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> AuthenticatedUser:
         token_str = bearer_token.credentials
+        return await self.authenticate_token(token_str)
+
+    async def authenticate_token(self, token_str: str) -> AuthenticatedUser:
+        """
+        Authenticates a user using a bearer token string directly.
+        Used for WebSocket authentication.
+        """
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
 

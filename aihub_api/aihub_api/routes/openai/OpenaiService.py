@@ -17,6 +17,7 @@ from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import Az
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
@@ -176,6 +177,7 @@ class OpenaiService:
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
         function_args = {k: v for k, v in function_args.items() if v is not None}
+        del function_args['metadata']
         if function_args.get("stream", False):
 
             async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:
@@ -236,7 +238,9 @@ class OpenaiService:
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
     ):
-        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
+        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -244,7 +248,8 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_id),
+            thread_id=str_to_object_id(thread_id),
+            display_id=str_to_object_id(display_id),
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -280,7 +285,9 @@ class OpenaiService:
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
     ):
-        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
+        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -288,7 +295,8 @@ class OpenaiService:
             messages=chat_completion_request.messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_id),
+            thread_id=str_to_object_id(thread_id),
+            display_id=str_to_object_id(display_id),
         )
 
         async def sse_event_generator():

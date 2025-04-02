@@ -16,10 +16,10 @@ class TokenAndOauth2Handler(AuthHandler):
         self.oauth2_handler = oauth2_handler
 
     async def __call__(
-        self,
-        request: Request,
-        bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
-        oauth_token: OAuth2AuthorizationCodeBearer | None = Security(OAuth2Config().OPTIONAL_SCHEMA),
+            self,
+            request: Request,
+            bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
+            oauth_token: str | None = Security(OAuth2Config().OPTIONAL_SCHEMA),
     ) -> AuthenticatedUser:
         errors = []
 
@@ -32,6 +32,28 @@ class TokenAndOauth2Handler(AuthHandler):
             return await self.bearer_handler(request, bearer_token)
         except Exception:
             pass
+
+        # If no strategy succeeded, raise an error with all failure details.
+        raise HTTPException(status_code=401, detail=" | ".join(errors))
+
+    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+        """
+        Attempts to authenticate with the provided token using both OAuth2 and Bearer strategies.
+        """
+        errors = []
+
+        # Try OAuth2 first
+        try:
+            return await self.oauth2_handler.authenticate_token(token)
+        except Exception as e:
+            errors.append(f"OAuth2 authentication failed: {str(e)}")
+
+        # Then try Bearer token
+        try:
+            # Create a mock request for the bearer handler
+            return await self.bearer_handler.authenticate_token(token)
+        except Exception as e:
+            errors.append(f"Bearer authentication failed: {str(e)}")
 
         # If no strategy succeeded, raise an error with all failure details.
         raise HTTPException(status_code=401, detail=" | ".join(errors))

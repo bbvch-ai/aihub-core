@@ -37,6 +37,7 @@ async def main():
         OpenWebuiAuthHandler(),
         OAuth2AuthHandler(),
     )
+    # auth = NoAuthHandler()
 
     runner.mount(
         HealthController().get_health(),
@@ -61,7 +62,7 @@ async def main():
             start_event_type=UserMessageEvent,
             stop_event_type=LLMStopEvent,
         ),
-        TokenController().create_token().list_tokens().revoke_token(),
+        TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(
             auth=auth,
             embedding_models=[
@@ -85,7 +86,7 @@ async def main():
                 ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
                     api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,

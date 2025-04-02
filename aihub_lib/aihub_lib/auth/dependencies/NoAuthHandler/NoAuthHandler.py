@@ -14,6 +14,9 @@ class NoAuthHandler(AuthHandler):
         self.config = NoAuthConfig()
 
     async def __call__(self, request: Request) -> AuthenticatedUser:
+        return await self.authenticate_token("")
+
+    async def authenticate_token(self, token_str: str) -> AuthenticatedUser:
         logger.warning("NoAuthHandler is active. This is not recommended for production use.")
         return AuthenticatedUser(
             name=self.config.NAME,

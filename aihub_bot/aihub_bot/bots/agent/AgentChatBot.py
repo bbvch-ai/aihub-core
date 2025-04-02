@@ -9,6 +9,7 @@ from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.routes.agent.AgentChatService import AgentChatService
+from aihub_lib.persistence.utils import str_to_object_id
 
 
 class AgentChatBot(ActivityHandler):
@@ -69,7 +70,8 @@ class AgentChatBot(ActivityHandler):
             agent_id=self.agent_id,
             nc=self.nc,
             external_event_distributor=self.external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(turn_context.activity.conversation.id),
+            thread_id=str_to_object_id(turn_context.activity.conversation.id),
+            display_id=str_to_object_id(turn_context.activity.id),
         )
 
         typing_stop_signal.set()

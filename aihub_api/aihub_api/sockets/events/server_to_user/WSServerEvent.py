@@ -1,9 +1,43 @@
-from typing import Dict, Optional
+import json
+from typing import Dict, Optional, Any, Union
 
+from typing_extensions import override
+
+from aihub_lib.nats.events import DisplayEvent, AgentInTheLoopRequestEvent, AgentInTheLoopExceptionEvent, \
+    AgentInTheLoopResponseEvent, CostEvent, LLMCostEvent, ChunkEvent, ThoughtEvent, GuardRejectionEvent, StopEvent, \
+    HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent, AgentEvent, ChainEvent, EmbeddingEvent, LLMEvent, \
+    LLMStopEvent, RerankerEvent, RetrieverEvent, ToolEvent, StartEvent, UserMessageEvent
+from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from pydantic import BaseModel, Field
 
+# Import all events here that the frontend should be able to display
+DisplayEvents = Union[
+    DisplayEvent,
+    StopEvent,
+    AgentInTheLoopRequestEvent,
+    AgentInTheLoopExceptionEvent,
+    AgentInTheLoopResponseEvent,
+    CostEvent,
+    LLMCostEvent,
+    ChunkEvent,
+    ThoughtEvent,
+    GuardRejectionEvent,
+    HumanInTheLoopRequestEvent,
+    HumanInTheLoopResponseEvent,
+    SemanticEvent,
+    AgentEvent,
+    ChainEvent,
+    EmbeddingEvent,
+    LLMEvent,
+    LLMStopEvent,
+    RerankerEvent,
+    RetrieverEvent,
+    ToolEvent,
+    StartEvent,
+    UserMessageEvent,
+]
 
 class WSServerEvent(BaseModel):
     """
@@ -37,7 +71,7 @@ class WSServerEvent(BaseModel):
     )
     event_name: str = Field(..., description="Name of the event, indicating its subtype or category.")
     event_id: str = Field(..., description="Unique identifier of this event instance.")
-    event_data: Dict = Field(..., description="Payload of the event, containing detailed information.")
+    event: DisplayEvents = Field(..., description="Payload of the event, containing detailed information.")
 
     @classmethod
     def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":
@@ -54,5 +88,25 @@ class WSServerEvent(BaseModel):
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
             event_id=persisted_event.event_id,
-            event_data=persisted_event.event_data,
+            event=DisplayEvent.deserialize_event(persisted_event.event_data),
         )
+
+    @override
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """
+        Serializes the event into a dictionary. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        data = super().model_dump(**kwargs)
+        return {
+            **data,
+            "event": self.event.model_dump()
+        }
+
+    @override
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """
+        Serializes the event into a JSON string. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        return json.dumps(self.model_dump(**kwargs), default=str)

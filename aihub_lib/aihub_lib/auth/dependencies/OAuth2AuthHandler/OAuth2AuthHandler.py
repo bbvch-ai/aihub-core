@@ -46,10 +46,15 @@ class OAuth2AuthHandler(AuthHandler):
         self.config = OAuth2Config()
 
     async def __call__(
-        self, oauth_token: OAuth2AuthorizationCodeBearer = Security(OAuth2Config().SCHEMA)
+            self, oauth_token: str = Security(OAuth2Config().SCHEMA)
     ) -> AuthenticatedUser:
-        print("auth handler", OAuth2Config())
+        return await self.authenticate_token(oauth_token)
 
+    async def authenticate_token(self, oauth_token: str) -> AuthenticatedUser:
+        """
+        Authenticates a user using an OAuth2 token string directly.
+        Used for WebSocket authentication.
+        """
         try:
             # Retrieve JWKS keys for signature verification
             async with httpx.AsyncClient() as client:
