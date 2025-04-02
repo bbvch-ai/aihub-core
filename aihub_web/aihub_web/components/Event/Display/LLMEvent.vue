@@ -1,7 +1,7 @@
 <template>
   <EventDisplayBase
     :event="props.event"
-    title="LLM Stop"
+    title="LLM Interaction"
     subtitle="Marks a completed LLM output"
   >
     <div class="flex flex-col gap-12 py-5">
@@ -27,22 +27,14 @@
         />
       </div>
     </div>
-    <CostsTable
-      :prompt-token-count="event.event.token_count_prompt ?? 0"
-      :prompt-tokens-costs="event.event.token_count_prompt / 1000 * event.event.invocation_parameters?.prompt_tokens_costs_per_thousand ?? 0"
-      :completion-token-count="event.event.token_count_completion ?? 0"
-      :completion-tokens-costs="event.event.token_count_completion / 1000 * event.event.invocation_parameters?.completion_tokens_costs_per_thousand ?? 0"
-      :embedding-token-count="0"
-      :embedding-tokens-costs="0"
-    />
   </EventDisplayBase>
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, LlmStopEvent, WsServerEvent } from '@core/sdk/client'
+import type { ChatMessageOutput, LlmEvent, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: LlmStopEvent }
+  event: WsServerEvent & { event: LlmEvent }
 }>()
 
 const inputMessages = computed<ChatMessageOutput[]>(() => {

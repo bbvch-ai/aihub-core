@@ -2,6 +2,8 @@ services:
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     network_mode: "host"
+    volumes:
+        - openwebui:/openwebui
     environment:
       SCARF_NO_ANALYTICS: true
       DO_NOT_TRACK: true
@@ -89,3 +91,6 @@ services:
       OAUTH_PROVIDER_NAME: "azure"
 
       ENABLE_DIRECT_CONNECTIONS: false
+
+volumes:
+  openwebui:
