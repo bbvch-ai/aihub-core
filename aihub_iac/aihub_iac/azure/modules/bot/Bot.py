@@ -40,7 +40,7 @@ class Bot(pulumi.ComponentResource):
         self.api_db = self._get_api_db()
 
         self.vnet = self.network_provider.get_vnet()
-        self.subnet = self.network_provider.get_subnet()
+        self.subnet = self.network_provider.app_subnet
 
         self.identity = self.identity_provider.create_identity(self.name)
         self.identity.assign_openai_user()
@@ -62,20 +62,14 @@ class Bot(pulumi.ComponentResource):
 
     def _create_webapp(self):
         app_settings = [
+            *self._base_env,
+            *self._registry_env,
+            *self._o_auth_env,
             web.NameValuePairArgs(name="WEBSITES_PORT", value="8001"),
-            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_URL", value=self.registry_url),
-            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_USERNAME", value=BotConfig().REGISTRY_USER),
-            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_PASSWORD", value=BotConfig().REGISTRY_PAT),
-            web.NameValuePairArgs(name="AZURE_SUBSCRIPTION_ID", value=self.subscription_id),
             web.NameValuePairArgs(name="COSMOS_RESOURCE_GROUP_NAME", value=self.api_db_ressource_group),
             web.NameValuePairArgs(name="COSMOS_ACCOUNT_NAME", value=self.api_db_name),
-            web.NameValuePairArgs(name="CLIENT_ID", value=BotConfig().CLIENT_ID),
-            web.NameValuePairArgs(name="TENANT_ID", value=BotConfig().TENANT_ID),
-            web.NameValuePairArgs(name="AUTHORITY_URL", value=BotConfig().AUTHORITY_URL),
             web.NameValuePairArgs(name="NATS_ENDPOINT", value=BotConfig().NATS_ENDPOINT),
             web.NameValuePairArgs(name="VERSION", value=BotConfig().VERSION),
-            web.NameValuePairArgs(name="REGION_SHORT", value=self.location_short),
-            web.NameValuePairArgs(name="APP_NAME", value=self.project_name),
             web.NameValuePairArgs(name="NAME", value=BotConfig().BOT_ANONYM_NAME),
             web.NameValuePairArgs(name="EMAIL", value=BotConfig().BOT_ANONYM_EMAIL),
             web.NameValuePairArgs(name="ROLES", value=BotConfig().BOT_ANONYM_ROLES),
@@ -93,3 +87,30 @@ class Bot(pulumi.ComponentResource):
             identity=identity,
             subnet_id=self.subnet.id,
         )
+
+    @property
+    def _registry_env(self):
+        """environment variables for the docker registry"""
+        return [
+            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_URL", value=self.registry_url),
+            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_USERNAME", value=BotConfig().REGISTRY_USER),
+            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_PASSWORD", value=BotConfig().REGISTRY_PAT),
+        ]
+
+    @property
+    def _o_auth_env(self):
+        """environment variables for the oAuth"""
+        return [
+            web.NameValuePairArgs(name="CLIENT_ID", value=BotConfig().CLIENT_ID),
+            web.NameValuePairArgs(name="TENANT_ID", value=BotConfig().TENANT_ID),
+            web.NameValuePairArgs(name="AUTHORITY_URL", value=BotConfig().AUTHORITY_URL),
+        ]
+
+    @property
+    def _base_env(self):
+        """base environment variables for subscription, app name and region"""
+        return [
+            web.NameValuePairArgs(name="AZURE_SUBSCRIPTION_ID", value=self.subscription_id),
+            web.NameValuePairArgs(name="REGION_SHORT", value=self.location_short),
+            web.NameValuePairArgs(name="APP_NAME", value=self.project_name),
+        ]

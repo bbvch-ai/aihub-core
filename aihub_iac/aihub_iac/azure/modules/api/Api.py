@@ -43,7 +43,7 @@ class Api(pulumi.ComponentResource):
         self.api_db = self._get_api_db()
 
         self.vnet = self.network_provider.get_vnet()
-        self.subnet = self.network_provider.get_subnet()
+        self.subnet = self.network_provider.app_subnet
 
         self.identity = self.identity_provider.create_identity(self.name)
         self.identity.assign_openai_user()

@@ -1,7 +1,7 @@
 import pulumi
 from pulumi_azure_native import network
 
-from aihub_iac.azure.constants.resources import V_NET, SUB_NET
+from aihub_iac.azure.constants.resources import V_NET, SUB_NET, APP_SERVICE, CONTAINER_INSTANCE
 
 
 class NetworkProvider:
@@ -24,3 +24,11 @@ class NetworkProvider:
             resource_group_name=self.resource_group,
             virtual_network_name=self.v_net_name,
         )
+
+    @property
+    def app_subnet(self):
+        return f"{self.sub_net_name}-{APP_SERVICE}"
+
+    @property
+    def nats_subnet(self):
+        return f"{self.sub_net_name}-{CONTAINER_INSTANCE}-nats"
