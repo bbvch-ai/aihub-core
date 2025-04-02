@@ -34,8 +34,6 @@ class AgentCompletionHandler(CompletionHandler):
         **kwargs,
     ) -> str:
         """Get a non-streaming Agent completion."""
-        thread_id = ThreadEntity.to_thread_id(turn_context.activity.conversation.id)
-
         resources: JsonResources = await AgentCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
@@ -69,8 +67,6 @@ class AgentCompletionHandler(CompletionHandler):
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Get a streaming Agent completion."""
-        thread_id = ThreadEntity.to_thread_id(turn_context.activity.conversation.id)
-
         resources: StreamingResources = await AgentCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
