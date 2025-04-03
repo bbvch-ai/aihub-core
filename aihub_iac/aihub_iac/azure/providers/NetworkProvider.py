@@ -31,4 +31,4 @@ class NetworkProvider:
 
     @property
     def nats_subnet(self):
-        return f"{self.sub_net_name}-{CONTAINER_INSTANCE}-nats"
+        return self.get_subnet(f"{self.sub_net_name}-{CONTAINER_INSTANCE}-nats")

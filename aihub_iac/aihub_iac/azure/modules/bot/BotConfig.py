@@ -1,28 +1,80 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
-from typing import Optional
+from dataclasses import dataclass
 
-class BotConfig(BaseSettings):
-    BOT_APP_SERVICE_PLAN_NAME: str = Field(..., description="name of the app service plan to use for the bot")
-    BOT_REPO_IMAGE_URL: str = Field(..., description="URL where the image for the bot is stored")
-    BOT_IMAGE_TAG: str = Field(..., description="image tag for the bot")
-    REGISTRY_USER: str = Field(..., description="username used to authenticate with the registry")
-    REGISTRY_PAT: str = Field(..., description="personal access token used to authenticate with the registry")
-    NATS_ENDPOINT: str = Field(..., description="NATS endpoint")
-    CLIENT_ID: str = Field(..., description="client id") # TODO: really needed? for what?
-    TENANT_ID: str = Field(..., description="tenant id") # TODO: really needed? for what?
-    AUTHORITY_URL: str = Field(..., description="authority url") # TODO: really needed? for what?
-    VERSION: str = Field(..., description="version")
-    COSMOS_RESOURCE_GROUP_NAME: Optional[str] = Field(..., description="resource group name where the cosmos is located if not in the same resource group as the bot")
-    COSMOS_ACCOUNT_NAME: Optional[str] = Field(..., description="name of the cosmos account if not default (<APP_NAME>-cos-<LOCATION>-api)")
-    BOT_ANONYM_NAME: str = Field(..., description="-")
-    BOT_ANONYM_EMAIL: str = Field(..., description="-")
-    BOT_ANONYM_ROLES: str = Field(..., description="-")
-    BOT_ANONYM_OID: str = Field(..., description="-")
+from aihub_iac.azure.constants.resources import APP_SERVICE, COSMOS
+from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_ignore_empty=True,
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+
+@dataclass
+class BotServiceConfig:
+    """Configuration class for Bot service infrastructure"""
+
+    stack: str
+    name: str
+    repo_image_url: str
+    docker_image_tag: str
+    cosmos_account_name: str
+    cosmos_resource_group: str
+    bot_anonym_name: str
+    bot_anonym_email: str
+    bot_anonym_roles: str
+    bot_anonym_oid: str
+    nats_endpoint: str
+    version: str
+
+    @classmethod
+    def from_env(
+        cls,
+        stack: str,
+        name: str,
+        repo_image_url: str,
+        docker_image_tag: str,
+        cosmos_account_name: str,
+        cosmos_resource_group: str,
+        bot_anonym_name: str,
+        bot_anonym_email: str,
+        bot_anonym_roles: str,
+        bot_anonym_oid: str,
+        nats_endpoint: str,
+        version: str,
+    ) -> "BotServiceConfig":
+        """Create a configuration from environment variables and BotConfig"""
+
+        return cls(
+            stack=stack,
+            name=name,
+            repo_image_url=repo_image_url,
+            docker_image_tag=docker_image_tag,
+            cosmos_account_name=cosmos_account_name,
+            cosmos_resource_group=cosmos_resource_group,
+            bot_anonym_name=bot_anonym_name,
+            bot_anonym_email=bot_anonym_email,
+            bot_anonym_roles=bot_anonym_roles,
+            bot_anonym_oid=bot_anonym_oid,
+            nats_endpoint=nats_endpoint,
+            version=version,
+        )
+
+    @property
+    def service_name(self) -> str:
+        """Generate the service name"""
+        return f"{ProjectSettings().APP_NAME}-{APP_SERVICE}-{ProjectSettings().LOCATION_SHORT}-bot"
+
+    @property
+    def cosmos_name(self) -> str:
+        """Generate the cosmos name"""
+        return f"{ProjectSettings().APP_NAME}-{COSMOS}-{ProjectSettings().LOCATION_SHORT}-api"
+
+    @property
+    def effective_cosmos_account_name(self) -> str:
+        """Get the effective cosmos account name, using the configured value or generating one"""
+        return self.cosmos_account_name or self.cosmos_name
+
+    @property
+    def effective_cosmos_resource_group(self) -> str:
+        """Get the effective cosmos resource group, using the configured value or the default"""
+        return self.cosmos_resource_group or ProjectSettings().RESOURCE_GROUP
+
+    @property
+    def effective_docker_image(self) -> str:
+        """Generate the full docker image string"""
+        return f"DOCKER|{self.repo_image_url}:{self.docker_image_tag}"
