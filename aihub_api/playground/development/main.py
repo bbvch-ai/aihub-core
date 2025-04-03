@@ -1,4 +1,5 @@
 import asyncio
+from os.path import join, dirname, abspath, isdir
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.event.EventController import EventController
@@ -32,6 +33,10 @@ enable_logging()
 
 async def main():
     runner = ApiTestRunner()
+
+    frontend_dir = join(dirname(abspath(__file__)), "..", "..", "..", "aihub_web", "aihub_web", ".playground", ".output", "public")
+    if isdir(frontend_dir):
+        runner.mount_frontend(frontend_dir)
 
     auth = TokenAndOauth2Handler(
         OpenWebuiAuthHandler(),

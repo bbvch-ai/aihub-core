@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nuxi prepare && nuxi dev .playground --port 8182",
     "dev:prepare": "nuxi prepare && nuxt prepare .playground",
-    "build": "nuxt generate .playground && ",
+    "build": "nuxt generate .playground",
     "preview": "nuxt preview .playground",
     "lint": "nuxi prepare && eslint . --fix",
     "storybook": "storybook dev --port 6006",
