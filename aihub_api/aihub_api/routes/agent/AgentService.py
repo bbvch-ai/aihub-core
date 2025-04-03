@@ -7,7 +7,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import StartEvent, StopEvent, ExceptionEvent
+from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher

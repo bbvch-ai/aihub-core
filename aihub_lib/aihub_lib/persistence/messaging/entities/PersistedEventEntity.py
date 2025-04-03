@@ -47,21 +47,29 @@ class PersistedEventEntity(Document):
         persisted_entity.save()
 
     @classmethod
-    def display_events_for_thread(cls, thread_id: str, display_id: Optional[str] = None) -> List["PersistedEventEntity"]:
+    def display_events_for_thread(
+        cls, thread_id: str, display_id: Optional[str] = None, event_class: Optional[str] = None
+    ) -> List["PersistedEventEntity"]:
         query = cls.objects().filter(thread_id=thread_id, event_type=TopicManager.DISPLAY_EVENT)
 
         if display_id is not None:
             query = query.filter(display_id=display_id)
 
+        if event_class is not None:
+            query = query.filter(event_parents__contains=event_class)
+
         return query.order_by("event_data__created_at")
 
     @classmethod
-    def display_events_for_threads(cls, thread_ids: List[str]) -> List["PersistedEventEntity"]:
-        return (
-            cls.objects()
-            .filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
-            .order_by("event_data__created_at")
-        )
+    def display_events_for_threads(
+        cls, thread_ids: List[str], event_class: Optional[str] = None
+    ) -> List["PersistedEventEntity"]:
+        query = cls.objects().filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
+
+        if event_class is not None:
+            query = query.filter(event_parents__contains=event_class)
+
+        return query.order_by("event_data__created_at")
 
     @classmethod
     def display_events_for_agent(cls, agent_id: str) -> List["PersistedEventEntity"]:

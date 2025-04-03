@@ -1,9 +1,7 @@
-from pydantic import Field
-
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.display.ChunkEvent import ChunkEvent
 
 
-class ThoughtEvent(DisplayEvent):
+class ThoughtEvent(ChunkEvent):
     """
     An event representing the system or agent's internal reasoning process, often displayed as
     a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -15,6 +13,4 @@ class ThoughtEvent(DisplayEvent):
     explaining the agent’s behavior to end-users (e.g., "chain-of-thought" explanations).
     """
 
-    content: str = Field(
-        ..., description="The textual representation of the agent’s internal reasoning at a particular point in time."
-    )
+    pass

@@ -1,26 +1,24 @@
 import logging
 import traceback
-from typing import List, Annotated
-
-from fastapi.params import Query
+from typing import Annotated, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor, \
-    use_external_event_distributor_ws
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Security, WebSocket, Depends
+from fastapi import Depends, HTTPException, Security, WebSocket
+from fastapi.params import Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 
-from .EventService import EventService
+from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
-from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager, use_ws_manager_ws
+from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
 from ...sockets.sender.WebSocketSender import WebSocketSender
-from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender, use_ws_sender_ws
+from .EventService import EventService
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +47,9 @@ class EventController(Controller):
     def get_events(self, path: str = "/") -> "EventController":
         @self.router.get(path, tags=self.tags)
         async def get_events(
-            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            thread_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
+            display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
+            event_class: Annotated[str, Query()] = None,
             user: AuthenticatedUser = Security(self.auth),
         ) -> List[WSServerEvent]:
             """
@@ -58,15 +57,17 @@ class EventController(Controller):
             Useful for clients who want a snapshot of what has happened so far.
             """
             if display_id is not None and thread_id is None:
-                raise HTTPException(status_code=400, detail="If display_id is provided, thread_id must also be provided.")
+                raise HTTPException(
+                    status_code=400, detail="If display_id is provided, thread_id must also be provided."
+                )
             return EventService.get_user_events(
                 user.oid,
                 str_to_object_id(thread_id) if thread_id else None,
                 str_to_object_id(display_id) if display_id else None,
+                event_class,
             )
 
         return self
-
 
     def ws(self, path: str = "/ws") -> "EventController":
         @self.router.websocket(path)

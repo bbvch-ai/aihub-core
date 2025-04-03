@@ -2,20 +2,19 @@ import logging
 import traceback
 from typing import List, Optional
 
-from starlette.websockets import WebSocket, WebSocketDisconnect
-
-from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)
@@ -44,7 +43,12 @@ class EventService:
     """
 
     @staticmethod
-    def get_user_events(user_oid: str, thread_id: Optional[ObjectId] = None, display_id: Optional[ObjectId] = None) -> List[WSServerEvent]:
+    def get_user_events(
+        user_oid: str,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
+        event_class: Optional[str] = None,
+    ) -> List[WSServerEvent]:
         """
         Retrieves all events for a given user by:
         1. Finding all threads the user is part of.
@@ -54,11 +58,12 @@ class EventService:
         if thread_id is None:
             user_threads = ThreadEntity.get_threads_by_user(user_oid)
             thread_ids = [str(thread.id) for thread in user_threads]
-            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids)
+            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids, event_class=event_class)
         else:
             persisted_events = PersistedEventEntity.display_events_for_thread(
                 thread_id=str(thread_id),
                 display_id=str(display_id) if display_id is not None else None,
+                event_class=event_class,
             )
         return [WSServerEvent.from_persisted_event(event) for event in persisted_events]
 
@@ -95,11 +100,11 @@ class EventService:
 
     @staticmethod
     async def event_websocket_connection(
-            websocket: WebSocket,
-            ws_sender: WebSocketSender,
-            ws_manager: WebSocketManager,
-            external_event_distributor: ExternalEventDistributor,
-            user: AuthenticatedUser
+        websocket: WebSocket,
+        ws_sender: WebSocketSender,
+        ws_manager: WebSocketManager,
+        external_event_distributor: ExternalEventDistributor,
+        user: AuthenticatedUser,
     ):
         logger.debug(f"User {user.oid} connected to websocket")
         await ws_manager.connect(websocket, user.oid)

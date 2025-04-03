@@ -1,14 +1,13 @@
 <template>
-  <EventDisplayBase :event="props.event">
-    Unknown: {{ props.event }}
+  <EventDisplayBase :event="event">
+    Unknown: {{ event }}
   </EventDisplayBase>
 </template>
 
 <script setup lang="ts">
-import type {WsServerEvent} from "@core/sdk/client";
+import type { WsServerEvent } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   event: WsServerEvent
 }>()
 </script>
-

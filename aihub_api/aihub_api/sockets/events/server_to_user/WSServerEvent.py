@@ -1,16 +1,34 @@
 import json
-from typing import Dict, Optional, Any, Union
+from typing import Any, Dict, Optional, Union
 
-from typing_extensions import override
-
-from aihub_lib.nats.events import DisplayEvent, AgentInTheLoopRequestEvent, AgentInTheLoopExceptionEvent, \
-    AgentInTheLoopResponseEvent, CostEvent, LLMCostEvent, ChunkEvent, ThoughtEvent, GuardRejectionEvent, StopEvent, \
-    HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent, AgentEvent, ChainEvent, EmbeddingEvent, LLMEvent, \
-    LLMStopEvent, RerankerEvent, RetrieverEvent, ToolEvent, StartEvent, UserMessageEvent
+from aihub_lib.nats.events import (
+    AgentEvent,
+    AgentInTheLoopExceptionEvent,
+    AgentInTheLoopRequestEvent,
+    AgentInTheLoopResponseEvent,
+    ChainEvent,
+    ChunkEvent,
+    DisplayEvent,
+    EmbeddingEvent,
+    GuardRejectionEvent,
+    HumanInTheLoopRequestEvent,
+    HumanInTheLoopResponseEvent,
+    LLMCostEvent,
+    LLMEvent,
+    LLMStopEvent,
+    RerankerEvent,
+    RetrieverEvent,
+    StartEvent,
+    StopEvent,
+    ThoughtEvent,
+    ToolEvent,
+    UserMessageEvent,
+)
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from pydantic import BaseModel, Field
+from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
 DisplayEvents = Union[
@@ -19,24 +37,25 @@ DisplayEvents = Union[
     AgentInTheLoopRequestEvent,
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopResponseEvent,
-LLMCostEvent,
-ChunkEvent,
-ThoughtEvent,
+    LLMCostEvent,
+    ChunkEvent,
+    ThoughtEvent,
     GuardRejectionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     SemanticEvent,
     AgentEvent,
     ChainEvent,
-EmbeddingEvent,
-LLMEvent,
+    EmbeddingEvent,
+    LLMEvent,
     LLMStopEvent,
-RerankerEvent,
-RetrieverEvent,
-ToolEvent,
+    RerankerEvent,
+    RetrieverEvent,
+    ToolEvent,
     StartEvent,
-UserMessageEvent,
+    UserMessageEvent,
 ]
+
 
 class WSServerEvent(BaseModel):
     """
@@ -97,10 +116,7 @@ class WSServerEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         data = super().model_dump(**kwargs)
-        return {
-            **data,
-            "event": self.event.model_dump()
-        }
+        return {**data, "event": self.event.model_dump()}
 
     @override
     def model_dump_json(self, **kwargs: Any) -> str:

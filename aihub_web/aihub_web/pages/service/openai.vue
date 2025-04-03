@@ -14,6 +14,7 @@
       position="right"
       class="!w-[50vw]"
     >
+      {{ activeThreadId }} / {{ activeDisplayId }}
       <EventList :events="eventsInThread" />
     </Drawer>
   </div>

@@ -19,7 +19,8 @@
         </p>
       </div>
       <div
-        v-for="block in message.blocks"
+        v-for="(block, index) in message.blocks"
+        :key="index"
         class="w-full rounded-lg bg-white p-3 dark:bg-surface-700"
       >
         <p v-if="block?.text">

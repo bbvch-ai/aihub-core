@@ -1,14 +1,12 @@
 import asyncio
 from typing import AsyncGenerator, List, Optional
 
-from bson import ObjectId
-
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from botbuilder.core import TurnContext
+from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from nats.aio.client import Client as NATS
 
@@ -52,7 +50,8 @@ class AgentCompletionHandler(CompletionHandler):
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
-        return ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        content, _ = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        return content
 
     @staticmethod
     async def get_stream_completion(

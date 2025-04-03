@@ -1,11 +1,22 @@
+import asyncio
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.events import LLMEvent, LLMStopEvent, UserMessageEvent, EmbeddingEvent, RetrieverEvent, \
-    RerankerEvent, ToolEvent, StopEvent
+from aihub_lib.nats.events import (
+    LLMEvent,
+    LLMStopEvent,
+    UserMessageEvent,
+    EmbeddingEvent,
+    RetrieverEvent,
+    RerankerEvent,
+    ToolEvent,
+    StopEvent,
+)
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events.semantic import Embedding
 from aihub_lib.nats.events.semantic.retriever import Document
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, SOURCE, CREATED_AT, REFERENCE_URL
 from playground.agent.FrontendTestingAgent.FrontendTestingAgentConfig import FrontendTestingAgentConfig
 
 
@@ -18,11 +29,12 @@ class FrontendTestingAgent(Agent):
         displayer: EventDisplayer,
     ) -> LLMEvent:
         await displayer.display_thought("First, I answer the user")
+        await asyncio.sleep(2)
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
 
     @step()
-    async def guard_step(self, event: LLMEvent, displayer: EventDisplayer) -> EmbeddingEvent:
+    async def guard_step(self, _: LLMEvent, displayer: EventDisplayer) -> EmbeddingEvent:
         await displayer.display_thought("Now I need to check the guard")
         return EmbeddingEvent(
             text="This is the text that was embedded",
@@ -36,20 +48,30 @@ class FrontendTestingAgent(Agent):
         )
 
     @step()
-    async def retriever_step(self, event: EmbeddingEvent) -> RetrieverEvent:
+    async def retriever_step(self, _: EmbeddingEvent) -> RetrieverEvent:
         return RetrieverEvent(
             documents=[
                 Document(
                     id="1",
-                    content="This is the Content of some important Document!",
+                    content="Der Zug hat Verspätung!",
                     score=0.9,
-                    metadata={"title": "Must Read"},
+                    metadata={
+                        DOCUMENT_TITLE: "SBB",
+                        SOURCE: "sbb.docx",
+                        CREATED_AT: 1743681278,
+                        REFERENCE_URL: "https://www.sbb.ch",
+                    },
                 ),
                 Document(
                     id="2",
-                    content="This is even more important content!",
+                    content="Corona is not real!",
                     score=0.85,
-                    metadata={"title": "Must-must Read"},
+                    metadata={
+                        DOCUMENT_TITLE: "WHO Bericht",
+                        SOURCE: "who.pdf",
+                        CREATED_AT: 1743481278,
+                        REFERENCE_URL: "https://www.who.int",
+                    },
                 ),
             ],
         )
@@ -63,8 +85,9 @@ class FrontendTestingAgent(Agent):
             rerank_model_name="Azure AI Search Reranker",
             top_k=5,
         )
+
     @step()
-    async def tool(self, event: RerankerEvent) -> ToolEvent:
+    async def tool(self, _: RerankerEvent) -> ToolEvent:
         return ToolEvent(
             name="Weather Tool",
             description="Fetches the current weather",
@@ -90,5 +113,6 @@ class FrontendTestingAgent(Agent):
         )
 
     @step()
-    async def stop(self, event: ToolEvent) -> LLMStopEvent:
+    async def stop(self, _: ToolEvent, displayer: EventDisplayer) -> LLMStopEvent:
+        await displayer.display_chunk(content="All done!", model_name="FrontendTestingAgent")
         return StopEvent()

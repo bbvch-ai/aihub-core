@@ -1,9 +1,10 @@
+import { getEvents } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import ObjectID from 'bson-objectid'
 import { defineStore } from 'pinia'
-import type { WsServerEvent, UserMessageEvent} from '@core/sdk/client'
-import { getEvents} from '@core/sdk/client'
+
+import type { WsServerEvent, UserMessageEvent } from '@core/sdk/client'
 
 export const useEventsStore = defineStore('events', () => {
   const { getBearer } = useAuth()
@@ -19,7 +20,7 @@ export const useEventsStore = defineStore('events', () => {
     key: ['events'],
     query: () => getEvents({
       composable: '$fetch',
-    })
+    }),
   })
 
   const {
@@ -119,7 +120,7 @@ export const useEventsStore = defineStore('events', () => {
 
   const eventsForThread = (thread_id: string, display_id?: string) => {
     return computed<WsServerEvent>(() => {
-      return events.value.filter(event => {
+      return events.value.filter((event) => {
         return event.thread_id === thread_id
           && (!display_id || event.display_id === display_id)
       })

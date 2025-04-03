@@ -4,8 +4,8 @@ from typing import AsyncGenerator
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from fastapi import FastAPI

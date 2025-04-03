@@ -1,25 +1,27 @@
 import hashlib
 import logging
 
-from cachetools import TTLCache, cached
+import httpx
+from azure.identity import DefaultAzureCredential
+from cachetools import TTLCache
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import httpx
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
-from azure.identity import DefaultAzureCredential
 
 logger = logging.getLogger(__name__)
 
+
 def hash_string_sha1(input_string):
-    static_salt = f"k2oj3dk2*dk2p&29dkjklUdk(3kKldi39djkd?+lfdfdf"
+    static_salt = "k2oj3dk2*dk2p&29dkjklUdk(3kKldi39djkd?+lfdfdf"
     hash_input = f"{static_salt}{input_string}"
-    input_bytes = hash_input.encode('utf-8')
+    input_bytes = hash_input.encode("utf-8")
     sha1_hash = hashlib.sha1(input_bytes)
     hex_digest = sha1_hash.hexdigest()
     return hex_digest
+
 
 class OpenWebuiAuthHandler(BearerAuthHandler):
     """
@@ -43,10 +45,9 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         # Initialize Azure credential for Microsoft Graph access
         self.credential = DefaultAzureCredential()
         self.graph_scope = "https://graph.microsoft.com/.default"
+        self.user_info_cache = TTLCache(maxsize=100, ttl=3600)  # Cache for user info
 
-    @staticmethod
-    @cached(TTLCache(maxsize=128, ttl=60))
-    async def get_user_by_email(email: str, access_token: str) -> AuthenticatedUser:
+    async def get_user_by_email(self, email: str, access_token: str) -> AuthenticatedUser:
         """
         Retrieves user information from Microsoft Graph by email address,
         including roles assigned in enterprise applications.
@@ -57,29 +58,35 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         Returns:
             A dictionary containing user information including OID and roles.
         """
+        # Check if user info is cached
+        if email in self.user_info_cache:
+            logger.info(f"User info for {email} retrieved from cache.")
+            return self.user_info_cache[email]
+
         # Get access token for Microsoft Graph
         headers = {"Authorization": f"Bearer {access_token}"}
 
         # Search for user by email using Microsoft Graph filter
-        search_url = f"https://graph.microsoft.com/v1.0/users?$filter=mail eq '{email}' or userPrincipalName eq '{email}'"
+        search_url = (
+            f"https://graph.microsoft.com/v1.0/users?$filter=mail eq '{email}' or userPrincipalName eq '{email}'"
+        )
 
         async with httpx.AsyncClient() as client:
             response = await client.get(search_url, headers=headers)
 
         if response.status_code != 200:
-            logger.error(
-                f"Failed to query Microsoft Graph. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"Failed to query Microsoft Graph. Status: {response.status_code}, Response: {response.text}")
             raise HTTPException(status_code=500, detail="Failed to resolve user identity")
 
         user_data = response.json()
 
         # Check if user was found
-        if not user_data.get('value') or len(user_data['value']) == 0:
+        if not user_data.get("value") or len(user_data["value"]) == 0:
             logger.warning(f"User with email {email} not found in Azure AD")
             raise HTTPException(status_code=401, detail="User not found in directory")
 
-        user = user_data['value'][0]
-        user_id = user['id']
+        user = user_data["value"][0]
+        user_id = user["id"]
         user_roles = []
 
         # Get user's directory roles via memberOf
@@ -90,9 +97,9 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         if roles_response.status_code == 200:
             roles_data = roles_response.json()
             # Extract directory roles
-            for item in roles_data.get('value', []):
-                if item.get('@odata.type', '').endswith('directoryRole'):
-                    user_roles.append(item['displayName'])
+            for item in roles_data.get("value", []):
+                if item.get("@odata.type", "").endswith("directoryRole"):
+                    user_roles.append(item["displayName"])
         else:
             logger.warning(f"Failed to fetch directory roles. Status: {roles_response.status_code}")
 
@@ -105,10 +112,10 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
             app_roles_data = app_roles_response.json()
 
             # Process each app role assignment
-            for app_role in app_roles_data.get('value', []):
+            for app_role in app_roles_data.get("value", []):
                 # Get app details to find the role name
-                app_id = app_role.get('resourceId')
-                role_id = app_role.get('appRoleId')
+                app_id = app_role.get("resourceId")
+                role_id = app_role.get("appRoleId")
 
                 if app_id and role_id:
                     # Get service principal to find role names
@@ -119,9 +126,9 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
                     if sp_response.status_code == 200:
                         sp_data = sp_response.json()
                         # Find the matching role definition
-                        for role_def in sp_data.get('appRoles', []):
-                            if role_def.get('id') == role_id:
-                                user_roles.append(role_def.get('displayName'))
+                        for role_def in sp_data.get("appRoles", []):
+                            if role_def.get("id") == role_id:
+                                user_roles.append(role_def.get("displayName"))
                                 break
         else:
             logger.warning(f"Failed to fetch app role assignments. Status: {app_roles_response.status_code}")
@@ -134,25 +141,26 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         if groups_response.status_code == 200:
             groups_data = groups_response.json()
             # Add security group memberships as roles - often used for RBAC
-            for group in groups_data.get('value', []):
-                if group.get('@odata.type', '').endswith('group'):
+            for group in groups_data.get("value", []):
+                if group.get("@odata.type", "").endswith("group"):
                     user_roles.append(f"Group_{group['displayName']}")
         else:
             logger.warning(f"Failed to fetch security groups. Status: {groups_response.status_code}")
 
         logger.info(f"Retrieved roles for user {email}: {user_roles}")
 
-
-        return AuthenticatedUser(
-            name=user.get('displayName', ''),
-            preferred_username=user.get('userPrincipalName', ''),
-            oid=user['id'],
+        user_info = AuthenticatedUser(
+            name=user.get("displayName", ""),
+            preferred_username=user.get("userPrincipalName", ""),
+            oid=user["id"],
             roles=user_roles,
         )
-
+        # Cache the user info
+        self.user_info_cache[email] = user_info
+        return user_info
 
     async def __call__(
-            self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> AuthenticatedUser:
         token_str = bearer_token.credentials
         if not token_str:

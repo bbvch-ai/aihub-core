@@ -1,14 +1,14 @@
 <template>
   <EventDisplayBase
-    :event="props.event"
-    title="Chunk"
-    subtitle="Message sent from the Assistant to the User"
+    :event="event"
+    title="Teilantwort"
+    subtitle="Der Assistent hat ein Teil der Antwort generiert und an den Benutzer gesendet, die der Benutzer bereits angezeigt bekommt."
   >
     <div class="py-5">
       <ChatMessage
         :message="message"
-        :name="`${props.event.agent_class}/${props.event.agent_id}`"
-        :preferred-username="props.event.event.model_name"
+        :name="`${event.agent_class}/${event.agent_id}`"
+        :preferred-username="event.event.model_name"
       />
     </div>
   </EventDisplayBase>

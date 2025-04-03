@@ -1,7 +1,7 @@
 <template>
   <div class="p-3">
     <Timeline
-      :value="props.events"
+      :value="events"
       data-key="event_id"
       align="left"
       class="customized-timeline w-full"
@@ -22,7 +22,7 @@
           />
         </div>
       </template>
-      <template #marker="{ item: event }">
+      <template #marker>
         <span
           class="z-10 flex size-5 items-center justify-center rounded-full border border-surface-100 bg-white text-white shadow-md shadow-surface-200 dark:border-surface-800 dark:bg-surface-700 dark:shadow-surface-950"
         >
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import type { DisplayEvent, WsServerEvent } from '@core/sdk/client'
+import type { WsServerEvent } from '@core/sdk/client'
 
 import {
   EventDisplayUserMessageEvent,
@@ -54,7 +54,7 @@ import {
   EventDisplayToolEvent,
 } from '#components'
 
-const props = defineProps<{
+defineProps<{
   events: WsServerEvent[]
 }>()
 

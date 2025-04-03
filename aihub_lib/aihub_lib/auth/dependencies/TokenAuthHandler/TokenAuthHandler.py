@@ -29,7 +29,7 @@ class TokenAuthHandler(BearerAuthHandler):
     """
 
     async def __call__(
-            self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> AuthenticatedUser:
         token_str = bearer_token.credentials
         return await self.authenticate_token(token_str)

@@ -1,18 +1,19 @@
 <template>
   <EventDisplayBase
-    :event="props.event"
-    title="User Message"
-    subtitle="Message sent to a user to an Agent"
+    :event="event"
+    title="Anfrage via Chat"
+    subtitle="Der Assistent hat eine Nachricht vom Benutzer erhalten, die er zu beantworten versucht. Falls bereits ein Chatverlauf existiert wird dieser dem Assistenten ebenfalls zur Verfügung gestellt"
   >
-    <div class="flex flex-col gap-12 py-5">
+    <div class="flex flex-col gap-12">
       <div
-        v-for="message in props.event.event.messages"
+        v-for="(message, index) in event.event.messages"
+        :key="index"
         class="flex flex-col gap-2"
       >
         <ChatMessage
           :message="message"
-          :name="message.role == 'user' ? props.event.event.user.name : message.role"
-          :preferred-username="message.role == 'user' ? props.event.event.user.preferred_username : ''"
+          :name="message.role == 'user' ? event.event.user.name : message.role"
+          :preferred-username="message.role == 'user' ? event.event.user.preferred_username : ''"
         />
       </div>
     </div>
@@ -22,7 +23,7 @@
 <script setup lang="ts">
 import type { UserMessageEvent, WsServerEvent } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   event: WsServerEvent & { event: UserMessageEvent }
 }>()
 </script>

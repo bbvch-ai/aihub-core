@@ -1,5 +1,4 @@
 import base64
-from typing import Optional
 
 import httpx
 from azure.identity import DefaultAzureCredential
@@ -75,4 +74,3 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         # Acquire an access token from Azure Identity
         access_token = self.credential.get_token(self.scope).token
         return self.get_userdata_by_oid(oid, access_token)
-

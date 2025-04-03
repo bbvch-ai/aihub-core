@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import Field
 
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
@@ -16,5 +18,8 @@ class ChunkEvent(DisplayEvent):
     for the entire answer.
     """
 
-    model_name: str = Field(..., description="The name of the AI model generating the chunks.")
-    content: str = Field(..., description="The actual chunk of text or data produced at this stage.")
+    content: str = Field("", description="The actual chunk of text or data produced at this stage.")
+    model_name: str = Field("aihub", description="The name of the AI model generating the chunks.")
+    reasoning_content: Optional[str] = Field(
+        None, description="The textual representation of the agent’s internal reasoning at a particular point in time."
+    )

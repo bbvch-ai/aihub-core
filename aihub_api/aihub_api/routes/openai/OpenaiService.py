@@ -16,7 +16,6 @@ from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import Az
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
@@ -177,7 +176,10 @@ class OpenaiService:
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
         function_args = {k: v for k, v in function_args.items() if v is not None}
-        del function_args['metadata']
+
+        if "metadata" in function_args:
+            del function_args["metadata"]
+
         if function_args.get("stream", False):
 
             async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:
@@ -256,7 +258,9 @@ class OpenaiService:
         await resources.subscriber.stop()
 
         # Construct final JSON response
-        content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        content, reasoning_content = ChatService.build_json_response_content(
+            resources.chunk_events, resources.stop_event
+        )
         return ChatCompletion(
             id=str(uuid.uuid4()),
             object="chat.completion",
@@ -265,7 +269,11 @@ class OpenaiService:
             choices=[
                 JsonChoice(
                     index=0,
-                    message=ChatCompletionMessage(role="assistant", content=content),
+                    message=ChatCompletionMessage(
+                        role="assistant",
+                        content=content,
+                        reasoning_content=reasoning_content,
+                    ),
                     finish_reason="stop",
                 )
             ],
@@ -311,7 +319,16 @@ class OpenaiService:
                         object="chat.completion.chunk",
                         created=int(datetime.now(timezone.utc).timestamp()),
                         model=chunk_event.model_name,
-                        choices=[Choice(index=0, delta=ChoiceDelta(content=chunk_event.content, role="assistant"))],
+                        choices=[
+                            Choice(
+                                index=0,
+                                delta=ChoiceDelta(
+                                    content=chunk_event.content,
+                                    role="assistant",
+                                    reasoning_content=chunk_event.reasoning_content,
+                                ),
+                            ),
+                        ],
                         usage=None,
                     )
                     yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"

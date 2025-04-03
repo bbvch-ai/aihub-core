@@ -292,12 +292,13 @@ class ChatService:
     @staticmethod
     def build_json_response_content(
         chunk_events: List[ChunkEvent], stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent]
-    ) -> str:
+    ) -> Tuple[str, str]:
         """
         Construct a JSON response from collected chunk events.
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         content = "".join(chunk.content for chunk in sorted_chunks)
+        reasoning_content = "".join(chunk.reasoning_content for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             content += stop_event.question
-        return content
+        return content, reasoning_content

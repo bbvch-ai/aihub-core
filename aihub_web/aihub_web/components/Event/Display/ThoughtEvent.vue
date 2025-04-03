@@ -1,8 +1,8 @@
 <template>
   <EventDisplayBase
-    :event="props.event"
-    title="Thought"
-    subtitle="Internal thought of the agent"
+    :event="event"
+    title="Interner Gedanke"
+    subtitle="Der Agent teilt einen Gedankenschritt mit, welcher ihm dabei hilft, näher zur Erfüllung seiner Aufgabe zu kommen."
   >
     <p class="border-l-4 border-surface-200 pl-3 italic dark:border-surface-600">
       {{ event.event.content }}
@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import type { ThoughtEvent, WsServerEvent } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   event: WsServerEvent & { event: ThoughtEvent }
 }>()
 </script>

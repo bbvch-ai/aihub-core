@@ -1,12 +1,13 @@
 <template>
   <EventDisplayBase
-    :event="props.event"
-    title="LLM Interaction"
-    subtitle="Marks a completed LLM output"
+    :event="event"
+    title="Zusammenfassung LLM Interaktion"
+    subtitle="Eine Teilinteraktion zwischen dem Assistenten und dem Benutzer ist abgeschlossen. Hier wird der Chatverlauf dieser Interaktion angezeigt."
   >
-    <div class="flex flex-col gap-12 py-5">
+    <div class="flex flex-col gap-12">
       <div
-        v-for="message in inputMessages"
+        v-for="(message, index) in inputMessages"
+        :key="index"
         class="flex flex-col gap-2"
       >
         <ChatMessage
@@ -17,7 +18,8 @@
       </div>
       <hr>
       <div
-        v-for="message in outputMessages"
+        v-for="(message, index) in outputMessages"
+        :key="index"
         class="flex flex-col gap-2"
       >
         <ChatMessage
