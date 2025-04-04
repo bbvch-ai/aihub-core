@@ -1,82 +1,119 @@
+from typing import Optional, List
+
 import pulumi
 
 from pulumi_azure_native import web, documentdb
 
-from aihub_iac.azure.constants.resources import APP_SERVICE, COSMOS
 from aihub_iac.azure.constants.roles import ROLES
-from aihub_iac.azure.modules.api.ApiConfig import ApiConfig
-from aihub_iac.azure.providers.EnvVariableProvider import EnvVariableProvider
+from aihub_iac.azure.modules.api.ApiConfig import ApiServiceConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.providers.WebAppCreator import WebAppCreator
 
 
 class Api(pulumi.ComponentResource):
-    def __init__(self, stack, name, opts=None):
+    """A Pulumi component resource for deploying API services"""
+
+    def __init__(
+        self,
+        stack: str,
+        name: str,
+        config: ApiServiceConfig,
+        opts: Optional[pulumi.ResourceOptions] = None,
+    ):
         super().__init__(f"{stack}:{name}", name, None, opts)
-        self.stack = stack
-        self.name = name
-        self.project_name, self.location, self.location_short, self.resource_group, self.subscription_id = (
-            EnvVariableProvider.get_environment_variables()
+
+        # Create configuration from environment or use provided config
+        self.config = config
+
+        # Initialize providers
+        self.network_provider = NetworkProvider(
+            self.config.resource_group, self.config.project_name, self.config.location_short
         )
 
-        self.service_name = f"{self.project_name}-{APP_SERVICE}-{self.location_short}-api"
-        self.cosmos_name = f"{self.project_name}-{COSMOS}-{self.location_short}-api"
-
-        self.network_provider = NetworkProvider(self.resource_group, self.project_name, self.location_short)
         self.identity_provider = IdentityProvider(
-            self.resource_group, self.location, self.subscription_id, self.project_name, self.location_short
+            self.config.resource_group,
+            self.config.location,
+            self.config.subscription_id,
+            self.config.project_name,
+            self.config.location_short,
         )
+
         self.webapp_creator = WebAppCreator(
-            service_name=self.service_name,
-            resource_group=self.resource_group,
-            location=self.location,
-            app_service_plan_name=ApiConfig().API_APP_SERVICE_PLAN_NAME,
+            service_name=self.config.service_name,
+            resource_group=self.config.resource_group,
+            location=self.config.location,
+            app_service_plan_name=self.config.app_service_plan_name,
         )
 
-        # API specific configuration
-        self.registry_url = "https://ghcr.io"
-        self.docker_image = f"DOCKER|{ApiConfig().API_REPO_IMAGE_URL}:{ApiConfig().API_IMAGE_TAG}"
+        # Create resources in the right order with proper dependencies
+        self._create_resources()
 
-        self.api_db_name = ApiConfig().COSMOS_ACCOUNT_NAME or self.cosmos_name
-        self.api_db_ressource_group = ApiConfig().COSMOS_RESOURCE_GROUP_NAME or self.resource_group
-        self.api_db = self._get_api_db()
-
+    def _create_resources(self):
+        """Create all required resources with proper dependency management"""
+        # Step 1: Get networking resources
         self.vnet = self.network_provider.get_vnet()
         self.subnet = self.network_provider.app_subnet
 
-        self.identity = self.identity_provider.create_identity(self.name)
-        self.identity.assign_openai_user()
-        self.identity.assign_role_to_identity(
+        # Step 2: Get the Cosmos DB resource
+        self.api_db = self._get_api_db()
+
+        # Step 3: Set up identity and assign roles
+        self.identity = self._create_identity()
+
+        # Step 4: Create the web app
+        self.webapp = self._create_webapp()
+
+        # Export important outputs
+        self.register_outputs(
+            {
+                "webapp_id": self.webapp.id,
+                "webapp_name": self.webapp.name,
+                "webapp_url": self.webapp.default_host_name.apply(lambda host_name: f"https://{host_name}"),
+                "identity_id": self.identity.principal_id,
+            }
+        )
+
+    def _get_api_db(self) -> documentdb.GetDatabaseAccountResult:
+        """Get the Cosmos DB account"""
+        return documentdb.get_database_account(
+            account_name=self.config.effective_cosmos_account_name(),
+            resource_group_name=self.config.effective_cosmos_resource_group(),
+        )
+
+    def _create_identity(self):
+        """Create and configure the managed identity"""
+        identity = self.identity_provider.create_identity(self.config.name)
+
+        # Assign required roles
+        identity.assign_openai_user()
+        identity.assign_role_to_identity(
             role=ROLES.DB_ACCOUNT_CONTRIBUTOR_ROLE_ID, scope_id=self.api_db.id, scope_name=self.api_db.name
         )
 
-        self.identity.assign_role_to_identity(
+        identity.assign_role_to_identity(
             role=ROLES.CONTRIBUTOR_ROLE_ID, scope_id=self.api_db.id, scope_name=self.api_db.name
         )
 
-        self._create_webapp()
-
-    def _get_api_db(self):
-        return documentdb.get_database_account(
-            account_name=self.api_db_name,
-            resource_group_name=self.api_db_ressource_group,
-        )
+        return identity
 
     def _create_webapp(self):
+        """Create the web app with all required configuration"""
         app_settings = [
-            *self._base_env,
-            *self._registry_env,
-            *self._o_auth_env,
+            *self._get_base_env(),
+            *self._get_registry_env(),
+            *self._get_oauth_env(),
             web.NameValuePairArgs(name="WEBSITES_PORT", value="8001"),
-            web.NameValuePairArgs(name="COSMOS_RESOURCE_GROUP_NAME", value=self.api_db_ressource_group),
-            web.NameValuePairArgs(name="COSMOS_ACCOUNT_NAME", value=self.api_db_name),
-            web.NameValuePairArgs(name="NATS_ENDPOINT", value=ApiConfig().NATS_ENDPOINT),
-            web.NameValuePairArgs(name="VERSION", value=ApiConfig().VERSION),
-            web.NameValuePairArgs(name="NAME", value=ApiConfig().API_ANONYM_NAME),
-            web.NameValuePairArgs(name="EMAIL", value=ApiConfig().API_ANONYM_EMAIL),
-            web.NameValuePairArgs(name="ROLES", value=ApiConfig().API_ANONYM_ROLES),
-            web.NameValuePairArgs(name="OID", value=ApiConfig().API_ANONYM_OID),
+            web.NameValuePairArgs(
+                name="COSMOS_RESOURCE_GROUP_NAME", value=self.config.effective_cosmos_resource_group()
+            ),
+            web.NameValuePairArgs(name="COSMOS_ACCOUNT_NAME", value=self.config.effective_cosmos_account_name()),
+            web.NameValuePairArgs(name="NATS_ENDPOINT", value=self.config.nats_endpoint),
+            web.NameValuePairArgs(name="VERSION", value=self.config.version),
+            web.NameValuePairArgs(name="NAME", value=self.config.anonym_name),
+            web.NameValuePairArgs(name="EMAIL", value=self.config.anonym_email),
+            web.NameValuePairArgs(name="ROLES", value=self.config.anonym_roles),
+            web.NameValuePairArgs(name="OID", value=self.config.anonym_oid),
             web.NameValuePairArgs(name="AZURE_CLIENT_ID", value=self.identity.client_id),
         ]
 
@@ -85,35 +122,32 @@ class Api(pulumi.ComponentResource):
         )
 
         return self.webapp_creator.create_webapp(
-            docker_image=self.docker_image,
+            docker_image=self.config.effective_docker_image,
             app_settings=app_settings,
             identity=identity,
             subnet_id=self.subnet.id,
         )
 
-    @property
-    def _registry_env(self):
-        """environment variables for the docker registry"""
+    def _get_base_env(self) -> List[web.NameValuePairArgs]:
+        """Get base environment variables for subscription, app name and region"""
         return [
-            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_URL", value=self.registry_url),
-            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_USERNAME", value=ApiConfig().REGISTRY_USER),
-            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_PASSWORD", value=ApiConfig().REGISTRY_PAT),
+            web.NameValuePairArgs(name="AZURE_SUBSCRIPTION_ID", value=self.config.subscription_id),
+            web.NameValuePairArgs(name="REGION_SHORT", value=self.config.location_short),
+            web.NameValuePairArgs(name="APP_NAME", value=self.config.project_name),
         ]
 
-    @property
-    def _o_auth_env(self):
-        """environment variables for the oAuth"""
+    def _get_registry_env(self) -> List[web.NameValuePairArgs]:
+        """Get environment variables for the docker registry"""
         return [
-            web.NameValuePairArgs(name="CLIENT_ID", value=ApiConfig().CLIENT_ID),
-            web.NameValuePairArgs(name="TENANT_ID", value=ApiConfig().TENANT_ID),
-            web.NameValuePairArgs(name="AUTHORITY_URL", value=ApiConfig().AUTHORITY_URL),
+            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_URL", value=self.config.registry_url),
+            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_USERNAME", value=self.config.registry_user),
+            web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_PASSWORD", value=self.config.registry_pat),
         ]
 
-    @property
-    def _base_env(self):
-        """base environment variables for subscription, app name and region"""
+    def _get_oauth_env(self) -> List[web.NameValuePairArgs]:
+        """Get environment variables for the oAuth"""
         return [
-            web.NameValuePairArgs(name="AZURE_SUBSCRIPTION_ID", value=self.subscription_id),
-            web.NameValuePairArgs(name="REGION_SHORT", value=self.location_short),
-            web.NameValuePairArgs(name="APP_NAME", value=self.project_name),
+            web.NameValuePairArgs(name="CLIENT_ID", value=self.config.client_id),
+            web.NameValuePairArgs(name="TENANT_ID", value=self.config.tenant_id),
+            web.NameValuePairArgs(name="AUTHORITY_URL", value=self.config.authority_url),
         ]

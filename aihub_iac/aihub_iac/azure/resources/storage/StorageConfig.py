@@ -1,10 +1,9 @@
-from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
 from aihub_iac.azure.constants.resources import STORAGE_ACCOUNT
 
 
-@dataclass
-class StorageConfig:
+class StorageConfig(BaseModel):
     """Base configuration for storage resources"""
 
     resource_group: str

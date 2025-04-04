@@ -29,7 +29,7 @@ class Nats(pulumi.ComponentResource):
     def _create_nats_container(self) -> containerinstance.ContainerArgs:
         """Create a NATS container configuration"""
         return containerinstance.ContainerArgs(
-            name=self.config.nats_service_name,
+            name=self.config.nats_service_name(),
             image=f"ghcr.io/bbvch-ai/aihub-core/nats:{self.config.nats_image_tag}",
             command=["nats-server", "-js", "-m", "8222", "-sd", "/mnt/nats-data"],
             ports=[containerinstance.ContainerPortArgs(port=4222), containerinstance.ContainerPortArgs(port=8222)],
@@ -47,7 +47,7 @@ class Nats(pulumi.ComponentResource):
     def _create_redis_container(self) -> containerinstance.ContainerArgs:
         """Create a Redis container configuration"""
         return containerinstance.ContainerArgs(
-            name=self.config.redis_service_name,
+            name=self.config.redis_service_name(),
             image=f"ghcr.io/bbvch-ai/aihub-core/redis:{self.config.redis_image_tag}",
             command=["redis-server", "--dir", "/mnt/redis"],
             ports=[containerinstance.ContainerPortArgs(port=6379)],
@@ -63,7 +63,7 @@ class Nats(pulumi.ComponentResource):
     def _create_resources(self):
         """Create all required resources with proper dependency management"""
         self.storage_account = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name
+            service_name=self.config.storage_service_name()
         )
         self.storage_account_key = self.storage_factory.get_storage_account_key(self.storage_account)
 
@@ -103,8 +103,8 @@ class Nats(pulumi.ComponentResource):
             raise ValueError(f"Missing required resources: {', '.join(missing)}")
 
         return containerinstance.ContainerGroup(
-            resource_name=self.config.container_instance_name,
-            container_group_name=self.config.container_instance_name,
+            resource_name=self.config.container_instance_name(),
+            container_group_name=self.config.container_instance_name(),
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             os_type="Linux",
@@ -144,7 +144,7 @@ class Nats(pulumi.ComponentResource):
             identity=containerinstance.ContainerGroupIdentityArgs(
                 type=containerinstance.ResourceIdentityType.SYSTEM_ASSIGNED
             ),
-            subnet_ids=[containerinstance.ContainerGroupSubnetIdArgs(id=self.network_provider.nats_subnet.id)],
+            subnet_ids=[containerinstance.ContainerGroupSubnetIdArgs(id=self.network_provider.get_nats_subnet().id)],
             opts=pulumi.ResourceOptions(
                 replace_on_changes=["containers", "volumes"],
                 delete_before_replace=True,
