@@ -226,9 +226,13 @@ class AgentTestRunner(AgentRunner):
             and (not exact or event_class.event_name_from_class() == ev.event.event_name)
         ]
 
-    def has_event_of_class(self, event_class: Type[BaseEvent]) -> bool:
+    def has_event_of_class(
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+    ) -> bool:
         """Check if any event of the specified class was observed."""
-        return any(isinstance(ev.event, event_class) for ev in self.observed_events)
+        return len(self.get_events_of_class(event_class, exact)) > 0
 
     def get_event_of_class(
         self,
