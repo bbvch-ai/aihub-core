@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
@@ -40,6 +41,16 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import cr
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
+
+
+# Set up an event loop for the test session
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
 
 scenarios("../tests/features/rag_agent.feature")
 
@@ -112,10 +123,13 @@ def azure_agent_config():
 
 
 @pytest.fixture(scope="function")
-def self_hosted_agent_config():
+def self_hosted_agent_config(event_loop):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
+    # Set the event loop for this function
+    asyncio.set_event_loop(event_loop)
+
     llm_config = SelfHostedLLMConfig(
         name="unsloth/Llama-3.2-1B-Instruct",
         base_url="http://localhost:8182/v1",
