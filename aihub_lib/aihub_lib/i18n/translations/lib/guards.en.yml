@@ -67,7 +67,6 @@ context_sufficient_guard:
     If the question can be answered with the provided context, then the conversation may continue (success=True).
     If answering the question is not possible with the context, then the conversation should be terminated (success=False).
     First, think about how to decide, and then determine whether the conversation can be successfully continued or not.
-  message: |
     Question:
     <Question>
     {user_query}
@@ -76,3 +75,9 @@ context_sufficient_guard:
     <Context>
     {context}
     </Context>
+  reason: |
+    Justification for the decision made.
+  success: |
+    true if the request can be forwarded to the agent, false if the request does not fall into the responsibility of the agent.
+  docstring: |
+    Data model for the decision on whether the request is acceptable or not
