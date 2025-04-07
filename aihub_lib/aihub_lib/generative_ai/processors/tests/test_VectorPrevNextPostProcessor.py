@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -9,6 +10,16 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.milvus_vector_store_content import fill_collection
+
+
+# Set up an event loop for the test session
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
 
 scenarios("features/vector_prev_next_post_processor.feature")
 
@@ -41,7 +52,10 @@ def _(nodes, node_id, datatable):
 
 
 @pytest.fixture()
-def milvus_vector_store(nodes_with_relationships):
+def milvus_vector_store(nodes_with_relationships, event_loop):
+    # Use event_loop fixture to ensure there's an active event loop
+    asyncio.set_event_loop(event_loop)
+
     embedding_config = SelfHostedEmbeddingConfig(
         name="Alibaba-NLP/gte-base-en-v1.5",
         base_url="http://localhost:8183",
