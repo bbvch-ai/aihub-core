@@ -2,6 +2,7 @@
   <EventDisplayBase
     :event="event"
     title="Kosten"
+    icon="fluent:money-16-filled"
     subtitle="Bei der Interaktion mit dem Sprachmodell sind Kosten entstanden, die hier aufgelistet sind."
   >
     <CostsTable

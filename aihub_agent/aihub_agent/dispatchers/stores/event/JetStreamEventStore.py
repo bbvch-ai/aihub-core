@@ -3,7 +3,7 @@ import logging
 import uuid
 from typing import Annotated, Dict, List, Optional, Set
 
-from aihub_lib.nats.events import ControlEvent
+from aihub_lib.nats.events import ControlEvent, BaseEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic

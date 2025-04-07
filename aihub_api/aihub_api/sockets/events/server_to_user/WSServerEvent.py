@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Annotated
 
 from aihub_lib.nats.events import (
     AgentEvent,
@@ -22,39 +22,52 @@ from aihub_lib.nats.events import (
     StopEvent,
     ThoughtEvent,
     ToolEvent,
-    UserMessageEvent,
+    UserMessageEvent, ExceptionEvent,
 )
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, Tag, Discriminator
 from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
 DisplayEvents = Union[
-    DisplayEvent,
-    StopEvent,
-    AgentInTheLoopRequestEvent,
-    AgentInTheLoopExceptionEvent,
-    AgentInTheLoopResponseEvent,
-    LLMCostEvent,
-    ChunkEvent,
-    ThoughtEvent,
-    GuardRejectionEvent,
-    HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
-    SemanticEvent,
-    AgentEvent,
-    ChainEvent,
-    EmbeddingEvent,
-    LLMEvent,
-    LLMStopEvent,
-    RerankerEvent,
-    RetrieverEvent,
-    ToolEvent,
-    StartEvent,
-    UserMessageEvent,
+    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
+    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
+    Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")],
+    Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")],
+    Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")],
+    Annotated[LLMCostEvent, Tag("LLMCostEvent")],
+    Annotated[ChunkEvent, Tag("ChunkEvent")],
+    Annotated[ThoughtEvent, Tag("ThoughtEvent")],
+    Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")],
+    Annotated[SemanticEvent, Tag("SemanticEvent")],
+    Annotated[AgentEvent, Tag("AgentEvent")],
+    Annotated[ChainEvent, Tag("ChainEvent")],
+    Annotated[EmbeddingEvent, Tag("EmbeddingEvent")],
+    Annotated[LLMEvent, Tag("LLMEvent")],
+    Annotated[LLMStopEvent, Tag("LLMStopEvent")],
+    Annotated[RerankerEvent, Tag("RerankerEvent")],
+    Annotated[RetrieverEvent, Tag("RetrieverEvent")],
+    Annotated[ToolEvent, Tag("ToolEvent")],
+    Annotated[StartEvent, Tag("StartEvent")],
+    Annotated[UserMessageEvent, Tag("UserMessageEvent")],
+    Annotated[ExceptionEvent, Tag("ExceptionEvent")],
+    Annotated[StopEvent, Tag("StopEvent")],
+    Annotated[DisplayEvent, Tag("DisplayEvent")],
 ]
+
+
+def event_discriminator(event: DisplayEvent) -> str:
+    print("Discriminator called", event)
+    # Get all tags from DisplayEvents union
+    valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
+
+    # Return "DisplayEvent" if _type is missing or not in valid_tags
+    if not hasattr(event, "_type") or event._type not in valid_tags:
+        return "DisplayEvent"
+
+    return event._type
 
 
 class WSServerEvent(BaseModel):
@@ -89,7 +102,7 @@ class WSServerEvent(BaseModel):
     )
     event_name: str = Field(..., description="Name of the event, indicating its subtype or category.")
     event_id: str = Field(..., description="Unique identifier of this event instance.")
-    event: DisplayEvents = Field(..., description="Payload of the event, containing detailed information.")
+    event: DisplayEvents = Field(..., description="Payload of the event, containing detailed information.", discriminator=Discriminator(event_discriminator))
 
     @classmethod
     def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":

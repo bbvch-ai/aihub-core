@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Annotated, List
+from typing import Annotated, List, Dict
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -60,12 +60,16 @@ class EventController(Controller):
                 raise HTTPException(
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
-            return EventService.get_user_events(
+            events = EventService.get_user_events(
                 user.oid,
                 str_to_object_id(thread_id) if thread_id else None,
                 str_to_object_id(display_id) if display_id else None,
                 event_class,
             )
+
+            print([e.model_dump() for e in events])
+
+            return events
 
         return self
 

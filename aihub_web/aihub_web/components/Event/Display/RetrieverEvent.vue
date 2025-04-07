@@ -2,6 +2,7 @@
   <EventDisplayBase
     :event="event"
     title="Dokumente Gefunden"
+    icon="line-md:document-twotone"
     subtitle="Der Assistent hat Dokumente gefunde, welche ihm bei seiner Aufgabe hilfreich sein könnten"
   >
     <div class="flex flex-col gap-4">

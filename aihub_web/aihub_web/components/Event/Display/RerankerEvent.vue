@@ -2,6 +2,7 @@
   <EventDisplayBase
     :event="event"
     title="Dokumente sortieren"
+    icon="iconoir:sort"
     subtitle="Sortiere Dokumente nach Relevanz und wähle die passendsten Dokumente für die Aufgabe aus."
   >
     <div class="flex flex-col gap-4">

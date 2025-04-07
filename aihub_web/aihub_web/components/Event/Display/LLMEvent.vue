@@ -2,9 +2,10 @@
   <EventDisplayBase
     :event="event"
     title="Zusammenfassung LLM Interaktion"
+    icon="vaadin:chat"
     subtitle="Eine Teilinteraktion zwischen dem Assistenten und dem Benutzer ist abgeschlossen. Hier wird der Chatverlauf dieser Interaktion angezeigt."
   >
-    <div class="flex flex-col gap-12">
+    <div class="flex flex-col gap-8">
       <div
         v-for="(message, index) in inputMessages"
         :key="index"

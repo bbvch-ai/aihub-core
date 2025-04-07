@@ -14,8 +14,13 @@
       position="right"
       class="!w-[50vw]"
     >
-      {{ activeThreadId }} / {{ activeDisplayId }}
-      <EventList :events="eventsInThread" />
+      <EventList :events="eventsInDisplay" />
+      <Paginator
+        v-model:first="page"
+        always-show
+        :rows="1"
+        :total-records="uniqueDisplayIds.length"
+      />
     </Drawer>
   </div>
 </template>
@@ -34,11 +39,32 @@ const sourcesPannel = useTemplateRef<HTMLElement>('sources')
 const { events } = storeToRefs(useEventsStore())
 const activeThreadId = ref<string>('')
 const activeDisplayId = ref<string>('')
+const page = ref<number>(0)
 
 const eventsInThread = computed<WsServerEvent[]>(() => {
-  return events.value.filter((event) => {
-    return event.thread_id === activeThreadId.value
-      && (!activeDisplayId.value || event.display_id === activeDisplayId.value)
+  return events.value
+    .filter((event) => {
+      return event.thread_id === activeThreadId.value
+    })
+    .sort((a: WsServerEvent, b: WsServerEvent) => {
+      return a.event.created_at - b.event.created_at
+    })
+})
+
+const uniqueDisplayIds = computed<string[]>(() => {
+  const displayIds: string[] = []
+  eventsInThread.value.forEach((event: WsServerEvent) => {
+    if (event.display_id && !displayIds.includes(event.display_id)) {
+      displayIds.push(event.display_id)
+    }
+  })
+  return displayIds
+})
+
+const eventsInDisplay = computed<WsServerEvent[]>(() => {
+  const selectedDisplay = uniqueDisplayIds.value[page.value]
+  return eventsInThread.value.filter((event) => {
+    return event.display_id === selectedDisplay
   })
 })
 
@@ -60,6 +86,10 @@ const handleMessage = (event: MessageEvent) => {
       activeDisplayId.value = data.display_id
       showSources.value = !showSources.value
       sourceInfo.value = data
+
+      nextTick(() => {
+        page.value = uniqueDisplayIds.value.length - 1
+      })
     }
   }
 }

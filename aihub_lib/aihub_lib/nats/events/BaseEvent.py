@@ -179,8 +179,6 @@ class BaseEvent(BaseModel):
         if event_type and isinstance(event_type, str):
             event_class = cls._event_registry.get(event_type)
             if event_class:
-                # For known event types, we should not catch validation errors
-                # This ensures validation failures propagate to the caller
                 return event_class(**json_data)
 
         # If we get here, either:

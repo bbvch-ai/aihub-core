@@ -48,6 +48,6 @@ class HealthController(Controller):
             A simple health check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.
             """
-            return HealthResponse(status="ok")
+            return HealthResponse(status="ok", code=200)
 
         return self

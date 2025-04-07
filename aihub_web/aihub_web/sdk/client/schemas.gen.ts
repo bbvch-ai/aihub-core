@@ -2958,10 +2958,15 @@ export const HealthResponseSchema = {
             type: 'string',
             title: 'Status',
             description: 'The health status of the application.'
+        },
+        code: {
+            type: 'integer',
+            title: 'Code',
+            description: 'HTTP status code.'
         }
     },
     type: 'object',
-    required: ['status'],
+    required: ['status', 'code'],
     title: 'HealthResponse'
 } as const;
 

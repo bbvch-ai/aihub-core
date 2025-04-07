@@ -1090,6 +1090,10 @@ export type HealthResponse = {
      * The health status of the application.
      */
     status: string;
+    /**
+     * HTTP status code.
+     */
+    code: number;
 };
 
 /**

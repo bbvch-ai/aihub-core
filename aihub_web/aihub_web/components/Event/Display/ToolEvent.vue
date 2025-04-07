@@ -2,6 +2,7 @@
   <EventDisplayBase
     :event="event"
     title="Tool"
+    icon="mynaui:tool"
     subtitle="Internal thought of the agent"
   >
     <p class="text-2xl font-bold">

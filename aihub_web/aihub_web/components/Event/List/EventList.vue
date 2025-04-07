@@ -38,51 +38,17 @@
 </template>
 
 <script setup lang="ts">
-import type { WsServerEvent } from '@core/sdk/client'
+import useEventComponent from '@core/composables/useEventComponent'
 
-import {
-  EventDisplayUserMessageEvent,
-  EventDisplayChunkEvent,
-  EventDisplayUnknownEvent,
-  EventDisplayLLMEvent,
-  EventDisplayLLMCostEvent,
-  EventDisplayThoughtEvent,
-  EventDisplayEmbeddingEvent,
-  EventDisplayRerankerEvent,
-  EventDisplayRetrieverEvent,
-  EventDisplayStopEvent,
-  EventDisplayToolEvent,
-} from '#components'
+import type {
+  WsServerEvent,
+} from '@core/sdk/client'
 
 defineProps<{
   events: WsServerEvent[]
 }>()
 
-const resolveComponentForEvent = (event: WsServerEvent) => {
-  const mapping = {
-    UserMessageEvent: EventDisplayUserMessageEvent,
-    ChunkEvent: EventDisplayChunkEvent,
-    LLMEvent: EventDisplayLLMEvent,
-    LLMCostEvent: EventDisplayLLMCostEvent,
-    ThoughtEvent: EventDisplayThoughtEvent,
-    EmbeddingEvent: EventDisplayEmbeddingEvent,
-    RerankerEvent: EventDisplayRerankerEvent,
-    RetrieverEvent: EventDisplayRetrieverEvent,
-    StopEvent: EventDisplayStopEvent,
-    ToolEvent: EventDisplayToolEvent,
-  }
-  const exact_match = mapping[event.event._type]
-  if (exact_match) {
-    return exact_match
-  }
-  for (const parent_class in event.event._parent_class_names) {
-    const parent_match = mapping[parent_class]
-    if (parent_match) {
-      return parent_match
-    }
-  }
-  return EventDisplayUnknownEvent
-}
+const { resolveComponentForEvent } = useEventComponent()
 </script>
 
 <style scoped>

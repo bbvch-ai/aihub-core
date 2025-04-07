@@ -9,7 +9,7 @@ from aihub_lib.nats.events import (
     RetrieverEvent,
     RerankerEvent,
     ToolEvent,
-    StopEvent,
+    StopEvent, AgentInTheLoop, HumanInTheLoop,
 )
 
 from aihub_agent.agents.abstract.Agent import Agent
@@ -17,24 +17,17 @@ from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events.semantic import Embedding
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, SOURCE, CREATED_AT, REFERENCE_URL
-from playground.agent.FrontendTestingAgent.FrontendTestingAgentConfig import FrontendTestingAgentConfig
 
 
 class FrontendTestingAgent(Agent):
-    @step()
-    async def start_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: FrontendTestingAgentConfig,
-        displayer: EventDisplayer,
-    ) -> LLMEvent:
-        await displayer.display_thought("First, I answer the user")
-        await asyncio.sleep(2)
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
 
     @step()
-    async def guard_step(self, _: LLMEvent, displayer: EventDisplayer) -> EmbeddingEvent:
+    async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
+        print("[OrchestratorAgent.start_step]", event)
+        return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
+
+    @step()
+    async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> EmbeddingEvent:
         await displayer.display_thought("Now I need to check the guard")
         return EmbeddingEvent(
             text="This is the text that was embedded",
@@ -113,6 +106,11 @@ class FrontendTestingAgent(Agent):
         )
 
     @step()
-    async def stop(self, _: ToolEvent, displayer: EventDisplayer) -> LLMStopEvent:
-        await displayer.display_chunk(content="All done!", model_name="FrontendTestingAgent")
+    async def hitl_step(self, _: ToolEvent) -> HumanInTheLoop.request:
+        print("[HumanInTheLoopAgent.start_step]")
+        return HumanInTheLoop.invoke(question="Shall I continue?")
+
+    @step()
+    async def stop(self, event: HumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+        await displayer.display_chunk(content=f"All done: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()
