@@ -9,8 +9,8 @@ from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 
-from aihub_bot.bots.openai.OpenaiChatBot import OpenaiChatBot
-from aihub_bot.bots.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
+from aihub_bot.bots.chat.openai.OpenaiChatBot import OpenaiChatBot
+from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
