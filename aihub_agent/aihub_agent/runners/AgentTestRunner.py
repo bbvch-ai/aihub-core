@@ -199,12 +199,18 @@ class AgentTestRunner(AgentRunner):
             for event in self.observed_events
         )
 
-    def get_topics(self, event_class: Type[BaseEvent]) -> List[AgentTopic]:
+    def get_topics(
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+    ) -> List[AgentTopic]:
         """Returns the topics of all observed events of the specified class, if any are AgentTopic."""
         return [
             ev.topic
             for ev in self.observed_events
-            if isinstance(ev.event, event_class) and isinstance(ev.topic, AgentTopic)
+            if isinstance(ev.event, event_class)
+            and (not exact or event_class.event_name_from_class() == ev.event.event_name)
+            and isinstance(ev.topic, AgentTopic)
         ]
 
     def get_events_of_class(self, event_class: Type[BaseEvent]) -> List[BaseEvent]:

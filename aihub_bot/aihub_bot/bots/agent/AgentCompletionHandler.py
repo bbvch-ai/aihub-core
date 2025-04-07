@@ -50,8 +50,8 @@ class AgentCompletionHandler(CompletionHandler):
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
-        content, _ = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
-        return content
+        chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        return chat_content.content
 
     @staticmethod
     async def get_stream_completion(

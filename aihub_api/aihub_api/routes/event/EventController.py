@@ -95,7 +95,6 @@ class EventController(Controller):
                 await websocket.close(code=4000, reason="No token provided")
                 return
 
-            # Validate token using the new method
             try:
                 user = await self.auth.authenticate_token(token)
             except HTTPException as e:

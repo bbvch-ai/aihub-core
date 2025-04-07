@@ -2,7 +2,7 @@
   <div class="flex flex-row">
     <div class="h-[calc(100vh-50px)] w-full">
       <iframe
-        src="http://localhost:8080"
+        :src="runtimeConfig.public.webui.url"
         width="100%"
         height="100%"
         title="Open Web UI"
@@ -30,6 +30,8 @@ import { useEventsStore } from '@core/stores/useEventsStore'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 import type { WsServerEvent } from '@core/sdk/client'
+
+const runtimeConfig = useRuntimeConfig()
 
 // State for the overlay
 const showSources = ref(false)
@@ -77,7 +79,7 @@ const handleMessage = (event: MessageEvent) => {
   console.log('Received message:', event)
   // Since we're in development, the origin will be localhost
   // In production, you'd check for your app's actual domain
-  if (event.origin === 'http://localhost:8080') {
+  if (event.origin === runtimeConfig.public.webui.url) {
     const data = event.data
 
     // Check if it's the overlay command

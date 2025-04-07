@@ -1,3 +1,9 @@
+"""
+title: AI-Hub Assistants
+description: Makes aihub assistants accessible in open webui
+required_open_webui_version: 0.6.0
+"""
+
 from pydantic import BaseModel, Field
 import requests
 import hashlib
@@ -6,6 +12,7 @@ import json
 from typing import Optional, List, Dict, Any, Generator, AsyncGenerator
 from bson import ObjectId
 import asyncio
+import logging
 
 logger = logging.getLogger(__name__)
 

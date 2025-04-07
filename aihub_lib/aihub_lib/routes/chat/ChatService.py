@@ -53,6 +53,12 @@ class JsonResources:
     )
 
 
+@dataclass
+class ChatContent:
+    content: str
+    reasoning_content: str
+
+
 class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
@@ -179,6 +185,7 @@ class ChatService:
                 logger.debug(f"Received chunk event: {event}")
                 await chunk_queue.put(event)
             elif event.is_hitl_request_event:
+                logger.debug(f"Received HITL event: {event}")
                 resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
@@ -299,13 +306,14 @@ class ChatService:
     @staticmethod
     def build_json_response_content(
         chunk_events: List[ChunkEvent], stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent]
-    ) -> Tuple[str, str]:
+    ) -> ChatContent:
         """
         Construct a JSON response from collected chunk events.
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
-        content = "".join(chunk.content for chunk in sorted_chunks)
-        reasoning_content = "".join(chunk.reasoning_content or "" for chunk in sorted_chunks)
+        chat_content = ChatContent(content="", reasoning_content="")
+        chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
+        chat_content.reasoning_content = "".join(chunk.reasoning_content or "" for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
-            content += stop_event.question
-        return content, reasoning_content
+            chat_content.content += stop_event.question
+        return chat_content

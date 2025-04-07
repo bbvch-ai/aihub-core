@@ -262,9 +262,7 @@ class OpenaiService:
         await resources.subscriber.stop()
 
         # Construct final JSON response
-        content, reasoning_content = ChatService.build_json_response_content(
-            resources.chunk_events, resources.stop_event
-        )
+        chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
         return ChatCompletion(
             id=str(uuid.uuid4()),
             object="chat.completion",
@@ -275,8 +273,8 @@ class OpenaiService:
                     index=0,
                     message=ChatCompletionMessage(
                         role="assistant",
-                        content=content,
-                        reasoning_content=reasoning_content,
+                        content=chat_content.content,
+                        reasoning_content=chat_content.reasoning_content,
                     ),
                     finish_reason="stop",
                 )

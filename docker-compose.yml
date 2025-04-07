@@ -26,8 +26,24 @@ services:
 
   redis:
     image: redis:latest
+    container_name: redis
+    command: "redis-server --save 30 1 --loglevel warning"
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   mongo:
     image: mongo:latest

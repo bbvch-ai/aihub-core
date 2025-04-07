@@ -1,6 +1,6 @@
 """
-title: Open Traces Action
-description: Opens tracing view in AI-Hub Suite
+title: AI-Hub Suite
+description: Enables tracing view for aihub assistants
 icon_url: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJjdXJyZW50Q29sb3IiIGQ9Ik0xOCAxNmgtLjU4bC0uODEtLjgxQTcuMDcgNy4wNyAwIDAgMCAxOCAxMWMwLTMuODctMy4xMy03LTctN2MtMS41IDAtMyAuNS00LjIxIDEuNGMtMy4wOSAyLjMyLTMuNzIgNi43MS0xLjQgOS44czYuNzEgMy43MiA5LjggMS40bC44MS44MVYxOGw1IDVsMi0yem0tNyAwYy0yLjc2IDAtNS0yLjI0LTUtNXMyLjI0LTUgNS01czUgMi4yNCA1IDVzLTIuMjQgNS01IDVNMyA2TDEgOFYxaDdMNiAzSDN6bTE4LTV2N2wtMi0yVjNoLTNsLTItMnpNNiAxOWwyIDJIMXYtN2wyIDJ2M3oiLz48L3N2Zz4=
 required_open_webui_version: 0.6.0
 """
@@ -13,6 +13,7 @@ import os
 import requests
 import asyncio
 import hashlib
+import logging
 
 from bson import ObjectId
 

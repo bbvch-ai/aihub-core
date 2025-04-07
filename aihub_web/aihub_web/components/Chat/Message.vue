@@ -1,11 +1,11 @@
 <template>
   <div
     class="flex w-full"
-    :class="[message.role === 'user' ? 'justify-end' : 'justify-start']"
+    :class="justifyClass"
   >
     <div
       class="flex max-w-[80%] gap-2"
-      :class="[message.role === 'user' ? 'flex-row-reverse' : 'flex-row']"
+      :class="flowClass"
     >
       <Avatar
         :label="avatarLabel"
@@ -17,7 +17,7 @@
       <div class="flex w-full flex-col">
         <div
           class="mb-1 flex gap-2"
-          :class="[message.role === 'user' ? 'justify-end' : 'justify-start']"
+          :class="justifyClass"
         >
           <p class="text-sm font-bold">
             {{ name }}
@@ -57,5 +57,12 @@ const props = defineProps<{
 
 const avatarLabel = computed(() => {
   return props.name?.at(0) || 'U'
+})
+
+const justifyClass = computed<string[]>(() => {
+  return [props.message.role === 'user' ? 'justify-end' : 'justify-start']
+})
+const flowClass = computed<string[]>(() => {
+  return [props.message.role === 'user' ? 'flex-row-reverse' : 'flex-row']
 })
 </script>

@@ -1,13 +1,38 @@
 services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: postgres
+    environment:
+      POSTGRES_USER: webui
+      POSTGRES_PASSWORD: webui_password
+      POSTGRES_DB: webui
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U webui" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     network_mode: "host"
     volumes:
-        - openwebui:/openwebui
+      - open-webui:/app/backend/data
     environment:
       SCARF_NO_ANALYTICS: true
       DO_NOT_TRACK: true
       ANONYMIZED_TELEMETRY: true
+      GLOBAL_LOG_LEVEL: "debug"
 
       WEBUI_NAME: "bbv AI-Hub"
       CORS_ALLOW_ORIGIN: "http://localhost:5173"
@@ -26,6 +51,13 @@ services:
       ENABLE_FORWARD_USER_INFO_HEADERS: true
       PRESERVE_METADATA_IN_OPENAI_API_CALLS: true
 
+      ENABLE_WEBSOCKET_SUPPORT: true
+      WEBSOCKET_MANAGER: "redis"
+      WEBSOCKET_REDIS_URL: "redis://localhost:6379/1"
+      WEB_CONCURRENCY: 4
+
+      DATABASE_URL: "postgresql://webui:webui_password@localhost:5432/webui"
+
       OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
       RAG_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
       AUDIO_STT_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
@@ -43,12 +75,12 @@ services:
       IMAGE_SIZE: "1792x1024"
       IMAGE_GENERATION_MODEL: "dall-e-3"
 
-      TASK_MODEL_EXTERNAL: "gpt-4o"
+      TASK_MODEL_EXTERNAL: "aihub/gpt-4o"
 
       ENABLE_AUTOCOMPLETE_GENERATION: false
       AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: 60
 
-      VECTOR_DB: "milvus"
+      VECTOR_DB: "pgvector"
       RAG_EMBEDDING_ENGINE: "openai"
       RAG_EMBEDDING_MODEL: "text-embedding-3-large"
       RAG_EMBEDDING_OPENAI_BATCH_SIZE: 8
@@ -60,9 +92,6 @@ services:
       RAG_FILE_MAX_SIZE: 1024
       RAG_FILE_MAX_COUNT: 10
       ENABLE_RETRIEVAL_QUERY_GENERATION: true
-
-      MILVUS_URI: "http://localhost:19530"
-      MILVUS_DB: "webui"
 
       ENABLE_RAG_WEB_SEARCH: true
       ENABLE_SEARCH_QUERY_GENERATION: true
@@ -93,4 +122,5 @@ services:
       ENABLE_DIRECT_CONNECTIONS: false
 
 volumes:
-  openwebui:
+  open-webui: {}
+  postgres-data: {}

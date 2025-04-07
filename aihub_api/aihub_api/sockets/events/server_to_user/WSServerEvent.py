@@ -63,7 +63,7 @@ def event_discriminator(event: DisplayEvent) -> str:
     # Get all tags from DisplayEvents union
     valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
 
-    # Return "DisplayEvent" if _type is missing or not in valid_tags
+    # Return "DisplayEvent" if _event_name is missing or not in valid_tags
     if not hasattr(event, "_event_name") or event._event_name not in valid_tags:
         return "DisplayEvent"
 
@@ -104,7 +104,7 @@ class WSServerEvent(BaseModel):
     event_id: str = Field(..., description="Unique identifier of this event instance.")
     event: DisplayEvents = Field(
         ...,
-        description="Payload of the event, containing detailed information.",
+        description="Data of the event itself.",
         discriminator=Discriminator(event_discriminator),
     )
 

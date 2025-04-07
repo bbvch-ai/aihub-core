@@ -36,9 +36,6 @@ class TokenAndOauth2Handler(AuthHandler):
         try:
             return await self.bearer_handler(request, bearer_token)
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
             logger.warning("Bearer authentication failed: %s", e)
             errors.append(f"Bearer authentication failed: {str(e)}")
 

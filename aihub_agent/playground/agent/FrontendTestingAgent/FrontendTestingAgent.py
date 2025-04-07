@@ -1,4 +1,3 @@
-
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.events import (
     UserMessageEvent,

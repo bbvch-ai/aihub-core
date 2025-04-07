@@ -84,18 +84,23 @@ class AgentService:
         await sleep(1)
         await nc_subscriber.stop()
 
-        agents = [
-            AgentDTO(
-                agent_class=response.agent_class,
-                agent_id=response.agent_id,
-                agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
-                is_conversational=response.is_conversational,
-                start_events=response.start_events,
-                stop_events=response.stop_events,
-                network_graph=response.network_graph,
-            )
-            for response in discovery_responses
-        ]
+        unique_agents_dict = {}
+
+        for response in discovery_responses:
+            unique_key = (response.agent_class, response.agent_id)
+
+            if unique_key not in unique_agents_dict:
+                unique_agents_dict[unique_key] = AgentDTO(
+                    agent_class=response.agent_class,
+                    agent_id=response.agent_id,
+                    agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
+                    is_conversational=response.is_conversational,
+                    start_events=response.start_events,
+                    stop_events=response.stop_events,
+                    network_graph=response.network_graph,
+                )
+
+        agents = list(unique_agents_dict.values())
 
         DISCOVER_AGENTS_CACHE[cache_key] = agents
         return agents

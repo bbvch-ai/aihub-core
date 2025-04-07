@@ -9,6 +9,9 @@ export default defineNuxtConfig({
         clientId: process.env.AZURE_AD_CLIENT_ID,
         tenantId: process.env.AZURE_AD_TENANT_ID,
       },
+      webui: {
+        url: 'http://localhost:8080',
+      },
     },
   },
   compatibilityDate: '2024-12-03',

@@ -1,11 +1,14 @@
 import asyncio
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.infrastructure.RedisConfig import RedisConfig
+
+from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.agent.FrontendTestingAgent.FrontendTestingAgent import FrontendTestingAgent
 from playground.agent.FrontendTestingAgent.FrontendTestingAgentConfig import FrontendTestingAgentConfig
@@ -14,7 +17,9 @@ enable_logging()
 
 
 async def main():
-    runner = AgentTestRunner(
+    runner = MultiprocessAgentRunner(
+        servers=[NatsConfig().NATS_ENDPOINT],
+        redis_url=RedisConfig().REDIS_URL,
         agent_type=FrontendTestingAgent,
         agent_config=FrontendTestingAgentConfig(
             agent_id="frontend_testing",
