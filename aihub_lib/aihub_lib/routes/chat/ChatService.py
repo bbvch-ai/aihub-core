@@ -108,7 +108,6 @@ class ChatService:
             parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.name()] + list(
                 get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
             )
-            print(messages)
             event = HumanInTheLoopResponseEvent.deserialize_event(
                 {
                     "_event_name": topic.event_name,
@@ -154,9 +153,6 @@ class ChatService:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
-        print("THREAD ID", thread_id)
-        print("DISPLAY ID", display_id)
-
         external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,

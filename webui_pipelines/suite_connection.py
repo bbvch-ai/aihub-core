@@ -16,6 +16,7 @@ import hashlib
 
 from bson import ObjectId
 
+logger = logging.getLogger(__name__)
 
 def str_to_object_id(context_id: Optional[str]) -> ObjectId:
     if not context_id:
@@ -40,8 +41,6 @@ class Action:
         __event_call__=None,
     ) -> Optional[dict]:
         try:
-            print("body", body)
-
             code = f"""
             window.parent.postMessage({{
                 type: 'show-sources',
@@ -59,4 +58,4 @@ class Action:
                 }
             )
         except Exception as e:
-            print(e)
+            logger.error(e)

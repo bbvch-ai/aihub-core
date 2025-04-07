@@ -60,16 +60,12 @@ class EventController(Controller):
                 raise HTTPException(
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
-            events = EventService.get_user_events(
+            return EventService.get_user_events(
                 user.oid,
                 str_to_object_id(thread_id) if thread_id else None,
                 str_to_object_id(display_id) if display_id else None,
                 event_class,
             )
-
-            print([e.model_dump() for e in events])
-
-            return events
 
         return self
 

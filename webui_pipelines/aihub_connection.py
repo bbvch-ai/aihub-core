@@ -7,6 +7,7 @@ from typing import Optional, List, Dict, Any, Generator, AsyncGenerator
 from bson import ObjectId
 import asyncio
 
+logger = logging.getLogger(__name__)
 
 def str_to_object_id(context_id: Optional[str]) -> str:
     if not context_id:
@@ -182,7 +183,6 @@ class Pipe:
             ]
 
         except Exception as e:
-            print("Exception in getting models", e)
             return [
                 {
                     "id": "error",
@@ -209,12 +209,12 @@ class Pipe:
             )
 
             if response.status_code != 200:
-                print(f"Error querying events: {response.status_code} - {response.text}")
+                logger.error(f"Error querying events: {response.status_code} - {response.text}")
                 return []
 
             return response.json()
         except Exception as e:
-            print(f"Exception in getting retriever events: {e}")
+            logger.debug(f"Exception in getting retriever events: {e}")
             return []
 
     async def handle_stream_and_query_sources(self, stream_iter, thread_id, display_id, headers, event_emitter):
@@ -248,18 +248,18 @@ class Pipe:
 
             # If we get here, the stream has ended (or we broke out of the loop)
             # Now query for RetrieverEvents
-            print("Stream completed, querying for retriever events")
+            logger.debug("Stream completed, querying for retriever events")
             retriever_events = await self.get_retriever_events(thread_id, display_id, headers)
 
             if retriever_events:
                 sources = transform_events_to_sources(retriever_events)
                 await event_emitter(sources)
-                print(f"Emitted sources with {len(sources['data']['sources'])} sources")
+                logger.debug(f"Emitted sources with {len(sources['data']['sources'])} sources")
             else:
-                print("No retriever events found after stream completed")
+                logger.debug("No retriever events found after stream completed")
 
         except Exception as e:
-            print(f"Error in stream handling: {e}")
+            logger.error(f"Error in stream handling: {e}")
             # Still yield any remaining lines to avoid breaking the client
             for line in stream_iter:
                 yield line
