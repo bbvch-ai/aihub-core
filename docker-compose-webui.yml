@@ -29,6 +29,8 @@ services:
     volumes:
       - open-webui:/app/backend/data
     environment:
+      ENV: "dev"
+
       SCARF_NO_ANALYTICS: true
       DO_NOT_TRACK: true
       ANONYMIZED_TELEMETRY: true
