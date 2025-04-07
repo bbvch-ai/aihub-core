@@ -18,11 +18,6 @@ services:
       - "4222:4222"  # Client connections
       - "8222:8222"  # HTTP monitoring interface
     restart: always
-    healthcheck:
-      test: wget --no-check-certificate -q http://0.0.0.0:8222/healthz -O /dev/null || exit 1
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   redis:
     image: redis:latest
