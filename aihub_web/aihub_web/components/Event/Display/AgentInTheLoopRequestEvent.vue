@@ -12,8 +12,6 @@
 </template>
 
 <script setup lang="ts">
-import useEventComponent from '@core/composables/useEventComponent'
-
 import type { AgentInTheLoopRequestEvent, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
