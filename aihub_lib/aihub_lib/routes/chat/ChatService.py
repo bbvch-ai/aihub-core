@@ -19,9 +19,10 @@ from aihub_lib.nats.events import (
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
-    StopEvent,
+    StopEvent, BaseEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -98,11 +99,15 @@ class ChatService:
         thread_id = str(thread.id)
 
         if len(hitl_requests) != len(hitl_responses):
-            open_hitl_request = hitl_requests[-1]
-            event = HumanInTheLoopResponseEvent(
-                response=messages[-1].content,
-                request_event=HumanInTheLoopRequestEvent.deserialize_event(open_hitl_request.event_data),
-            )
+            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
+            topic = open_hitl_request.topic
+            parent_classes = [topic.agent_class, HumanInTheLoopResponseEvent.__class__.__name__] + list(get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent))
+            event = HumanInTheLoopResponseEvent.deserialize_event({
+                "_type": topic.agent_class,
+                "_parent_class_names": parent_classes,
+                "response": messages[-1].content,
+                "request_event": open_hitl_request.model_dump(),
+            })
             display_id = event.request_event.topic.display_id
         else:
             event = UserMessageEvent(
