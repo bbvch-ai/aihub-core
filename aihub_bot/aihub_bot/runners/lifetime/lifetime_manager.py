@@ -2,17 +2,21 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
+from aihub_bot.routes.hitl.HitlHandler import HitlHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
 from fastapi import FastAPI
-from mongoengine import connect
+from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
+
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 
 @asynccontextmanager
-async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
+async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     logging.warning("Initializing NATS connection and resources")
 
     nc = NATS()
@@ -27,18 +31,32 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator[None, Any]:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
+
+        topic_manager = TopicManager()
+
+        # Setup Human In The Loop (HITL) subscriber
+        hitl_handler = HitlHandler()
+        hitl_subscriber = NCSubscriber.all_for_agent_display_events(
+            nc=nc,
+            topic_manager=topic_manager,
+            handler=hitl_handler.handle_display_event,
+        )
+        await hitl_subscriber.start()
+
         external_event_distributor = ExternalEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
+        app.state.hitl_handler = hitl_handler
         app.state.external_event_distributor = external_event_distributor
 
         # Yield control back to FastAPI to start serving requests
         yield
 
-        # Cleanup on exit
-        logging.warning("Shutting down NATS connection and resources")
+        # Shutdown: stop subscribers
+        await hitl_subscriber.stop()
+        disconnect()
 
     finally:
         # Close NATS connection on exit
