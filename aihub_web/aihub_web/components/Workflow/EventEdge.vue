@@ -15,7 +15,7 @@
       }"
       class="absolute overflow-hidden rounded-md border border-dashed border-surface-400 bg-surface-50 px-4 py-2 shadow-md dark:border-surface-400 dark:bg-surface-950"
     >
-      {{ data.event_type }}
+      {{ data.event_name }}
     </div>
   </EdgeLabelRenderer>
 </template>

@@ -78,7 +78,7 @@ export const useEventsStore = defineStore('events', () => {
       thread_id,
       display_id: display_id || (ObjectID()).toHexString(),
       event: {
-        _type: 'UserMessageEvent',
+        _event_name: 'UserMessageEvent',
         event_id: (ObjectID()).toHexString(),
         created_at: Date.now() * 1_000_000,
         messages: [
@@ -96,7 +96,7 @@ export const useEventsStore = defineStore('events', () => {
     const lastHumanInTheLoopRequestEvent = events.value.findLast((event) => {
       return (
         event.thread_id === thread_id
-        && event.event._type === 'HumanInTheLoopRequestEvent'
+        && event.event._event_name === 'HumanInTheLoopRequestEvent'
       )
     })
     if (lastHumanInTheLoopRequestEvent) {
@@ -104,7 +104,7 @@ export const useEventsStore = defineStore('events', () => {
         thread_id,
         display_id: lastHumanInTheLoopRequestEvent.display_id,
         event: {
-          _type: 'HumanInTheLoopResponseEvent',
+          _event_name: 'HumanInTheLoopResponseEvent',
           event_id: (ObjectID()).toHexString(),
           created_at: Date.now() * 1_000_000,
           response: content,

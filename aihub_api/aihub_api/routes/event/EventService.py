@@ -58,12 +58,12 @@ class EventService:
         if thread_id is None:
             user_threads = ThreadEntity.get_threads_by_user(user_oid)
             thread_ids = [str(thread.id) for thread in user_threads]
-            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids, event_class=event_class)
+            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids, event_name=event_class)
         else:
             persisted_events = PersistedEventEntity.display_events_for_thread(
                 thread_id=str(thread_id),
                 display_id=str(display_id) if display_id is not None else None,
-                event_class=event_class,
+                event_name=event_class,
             )
         return [WSServerEvent.from_persisted_event(event) for event in persisted_events]
 
@@ -93,7 +93,7 @@ class EventService:
                     thread_id=event.thread_id,
                     display_id=event.display_id,
                     event_type=TopicManager.DISPLAY_EVENT,
-                    event_name=ExceptionEvent.__name__,
+                    event_name=ExceptionEvent.event_name_from_class(),
                     event_id=str(ObjectId()),
                 ),
             )

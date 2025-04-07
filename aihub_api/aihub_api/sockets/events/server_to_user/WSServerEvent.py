@@ -59,15 +59,14 @@ DisplayEvents = Union[
 
 
 def event_discriminator(event: DisplayEvent) -> str:
-    print("Discriminator called", event)
     # Get all tags from DisplayEvents union
     valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
 
     # Return "DisplayEvent" if _type is missing or not in valid_tags
-    if not hasattr(event, "_type") or event._type not in valid_tags:
+    if not hasattr(event, "_event_name") or event._event_name not in valid_tags:
         return "DisplayEvent"
 
-    return event._type
+    return event._event_name
 
 
 class WSServerEvent(BaseModel):

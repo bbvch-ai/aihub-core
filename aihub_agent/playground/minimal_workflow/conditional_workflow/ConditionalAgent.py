@@ -19,5 +19,5 @@ class ConditionalAgent(Agent):
 
     @step()
     async def end_step(self, event: AboveThresholdEvent | BelowThresholdEvent) -> StopEvent:
-        print(f"[ConditionalAgent.end_step] Received {event.__class__.__name__}")
+        print(f"[ConditionalAgent.end_step] Received {event.event_name}")
         return StopEvent()

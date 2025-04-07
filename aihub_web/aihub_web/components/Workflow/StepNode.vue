@@ -31,7 +31,7 @@
           class="flex flex-col gap-2"
         >
           <EventSpecs
-            :events="event_specs.event_types"
+            :events="event_specs.event_names"
             type="input"
           />
         </div>

@@ -32,7 +32,7 @@ class ExternalEvent(BaseModel):
       "thread_id": "thread123",
       "display_id": "displayA",
       "event": {
-        "_type": "UserMessageEvent",
+        "_event_name": "UserMessageEvent",
         "content": "Hello world!"
       }
     }

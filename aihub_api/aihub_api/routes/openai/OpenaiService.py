@@ -249,7 +249,7 @@ class OpenaiService:
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.messages,
+            messages=[ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump())) for msg in chat_completion_request.messages],
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),

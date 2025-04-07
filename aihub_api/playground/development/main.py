@@ -64,8 +64,8 @@ async def main():
         .send_event_to(
             "LLMWrappingAgent",
             "dev_agent",
-            start_event_type=UserMessageEvent,
-            stop_event_type=LLMStopEvent,
+            start_event_class=UserMessageEvent,
+            stop_event_class=LLMStopEvent,
         ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(

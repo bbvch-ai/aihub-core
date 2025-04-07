@@ -301,18 +301,18 @@ import random
 
 class ConditionalAgent(Agent):
 
-    @step()
-    async def start_step(self, event: StartEvent) -> EventA | EventB:
-        if random.random() > 0.5:
-            print("[ConditionalAgent.start_step] Sent Event A")
-            return EventA()
-        print("[ConditionalAgent.start_step] Sent Event B")
-        return EventB()
+  @step()
+  async def start_step(self, event: StartEvent) -> EventA | EventB:
+    if random.random() > 0.5:
+      print("[ConditionalAgent.start_step] Sent Event A")
+      return EventA()
+    print("[ConditionalAgent.start_step] Sent Event B")
+    return EventB()
 
-    @step()
-    async def end_step(self, event: EventA | EventB) -> StopEvent:
-        print(f"[ConditionalAgent.end_step] Received {event.__class__.__name__}")
-        return StopEvent()
+  @step()
+  async def end_step(self, event: EventA | EventB) -> StopEvent:
+    print(f"[ConditionalAgent.end_step] Received {event.event_name}")
+    return StopEvent()
 ```
 
 **Key Takeaways:**

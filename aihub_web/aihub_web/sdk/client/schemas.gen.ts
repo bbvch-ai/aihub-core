@@ -355,7 +355,7 @@ export const AgentTopicSchema = {
             title: 'Display Id',
             description: 'UI-facing grouping ID, used to distinguish or group related runs.'
         },
-        event_type: {
+        eventname: {
             type: 'string',
             title: 'Event Type',
             description: "Type of event (e.g., 'display_event', 'control_event')."
@@ -5759,13 +5759,7 @@ export const WSServerEventSchema = {
             description: 'Unique identifier of this event instance.'
         },
         event: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/DisplayEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/StopEvent'
-                },
+            oneOf: [
                 {
                     '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
                 },
@@ -5774,6 +5768,12 @@ export const WSServerEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
                 },
                 {
                     '$ref': '#/components/schemas/LLMCostEvent'
@@ -5786,12 +5786,6 @@ export const WSServerEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/GuardRejectionEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
                 },
                 {
                     '$ref': '#/components/schemas/SemanticEvent'
@@ -5825,6 +5819,15 @@ export const WSServerEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/UserMessageEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ExceptionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/StopEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/DisplayEvent'
                 }
             ],
             title: 'Event',

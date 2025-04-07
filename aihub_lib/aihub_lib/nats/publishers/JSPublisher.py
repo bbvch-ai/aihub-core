@@ -40,18 +40,18 @@ class JSPublisher(Generic[TEvent]):
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
         """
-        logger.debug(f"Publishing event {event.__class__.__name__} to {subject}")
+        logger.debug(f"Publishing event {event.event_name} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)
-        logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
+        logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
             logger.warning(
-                f"Control event {event.__class__.__name__} is being published to a non-control subject: {subject}"
+                f"Control event {event.event_name} is being published to a non-control subject: {subject}"
             )
 
         if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
             logger.warning(
-                f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
+                f"Display event {event.event_name} is being published to a non-display subject: {subject}"
             )
 
         message_id = str(uuid.uuid4())
@@ -67,11 +67,11 @@ class JSPublisher(Generic[TEvent]):
                 return  # Success, no retry needed
             except asyncio.TimeoutError:
                 logger.warning(
-                    f"Publish timeout ({attempt + 1}/{retries}) for {event.__class__.__name__} to subject {subject}"
+                    f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}"
                 )
             except Exception as e:
                 logger.error(f"NATS error while publishing event: {e}")
 
             await asyncio.sleep(1)  # Wait before retrying
 
-        logger.error(f"Failed to publish event {event.__class__.__name__} after {retries} attempts")
+        logger.error(f"Failed to publish event {event.event_name} after {retries} attempts")

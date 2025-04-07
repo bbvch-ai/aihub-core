@@ -31,12 +31,12 @@ export default () => {
       HumanInTheLoopResponseEvent: EventDisplayHumanInTheLoopResponseEvent,
       StopEvent: EventDisplayStopEvent,
     }
-    const exact_match = mapping[event.event._type]
+    const exact_match = mapping[event.event._event_name]
     if (exact_match) {
       return exact_match
     }
     for (const eventName in mapping) {
-      if (event.event._parent_class_names.includes(eventName)) {
+      if (event.event._parent_event_names.includes(eventName)) {
         return mapping[eventName]
       }
     }

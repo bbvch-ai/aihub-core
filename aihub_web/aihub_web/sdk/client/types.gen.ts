@@ -88,7 +88,7 @@ export type AgentEvent = {
      */
     created_at?: number;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
     readonly _type: string;
@@ -119,7 +119,7 @@ export type AgentInTheLoopExceptionEvent = {
      */
     exception_event: ExceptionEvent;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
     readonly _type: string;
@@ -2312,7 +2312,7 @@ export type WsServerEvent = {
     /**
      * Payload of the event, containing detailed information.
      */
-    event: DisplayEvent | StopEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardRejectionEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | StartEvent | UserMessageEvent;
+    event: AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | StartEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
 };
 
 /**

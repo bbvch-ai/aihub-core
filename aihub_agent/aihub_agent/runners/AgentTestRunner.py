@@ -1,6 +1,6 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, List, Optional, Type
+from typing import AsyncGenerator, List, Optional, Type, Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
@@ -37,7 +37,7 @@ class AgentTestRunner(AgentRunner):
     - Observing events published by the agent and storing them for assertions in tests.
     - Providing a `test_run` context manager that sets up a test environment, including
       event subscriptions and automatic cleanup after a delay.
-    - Utilities to quickly check if certain event types (Start/Stop/Exception) have been emitted,
+    - Utilities to quickly check if certain event classes (Start/Stop/Exception) have been emitted,
       and to retrieve all events of a particular type.
 
     ### Why AgentTestRunner?
@@ -199,59 +199,48 @@ class AgentTestRunner(AgentRunner):
             for event in self.observed_events
         )
 
-    def get_events(self, event_type: Type[BaseEvent], event_filter: str) -> List[BaseEvent]:
-        """Returns all observed events of the specified type."""
-        if event_filter:
-            return [
-                ev.event
-                for ev in self.observed_events
-                if isinstance(ev.event, event_type) and ev.topic.event_type == event_filter
-            ]
-        else:
-            return [ev.event for ev in self.observed_events if isinstance(ev.event, event_type)]
-
-    def get_topics(self, event_type: Type[BaseEvent]) -> List[AgentTopic]:
-        """Returns the topics of all observed events of the specified type, if any are AgentTopic."""
+    def get_topics(self, event_class: Type[BaseEvent]) -> List[AgentTopic]:
+        """Returns the topics of all observed events of the specified class, if any are AgentTopic."""
         return [
             ev.topic
             for ev in self.observed_events
-            if isinstance(ev.event, event_type) and isinstance(ev.topic, AgentTopic)
+            if isinstance(ev.event, event_class) and isinstance(ev.topic, AgentTopic)
         ]
 
-    def get_events_of_type(self, event_type: Type[BaseEvent], event_filter: str | None = None) -> List[BaseEvent]:
-        """Alias for get_events(event_type), provided for convenience."""
-        return self.get_events(event_type, event_filter)
+    def get_events_of_class(self, event_class: Type[BaseEvent]) -> List[BaseEvent]:
+        """Returns all observed events of the specified class."""
+        return [ev.event for ev in self.observed_events if isinstance(ev.event, event_class)]
 
-    def has_event_of_type(self, event_type: Type[BaseEvent]) -> bool:
-        """Check if any event of the specified type was observed."""
-        return any(isinstance(ev.event, event_type) for ev in self.observed_events)
+    def has_event_of_class(self, event_class: Type[BaseEvent]) -> bool:
+        """Check if any event of the specified class was observed."""
+        return any(isinstance(ev.event, event_class) for ev in self.observed_events)
 
-    def get_event_of_type(self, event_type: Type[BaseEvent]) -> BaseEvent:
+    def get_event_of_class(self, event_class: Type[BaseEvent], exact: Annotated[bool, 'Mus the event be an exact match or is subclass okay?']=False) -> BaseEvent:
         """
-        Returns the first observed event of the specified type.
+        Returns the first observed event of the specified class.
         Raises StopIteration if no such event is found.
         """
         try:
-            return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_type))
+            return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_class) and (not exact or event_class.event_name_from_class() == ev.event.event_name))
         except StopIteration:
-            raise StopIteration(f"No event of type {event_type.__name__} was observed")
+            raise StopIteration(f"No event of class {event_class.event_name_from_class()} was observed")
 
     async def wait_for_event(
         self,
-        event_type: Type[BaseEvent],
+        event_class: Type[BaseEvent],
         timeout: float = 60.0,
         interval: float = 0.1,
     ) -> BaseEvent:
         """
-        Wait until an event of the specified type is observed or until the timeout is reached.
+        Wait until an event of the specified class is observed or until the timeout is reached.
         """
         max_attempts = int(timeout / interval)  # Maximum number of attempts based on the timeout
         attempts = 0
 
-        while not self.has_event_of_type(event_type):
+        while not self.has_event_of_class(event_class):
             if attempts >= max_attempts:
-                raise TimeoutError(f"Timeout waiting for event of type {event_type.__name__}")
+                raise TimeoutError(f"Timeout waiting for event of class {event_class.event_name_from_class()}")
             attempts += 1
             await sleep(interval)
 
-        return self.get_event_of_type(event_type)
+        return self.get_event_of_class(event_class)

@@ -104,10 +104,11 @@ class ChatService:
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
-            parent_classes = [topic.agent_class, HumanInTheLoopResponseEvent.__class__.__name__] + list(get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent))
+            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.name()] + list(get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent))
+            print(messages)
             event = HumanInTheLoopResponseEvent.deserialize_event({
-                "_type": topic.agent_class,
-                "_parent_class_names": parent_classes,
+                "_event_name": topic.event_name,
+                "_parent_event_names": parent_classes,
                 "response": messages[-1].content,
                 "request_event": open_hitl_request.model_dump(),
             })
@@ -303,7 +304,7 @@ class ChatService:
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         content = "".join(chunk.content for chunk in sorted_chunks)
-        reasoning_content = "".join(chunk.reasoning_content for chunk in sorted_chunks)
+        reasoning_content = "".join(chunk.reasoning_content or "" for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             content += stop_event.question
         return content, reasoning_content

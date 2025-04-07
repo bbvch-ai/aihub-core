@@ -43,14 +43,14 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('a ThoughtEvent with content "{thought_content}" is present'))
 def _(agent_runner: AgentTestRunner, thought_content: str):
-    assert agent_runner.has_event_of_type(ThoughtEvent), "ThoughtEvent was not received"
-    assert agent_runner.get_event_of_type(ThoughtEvent).content == thought_content
+    assert agent_runner.has_event_of_class(ThoughtEvent), "ThoughtEvent was not received"
+    assert agent_runner.get_event_of_class(ThoughtEvent, exact=True).reasoning_content == thought_content
 
 
 @then(parsers.parse('a ChunkEvent with content "{chunk_content}" is present'))
 def _(agent_runner: AgentTestRunner, chunk_content: str):
-    assert agent_runner.has_event_of_type(ChunkEvent), "ChunkEvent was not received"
-    assert agent_runner.get_event_of_type(ChunkEvent).content == chunk_content
+    assert agent_runner.has_event_of_class(ChunkEvent), "ChunkEvent was not received"
+    assert agent_runner.get_event_of_class(ChunkEvent, exact=True).content == chunk_content
 
 
 @then("a StopEvent is present")

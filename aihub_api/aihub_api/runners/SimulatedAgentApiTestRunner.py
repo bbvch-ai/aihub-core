@@ -116,21 +116,21 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
         start_events = [
             EventSpecs(
-                event_type=StartEvent.__name__,
+                event_name=StartEvent.event_name_from_class(),
                 event_schema=StartEvent.model_json_schema(),
             ),
             EventSpecs(
-                event_type=UserMessageEvent.__name__,
+                event_name=UserMessageEvent.event_name_from_class(),
                 event_schema=UserMessageEvent.model_json_schema(),
             ),
         ]
         stop_events = [
             EventSpecs(
-                event_type=StopEvent.__name__,
+                event_name=StopEvent.event_name_from_class(),
                 event_schema=StopEvent.model_json_schema(),
             ),
             EventSpecs(
-                event_type=LLMStopEvent.__name__,
+                event_name=LLMStopEvent.event_name_from_class(),
                 event_schema=LLMStopEvent.model_json_schema(),
             ),
         ]
@@ -167,16 +167,16 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         )
         if event.is_control_event:
             subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-                event.__class__.__name__, event.event_id
+                event.event_name, event.event_id
             )
-            logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
+            logger.debug(f"Publishing control event {event.event_name} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
         if event.is_display_event:
             subject = thread_topic_manager.get_subject_for_display_event_in_thread(
-                event.__class__.__name__, event.event_id
+                event.event_name, event.event_id
             )
-            logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
+            logger.debug(f"Publishing display event {event.event_name} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
     async def start_simulation(self):

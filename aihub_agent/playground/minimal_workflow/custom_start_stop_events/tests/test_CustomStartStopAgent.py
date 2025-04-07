@@ -46,4 +46,4 @@ def _(agent_runner: AgentTestRunner, payload: str):
 
 @then(parsers.parse('an MyCustomStopEvent event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.get_event_of_type(MyCustomStopEvent).payload.payload == payload, "Agent received incorrect data"
+    assert agent_runner.get_event_of_class(MyCustomStopEvent).payload.payload == payload, "Agent received incorrect data"

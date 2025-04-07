@@ -204,42 +204,42 @@ def _(agent_runner: AgentTestRunner, payload: str):
 
 @then("a LimitChatHistoryEvent is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.get_event_of_type(LimitChatHistoryEvent), "Agent did not produce LimitChatHistoryEvent"
+    assert agent_runner.get_event_of_class(LimitChatHistoryEvent), "Agent did not produce LimitChatHistoryEvent"
 
 
 @then(parsers.parse("a StandaloneQuestionCondenserEvent is present with condensed question"))
 def _(agent_runner: AgentTestRunner):
-    condenser_event = agent_runner.get_event_of_type(StandaloneQuestionCondenserEvent)
+    condenser_event = agent_runner.get_event_of_class(StandaloneQuestionCondenserEvent)
     assert condenser_event.condensed_chat_message.content, "No condensed question found"
 
 
 @then("a RetrieverEvent is present with retrieved documents")
 def _(agent_runner: AgentTestRunner):
-    retriever_event = agent_runner.get_event_of_type(RetrieverEvent)
+    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
     assert retriever_event.documents, "RetrieverEvent did not produce documents"
 
 
 @then("an InOrderNodeCombinerEvent is present with ordered context message")
 def _(agent_runner: AgentTestRunner):
-    combiner_event = agent_runner.get_event_of_type(InOrderNodeCombinerEvent)
+    combiner_event = agent_runner.get_event_of_class(InOrderNodeCombinerEvent)
     assert combiner_event.context_message, "InOrderNodeCombinerEvent did not produce context message"
 
 
 @then("a LimitChatHistoryWithContextEvent is present with limited history and context")
 def _(agent_runner: AgentTestRunner):
-    history_event = agent_runner.get_event_of_type(LimitChatHistoryWithContextEvent)
+    history_event = agent_runner.get_event_of_class(LimitChatHistoryWithContextEvent)
     assert history_event.limited_history_with_context, "LimitChatHistoryWithContextEvent missing data"
 
 
 @then("an LLMEvent is present with a generated response")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
     assert llm_event, "LLMEvent not produced"
 
 
 @then("the response contains a detailed explanation")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
     assert "detailed" in llm_event.response.content.lower(), "Response does not contain a detailed explanation"
 
 
@@ -277,19 +277,19 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
 
 @then("the few shot guard should reject the user query")
 def _(agent_runner: AgentTestRunner):
-    event = agent_runner.get_event_of_type(FewShotRejectEvent)
+    event = agent_runner.get_event_of_class(FewShotRejectEvent)
     assert event is not None, "FewShotRejectEvent was not produced for an invalid user query"
 
 
 @then("the few shot guard should accept the user query")
 def _(agent_runner: AgentTestRunner):
-    event = agent_runner.get_event_of_type(FewShotAcceptEvent)
+    event = agent_runner.get_event_of_class(FewShotAcceptEvent)
     assert event is not None, "FewShotAcceptEvent was not produced for a valid user query"
 
 
 @then("respond to the user with the reasoning for the rejection")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
     input_messages = llm_event.input_messages
     for msg in input_messages:
         if msg.role == MessageRole.SYSTEM:
@@ -300,6 +300,6 @@ def _(agent_runner: AgentTestRunner):
 
 @then("respond to the user with a generated response")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned for a valid user query"

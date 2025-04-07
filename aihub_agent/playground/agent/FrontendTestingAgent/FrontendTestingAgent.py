@@ -9,7 +9,7 @@ from aihub_lib.nats.events import (
     RetrieverEvent,
     RerankerEvent,
     ToolEvent,
-    StopEvent, AgentInTheLoop, HumanInTheLoop,
+    StopEvent, AgentInTheLoop, HumanInTheLoop, HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent,
 )
 
 from aihub_agent.agents.abstract.Agent import Agent
@@ -17,6 +17,18 @@ from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events.semantic import Embedding
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, SOURCE, CREATED_AT, REFERENCE_URL
+
+class CustomHumanInTheLoopRequestEvent(HumanInTheLoopRequestEvent):
+    pass
+
+
+class CustomHumanInTheLoopResponseEvent(HumanInTheLoopResponseEvent):
+    pass
+
+
+class CustomHumanInTheLoop(HumanInTheLoop):
+    request = CustomHumanInTheLoopRequestEvent
+    response = CustomHumanInTheLoopResponseEvent
 
 
 class FrontendTestingAgent(Agent):
@@ -106,11 +118,11 @@ class FrontendTestingAgent(Agent):
         )
 
     @step()
-    async def hitl_step(self, _: ToolEvent) -> HumanInTheLoop.request:
+    async def hitl_step(self, _: ToolEvent) -> CustomHumanInTheLoop.request:
         print("[HumanInTheLoopAgent.start_step]")
-        return HumanInTheLoop.invoke(question="Shall I continue?")
+        return CustomHumanInTheLoop.invoke(question="Shall I continue?")
 
     @step()
-    async def stop(self, event: HumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+    async def stop(self, event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
         await displayer.display_chunk(content=f"All done: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()

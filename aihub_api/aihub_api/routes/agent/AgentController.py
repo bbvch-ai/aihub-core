@@ -100,8 +100,8 @@ class AgentController(Controller):
         self,
         agent_class,
         agent_id,
-        start_event_type: Type[StartEvent],
-        stop_event_type: Type[StopEvent],
+        start_event_class: Type[StartEvent],
+        stop_event_class: Type[StopEvent],
         route_postfix="/send_event",
     ) -> "AgentController":
         """
@@ -112,8 +112,8 @@ class AgentController(Controller):
         agent_id = snakecase(agent_id)
         postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
         name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
-        start_event_input_type = create_input_model(start_event_type)
-        stop_event_output_type = create_output_model(stop_event_type)
+        start_event_input_type = create_input_model(start_event_class)
+        stop_event_output_type = create_output_model(stop_event_class)
 
         if route_postfix.startswith("/"):
             route_postfix = route_postfix[1:]
@@ -135,7 +135,7 @@ class AgentController(Controller):
             """
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-            start_event = start_event_type(
+            start_event = start_event_class(
                 event_id=str(ObjectId()),
                 created_at=time.time_ns(),
                 **start_event_input.model_dump(),

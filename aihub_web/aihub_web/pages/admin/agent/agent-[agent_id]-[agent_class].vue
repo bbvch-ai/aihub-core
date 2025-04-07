@@ -18,11 +18,11 @@
           </p>
           <div
             v-for="startEvent in startEvents"
-            :key="startEvent.event_type"
+            :key="startEvent.event_name"
           >
             <component
-              :is="startEventComponents[startEvent.event_type]"
-              v-if="startEvent.event_type in startEventComponents"
+              :is="startEventComponents[startEvent.event_name]"
+              v-if="startEvent.event_name in startEventComponents"
             />
           </div>
         </div>

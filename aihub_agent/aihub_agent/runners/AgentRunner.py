@@ -117,11 +117,11 @@ class AgentRunner:
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [
-            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in start_events
+            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in start_events
         ]
 
         stop_events = self.agent_type.get_stop_events()
-        stop_event_specs = [EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in stop_events]
+        stop_event_specs = [EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in stop_events]
 
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
@@ -252,6 +252,6 @@ class AgentRunner:
             run_id,
         )
         subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-            start_event.__class__.__name__, event_id=start_event.event_id
+            start_event.event_name, event_id=start_event.event_id
         )
         await publisher.publish_event(start_event, subject)

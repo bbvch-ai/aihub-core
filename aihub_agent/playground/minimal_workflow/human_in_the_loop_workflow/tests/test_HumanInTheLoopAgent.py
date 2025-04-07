@@ -60,13 +60,13 @@ def _(agent_runner: AgentTestRunner):
 @then("a HumanInTheLoopRequestEvent event is present")
 def _(agent_runner: AgentTestRunner):
     # Make sure the agent emitted HumanInTheLoopRequestEvent
-    assert agent_runner.has_event_of_type(HumanInTheLoopRequestEvent)
+    assert agent_runner.has_event_of_class(HumanInTheLoopRequestEvent)
 
 
 @then(parsers.parse('a HumanInTheLoopResponseEvent event with the response "{response}" is present'))
 def _(agent_runner: AgentTestRunner, response: str):
     assert (
-        agent_runner.get_event_of_type(HumanInTheLoopResponseEvent).response == response
+            agent_runner.get_event_of_class(HumanInTheLoopResponseEvent).response == response
     ), "Agent did not receive correct response"
 
 
