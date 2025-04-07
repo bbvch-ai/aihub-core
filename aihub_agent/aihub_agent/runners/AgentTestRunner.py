@@ -218,7 +218,7 @@ class AgentTestRunner(AgentRunner):
     def get_event_of_class(
         self,
         event_class: Type[BaseEvent],
-        exact: Annotated[bool, "Mus the event be an exact match or is subclass okay?"] = False,
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> BaseEvent:
         """
         Returns the first observed event of the specified class.
