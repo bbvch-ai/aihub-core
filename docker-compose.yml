@@ -75,3 +75,5 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
 
+volumes:
+  redis-data: {}
