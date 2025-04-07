@@ -34,7 +34,9 @@ enable_logging()
 async def main():
     runner = ApiTestRunner()
 
-    frontend_dir = join(dirname(abspath(__file__)), "..", "..", "..", "aihub_web", "aihub_web", ".playground", ".output", "public")
+    frontend_dir = join(
+        dirname(abspath(__file__)), "..", "..", "..", "aihub_web", "aihub_web", ".playground", ".output", "public"
+    )
     if isdir(join(frontend_dir, "_nuxt")):
         runner.mount_frontend(frontend_dir)
 

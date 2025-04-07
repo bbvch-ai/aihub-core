@@ -45,14 +45,10 @@ class JSPublisher(Generic[TEvent]):
         logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
-            logger.warning(
-                f"Control event {event.event_name} is being published to a non-control subject: {subject}"
-            )
+            logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
 
         if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
-            logger.warning(
-                f"Display event {event.event_name} is being published to a non-display subject: {subject}"
-            )
+            logger.warning(f"Display event {event.event_name} is being published to a non-display subject: {subject}")
 
         message_id = str(uuid.uuid4())
         headers = {"Nats-Msg-Id": message_id}  # Deduplication
@@ -66,9 +62,7 @@ class JSPublisher(Generic[TEvent]):
                 logger.debug(f"Publish ACK received: {ack}")
                 return  # Success, no retry needed
             except asyncio.TimeoutError:
-                logger.warning(
-                    f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}"
-                )
+                logger.warning(f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}")
             except Exception as e:
                 logger.error(f"NATS error while publishing event: {e}")
 

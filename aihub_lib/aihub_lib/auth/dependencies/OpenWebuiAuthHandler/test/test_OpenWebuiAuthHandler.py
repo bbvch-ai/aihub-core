@@ -1,7 +1,6 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Generator
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bson import ObjectId
@@ -33,9 +32,11 @@ def mongo_connection(monkeypatch) -> Generator[None, None, None]:
 
 # --- Mocking Fixtures ---
 
+
 class MockTokenResponse:
     def __init__(self):
         self.token = "mock-access-token"
+
 
 class MockCredential:
     def __init__(self):
@@ -51,7 +52,7 @@ def mock_azure_credential(monkeypatch):
     """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
     monkeypatch.setattr(
         "aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler.DefaultAzureCredential",
-        lambda: MockCredential()
+        lambda: MockCredential(),
     )
 
 
@@ -64,7 +65,7 @@ def mock_get_user_by_email(monkeypatch):
     yield
 
     # Restore the original method after test
-    monkeypatch.setattr(OpenWebuiAuthHandler, 'get_user_by_email', original_method)
+    monkeypatch.setattr(OpenWebuiAuthHandler, "get_user_by_email", original_method)
 
 
 # --- Scenario Declarations ---
@@ -123,7 +124,9 @@ def generate_dummy_valid_token(oid: str) -> str:
         'a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'
     )
 )
-def insert_token_document(token_context: dict, cleanup_token: list, name: str, email: str, roles: str, monkeypatch) -> None:
+def insert_token_document(
+    token_context: dict, cleanup_token: list, name: str, email: str, roles: str, monkeypatch
+) -> None:
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
@@ -169,7 +172,7 @@ def insert_token_document(token_context: dict, cleanup_token: list, name: str, e
         )
 
     # Replace the entire call method
-    monkeypatch.setattr(OpenWebuiAuthHandler, '__call__', mock_handler_call)
+    monkeypatch.setattr(OpenWebuiAuthHandler, "__call__", mock_handler_call)
 
 
 @given(parsers.parse('an invalid token format "{token}"'))
@@ -181,7 +184,7 @@ def invalid_token_format(token_context: dict, token: str, monkeypatch) -> None:
     async def mock_handler_call(self, request, bearer_token):
         raise HTTPException(status_code=401, detail="Invalid token format")
 
-    monkeypatch.setattr(OpenWebuiAuthHandler, '__call__', mock_handler_call)
+    monkeypatch.setattr(OpenWebuiAuthHandler, "__call__", mock_handler_call)
 
 
 @given(parsers.parse('a token does not exist in the database with token "{token}"'))
@@ -197,7 +200,7 @@ def token_not_found(token_context: dict, token: str, monkeypatch) -> None:
     async def mock_handler_call(self, request, bearer_token):
         raise HTTPException(status_code=401, detail="Token not found")
 
-    monkeypatch.setattr(OpenWebuiAuthHandler, '__call__', mock_handler_call)
+    monkeypatch.setattr(OpenWebuiAuthHandler, "__call__", mock_handler_call)
 
 
 @given("I modify the token to cause a mismatch")
@@ -217,7 +220,7 @@ def modify_token_for_mismatch(token_context: dict, monkeypatch) -> None:
     async def mock_handler_call(self, request, bearer_token):
         raise HTTPException(status_code=401, detail="Token mismatch")
 
-    monkeypatch.setattr(OpenWebuiAuthHandler, '__call__', mock_handler_call)
+    monkeypatch.setattr(OpenWebuiAuthHandler, "__call__", mock_handler_call)
 
 
 @given("I set the token expiry to a past time")
@@ -232,7 +235,7 @@ def set_token_expired(token_context: dict, monkeypatch) -> None:
     async def mock_handler_call(self, request, bearer_token):
         raise HTTPException(status_code=401, detail="Token expired")
 
-    monkeypatch.setattr(OpenWebuiAuthHandler, '__call__', mock_handler_call)
+    monkeypatch.setattr(OpenWebuiAuthHandler, "__call__", mock_handler_call)
 
 
 # --- When Steps ---
@@ -301,7 +304,7 @@ def check_preferred_username(token_context_result: dict, expected_email: str) ->
     """Check that the authenticated user has the expected preferred username."""
     user = token_context_result.get("user")
     assert (
-            user.preferred_username == expected_email
+        user.preferred_username == expected_email
     ), f"Expected email '{expected_email}', got '{user.preferred_username}'"
 
 

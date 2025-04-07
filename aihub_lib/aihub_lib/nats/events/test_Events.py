@@ -285,7 +285,11 @@ def test_missing_fields():
 def test_extra_fields():
     """Test deserialization with extra fields."""
     # Extra fields should be preserved
-    extra_data = {"_event_name": "TestStartEvent", "message": "Hello", "extra_field": "This wasn't in the original class"}
+    extra_data = {
+        "_event_name": "TestStartEvent",
+        "message": "Hello",
+        "extra_field": "This wasn't in the original class",
+    }
 
     event = BaseEvent.deserialize_event(extra_data)
 

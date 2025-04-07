@@ -14,12 +14,13 @@ from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import (
+    BaseEvent,
     ChunkEvent,
     DisplayEvent,
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
-    StopEvent, BaseEvent,
+    StopEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.events.utils import get_parent_classes_until_base
@@ -104,14 +105,18 @@ class ChatService:
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
-            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.name()] + list(get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent))
+            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.name()] + list(
+                get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
+            )
             print(messages)
-            event = HumanInTheLoopResponseEvent.deserialize_event({
-                "_event_name": topic.event_name,
-                "_parent_event_names": parent_classes,
-                "response": messages[-1].content,
-                "request_event": open_hitl_request.model_dump(),
-            })
+            event = HumanInTheLoopResponseEvent.deserialize_event(
+                {
+                    "_event_name": topic.event_name,
+                    "_parent_event_names": parent_classes,
+                    "response": messages[-1].content,
+                    "request_event": open_hitl_request.model_dump(),
+                }
+            )
             display_id = event.request_event.topic.display_id
         else:
             event = UserMessageEvent(

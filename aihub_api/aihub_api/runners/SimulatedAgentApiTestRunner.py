@@ -166,16 +166,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             run_id=topic.run_id,
         )
         if event.is_control_event:
-            subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-                event.event_name, event.event_id
-            )
+            subject = thread_topic_manager.get_subject_for_control_event_in_thread(event.event_name, event.event_id)
             logger.debug(f"Publishing control event {event.event_name} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
         if event.is_display_event:
-            subject = thread_topic_manager.get_subject_for_display_event_in_thread(
-                event.event_name, event.event_id
-            )
+            subject = thread_topic_manager.get_subject_for_display_event_in_thread(event.event_name, event.event_id)
             logger.debug(f"Publishing display event {event.event_name} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 

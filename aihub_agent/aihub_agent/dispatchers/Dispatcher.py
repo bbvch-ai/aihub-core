@@ -240,11 +240,15 @@ class Dispatcher:
 
         # For each parameter, check if we have enough events
         for argument_name, event_classes in input_event_mapping.items():
-            logger.debug(f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_classes}")
+            logger.debug(
+                f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_classes}"
+            )
             required_size = size_requirements.get(argument_name)
             is_optional = parameter_optional_map.get(argument_name, False)
 
-            available_events_count = sum(len(events.get(event_class.event_name_from_class(), [])) for event_class in event_classes)
+            available_events_count = sum(
+                len(events.get(event_class.event_name_from_class(), [])) for event_class in event_classes
+            )
 
             # If a fixed size is required, verify count
             if required_size is not None and available_events_count < required_size:

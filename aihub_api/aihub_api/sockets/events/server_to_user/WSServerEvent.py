@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, Union, Annotated
+from typing import Annotated, Any, Dict, Optional, Union
 
 from aihub_lib.nats.events import (
     AgentEvent,
@@ -10,6 +10,7 @@ from aihub_lib.nats.events import (
     ChunkEvent,
     DisplayEvent,
     EmbeddingEvent,
+    ExceptionEvent,
     GuardRejectionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
@@ -22,12 +23,12 @@ from aihub_lib.nats.events import (
     StopEvent,
     ThoughtEvent,
     ToolEvent,
-    UserMessageEvent, ExceptionEvent,
+    UserMessageEvent,
 )
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
-from pydantic import BaseModel, Field, Tag, Discriminator
+from pydantic import BaseModel, Discriminator, Field, Tag
 from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
@@ -101,7 +102,11 @@ class WSServerEvent(BaseModel):
     )
     event_name: str = Field(..., description="Name of the event, indicating its subtype or category.")
     event_id: str = Field(..., description="Unique identifier of this event instance.")
-    event: DisplayEvents = Field(..., description="Payload of the event, containing detailed information.", discriminator=Discriminator(event_discriminator))
+    event: DisplayEvents = Field(
+        ...,
+        description="Payload of the event, containing detailed information.",
+        discriminator=Discriminator(event_discriminator),
+    )
 
     @classmethod
     def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":

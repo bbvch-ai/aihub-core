@@ -25,6 +25,7 @@ class DummySuccessAuth(AuthHandler):
             roles=["user"],
         )
 
+
 class DummyFailureAuth(AuthHandler):
     def __init__(self, detail: str, status_code: int = 401):
         self.detail = detail
@@ -50,6 +51,7 @@ class DummyFailureNon401(AuthHandler):
     async def authenticate_token(self, token: str) -> AuthenticatedUser:
         """Raise HTTPException with a non-401 error."""
         raise HTTPException(status_code=500, detail=self.detail)
+
 
 # --- Fixtures to store context ---
 

@@ -2,9 +2,7 @@ import json
 
 from pydantic import BaseModel, Field
 
-from aihub_lib.nats.events import StartEvent, ControlEvent, BaseEvent
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
-from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent
 
 
 class ExternalEvent(BaseModel):
@@ -42,9 +40,7 @@ class ExternalEvent(BaseModel):
 
     thread_id: str = Field(..., description="ID of the thread this event is related to.")
     display_id: str = Field(..., description="Display session ID, grouping events in the UI.")
-    event: ControlEvent = Field(
-        ..., description="The user-originated event."
-    )
+    event: ControlEvent = Field(..., description="The user-originated event.")
 
     @classmethod
     def deserialize_event(cls, data: bytes | str | dict) -> "ExternalEvent":
@@ -57,7 +53,6 @@ class ExternalEvent(BaseModel):
             json_data = json.loads(data.decode())
         else:
             raise ValueError(f"Cannot deserialize data of type {type(data)}")
-
 
         thread_id = json_data.get("thread_id")
         display_id = json_data.get("display_id")

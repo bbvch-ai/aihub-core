@@ -43,13 +43,9 @@ class NCPublisher(Generic[TEvent]):
         logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
-            logger.warning(
-                f"Control event {event.event_name} is being published to a non-control subject: {subject}"
-            )
+            logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
 
         if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
-            logger.warning(
-                f"Display event {event.event_name} is being published to a non-display subject: {subject}"
-            )
+            logger.warning(f"Display event {event.event_name} is being published to a non-display subject: {subject}")
 
         await self.nc.publish(subject, serialized_event.encode())

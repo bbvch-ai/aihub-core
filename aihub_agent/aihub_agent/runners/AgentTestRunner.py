@@ -1,6 +1,6 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, List, Optional, Type, Annotated
+from typing import Annotated, AsyncGenerator, List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
@@ -215,13 +215,22 @@ class AgentTestRunner(AgentRunner):
         """Check if any event of the specified class was observed."""
         return any(isinstance(ev.event, event_class) for ev in self.observed_events)
 
-    def get_event_of_class(self, event_class: Type[BaseEvent], exact: Annotated[bool, 'Mus the event be an exact match or is subclass okay?']=False) -> BaseEvent:
+    def get_event_of_class(
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Mus the event be an exact match or is subclass okay?"] = False,
+    ) -> BaseEvent:
         """
         Returns the first observed event of the specified class.
         Raises StopIteration if no such event is found.
         """
         try:
-            return next(ev.event for ev in self.observed_events if isinstance(ev.event, event_class) and (not exact or event_class.event_name_from_class() == ev.event.event_name))
+            return next(
+                ev.event
+                for ev in self.observed_events
+                if isinstance(ev.event, event_class)
+                and (not exact or event_class.event_name_from_class() == ev.event.event_name)
+            )
         except StopIteration:
             raise StopIteration(f"No event of class {event_class.event_name_from_class()} was observed")
 

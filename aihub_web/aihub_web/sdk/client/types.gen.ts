@@ -91,11 +91,11 @@ export type AgentEvent = {
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -122,11 +122,11 @@ export type AgentInTheLoopExceptionEvent = {
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | ExceptionEvent | Array<string> | undefined;
 };
 
@@ -167,14 +167,14 @@ export type AgentInTheLoopRequestEvent = {
      */
     share_run_id?: boolean;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | StartEvent | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
 };
 
@@ -197,14 +197,14 @@ export type AgentInTheLoopResponseEvent = {
      */
     stop_event: StopEvent;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | StopEvent | Array<string> | undefined;
 };
 
@@ -378,14 +378,14 @@ export type ChainEvent = {
         [key: string]: unknown;
     } | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | ({
         [key: string]: unknown;
     } | null) | Array<string> | undefined;
@@ -658,14 +658,14 @@ export type ChunkEvent = {
      */
     reasoning_content?: string | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (string | null) | Array<string> | undefined;
 };
 
@@ -749,14 +749,14 @@ export type DisplayEvent = {
      */
     created_at?: number;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -798,9 +798,9 @@ export type EdgeData = {
      */
     edge_id: number;
     /**
-     * Type of event represented by this edge
+     * Event represented by this edge
      */
-    event_type: string;
+    event_name: string;
     /**
      * Fully qualified name of the event
      */
@@ -851,14 +851,14 @@ export type EmbeddingEvent = {
      */
     embeddings?: Array<Embedding> | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
 };
 
@@ -962,9 +962,9 @@ export type EventPayloadField = {
  */
 export type EventSpecs = {
     /**
-     * The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.
+     * The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.
      */
-    event_type: string;
+    event_name: string;
     /**
      * A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.
      */
@@ -1002,14 +1002,14 @@ export type ExceptionEvent = {
      */
     http_status_code?: number;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -1070,14 +1070,14 @@ export type GuardRejectionEvent = {
      */
     reason: string;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -1119,14 +1119,14 @@ export type HumanInTheLoopRequestEvent = {
      */
     topic: PartialAgentTopic | AgentTopic;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
 };
 
@@ -1153,14 +1153,14 @@ export type HumanInTheLoopResponseEvent = {
      */
     request_event: HumanInTheLoopRequestEvent;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | HumanInTheLoopRequestEvent | Array<string> | undefined;
 };
 
@@ -1218,9 +1218,9 @@ export type InputAudio = {
  */
 export type InputEventInfo = {
     /**
-     * The types of events that can be accepted
+     * The events that can be accepted
      */
-    event_types: Array<EventInfo>;
+    event_names: Array<EventInfo>;
     /**
      * Whether this input is optional
      */
@@ -1281,14 +1281,14 @@ export type LlmCostEvent = {
      */
     llm_name: string;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | number | number | string | Array<string> | undefined;
 };
 
@@ -1357,14 +1357,14 @@ export type LlmEvent = {
         [key: string]: unknown;
     }> | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (Array<Message> | null) | (Array<Message> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
@@ -1439,14 +1439,14 @@ export type LlmStopEvent = {
         [key: string]: unknown;
     }> | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (Array<Message> | null) | (Array<Message> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
@@ -1774,14 +1774,14 @@ export type RerankerEvent = {
      */
     top_k?: number | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
@@ -1809,14 +1809,14 @@ export type RetrieverEvent = {
      */
     documents?: Array<Document> | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (Array<Document> | null) | Array<string> | undefined;
 };
 
@@ -1859,14 +1859,14 @@ export type SemanticEvent = {
      */
     created_at?: number;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -1907,14 +1907,14 @@ export type StartEvent = {
      */
     created_at?: number;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -1944,14 +1944,14 @@ export type StopEvent = {
      */
     created_at?: number;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
@@ -2020,14 +2020,14 @@ export type ThoughtEvent = {
      */
     reasoning_content?: string | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (string | null) | Array<string> | undefined;
 };
 
@@ -2086,14 +2086,14 @@ export type ToolEvent = {
         [key: string]: unknown;
     } | null;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (string | null) | (string | null) | ({
         [key: string]: unknown;
     } | null) | ({
@@ -2234,14 +2234,14 @@ export type UserMessageEvent = {
      */
     messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
     /**
-     * The event type name, usually the class name. If unknown, uses _unknown_type.
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
-    readonly _type: string;
+    readonly _event_name: string;
     /**
      * Contains the names of all parent classes up until BaseEvent.
      */
-    readonly _parent_class_names: Array<string>;
+    readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (string | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | Array<string> | undefined;
 };
 

@@ -140,26 +140,26 @@ export const AgentEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'AgentEvent'
 } as const;
 
@@ -178,26 +178,26 @@ export const AgentInTheLoopExceptionEventSchema = {
             '$ref': '#/components/schemas/ExceptionEvent',
             description: 'The exception event from the delegated agent containing error details and failure context.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['exception_event', '_type', '_parent_class_names'],
+    required: ['exception_event', '_event_name', '_parent_event_names'],
     title: 'AgentInTheLoopExceptionEvent',
     description: `An error response from an agent when a delegated task fails.
 
@@ -253,26 +253,26 @@ export const AgentInTheLoopRequestEventSchema = {
             description: 'Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!',
             default: false
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['start_event', 'other_agent_topic', '_type', '_parent_class_names'],
+    required: ['start_event', 'other_agent_topic', '_event_name', '_parent_event_names'],
     title: 'AgentInTheLoopRequestEvent',
     description: `An event delegating a task to another agent at a specific point in a workflow.
 
@@ -299,26 +299,26 @@ export const AgentInTheLoopResponseEventSchema = {
             '$ref': '#/components/schemas/StopEvent',
             description: 'The stop event from the delegated agent containing the task results and marks the completion.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['stop_event', '_type', '_parent_class_names'],
+    required: ['stop_event', '_event_name', '_parent_event_names'],
     title: 'AgentInTheLoopResponseEvent',
     description: `A response from an agent after completing a delegated task.
 
@@ -355,7 +355,7 @@ export const AgentTopicSchema = {
             title: 'Display Id',
             description: 'UI-facing grouping ID, used to distinguish or group related runs.'
         },
-        eventname: {
+        event_type: {
             type: 'string',
             title: 'Event Type',
             description: "Type of event (e.g., 'display_event', 'control_event')."
@@ -758,26 +758,26 @@ export const ChainEventSchema = {
             title: 'Metadata',
             description: 'Metadata associated with the chain as a dictionary JSON string. For example, LangChain uses metadata to store user-defined attributes for a chain.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'ChainEvent'
 } as const;
 
@@ -2019,26 +2019,26 @@ export const ChunkEventSchema = {
             title: 'Reasoning Content',
             description: 'The textual representation of the agent’s internal reasoning at a particular point in time.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'ChunkEvent',
     description: `An event representing a portion of output or generated content (a "chunk") that is
 streamed or delivered in segments—common in incremental output scenarios like LLM
@@ -2258,26 +2258,26 @@ export const DisplayEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'DisplayEvent',
     description: `Represents a user-facing event that can be shown to end-users, UIs, or monitoring dashboards.
 Display events are purely informational and never affect the control flow or execution order
@@ -2360,10 +2360,10 @@ export const EdgeDataSchema = {
             title: 'Edge Id',
             description: 'Unique identifier for the edge'
         },
-        event_type: {
+        event_name: {
             type: 'string',
-            title: 'Event Type',
-            description: 'Type of event represented by this edge'
+            title: 'Event Name',
+            description: 'Event represented by this edge'
         },
         event_full_name: {
             type: 'string',
@@ -2390,7 +2390,7 @@ export const EdgeDataSchema = {
         }
     },
     type: 'object',
-    required: ['source', 'target', 'edge_id', 'event_type', 'event_full_name', 'is_start_event', 'is_stop_event', 'payload'],
+    required: ['source', 'target', 'edge_id', 'event_name', 'event_full_name', 'is_start_event', 'is_stop_event', 'payload'],
     title: 'EdgeData',
     description: 'Data for an edge in the workflow graph.'
 } as const;
@@ -2479,26 +2479,26 @@ export const EmbeddingEventSchema = {
             title: 'Embeddings',
             description: 'A list of embedding objects containing text and vector data.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'EmbeddingEvent'
 } as const;
 
@@ -2702,10 +2702,10 @@ export const EventPayloadFieldSchema = {
 
 export const EventSpecsSchema = {
     properties: {
-        event_type: {
+        event_name: {
             type: 'string',
-            title: 'Event Type',
-            description: 'The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.'
+            title: 'Event Name',
+            description: 'The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.'
         },
         event_schema: {
             type: 'object',
@@ -2714,7 +2714,7 @@ export const EventSpecsSchema = {
         }
     },
     type: 'object',
-    required: ['event_type', 'event_schema'],
+    required: ['event_name', 'event_schema'],
     title: 'EventSpecs',
     description: 'Defines a specification for a start event that an agent can handle.'
 } as const;
@@ -2741,26 +2741,26 @@ export const ExceptionEventSchema = {
             description: 'HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).',
             default: 500
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['message', '_type', '_parent_class_names'],
+    required: ['message', '_event_name', '_parent_event_names'],
     title: 'ExceptionEvent',
     description: `An event signaling that an exception or error has occurred during a run.
 
@@ -2908,26 +2908,26 @@ export const GuardRejectionEventSchema = {
             title: 'Reason',
             description: 'Reason why the Guard rejected the request.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['reason', '_type', '_parent_class_names'],
+    required: ['reason', '_event_name', '_parent_event_names'],
     title: 'GuardRejectionEvent',
     description: `A class representing a guard rejection event.
 This event is used to communicate the reason for the rejection to the client.
@@ -2998,26 +2998,26 @@ export const HumanInTheLoopRequestEventSchema = {
             title: 'Topic',
             description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['question', 'topic', '_type', '_parent_class_names'],
+    required: ['question', 'topic', '_event_name', '_parent_event_names'],
     title: 'HumanInTheLoopRequestEvent',
     description: `An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
@@ -3047,26 +3047,26 @@ export const HumanInTheLoopResponseEventSchema = {
             '$ref': '#/components/schemas/HumanInTheLoopRequestEvent',
             description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['response', 'request_event', '_type', '_parent_class_names'],
+    required: ['response', 'request_event', '_event_name', '_parent_event_names'],
     title: 'HumanInTheLoopResponseEvent',
     description: `A response from a human operator after a HITL request.
 
@@ -3337,13 +3337,13 @@ export const InputAudioSchema = {
 
 export const InputEventInfoSchema = {
     properties: {
-        event_types: {
+        event_names: {
             items: {
                 '$ref': '#/components/schemas/EventInfo'
             },
             type: 'array',
-            title: 'Event Types',
-            description: 'The types of events that can be accepted'
+            title: 'Event Names',
+            description: 'The events that can be accepted'
         },
         optional: {
             type: 'boolean',
@@ -3352,7 +3352,7 @@ export const InputEventInfoSchema = {
         }
     },
     type: 'object',
-    required: ['event_types', 'optional'],
+    required: ['event_names', 'optional'],
     title: 'InputEventInfo',
     description: 'Information about an input event for a step.'
 } as const;
@@ -3434,26 +3434,26 @@ export const LLMCostEventSchema = {
             title: 'Llm Name',
             description: "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to."
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['prompt_token_count', 'completion_token_count', 'embedding_token_count', 'prompt_tokens_costs', 'completion_tokens_costs', 'embedding_tokens_costs', 'llm_name', '_type', '_parent_class_names'],
+    required: ['prompt_token_count', 'completion_token_count', 'embedding_token_count', 'prompt_tokens_costs', 'completion_tokens_costs', 'embedding_tokens_costs', 'llm_name', '_event_name', '_parent_event_names'],
     title: 'LLMCostEvent',
     description: `A concrete event representing the costs associated with Large Language Model operations,
 including prompt, completion, and embedding token usage.
@@ -3644,26 +3644,26 @@ export const LLMEventSchema = {
             title: 'Tools',
             description: 'List of tools that are advertised to the LLM to be able to call.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'LLMEvent'
 } as const;
 
@@ -3846,26 +3846,26 @@ export const LLMStopEventSchema = {
             title: 'Tools',
             description: 'List of tools that are advertised to the LLM to be able to call.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'LLMStopEvent'
 } as const;
 
@@ -4624,26 +4624,26 @@ export const RerankerEventSchema = {
             title: 'Top K',
             description: 'The top K parameter, representing the number of results to be reranked.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'RerankerEvent'
 } as const;
 
@@ -4715,26 +4715,26 @@ export const RetrieverEventSchema = {
             title: 'Documents',
             description: 'List of documents retrieved by the retriever, including document IDs, scores, and content.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'RetrieverEvent'
 } as const;
 
@@ -4762,26 +4762,26 @@ export const SemanticEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'SemanticEvent',
     description: `A base class for events that must report their data to an OpenInference-compatible tracing system,
 such as Arize Phoenix. By inheriting from both \`ControlEvent\` and \`DisplayEvent\`, \`SemanticEvent\`:
@@ -4850,26 +4850,26 @@ export const StartEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'StartEvent',
     description: `An event signaling the start of a new run within a thread, providing initial context such as
 user messages, assistant responses, and locale settings.
@@ -4893,26 +4893,26 @@ export const StopEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'StopEvent',
     description: `An event signaling the conclusion of a run within a thread, acting both as a control signal
 and a user-facing message.
@@ -5059,26 +5059,26 @@ export const ThoughtEventSchema = {
             title: 'Reasoning Content',
             description: 'The textual representation of the agent’s internal reasoning at a particular point in time.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'ThoughtEvent',
     description: `An event representing the system or agent's internal reasoning process, often displayed as
 a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -5228,26 +5228,26 @@ export const ToolEventSchema = {
             title: 'Parameters',
             description: 'The parameters definition for invoking the tool'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['_type', '_parent_class_names'],
+    required: ['_event_name', '_parent_event_names'],
     title: 'ToolEvent'
 } as const;
 
@@ -5601,26 +5601,26 @@ export const UserMessageEventSchema = {
             title: 'Messages',
             description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
         },
-        _type: {
+        _event_name: {
             type: 'string',
-            title: 'Type',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_type.
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
 Used during deserialization to decide which subclass to instantiate.`,
             readOnly: true
         },
-        _parent_class_names: {
+        _parent_event_names: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Parent Class Names',
+            title: 'Parent Event Names',
             description: 'Contains the names of all parent classes up until BaseEvent.',
             readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['user', '_type', '_parent_class_names'],
+    required: ['user', '_event_name', '_parent_event_names'],
     title: 'UserMessageEvent',
     description: `A start event triggered directly by a user's message, bridging both display and control functionalities.
 
