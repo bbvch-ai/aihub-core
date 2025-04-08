@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -11,8 +12,6 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
-
-from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import HitlHandler
 
 
 @asynccontextmanager
@@ -34,28 +33,28 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         topic_manager = TopicManager()
 
-        # Setup Human In The Loop (HITL) subscriber
-        hitl_handler = HitlHandler()
-        hitl_subscriber = NCSubscriber.all_for_agent_display_events(
+        # Setup Human In The Loop (BOT_IN_THE_LOOP) subscriber
+        bot_in_the_loop_handler = BotInTheLoopHandler()
+        bot_in_the_loop_subscriber = NCSubscriber.all_for_agent_display_events(
             nc=nc,
             topic_manager=topic_manager,
-            handler=hitl_handler.handle_display_event,
+            handler=bot_in_the_loop_handler.handle_display_event,
         )
-        await hitl_subscriber.start()
+        await bot_in_the_loop_subscriber.start()
 
         external_event_distributor = ExternalEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
-        app.state.hitl_handler = hitl_handler
+        app.state.bot_in_the_loop_handler = bot_in_the_loop_handler
         app.state.external_event_distributor = external_event_distributor
 
         # Yield control back to FastAPI to start serving requests
         yield
 
         # Shutdown: stop subscribers
-        await hitl_subscriber.stop()
+        await bot_in_the_loop_subscriber.stop()
         disconnect()
 
     finally:
