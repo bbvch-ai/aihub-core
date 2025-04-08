@@ -96,11 +96,8 @@ redis = "^5.2.1"
 transformers = "^4.48.1"
 
 [package.source]
-type = "git"
-url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.131.0"
-resolved_reference = "4be60e4a94bcef4add4db055e0e546f8b6f0b8f8"
-subdirectory = "aihub_lib"
+type = "directory"
+url = "../aihub_lib"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -5457,4 +5454,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "584d5a526063930cc6e406d7e867609c7a0b3d31333d943ece2a4d17878a52ec"
+content-hash = "6fa18d3529cf649e7f26ceabd861901ffc28a4ed562c5ada20aad2a6a75d5065"

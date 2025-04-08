@@ -10,8 +10,6 @@ class NatsConfig(StorageConfig):
     """Configuration class for Nats infrastructure"""
 
     # Required fields
-    stack: str
-    name: str
     project_name: str
     location: str
     location_short: str
@@ -27,14 +25,12 @@ class NatsConfig(StorageConfig):
     redis_volume: str = "azurefilevolumeredis"
 
     @classmethod
-    def from_env(cls, stack: str, name: str, nats_image_tag: str, redis_image_tag: str) -> "NatsConfig":
+    def from_env(cls, nats_image_tag: str, redis_image_tag: str) -> "NatsConfig":
         """Create a configuration from environment variables"""
         project_settings = ProjectSettings()
         registry_settings = RegistrySettings()
 
         return cls(
-            stack=stack,
-            name=name,
             nats_image_tag=nats_image_tag,
             redis_image_tag=redis_image_tag,
             project_name=project_settings.APP_NAME,

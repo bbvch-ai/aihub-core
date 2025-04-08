@@ -262,6 +262,23 @@ pulumi = ">=3.142.0,<4.0.0"
 semver = ">=2.8.1"
 
 [[package]]
+name = "pulumi-command"
+version = "1.0.2"
+description = "The Pulumi Command Provider enables you to execute commands and scripts either locally or remotely as part of the Pulumi resource model."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "pulumi_command-1.0.2-py3-none-any.whl", hash = "sha256:c75424fe6a80b495bec33c19c8ae97240f38003eb35f865a78ff59425bf9531c"},
+    {file = "pulumi_command-1.0.2.tar.gz", hash = "sha256:17b4010149a62ebce85a35f412fca6f7f508a24e54ee43d73c900e27869cae3e"},
+]
+
+[package.dependencies]
+parver = ">=0.2.1"
+pulumi = ">=3.142.0,<4.0.0"
+semver = ">=2.8.1"
+
+[[package]]
 name = "pydantic"
 version = "2.11.1"
 description = "Data validation using Python type hints"
@@ -548,4 +565,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "6f0034f3cb4f511274c6ea80a563698fd5909c6eac3f23078a2c8ac79b083b27"
+content-hash = "3b2bca5f7d9ca4f084f676b9021a60e21b6dfed72afd540293ec92bd0110cf9d"

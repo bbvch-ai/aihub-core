@@ -11,8 +11,6 @@ class NetworkConfig(BaseModel):
     """Configuration class for Nats infrastructure"""
 
     # Required fields
-    stack: str
-    name: str
     project_name: str
     location: str
     location_short: str
@@ -21,12 +19,10 @@ class NetworkConfig(BaseModel):
     network_provider: NetworkProvider
 
     @classmethod
-    def from_env(cls, stack: str, name: str) -> "NetworkConfig":
+    def from_env(cls) -> "NetworkConfig":
         """Create a configuration from environment variables"""
         project_settings = ProjectSettings()
         return cls(
-            stack=stack,
-            name=name,
             project_name=project_settings.APP_NAME,
             location=project_settings.LOCATION,
             location_short=project_settings.LOCATION_SHORT,

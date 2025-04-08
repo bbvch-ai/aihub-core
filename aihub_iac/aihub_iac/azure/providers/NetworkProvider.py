@@ -27,6 +27,12 @@ class NetworkProvider:
     def get_nats_subnet(self):
         self.get_subnet(subnet_name=self.nats_subnet_name)
 
+    def get_cap_subnet(self):
+        self.get_subnet(subnet_name=self.cap_subnet_name)
+
+    def get_pg_subnet(self):
+        self.get_subnet(subnet_name=self.pg_subnet_name)
+
     @property
     def v_net_name(self):
         return f"{self.project_name}-{V_NET}-{self.location_short_name}"

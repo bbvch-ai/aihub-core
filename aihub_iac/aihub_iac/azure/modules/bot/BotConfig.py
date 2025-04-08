@@ -9,10 +9,6 @@ from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 class BotConfig(BaseModel):
     """Configuration class for Bot service infrastructure"""
 
-    # Basic configuration
-    stack: str
-    name: str
-
     # Project and environment settings
     project_name: str
     location: str
@@ -51,13 +47,11 @@ class BotConfig(BaseModel):
     @classmethod
     def from_env(
         cls,
-        stack: str,
-        name: str,
         repo_image_url: str,
         docker_image_tag: str,
         app_service_plan_name: str,
-        cosmos_account_name: str,
-        cosmos_resource_group: str,
+        cosmos_account_name: str | None,
+        cosmos_resource_group: str | None,
         anonym_name: str,
         anonym_email: str,
         anonym_roles: str,
@@ -71,8 +65,6 @@ class BotConfig(BaseModel):
         oauth_settings = OAuthSettings()
 
         return cls(
-            stack=stack,
-            name=name,
             repo_image_url=repo_image_url,
             docker_image_tag=docker_image_tag,
             app_service_plan_name=app_service_plan_name,

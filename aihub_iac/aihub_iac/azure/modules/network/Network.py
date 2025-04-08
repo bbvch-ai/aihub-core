@@ -7,7 +7,7 @@ from aihub_iac.azure.constants.resources import V_NET
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
 
 
-class NetworkInfrastructure(pulumi.ComponentResource):
+class Network(pulumi.ComponentResource):
     """A Pulumi component resource for creating network infrastructure"""
 
     def __init__(self, stack: str, name: str, config: NetworkConfig, opts: Optional[pulumi.ResourceOptions] = None):
