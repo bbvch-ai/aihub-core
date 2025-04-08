@@ -6,7 +6,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import Chat
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
-from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 
 
 class RAGAgentConfig(AgentConfig):

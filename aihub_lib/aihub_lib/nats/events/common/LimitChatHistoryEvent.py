@@ -1,11 +1,13 @@
 from typing import List
 
-from aihub_lib.nats.events import ControlEvent
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
+from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
-class LimitChatHistoryEvent(ControlEvent):
+
+class LimitChatHistoryEvent(ControlEvent, DisplayEvent):
     """
     Limits the chat messages based on number of input tokens.
     """

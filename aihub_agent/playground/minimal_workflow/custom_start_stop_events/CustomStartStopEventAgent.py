@@ -1,4 +1,4 @@
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStartEvent import MyCustomStartEvent
 from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStopEvent import MyCustomStopEvent

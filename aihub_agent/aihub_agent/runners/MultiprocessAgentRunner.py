@@ -8,7 +8,7 @@ from typing import List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 logger = logging.getLogger(__name__)

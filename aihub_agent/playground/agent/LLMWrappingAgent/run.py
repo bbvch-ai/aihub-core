@@ -1,7 +1,7 @@
 import asyncio
 
-from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
-from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
+from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
+from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,

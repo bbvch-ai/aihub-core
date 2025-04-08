@@ -2,6 +2,7 @@ import json
 from typing import Annotated, Any, Dict, Optional, Union
 
 from aihub_lib.nats.events import (
+    StartEvent,
     AgentEvent,
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
@@ -14,11 +15,13 @@ from aihub_lib.nats.events import (
     GuardRejectionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    LimitChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
     RerankerEvent,
     RetrieverEvent,
+    StandaloneQuestionCondenserEvent,
     StartEvent,
     StopEvent,
     ThoughtEvent,
@@ -33,11 +36,14 @@ from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
 DisplayEvents = Union[
+    Annotated[StartEvent, Tag("StartEvent")],
     Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
     Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
     Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")],
     Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")],
     Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")],
+    Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")],
+    Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")],
     Annotated[LLMCostEvent, Tag("LLMCostEvent")],
     Annotated[ChunkEvent, Tag("ChunkEvent")],
     Annotated[ThoughtEvent, Tag("ThoughtEvent")],

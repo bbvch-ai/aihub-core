@@ -30,3 +30,73 @@ rag:
 
     Instruction : Utilisez les informations des documents fournis pour générer une réponse détaillée et bien structurée 
     à la question de l'utilisateur.
+
+router:
+  selection_option_index: Index of the selected option (0-based)
+  reason: Detailed explanation of why this option is the most appropriate
+  routing_prompt: |
+    {% chat role="system" %}
+    <task>
+    Select the most appropriate routing option based on the given instructions.
+    </task>
+
+    <instructions>
+    {{ instructions }}
+    </instructions>
+
+    <available_options>
+    {% for route in routes %}
+    <option id="{{ loop.index0 }}">
+      <name>{{ route.name }}</name>
+      <description>{{ route.description }}</description>
+      <selection_criteria>{{ route.instructions }}</selection_criteria>
+    </option>
+    {% endfor %}
+    </available_options>
+
+    <selection_requirements>
+    1. Analyze the instructions carefully
+    2. Compare against each option's selection criteria
+    3. Choose exactly one option that best matches
+    4. Provide the option index (0 to {{ routes|length - 1 }})
+    5. Explain your reasoning in detail
+    </selection_requirements>
+    {% endchat %}
+  instructions:
+    context_sufficient: |
+      Determine whether the user's query can be fulfilled given the available chat history.
+  
+      <chat_history>
+      {% for message in chat_history %}
+      <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+      </message>
+      {% endfor %}
+      </chat_history>
+  
+      <user_query>
+      {{ query }}
+      </user_query>
+  
+      <fulfillment_criteria>
+      <can_fulfill>
+      A query CAN be fulfilled if ANY of the following are true:
+      * All information required to fulfill the query is present in the chat history
+      * No specific information is required to fulfill the query (e.g., summarizing already provided content)
+      * The information required is trivial knowledge that most people would know (e.g., "the sky is blue")
+      * There is no information in the chat history, but the query also does not require any specific information
+      </can_fulfill>
+  
+      <cannot_fulfill>
+      A query CANNOT be fulfilled if ANY of the following are true:
+      * It explicitly asks for information not provided in the chat history and not trivially available
+      * It requires a task that would need more knowledge than what is available in the context
+      * The query can only be insufficiently or partially answered given the available context
+      </cannot_fulfill>
+      </fulfillment_criteria>
+  
+      Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.

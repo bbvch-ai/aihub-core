@@ -17,7 +17,7 @@ from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from bson import ObjectId
 from pydantic import BaseModel
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 

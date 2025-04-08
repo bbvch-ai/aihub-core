@@ -1,9 +1,11 @@
-from aihub_lib.nats.events import ControlEvent
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
+from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
-class StandaloneQuestionCondenserEvent(ControlEvent):
+
+class StandaloneQuestionCondenserEvent(ControlEvent, DisplayEvent):
     """
     Event to condense chat messages into a single standalone question as a chat message.
     """

@@ -12,7 +12,7 @@ from aihub_lib.nats.events import (
     HumanInTheLoopResponseEvent,
 )
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events.semantic import Embedding
 from aihub_lib.nats.events.semantic.retriever import Document

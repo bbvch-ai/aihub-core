@@ -24,7 +24,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler

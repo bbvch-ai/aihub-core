@@ -88,7 +88,7 @@ class EventDisplayer:
         Publish an internal reasoning thought as a ThoughtEvent.
         Provides transparency into agent's internal logic or decision-making steps.
         """
-        event = ThoughtEvent(content="", model_name="", reasoning_content=thought)
+        event = ThoughtEvent(content="", model_name="", reasoning_content=f"{thought}\n")
         await self.display_event(event, content=thought)
 
     async def display_llm_costs(

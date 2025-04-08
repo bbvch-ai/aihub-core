@@ -4,8 +4,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import scenarios, given, when, then, parsers
 
-from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.agents.common.events.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig

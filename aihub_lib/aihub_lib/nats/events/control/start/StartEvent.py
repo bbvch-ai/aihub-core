@@ -1,9 +1,10 @@
 from typing import Any, Dict
 
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
 
-class StartEvent(ControlEvent):
+class StartEvent(ControlEvent, DisplayEvent):
     """
     An event signaling the start of a new run within a thread, providing initial context such as
     user messages, assistant responses, and locale settings.
