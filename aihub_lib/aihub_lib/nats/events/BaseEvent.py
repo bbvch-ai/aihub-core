@@ -137,11 +137,11 @@ class BaseEvent(BaseModel):
 
     @property
     def is_bitl_request_event(self) -> bool:
-        return "BotInTheLoopRequestEvent" in self._parent_class_names
+        return "BotInTheLoopRequestEvent" in self._parent_event_names
 
     @property
     def is_bitl_response_event(self) -> bool:
-        return "BotInTheLoopResponseEvent" in self._parent_class_names
+        return "BotInTheLoopResponseEvent" in self._parent_event_names
 
     @property
     def is_chunk_event(self) -> bool:
