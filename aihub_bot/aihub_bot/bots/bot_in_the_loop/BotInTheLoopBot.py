@@ -9,7 +9,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopResponseEvent
+from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +54,12 @@ class BotInTheLoopBot(ActivityHandler):
 
         await self.external_event_distributor.distribute_event(
             external_event=ExternalEvent(
-                event=BotInTheLoopResponseEvent(
+                event=BotInTheLoop.response(
                     response=turn_context.activity.text,
                     request_event=bot_in_the_loop_request,
                 ),
-                thread_id=thread_id,
-                display_id="test",
+                thread_id=bot_in_the_loop_request.topic.thread_id,
+                display_id=bot_in_the_loop_request.topic.display_id,
             ),
-            user=turn_context.activity.from_property.id,
+            user=bot_in_the_loop_request.user,
         )

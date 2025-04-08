@@ -2,6 +2,7 @@ from typing import Union
 
 from pydantic import Field
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
@@ -16,6 +17,10 @@ class BotInTheLoopRequestEvent(ControlEvent):
     - Carries a question and a topic indicating where the subsequent response should be sent.
     """
 
+    user: AuthenticatedUser = Field(
+        ...,
+        description="The authenticated user who is requesting the human-in-the-loop interaction.",
+    )
     question: str = Field(..., description="The query or prompt presented to the human operator.")
     topic: Union[PartialAgentTopic, AgentTopic] = Field(
         ...,

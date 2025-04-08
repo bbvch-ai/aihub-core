@@ -138,8 +138,8 @@ class AgentController(Controller):
             start_event = start_event_class(
                 event_id=str(ObjectId()),
                 created_at=time.time_ns(),
-                **start_event_input.model_dump(),
                 user=user,
+                **start_event_input.model_dump(),
                 locale=t.locale,
             )
             stop_event = await AgentService.send_event(
