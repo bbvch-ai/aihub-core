@@ -31,7 +31,7 @@ class BotInTheLoopHandler:
         if thread_id in self.thread_to_conversation_mapping:
             slack_channel_id = self.thread_to_conversation_mapping[thread_id]
         else:
-            slack_channel_id = "B1234567890:T1234567890:C1234567890"
+            slack_channel_id = "B08D8FP20TZ:T08AZPNJV33:C08MK7Z8GU9"
             self.thread_to_conversation_mapping[thread_id] = slack_channel_id
 
         self.conversation_to_bot_in_the_loop_request_mapping[slack_channel_id] = event
