@@ -14,12 +14,12 @@ def create_output_model(event_class: Type[T]) -> Type[BaseModel]:
     fields = {}
     for name, field_info in event_class.model_fields.items():
         # Skip fields with generated values
-        if name not in ["event_id", "created_at", "_type", "_parent_class_names"]:
+        if name not in ["event_id", "created_at", "_event_name", "_parent_event_names"]:
             fields[name] = (field_info.annotation, field_info)
 
     # Create a new model with the filtered fields
     return create_model(
-        f"{event_class.__name__}Output",
+        f"{event_class.event_name_from_class()}Output",
         __base__=BaseModel,
         **fields,
         model_config=ConfigDict(

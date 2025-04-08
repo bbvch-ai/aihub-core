@@ -113,12 +113,12 @@ def test_event_creation(test_start_event):
 
 def test_computed_type(test_start_event):
     """Test that _type property returns the correct class name."""
-    assert test_start_event._type == "TestStartEvent"
+    assert test_start_event._event_name == "TestStartEvent"
 
 
-def test_parent_class_names(test_start_event):
-    """Test that _parent_class_names includes all expected parents."""
-    parent_classes = test_start_event._parent_class_names
+def test_parent_event_names(test_start_event):
+    """Test that _parent_event_names includes all expected parents."""
+    parent_classes = test_start_event._parent_event_names
     assert "TestStartEvent" in parent_classes
     assert "StartEvent" in parent_classes
     assert "ControlEvent" in parent_classes
@@ -147,18 +147,18 @@ def test_is_properties(test_start_event, test_stop_event, test_exception_event, 
 def test_serialization_to_dict(test_start_event):
     """Test that events can be serialized to dictionaries."""
     data = test_start_event.model_dump()
-    assert data["_type"] == "TestStartEvent"
+    assert data["_event_name"] == "TestStartEvent"
     assert data["message"] == "Hello, world!"
-    assert "_parent_class_names" in data
-    assert "TestStartEvent" in data["_parent_class_names"]
-    assert "StartEvent" in data["_parent_class_names"]
+    assert "_parent_event_names" in data
+    assert "TestStartEvent" in data["_parent_event_names"]
+    assert "StartEvent" in data["_parent_event_names"]
 
 
 def test_serialization_to_json(test_start_event):
     """Test that events can be serialized to JSON."""
     json_str = json.dumps(test_start_event.model_dump())
     data = json.loads(json_str)
-    assert data["_type"] == "TestStartEvent"
+    assert data["_event_name"] == "TestStartEvent"
     assert data["message"] == "Hello, world!"
 
 
@@ -168,17 +168,17 @@ def test_deserialization_of_known_event(test_start_event):
     deserialized = BaseEvent.deserialize_event(json_str)
     assert isinstance(deserialized, TestStartEvent)
     assert deserialized.message == "Hello, world!"
-    assert deserialized._type == "TestStartEvent"
+    assert deserialized._event_name == "TestStartEvent"
 
 
 def test_unknown_event_deserialization():
     """Test deserialization of an event type that isn't registered."""
     # Create a dictionary representing an event type that doesn't exist in this process
     unknown_event_data = {
-        "_type": "UnknownEventType",
+        "_event_name": "UnknownEventType",
         "event_id": "12345",
         "created_at": 1234567890,
-        "_parent_class_names": ["UnknownEventType", "SomeBaseClass", "AnotherBaseClass", "StartEvent", "ControlEvent"],
+        "_parent_event_names": ["UnknownEventType", "SomeBaseClass", "AnotherBaseClass", "StartEvent", "ControlEvent"],
         "some_field": "some value",
     }
 
@@ -186,9 +186,9 @@ def test_unknown_event_deserialization():
     deserialized = BaseEvent.deserialize_event(unknown_event_data)
 
     # Even though we don't know this type, we should preserve its hierarchy
-    assert deserialized._type == "UnknownEventType"
-    assert "UnknownEventType" in deserialized._parent_class_names
-    assert "StartEvent" in deserialized._parent_class_names
+    assert deserialized._event_name == "UnknownEventType"
+    assert "UnknownEventType" in deserialized._parent_event_names
+    assert "StartEvent" in deserialized._parent_event_names
     assert deserialized.is_start_event
     assert deserialized.is_control_event
     assert not deserialized.is_stop_event
@@ -212,7 +212,7 @@ def test_cross_process_type_checking(test_start_event, aitl_request_event):
     # Complex event
     remote_aitl = simulate_cross_process_boundary(aitl_request_event)
     assert remote_aitl.is_aitl_request_event
-    assert "AgentInTheLoopRequestEvent" in remote_aitl._parent_class_names
+    assert "AgentInTheLoopRequestEvent" in remote_aitl._parent_event_names
 
 
 def test_nested_events_preservation(aitl_request_event):
@@ -223,7 +223,7 @@ def test_nested_events_preservation(aitl_request_event):
     # The nested start event should still have its type information
     nested_start = remote_aitl.start_event
     assert nested_start.is_start_event
-    assert "TestStartEvent" in nested_start._parent_class_names
+    assert "TestStartEvent" in nested_start._parent_event_names
 
 
 def test_aitl_request_properties(aitl_request_event):
@@ -272,20 +272,24 @@ def test_missing_fields():
     """Test deserialization with missing fields."""
     # Missing fields should be handled gracefully
     incomplete_data = {
-        "_type": "TestStartEvent",
+        "_event_name": "TestStartEvent",
         # Missing message field
     }
 
     # This should raise a ValidationError since message is required
     with pytest.raises(Exception):
         event = BaseEvent.deserialize_event(incomplete_data)
-        print(event._type)
+        print(event._event_name)
 
 
 def test_extra_fields():
     """Test deserialization with extra fields."""
     # Extra fields should be preserved
-    extra_data = {"_type": "TestStartEvent", "message": "Hello", "extra_field": "This wasn't in the original class"}
+    extra_data = {
+        "_event_name": "TestStartEvent",
+        "message": "Hello",
+        "extra_field": "This wasn't in the original class",
+    }
 
     event = BaseEvent.deserialize_event(extra_data)
 
@@ -309,19 +313,19 @@ def test_invalid_json():
         BaseEvent.deserialize_event("This is not valid JSON")
 
 
-def test_corrupted_parent_class_names():
-    """Test handling of corrupted _parent_class_names."""
+def test_corrupted_parent_event_names():
+    """Test handling of corrupted _parent_event_names."""
     corrupted_data = {
-        "_type": "TestStartEvent",
+        "_event_name": "TestStartEvent",
         "message": "Hello",
-        "_parent_class_names": "Not a list",  # Should be a list
+        "_parent_event_names": "Not a list",  # Should be a list
     }
 
     # Should still deserialize, but parent class info might be incorrect
     event = BaseEvent.deserialize_event(corrupted_data)
     assert event.message == "Hello"
     # Type checking should fall back to class-based hierarchy
-    assert isinstance(event._parent_class_names, list)
+    assert isinstance(event._parent_event_names, list)
 
 
 def test_registry_contains_expected_events():
@@ -394,7 +398,7 @@ def test_user_message_event_round_trip():
 
     # Type checking should work
     assert remote_msg.is_user_message_event
-    assert "UserMessageEvent" in remote_msg._parent_class_names
+    assert "UserMessageEvent" in remote_msg._parent_event_names
 
     # Data should be preserved
     assert remote_msg.message == "Hello agent!"
@@ -410,8 +414,8 @@ def test_llm_events_hierarchy():
 
     # Check type hierarchy
     assert remote_event.is_semantic_event  # Should be a semantic event
-    assert "LLMStopEvent" in remote_event._parent_class_names
-    assert "LLMEvent" in remote_event._parent_class_names
+    assert "LLMStopEvent" in remote_event._parent_event_names
+    assert "LLMEvent" in remote_event._parent_event_names
 
     # Data should be preserved
     assert remote_event.chat_model_name == "test"

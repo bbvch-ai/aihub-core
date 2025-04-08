@@ -244,11 +244,11 @@ def test_inheritance_depth_with_custom_events():
         deserialized = BaseEvent.deserialize_event(serialized)
 
         # Verify that inheritance info is preserved
-        assert "APIEvent" in deserialized._parent_class_names
-        assert "NetworkEvent" in deserialized._parent_class_names
-        assert "DatabaseEvent" in deserialized._parent_class_names
-        assert "ServiceEvent" in deserialized._parent_class_names
-        assert "CustomBaseEvent" in deserialized._parent_class_names
+        assert "APIEvent" in deserialized._parent_event_names
+        assert "NetworkEvent" in deserialized._parent_event_names
+        assert "DatabaseEvent" in deserialized._parent_event_names
+        assert "ServiceEvent" in deserialized._parent_event_names
+        assert "CustomBaseEvent" in deserialized._parent_event_names
     finally:
         # Clean up the registry
         for cls_name in ["CustomBaseEvent", "ServiceEvent", "NetworkEvent", "DatabaseEvent", "APIEvent"]:
@@ -277,11 +277,11 @@ def test_event_deserialization_priority_by_depth():
         # Create event data with all three classes in parent_class_names
         # but with a type that doesn't exist in this process
         event_data = {
-            "_type": "UnknownSubclassEvent",
+            "_event_name": "UnknownSubclassEvent",
             "common_field": "shared value",
             "level2_field": "level 2 value",
             "level3_field": "level 3 value",
-            "_parent_class_names": ["UnknownSubclassEvent", "Level3Event", "Level2Event", "Level1Event"],
+            "_parent_event_names": ["UnknownSubclassEvent", "Level3Event", "Level2Event", "Level1Event"],
         }
 
         # Deserialize it
@@ -292,10 +292,10 @@ def test_event_deserialization_priority_by_depth():
         assert deserialized.common_field == "shared value"
         assert deserialized.level2_field == "level 2 value"
         assert deserialized.level3_field == "level 3 value"
-        assert deserialized._unknown_type == "UnknownSubclassEvent"
+        assert deserialized._unknown_event_name == "UnknownSubclassEvent"
 
-        # Now remove Level3Event from _parent_class_names
-        event_data["_parent_class_names"] = ["UnknownSubclassEvent", "Level2Event", "Level1Event"]
+        # Now remove Level3Event from _parent_event_names
+        event_data["_parent_event_names"] = ["UnknownSubclassEvent", "Level2Event", "Level1Event"]
         deserialized = BaseEvent.deserialize_event(event_data)
 
         # It should fall back to Level2Event
@@ -303,7 +303,7 @@ def test_event_deserialization_priority_by_depth():
         assert not isinstance(deserialized, Level3Event)
 
         # Finally, remove both Level3Event and Level2Event
-        event_data["_parent_class_names"] = ["UnknownSubclassEvent", "Level1Event"]
+        event_data["_parent_event_names"] = ["UnknownSubclassEvent", "Level1Event"]
         deserialized = BaseEvent.deserialize_event(event_data)
 
         # It should fall back to Level1Event
@@ -553,12 +553,12 @@ def test_get_parent_classes_until_base_with_event_serialization():
         data = json.loads(serialized)
 
         # Check that all parent classes are included
-        assert "Level1Event" in data["_parent_class_names"]
-        assert "Level2Event" in data["_parent_class_names"]
-        assert "Level3EventA" in data["_parent_class_names"]
-        assert "Level3EventB" in data["_parent_class_names"]
-        assert "TestComplexEvent" in data["_parent_class_names"]
-        assert "BaseEvent" not in data["_parent_class_names"]  # Base itself shouldn't be included
+        assert "Level1Event" in data["_parent_event_names"]
+        assert "Level2Event" in data["_parent_event_names"]
+        assert "Level3EventA" in data["_parent_event_names"]
+        assert "Level3EventB" in data["_parent_event_names"]
+        assert "TestComplexEvent" in data["_parent_event_names"]
+        assert "BaseEvent" not in data["_parent_event_names"]  # Base itself shouldn't be included
 
         # Now deserialize and check
         deserialized = BaseEvent.deserialize_event(serialized)
@@ -573,7 +573,7 @@ def test_get_parent_classes_until_base_with_event_serialization():
         assert isinstance(deserialized, Level3EventA) or isinstance(deserialized, Level3EventB)
 
         # Verify parent classes list is preserved
-        assert "TestComplexEvent" in deserialized._parent_class_names
+        assert "TestComplexEvent" in deserialized._parent_event_names
     finally:
         # Clean up the registry
         for cls_name in ["Level1Event", "Level2Event", "Level3EventA", "Level3EventB", "TestComplexEvent"]:

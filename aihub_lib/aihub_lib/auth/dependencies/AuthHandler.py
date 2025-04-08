@@ -12,3 +12,11 @@ class AuthHandler(ABC):
         Given a FastAPI Request, this method must either return an AuthenticatedUser or raise an HTTPException.
         """
         pass
+
+    @abstractmethod
+    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+        """
+        Authenticates a user based on a token string.
+        Used for WebSocket connections and other contexts without a full Request object.
+        """
+        pass

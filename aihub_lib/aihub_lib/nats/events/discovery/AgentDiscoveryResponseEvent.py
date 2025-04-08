@@ -12,9 +12,9 @@ class EventSpecs(BaseModel):
     Defines a specification for a start event that an agent can handle.
     """
 
-    event_type: str = Field(
+    event_name: str = Field(
         ...,
-        description="The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.",
+        description="The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.",
     )
     event_schema: Dict[str, Any] = Field(
         ...,

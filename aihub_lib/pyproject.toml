@@ -53,6 +53,7 @@ azure-storage-file-datalake = "^12.18.1"
 adlfs = "^2024.12.0"
 redis = "^5.2.1"
 openai = "^1.67.0"
+cachetools = "^5.5.2"
 
 
 [tool.poetry.group.dev.dependencies]

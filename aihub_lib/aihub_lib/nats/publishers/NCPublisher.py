@@ -38,18 +38,14 @@ class NCPublisher(Generic[TEvent]):
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
         """
-        logger.debug(f"Publishing event {event.__class__.__name__} to {subject}")
+        logger.debug(f"Publishing event {event.event_name} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)
-        logger.debug(f"Serialized event: {event.__class__.__name__}({serialized_event})")
+        logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
 
         if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
-            logger.warning(
-                f"Control event {event.__class__.__name__} is being published to a non-control subject: {subject}"
-            )
+            logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
 
         if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
-            logger.warning(
-                f"Display event {event.__class__.__name__} is being published to a non-display subject: {subject}"
-            )
+            logger.warning(f"Display event {event.event_name} is being published to a non-display subject: {subject}")
 
         await self.nc.publish(subject, serialized_event.encode())

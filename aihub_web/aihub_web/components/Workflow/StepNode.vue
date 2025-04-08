@@ -4,13 +4,13 @@
     <div class="flex flex-row gap-3 p-3">
       <div class="mt-1 flex size-8 items-center justify-center rounded-full bg-surface-200 dark:bg-surface-600">
         <Icon
-          :name="props.data.icon ?? 'mingcute:ai-fill'"
+          :name="data.icon ?? 'mingcute:ai-fill'"
           size="0.8em"
         />
       </div>
       <div class="flex flex-col">
-        <span class="font-bold">{{ props.data.label }}</span>
-        <span class="text-xs">{{ props.data.description }}</span>
+        <span class="font-bold">{{ data.label }}</span>
+        <span class="text-xs">{{ data.description }}</span>
       </div>
 
       <Handle
@@ -26,20 +26,20 @@
     <div class="flex w-full flex-row gap-2 p-3">
       <div class="flex w-1/2 flex-col gap-2">
         <div
-          v-for="(event_specs, event_name) in props.data.input_events"
+          v-for="(event_specs, event_name) in data.input_events"
           :key="event_name"
           class="flex flex-col gap-2"
         >
           <EventSpecs
-            :events="event_specs.event_types"
+            :events="event_specs.event_names"
             type="input"
           />
         </div>
       </div>
       <div class="flex w-1/2 flex-col gap-2">
         <EventSpecs
-          v-if="props.data.output_events"
-          :events="props.data.output_events"
+          v-if="data.output_events"
+          :events="data.output_events"
           type="output"
         />
       </div>
@@ -53,7 +53,7 @@ import { Handle, Position } from '@vue-flow/core'
 
 import type { NodeData } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   id: string
   data: NodeData
 }>()

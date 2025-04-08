@@ -6,7 +6,7 @@
   >
     <AccordionPanel
       class="rounded-md border-surface-300 bg-white p-1 pl-2 dark:border-surface-600 dark:bg-surface-900"
-      :class="{ 'border-l-2': props.type == 'input', 'border-r-2': props.type == 'output' }"
+      :class="{ 'border-l-2': type == 'input', 'border-r-2': type == 'output' }"
       :value="event.name"
     >
       <AccordionHeader class="p-1 pb-0 pl-0 text-xs font-normal text-surface-900 dark:text-surface-100">
@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import type { EventInfo } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   events: EventInfo[]
   type: string
 }>()

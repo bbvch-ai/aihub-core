@@ -94,7 +94,7 @@ const transformGraphData = () => {
       source: link.source,
       target: link.target,
       animated: true,
-      label: link.event_type || '',
+      label: link.event_name || '',
       data: link,
       markerEnd: MarkerType.Arrow,
       type: 'custom',

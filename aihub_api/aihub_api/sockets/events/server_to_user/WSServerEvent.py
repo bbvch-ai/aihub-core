@@ -1,8 +1,73 @@
-from typing import Dict, Optional
+import json
+from typing import Annotated, Any, Dict, Optional, Union
 
+from aihub_lib.nats.events import (
+    AgentEvent,
+    AgentInTheLoopExceptionEvent,
+    AgentInTheLoopRequestEvent,
+    AgentInTheLoopResponseEvent,
+    ChainEvent,
+    ChunkEvent,
+    DisplayEvent,
+    EmbeddingEvent,
+    ExceptionEvent,
+    GuardRejectionEvent,
+    HumanInTheLoopRequestEvent,
+    HumanInTheLoopResponseEvent,
+    LLMCostEvent,
+    LLMEvent,
+    LLMStopEvent,
+    RerankerEvent,
+    RetrieverEvent,
+    StartEvent,
+    StopEvent,
+    ThoughtEvent,
+    ToolEvent,
+    UserMessageEvent,
+)
+from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Discriminator, Field, Tag
+from typing_extensions import override
+
+# Import all events here that the frontend should be able to display
+DisplayEvents = Union[
+    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
+    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
+    Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")],
+    Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")],
+    Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")],
+    Annotated[LLMCostEvent, Tag("LLMCostEvent")],
+    Annotated[ChunkEvent, Tag("ChunkEvent")],
+    Annotated[ThoughtEvent, Tag("ThoughtEvent")],
+    Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")],
+    Annotated[SemanticEvent, Tag("SemanticEvent")],
+    Annotated[AgentEvent, Tag("AgentEvent")],
+    Annotated[ChainEvent, Tag("ChainEvent")],
+    Annotated[EmbeddingEvent, Tag("EmbeddingEvent")],
+    Annotated[LLMEvent, Tag("LLMEvent")],
+    Annotated[LLMStopEvent, Tag("LLMStopEvent")],
+    Annotated[RerankerEvent, Tag("RerankerEvent")],
+    Annotated[RetrieverEvent, Tag("RetrieverEvent")],
+    Annotated[ToolEvent, Tag("ToolEvent")],
+    Annotated[StartEvent, Tag("StartEvent")],
+    Annotated[UserMessageEvent, Tag("UserMessageEvent")],
+    Annotated[ExceptionEvent, Tag("ExceptionEvent")],
+    Annotated[StopEvent, Tag("StopEvent")],
+    Annotated[DisplayEvent, Tag("DisplayEvent")],
+]
+
+
+def event_discriminator(event: DisplayEvent) -> str:
+    # Get all tags from DisplayEvents union
+    valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
+
+    # Return "DisplayEvent" if _event_name is missing or not in valid_tags
+    if not hasattr(event, "_event_name") or event._event_name not in valid_tags:
+        return "DisplayEvent"
+
+    return event._event_name
 
 
 class WSServerEvent(BaseModel):
@@ -37,7 +102,11 @@ class WSServerEvent(BaseModel):
     )
     event_name: str = Field(..., description="Name of the event, indicating its subtype or category.")
     event_id: str = Field(..., description="Unique identifier of this event instance.")
-    event_data: Dict = Field(..., description="Payload of the event, containing detailed information.")
+    event: DisplayEvents = Field(
+        ...,
+        description="Data of the event itself.",
+        discriminator=Discriminator(event_discriminator),
+    )
 
     @classmethod
     def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":
@@ -54,5 +123,22 @@ class WSServerEvent(BaseModel):
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
             event_id=persisted_event.event_id,
-            event_data=persisted_event.event_data,
+            event=DisplayEvent.deserialize_event(persisted_event.event_data),
         )
+
+    @override
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """
+        Serializes the event into a dictionary. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        data = super().model_dump(**kwargs)
+        return {**data, "event": self.event.model_dump()}
+
+    @override
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """
+        Serializes the event into a JSON string. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        return json.dumps(self.model_dump(**kwargs), default=str)

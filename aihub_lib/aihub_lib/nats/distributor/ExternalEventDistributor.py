@@ -63,7 +63,7 @@ class ExternalEventDistributor:
         """
         user_id = user.oid
         thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
-        logger.debug(f"Received event {external_event.event.__class__.__name__} for thread {external_event.thread_id}")
+        logger.debug(f"Received event {external_event.event.event_name} for thread {external_event.thread_id}")
         users_in_thread = [user.user_id for user in thread.users]
 
         if user_id not in users_in_thread:
@@ -75,7 +75,7 @@ class ExternalEventDistributor:
         elif external_event.event.is_hitl_response_event:
             run_id = external_event.event.request_event.topic.run_id
         else:
-            raise ValueError(f"Received event of unhandled type: {external_event.event.__class__.__name__}")
+            raise ValueError(f"Received event of unhandled type: {external_event.event.event_name}")
 
         if external_event.event.is_hitl_response_event:
             await self._handle_human_in_the_loop_response(thread, external_event)
@@ -108,7 +108,7 @@ class ExternalEventDistributor:
                 run_id=run_id,
             )
             subject = topic_manager.get_subject_for_control_event_in_thread(
-                event_name=external_event.event.__class__.__name__,
+                event_name=external_event.event.event_name,
                 event_id=external_event.event.event_id,
             )
             await self.js_publisher.publish_event(external_event.event, subject)
@@ -129,7 +129,7 @@ class ExternalEventDistributor:
             display_id=external_event.display_id,
             run_id=run_id,
             event_type=TopicManager.DISPLAY_EVENT,
-            event_name=external_event.event.__class__.__name__,
+            event_name=external_event.event.event_name,
             event_id=external_event.event.event_id,
         )
         await self.nc_publisher.publish_event(external_event.event, subject)
@@ -154,7 +154,7 @@ class ExternalEventDistributor:
             run_id=topic.run_id,
         )
         subject = topic_manager.get_subject_for_control_event_in_thread(
-            event_name=external_event.event.__class__.__name__,
+            event_name=external_event.event.event_name,
             event_id=external_event.event.event_id,
         )
         await self.js_publisher.publish_event(external_event.event, subject)

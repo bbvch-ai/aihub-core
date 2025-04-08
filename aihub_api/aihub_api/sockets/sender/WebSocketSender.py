@@ -1,8 +1,10 @@
 import logging
+from typing import List
 
 from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from cachetools import TTLCache, cached
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
@@ -39,6 +41,13 @@ class WebSocketSender:
     def __init__(self, ws_manager: WebSocketManager):
         self.ws_manager = ws_manager
 
+    @staticmethod
+    @cached(TTLCache(maxsize=128, ttl=60))
+    def get_users_in_thread(thread_id: str) -> List[str]:
+        """Retrieves the users associated with a thread ID. This is cached."""
+        thread = ThreadEntity.get_thread_by_id(thread_id)
+        return [user.user_id for user in thread.users]
+
     async def send_event(self, event: DisplayEvent, topic: AgentTopic):
         """
         Given a DisplayEvent and its topic context:
@@ -47,8 +56,7 @@ class WebSocketSender:
         - Send the event to each user via WebSocketManager.
         """
         logger.debug(f"Sending event {event} to thread {topic.thread_id}")
-        thread = ThreadEntity.get_thread_by_id(topic.thread_id)
-        users = thread.users
+        users = self.get_users_in_thread(topic.thread_id)
         external_event = WSServerEvent(
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,
@@ -58,7 +66,7 @@ class WebSocketSender:
             event_type=topic.event_type,
             event_name=topic.event_name,
             event_id=event.event_id,
-            event_data=event.model_dump(),
+            event=event,
         )
         for user in users:
-            await self.ws_manager.send_event(external_event, user.user_id)
+            await self.ws_manager.send_event(external_event, user)

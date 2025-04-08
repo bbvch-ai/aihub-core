@@ -215,7 +215,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         publisher = JSPublisher(js)
 
         subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-            start_event.__class__.__name__, event_id=start_event.event_id
+            start_event.event_name, event_id=start_event.event_id
         )
 
         await asyncio.sleep(1)

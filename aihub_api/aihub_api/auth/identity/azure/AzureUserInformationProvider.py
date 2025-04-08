@@ -2,6 +2,7 @@ import base64
 
 import httpx
 from azure.identity import DefaultAzureCredential
+from cachetools import TTLCache, cached
 
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
 from aihub_api.routes.user.dto.UserDTO import UserDTO
@@ -30,11 +31,10 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         self.credential = DefaultAzureCredential()
         self.scope = "https://graph.microsoft.com/.default"
 
-    def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        # Acquire an access token from Azure Identity
-        access_token = self.credential.get_token(self.scope).token
+    @staticmethod
+    @cached(TTLCache(maxsize=128, ttl=60))
+    def get_userdata_by_oid(oid: str, access_token: str) -> UserDTO:
         headers = {"Authorization": f"Bearer {access_token}"}
-
         # Get basic user details
         user_url = f"https://graph.microsoft.com/v1.0/users/{oid}"
         with httpx.Client() as client:
@@ -69,3 +69,8 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
             email=user_data.get("mail") or user_data.get("userPrincipalName"),
             profile_image=data_url,  # Ensure your UserDTO accepts this field.
         )
+
+    def get_user_info_by_oid(self, oid: str) -> UserDTO:
+        # Acquire an access token from Azure Identity
+        access_token = self.credential.get_token(self.scope).token
+        return self.get_userdata_by_oid(oid, access_token)

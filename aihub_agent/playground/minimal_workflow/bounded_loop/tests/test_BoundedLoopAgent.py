@@ -51,19 +51,19 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('"{loop_max:d}" BeginEvent are present'))
 def _(loop_max: int, agent_runner: AgentTestRunner):
-    received_loop_max = len(agent_runner.get_events_of_type(BeginEvent))
+    received_loop_max = len(agent_runner.get_events_of_class(BeginEvent))
     assert received_loop_max == loop_max, f"Agent received {received_loop_max} BeginEvents, but expected {loop_max}"
 
 
 @then(parsers.parse('"{loop_max:d}" ProcessEvent are present'))
 def _(loop_max: int, agent_runner: AgentTestRunner):
-    received_loop_max = len(agent_runner.get_events_of_type(ProcessEvent))
+    received_loop_max = len(agent_runner.get_events_of_class(ProcessEvent))
     assert received_loop_max == loop_max, f"Agent received {received_loop_max} ProcessEvents, but expected {loop_max}"
 
 
 @then("a DecisionEvent is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.get_event_of_type(DecisionEvent), "Agent did not receive DecisionEvent"
+    assert agent_runner.get_event_of_class(DecisionEvent), "Agent did not receive DecisionEvent"
 
 
 @then("a StopEvent is present")

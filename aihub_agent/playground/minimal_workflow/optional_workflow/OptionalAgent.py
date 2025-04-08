@@ -32,5 +32,5 @@ class OptionalAgent(Agent):
 
     @step(max_executions_per_run=1)
     async def end_step(self, event: EventOptionalC | EventOptionalD) -> StopEvent:
-        print(f"[OptionalAgent.end_step] Received {event.__class__.__name__}")
+        print(f"[OptionalAgent.end_step] Received {event.event_name}")
         return StopEvent()

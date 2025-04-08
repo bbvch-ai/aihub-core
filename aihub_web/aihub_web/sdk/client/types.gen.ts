@@ -81,11 +81,217 @@ export type AgentDto = {
     network_graph: WorkflowGraph;
 };
 
-export type AssistantChatMessage = {
+export type AgentEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
+/**
+ * An error response from an agent when a delegated task fails.
+ *
+ * ### Why AgentInTheLoopExceptionEvent?
+ * When an agent encounters an error during a delegated task, this event:
+ * - Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent
+ * - Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures
+ * - Provides a dedicated error channel separate from successful responses
+ */
+export type AgentInTheLoopExceptionEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The exception event from the delegated agent containing error details and failure context.
+     */
+    exception_event: ExceptionEvent;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | ExceptionEvent | Array<string> | undefined;
+};
+
+/**
+ * An event delegating a task to another agent at a specific point in a workflow.
+ *
+ * ### Why AgentInTheLoopRequestEvent?
+ * In automated workflows, certain tasks may require specialized capabilities from other agents. This event:
+ * - Is a `DisplayEvent`, so the delegation can be monitored in user interfaces
+ * - Carries a start event that initiates the other agent's task
+ * - Manages context sharing between agents (thread, display, run IDs)
+ * - Handles both successful responses and exceptions from the delegated agent
+ */
+export type AgentInTheLoopRequestEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event that will be sent to the other agent to initiate its task.
+     */
+    start_event: StartEvent;
+    /**
+     * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
+     */
+    other_agent_topic: PartialAgentTopic | AgentTopic;
+    /**
+     * Whether to share the conversation thread context with the other agent.
+     */
+    share_thread_id?: boolean;
+    /**
+     * Whether to share the display context with the other agent for UI consistency.
+     */
+    share_display_id?: boolean;
+    /**
+     * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+     */
+    share_run_id?: boolean;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | StartEvent | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
+};
+
+/**
+ * A response from an agent after completing a delegated task.
+ *
+ * ### Why AgentInTheLoopResponseEvent?
+ * When an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:
+ * - Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result
+ * - Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions
+ */
+export type AgentInTheLoopResponseEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The stop event from the delegated agent containing the task results and marks the completion.
+     */
+    stop_event: StopEvent;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | StopEvent | Array<string> | undefined;
+};
+
+/**
+ * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+ * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+ *
+ * ### Why This Class Exists
+ *
+ * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+ * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+ * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+ * routing or logging a complete event identifier.
+ *
+ * ### Example:
+ * If an event subject is something like:
+ * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+ * then this AgentTopic can represent it, providing quick field-level access and serialization.
+ */
+export type AgentTopic = {
+    /**
+     * The agent's class identifier.
+     */
+    agent_class: string;
+    /**
+     * Unique identifier for the specific agent instance.
+     */
+    agent_id: string;
+    /**
+     * The run ID within the thread.
+     */
+    run_id: string;
+    /**
+     * Unique identifier for the conversation or workflow thread.
+     */
+    thread_id: string;
+    /**
+     * UI-facing grouping ID, used to distinguish or group related runs.
+     */
+    display_id: string;
+    /**
+     * Type of event (e.g., 'display_event', 'control_event').
+     */
+    event_type: string;
+    /**
+     * Name of the event (e.g., 'start', 'stop', 'error').
+     */
+    event_name: string;
+    /**
+     * Unique identifier for this particular event instance.
+     */
+    event_id: string;
+};
+
+export type Annotation = {
+    type: 'url_citation';
+    url_citation: AnnotationUrlCitation;
+    [key: string]: unknown | 'url_citation' | AnnotationUrlCitation;
+};
+
+export type AnnotationUrlCitation = {
+    end_index: number;
+    start_index: number;
+    title: string;
+    url: string;
+    [key: string]: unknown | number | string;
+};
+
+export type AssistantChatMessageInput = {
     role?: MessageRole;
     additional_kwargs?: {
         [key: string]: unknown;
     };
+    blocks?: Array<({
+        block_type?: 'text';
+    } & TextBlock) | ({
+        block_type?: 'image';
+    } & ImageBlock) | ({
+        block_type?: 'audio';
+    } & AudioBlock)>;
+    agent_id: string;
+    agent_class: string;
+};
+
+export type AssistantChatMessageOutput = {
+    role?: MessageRole;
+    additional_kwargs?: unknown;
     blocks?: Array<({
         block_type?: 'text';
     } & TextBlock) | ({
@@ -107,6 +313,25 @@ export type AudioBlock = {
     path?: string | null;
     url?: string | null;
     format?: string | null;
+};
+
+export type AuthenticatedUser = {
+    /**
+     * User's full name
+     */
+    name?: string | null;
+    /**
+     * User's email address
+     */
+    preferred_username: string;
+    /**
+     * User's Object ID
+     */
+    oid: string;
+    /**
+     * User's roles
+     */
+    roles?: Array<string> | null;
 };
 
 export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
@@ -138,6 +363,32 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
+};
+
+export type ChainEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Metadata associated with the chain as a dictionary JSON string. For example, LangChain uses metadata to store user-defined attributes for a chain.
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | ({
+        [key: string]: unknown;
+    } | null) | Array<string> | undefined;
 };
 
 export type ChatCompletion = {
@@ -215,10 +466,11 @@ export type ChatCompletionMessage = {
     content?: string | null;
     refusal?: string | null;
     role: 'assistant';
+    annotations?: Array<Annotation> | null;
     audio?: ChatCompletionAudio | null;
     function_call?: FunctionCallOutput | null;
     tool_calls?: Array<ChatCompletionMessageToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageToolCall> | null) | undefined;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageToolCall> | null) | undefined;
 };
 
 export type ChatCompletionMessageToolCall = {
@@ -252,7 +504,7 @@ export type ChatCompletionRequest = {
     /**
      * ID of the model to use for the chat completion.
      */
-    model: string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Enable streaming response.
      */
@@ -277,7 +529,7 @@ export type ChatCompletionRequest = {
     prediction?: ChatCompletionPredictionContentParam | null;
     presence_penalty?: number | null;
     reasoning_effort?: ('low' | 'medium' | 'high') | null;
-    response_format?: ResponseFormatText | ResponseFormatJsonObject | ResponseFormatJsonSchema | null;
+    response_format?: ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null;
     seed?: number | null;
     service_tier?: ('auto' | 'default') | null;
     stop?: string | Array<string> | null;
@@ -288,11 +540,11 @@ export type ChatCompletionRequest = {
     tools?: Array<ChatCompletionToolParam> | null;
     top_logprobs?: number | null;
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
     } | null) | (boolean | null) | (number | null) | (number | null) | ({
         [key: string]: unknown;
-    } | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonObject | ResponseFormatJsonSchema | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
+    } | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
 
 export type ChatCompletionStreamOptionsParam = {
@@ -325,7 +577,7 @@ export type ChatCompletionToolParam = {
 };
 
 export type ChatCompletionUserMessageParam = {
-    content: string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartImageParam | ChatCompletionContentPartInputAudioParam>;
+    content: string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartImageParam | ChatCompletionContentPartInputAudioParam | File>;
     role: 'user';
     name?: string;
 };
@@ -333,11 +585,26 @@ export type ChatCompletionUserMessageParam = {
 /**
  * Chat message.
  */
-export type ChatMessage = {
+export type ChatMessageInput = {
     role?: MessageRole;
     additional_kwargs?: {
         [key: string]: unknown;
     };
+    blocks?: Array<({
+        block_type?: 'text';
+    } & TextBlock) | ({
+        block_type?: 'image';
+    } & ImageBlock) | ({
+        block_type?: 'audio';
+    } & AudioBlock)>;
+};
+
+/**
+ * Chat message.
+ */
+export type ChatMessageOutput = {
+    role?: MessageRole;
+    additional_kwargs?: unknown;
     blocks?: Array<({
         block_type?: 'text';
     } & TextBlock) | ({
@@ -359,6 +626,47 @@ export type ChoiceLogprobs = {
     content?: Array<ChatCompletionTokenLogprob> | null;
     refusal?: Array<ChatCompletionTokenLogprob> | null;
     [key: string]: unknown | (Array<ChatCompletionTokenLogprob> | null) | (Array<ChatCompletionTokenLogprob> | null) | undefined;
+};
+
+/**
+ * An event representing a portion of output or generated content (a "chunk") that is
+ * streamed or delivered in segments—common in incremental output scenarios like LLM
+ * token streaming.
+ *
+ * ### Why ChunkEvent?
+ * In conversational or streaming AI outputs, the model might emit content in pieces rather
+ * than all at once. `ChunkEvent` allows the frontend or other consumers to display partial
+ * responses as they are generated, improving user experience by not forcing them to wait
+ * for the entire answer.
+ */
+export type ChunkEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The actual chunk of text or data produced at this stage.
+     */
+    content?: string;
+    /**
+     * The name of the AI model generating the chunks.
+     */
+    model_name?: string;
+    /**
+     * The textual representation of the agent’s internal reasoning at a particular point in time.
+     */
+    reasoning_content?: string | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (string | null) | Array<string> | undefined;
 };
 
 export type CompletionTokensDetails = {
@@ -420,6 +728,60 @@ export type CreateTokenResponse = {
 };
 
 /**
+ * Represents a user-facing event that can be shown to end-users, UIs, or monitoring dashboards.
+ * Display events are purely informational and never affect the control flow or execution order
+ * of workflows.
+ *
+ * ### Why DisplayEvent?
+ * While `ControlEvent` influences the system’s decision-making and progression, `DisplayEvent`
+ * focuses on communicating results, status updates, and other information intended for human
+ * consumption or passive observation. This separation ensures that even if a display event fails
+ * to reach a UI, it doesn’t alter the underlying workflow logic or state transitions.
+ *
+ * By subclassing `BaseEvent`, `DisplayEvent` remains fully compatible with the automatic
+ * registration, serialization, and deserialization mechanisms, making it simple to integrate
+ * into a user interface or logging pipeline.
+ */
+export type DisplayEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
+export type Document = {
+    /**
+     * Unique identifier for the document.
+     */
+    id: string;
+    /**
+     * Score representing the relevance of the document.
+     */
+    score?: number | null;
+    /**
+     * Content of the document.
+     */
+    content?: string | null;
+    /**
+     * Optional metadata associated with the document as a dictionary.
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
  * Data for an edge in the workflow graph.
  */
 export type EdgeData = {
@@ -436,9 +798,9 @@ export type EdgeData = {
      */
     edge_id: number;
     /**
-     * Type of event represented by this edge
+     * Event represented by this edge
      */
-    event_type: string;
+    event_name: string;
     /**
      * Fully qualified name of the event
      */
@@ -457,6 +819,47 @@ export type EdgeData = {
     payload: {
         [key: string]: EventPayloadField;
     };
+};
+
+export type Embedding = {
+    /**
+     * The text represented by the embedding.
+     */
+    text?: string | null;
+    /**
+     * The embedding vector as a list of floats.
+     */
+    vector?: Array<number> | null;
+};
+
+export type EmbeddingEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The text represented in the embedding
+     */
+    text?: string | null;
+    /**
+     * The name of the embedding model used.
+     */
+    embedding_model_name?: string | null;
+    /**
+     * A list of embedding objects containing text and vector data.
+     */
+    embeddings?: Array<Embedding> | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
 };
 
 export type Embeddings = {
@@ -559,15 +962,66 @@ export type EventPayloadField = {
  */
 export type EventSpecs = {
     /**
-     * The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.
+     * The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.
      */
-    event_type: string;
+    event_name: string;
     /**
      * A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.
      */
     event_schema: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * An event signaling that an exception or error has occurred during a run.
+ *
+ * ### Why ExceptionEvent?
+ * In a complex, event-driven workflow, errors are inevitable. Some steps might fail due to
+ * invalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`
+ * provides a unified way to:
+ * - Halt or adjust the workflow’s control flow as a `ControlEvent`.
+ * - Communicate the error details to end-users or logging systems as a `DisplayEvent`.
+ *
+ * By appearing as both a control and display event, `ExceptionEvent` ensures that the workflow
+ * can stop further processing while also making the error visible in UI dashboards, logs, or
+ * monitoring tools—giving operators and developers immediate insight into what went wrong.
+ */
+export type ExceptionEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * A human-readable description of the exception or error that occurred.
+     */
+    message: string;
+    /**
+     * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
+     */
+    http_status_code?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
+export type File = {
+    file: FileFile;
+    type: 'file';
+};
+
+export type FileFile = {
+    file_data?: string;
+    file_id?: string;
+    filename?: string;
 };
 
 export type FunctionOutput = {
@@ -596,6 +1050,37 @@ export type FunctionDefinition = {
     strict?: boolean | null;
 };
 
+/**
+ * A class representing a guard rejection event.
+ * This event is used to communicate the reason for the rejection to the client.
+ *
+ *
+ * ### Why GuardRejectionEvent?
+ * Safeguarding the system from invalid requests is a critical part of any system. This event
+ * is used to communicate the reason for the rejection to the client.
+ */
+export type GuardRejectionEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
 export type HttpValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -605,6 +1090,78 @@ export type HealthResponse = {
      * The health status of the application.
      */
     status: string;
+    /**
+     * HTTP status code.
+     */
+    code: number;
+};
+
+/**
+ * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ *
+ * ### Why HumanInTheLoopRequestEvent?
+ * In automated workflows, certain decisions may require human validation. This event:
+ * - Is a `DisplayEvent`, so it can appear in user interfaces.
+ * - Carries a question and a topic indicating where the subsequent response should be sent.
+ */
+export type HumanInTheLoopRequestEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentTopic;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
+};
+
+/**
+ * A response from a human operator after a HITL request.
+ *
+ * ### Why HumanInTheLoopResponseEvent?
+ * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
+ * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
+ * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ */
+export type HumanInTheLoopResponseEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The human operator's answer or decision.
+     */
+    response: string;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopRequestEvent;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | HumanInTheLoopRequestEvent | Array<string> | undefined;
 };
 
 export type Image = {
@@ -661,9 +1218,9 @@ export type InputAudio = {
  */
 export type InputEventInfo = {
     /**
-     * The types of events that can be accepted
+     * The events that can be accepted
      */
-    event_types: Array<EventInfo>;
+    event_names: Array<EventInfo>;
     /**
      * Whether this input is optional
      */
@@ -677,6 +1234,226 @@ export type JsonSchema = {
         [key: string]: unknown;
     };
     strict?: boolean | null;
+};
+
+/**
+ * A concrete event representing the costs associated with Large Language Model operations,
+ * including prompt, completion, and embedding token usage.
+ *
+ * ### Why LLMCostEvent?
+ * For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
+ * breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
+ * engineers, product managers, or finance teams clear insights into where tokens—and money—are
+ * going.
+ */
+export type LlmCostEvent = {
+    /**
+     * Number of tokens used in the prompt
+     */
+    prompt_token_count: number;
+    /**
+     * Number of tokens generated in the completion
+     */
+    completion_token_count: number;
+    /**
+     * Number of tokens used for embeddings
+     */
+    embedding_token_count: number;
+    /**
+     * Cost associated with the prompt tokens
+     */
+    prompt_tokens_costs: number;
+    /**
+     * Cost associated with the completion tokens
+     */
+    completion_tokens_costs: number;
+    /**
+     * Cost associated with the embedding tokens
+     */
+    embedding_tokens_costs: number;
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
+     */
+    llm_name: string;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | number | number | string | Array<string> | undefined;
+};
+
+export type LlmEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<Message> | null;
+    /**
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<Message> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (Array<Message> | null) | (Array<Message> | null) | ({
+        [key: string]: unknown;
+    } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
+        [key: string]: string;
+    } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
+        [key: string]: unknown;
+    }> | null) | Array<string> | undefined;
+};
+
+export type LlmStopEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<Message> | null;
+    /**
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<Message> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (Array<Message> | null) | (Array<Message> | null) | ({
+        [key: string]: unknown;
+    } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
+        [key: string]: string;
+    } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
+        [key: string]: unknown;
+    }> | null) | Array<string> | undefined;
 };
 
 export type LlmStopEventOutput = {
@@ -752,6 +1529,13 @@ export type LocaleResponse = {
      * Test string in the specified language
      */
     test: string;
+};
+
+export type Logprob = {
+    token?: string | null;
+    bytes?: Array<number> | null;
+    logprob?: number | null;
+    [key: string]: unknown | (string | null) | (Array<number> | null) | (number | null) | undefined;
 };
 
 export type Message = {
@@ -904,10 +1688,101 @@ export type NodeData = {
     stop_on_error?: boolean | null;
 };
 
+/**
+ * Represents a partially qualified agent event topic, where some fields may be unspecified.
+ * Wildcards (represented by "*") in the subject translate into None values here.
+ *
+ * ### Why PartialAgentTopic?
+ * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+ * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+ * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+ * and which remain open (None).
+ *
+ * ### Use Cases
+ * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
+ * all display events for a given agent class, regardless of the specific agent instance or thread.
+ * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+ * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+ * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+ * unknowns as flexible conditions.
+ */
+export type PartialAgentTopic = {
+    /**
+     * Agent class or None if unspecified.
+     */
+    agent_class?: string | null;
+    /**
+     * Agent ID or None if unspecified.
+     */
+    agent_id?: string | null;
+    /**
+     * Run ID or None if unspecified.
+     */
+    run_id?: string | null;
+    /**
+     * Thread ID or None if unspecified.
+     */
+    thread_id?: string | null;
+    /**
+     * Display ID or None if unspecified.
+     */
+    display_id?: string | null;
+    /**
+     * Event type or None if unspecified.
+     */
+    event_type?: string | null;
+    /**
+     * Event name or None if unspecified.
+     */
+    event_name?: string | null;
+    /**
+     * Event ID or None if unspecified.
+     */
+    event_id?: string | null;
+};
+
 export type PromptTokensDetails = {
     audio_tokens?: number | null;
     cached_tokens?: number | null;
     [key: string]: unknown | (number | null) | (number | null) | undefined;
+};
+
+export type RerankerEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * List of input documents provided to the reranker.
+     */
+    input_documents?: Array<Document> | null;
+    /**
+     * List of documents outputted by the reranker.
+     */
+    output_documents?: Array<Document> | null;
+    /**
+     * The query string used by the reranker.
+     */
+    query?: string | null;
+    /**
+     * Name of the reranker model being used.
+     */
+    rerank_model_name?: string | null;
+    /**
+     * The top K parameter, representing the number of results to be reranked.
+     */
+    top_k?: number | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
 export type ResponseFormatJsonObject = {
@@ -923,8 +1798,76 @@ export type ResponseFormatText = {
     type: 'text';
 };
 
+export type RetrieverEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * List of documents retrieved by the retriever, including document IDs, scores, and content.
+     */
+    documents?: Array<Document> | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (Array<Document> | null) | Array<string> | undefined;
+};
+
 export type RevokeTokenResponse = {
     detail: string;
+};
+
+/**
+ * A base class for events that must report their data to an OpenInference-compatible tracing system,
+ * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
+ * - Influences workflow execution and can control the system flow (like any `ControlEvent`).
+ * - Remains visible to the end-user or UI (like any `DisplayEvent`).
+ * - Introduces the requirement to define a `to_semantic_convention()` method,
+ * providing structured semantic attributes for OpenInference tracing.
+ *
+ * ### Why SemanticEvent?
+ * The primary purpose is to provide a flexible foundation for events that carry semantically rich
+ * information which should be recorded in tracing and observability tools. By encouraging a
+ * `to_semantic_convention()` method, `SemanticEvent` standardizes the process of converting event
+ * data into a form suitable for advanced analytics, debugging, and telemetry.
+ *
+ * ### Integrating with OpenInference
+ * OpenInference mandates a set of semantic conventions for attributes, ensuring that tooling
+ * (like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of
+ * `SemanticEvent` should implement `to_semantic_convention()` to:
+ * - Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.
+ * - Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.
+ *
+ * This allows downstream systems to understand and correlate complex operations like retrieval,
+ * reranking, or prompt tuning with high-level performance metrics or user outcomes.
+ *
+ * ### Note
+ * Since `to_semantic_convention()` is not implemented here, subclasses must provide their own logic
+ * to translate the event’s internal state into OpenInference semantic attributes.
+ */
+export type SemanticEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
 export type ServiceDto = {
@@ -944,6 +1887,72 @@ export type ServiceDto = {
      * The path under which the service is callable in the frontend.
      */
     path: string;
+};
+
+/**
+ * An event signaling the start of a new run within a thread, providing initial context such as
+ * user messages, assistant responses, and locale settings.
+ *
+ * ### Why StartEvent?
+ * The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
+ * from the StartEvent, initial context for the workflow can be set.
+ *
+ * By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
+ * drive the flow. Other event types may provide data or UI updates but do not start or control runs.
+ */
+export type StartEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
+/**
+ * An event signaling the conclusion of a run within a thread, acting both as a control signal
+ * and a user-facing message.
+ *
+ * ### Why StopEvent?
+ * In many workflows, reaching a terminal state (e.g., producing a final result or hitting an
+ * end-of-workflow condition) must:
+ * - Influence the system’s control flow, ensuring no further steps are executed.
+ * - Provide a visible indicator to the end-user or UI that the process has completed.
+ *
+ * By inheriting from both `ControlEvent` and `DisplayEvent`:
+ * - As a `ControlEvent`, it instructs the workflow engine to stop processing subsequent steps.
+ * - As a `DisplayEvent`, it can be shown to users or captured by dashboards, indicating that
+ * the run is over and providing any final output or status messages.
+ *
+ * ### Use Cases
+ * - Signaling that a response is ready, and no more actions are needed.
+ * - Informing the user interface that the conversation or task has concluded.
+ */
+export type StopEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
 export type SuiteDto = {
@@ -982,6 +1991,46 @@ export type TextToSpeechRequest = {
     [key: string]: unknown | ('tts-1' | 'tts-1-hd') | string | ('alloy' | 'ash' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer') | (('mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm') | null) | (number | null) | undefined;
 };
 
+/**
+ * An event representing the system or agent's internal reasoning process, often displayed as
+ * a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
+ * at decisions, though they don't influence control flow (since it's a DisplayEvent).
+ *
+ * ### Why ThoughtEvent?
+ * While `ControlEvent` affects workflow logic, `ThoughtEvent` provides transparency,
+ * revealing the reasoning paths taken by the agent. Useful for debugging, auditing, or
+ * explaining the agent’s behavior to end-users (e.g., "chain-of-thought" explanations).
+ */
+export type ThoughtEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The actual chunk of text or data produced at this stage.
+     */
+    content?: string;
+    /**
+     * The name of the AI model generating the chunks.
+     */
+    model_name?: string;
+    /**
+     * The textual representation of the agent’s internal reasoning at a particular point in time.
+     */
+    reasoning_content?: string | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (string | null) | Array<string> | undefined;
+};
+
 export type ThreadAgentDto = {
     agent_id: string;
     agent_class: string;
@@ -1010,6 +2059,48 @@ export type TokenResponse = {
     roles: Array<string>;
 };
 
+export type ToolEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The name of the tool being utilized
+     */
+    name?: string | null;
+    /**
+     * Description of the tool's purpose and functionality
+     */
+    description?: string | null;
+    /**
+     * The json schema of a tool input
+     */
+    json_schema?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * The parameters definition for invoking the tool
+     */
+    parameters?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (string | null) | (string | null) | ({
+        [key: string]: unknown;
+    } | null) | ({
+        [key: string]: unknown;
+    } | null) | Array<string> | undefined;
+};
+
 export type TopLogprob = {
     token: string;
     bytes?: Array<number> | null;
@@ -1019,7 +2110,8 @@ export type TopLogprob = {
 
 export type Transcription = {
     text: string;
-    [key: string]: unknown | string;
+    logprobs?: Array<Logprob> | null;
+    [key: string]: unknown | string | (Array<Logprob> | null) | undefined;
 };
 
 export type TranscriptionSegment = {
@@ -1052,11 +2144,24 @@ export type TranscriptionWord = {
     [key: string]: unknown | number | string;
 };
 
-export type UserChatMessage = {
+export type UserChatMessageInput = {
     role?: MessageRole;
     additional_kwargs?: {
         [key: string]: unknown;
     };
+    blocks?: Array<({
+        block_type?: 'text';
+    } & TextBlock) | ({
+        block_type?: 'image';
+    } & ImageBlock) | ({
+        block_type?: 'audio';
+    } & AudioBlock)>;
+    user_id: string;
+};
+
+export type UserChatMessageOutput = {
+    role?: MessageRole;
+    additional_kwargs?: unknown;
     blocks?: Array<({
         block_type?: 'text';
     } & TextBlock) | ({
@@ -1086,11 +2191,65 @@ export type UserDto = {
     profile_image?: string | null;
 };
 
+/**
+ * A start event triggered directly by a user's message, bridging both display and control functionalities.
+ *
+ * ### Why UserMessageEvent?
+ * While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
+ * output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
+ * interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
+ * - A display event (since it may appear in the UI history).
+ * - A control event triggering workflow execution from a particular starting step.
+ *
+ * By inheriting from `DisplayEvent` and `StartEvent`:
+ * - It ensures the event is visible in the user interface, displaying the user’s message.
+ * - It also sets the workflow in motion, deciding how and where the system responds or which step
+ * of the workflow to begin with.
+ *
+ * ### Use Case
+ * In an agent workflow, you might have:
+ * - **UserMessageEvent**: Initiates the workflow at a certain step due to user input.
+ * - Another start event from an agent or a system event: Initiates the workflow at a different step
+ * or with different initial conditions.
+ *
+ * This flexible design allows mixing and matching start events to adapt how and when workflows
+ * are triggered, depending on the source of the event.
+ */
+export type UserMessageEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
+     */
+    locale?: string | null;
+    /**
+     * User who sent the message
+     */
+    user: AuthenticatedUser;
+    /**
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (string | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | Array<string> | undefined;
+};
+
 export type UserMessageEventInput = {
     /**
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
+    messages?: Array<ChatMessageInput | UserChatMessageInput | AssistantChatMessageInput>;
 };
 
 export type ValidationError = {
@@ -1153,9 +2312,7 @@ export type WsServerEvent = {
     /**
      * Payload of the event, containing detailed information.
      */
-    event_data: {
-        [key: string]: unknown;
-    };
+    event: AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | StartEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
 };
 
 /**
@@ -1267,21 +2424,34 @@ export type GetLocaleResponses = {
 
 export type GetLocaleResponse = GetLocaleResponses[keyof GetLocaleResponses];
 
-export type GetAllEventsData = {
+export type GetEventsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        thread_id?: string;
+        display_id?: string;
+        event_class?: string;
+    };
     url: '/event/';
 };
 
-export type GetAllEventsResponses = {
+export type GetEventsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetEventsError = GetEventsErrors[keyof GetEventsErrors];
+
+export type GetEventsResponses = {
     /**
      * Successful Response
      */
     200: Array<WsServerEvent>;
 };
 
-export type GetAllEventsResponse = GetAllEventsResponses[keyof GetAllEventsResponses];
+export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
 
 export type ListUserThreadsData = {
     body?: never;
