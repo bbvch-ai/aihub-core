@@ -1,51 +1,52 @@
 from typing import override
 
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.events import BotInTheLoopResponseEvent
 from botbuilder.core import ActivityHandler, TurnContext
 from botframework.connector import Channels
 from nats.aio.client import Client as NATS
 
-from aihub_bot.routes.hitl.HitlHandler import HitlHandler
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import HumanInTheLoopResponseEvent
-from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 
 
-class HitlBot(ActivityHandler):
+class BotInTheLoopBot(ActivityHandler):
     def __init__(
         self,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        hitl_handler: HitlHandler,
+        bot_in_the_loophandler: BotInTheLoopHandler,
     ):
         super().__init__()
         self.nc = nc
         self.external_event_distributor = external_event_distributor
-        self.hitl_handler = hitl_handler
+        self.bot_in_the_loophandler = bot_in_the_loophandler
 
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         # Handle Slack-specific message formatting
         if turn_context.activity.channel_id != Channels.slack:
-            raise NotImplementedError("HitlBot only supports Slack channel")
+            raise NotImplementedError("BotInTheLoopBot only supports Slack channel")
 
         conversation_id = turn_context.activity.conversation.id
 
         found = False
-        for thread_id, existing_conv_id in self.hitl_handler.thread_to_conversation_mapping.items():
+        for thread_id, existing_conv_id in self.bot_in_the_loophandler.thread_to_conversation_mapping.items():
             if conversation_id.startswith(existing_conv_id):
-                self.hitl_handler.thread_to_conversation_mapping[thread_id] = conversation_id
+                self.bot_in_the_loophandler.thread_to_conversation_mapping[thread_id] = conversation_id
                 found = True
                 break
 
         if not found:
             raise RuntimeError("Conversation ID not found in thread_to_conversation_mapping")
 
-        hitl_request = self.hitl_handler.conversation_to_hitl_request_mapping.get(conversation_id)
+        bot_in_the_looprequest = self.bot_in_the_loophandler.conversation_to_bot_in_the_looprequest_mapping.get(
+            conversation_id
+        )
 
         await self.external_event_distributor.distribute_event(
-            external_event=HumanInTheLoopResponseEvent(
+            external_event=BotInTheLoopResponseEvent(
                 response=turn_context.activity.text,
-                request_event=hitl_request,
+                request_event=bot_in_the_looprequest,
             ),
             user=turn_context.activity.from_property.id,
         )

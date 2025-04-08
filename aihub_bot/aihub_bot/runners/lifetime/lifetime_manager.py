@@ -1,18 +1,18 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
-from aihub_bot.routes.hitl.HitlHandler import HitlHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import HitlHandler
 
 
 @asynccontextmanager
