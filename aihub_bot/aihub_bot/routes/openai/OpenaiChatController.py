@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 class OpenaiChatController(Controller):
     name = LocaleString(en="LLM Chat")
     description = LocaleString(en="Chat with LLMs")
-    icon = "material-symbols-light:chat-outline"
 
     def __init__(
         self,

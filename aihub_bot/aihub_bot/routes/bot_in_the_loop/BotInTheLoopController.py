@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Callable, Any
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -6,7 +6,7 @@ from aihub_lib.nats.distributor.dependencies.use_external_event_distributor impo
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
-from fastapi import Body, Depends, Request, Response
+from fastapi import Body, Request, Response, Depends
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.bot_in_the_loop.BotInTheLoopBot import BotInTheLoopBot
@@ -16,20 +16,19 @@ from aihub_bot.routes.RoutesService import RoutesService
 
 
 class BotInTheLoopController(Controller):
-    name = LocaleString(en="Human In The Loop Bot")
-    description = LocaleString(en="Human In The Loop Bot")
+    name = LocaleString(en="Bot In The Loop Bot")
+    description = LocaleString(en="Bot In The Loop Bot")
 
-    def __init__(self, route: str = "/bot_in_the_loop", is_admin_only=False):
-        super().__init__(route, is_admin_only=is_admin_only)
+    def __init__(
+        self,
+        route: str = "/bot_in_the_loop",
+        is_admin_only=False,
+        auth: Callable[..., Any] = None,
+    ):
+        super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def bot_in_the_loop_response(self, route: str = "/response") -> "BotInTheLoopController":
-        @self.router.post(
-            route,
-            summary="Human In The Loop Response",
-            description="Handles Human In The Loop responses by publishing them to the NATS server.",
-            tags=self.tags,
-            response_model=None,
-        )
+        @self.router.post(route, tags=self.tags)
         async def bot_in_the_loop_chat(
             request: Request,
             _: Annotated[ActivityModel, Body],  # openapi request body
