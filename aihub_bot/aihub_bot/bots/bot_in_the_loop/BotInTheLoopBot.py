@@ -8,6 +8,7 @@ from botframework.connector import Channels
 from nats.aio.client import Client as NATS
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
+from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopResponseEvent
 
 logger = logging.getLogger(__name__)
@@ -33,14 +34,14 @@ class BotInTheLoopBot(ActivityHandler):
 
         conversation_id = turn_context.activity.conversation.id
 
-        found = False
-        for thread_id, existing_conv_id in self.bot_in_the_loop_handler.thread_to_conversation_mapping.items():
+        thread_id = None
+        for existing_thread_id, existing_conv_id in self.bot_in_the_loop_handler.thread_to_conversation_mapping.items():
             if conversation_id.startswith(existing_conv_id):
-                self.bot_in_the_loop_handler.thread_to_conversation_mapping[thread_id] = conversation_id
-                found = True
+                self.bot_in_the_loop_handler.thread_to_conversation_mapping[existing_thread_id] = conversation_id
+                thread_id = existing_thread_id
                 break
 
-        if not found:
+        if not thread_id:
             self.bot_in_the_loop_handler.slack_conversation = TurnContext.get_conversation_reference(
                 turn_context.activity
             )
@@ -52,9 +53,13 @@ class BotInTheLoopBot(ActivityHandler):
         )
 
         await self.external_event_distributor.distribute_event(
-            external_event=BotInTheLoopResponseEvent(
-                response=turn_context.activity.text,
-                request_event=bot_in_the_loop_request,
+            external_event=ExternalEvent(
+                event=BotInTheLoopResponseEvent(
+                    response=turn_context.activity.text,
+                    request_event=bot_in_the_loop_request,
+                ),
+                thread_id=thread_id,
+                display_id="test",
             ),
             user=turn_context.activity.from_property.id,
         )
