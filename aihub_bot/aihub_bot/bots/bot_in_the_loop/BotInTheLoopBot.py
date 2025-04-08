@@ -1,3 +1,5 @@
+import logging
+
 from typing_extensions import override
 
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -7,6 +9,8 @@ from nats.aio.client import Client as NATS
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopResponseEvent
+
+logger = logging.getLogger(__name__)
 
 
 class BotInTheLoopBot(ActivityHandler):
@@ -37,16 +41,20 @@ class BotInTheLoopBot(ActivityHandler):
                 break
 
         if not found:
-            raise RuntimeError("Conversation ID not found in thread_to_conversation_mapping")
+            self.bot_in_the_loop_handler.slack_conversation = TurnContext.get_conversation_reference(
+                turn_context.activity
+            )
+            logger.info("New Slack conversation ID set: %s", conversation_id)
+            return await turn_context.send_activity(f"New Slack channel ID set: {conversation_id}")
 
-        bot_in_the_looprequest = self.bot_in_the_loop_handler.conversation_to_bot_in_the_looprequest_mapping.get(
+        bot_in_the_loop_request = self.bot_in_the_loop_handler.conversation_to_bot_in_the_loop_request_mapping.get(
             conversation_id
         )
 
         await self.external_event_distributor.distribute_event(
             external_event=BotInTheLoopResponseEvent(
                 response=turn_context.activity.text,
-                request_event=bot_in_the_looprequest,
+                request_event=bot_in_the_loop_request,
             ),
             user=turn_context.activity.from_property.id,
         )

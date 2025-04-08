@@ -1,12 +1,11 @@
-from typing import Callable, Dict, cast
+from typing import Callable, Dict, Optional
 
+from aihub_bot.routes.RoutesService import RoutesService
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentTopic
 from botbuilder.core import TurnContext
-from botbuilder.integration.aiohttp import CloudAdapter
-from botbuilder.schema import ConversationAccount, ConversationReference
-from botframework.connector import Channels
+from botbuilder.schema import ConversationReference
 from fastapi import Request
 
 
@@ -14,8 +13,12 @@ class BotInTheLoopHandler:
     def __init__(self):
         self.thread_to_conversation_mapping: Dict[str, str] = {}
         self.conversation_to_bot_in_the_loop_request_mapping: Dict[str, BotInTheLoopRequestEvent] = {}
+        self.slack_conversation: Optional[ConversationReference] = None
+        self.path: Optional[str] = None
 
     async def handle_event(self, event: BaseEvent, topic: AgentTopic):
+        if not self.slack_conversation:
+            raise RuntimeError("Slack channel ID is not set")
         if event.is_bitl_request_event:
             await self._handle_bot_in_the_loop_request(event, topic)
         else:
@@ -26,22 +29,18 @@ class BotInTheLoopHandler:
         event: BotInTheLoopRequestEvent,
         topic: AgentTopic,
     ):
-        adapter = CloudAdapter()
+        adapter = RoutesService.get_adapter(self.path)
         thread_id = topic.thread_id
         if thread_id in self.thread_to_conversation_mapping:
             slack_channel_id = self.thread_to_conversation_mapping[thread_id]
         else:
-            slack_channel_id = "B08D8FP20TZ:T08AZPNJV33:C08MK7Z8GU9"
+            slack_channel_id = self.slack_conversation.conversation.id
             self.thread_to_conversation_mapping[thread_id] = slack_channel_id
 
         self.conversation_to_bot_in_the_loop_request_mapping[slack_channel_id] = event
 
-        conversation = ConversationReference(
-            channel_id=Channels.slack,
-            conversation=ConversationAccount(
-                id=f"{slack_channel_id}",
-            ),
-        )
+        conversation = self.slack_conversation
+        conversation.conversation.id = slack_channel_id
         question: str = event.question
         await adapter.continue_conversation(
             reference=conversation,
