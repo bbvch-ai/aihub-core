@@ -72,8 +72,8 @@ async def main():
         .send_event_to(
             "BotInTheLoopAgent",
             "bot_in_the_loop_agent",
-            start_event_type=StartEvent,
-            stop_event_type=StopEvent,
+            start_event_class=StartEvent,
+            stop_event_class=StopEvent,
         ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(
