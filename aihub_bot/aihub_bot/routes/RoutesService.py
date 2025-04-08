@@ -38,5 +38,9 @@ class RoutesService(ChatService):
         - Each path has a unique set of credentials.
         - The credential is needed to verify that requests are coming from the correct bot service.
         """
-        credentials: Credentials = PathEntity.get_credentials_by_path(path)
+        credentials: Credentials = RoutesService.get_credentials(path)
         return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
+
+    @staticmethod
+    def get_credentials(path: str) -> Credentials:
+        return PathEntity.get_credentials_by_path(path)

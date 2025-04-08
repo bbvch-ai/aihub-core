@@ -43,6 +43,7 @@ class BotInTheLoopHandler:
         conversation.conversation.id = slack_channel_id
         question: str = event.question
         await adapter.continue_conversation(
+            bot_app_id=RoutesService.get_credentials(self.path).APP_ID,
             reference=conversation,
             callback=self._bot_in_the_loop_callback(question),
         )
