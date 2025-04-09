@@ -34,7 +34,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         topic_manager = TopicManager()
 
-        # Setup Human In The Loop (BOT_IN_THE_LOOP) subscriber
+        # Setup Bot In The Loop subscriber
         bot_in_the_loop_handler = BotInTheLoopHandler()
         bot_in_the_loop_subscriber = NCSubscriber.for_all_agent_events(
             nc=nc,
