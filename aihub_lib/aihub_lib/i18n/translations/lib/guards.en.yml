@@ -74,19 +74,21 @@ context_sufficient_guard:
   prompt: |
     I will give you a context, a question, and previous queries if any have been generated.
     If the question can be answered with the provided context, then the conversation may continue (success=True).
-    If answering the question is not possible with the context, then the conversation should be terminated (success=False).
-    First, think about how to decide, and then determine whether the conversation can be successfully continued or not. 
-    Second, make sure your new query is unique enough compared to the previous ones.
-  message: |
+    If answering the question is not possible with the context, then the conversation needs more context (success=False).
+    This results in needing a new query which will be used to gather more information. Make sure your new query is 
+    distinct from previous queries. If necessary abstract to a higher level concept.
+    
     Question:
     <Question>
     {user_query}
     </Question>
-    Context:
-    <Context>
-    {context}
-    </Context>
+    
     Previous Queries:
     <Previous_Queries>
     {prev_queries}
     <\Previous_Queries>
+    
+    Context:
+    <Context>
+    {context}
+    </Context>

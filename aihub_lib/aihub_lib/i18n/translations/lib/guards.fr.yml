@@ -80,7 +80,7 @@ context_sufficient_guard:
     Si le contexte ne permet pas de répondre à la question, la conversation doit être interrompue (success=False).
     Tout d'abord, réfléchissez à la manière de prendre une décision, puis déterminez si la conversation peut être poursuivie avec succès ou non. 
     Ensuite, assurez-vous que votre nouvelle requête est suffisamment unique par rapport aux précédentes.
-  message: |
+    
     Question :
     <Question>
     {user_query}

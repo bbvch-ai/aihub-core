@@ -80,7 +80,7 @@ context_sufficient_guard:
     Ist die Beantwortung der Frage mit dem Kontext nicht möglich, sollte die Konversation beendet werden (success=False).
     Überlegen Sie zunächst, wie Sie entscheiden sollen, und bestimmen Sie dann, ob die Konversation erfolgreich fortgesetzt werden kann oder nicht. 
     Stellen Sie zweitens sicher, dass Ihre neue Abfrage im Vergleich zu den vorherigen eindeutig genug ist.
-  message: |
+    
     Frage:
     <Question>
     {user_query}

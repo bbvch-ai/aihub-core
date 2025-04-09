@@ -31,7 +31,7 @@ async def context_sufficient_guard(
     context: str,
     prev_queries: List[str],
 ) -> ContextGuardResult:
-    sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.message"))
+    sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
     if prev_queries:
         prev_queries = "\n".join(prev_queries)
     llm_kwargs = {}

@@ -142,7 +142,7 @@ def self_hosted_agent_config(event_loop):
         name="unsloth/Llama-3.2-1B-Instruct",
         base_url="http://localhost:8182/v1",
         api_key=None,
-        context_size=512,
+        context_size=8192,
         is_chat_model=True,
         is_function_calling_model=False,
         default_parameter=SelfHostedLLMParameter(
@@ -249,7 +249,7 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
 def _(count: int, agent_runner: AgentTestRunner):
-    retriever_events = len(agent_runner.get_events_of_class(RetrieverEvent, "control_event"))
+    retriever_events = len(agent_runner.get_events_of_class(RetrieverEvent, True))
     assert retriever_events == count, f"Expected {count} RetrieverEvents, got {retriever_events}"
 
 

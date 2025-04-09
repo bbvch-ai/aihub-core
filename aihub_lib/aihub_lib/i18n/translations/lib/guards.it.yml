@@ -81,7 +81,7 @@ context_sufficient_guard:
     Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere interrotta (success=False).
     Per prima cosa, si deve pensare a come decidere e quindi determinare se la conversazione può essere continuata con successo o meno. 
     In secondo luogo, assicurarsi che la nuova domanda sia sufficientemente unica rispetto alle precedenti.
-  message: |
+    
     Domanda:
     <Domanda>
     {user_query}

@@ -24,7 +24,6 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     maintains consistency and allows easy extension if needed.
     """
 
-    dimensions: Annotated[int, Field(description="Number of embedding dimensions if applicable.")] = 1536
     encoding_format: Annotated[str, Field(description="The encoding format of the returned embeddings.")] = "float"
 
 
