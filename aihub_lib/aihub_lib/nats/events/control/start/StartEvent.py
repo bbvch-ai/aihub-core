@@ -1,8 +1,5 @@
 from typing import Any, Dict
 
-from pydantic import Field
-
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
 
@@ -18,8 +15,6 @@ class StartEvent(ControlEvent):
     By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
     """
-
-    user: AuthenticatedUser = Field(..., description="The authenticated user initiating the workflow.")
 
     def to_context_dict(self) -> Dict[str, Any]:
         """

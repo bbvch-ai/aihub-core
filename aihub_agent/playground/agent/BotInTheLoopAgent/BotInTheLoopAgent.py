@@ -3,12 +3,12 @@ from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import StartEvent, StopEvent, UserMessageEvent
 
 
 class BotInTheLoopAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent, run_context: RunContext) -> BotInTheLoop.request:
+    async def start_step(self, event: UserMessageEvent, run_context: RunContext) -> BotInTheLoop.request:
         print("[BotInTheLoopAgent.start_step]")
         user = await run_context.get("user")
         return BotInTheLoop.invoke(
