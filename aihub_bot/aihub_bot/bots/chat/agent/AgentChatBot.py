@@ -1,8 +1,8 @@
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from nats.aio.client import Client as NATS
 
-from aihub_bot.bots.agent.AgentCompletionHandler import AgentCompletionHandler
-from aihub_bot.bots.BaseChatBot import BaseChatBot
+from aihub_bot.bots.chat.agent.AgentCompletionHandler import AgentCompletionHandler
+from aihub_bot.bots.chat.BaseChatBot import BaseChatBot
 
 
 class AgentChatBot(BaseChatBot):

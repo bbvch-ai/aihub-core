@@ -8,7 +8,7 @@ from botbuilder.core import ActivityHandler, TurnContext
 from botframework.connector import Channels
 from typing_extensions import override
 
-from aihub_bot.bots.CompletionHandler import CompletionHandler
+from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 
 
 class BaseChatBot(ActivityHandler):

@@ -9,8 +9,8 @@ from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 
-from aihub_bot.bots.openai.OpenaiChatBot import OpenaiChatBot
-from aihub_bot.bots.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
+from aihub_bot.bots.chat.openai.OpenaiChatBot import OpenaiChatBot
+from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 class OpenaiChatController(Controller):
     name = LocaleString(en="LLM Chat")
     description = LocaleString(en="Chat with LLMs")
-    icon = "material-symbols-light:chat-outline"
 
     def __init__(
         self,

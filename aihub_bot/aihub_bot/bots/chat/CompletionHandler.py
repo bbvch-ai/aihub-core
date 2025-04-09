@@ -8,7 +8,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
 
-from aihub_bot.bots.ContentExtractor import ContentExtractor
+from aihub_bot.bots.chat.ContentExtractor import ContentExtractor
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
 from aihub_bot.persistence.entities.PathEntity import PathEntity
 

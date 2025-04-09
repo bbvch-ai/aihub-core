@@ -1,5 +1,6 @@
 import asyncio
 
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
 from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.BotTestRunner import BotTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
@@ -27,6 +28,7 @@ async def main():
         )
         .json_chat_completion()
         .stream_chat_completion(),
+        BotInTheLoopController().bot_in_the_loop_response(),
     )
 
     await runner.run()
