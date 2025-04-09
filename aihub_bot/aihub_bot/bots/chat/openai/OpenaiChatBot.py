@@ -1,7 +1,7 @@
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 
-from aihub_bot.bots.BaseChatBot import BaseChatBot
-from aihub_bot.bots.openai.OpenaiCompletionHandler import OpenaiCompletionHandler
+from aihub_bot.bots.chat.BaseChatBot import BaseChatBot
+from aihub_bot.bots.chat.openai.OpenaiCompletionHandler import OpenaiCompletionHandler
 
 
 class OpenaiChatBot(BaseChatBot):

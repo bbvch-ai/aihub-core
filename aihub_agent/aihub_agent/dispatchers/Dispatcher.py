@@ -418,6 +418,19 @@ class Dispatcher:
                             event_id=event.event_id,
                         )
 
+                    if event.is_bitl_request_event:
+                        logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event}")
+                        # Complete the event's topic info
+                        event.topic = AgentTopic.from_partial_topic(
+                            partial_topic=event.topic,
+                            agent_class=topic.agent_class,
+                            agent_id=topic.agent_id,
+                            run_id=topic.run_id,
+                            thread_id=topic.thread_id,
+                            display_id=topic.display_id,
+                            event_id=event.event_id,
+                        )
+
                     if event.is_aitl_request_event:
                         logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
                         await self.trigger_agent_in_the_loop(event, topic)

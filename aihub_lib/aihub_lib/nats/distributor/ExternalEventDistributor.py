@@ -74,10 +74,15 @@ class ExternalEventDistributor:
             run_id = str(ObjectId())
         elif external_event.event.is_hitl_response_event:
             run_id = external_event.event.request_event.topic.run_id
+        elif external_event.event.is_bitl_response_event:
+            run_id = external_event.event.request_event.topic.run_id
         else:
             raise ValueError(f"Received event of unhandled type: {external_event.event.event_name}")
 
         if external_event.event.is_hitl_response_event:
+            await self._handle_human_in_the_loop_response(thread, external_event)
+
+        if external_event.event.is_bitl_response_event:
             await self._handle_human_in_the_loop_response(thread, external_event)
 
         if external_event.event.is_display_event:

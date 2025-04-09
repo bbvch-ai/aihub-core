@@ -10,7 +10,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from nats.aio.client import Client as NATS
 
-from aihub_bot.bots.BaseChatBot import CompletionHandler
+from aihub_bot.bots.chat.BaseChatBot import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import Content, Message
 
 

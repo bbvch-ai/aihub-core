@@ -1,0 +1,30 @@
+import asyncio
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.i18n.LocaleString import LocaleString
+from playground.agent.BotInTheLoopAgent.BotInTheLoopAgent import BotInTheLoopAgent
+from playground.agent.BotInTheLoopAgent.BotInTheLoopAgentConfig import BotInTheLoopAgentConfig
+
+
+async def main():
+    runner = AgentTestRunner(
+        agent_type=BotInTheLoopAgent,
+        agent_config=BotInTheLoopAgentConfig(
+            agent_id="bot_in_the_loop_agent",
+            name=LocaleString(en="Bot in the Loop Agent"),
+            description=LocaleString(en="This is an agent with the Bot in the Loop"),
+            system_prompt=LocaleString(en="You are an agent"),
+        ),
+    )
+
+    task = asyncio.create_task(runner.run_forever())
+
+    try:
+        await task
+    except KeyboardInterrupt:
+        task.cancel()
+        await task
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
