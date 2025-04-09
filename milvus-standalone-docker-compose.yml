@@ -47,7 +47,7 @@ services:
       - milvus:/var/lib/milvus
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
-      interval: 30s
+      interval: 60s
       start_period: 90s
       timeout: 20s
       retries: 3
