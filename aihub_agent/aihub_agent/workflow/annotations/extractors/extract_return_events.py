@@ -3,7 +3,7 @@ from typing import Annotated, Callable, Set, Type
 
 from aihub_lib.nats.events import BaseEvent
 
-from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
+from aihub_agent.workflow.annotations.extractors.extract_event_names import extract_event_classes
 
 
 def extract_return_events(
@@ -23,7 +23,7 @@ def extract_return_events(
 
     ### How It Works
     - Retrieves the function’s return annotation from `func.__signature__.return_annotation`.
-    - Passes that annotation to `extract_event_types` to handle unions, optionals, fixed-size lists, etc.
+    - Passes that annotation to `extract_event_classes` to handle unions, optionals, fixed-size lists, etc.
     - Returns a set of `BaseEvent` subclasses that represent possible output events.
 
     ### Note
@@ -37,10 +37,10 @@ def extract_return_events(
     ```
     This would return `{SomeEvent}` indicating that it may return a `SomeEvent` or `None`.
     """
-
-    return_annotation = func.__signature__.return_annotation
+    signature = inspect.signature(func)
+    return_annotation = signature.return_annotation
     if return_annotation is inspect._empty:
         return set()
 
-    event_types, _, _ = extract_event_types(return_annotation)
-    return event_types
+    event_classes, _, _ = extract_event_classes(return_annotation)
+    return event_classes

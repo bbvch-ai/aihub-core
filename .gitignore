@@ -1,2 +1,3 @@
 __pycache__/
 *.py[cod]
+/aihub_agent/playground/minimal_workflow/bounded_loop/tests/.env

@@ -203,9 +203,9 @@ class JetStreamEventStore:
         run_store.add_event(event)
 
         # Signal if this event was being waited for
-        event_type = event.__class__.__name__
+        event_name = event.event_name
         event_id = event.event_id
-        event_key = f"{run_id}:{event_type}:{event_id}"
+        event_key = f"{run_id}:{event_name}:{event_id}"
 
         if event_key in self.pending_events:
             self.pending_events.remove(event_key)
@@ -254,16 +254,16 @@ class JetStreamEventStore:
 
         Returns True if the event is stored, False if the timeout expired.
         """
-        event_type = event.__class__.__name__
+        event_name = event.event_name
         event_id = event.event_id
 
         # Check if the event is already stored
         run_store = self._get_run_store(run_id)
-        if event_id in run_store.events.get(event_type, {}):
+        if event_id in run_store.events.get(event_name, {}):
             return True
 
         # If not stored, create a condition to wait for it
-        event_key = f"{run_id}:{event_type}:{event_id}"
+        event_key = f"{run_id}:{event_name}:{event_id}"
         self.pending_events.add(event_key)
 
         if event_key not in self.event_sync_conditions:
@@ -275,7 +275,7 @@ class JetStreamEventStore:
         try:
             async with condition:
                 # Check again in case it arrived while we were setting up
-                if event_id in run_store.events.get(event_type, {}):
+                if event_id in run_store.events.get(event_name, {}):
                     return True
 
                 # Wait for the condition to be notified
@@ -308,7 +308,7 @@ class JetStreamEventStore:
         If 'until' is specified, only returns events created until that timestamp.
         """
         run_store = self._get_run_store(run_id)
-        return run_store.get_events_of_type(class_name, until_event)
+        return run_store.get_events_of_name(class_name, until_event)
 
     async def get_events_of_multiple_types(
         self,
@@ -323,7 +323,7 @@ class JetStreamEventStore:
         This is the primary method used by the Dispatcher.
         """
         run_store = self._get_run_store(run_id)
-        return run_store.get_events_of_multiple_types(class_names, until_event)
+        return run_store.get_events_of_multiple_names(class_names, until_event)
 
     async def delete_all(self, run_id: Annotated[str, "Unique identifier for the workflow run"]):
         """

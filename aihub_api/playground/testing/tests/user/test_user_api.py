@@ -15,7 +15,7 @@ def api_client():
     """Create a test client for the API with UserController mounted."""
     runner = ApiTestRunner()
     auth = NoAuthHandler()
-    runner.mount(UserController(auth=auth).get_user())
+    runner.mount(UserController(auth=auth).get_my_user())
     return TestClient(runner.get_app())
 
 

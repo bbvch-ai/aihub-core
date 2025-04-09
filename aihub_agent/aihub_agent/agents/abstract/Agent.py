@@ -55,13 +55,13 @@ class Agent(abc.ABC):
 
     @classmethod
     @functools.cache
-    def get_steps_waiting_for_event(cls, event_type: Type[ControlEvent]):
+    def get_steps_waiting_for_event(cls, event_class: Type[ControlEvent]):
         """
         Given an event type, returns the steps that can handle it.
         This helps the dispatcher decide which steps to execute when a certain event arrives.
         """
         steps = cls.get_steps()
-        return [method for method in steps if event_type in method._input_events]
+        return [method for method in steps if event_class in method._input_events]
 
     @classmethod
     @functools.cache
@@ -71,7 +71,17 @@ class Agent(abc.ABC):
         This provides a global view of which events can drive the agent’s workflow.
         """
         steps = cls.get_steps()
-        return set(event_type for method in steps for event_type in method._input_events)
+        return set(event_class for method in steps for event_class in method._input_events)
+
+    @classmethod
+    @functools.cache
+    def get_output_events(cls) -> Set[Type[ControlEvent]]:
+        """
+        Aggregates all output event types produced by all steps.
+        This provides a global view of which events the agent can emit.
+        """
+        steps = cls.get_steps()
+        return set(event_class for method in steps for event_class in method._output_events)
 
     @classmethod
     @functools.cache
@@ -90,5 +100,5 @@ class Agent(abc.ABC):
         Returns all event types that are considered stop events (subclasses of StopEvent).
         These events indicate how a run/workflow can terminate.
         """
-        input_events = cls.get_input_events()
-        return {event for event in input_events if issubclass(event, StopEvent)}
+        output_events = cls.get_output_events()
+        return {event for event in output_events if issubclass(event, StopEvent)}

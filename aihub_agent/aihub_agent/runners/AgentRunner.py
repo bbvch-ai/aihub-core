@@ -21,6 +21,7 @@ from redis.asyncio import ConnectionPool, Redis
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.dispatchers.Dispatcher import Dispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
+from aihub_agent.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 
 logger = logging.getLogger(__name__)
 
@@ -116,11 +117,17 @@ class AgentRunner:
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [
-            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in start_events
+            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in start_events
         ]
 
         stop_events = self.agent_type.get_stop_events()
-        stop_event_specs = [EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in stop_events]
+        stop_event_specs = [
+            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in stop_events
+        ]
+
+        network_graph = WorkflowVisualizer(agent=self.agent_type)
+        network_graph.build_workflow_graph()
+
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_config.agent_id,
@@ -128,6 +135,7 @@ class AgentRunner:
             agent_config=self.agent_config,
             start_events=start_event_specs,
             stop_events=stop_event_specs,
+            network_graph=network_graph.to_pydantic(),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -246,6 +254,6 @@ class AgentRunner:
             run_id,
         )
         subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-            start_event.__class__.__name__, event_id=start_event.event_id
+            start_event.event_name, event_id=start_event.event_id
         )
         await publisher.publish_event(start_event, subject)

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.127.0"
+version = "v0.139.0"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -20,7 +20,7 @@ mongoengine = "^0.29.1"
 azure-identity = "^1.19.0"
 azure-mgmt-cosmosdb = "^9.7.0"
 azure-mgmt-resource = "^23.2.0"
-uvicorn = "^0.34.0"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
 httpx = "^0.28.1"
 cryptography = "^44.0.0"
 pyjwt = "^2.10.1"
@@ -42,7 +42,7 @@ asgi-lifespan = "^2.1.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.127.0"
+tag = "v0.139.0"
 subdirectory = "aihub_lib"
 
 [build-system]

@@ -50,4 +50,4 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('an EventA event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.get_event_of_type(SimpleEventA).payload == payload, "Agent received incorrect data"
+    assert agent_runner.get_event_of_class(SimpleEventA).payload == payload, "Agent received incorrect data"

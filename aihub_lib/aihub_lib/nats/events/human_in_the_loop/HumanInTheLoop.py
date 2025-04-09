@@ -38,6 +38,6 @@ class HumanInTheLoop:
             **kwargs,
             topic=PartialAgentTopic(
                 event_type=TopicManager.CONTROL_EVENT,
-                event_name=HumanInTheLoopResponseEvent.__name__,
+                event_name=cls.response.event_name_from_class(),
             ),
         )

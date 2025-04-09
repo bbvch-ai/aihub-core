@@ -1,4 +1,5 @@
 import { useThread } from '@core/composables/useThread'
+
 import { useLocalePath } from '#i18n'
 
 export const useActiveThread = () => {

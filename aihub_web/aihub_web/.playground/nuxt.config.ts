@@ -1,3 +1,5 @@
+import { defineNuxtConfig } from 'nuxt/config'
+
 export default defineNuxtConfig({
   extends: ['..'],
   modules: ['@nuxt/eslint'],
@@ -6,6 +8,9 @@ export default defineNuxtConfig({
       oidc: {
         clientId: process.env.AZURE_AD_CLIENT_ID,
         tenantId: process.env.AZURE_AD_TENANT_ID,
+      },
+      webui: {
+        url: 'http://localhost:8080',
       },
     },
   },

@@ -5,7 +5,8 @@ from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent
 
-from aihub_agent.workflow.annotations.extractors.extract_event_types import extract_event_types
+from aihub_agent.workflow.annotations.extractors.extract_event_names import extract_event_classes
+from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 
 def extract_function_events(
@@ -14,6 +15,7 @@ def extract_function_events(
         "A function or method whose parameters are to be analyzed for event types.",
     ],
 ) -> Tuple[
+    Set[Type[BaseEvent]],
     Set[Type[BaseEvent]],
     Dict[str, Set[Type[BaseEvent]]],
     Dict[str, bool],
@@ -40,16 +42,17 @@ def extract_function_events(
     ### Details
     - Parameters named `self` are ignored (common in instance methods).
     - Parameters annotated as `RunContext` or `ThreadContext` are not event parameters and thus skipped.
-    - Uses `extract_event_types` internally to handle complex union types, optional parameters, and fixed-size collections.
+    - Uses `extract_event_classes` internally to handle complex union types, optional parameters, and fixed-size collections.
 
     ### Example
     Consider a step method:
     ```python
-    def my_step(event: SomeEvent | None, events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]):
+    def my_step(event: SomeEvent | None, events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]) -> StopEvent:
         ...
     ```
     This might produce:
     - input_events = {SomeEvent, AnotherEvent, YetAnotherEvent}
+    - output_events = {StopEvent}
     - input_event_mapping = {"event": {SomeEvent}, "events": {AnotherEvent}, "fixed": {YetAnotherEvent}}
     - parameter_optional_map = {"event": True, "events": False, "fixed": False}
     - size_requirements = {"event": None, "events": None, "fixed": 3}
@@ -61,6 +64,8 @@ def extract_function_events(
     parameter_optional_map: Dict[str, bool] = {}
     size_requirements: Dict[str, Optional[int]] = {}
 
+    output_events: Set[Type[BaseEvent]] = extract_return_events(func)
+
     for param in signature.parameters.values():
         if param.name == "self":
             continue
@@ -69,11 +74,11 @@ def extract_function_events(
         if annotation in (RunContext, ThreadContext):
             continue
 
-        event_types, is_optional, required_size = extract_event_types(annotation)
-        if event_types:
-            input_events.update(event_types)
-            input_event_mapping[param.name] = event_types
+        event_classes, is_optional, required_size = extract_event_classes(annotation)
+        if event_classes:
+            input_events.update(event_classes)
+            input_event_mapping[param.name] = event_classes
             parameter_optional_map[param.name] = is_optional
             size_requirements[param.name] = required_size
 
-    return input_events, input_event_mapping, parameter_optional_map, size_requirements
+    return input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements

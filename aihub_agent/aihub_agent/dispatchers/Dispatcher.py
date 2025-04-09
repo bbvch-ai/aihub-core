@@ -155,7 +155,7 @@ class Dispatcher:
         if not self._initialized:
             await self.start()
 
-        logger.debug(f"Handling event {event.__class__.__name__} for subject {topic}")
+        logger.debug(f"Handling event {event.event_name} for subject {topic}")
 
         await self.event_store.ensure_event_stored(topic.run_id, event)
 
@@ -164,7 +164,7 @@ class Dispatcher:
         thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if event.is_start_event:
-            logger.debug(f"Handling StartEvent: {event.__class__.__name__}")
+            logger.debug(f"Handling StartEvent: {event.event_name}")
             telemetry_headers = self.tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
 
@@ -175,7 +175,7 @@ class Dispatcher:
                 await run_context.set(key, value)
 
         if event.is_stop_event:
-            logger.debug(f"Handling StopEvent: {event.__class__.__name__}")
+            logger.debug(f"Handling StopEvent: {event.event_name}")
             # Clean up run-specific data
             await run_context.delete_all()
             await self.event_store.delete_all(topic.run_id)
@@ -183,7 +183,7 @@ class Dispatcher:
             return
 
         if event.is_exception_event:
-            logger.debug(f"Handling ExceptionEvent: {event.__class__.__name__}")
+            logger.debug(f"Handling ExceptionEvent: {event.event_name}")
             # Mark run as crashed so no further steps are executed
             await self.step_store.mark_run_as_crashed(topic.run_id)
             return
@@ -193,19 +193,19 @@ class Dispatcher:
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
             input_events = getattr(step_method, "_input_events", set())
-            input_event_class_names = [event_type.__name__ for event_type in input_events]
+            input_event_class_names = [event_class.event_name_from_class() for event_class in input_events]
             events = await self.event_store.get_events_of_multiple_types(
                 topic.run_id, input_event_class_names, until_event=event
             )
             if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
-                logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.__class__.__name__}'")
+                logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
                 asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
 
     async def is_step_ready(
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
@@ -239,12 +239,16 @@ class Dispatcher:
         precondition_fn: Optional[Callable[..., Awaitable[bool]]] = getattr(step_method, "_precondition_fn", None)
 
         # For each parameter, check if we have enough events
-        for argument_name, event_types in input_event_mapping.items():
-            logger.debug(f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_types}")
+        for argument_name, event_classes in input_event_mapping.items():
+            logger.debug(
+                f"[{step_method.__name__}] Checking argument '{argument_name}' for event types {event_classes}"
+            )
             required_size = size_requirements.get(argument_name)
             is_optional = parameter_optional_map.get(argument_name, False)
 
-            available_events_count = sum(len(events.get(event_type.__name__, [])) for event_type in event_types)
+            available_events_count = sum(
+                len(events.get(event_class.event_name_from_class(), [])) for event_class in event_classes
+            )
 
             # If a fixed size is required, verify count
             if required_size is not None and available_events_count < required_size:
@@ -280,7 +284,7 @@ class Dispatcher:
         step_method: Annotated[Callable, "The step method we're preparing arguments for."],
         events: Annotated[
             Dict[str, List[ControlEvent]],
-            "All events for this run, keyed by event_type_name.",
+            "All events for this run, keyed by event name.",
         ],
         trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."],
     ) -> Optional[Any]:
@@ -295,14 +299,14 @@ class Dispatcher:
 
         Returns None if no suitable event is found and the parameter is optional.
         """
-        event_types = step_method._input_event_mapping.get(param.name, set())
+        event_classes = step_method._input_event_mapping.get(param.name, set())
         size_requirements = getattr(step_method, "_size_requirements", {})
         required_size = size_requirements.get(param.name)
 
         # Gather all matching events
         all_matching_events: List[ControlEvent] = []
-        for event_type in event_types:
-            event_list = events.get(event_type.__name__, [])
+        for event_class in event_classes:
+            event_list = events.get(event_class.event_name_from_class(), [])
             all_matching_events.extend(event_list)
 
         if not all_matching_events:
@@ -333,7 +337,7 @@ class Dispatcher:
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
@@ -424,7 +428,7 @@ class Dispatcher:
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         method: Annotated[Callable, "The method to prepare the args for."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event_type_name."],
+        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
@@ -507,19 +511,19 @@ class Dispatcher:
         - Maintains isolation between different agent-to-agent interactions
         - Enables monitoring of both successful completions and failures
         """
-        response_event_type = aitl_request_event.response
-        exception_event_type = aitl_request_event.exception
+        response_event_class = aitl_request_event.response
+        exception_event_class = aitl_request_event.exception
 
         start_event = aitl_request_event.start_event
 
         async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
             if aitl_event.is_stop_event:
-                aitl_response = response_event_type(stop_event=aitl_event)
+                aitl_response = response_event_class(stop_event=aitl_event)
                 logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
                 await event_subscriber.stop()
                 await self.publish_event(aitl_response, topic)
             if aitl_event.is_exception_event:
-                aitl_exception = exception_event_type(exception_event=aitl_event)
+                aitl_exception = exception_event_class(exception_event=aitl_event)
                 logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
                 await event_subscriber.stop()
                 await self.publish_event(aitl_exception, topic)
@@ -558,8 +562,8 @@ class Dispatcher:
         """
         topic_manager = self.get_topic_manager_for_thread(topic)
         if event.is_control_event:
-            subject = topic_manager.get_subject_for_control_event_in_thread(event.__class__.__name__, event.event_id)
+            subject = topic_manager.get_subject_for_control_event_in_thread(event.event_name, event.event_id)
             await self.js_publisher.publish_event(event, subject)
         if event.is_display_event:
-            subject = topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
+            subject = topic_manager.get_subject_for_display_event_in_thread(event.event_name, event.event_id)
             await self.nc_publisher.publish_event(event, subject)

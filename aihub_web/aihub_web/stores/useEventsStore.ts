@@ -1,28 +1,26 @@
-import { defineStore } from 'pinia'
+import { getEvents } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import ObjectID from 'bson-objectid'
-import type { WSUserEvent } from '@core/types/Events/WSEvent/WSUserEvent'
-import type { HumanInTheLoopResponseEvent } from '@core/types/Events/HumanInTheLoopEvents/HumanInTheLoopResponseEvent'
-import type { UserMessageEvent } from '@core/types/Events/UserEvents/UserMessageEvent'
-import type { WSServerEvent } from '@core/types/Events/WSEvent/WSServerEvent'
+import { defineStore } from 'pinia'
+
+import type { WsServerEvent, UserMessageEvent } from '@core/sdk/client'
 
 export const useEventsStore = defineStore('events', () => {
-  const { getHeaders, getBearer } = useAuth()
+  const { getBearer } = useAuth()
 
-  const newEvents = ref<WSServerEvent[]>([])
+  const newEvents = ref<WsServerEvent[]>([])
 
   const {
     data: oldEvents,
     state: initialRequestState,
     refresh: refreshEvents,
     refetch: refetchEvents,
-  } = useQuery<WSServerEvent[]>({
+  } = useQuery<WsServerEvent[]>({
     key: ['events'],
-    query: () =>
-      getHeaders()
-        .then(headers => fetch(`/api/v1/event/`, { headers: headers }))
-        .then(res => res.json()),
+    query: () => getEvents({
+      composable: '$fetch',
+    }),
   })
 
   const {
@@ -43,7 +41,7 @@ export const useEventsStore = defineStore('events', () => {
   })
 
   // Generic send event function
-  const sendEvent = (event: WSUserEvent) => {
+  const sendEvent = (event: WsServerEvent) => {
     send(JSON.stringify(event))
   }
 
@@ -51,36 +49,36 @@ export const useEventsStore = defineStore('events', () => {
     () => newEvent.value,
     (receivedEvent) => {
       if (receivedEvent) {
-        const event = JSON.parse(receivedEvent) as WSServerEvent
+        const event = JSON.parse(receivedEvent) as WsServerEvent
         newEvents.value.push(event)
       }
     },
   )
 
   // Combine, deduplicate, and sort events by creation date
-  const events = computed<WSServerEvent[]>(() => {
+  const events = computed<WsServerEvent[]>(() => {
     const allEvents = [...newEvents.value]
     if (oldEvents.value) {
       allEvents.push(...oldEvents.value)
     }
     // Remove duplicates based on event_id
-    const uniqueEventsMap = new Map<string, WSServerEvent>()
+    const uniqueEventsMap = new Map<string, WsServerEvent>()
     allEvents.forEach((event) => {
-      uniqueEventsMap.set(event.event_data.event_id, event)
+      uniqueEventsMap.set(event.event.event_id, event)
     })
     const uniqueEvents = Array.from(uniqueEventsMap.values())
     // Sort events by creation date
     return uniqueEvents.sort(
-      (a, b) => a.event_data.created_at - b.event_data.created_at,
+      (a, b) => a.event.created_at - b.event.created_at,
     )
   })
 
   const sendUserMessageEvent = (thread_id: string, content: string, display_id?: string) => {
-    const userMessageEvent: WSUserEvent = {
+    const userMessageEvent: WsServerEvent = {
       thread_id,
       display_id: display_id || (ObjectID()).toHexString(),
       event: {
-        _type: 'UserMessageEvent',
+        _event_name: 'UserMessageEvent',
         event_id: (ObjectID()).toHexString(),
         created_at: Date.now() * 1_000_000,
         messages: [
@@ -98,20 +96,20 @@ export const useEventsStore = defineStore('events', () => {
     const lastHumanInTheLoopRequestEvent = events.value.findLast((event) => {
       return (
         event.thread_id === thread_id
-        && event.event_data._type === 'HumanInTheLoopRequestEvent'
+        && event.event._event_name === 'HumanInTheLoopRequestEvent'
       )
     })
     if (lastHumanInTheLoopRequestEvent) {
-      const humanInTheLoopResponseEvent: WSUserEvent = {
+      const humanInTheLoopResponseEvent = {
         thread_id,
         display_id: lastHumanInTheLoopRequestEvent.display_id,
         event: {
-          _type: 'HumanInTheLoopResponseEvent',
+          _event_name: 'HumanInTheLoopResponseEvent',
           event_id: (ObjectID()).toHexString(),
           created_at: Date.now() * 1_000_000,
           response: content,
-          request_event: lastHumanInTheLoopRequestEvent.event_data,
-        } as HumanInTheLoopResponseEvent,
+          request_event: lastHumanInTheLoopRequestEvent.event,
+        },
       }
       sendEvent(humanInTheLoopResponseEvent)
     }
@@ -120,12 +118,22 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
+  const eventsForThread = (thread_id: string, display_id?: string) => {
+    return computed<WsServerEvent>(() => {
+      return events.value.filter((event) => {
+        return event.thread_id === thread_id
+          && (!display_id || event.display_id === display_id)
+      })
+    })
+  }
+
   return {
     initialRequestState,
     refreshEvents,
     refetchEvents,
     webSocketsStatus,
     events,
+    eventsForThread,
     sendUserMessageEvent,
     sendHumanInTheLoopResponse,
     sendEvent,

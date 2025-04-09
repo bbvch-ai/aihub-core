@@ -2,10 +2,12 @@ import asyncio
 from asyncio import sleep
 from typing import List, Optional
 
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -21,6 +23,7 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
@@ -49,7 +52,7 @@ class AgentService:
     """
 
     @staticmethod
-    async def discover_agents(nc: NATS) -> List[AgentDTO]:
+    async def discover_agents(nc: NATS, t: LocaleHandler) -> List[AgentDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -81,23 +84,29 @@ class AgentService:
         await sleep(1)
         await nc_subscriber.stop()
 
-        agents = [
-            AgentDTO(
-                agent_class=response.agent_class,
-                agent_id=response.agent_id,
-                agent_config=response.agent_config,
-                is_conversational=response.is_conversational,
-                start_events=response.start_events,
-                stop_events=response.stop_events,
-            )
-            for response in discovery_responses
-        ]
+        unique_agents_dict = {}
+
+        for response in discovery_responses:
+            unique_key = (response.agent_class, response.agent_id)
+
+            if unique_key not in unique_agents_dict:
+                unique_agents_dict[unique_key] = AgentDTO(
+                    agent_class=response.agent_class,
+                    agent_id=response.agent_id,
+                    agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
+                    is_conversational=response.is_conversational,
+                    start_events=response.start_events,
+                    stop_events=response.stop_events,
+                    network_graph=response.network_graph,
+                )
+
+        agents = list(unique_agents_dict.values())
 
         DISCOVER_AGENTS_CACHE[cache_key] = agents
         return agents
 
     @staticmethod
-    async def get_agent(nc: NATS, agent_class: str, agent_id: str) -> AgentDTO:
+    async def get_agent(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -118,10 +127,11 @@ class AgentService:
             agent = AgentDTO(
                 agent_class=event.agent_class,
                 agent_id=event.agent_id,
-                agent_config=event.agent_config,
+                agent_config=AgentConfigDTO.from_agent_config(event.agent_config, t),
                 is_conversational=event.is_conversational,
                 start_events=event.start_events,
                 stop_events=event.stop_events,
+                network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             )
             agent_found_event.set()
 
@@ -158,12 +168,12 @@ class AgentService:
         start_event: StartEvent,
         agent_class: str,
         agent_id: str,
-        thread_id: Optional[str] = None,
-        display_id: Optional[str] = None,
-    ) -> StopEvent:
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
+    ) -> StopEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(thread_id)
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
         else:
             thread = ThreadEntity.create_thread(
                 "chat",

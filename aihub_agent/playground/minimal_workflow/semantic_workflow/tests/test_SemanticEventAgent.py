@@ -37,16 +37,16 @@ def start_present(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('a RetrieverEvent is present that retrieved "{count:d}" documents'))
 def retrieve_present(agent_runner: AgentTestRunner, count: int):
-    assert agent_runner.has_event_of_type(RetrieverEvent), "Agent did not receive retriever event"
-    num_documents = len(agent_runner.get_event_of_type(RetrieverEvent).documents)
+    assert agent_runner.has_event_of_class(RetrieverEvent), "Agent did not receive retriever event"
+    num_documents = len(agent_runner.get_event_of_class(RetrieverEvent).documents)
     assert num_documents == count, f"Expected {count} documents, got {num_documents}"
 
 
 @then("a RerankerEvent is present")
 def rerank_present(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(RerankerEvent), "Agent did not receive reranker event"
+    assert agent_runner.has_event_of_class(RerankerEvent), "Agent did not receive reranker event"
 
 
 @then("a LLMStopEvent is present")
 def stop_present(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(LLMStopEvent), "Agent did not receive stop event"
+    assert agent_runner.has_event_of_class(LLMStopEvent), "Agent did not receive stop event"

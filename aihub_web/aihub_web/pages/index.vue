@@ -1,5 +1,5 @@
 <template>
-  <div class="text-center pt-72">
+  <div class="pt-72 text-center">
     <h1 class="text-6xl">
       {{ $t('welcome') }}
     </h1>

@@ -2,9 +2,7 @@ import json
 
 from pydantic import BaseModel, Field
 
-from aihub_lib.nats.events import StartEvent
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopResponseEvent
-from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent
 
 
 class ExternalEvent(BaseModel):
@@ -32,7 +30,7 @@ class ExternalEvent(BaseModel):
       "thread_id": "thread123",
       "display_id": "displayA",
       "event": {
-        "_type": "UserMessageEvent",
+        "_event_name": "UserMessageEvent",
         "content": "Hello world!"
       }
     }
@@ -42,23 +40,11 @@ class ExternalEvent(BaseModel):
 
     thread_id: str = Field(..., description="ID of the thread this event is related to.")
     display_id: str = Field(..., description="Display session ID, grouping events in the UI.")
-    event: StartEvent | UserMessageEvent | HumanInTheLoopResponseEvent = Field(
-        ..., description="The user-originated event."
-    )
+    event: ControlEvent = Field(..., description="The user-originated event.")
 
     @classmethod
     def deserialize_event(cls, data: bytes | str | dict) -> "ExternalEvent":
-        """
-        Deserialize incoming raw data (JSON string, bytes, or dict) into a ExternalEvent.
-
-        Steps:
-        1. Parse the raw data into a dictionary.
-        2. Extract the `event` part and determine its type from the `_type` field.
-        3. Depending on the `_type`, construct a `HumanInTheLoopResponseEvent` or `UserMessageEvent`.
-        4. Return a ExternalEvent instance with the parsed event and identifiers (thread_id, display_id).
-
-        Raises `ValueError` if the event type is unknown.
-        """
+        """Deserialize incoming raw data (JSON string, bytes, or dict) into a ExternalEvent."""
         if isinstance(data, dict):
             json_data = data
         elif isinstance(data, str):
@@ -68,23 +54,14 @@ class ExternalEvent(BaseModel):
         else:
             raise ValueError(f"Cannot deserialize data of type {type(data)}")
 
+        thread_id = json_data.get("thread_id")
+        display_id = json_data.get("display_id")
+
         event_json_data = json_data.get("event")
-        if event_json_data is None:
-            raise ValueError("Event field is missing in the input")
+        event = BaseEvent.deserialize_event(event_json_data)
 
-        _type = event_json_data.get("_type")
-        if _type is None:
-            raise ValueError("No '_type' field in event")
-
-        # Remove 'event' from the main dictionary before constructing ExternalEvent
-        del json_data["event"]
-        event_raw_data = json.dumps(event_json_data)
-
-        if _type == "HumanInTheLoopResponseEvent":
-            event_class = HumanInTheLoopResponseEvent.deserialize_event(event_json_data)
-        elif _type == "UserMessageEvent":
-            event_class = UserMessageEvent.deserialize_event(event_raw_data.encode())
-        else:
-            raise ValueError(f"Unknown event type: {_type}")
-
-        return cls(event=event_class, **json_data)
+        return cls(
+            thread_id=thread_id,
+            display_id=display_id,
+            event=event,
+        )

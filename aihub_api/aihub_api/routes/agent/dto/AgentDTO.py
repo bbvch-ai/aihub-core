@@ -1,8 +1,10 @@
 from typing import List
 
-from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel, Field
+
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 
 
 class AgentDTO(BaseModel):
@@ -19,7 +21,7 @@ class AgentDTO(BaseModel):
 
     agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
     agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
-    agent_config: AgentConfig = Field(
+    agent_config: AgentConfigDTO = Field(
         ..., description="Configuration details of the agent, including name, description, and prompts."
     )
     is_conversational: bool = Field(..., description="Whether the agent can participate in a chat-based conversation")
@@ -28,4 +30,8 @@ class AgentDTO(BaseModel):
     )
     stop_events: List[EventSpecs] = Field(
         ..., description="A list of `EventSpecs` representing events that can stop this agent's workflow."
+    )
+    network_graph: WorkflowGraph = Field(
+        ...,
+        description="A network graph of the agent, showing how different components are connected and interact.",
     )

@@ -1,9 +1,15 @@
 import abc
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, FastAPI
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+
+if TYPE_CHECKING:
+    from aihub_lib.runners.Runner import Runner
 
 
 class Controller(abc.ABC):
@@ -41,12 +47,22 @@ class Controller(abc.ABC):
     This sets up all routes defined in `MyController` under `/my-endpoints`.
     """
 
-    def __init__(self, route: str, auth: AuthHandler | None = None):
+    name = LocaleString(en="Unnamed Controller")
+    description = LocaleString(en="This controller has no description.")
+    icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
+
+    def __init__(self, route: str, auth: AuthHandler | None = None, is_admin_only=False):
         self.base_route: str = route
         self.auth: AuthHandler = auth or NoAuthHandler()
         self.router: APIRouter = APIRouter()
 
-    def mount(self, app: FastAPI):
+        self.is_admin_only = is_admin_only
+
+    @property
+    def tags(self):
+        return [LocaleHandler().extract(self.name)]
+
+    def mount(self, app: FastAPI, runner: "Runner"):
         """
         Attach this controller’s router to the given FastAPI application using the base_route prefix.
         This final step exposes all endpoints defined in this controller to incoming requests.

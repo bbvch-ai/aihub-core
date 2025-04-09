@@ -60,12 +60,12 @@ class EventDisplayer:
         Publish a display event, optionally logging its content to the current trace span.
         Useful for any displayable output that needs to be consumed downstream (UI, logs, etc.).
         """
-        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
+        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.event_name, event.event_id)
         attributes = FlatterDict(event.model_dump(), delimiter=".").as_dict()
 
         current_span = trace.get_current_span()
         current_span.add_event(
-            name=f"{event.__class__.__name__}: {content or json.dumps(attributes)}",
+            name=f"{event.event_name}: {content or json.dumps(attributes)}",
             attributes=attributes,
         )
 
@@ -88,7 +88,7 @@ class EventDisplayer:
         Publish an internal reasoning thought as a ThoughtEvent.
         Provides transparency into agent's internal logic or decision-making steps.
         """
-        event = ThoughtEvent(content=thought)
+        event = ThoughtEvent(content="", model_name="", reasoning_content=thought)
         await self.display_event(event, content=thought)
 
     async def display_llm_costs(

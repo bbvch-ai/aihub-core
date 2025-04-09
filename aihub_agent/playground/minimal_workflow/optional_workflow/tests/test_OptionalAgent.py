@@ -64,37 +64,37 @@ async def _(agent_runner: AgentTestRunner):
 
 @then("an EventA event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventOptionalA), "EventA was not received"
+    assert agent_runner.has_event_of_class(EventOptionalA), "EventA was not received"
 
 
 @then("an EventB event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventOptionalB), "EventB was not received"
+    assert agent_runner.has_event_of_class(EventOptionalB), "EventB was not received"
 
 
 @then("no EventB event is present")
 def _(agent_runner: AgentTestRunner):
-    assert not agent_runner.has_event_of_type(EventOptionalB), "EventB was received"
+    assert not agent_runner.has_event_of_class(EventOptionalB), "EventB was received"
 
 
 @then("an EventC event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventOptionalC), "EventC was not received"
+    assert agent_runner.has_event_of_class(EventOptionalC), "EventC was not received"
 
 
 @then("no EventC event is present")
 def _(agent_runner: AgentTestRunner):
-    assert not agent_runner.has_event_of_type(EventOptionalC), "EventC was received"
+    assert not agent_runner.has_event_of_class(EventOptionalC), "EventC was received"
 
 
 @then("an EventD event is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(EventOptionalD), "EventD was not received"
+    assert agent_runner.has_event_of_class(EventOptionalD), "EventD was not received"
 
 
 @then("no EventD event is present")
 def _(agent_runner: AgentTestRunner):
-    assert not agent_runner.has_event_of_type(EventOptionalD), "EventD was received"
+    assert not agent_runner.has_event_of_class(EventOptionalD), "EventD was received"
 
 
 @then("a StopEvent is present")

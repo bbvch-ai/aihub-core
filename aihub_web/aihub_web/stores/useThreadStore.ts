@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@pinia/colada'
 import { defineStore } from 'pinia'
+
 import type { Thread } from '@core/types/thread/Thread'
 
 export const useThreadStore = defineStore('threads', () => {
