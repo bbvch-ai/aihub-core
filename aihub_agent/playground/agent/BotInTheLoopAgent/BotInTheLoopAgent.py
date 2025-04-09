@@ -12,14 +12,21 @@ class BotInTheLoopAgent(Agent):
         print("[BotInTheLoopAgent.start_step]")
         user = await run_context.get("user")
         return BotInTheLoop.invoke(
-            user=user, question="Shall I continue?", conversation_id="B08D8FP20TZ:T08AZPNJV33:C08MK7Z8GU9"
+            user=user, question="Are we there yet?", conversation_id="B08D8FP20TZ:T08AZPNJV33:C08MK7Z8GU9"
         )
 
     @step()
-    async def end_step(self, event: BotInTheLoop.response) -> StopEvent:
+    async def end_step(self, event: BotInTheLoop.response) -> BotInTheLoop.request | StopEvent:
         print(
             "[BotInTheLoopAgent.end_step]",
             event.request_event.question,
             event.response,
         )
-        return StopEvent()
+        if event.response == "yes":
+            return StopEvent()
+        else:
+            return BotInTheLoop.invoke(
+                user=event.request_event.user,
+                question="What about now?",
+                conversation_id=event.request_event.conversation_id,
+            )
