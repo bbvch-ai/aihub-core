@@ -59,6 +59,7 @@ class RAGAgent(Agent):
         """
         await run_context.set("hop_count", 1)
         await run_context.set("prev_queries", [])
+        await run_context.set("accumulated_context", [])
         limited_chat_history = limit_chat_history(
             chat_history=event.messages,
             number_of_input_tokens=agent_config.number_of_input_tokens,
@@ -92,33 +93,21 @@ class RAGAgent(Agent):
     @step()
     async def few_shot_guard_step(
         self,
-        event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
+        event: StandaloneQuestionCondenserEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        run_context: RunContext,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         if not agent_config.few_shot_guard_examples:
             return FewShotAcceptEvent(reasoning=t("agent.thought.no_few_shot_examples"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            if isinstance(event, StandaloneQuestionCondenserEvent):
-                guard_result = await few_shot_guard(
-                    llm=llm,
-                    t=t,
-                    user_query=event.condensed_chat_message.content,
-                    examples=agent_config.few_shot_guard_examples,
-                )
-            else:
-                prev_queries = await run_context.get("prev_queries")
-                prev_queries.append(event.new_query)
-                await run_context.set("prev_queries", prev_queries)
-                guard_result = await few_shot_guard(
-                    llm=llm,
-                    t=t,
-                    user_query=event.new_query,
-                    examples=agent_config.few_shot_guard_examples,
-                )
+            guard_result = await few_shot_guard(
+                llm=llm,
+                t=t,
+                user_query=event.condensed_chat_message.content,
+                examples=agent_config.few_shot_guard_examples,
+            )
 
         if not guard_result.success:
             return FewShotRejectEvent(reasoning=guard_result.reasoning)
@@ -128,7 +117,7 @@ class RAGAgent(Agent):
     @step()
     async def retrieve_step(
         self,
-        standalone_question_event: StandaloneQuestionCondenserEvent,
+        event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
         retrieve_step_config: RetrieveStepConfig,
         displayer: EventDisplayer,
@@ -139,8 +128,14 @@ class RAGAgent(Agent):
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
+
+        if isinstance(event, StandaloneQuestionCondenserEvent):
+            query = event.condensed_chat_message.content
+        else:
+            query = event.new_query
+
         nodes = retrieve_nodes(
-            message=standalone_question_event.condensed_chat_message.content,
+            message=query,
             retrieve_k=retrieve_step_config.retrieve_k,
             embed_model=embedding,
             index_namespaces=retrieve_step_config.index_namespaces,
@@ -195,9 +190,7 @@ class RAGAgent(Agent):
             return ContextSufficientEvent()
 
         prev_queries = await run_context.get("prev_queries")
-        async with agent_config.llm.cost_reporting_llm(
-            displayer, system_prompt=t("lib.guards.context_sufficient_guard.prompt")
-        ) as llm:
+        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await context_sufficient_guard(
                 llm=llm,
                 t=t,
@@ -212,12 +205,14 @@ class RAGAgent(Agent):
 
         hop_count = await run_context.get("hop_count")
         if hop_count == agent_config.max_hops:
-            await displayer.display_thought(t("agent.thought.max_hops_reached"))
             return ContextInsufficientEvent(reasoning=guard_result.reasoning)
 
         await run_context.set("hop_count", hop_count + 1)
+        new_query = guard_result.new_query
+        prev_queries.append(new_query)
+        await run_context.set("prev_queries", prev_queries)
         await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
-        return ContextInsufficientWithQueryEvent(reasoning=guard_result.reasoning, new_query=guard_result.new_query)
+        return ContextInsufficientWithQueryEvent(reasoning=guard_result.reasoning, new_query=new_query)
 
     @step()
     async def limit_chat_history_with_context_step(

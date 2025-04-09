@@ -75,8 +75,25 @@ context_sufficient_guard:
     I will give you a context, a question, and previous queries if any have been generated.
     If the question can be answered with the provided context, then the conversation may continue (success=True).
     If answering the question is not possible with the context, then the conversation needs more context (success=False).
-    This results in needing a new query which will be used to gather more information. Make sure your new query is 
-    distinct from previous queries. If necessary abstract to a higher level concept.
+    
+    When success=False, you must generate a new query that will be used to gather more information. When creating a new query:
+
+    1. PRIORITIZE HIGHER-LEVEL CONCEPTS: Your primary strategy should be to move up conceptual hierarchies to broader domains that would naturally include information about the original topic.
+       - For example, if asking about "neural networks" yields insufficient results, move to "machine learning methods" or "computational models" instead of asking about neural networks differently.
+       - If a topic isn't yielding results, consider what academic field, industry, or knowledge domain it belongs to.
+    
+    2. Analyze the previous queries to avoid repetition or minor variations of the same question.
+    
+    3. If higher-level concepts have already been explored, try these alternative strategies:
+       - Examine related fields that intersect with the main topic
+       - Look for foundational concepts that underpin the topic
+       - Seek information about the parent category or classification system
+       - Request information about broader technological or scientific principles
+       - Consider interdisciplinary connections to other domains
+    
+    4. The new query MUST be clearly distinct from all previous queries and move away from the specific topic if direct approaches have failed.
+    
+    5. Each successive query should represent a more significant conceptual shift than the previous ones.
     
     Question:
     <Question>

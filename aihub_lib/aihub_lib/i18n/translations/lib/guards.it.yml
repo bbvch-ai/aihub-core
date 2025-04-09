@@ -79,8 +79,25 @@ context_sufficient_guard:
     Fornirò un contesto, una domanda e le query precedenti, se sono state generate.
     Se è possibile rispondere alla domanda con il contesto fornito, la conversazione può continuare (success=True).
     Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere interrotta (success=False).
-    Per prima cosa, si deve pensare a come decidere e quindi determinare se la conversazione può essere continuata con successo o meno. 
-    In secondo luogo, assicurarsi che la nuova domanda sia sufficientemente unica rispetto alle precedenti.
+    
+    Quando success=False, è necessario generare una nuova query che verrà utilizzata per raccogliere ulteriori informazioni. Quando si crea una nuova query:
+
+    1. DARE PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: La strategia principale dovrebbe essere quella di risalire le gerarchie concettuali verso domini più ampi che includano naturalmente informazioni sull'argomento originale.
+       - Ad esempio, se la richiesta di “reti neurali” non produce risultati sufficienti, spostatevi su “metodi di apprendimento automatico” o “modelli computazionali” invece di chiedere le reti neurali in modo diverso.
+       - Se un argomento non produce risultati, considerate il campo accademico, l'industria o il dominio di conoscenza a cui appartiene.
+    
+    2. Analizzate le query precedenti per evitare ripetizioni o piccole variazioni della stessa domanda.
+    
+    3. Se i concetti di livello superiore sono già stati esplorati, provate queste strategie alternative:
+       - Esaminare i campi correlati che si intersecano con l'argomento principale.
+       - Cercare i concetti fondamentali che stanno alla base dell'argomento
+       - Cercare informazioni sulla categoria o sul sistema di classificazione di riferimento.
+       - Richiedere informazioni su principi tecnologici o scientifici più ampi
+       - Considerare collegamenti interdisciplinari con altri ambiti
+    
+    4. La nuova interrogazione DEVE essere chiaramente distinta da tutte le interrogazioni precedenti e allontanarsi dall'argomento specifico se gli approcci diretti hanno fallito.
+    
+    5. Ogni domanda successiva deve rappresentare un cambiamento concettuale più significativo di quelle precedenti.
     
     Domanda:
     <Domanda>
