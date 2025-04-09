@@ -3,7 +3,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.agents.FewShotAgent import FewShotAgent
-from aihub_agent.agents.FewShotAgent import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
 from aihub_agent.agents.FewShotAgent.events import (
     FewShotStandaloneQuestionCondenserEvent,

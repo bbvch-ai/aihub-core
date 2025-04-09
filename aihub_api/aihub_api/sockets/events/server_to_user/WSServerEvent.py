@@ -2,7 +2,6 @@ import json
 from typing import Annotated, Any, Dict, Optional, Union
 
 from aihub_lib.nats.events import (
-    StartEvent,
     AgentEvent,
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,

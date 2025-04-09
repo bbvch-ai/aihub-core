@@ -98,7 +98,7 @@ class EventController(Controller):
             try:
                 user = await self.auth.authenticate_token(token)
             except HTTPException as e:
-                traceback.print_exc()
+                logger.exception(e)
                 await websocket.close(code=4001, reason=f"Invalid token: {e.detail}")
                 return
             except Exception as e:

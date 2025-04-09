@@ -97,8 +97,8 @@ class JSSubscriber(Generic[TEvent]):
         except MsgAlreadyAckdError:
             pass
         except Exception as e:
+            logger.exception(e)
             logger.error(f"Error in message handler: {e}")
-            traceback.print_exc()
 
     async def _process(self, event, topic, msg):
         """
@@ -109,8 +109,8 @@ class JSSubscriber(Generic[TEvent]):
             try:
                 await self.handler(event, topic)
             except Exception as e:
+                logger.exception(e)
                 logger.error(f"Error in async handler: {e}")
-                traceback.print_exc()
 
     @classmethod
     def for_agent_instance_events(

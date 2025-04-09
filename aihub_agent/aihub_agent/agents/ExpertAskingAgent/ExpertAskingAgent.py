@@ -2,25 +2,24 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.events import HumanInTheLoop, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import HumanInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, ChatResponse
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertEvent import AskExpertEvent
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerInsufficientEvent import ExpertAnswerInsufficientEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerSufficientEvent import ExpertAnswerSufficientEvent
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
+from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
 from aihub_agent.workflow.decorators.step import step
 
 
 class ExpertAskingAgent(Agent):
-
     @step()
     async def start_asking_step(
         self,
@@ -103,9 +102,7 @@ class ExpertAskingAgent(Agent):
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(
-                template_str=t("lib.expert_asking_agent.follow_up_question")
-            ).format_messages(
+            chat = RichPromptTemplate(template_str=t("lib.expert_asking_agent.follow_up_question")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
             )
@@ -127,12 +124,10 @@ class ExpertAskingAgent(Agent):
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(
-                template_str=t("lib.expert_asking_agent.follow_up_question")
-            ).format_messages(
+            chat = RichPromptTemplate(template_str=t("lib.expert_asking_agent.follow_up_question")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
-                reason=router_event.reason
+                reason=router_event.reason,
             )
             response: ChatResponse = await llm.achat(chat)
             return AskExpertEvent(question_to_expert=response.message.content)

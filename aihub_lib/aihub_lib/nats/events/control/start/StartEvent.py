@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
 
 class StartEvent(ControlEvent, DisplayEvent):

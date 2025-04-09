@@ -82,16 +82,16 @@ class NCSubscriber(Generic[TEvent]):
             logger.debug(f"Deserialized event: {event}")
             asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
         except Exception as e:
+            logger.exception(e)
             logger.error(f"Error in message handler for subject '{msg.subject}': {e}")
-            traceback.print_exc()
 
     async def _run_handler_with_error_handling(self, event, topic, subject):
         """Helper method to run handler with proper error handling"""
         try:
             await self.handler(event, topic)
         except Exception as e:
+            logger.exception(e)
             logger.error(f"Error in async handler for subject '{subject}': {e}")
-            traceback.print_exc()
 
     @classmethod
     def all_for_agent_display_events(
