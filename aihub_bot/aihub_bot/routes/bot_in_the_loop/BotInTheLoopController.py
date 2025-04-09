@@ -1,4 +1,4 @@
-from typing import Annotated, Callable, Any
+from typing import Annotated, Any, Callable
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -6,7 +6,7 @@ from aihub_lib.nats.distributor.dependencies.use_external_event_distributor impo
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
-from fastapi import Body, Request, Response, Depends
+from fastapi import Body, Depends, Request, Response
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.bot_in_the_loop.BotInTheLoopBot import BotInTheLoopBot

@@ -115,8 +115,7 @@ class ChatService:
                 get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
             )
             event = HumanInTheLoopResponseEvent.deserialize_event(
-
-                    {
+                {
                     "_event_name": topic.event_name,
                     "_parent_event_names": parent_classes,
                     "response": messages[-1].content,

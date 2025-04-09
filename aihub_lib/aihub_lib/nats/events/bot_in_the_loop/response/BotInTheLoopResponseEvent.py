@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import BotInTheLoopRequestEvent
+from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
 
 class BotInTheLoopResponseEvent(ControlEvent):

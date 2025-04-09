@@ -1,14 +1,14 @@
 from typing import Callable, Dict, Optional
 
-from botbuilder.schema import ConversationReference, ConversationAccount, ChannelAccount
-from pydantic import Field, BaseModel
-
-from aihub_bot.routes.RoutesService import RoutesService
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentTopic
 from botbuilder.core import TurnContext
+from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
 from fastapi import Request
+from pydantic import BaseModel, Field
+
+from aihub_bot.routes.RoutesService import RoutesService
 
 
 class BotInTheLoopThread(BaseModel):
