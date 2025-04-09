@@ -1,5 +1,4 @@
 from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
 from aihub_agent.agents.abstract.Agent import Agent
@@ -12,7 +11,9 @@ class BotInTheLoopAgent(Agent):
     async def start_step(self, event: StartEvent, run_context: RunContext) -> BotInTheLoop.request:
         print("[BotInTheLoopAgent.start_step]")
         user = await run_context.get("user")
-        return BotInTheLoop.invoke(user=user, question="Shall I continue?")
+        return BotInTheLoop.invoke(
+            user=user, question="Shall I continue?", conversation_id="B08D8FP20TZ:T08AZPNJV33:C08MK7Z8GU9"
+        )
 
     @step()
     async def end_step(self, event: BotInTheLoop.response) -> StopEvent:

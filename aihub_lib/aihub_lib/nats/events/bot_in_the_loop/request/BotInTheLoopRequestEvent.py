@@ -22,6 +22,7 @@ class BotInTheLoopRequestEvent(ControlEvent):
         description="The authenticated user who is requesting the human-in-the-loop interaction.",
     )
     question: str = Field(..., description="The query or prompt presented to the human operator.")
+    conversation_id: str = Field(..., description="The ID of the conversation associated with this request.")
     topic: Union[PartialAgentTopic, AgentTopic] = Field(
         ...,
         description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",

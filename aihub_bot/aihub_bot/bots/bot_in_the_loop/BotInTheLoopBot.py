@@ -1,4 +1,5 @@
 import logging
+import re
 
 from typing_extensions import override
 
@@ -32,26 +33,38 @@ class BotInTheLoopBot(ActivityHandler):
         if turn_context.activity.channel_id != Channels.slack:
             raise NotImplementedError("BotInTheLoopBot only supports Slack channel")
 
+        if not self.is_slack_channel_thread_message(turn_context):
+            logger.debug("Not a Slack channel thread message")
+            return
+
         conversation_id = turn_context.activity.conversation.id
 
-        thread_id = None
-        for existing_thread_id, existing_conv_id in self.bot_in_the_loop_handler.thread_to_conversation_mapping.items():
-            if conversation_id.startswith(existing_conv_id):
-                self.bot_in_the_loop_handler.thread_to_conversation_mapping[existing_thread_id] = conversation_id
-                thread_id = existing_thread_id
+        # Parse the conversation ID to extract the full channel ID and thread ID
+        # Format is: {bot_id}:{team_id}:{channel_id}:{thread_ts}
+        parts = conversation_id.split(":")
+        if len(parts) < 4:
+            logger.debug(f"Invalid Slack conversation ID format: {conversation_id}")
+            return
+
+        # The full channel ID is the combination of bot_id:team_id:channel_id
+        full_channel_id = ":".join(parts[0:3])
+        slack_thread_ts = parts[3]
+
+        # Find the corresponding thread in the handler's threads dictionary
+        matching_thread_id = None
+        for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
+            if thread.slack_channel_id == full_channel_id and thread.slack_thread_id == slack_thread_ts:
+                matching_thread_id = thread_id
                 break
 
-        if not thread_id:
-            self.bot_in_the_loop_handler.slack_conversation = TurnContext.get_conversation_reference(
-                turn_context.activity
-            )
-            logger.info("New Slack conversation ID set: %s", conversation_id)
-            return await turn_context.send_activity(f"New Slack channel ID set: {conversation_id}")
+        if not matching_thread_id:
+            logger.debug(f"No matching thread found for Slack channel {full_channel_id} and thread {slack_thread_ts}")
+            return
 
-        bot_in_the_loop_request = self.bot_in_the_loop_handler.conversation_to_bot_in_the_loop_request_mapping.get(
-            conversation_id
-        )
+        # Get the original request event
+        bot_in_the_loop_request = self.bot_in_the_loop_handler.threads[matching_thread_id].last_request_event
 
+        # Distribute the response event
         await self.external_event_distributor.distribute_event(
             external_event=ExternalEvent(
                 event=BotInTheLoop.response(
@@ -63,3 +76,9 @@ class BotInTheLoopBot(ActivityHandler):
             ),
             user=bot_in_the_loop_request.user,
         )
+
+    @staticmethod
+    def is_slack_channel_thread_message(turn_context: TurnContext) -> bool:
+        conversation_id: str = turn_context.activity.conversation.id
+        channel_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:C[0-9A-Z]+:\d+[.]\d+$")
+        return channel_id_regex.match(conversation_id) is not None

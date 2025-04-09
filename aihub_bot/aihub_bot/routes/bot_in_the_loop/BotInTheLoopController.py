@@ -21,13 +21,13 @@ class BotInTheLoopController(Controller):
 
     def __init__(
         self,
-        route: str = "/bot_in_the_loop",
+        route: str = BotInTheLoopHandler.CONTROLLER_PATH,
         is_admin_only=False,
         auth: Callable[..., Any] = None,
     ):
         super().__init__(route, auth, is_admin_only=is_admin_only)
 
-    def bot_in_the_loop_response(self, route: str = "/response") -> "BotInTheLoopController":
+    def bot_in_the_loop_response(self, route: str = BotInTheLoopHandler.ENDPOINT_PATH) -> "BotInTheLoopController":
         @self.router.post(route, tags=self.tags)
         async def bot_in_the_loop_chat(
             request: Request,
