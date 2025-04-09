@@ -78,6 +78,16 @@ runs:
       run: |
         echo "Waiting for Docker services to become healthy..."
 
+        # Check if Docker is running
+        if ! docker info > /dev/null 2>&1; then
+          echo "Error: Docker is not running or not accessible"
+          exit 1
+        fi
+
+        # Show initial state of containers
+        echo "Initial container status:"
+        docker ps
+
         # Maximum wait time in seconds (5 minutes)
         MAX_WAIT=300
         # Polling interval in seconds
@@ -86,17 +96,19 @@ runs:
         ELAPSED=0
 
         while [ $ELAPSED -lt $MAX_WAIT ]; do
-          # Check if any unhealthy containers exist
-          # If a container has no health check, its status won't contain "(health:"
-          UNHEALTHY_COUNT=$(docker ps | grep "(health:" | grep -v "healthy" | wc -l)
+          # Check if any containers are unhealthy - approach with fewer assumptions about output format
+          UNHEALTHY_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
+          STARTING_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
 
-          if [ $UNHEALTHY_COUNT -eq 0 ]; then
-            echo "All Docker services are healthy or don't have health checks!"
+          if [ -z "$UNHEALTHY_CONTAINERS" ] && [ -z "$STARTING_CONTAINERS" ]; then
+            echo "All Docker services are in a healthy state!"
             docker ps
             break
           fi
 
-          echo "Found $UNHEALTHY_COUNT containers still starting or unhealthy..."
+          echo "Some containers are still starting or unhealthy:"
+          [ -n "$UNHEALTHY_CONTAINERS" ] && echo "$UNHEALTHY_CONTAINERS" 
+          [ -n "$STARTING_CONTAINERS" ] && echo "$STARTING_CONTAINERS"
 
           # Sleep for the polling interval
           sleep $INTERVAL
