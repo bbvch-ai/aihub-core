@@ -1,4 +1,5 @@
 import asyncio
+from time import sleep
 
 import pytest
 from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
@@ -10,7 +11,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingParameter,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
-from aihub_lib.testing.milvus_vector_store_content import fill_collection
+from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
 
 
 # Set up an event loop for the test session
@@ -80,6 +81,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
         vector_store,
         documents=nodes_with_relationships,
     )
+    sleep(1)
     yield vector_store
 
 
