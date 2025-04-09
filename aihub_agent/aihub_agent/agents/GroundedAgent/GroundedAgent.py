@@ -90,7 +90,11 @@ class GroundedAgent(Agent):
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_asking_agent_class,
             agent_id=agent_config.expert_asking_agent_id,
-            start_event=AskExpertStartEvent(question_to_expert=user_message_event.messages[-1].content),
+            start_event=AskExpertStartEvent(
+                question_to_expert=user_message_event.messages[-1].content,
+                locale=user_message_event.locale,
+                user=user_message_event.user,
+            ),
         )
 
     @step(precondition=is_answer_response)

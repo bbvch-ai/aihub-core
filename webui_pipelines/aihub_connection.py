@@ -272,11 +272,12 @@ class Pipe:
                 yield line
 
     async def pipe(
-            self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__
+            self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__
     ):
         headers = {
             "Authorization": f"Bearer {self.valves.AIHUB_API_KEY}",
             "Content-Type": "application/json",
+            "Accept-Language": __request__.headers.get("Accept-Language"),
             **user_header(__user__),
         }
 

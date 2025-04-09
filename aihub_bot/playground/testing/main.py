@@ -26,7 +26,7 @@ async def main():
                 AzureOpenAILLMConfig(
                     name="gpt-4o-mini",
                     base_url="https://aihub-dev-openai-che.openai.azure.com/",
-                    api_version="2023-12-01-preview",
+                    api_version="2024-12-01-preview",
                     prompt_tokens_costs_per_thousand=0.00013027,
                     completion_tokens_costs_per_thousand=0.0005211,
                 ),

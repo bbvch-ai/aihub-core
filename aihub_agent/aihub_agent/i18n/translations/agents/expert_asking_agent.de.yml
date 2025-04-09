@@ -1,0 +1,48 @@
+follow_up_question: |
+  Ihnen wird ein Chat-Verlauf zwischen einem KI-Assistenten und einem Experten gegeben. Das Ziel dieses Gesprächs
+  ist es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Die Antwort des Experten scheint jedoch unzureichend zu sein.
+
+   <chat_history>
+  {% for message in chat_history %}
+  <message role="{{ message.role.value }}">
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  </message>
+  {% endfor %}
+  </chat_history>
+
+  <user_question>
+  {{ question }}
+  </user_query>
+  
+  Bitte formulieren Sie eine Folgefrage an den Experten, die auf die Unzulänglichkeit in seiner vorherigen Antwort eingeht.
+  Die Frage sollte klar und präzise sein und dem Experten helfen, eine vollständigere Antwort auf die ursprüngliche Frage des Benutzers zu geben.
+
+knowledge_snippet: |
+  Ihnen wird ein Chat-Verlauf zwischen einem KI-Assistenten und einem Experten gegeben. Das Ziel dieses Gesprächs
+  war es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Der Experte konnte die Antwort erfolgreich liefern.
+
+  <user_question>
+  {{ question }}
+  </user_query>
+
+  <chat_history> 
+  {% for message in chat_history %}
+  <message role="{{ message.role.value }}">
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  </message>
+  {% endfor %}
+  </chat_history>
+  
+  Nachdem die Antwort gegeben wurde, extrahieren Sie bitte das Schlüsselwissen aus diesem Gespräch, das dem Benutzer fehlte.
+  Dieser Wissensausschnitt sollte eine prägnante Zusammenfassung der wichtigsten Informationen sein, die der Benutzer wissen musste.
+  Der Ausschnitt wird an den Benutzer zurückgegeben, daher muss aus dem Ausschnitt allein die Antwort auf die Frage offensichtlich sein.
+  Der Ausschnitt wird jedoch auch zur Wissensdatenbank hinzugefügt, daher sollte der Ausschnitt nicht nur die Antwort auf die Frage enthalten,
+  sondern das Wissen, das erforderlich ist, um die Frage zu beantworten.

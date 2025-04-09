@@ -21,6 +21,7 @@ class LocaleHandler:
 
         locale_paths = locale_paths or []
         for path in locale_paths + self.get_locale_paths():
+            print("Appending path", path)
             i18n.load_path.append(path)
 
         i18n.load_path = list(set(i18n.load_path))

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 
 from nats.aio.client import Client as NATS

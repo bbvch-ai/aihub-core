@@ -18,10 +18,6 @@ follow_up_question: |
   {{ question }}
   </user_query>
   
-  <insufficient_reason>
-  {{ reason }}
-  </insufficient_reason>
-  
   Please formulate a follow-up question to the expert that addresses the insufficiency in their previous answer.
   The question should be clear and concise, and it should help the expert provide a more complete answer to the user's original question.
 

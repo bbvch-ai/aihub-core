@@ -78,9 +78,7 @@ class FilesClient(BaseClient):
         files = {"file": (filename, file_content)}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                url, headers=headers, params=params, files=files
-            )
+            response = await client.post(url, headers=headers, params=params, files=files)
             response.raise_for_status()
             return FileModelResponse.model_validate(response.json())
 

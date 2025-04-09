@@ -1,9 +1,11 @@
+import logging
 import re
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 
+logger = logging.getLogger(__name__)
 
 class I18nMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
@@ -18,6 +20,8 @@ class I18nMiddleware(BaseHTTPMiddleware):
 
         if locale not in LocaleHandler.LOCALE_WHITE_LIST:
             locale = LocaleHandler.DEFAULT_LOCALE
+
+        logger.debug(f"Setting user locale: {locale}")
         request.state.locale = locale
 
         return await call_next(request)
@@ -28,5 +32,6 @@ class I18nMiddleware(BaseHTTPMiddleware):
         for language in languages:
             match = pattern.match(language.strip())
             if match:
-                return match.group(1).lower()
+                locale = match.group(1).lower()
+                return locale
         return LocaleHandler.DEFAULT_LOCALE

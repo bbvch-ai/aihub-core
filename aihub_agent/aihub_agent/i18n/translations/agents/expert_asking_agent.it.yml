@@ -1,0 +1,48 @@
+follow_up_question: |
+  Ti viene fornita una cronologia di chat tra un assistente AI e un esperto. L'obiettivo di questa conversazione
+  è rispondere a una domanda originariamente posta da un utente. Tuttavia, la risposta dell'esperto sembra essere insufficiente.
+
+   <chat_history>
+  {% for message in chat_history %}
+  <message role="{{ message.role.value }}">
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  </message>
+  {% endfor %}
+  </chat_history>
+
+  <user_question>
+  {{ question }}
+  </user_query>
+  
+  Per favore, formula una domanda di follow-up all'esperto che affronti l'insufficienza della sua risposta precedente.
+  La domanda dovrebbe essere chiara e concisa, e dovrebbe aiutare l'esperto a fornire una risposta più completa alla domanda originale dell'utente.
+
+knowledge_snippet: |
+  Ti viene fornita una cronologia di chat tra un assistente AI e un esperto. L'obiettivo di questa conversazione
+  era rispondere a una domanda originariamente posta da un utente. L'esperto è riuscito a fornire la risposta con successo.
+
+  <user_question>
+  {{ question }}
+  </user_query>
+
+  <chat_history> 
+  {% for message in chat_history %}
+  <message role="{{ message.role.value }}">
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  </message>
+  {% endfor %}
+  </chat_history>
+  
+  Ora che la risposta è stata fornita, estrai la conoscenza chiave da questa conversazione che mancava all'utente.
+  Questo frammento di conoscenza dovrebbe essere un riassunto conciso delle informazioni più importanti che l'utente doveva conoscere.
+  Il frammento sarà restituito all'utente, quindi, dal frammento stesso, la risposta alla domanda deve essere ovvia.
+  Tuttavia, il frammento sarà anche aggiunto alla base di conoscenza, quindi il frammento non dovrebbe contenere semplicemente
+  la risposta alla domanda, ma la conoscenza necessaria per rispondere alla domanda.

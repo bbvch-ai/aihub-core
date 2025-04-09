@@ -11,6 +11,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import (
@@ -75,6 +76,7 @@ class ChatService:
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
+        locale: Optional[str] = None,
     ) -> Tuple[ExternalEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
@@ -127,6 +129,7 @@ class ChatService:
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
             )
 
         event = ExternalEvent(
@@ -155,6 +158,7 @@ class ChatService:
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        locale: Optional[str] = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
@@ -167,6 +171,7 @@ class ChatService:
             thread_id=thread_id,
             display_id=display_id,
             subscribe_to_thread=True,
+            locale=locale,
         )
 
         stop_signal = asyncio.Event()
@@ -224,6 +229,7 @@ class ChatService:
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        locale: Optional[str] = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
@@ -236,6 +242,7 @@ class ChatService:
             thread_id=thread_id,
             display_id=display_id,
             subscribe_to_thread=True,
+            locale=locale,
         )
         return await ChatService.start_json_event_interaction(
             user, agent_class, agent_id, external_event, topic_manager, nc, external_event_distributor

@@ -1,11 +1,13 @@
-from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urljoin
 import json
 import logging
+from typing import Any, Dict, List, Optional, Union
+from urllib.parse import urljoin
+
 import httpx
 
 # Set up logging
 logger = logging.getLogger("openwebui.client")
+
 
 class OpenWebuiAPIError(Exception):
     """Exception raised for OpenWebUI API errors"""
@@ -33,11 +35,11 @@ class BaseClient:
     """
 
     def __init__(
-            self,
-            base_url: str = "http://localhost:8080",
-            token: Optional[str] = None,
-            timeout: int = 30,
-            debug: bool = False
+        self,
+        base_url: str = "http://localhost:8080",
+        token: Optional[str] = None,
+        timeout: int = 30,
+        debug: bool = False,
     ):
         self.base_url = base_url
         self.token = token
@@ -86,11 +88,11 @@ class BaseClient:
             try:
                 error_data = response.json()
                 if isinstance(error_data, dict):
-                    if 'detail' in error_data:
-                        if isinstance(error_data['detail'], str):
-                            detail = error_data['detail']
+                    if "detail" in error_data:
+                        if isinstance(error_data["detail"], str):
+                            detail = error_data["detail"]
                         else:
-                            detail = json.dumps(error_data['detail'])
+                            detail = json.dumps(error_data["detail"])
                     else:
                         detail = json.dumps(error_data)
             except Exception as e:
@@ -102,11 +104,11 @@ class BaseClient:
         return response
 
     async def _request(
-            self,
-            method: str,
-            endpoint: str,
-            params: Optional[Dict[str, Any]] = None,
-            json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        self,
+        method: str,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
     ) -> httpx.Response:
         """Send HTTP request and handle connection errors"""
         url = self._get_url(endpoint)
@@ -123,21 +125,12 @@ class BaseClient:
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    params=params,
-                    json=json_data
-                )
+                response = await client.request(method=method, url=url, headers=headers, params=params, json=json_data)
                 return await self._handle_response(response)
 
         except httpx.RequestError as e:
             logger.error(f"Request error: {str(e)}")
-            raise OpenWebuiAPIError(
-                status_code=0,
-                detail=f"Connection error: {str(e)}"
-            )
+            raise OpenWebuiAPIError(status_code=0, detail=f"Connection error: {str(e)}")
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
             raise
@@ -147,28 +140,25 @@ class BaseClient:
         return await self._request("GET", endpoint, params=params)
 
     async def post(
-            self,
-            endpoint: str,
-            json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
-            params: Optional[Dict[str, Any]] = None,
+        self,
+        endpoint: str,
+        json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> httpx.Response:
         """Make a POST request to the API with JSON body"""
         return await self._request("POST", endpoint, params=params, json_data=json_data)
 
     async def put(
-            self,
-            endpoint: str,
-            json_data: Dict[str, Any],
-            params: Optional[Dict[str, Any]] = None
+        self, endpoint: str, json_data: Dict[str, Any], params: Optional[Dict[str, Any]] = None
     ) -> httpx.Response:
         """Make a PUT request to the API with JSON body"""
         return await self._request("PUT", endpoint, params=params, json_data=json_data)
 
     async def delete(
-            self,
-            endpoint: str,
-            json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
-            params: Optional[Dict[str, Any]] = None,
+        self,
+        endpoint: str,
+        json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> httpx.Response:
         """Make a DELETE request to the API"""
         return await self._request("DELETE", endpoint, params=params, json_data=json_data)

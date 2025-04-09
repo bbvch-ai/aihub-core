@@ -1,8 +1,12 @@
+import asyncio
+
+from aihub_agent.agents.ExpertAskingAgent.events.KnowledgeSnippetEvent import KnowledgeSnippetEvent
+from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.open_webui.sdk import OpenWebuiClient
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.events import HumanInTheLoop
+from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
@@ -21,37 +25,48 @@ from aihub_agent.workflow.decorators.step import step
 
 class ExpertAskingAgent(Agent):
     @step()
-    async def start_asking_step(
+    async def start_step(
         self,
         question_event: AskExpertStartEvent | AskExpertEvent,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
-    ) -> HumanInTheLoop.request | NoAnswerStopEvent:
-        await displayer.display_thought("I am expert agent!!!")
+    ) -> BotInTheLoop.request | NoAnswerStopEvent:
+        await displayer.display_thought(f"Asking question: '{question_event.question_to_expert}'")
 
-        loop_count = await run_context.get("loop_count")
-        if loop_count < agent_config.loop_max:
+        loop_count = await run_context.get("loop_count", 0)
+        if loop_count >= agent_config.loop_max:
             return NoAnswerStopEvent()
+
+        chat_history = await run_context.get("chat_history", [])
+        chat_history = [ChatMessage(**message) for message in chat_history]
+        chat_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=question_event.question_to_expert))
+        await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
 
         chat_history = [ChatMessage(role=MessageRole.ASSISTANT, content=question_event.question_to_expert)]
         await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
 
-        return HumanInTheLoop.invoke(question=question_event.question_to_expert)
+        return BotInTheLoop.invoke(
+            question=question_event.question_to_expert,
+            user=question_event.user,
+            conversation_id=agent_config.conversation_id
+        )
+
 
     @step()
     async def expert_response_step(
         self,
         initial_question_event: AskExpertStartEvent,
-        expert_response_event: HumanInTheLoop.response,
+        expert_response_event: BotInTheLoop.response,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
-        t: LocaleHandler,
+        t: AgentLocaleHandler,
     ) -> RouterEvent:
+        await displayer.display_thought(f"Expert has responde: '{expert_response_event.response}'")
         await displayer.display_thought("Determine if expert answer is sufficient")
 
-        loop_count = await run_context.get("loop_count")
+        loop_count = await run_context.get("loop_count", 0)
         await run_context.set("loop_count", loop_count + 1)
 
         chat_history = await run_context.get("chat_history")
@@ -88,46 +103,77 @@ class ExpertAskingAgent(Agent):
         return router_event.selected_option.event
 
     @step()
-    async def finish_expert_flow(
+    async def create_knowledge_snippet(
         self,
-        expert_response_event: HumanInTheLoop.response,
         initial_question_event: AskExpertStartEvent,
         _: ExpertAnswerSufficientEvent,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
-        t: LocaleHandler,
+        t: AgentLocaleHandler,
         run_context: RunContext,
-    ) -> AnswerStopEvent:
+    ) -> KnowledgeSnippetEvent:
+        await displayer.display_thought("Expert answer is sufficient! Generating knowledge snippet now")
+
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(template_str=t("lib.expert_asking_agent.follow_up_question")).format_messages(
+            chat = RichPromptTemplate(template_str=t("agents.expert_asking_agent.knowledge_snippet")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
             )
             response: ChatResponse = await llm.achat(chat)
-        return AnswerStopEvent(expert_answer=response.message.content)
+            return KnowledgeSnippetEvent(content=response.message.content)
+
+
+    @step()
+    async def safe_knowledge_snippet(
+        self,
+        knowledge_snippet_event: KnowledgeSnippetEvent,
+        agent_config: ExpertAskingAgentConfig,
+        displayer: EventDisplayer,
+    ) -> AnswerStopEvent:
+        await displayer.display_thought("Saving knowledge snippet")
+        client = OpenWebuiClient(
+            base_url=agent_config.open_webui_api_url,
+            token=agent_config.open_webui_api_key,
+        )
+        knowledge_snippet = knowledge_snippet_event.content
+        bytes_content = knowledge_snippet.encode("utf-8")
+        filename = "my_text_file.txt"
+        file_response = await client.files.upload_file(
+            file=bytes_content,
+            filename=filename,
+        )
+        await asyncio.sleep(1)
+        await client.knowledge.add_file_to_knowledge(
+            knowledge_id=agent_config.open_webui_knowledge_id,
+            file_id=file_response.id,
+        )
+        return AnswerStopEvent(expert_answer=knowledge_snippet)
 
     @step()
     async def follow_up_question(
         self,
-        router_event: RouterEvent,
         initial_question_event: AskExpertStartEvent,
         _: ExpertAnswerInsufficientEvent,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
-        t: LocaleHandler,
+        t: AgentLocaleHandler,
         run_context: RunContext,
     ) -> AskExpertEvent:
+        await displayer.display_thought("Answer is not sufficient, asking follow up question")
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(template_str=t("lib.expert_asking_agent.follow_up_question")).format_messages(
+            chat = RichPromptTemplate(template_str=t("agents.expert_asking_agent.follow_up_question")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
-                reason=router_event.reason,
             )
             response: ChatResponse = await llm.achat(chat)
-            return AskExpertEvent(question_to_expert=response.message.content)
+            chat_history = await run_context.get("chat_history")
+            chat_history = [ChatMessage(**message) for message in chat_history]
+            chat_history.append(ChatMessage(role=MessageRole.USER, content=response.message.content))
+            await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
+            return AskExpertEvent(question_to_expert=response.message.content, locale=initial_question_event.locale, user=initial_question_event.user)

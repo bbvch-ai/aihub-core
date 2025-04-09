@@ -225,11 +225,11 @@ class OpenaiService:
 
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
-                agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
+                agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor, locale=t.locale
             )
 
         return await OpenaiService.json_assistant(
-            agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
+            agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor, locale=t.locale,
         )
 
     @staticmethod
@@ -240,6 +240,7 @@ class OpenaiService:
         user: AuthenticatedUser,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
+        locale: Optional[str] = None,
     ):
         thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
         display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
@@ -256,6 +257,7 @@ class OpenaiService:
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
+            locale=locale,
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -294,6 +296,7 @@ class OpenaiService:
         user: AuthenticatedUser,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
+        locale: Optional[str] = None,
     ):
         thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
         display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
@@ -310,6 +313,7 @@ class OpenaiService:
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
+            locale=locale,
         )
 
         async def sse_event_generator():

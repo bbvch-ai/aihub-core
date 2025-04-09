@@ -34,12 +34,12 @@ rag:
     gut strukturierte Antwort auf die Benutzerfrage zu erstellen.
 
 router:
-  selection_option_index: Index of the selected option (0-based)
-  reason: Detailed explanation of why this option is the most appropriate
+  selection_option_index: Index der ausgewählten Option (0-basiert)
+  reason: Detaillierte Erklärung, warum diese Option am besten geeignet ist
   routing_prompt: |
     {% chat role="system" %}
     <task>
-    Select the most appropriate routing option based on the given instructions.
+    Wählen Sie die am besten geeignete Routing-Option basierend auf den gegebenen Anweisungen.
     </task>
 
     <instructions>
@@ -57,16 +57,16 @@ router:
     </available_options>
 
     <selection_requirements>
-    1. Analyze the instructions carefully
-    2. Compare against each option's selection criteria
-    3. Choose exactly one option that best matches
-    4. Provide the option index (0 to {{ routes|length - 1 }})
-    5. Explain your reasoning in detail
+    1. Analysieren Sie die Anweisungen sorgfältig
+    2. Vergleichen Sie mit den Auswahlkriterien jeder Option
+    3. Wählen Sie genau eine Option, die am besten passt
+    4. Geben Sie den Options-Index an (0 bis {{ routes|length - 1 }})
+    5. Erklären Sie Ihre Begründung ausführlich
     </selection_requirements>
     {% endchat %}
   instructions:
     context_sufficient: |
-      Determine whether the user's query can be fulfilled given the available chat history.
+      Bestimmen Sie, ob die Anfrage des Benutzers anhand des verfügbaren Chat-Verlaufs erfüllt werden kann.
   
       <chat_history>
       {% for message in chat_history %}
@@ -86,28 +86,28 @@ router:
   
       <fulfillment_criteria>
       <can_fulfill>
-      A query CAN be fulfilled if ANY of the following are true:
-      * All information required to fulfill the query is present in the chat history
-      * No specific information is required to fulfill the query (e.g., summarizing already provided content)
-      * The information required is trivial knowledge that most people would know (e.g., "the sky is blue")
-      * There is no information in the chat history, but the query also does not require any specific information
+      Eine Anfrage KANN erfüllt werden, wenn EINER der folgenden Punkte zutrifft:
+      * Alle Informationen, die zur Erfüllung der Anfrage erforderlich sind, sind im Chat-Verlauf vorhanden
+      * Es sind keine spezifischen Informationen erforderlich, um die Anfrage zu erfüllen (z.B. Zusammenfassung bereits bereitgestellter Inhalte)
+      * Die erforderlichen Informationen sind triviales Wissen, das die meisten Menschen kennen würden (z.B. "der Himmel ist blau")
+      * Es gibt keine Informationen im Chat-Verlauf, aber die Anfrage erfordert auch keine spezifischen Informationen
       </can_fulfill>
   
       <cannot_fulfill>
-      A query CANNOT be fulfilled if ANY of the following are true:
-      * It explicitly asks for information not provided in the chat history and not trivially available
-      * It requires a task that would need more knowledge than what is available in the context
-      * The query can only be insufficiently or partially answered given the available context
+      Eine Anfrage KANN NICHT erfüllt werden, wenn EINER der folgenden Punkte zutrifft:
+      * Sie fragt explizit nach Informationen, die nicht im Chat-Verlauf vorhanden und nicht trivial verfügbar sind
+      * Sie erfordert eine Aufgabe, die mehr Wissen benötigen würde, als im Kontext verfügbar ist
+      * Die Anfrage kann aufgrund des verfügbaren Kontexts nur unzureichend oder teilweise beantwortet werden
       </cannot_fulfill>
       </fulfillment_criteria>
   
-      Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear decision with detailed reasoning.
+      Analysieren Sie die Benutzeranfrage sorgfältig in Bezug auf den Chat-Verlauf. Bestimmen Sie, ob die Anfrage basierend auf den oben genannten Kriterien erfüllt werden kann. Geben Sie eine klare Ja/Nein-Entscheidung mit detaillierter Begründung an.
 
     expert_answer_sufficient: |
-      You are given a chat history between an AI assistant and an expert. The goal of this conversation
-      is to answer a question originaly posed by a user. Determine whether the expert has already sufficiently
-      answered the question based on the chat history.
-      
+      Sie erhalten einen Chat-Verlauf zwischen einem KI-Assistenten und einem Experten. Das Ziel dieses Gesprächs
+      ist es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Bestimmen Sie, ob der Experte die Frage
+      basierend auf dem Chat-Verlauf bereits ausreichend beantwortet hat.
+
        <chat_history>
       {% for message in chat_history %}
       <message role="{{ message.role.value }}">
@@ -119,27 +119,27 @@ router:
       </message>
       {% endfor %}
       </chat_history>
-  
+
       <user_question>
       {{ question }}
       </user_query>
-      
+
       <answered_criteria>
       <is_answered>
-      A question is considered answered if ANY of the following are true:
-      * The expert has provided a complete and accurate answer to the user's question
-      * The expert has provided a partial answer, but the user can still understand the main points
-      * The expert has indicated where the answer can be found
-      * The expert has provided context information, maybe in the systme message, that - directly or indirectly - answer the question
+      Eine Frage gilt als beantwortet, wenn EINER der folgenden Punkte zutrifft:
+      * Der Experte hat eine vollständige und genaue Antwort auf die Frage des Benutzers gegeben
+      * Der Experte hat eine teilweise Antwort gegeben, aber der Benutzer kann die Hauptpunkte immer noch verstehen
+      * Der Experte hat angegeben, wo die Antwort zu finden ist
+      * Der Experte hat Kontextinformationen geliefert, möglicherweise in der Systemnachricht, die - direkt oder indirekt - die Frage beantworten
       </is_answered>
       <is_not_answered>
-      A question is considered not answered if ANY of the following are true:
-      * The expert has not provided any answer to the user's question
-      * The expert has provided an answer, but it is incomplete or inaccurate
-      * The expert has provided an answer, but it is not relevant to the user's question
-      * The expert has provided an answer, but it is not clear or understandable
-      * The expert indicates that they do not know the answer
+      Eine Frage gilt als nicht beantwortet, wenn EINER der folgenden Punkte zutrifft:
+      * Der Experte hat keine Antwort auf die Frage des Benutzers gegeben
+      * Der Experte hat eine Antwort gegeben, aber sie ist unvollständig oder ungenau
+      * Der Experte hat eine Antwort gegeben, aber sie ist nicht relevant für die Frage des Benutzers
+      * Der Experte hat eine Antwort gegeben, aber sie ist nicht klar oder verständlich
+      * Der Experte gibt an, dass er die Antwort nicht kennt
       </is_not_answered>
       </answered_criteria>
-      
-      Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
+
+      Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.

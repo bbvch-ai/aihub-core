@@ -62,7 +62,7 @@ async def main():
                 AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
                     base_url=OPENAI_URL,
-                    api_version="2023-12-01-preview",
+                    api_version="2024-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                 ),
             ],
