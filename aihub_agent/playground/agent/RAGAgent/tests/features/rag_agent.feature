@@ -51,7 +51,7 @@ Feature: RAG Agent
     Then the few shot guard should accept the user query
     * respond to the user with a generated response
 
-  @slow
+  @azure
   Scenario: Test the RAGAgent with multiple retrieval hops
     Given a RAGAgent runner with a valid azure configuration
     * check_context_sufficiency set to "True" and max_hops to "3"
