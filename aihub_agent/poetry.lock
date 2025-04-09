@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.140.0"
+version = "v0.141.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -75,7 +75,7 @@ llama-index-llms-openai-like = "^0.3.3"
 llama-index-readers-file = "^0.4.1"
 llama-index-storage-docstore-mongodb = "^0.3.0"
 llama-index-vector-stores-azureaisearch = "^0.3.0"
-llama-index-vector-stores-milvus = "^0.6.0"
+llama-index-vector-stores-milvus = "^0.7.3"
 mongoengine = "^0.29.1"
 nats-py = "^2.9.0"
 networkx = "^3.4.2"
@@ -99,8 +99,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.140.0"
-resolved_reference = "3c3d21616c1c28d84db6a8e64371990dccea51b6"
+reference = "v0.141.0"
+resolved_reference = "742f9fefb071185b4930aab1c7ea49609516f639"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -2398,14 +2398,14 @@ llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-milvus"
-version = "0.6.1"
+version = "0.7.3"
 description = "llama-index vector_stores milvus integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_vector_stores_milvus-0.6.1-py3-none-any.whl", hash = "sha256:2004b514d703d44d2c6851f1776e715add9505bc95c3fa2c9a420b1996dd222a"},
-    {file = "llama_index_vector_stores_milvus-0.6.1.tar.gz", hash = "sha256:94f0438011f14e26dc529b5d6df5b7a11b2e3a57826601a118f6194c445061fb"},
+    {file = "llama_index_vector_stores_milvus-0.7.3-py3-none-any.whl", hash = "sha256:911dd2b7ecef659fb2e860949806b2cc05977f24185b620d6bf2bcf114727db7"},
+    {file = "llama_index_vector_stores_milvus-0.7.3.tar.gz", hash = "sha256:bd0131862150c6f7800c98d72dd71dd0dc1df3de9f1d1b9ac9005a7f03940b52"},
 ]
 
 [package.dependencies]
@@ -5436,4 +5436,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "02ee8b104bbb2f00cc186e32315a274b6334881b674fb2932a84027dad9e011c"
+content-hash = "6851c283db84937ec6fef26b508203db7f86070f53c3d72b8c26e14214ae8eaf"
