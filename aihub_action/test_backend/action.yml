@@ -76,12 +76,39 @@ runs:
       if: inputs.docker_compose_paths != ''
       shell: bash
       run: |
-        while docker compose ps | grep -q -e "unhealthy" -e "health: starting" -e "Restarting"; do
-          echo "Waiting for all services to become healthy..."
-          sleep 5;
+        echo "Waiting for Docker services to become healthy..."
+
+        # Maximum wait time in seconds (5 minutes)
+        MAX_WAIT=300
+        # Polling interval in seconds
+        INTERVAL=5
+        # Counter
+        ELAPSED=0
+
+        while [ $ELAPSED -lt $MAX_WAIT ]; do
+          # Check if any unhealthy containers exist
+          # If a container has no health check, its status won't contain "(health:"
+          UNHEALTHY_COUNT=$(docker ps | grep "(health:" | grep -v "healthy" | wc -l)
+
+          if [ $UNHEALTHY_COUNT -eq 0 ]; then
+            echo "All Docker services are healthy or don't have health checks!"
+            docker ps
+            break
+          fi
+
+          echo "Found $UNHEALTHY_COUNT containers still starting or unhealthy..."
+
+          # Sleep for the polling interval
+          sleep $INTERVAL
+          ELAPSED=$((ELAPSED + INTERVAL))
+          echo "Waited for $ELAPSED seconds out of $MAX_WAIT maximum..."
         done
-        docker compose ps
-        echo "All services are healthy!"
+
+        if [ $ELAPSED -ge $MAX_WAIT ]; then
+          echo "⚠️ Timed out waiting for Docker services to become healthy after $MAX_WAIT seconds."
+          docker ps
+          echo "Continuing with tests anyway, but they may fail if services aren't ready."
+        fi
 
     - name: Run Tests with Coverage and Generate Report
       shell: bash
