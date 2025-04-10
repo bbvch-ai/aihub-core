@@ -1,7 +1,7 @@
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional
+from cachetools import TTLCache
 
 from aihub_bot.persistence.entities.PathEntity import PathEntity
-from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackUtils
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentTopic
@@ -11,6 +11,7 @@ from fastapi import Request
 from pydantic import BaseModel, Field
 
 from aihub_bot.routes.RoutesService import RoutesService
+from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackUtils, SlackIds
 
 
 class BotInTheLoopThread(BaseModel):
@@ -31,11 +32,14 @@ class BotInTheLoopHandler:
     CONTROLLER_PATH: str = "/bot_in_the_loop"
     ENDPOINT_PATH: str = "/response"
 
+    # Cache TTL of 30 days
+    CACHE_TTL_SECONDS = 60 * 60 * 24 * 30
+
     def __init__(self):
         self.threads: Dict[str, BotInTheLoopThread] = {}
         self.path: str = f"/api/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
-        # Cache for Slack IDs to avoid repeated API calls
-        self.slack_ids_cache: Dict[str, Tuple[str, str]] = {}
+        # Use TTLCache with max size of 100 entries
+        self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)
 
     async def handle_event(self, event: BaseEvent, _: AgentTopic):
         if event.is_bitl_request_event:
@@ -43,7 +47,7 @@ class BotInTheLoopHandler:
         else:
             return
 
-    async def _get_slack_ids(self, path: str) -> Optional[Tuple[str, str]]:
+    async def _get_slack_ids(self, path: str) -> SlackIds:
         """Get bot_id and team_id using the Slack auth.test API."""
         # Check cache first
         if path in self.slack_ids_cache:
@@ -52,13 +56,13 @@ class BotInTheLoopHandler:
         # Get the Slack token from the path entity
         slack_token = PathEntity.get_slack_token_by_path(path)
         if not slack_token:
-            return None
+            raise ValueError(f"No Slack token found for path {path}")
 
         # Use the SlackUtils to get the IDs
         slack_ids = await SlackUtils.get_slack_ids(slack_token)
-        if slack_ids:
-            # Cache the result for future use
-            self.slack_ids_cache[path] = slack_ids
+
+        # Cache the result for future use
+        self.slack_ids_cache[path] = slack_ids
 
         return slack_ids
 
@@ -71,12 +75,9 @@ class BotInTheLoopHandler:
 
         # Get the Slack IDs (bot_id and team_id)
         slack_ids = await self._get_slack_ids(self.path)
-        if not slack_ids:
-            raise ValueError("Failed to get Slack bot_id and team_id. Check the Slack token.")
 
-        bot_id, team_id = slack_ids
         # Create the full channel ID format with just the channel ID provided
-        channel_id = f"{bot_id}:{team_id}:{event.conversation_id}"
+        channel_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.conversation_id}"
 
         if thread_id in self.threads:
             # Handle the case where the thread already exists
@@ -94,6 +95,10 @@ class BotInTheLoopHandler:
         if self.threads[thread_id].slack_thread_id:
             conversation_id += f":{self.threads[thread_id].slack_thread_id}"
 
+        # Extract bot_id and team_id from the conversation_id
+        parts = conversation_id.split(":")
+        bot_id = parts[0]
+        team_id = parts[1]
         bot_team_id = f"{bot_id}:{team_id}"
 
         conversation = ConversationReference(
