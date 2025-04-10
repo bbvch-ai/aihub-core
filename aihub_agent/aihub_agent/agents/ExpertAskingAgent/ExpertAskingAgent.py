@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 
 from aihub_agent.agents.ExpertAskingAgent.events.KnowledgeSnippetEvent import KnowledgeSnippetEvent
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
@@ -34,7 +35,7 @@ class ExpertAskingAgent(Agent):
 
     @step(
         name=LocaleString(en="Invoke Expert Step"),
-        description=LocaleString("Poses question to a group of expert."),
+        description=LocaleString(en="Poses question to a group of expert."),
         icon="material-symbols:group-rounded",
     )
     async def start_step(
@@ -57,13 +58,13 @@ class ExpertAskingAgent(Agent):
         return BotInTheLoop.invoke(
             question=question_event.question_to_expert,
             user=question_event.user,
-            conversation_id=agent_config.conversation_id
+            slack_channel_id=agent_config.slack_channel_id
         )
 
 
     @step(
         name=LocaleString(en="Expert Response"),
-        description=LocaleString("Processes the expert response."),
+        description=LocaleString(en="Processes the expert response."),
         icon="carbon:question-answering",
     )
     async def expert_response_step(
@@ -75,14 +76,16 @@ class ExpertAskingAgent(Agent):
         run_context: RunContext,
         t: AgentLocaleHandler,
     ) -> RouterEvent:
-        await displayer.display_thought(f"Expert responded: '{expert_response_event.response}'.")
+        expert_response = expert_response_event.response
+        expert_name = expert_response_event.responder.user_name
+        await displayer.display_thought(f"Expert responded: '{expert_response}'.")
 
         loop_count = await run_context.get("loop_count", 0)
         await run_context.set("loop_count", loop_count + 1)
 
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
-        chat_history.append(ChatMessage(role=MessageRole.USER, content=expert_response_event.response))
+        chat_history.append(ChatMessage(role=MessageRole.USER, content=expert_response))
         await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
 
         instructions = RichPromptTemplate(
@@ -94,11 +97,11 @@ class ExpertAskingAgent(Agent):
                 instructions=instructions,
                 routes=[
                     RouteOptions.for_event(
-                        ExpertAnswerSufficientEvent(),
+                        ExpertAnswerSufficientEvent(response=expert_response, expert_name=expert_name),
                         "Choose this option if the experts response sufficiently answered the question.",
                     ),
                     RouteOptions.for_event(
-                        ExpertAnswerInsufficientEvent(),
+                        ExpertAnswerInsufficientEvent(response=expert_response, expert_name=expert_name),
                         "Choose this option if the experts response does NOT sufficiently answered the question.",
                     ),
                 ],
@@ -108,7 +111,7 @@ class ExpertAskingAgent(Agent):
 
     @step(
         name=LocaleString(en="Response Sufficient Router"),
-        description=LocaleString("Checks whether the expert has sufficiently answerd the question yet."),
+        description=LocaleString(en="Checks whether the expert has sufficiently answerd the question yet."),
         icon="line-md:chat",
     )
     async def router_step(
@@ -121,7 +124,7 @@ class ExpertAskingAgent(Agent):
 
     @step(
         name=LocaleString(en="Generate knowledge"),
-        description=LocaleString("Create a new knowledge snippet that can be safed to knowledge database."),
+        description=LocaleString(en="Create a new knowledge snippet that can be safed to knowledge database."),
         icon="ix:user-success-filled",
     )
     async def create_knowledge_snippet(
@@ -149,12 +152,13 @@ class ExpertAskingAgent(Agent):
 
     @step(
         name=LocaleString(en="Safe knowledge"),
-        description=LocaleString("Persists knowledge into the knowledge database."),
+        description=LocaleString(en="Persists knowledge into the knowledge database."),
         icon="bi:database-up",
     )
     async def safe_knowledge_snippet(
         self,
         knowledge_snippet_event: KnowledgeSnippetEvent,
+        expert_answer_event: ExpertAnswerSufficientEvent,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
     ) -> AnswerStopEvent:
@@ -163,14 +167,15 @@ class ExpertAskingAgent(Agent):
             base_url=agent_config.open_webui_api_url,
             token=agent_config.open_webui_api_key,
         )
-        knowledge_snippet = knowledge_snippet_event.content
+        knowledge_snippet = f"{knowledge_snippet_event.content}\n---\n{expert_answer_event.expert_name}"
         bytes_content = knowledge_snippet.encode("utf-8")
-        filename = "my_text_file.txt"
+        current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        filename = f"{expert_answer_event.expert_name} {current_date_str}.txt"
         file_response = await client.files.upload_file(
             file=bytes_content,
             filename=filename,
         )
-        await displayer.display_thought(f"Knowledge safed under {filename}.")
+        await displayer.display_thought(f"Knowledge saved under {filename}.")
         await asyncio.sleep(1)
         await client.knowledge.add_file_to_knowledge(
             knowledge_id=agent_config.open_webui_knowledge_id,
@@ -180,7 +185,7 @@ class ExpertAskingAgent(Agent):
 
     @step(
         name=LocaleString(en="Follow up question"),
-        description=LocaleString("Poses follow up question to expert as answer is not sufficient yet."),
+        description=LocaleString(en="Poses follow up question to expert as answer is not sufficient yet."),
         icon="ix:user-fail-filled",
     )
     async def follow_up_question(

@@ -1,4 +1,3 @@
-from aihub_agent.agents.ExpertAskingAgent.events.AskExpertEvent import AskExpertEvent
 from aihub_agent.agents.ExpertGroundedAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
@@ -45,7 +44,7 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Start"),
-        description=LocaleString("Processes messages sent by the user."),
+        description=LocaleString(en="Processes messages sent by the user."),
         icon="line-md:chat",
     )
     async def start_step(
@@ -82,7 +81,7 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Context Router"),
-        description=LocaleString("Determines whether the context is sufficient to fulfill the users query."),
+        description=LocaleString(en="Determines whether the context is sufficient to fulfill the users query."),
         icon="iconoir:missing-font",
     )
     async def context_sufficient_router_step(
@@ -95,7 +94,7 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Answer Question"),
-        description=LocaleString("Users query can be safely fulfilled."),
+        description=LocaleString(en="Users query can be safely fulfilled."),
         icon="simple-icons:answer",
     )
     async def answer_question_step(
@@ -111,7 +110,7 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Ask for Consent"),
-        description=LocaleString("Ask user for consent to contact expert with their question."),
+        description=LocaleString(en="Ask user for consent to contact expert with their question."),
         icon="akar-icons:chat-approve",
     )
     async def insufficient_context_step(
@@ -127,7 +126,7 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Consent Answer"),
-        description=LocaleString("User answered the question for consent."),
+        description=LocaleString(en="User answered the question for consent."),
         icon="carbon:question-answering",
     )
     async def user_expert_inquiry_response(
@@ -146,13 +145,13 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Invoke ExpertAskingAgent"),
-        description=LocaleString("Forwarding request to ExpertAskingAgent that will prompt experts."),
+        description=LocaleString(en="Forwarding request to ExpertAskingAgent that will prompt experts."),
         icon="hugeicons:robot-02",
     )
     async def forward_to_expert_asking_agent_step(
         self,
         user_message_event: UserMessageEvent,
-        _: AskExpertEvent,
+        _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertGroundedAgentConfig,
     ):
@@ -172,7 +171,7 @@ class ExpertGroundedAgent(Agent):
     @step(
         precondition=is_answer_response,
         name=LocaleString(en="Expert Answer Positive"),
-        description=LocaleString("ExpertAskingAgent was able to extract information from expert."),
+        description=LocaleString(en="ExpertAskingAgent was able to extract information from expert."),
         icon="ix:user-success-filled",
     )
     async def expert_answered_step(self, displayer: EventDisplayer, event: AgentInTheLoop.response):
@@ -184,7 +183,7 @@ class ExpertGroundedAgent(Agent):
     @step(
         precondition=is_no_answer_response,
         name=LocaleString(en="Expert Answer Negative"),
-        description=LocaleString("ExpertAskingAgent was NOT able to extract information from expert."),
+        description=LocaleString(en="ExpertAskingAgent was NOT able to extract information from expert."),
         icon="ix:user-fail-filled",
     )
     async def expert_not_answered_step(self, displayer: EventDisplayer, _: AgentInTheLoop.response):
@@ -194,7 +193,7 @@ class ExpertGroundedAgent(Agent):
 
     @step(
         name=LocaleString(en="Expert Answer Error"),
-        description=LocaleString("ExpertAskingAgent encountered an error."),
+        description=LocaleString(en="ExpertAskingAgent encountered an error."),
         icon="ix:error",
     )
     async def expert_exception_step(self, displayer: EventDisplayer, exception_event: AgentInTheLoop.exception):

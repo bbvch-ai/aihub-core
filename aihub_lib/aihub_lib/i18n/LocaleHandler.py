@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List
@@ -8,6 +9,7 @@ from typing_extensions import Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
+logger = logging.getLogger(__name__)
 
 class LocaleHandler:
     DEFAULT_LOCALE = "de"
@@ -20,8 +22,7 @@ class LocaleHandler:
         i18n.set("enable_memoization", True)
 
         locale_paths = locale_paths or []
-        for path in locale_paths + self.get_locale_paths():
-            print("Appending path", path)
+        for path in set(locale_paths + self.get_locale_paths()):
             i18n.load_path.append(path)
 
         i18n.load_path = list(set(i18n.load_path))
