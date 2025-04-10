@@ -77,7 +77,7 @@ class BotInTheLoopHandler:
         slack_ids = await self._get_slack_ids(self.path)
 
         # Create the full channel ID format with just the channel ID provided
-        channel_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.conversation_id}"
+        channel_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
 
         if thread_id in self.threads:
             # Handle the case where the thread already exists

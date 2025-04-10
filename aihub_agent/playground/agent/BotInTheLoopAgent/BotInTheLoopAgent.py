@@ -47,5 +47,5 @@ class BotInTheLoopAgent(Agent):
             return BotInTheLoop.invoke(
                 user=event.request_event.user,
                 question="What about now?",
-                conversation_id=event.request_event.conversation_id,
+                conversation_id=event.request_event.slack_channel_id,
             )
