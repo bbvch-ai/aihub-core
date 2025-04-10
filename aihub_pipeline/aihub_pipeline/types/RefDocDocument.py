@@ -1,5 +1,8 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from llama_index.core import Document
+from pydantic import computed_field
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -13,8 +16,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
 )
-from llama_index.core import Document
-from pydantic import computed_field
 
 if TYPE_CHECKING:
     from aihub_pipeline.types.DataLakeFile import DataLakeFile
@@ -36,8 +37,8 @@ class RefDocDocument(Document):
 
     @computed_field
     @property
-    def uri(self) -> str:
-        return self.metadata.get(DATA_LAKE_URI, "")
+    def uri(self) -> Optional[str]:
+        return self.metadata.get(DATA_LAKE_URI, None)
 
     @computed_field
     @property
