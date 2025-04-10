@@ -10,6 +10,7 @@ from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
+from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import SlackResponderInfo
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class BotInTheLoopBot(ActivityHandler):
         # Find the corresponding thread in the handler's threads dictionary
         matching_thread_id = None
         for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
-            if thread.slack_channel_id == full_channel_id and thread.slack_thread_id == slack_thread_ts:
+            if thread.conversation_id == full_channel_id and thread.slack_thread_ts == slack_thread_ts:
                 matching_thread_id = thread_id
                 break
 
@@ -63,12 +64,22 @@ class BotInTheLoopBot(ActivityHandler):
         # Get the original request event
         bot_in_the_loop_request = self.bot_in_the_loop_handler.threads[matching_thread_id].last_request_event
 
+        # Extract user information from the activity
+        responder_info = None
+        if hasattr(turn_context.activity, "from_property") and turn_context.activity.from_property:
+            responder_info = SlackResponderInfo(
+                user_id=turn_context.activity.from_property.id,
+                user_name=getattr(turn_context.activity.from_property, "name", None),
+                additional_info=getattr(turn_context.activity, "channel_data", None),
+            )
+
         # Distribute the response event
         await self.external_event_distributor.distribute_event(
             external_event=ExternalEvent(
                 event=BotInTheLoop.response(
                     response=turn_context.activity.text,
                     request_event=bot_in_the_loop_request,
+                    responder=responder_info,
                 ),
                 thread_id=bot_in_the_loop_request.topic.thread_id,
                 display_id=bot_in_the_loop_request.topic.display_id,
