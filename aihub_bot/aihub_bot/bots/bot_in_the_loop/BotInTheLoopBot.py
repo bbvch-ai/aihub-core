@@ -53,7 +53,7 @@ class BotInTheLoopBot(ActivityHandler):
         # Find the corresponding thread in the handler's threads dictionary
         matching_thread_id = None
         for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
-            if thread.slack_channel_id == full_channel_id and thread.slack_thread_id == slack_thread_ts:
+            if thread.conversation_id == full_channel_id and thread.slack_thread_ts == slack_thread_ts:
                 matching_thread_id = thread_id
                 break
 

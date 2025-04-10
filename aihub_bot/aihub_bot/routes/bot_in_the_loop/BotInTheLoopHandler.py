@@ -16,12 +16,12 @@ from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackUtils, SlackIds
 
 class BotInTheLoopThread(BaseModel):
     thread_id: str = Field(..., description="The ID of the thread in which the bot-in-the-loop requests are sent.")
-    slack_channel_id: str = Field(
-        ..., description="The full Slack channel ID (format: BotID:TeamID:ChannelID) where messages are sent to."
+    conversation_id: str = Field(
+        ..., description="The full Slack conversation ID (format: BotID:TeamID:ChannelID) where messages are sent to."
     )
-    slack_thread_id: Optional[str] = Field(
+    slack_thread_ts: Optional[str] = Field(
         None,
-        description="The ID of the Slack thread where the bot-in-the-loop requests are sent to and responses are received from.",
+        description="The timestamp of the Slack thread that acts as an identifier for the Slack thread where the bot-in-the-loop request is sent to.",
     )
     last_request_event: BotInTheLoopRequestEvent = Field(
         ..., description="The last bot-in-the-loop request event sent in this thread."
@@ -77,7 +77,7 @@ class BotInTheLoopHandler:
         slack_ids = await self._get_slack_ids(self.path)
 
         # Create the full channel ID format with just the channel ID provided
-        channel_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
+        conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
 
         if thread_id in self.threads:
             # Handle the case where the thread already exists
@@ -87,19 +87,15 @@ class BotInTheLoopHandler:
             # Handle the case where the thread does not exist
             # Create a new thread and add it to the threads dictionary
             self.threads[thread_id] = BotInTheLoopThread(
-                thread_id=thread_id, slack_channel_id=channel_id, last_request_event=event
+                thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
             )
 
         # Create conversation reference for the adapter
-        conversation_id = self.threads[thread_id].slack_channel_id
-        if self.threads[thread_id].slack_thread_id:
-            conversation_id += f":{self.threads[thread_id].slack_thread_id}"
+        conversation_id = self.threads[thread_id].conversation_id
+        if self.threads[thread_id].slack_thread_ts:
+            conversation_id += f":{self.threads[thread_id].slack_thread_ts}"
 
-        # Extract bot_id and team_id from the conversation_id
-        parts = conversation_id.split(":")
-        bot_id = parts[0]
-        team_id = parts[1]
-        bot_team_id = f"{bot_id}:{team_id}"
+        bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
         conversation = ConversationReference(
             channel_id="slack",
@@ -123,8 +119,8 @@ class BotInTheLoopHandler:
             if turn_context.activity.channel_id == "slack":
                 response = await turn_context.send_activity(question)
                 # Update the slack_thread_id in the thread mapping
-                if response and hasattr(response, "id") and thread.slack_thread_id is None:
-                    thread.slack_thread_id = response.id
+                if response and hasattr(response, "id") and thread.slack_thread_ts is None:
+                    thread.slack_thread_ts = response.id
             else:
                 raise NotImplementedError("Only Slack channel is supported")
 
