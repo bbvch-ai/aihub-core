@@ -2,8 +2,8 @@ import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from aihub_agent.agents.GroundedAgent.GroundedAgent import GroundedAgent
-from aihub_agent.agents.GroundedAgent.GroundedAgentConfig import GroundedAgentConfig
+from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgent import ExpertGroundedAgent
+from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgentConfig import ExpertGroundedAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -19,8 +19,8 @@ enable_logging()
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=GroundedAgent,
-        agent_config=GroundedAgentConfig(
+        agent_type=ExpertGroundedAgent,
+        agent_config=ExpertGroundedAgentConfig(
             agent_id="grounded_agent",
             name=LocaleString(en="Grounded Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
