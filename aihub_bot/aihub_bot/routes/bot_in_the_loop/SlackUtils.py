@@ -1,5 +1,6 @@
-import httpx
 import logging
+
+import httpx
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class SlackUtils:
         team_id = data.get("team_id")
 
         if not bot_id or not team_id:
-            raise ValueError(f"Missing bot_id or team_id in auth.test response")
+            raise ValueError("Missing bot_id or team_id in auth.test response")
 
         logger.info(f"Successfully retrieved Slack IDs - Bot ID: {bot_id}, Team ID: {team_id}")
         return SlackIds(bot_id=bot_id, team_id=team_id)

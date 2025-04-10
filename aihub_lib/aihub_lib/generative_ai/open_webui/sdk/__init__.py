@@ -4,7 +4,6 @@ from .api.chats import ChatsClient
 from .api.files import FilesClient
 from .api.knowledge import KnowledgeClient
 from .api.users import UsersClient
-from .client import BaseClient
 
 __all__ = ["OpenWebuiClient"]
 

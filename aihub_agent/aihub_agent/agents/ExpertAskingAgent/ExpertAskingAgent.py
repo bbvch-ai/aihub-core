@@ -1,8 +1,6 @@
 import asyncio
 import datetime
 
-from aihub_agent.agents.ExpertAskingAgent.events.KnowledgeSnippetEvent import KnowledgeSnippetEvent
-from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.open_webui.sdk import OpenWebuiClient
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
@@ -20,8 +18,10 @@ from aihub_agent.agents.ExpertAskingAgent.events.AskExpertEvent import AskExpert
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerInsufficientEvent import ExpertAnswerInsufficientEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerSufficientEvent import ExpertAnswerSufficientEvent
+from aihub_agent.agents.ExpertAskingAgent.events.KnowledgeSnippetEvent import KnowledgeSnippetEvent
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
+from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.workflow.decorators.step import step
 
 
@@ -58,9 +58,8 @@ class ExpertAskingAgent(Agent):
         return BotInTheLoop.invoke(
             question=question_event.question_to_expert,
             user=question_event.user,
-            slack_channel_id=agent_config.slack_channel_id
+            slack_channel_id=agent_config.slack_channel_id,
         )
-
 
     @step(
         name=LocaleString(en="Expert Response"),
@@ -149,7 +148,6 @@ class ExpertAskingAgent(Agent):
             response: ChatResponse = await llm.achat(chat)
             return KnowledgeSnippetEvent(content=response.message.content)
 
-
     @step(
         name=LocaleString(en="Safe knowledge"),
         description=LocaleString(en="Persists knowledge into the knowledge database."),
@@ -217,4 +215,8 @@ class ExpertAskingAgent(Agent):
             chat_history = [ChatMessage(**message) for message in chat_history]
             chat_history.append(ChatMessage(role=MessageRole.USER, content=response.message.content))
             await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
-            return AskExpertEvent(question_to_expert=response.message.content, locale=initial_question_event.locale, user=initial_question_event.user)
+            return AskExpertEvent(
+                question_to_expert=response.message.content,
+                locale=initial_question_event.locale,
+                user=initial_question_event.user,
+            )

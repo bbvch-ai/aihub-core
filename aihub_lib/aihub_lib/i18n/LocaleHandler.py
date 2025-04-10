@@ -11,6 +11,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 
 logger = logging.getLogger(__name__)
 
+
 class LocaleHandler:
     DEFAULT_LOCALE = "de"
     LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]

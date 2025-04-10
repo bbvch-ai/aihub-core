@@ -1,9 +1,8 @@
-from aihub_agent.agents.ExpertGroundedAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import AgentInTheLoop, StopEvent, UserMessageEvent, HumanInTheLoop
+from aihub_lib.nats.events import AgentInTheLoop, HumanInTheLoop, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -12,6 +11,7 @@ from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
+from aihub_agent.agents.ExpertGroundedAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgentConfig import ExpertGroundedAgentConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientEvent import ContextInsufficientEvent
 from aihub_agent.agents.RagAgent.events.ContextSufficientEvent import ContextSufficientEvent
@@ -58,7 +58,9 @@ class ExpertGroundedAgent(Agent):
         user_query = event.messages[-1].content
 
         await displayer.display_thought(f"The user asked '{user_query}'.")
-        await displayer.display_thought("I need to figure out whether I have sufficient information to answer this question.")
+        await displayer.display_thought(
+            "I need to figure out whether I have sufficient information to answer this question."
+        )
 
         instructions = RichPromptTemplate(
             template_str=t("lib.prompt.router.instructions.context_sufficient"),
@@ -118,8 +120,12 @@ class ExpertGroundedAgent(Agent):
         _: ContextInsufficientEvent,
         displayer: EventDisplayer,
     ) -> HumanInTheLoop.request:
-        await displayer.display_thought("Context is NOT sufficient. I see the potential of forwarding this question to an expert.")
-        await displayer.display_thought("Asking user for their consent to forward this question to a group of selected experts.")
+        await displayer.display_thought(
+            "Context is NOT sufficient. I see the potential of forwarding this question to an expert."
+        )
+        await displayer.display_thought(
+            "Asking user for their consent to forward this question to a group of selected experts."
+        )
         return HumanInTheLoop.invoke(
             question="Mir fehlt leider das nötige Wissen, um diese Frage zu beantworten. Soll ich für dich das nötige Wissen bei einem Experten abholen und auf dich zurück kommen?"
         )
@@ -155,9 +161,15 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         agent_config: ExpertGroundedAgentConfig,
     ):
-        await displayer.display_thought("Forwarding question to 'ExpertAskingAgent' and waiting for it to get back to me.")
-        await displayer.display_chunk("Deine Frage wurde an ein Team von Experten weitergeleitet.\n", model_name="expert")
-        await displayer.display_chunk("Sobald ein Experte die Frage beantworten konnte werde ich auf Sie zurück kommen.", model_name="expert")
+        await displayer.display_thought(
+            "Forwarding question to 'ExpertAskingAgent' and waiting for it to get back to me."
+        )
+        await displayer.display_chunk(
+            "Deine Frage wurde an ein Team von Experten weitergeleitet.\n", model_name="expert"
+        )
+        await displayer.display_chunk(
+            "Sobald ein Experte die Frage beantworten konnte werde ich auf Sie zurück kommen.", model_name="expert"
+        )
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_asking_agent_class,
             agent_id=agent_config.expert_asking_agent_id,
@@ -187,7 +199,9 @@ class ExpertGroundedAgent(Agent):
         icon="ix:user-fail-filled",
     )
     async def expert_not_answered_step(self, displayer: EventDisplayer, _: AgentInTheLoop.response):
-        await displayer.display_thought("'ExpertAskingAgent' was unable to find an expert that was able to answer users question.")
+        await displayer.display_thought(
+            "'ExpertAskingAgent' was unable to find an expert that was able to answer users question."
+        )
         await displayer.display_chunk("Expert was not able to answer question, apologies.", model_name="expert")
         return StopEvent()
 
@@ -197,6 +211,8 @@ class ExpertGroundedAgent(Agent):
         icon="ix:error",
     )
     async def expert_exception_step(self, displayer: EventDisplayer, exception_event: AgentInTheLoop.exception):
-        await displayer.display_thought(f"'ExpertAskingAgent' got back with an error {exception_event.exception_event.http_status_code}: {exception_event.exception_event.message}.")
+        await displayer.display_thought(
+            f"'ExpertAskingAgent' got back with an error {exception_event.exception_event.http_status_code}: {exception_event.exception_event.message}."
+        )
         await displayer.display_chunk("There was an exception interacting with the expert.", model_name="expert")
         return StopEvent()

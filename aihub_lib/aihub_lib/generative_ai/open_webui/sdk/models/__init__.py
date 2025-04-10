@@ -12,7 +12,6 @@ from .knowledge import (
     KnowledgeUserModel,
     KnowledgeUserResponse,
 )
-from .knowledge import UserResponse as KnowledgeUserResponse
 from .users import (
     ApiKeyResponse,
     ChatPermissions,

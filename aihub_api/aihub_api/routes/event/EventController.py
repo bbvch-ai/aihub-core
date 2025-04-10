@@ -1,5 +1,4 @@
 import logging
-import traceback
 from typing import Annotated, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser

@@ -24,7 +24,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StartEvent, StopEvent
+from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 

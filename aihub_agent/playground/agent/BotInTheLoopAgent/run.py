@@ -8,6 +8,7 @@ from playground.agent.BotInTheLoopAgent.BotInTheLoopAgentConfig import BotInTheL
 
 enable_logging()
 
+
 async def main():
     runner = AgentTestRunner(
         agent_type=BotInTheLoopAgent,

@@ -7,6 +7,7 @@ from starlette.requests import Request
 
 logger = logging.getLogger(__name__)
 
+
 class I18nMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         locale = self.get_preferred_locale(

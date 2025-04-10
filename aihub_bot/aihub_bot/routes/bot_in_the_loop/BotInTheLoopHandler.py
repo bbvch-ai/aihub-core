@@ -1,17 +1,17 @@
 from typing import Callable, Dict, Optional
-from cachetools import TTLCache
 
-from aihub_bot.persistence.entities.PathEntity import PathEntity
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentTopic
 from botbuilder.core import TurnContext
 from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
+from cachetools import TTLCache
 from fastapi import Request
 from pydantic import BaseModel, Field
 
+from aihub_bot.persistence.entities.PathEntity import PathEntity
+from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackIds, SlackUtils
 from aihub_bot.routes.RoutesService import RoutesService
-from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackUtils, SlackIds
 
 
 class BotInTheLoopThread(BaseModel):

@@ -229,7 +229,13 @@ class OpenaiService:
             )
 
         return await OpenaiService.json_assistant(
-            agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor, locale=t.locale,
+            agent_class,
+            agent_id,
+            chat_completion_request,
+            user,
+            nc,
+            external_event_distributor,
+            locale=t.locale,
         )
 
     @staticmethod
