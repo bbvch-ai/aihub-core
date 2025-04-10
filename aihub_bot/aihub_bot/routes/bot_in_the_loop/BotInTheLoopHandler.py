@@ -59,7 +59,7 @@ class BotInTheLoopHandler:
             raise ValueError(f"No Slack token found for path {path}")
 
         # Use the SlackUtils to get the IDs
-        slack_ids = await SlackUtils.get_slack_ids(slack_token)
+        slack_ids = SlackUtils.get_slack_ids(slack_token)
 
         # Cache the result for future use
         self.slack_ids_cache[path] = slack_ids
