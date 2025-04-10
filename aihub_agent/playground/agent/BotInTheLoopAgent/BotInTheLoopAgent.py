@@ -3,7 +3,7 @@ from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
 from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.nats.events import StartEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import StopEvent, UserMessageEvent
 
 
 class BotInTheLoopAgent(Agent):
@@ -11,8 +11,11 @@ class BotInTheLoopAgent(Agent):
     async def start_step(self, event: UserMessageEvent, run_context: RunContext) -> BotInTheLoop.request:
         print("[BotInTheLoopAgent.start_step]")
         user = await run_context.get("user")
+
+        # IMPORTANT: Only provide the Slack channel ID (starts with C)
+        # Do NOT include bot_id or team_id - they will be fetched automatically
         return BotInTheLoop.invoke(
-            user=user, question="Are we there yet?", conversation_id="B08D8FP20TZ:T08AZPNJV33:C08MK7Z8GU9"
+            user=user, question="Are we there yet?", conversation_id="C08MCK6LEBY"  # Only the channel ID is needed
         )
 
     @step()
@@ -39,6 +42,8 @@ class BotInTheLoopAgent(Agent):
         if event.response == "yes":
             return StopEvent()
         else:
+            # For subsequent messages, we can use the same conversation_id from the request event
+            # This will be the original channel ID for convenience
             return BotInTheLoop.invoke(
                 user=event.request_event.user,
                 question="What about now?",

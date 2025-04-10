@@ -1,5 +1,7 @@
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple
 
+from aihub_bot.persistence.entities.PathEntity import PathEntity
+from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackUtils
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentTopic
@@ -14,7 +16,7 @@ from aihub_bot.routes.RoutesService import RoutesService
 class BotInTheLoopThread(BaseModel):
     thread_id: str = Field(..., description="The ID of the thread in which the bot-in-the-loop requests are sent.")
     slack_channel_id: str = Field(
-        ..., description="The ID of the Slack channel where the bot-in-the-loop requests are sent to."
+        ..., description="The full Slack channel ID (format: BotID:TeamID:ChannelID) where messages are sent to."
     )
     slack_thread_id: Optional[str] = Field(
         None,
@@ -32,6 +34,8 @@ class BotInTheLoopHandler:
     def __init__(self):
         self.threads: Dict[str, BotInTheLoopThread] = {}
         self.path: str = f"/api/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
+        # Cache for Slack IDs to avoid repeated API calls
+        self.slack_ids_cache: Dict[str, Tuple[str, str]] = {}
 
     async def handle_event(self, event: BaseEvent, _: AgentTopic):
         if event.is_bitl_request_event:
@@ -39,12 +43,40 @@ class BotInTheLoopHandler:
         else:
             return
 
+    async def _get_slack_ids(self, path: str) -> Optional[Tuple[str, str]]:
+        """Get bot_id and team_id using the Slack auth.test API."""
+        # Check cache first
+        if path in self.slack_ids_cache:
+            return self.slack_ids_cache[path]
+
+        # Get the Slack token from the path entity
+        slack_token = PathEntity.get_slack_token_by_path(path)
+        if not slack_token:
+            return None
+
+        # Use the SlackUtils to get the IDs
+        slack_ids = await SlackUtils.get_slack_ids(slack_token)
+        if slack_ids:
+            # Cache the result for future use
+            self.slack_ids_cache[path] = slack_ids
+
+        return slack_ids
+
     async def _handle_bot_in_the_loop_request(
         self,
         event: BotInTheLoopRequestEvent,
     ):
         thread_id = event.topic.thread_id
         question = event.question
+
+        # Get the Slack IDs (bot_id and team_id)
+        slack_ids = await self._get_slack_ids(self.path)
+        if not slack_ids:
+            raise ValueError("Failed to get Slack bot_id and team_id. Check the Slack token.")
+
+        bot_id, team_id = slack_ids
+        # Create the full channel ID format with just the channel ID provided
+        channel_id = f"{bot_id}:{team_id}:{event.conversation_id}"
 
         if thread_id in self.threads:
             # Handle the case where the thread already exists
@@ -54,21 +86,23 @@ class BotInTheLoopHandler:
             # Handle the case where the thread does not exist
             # Create a new thread and add it to the threads dictionary
             self.threads[thread_id] = BotInTheLoopThread(
-                thread_id=thread_id, slack_channel_id=event.conversation_id, last_request_event=event
+                thread_id=thread_id, slack_channel_id=channel_id, last_request_event=event
             )
 
         # Create conversation reference for the adapter
         conversation_id = self.threads[thread_id].slack_channel_id
         if self.threads[thread_id].slack_thread_id:
             conversation_id += f":{self.threads[thread_id].slack_thread_id}"
-        bot_id = ":".join(conversation_id.split(":")[0:2])
+
+        bot_team_id = f"{bot_id}:{team_id}"
+
         conversation = ConversationReference(
             channel_id="slack",
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
             service_url="https://europe.slack.botframework.com",
-            bot=ChannelAccount(id=bot_id),
+            bot=ChannelAccount(id=bot_team_id),
         )
 
         adapter = RoutesService.get_adapter(self.path)
