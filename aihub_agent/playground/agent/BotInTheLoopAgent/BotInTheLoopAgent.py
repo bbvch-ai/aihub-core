@@ -17,11 +17,25 @@ class BotInTheLoopAgent(Agent):
 
     @step()
     async def end_step(self, event: BotInTheLoop.response) -> BotInTheLoop.request | StopEvent:
+        # Print basic response information
         print(
             "[BotInTheLoopAgent.end_step]",
-            event.request_event.question,
-            event.response,
+            f"Question: {event.request_event.question}",
+            f"Response: {event.response}",
         )
+
+        # Print responder information if available
+        if event.responder:
+            print(
+                "[Responder Info]",
+                f"User ID: {event.responder.user_id}",
+                f"Name: {event.responder.user_name or 'N/A'}",
+            )
+            if event.responder.additional_info:
+                print(f"Additional Info: {event.responder.additional_info}")
+        else:
+            print("[Responder Info] No responder information available")
+
         if event.response == "yes":
             return StopEvent()
         else:
