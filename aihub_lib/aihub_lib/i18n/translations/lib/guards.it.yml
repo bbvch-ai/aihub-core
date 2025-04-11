@@ -102,7 +102,7 @@ context_sufficient_guard:
     Domanda:
     <Domanda>
     {user_query}
-    </Questione>
+    </Domanda>
     Contesto:
     <Contesto>
     {context}

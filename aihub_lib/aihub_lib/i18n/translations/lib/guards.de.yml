@@ -27,7 +27,7 @@ agent_description_guard:
   success: |
     true wenn die Antwort gegeben werden kann, false wenn nicht
   docstring: |
-    Datenmodel für die Enscheidung ob eine Antwort gegeben werden kann.
+    Datenmodel für die Entscheidung ob eine Antwort gegeben werden kann.
 few_shot_guard:
   prompt: |
     Sie erhalten mehrere Beispiele, die zeigen, welche Benutzeranfragen erlaubt sind und welche nicht. Jede Beispielantwort besteht aus zwei Schlüsseln:

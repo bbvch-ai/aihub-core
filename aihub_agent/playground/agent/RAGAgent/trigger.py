@@ -1,13 +1,12 @@
 import asyncio
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
 from aihub_agent.agents.rag.RAGAgent import RAGAgent
 from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -89,13 +88,6 @@ async def main():
             ),
             check_context_sufficiency=True,
             max_hops=3,
-            few_shot_guard_examples=[
-                FewShotGuardExample(
-                    user=LocaleString(en="", de="", fr="", it=""),
-                    success=True,
-                    reason=LocaleString(en="", de="", fr="", it=""),
-                )
-            ],
         ),
     )
 
@@ -108,7 +100,15 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hey. What is AI?", role=MessageRole.USER)], user=fake_user(), locale="en"
+                messages=[
+                    ChatMessage(
+                        content="You're an agent answering user requests. Only use the context information provided.",
+                        role=MessageRole.SYSTEM,
+                    ),
+                    ChatMessage(content="Hey. What is AI?", role=MessageRole.USER),
+                ],
+                user=fake_user(),
+                locale="en",
             ),
         )
 
