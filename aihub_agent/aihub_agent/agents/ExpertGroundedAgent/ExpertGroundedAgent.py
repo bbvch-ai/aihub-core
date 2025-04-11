@@ -57,10 +57,8 @@ class ExpertGroundedAgent(Agent):
         chat_history = event.messages[:-1]
         user_query = event.messages[-1].content
 
-        await displayer.display_thought(f"The user asked '{user_query}'.")
-        await displayer.display_thought(
-            "I need to figure out whether I have sufficient information to answer this question."
-        )
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.user_asked", user_query=user_query))
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.need_to_determine_context"))
 
         instructions = RichPromptTemplate(
             template_str=t("lib.prompt.router.instructions.context_sufficient"),
@@ -105,8 +103,9 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         event: UserMessageEvent,
         _: ContextSufficientEvent,
+        t: LocaleHandler,
     ):
-        await displayer.display_thought("I can safely answer the users question now.")
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.can_answer_question"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
 
@@ -119,16 +118,11 @@ class ExpertGroundedAgent(Agent):
         self,
         _: ContextInsufficientEvent,
         displayer: EventDisplayer,
+        t: LocaleHandler,
     ) -> HumanInTheLoop.request:
-        await displayer.display_thought(
-            "Context is NOT sufficient. I see the potential of forwarding this question to an expert."
-        )
-        await displayer.display_thought(
-            "Asking user for their consent to forward this question to a group of selected experts."
-        )
-        return HumanInTheLoop.invoke(
-            question="Mir fehlt leider das nötige Wissen, um diese Frage zu beantworten. Soll ich für dich das nötige Wissen bei einem Experten abholen und auf dich zurück kommen?"
-        )
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.context_not_sufficient"))
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.asking_for_consent"))
+        return HumanInTheLoop.invoke(question=t("agents.expert_grounded_agent.messages.consent_question"))
 
     @step(
         name=LocaleString(en="Consent Answer"),
@@ -139,13 +133,16 @@ class ExpertGroundedAgent(Agent):
         self,
         event: HumanInTheLoop.response,
         displayer: EventDisplayer,
+        t: LocaleHandler,
     ) -> UserRequestsExpertEvent | StopEvent:
         if "yes" in event.response.lower() or "ja" in event.response.lower():
-            await displayer.display_thought("The user has expressed their consent.")
+            await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.user_consented"))
             return UserRequestsExpertEvent()
-        await displayer.display_thought("The user does not wish to forward the question to an expert.")
-        await displayer.display_thought("Waiting for new instructions.")
-        await displayer.display_chunk("Alles klar.", model_name="gpt-4o")
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.user_declined"))
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.waiting_for_instructions"))
+        await displayer.display_chunk(
+            t("agents.expert_grounded_agent.messages.user_declined_confirmation"), model_name="gpt-4o"
+        )
 
         return StopEvent()
 
@@ -160,15 +157,15 @@ class ExpertGroundedAgent(Agent):
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertGroundedAgentConfig,
+        t: LocaleHandler,
     ):
-        await displayer.display_thought(
-            "Forwarding question to 'ExpertAskingAgent' and waiting for it to get back to me."
-        )
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
-            "Deine Frage wurde an ein Team von Experten weitergeleitet.\n", model_name="expert"
+            t("agents.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="expert"
         )
+        await displayer.display_chunk("\n", model_name="expert")
         await displayer.display_chunk(
-            "Sobald ein Experte die Frage beantworten konnte werde ich auf Sie zurück kommen.", model_name="expert"
+            t("agents.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="expert"
         )
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_asking_agent_class,
@@ -186,9 +183,14 @@ class ExpertGroundedAgent(Agent):
         description=LocaleString(en="ExpertAskingAgent was able to extract information from expert."),
         icon="ix:user-success-filled",
     )
-    async def expert_answered_step(self, displayer: EventDisplayer, event: AgentInTheLoop.response):
-        await displayer.display_thought("'ExpertAskingAgent' got back with an answer from the expert.")
-        await displayer.display_thought("Forwarding information from expert to user.")
+    async def expert_answered_step(
+        self,
+        displayer: EventDisplayer,
+        event: AgentInTheLoop.response,
+        t: LocaleHandler,
+    ):
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.expert_answered"))
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.forwarding_expert_info"))
         await displayer.display_chunk(event.stop_event.expert_answer, model_name="expert")
         return StopEvent()
 
@@ -198,11 +200,16 @@ class ExpertGroundedAgent(Agent):
         description=LocaleString(en="ExpertAskingAgent was NOT able to extract information from expert."),
         icon="ix:user-fail-filled",
     )
-    async def expert_not_answered_step(self, displayer: EventDisplayer, _: AgentInTheLoop.response):
-        await displayer.display_thought(
-            "'ExpertAskingAgent' was unable to find an expert that was able to answer users question."
+    async def expert_not_answered_step(
+        self,
+        displayer: EventDisplayer,
+        _: AgentInTheLoop.response,
+        t: LocaleHandler,
+    ):
+        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.expert_unable_to_answer"))
+        await displayer.display_chunk(
+            t("agents.expert_grounded_agent.messages.expert_unable_to_answer"), model_name="expert"
         )
-        await displayer.display_chunk("Expert was not able to answer question, apologies.", model_name="expert")
         return StopEvent()
 
     @step(
@@ -210,9 +217,20 @@ class ExpertGroundedAgent(Agent):
         description=LocaleString(en="ExpertAskingAgent encountered an error."),
         icon="ix:error",
     )
-    async def expert_exception_step(self, displayer: EventDisplayer, exception_event: AgentInTheLoop.exception):
+    async def expert_exception_step(
+        self,
+        displayer: EventDisplayer,
+        exception_event: AgentInTheLoop.exception,
+        t: LocaleHandler,
+    ):
         await displayer.display_thought(
-            f"'ExpertAskingAgent' got back with an error {exception_event.exception_event.http_status_code}: {exception_event.exception_event.message}."
+            t(
+                "agents.expert_grounded_agent.thoughts.expert_error",
+                error_code=exception_event.exception_event.http_status_code,
+                error_message=exception_event.exception_event.message,
+            )
         )
-        await displayer.display_chunk("There was an exception interacting with the expert.", model_name="expert")
+        await displayer.display_chunk(
+            t("agents.expert_grounded_agent.messages.expert_error_occurred"), model_name="expert"
+        )
         return StopEvent()

@@ -73,6 +73,11 @@ class AgentRunner:
         agent_config: AgentConfig,
         locale_paths: Optional[List[str]] = None,
     ):
+        if not isinstance(agent_type, type):
+            raise ValueError("agent_type must be a class, not an instance or module.")
+        if not issubclass(agent_type, Agent):
+            raise ValueError("agent_type must be a subclass of Agent.")
+
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type

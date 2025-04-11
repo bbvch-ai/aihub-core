@@ -2,10 +2,10 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
-from aihub_agent.agents.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
 from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
-from aihub_agent.agents.FewShotAgent.events import (
+from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
     FewShotStandaloneQuestionCondenserEvent,
 )
 from aihub_agent.agents.FewShotAgent.events.RightAgentEvent import RightAgentEvent
@@ -26,9 +26,11 @@ from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from aihub_lib.testing.logging.logger import enable_logging
 
 scenarios("features/few_shot_agent.feature")
 
+enable_logging()
 
 @pytest.fixture
 def agent_config_data():

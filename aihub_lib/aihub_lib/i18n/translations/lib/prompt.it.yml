@@ -7,7 +7,7 @@ condenser:
     {chat_history}
     </chat_history>
 
-    <user_question>
+    <user_query>
     {question}
     </user_question>
     
@@ -118,8 +118,8 @@ router:
       {% endfor %}
       </chat_history>
 
-      <user_question>
-      {{ question }}
+      <user_query>
+      %{question}
       </user_query>
 
       <answered_criteria>
