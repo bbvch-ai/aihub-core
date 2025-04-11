@@ -2,7 +2,7 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import AgentInTheLoop, HumanInTheLoop, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import AgentInTheLoop, HumanInTheLoop, StopEvent, UserMessageEvent, LLMEvent, LLMStopEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -104,10 +104,10 @@ class ExpertGroundedAgent(Agent):
         event: UserMessageEvent,
         _: ContextSufficientEvent,
         t: LocaleHandler,
-    ):
+    ) -> LLMStopEvent:
         await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.can_answer_question"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages, as_stop_step=True)
 
     @step(
         name=LocaleString(en="Ask for Consent"),
