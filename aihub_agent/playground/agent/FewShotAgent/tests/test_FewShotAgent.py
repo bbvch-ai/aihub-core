@@ -32,6 +32,7 @@ scenarios("features/few_shot_agent.feature")
 
 enable_logging()
 
+
 @pytest.fixture
 def agent_config_data():
     """

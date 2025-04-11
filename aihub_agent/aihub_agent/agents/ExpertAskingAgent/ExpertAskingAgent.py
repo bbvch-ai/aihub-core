@@ -145,7 +145,9 @@ class ExpertAskingAgent(Agent):
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(template_str=t("agents.expert_asking_agent.knowledge_snippet_prompt")).format_messages(
+            chat = RichPromptTemplate(
+                template_str=t("agents.expert_asking_agent.knowledge_snippet_prompt")
+            ).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
             )
@@ -170,11 +172,12 @@ class ExpertAskingAgent(Agent):
             base_url=agent_config.open_webui_api_url,
             token=agent_config.open_webui_api_key,
         )
-        knowledge_snippet = t('agents.expert_asking_agent.knowledge_snippet',
+        knowledge_snippet = t(
+            "agents.expert_asking_agent.knowledge_snippet",
             content=knowledge_snippet_event.content,
             expert_name=expert_answer_event.expert_name,
-            date=datetime.datetime.now().strftime('%Y.%m.%d'),
-            time=datetime.datetime.now().strftime('%H:%M:%S')
+            date=datetime.datetime.now().strftime("%Y.%m.%d"),
+            time=datetime.datetime.now().strftime("%H:%M:%S"),
         )
         bytes_content = knowledge_snippet.encode("utf-8")
         current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")

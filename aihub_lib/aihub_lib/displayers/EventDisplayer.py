@@ -10,7 +10,7 @@ from opentelemetry import trace
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, ThoughtEvent, LLMStopEvent
+from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, LLMStopEvent, ThoughtEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
