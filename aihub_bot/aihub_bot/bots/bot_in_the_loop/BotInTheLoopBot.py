@@ -4,13 +4,13 @@ import re
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
+from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import SlackResponderInfo
 from botbuilder.core import ActivityHandler, TurnContext
 from botframework.connector import Channels
 from nats.aio.client import Client as NATS
 from typing_extensions import override
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
-from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import SlackResponderInfo
 
 logger = logging.getLogger(__name__)
 

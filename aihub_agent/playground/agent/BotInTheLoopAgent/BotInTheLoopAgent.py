@@ -1,21 +1,23 @@
+from aihub_agent.agents.Agent import Agent
 from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
-from aihub_agent.agents.abstract.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 
 
 class BotInTheLoopAgent(Agent):
     @step()
-    async def start_step(self, event: UserMessageEvent, run_context: RunContext) -> BotInTheLoop.request:
+    async def start_step(self, _: UserMessageEvent, run_context: RunContext) -> BotInTheLoop.request:
         print("[BotInTheLoopAgent.start_step]")
         user = await run_context.get("user")
 
         # IMPORTANT: Only provide the Slack channel ID (starts with C)
         # Do NOT include bot_id or team_id - they will be fetched automatically
         return BotInTheLoop.invoke(
-            user=user, question="Are we there yet?", slack_channel_id="C08MCK6LEBY"  # Only the channel ID is needed
+            user=user,
+            question="Are we there yet?",
+            slack_channel_id="C08MCK6LEBY",  # Only the channel ID is needed
         )
 
     @step()

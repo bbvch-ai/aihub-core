@@ -1,5 +1,4 @@
 import logging
-import traceback
 from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
@@ -82,7 +81,7 @@ class EventService:
             logger.debug(f"Handling event: {event}")
             await external_event_distributor.distribute_event(event, user)
         except Exception as e:
-            traceback.print_exc()
+            logger.exception(e)
             # If there's an error, notify the user with an ExceptionEvent
             await ws_sender.send_event(
                 ExceptionEvent(message=str(e)),
@@ -122,6 +121,5 @@ class EventService:
 
         except WebSocketDisconnect as e:
             logging.error(f"Websocket disconnected: {e}")
-            traceback.print_exc()
             logger.debug(f"User {user.oid} disconnected from websocket")
             await ws_manager.disconnect(websocket, user.oid)

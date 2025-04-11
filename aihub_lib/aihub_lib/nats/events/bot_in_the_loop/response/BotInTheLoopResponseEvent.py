@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+
 from pydantic import BaseModel, Field
 
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import BotInTheLoopRequestEvent

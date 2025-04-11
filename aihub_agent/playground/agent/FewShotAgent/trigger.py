@@ -2,8 +2,8 @@ import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from aihub_agent.agents.basic.FewShotAgent.FewShotAgent import FewShotAgent
-from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent import FewShotAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (

@@ -2,14 +2,14 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
-from aihub_agent.agents.basic.FewShotAgent.FewShotAgent import FewShotAgent
-from aihub_agent.agents.basic.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
-from aihub_agent.agents.basic.FewShotAgent.events.FewShotEvent import FewShotEvent
-from aihub_agent.agents.basic.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
+from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
+from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
     FewShotStandaloneQuestionCondenserEvent,
 )
-from aihub_agent.agents.basic.FewShotAgent.events.RightAgentEvent import RightAgentEvent
-from aihub_agent.agents.common.events.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_agent.agents.FewShotAgent.events.RightAgentEvent import RightAgentEvent
+from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
@@ -26,8 +26,11 @@ from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from aihub_lib.testing.logging.logger import enable_logging
 
 scenarios("features/few_shot_agent.feature")
+
+enable_logging()
 
 
 @pytest.fixture

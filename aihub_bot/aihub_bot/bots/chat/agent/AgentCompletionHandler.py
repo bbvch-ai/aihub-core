@@ -29,6 +29,7 @@ class AgentCompletionHandler(CompletionHandler):
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        locale: Optional[str] = None,
         **kwargs,
     ) -> str:
         """Get a non-streaming Agent completion."""
@@ -42,6 +43,7 @@ class AgentCompletionHandler(CompletionHandler):
             thread_id=thread_id,
             display_id=display_id,
             stream=False,
+            locale=locale,
         )
 
         if isinstance(resources.stop_event, ExceptionEvent):
@@ -63,6 +65,7 @@ class AgentCompletionHandler(CompletionHandler):
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        locale: Optional[str] = None,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Get a streaming Agent completion."""
@@ -76,6 +79,7 @@ class AgentCompletionHandler(CompletionHandler):
             thread_id=thread_id,
             display_id=thread_id,
             stream=True,
+            locale=locale,
         )
 
         if isinstance(resources.stop_event, ExceptionEvent):
@@ -108,6 +112,7 @@ class AgentCompletionHandler(CompletionHandler):
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         stream: bool = False,
+        locale: Optional[str] = None,
     ) -> StreamingResources | JsonResources:
         """
         ### What
@@ -158,6 +163,7 @@ class AgentCompletionHandler(CompletionHandler):
                 external_event_distributor=external_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
+                locale=locale,
             )
 
     @staticmethod

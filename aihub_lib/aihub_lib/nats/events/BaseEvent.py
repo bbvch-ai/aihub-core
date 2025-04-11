@@ -186,6 +186,12 @@ class BaseEvent(BaseModel):
         for key, value in list(json_data.items()):
             if isinstance(value, dict) and "_event_name" in value:
                 json_data[key] = cls.deserialize_event(value)
+            # Handle lists containing events
+            elif isinstance(value, list):
+                json_data[key] = [
+                    cls.deserialize_event(item) if isinstance(item, dict) and "_event_name" in item else item
+                    for item in value
+                ]
 
         # Get event type and parent classes
         event_name = json_data.get("_event_name")
@@ -271,8 +277,11 @@ class BaseEvent(BaseModel):
         """
         data = super().model_dump(**kwargs)
         for field_name, value in self.__dict__.items():
-            if isinstance(value, BaseEvent):
+            if isinstance(value, BaseModel):
                 data[field_name] = value.model_dump()
+            # Handle lists containing events
+            elif isinstance(value, list):
+                data[field_name] = [item.model_dump() if isinstance(item, BaseModel) else item for item in value]
 
         if not self._unknown_data:
             return data

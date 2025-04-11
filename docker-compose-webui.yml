@@ -38,12 +38,11 @@ services:
 
       WEBUI_NAME: "bbv AI-Hub"
       CORS_ALLOW_ORIGIN: "http://localhost:5173"
-      RESET_CONFIG_ON_START: true
       ENABLE_SIGNUP: true
       ENABLE_LOGIN_FORM: true
       ENABLE_ADMIN_EXPORT: true
       ENABLE_ADMIN_CHAT_ACCESS: true
-      ENABLE_CHANNELS: true
+      ENABLE_CHANNELS: false
       ADMIN_EMAIL: "ai@bbv.ch"
       SHOW_ADMIN_DETAILS: true
       DEFAULT_USER_ROLE: "user"
@@ -98,7 +97,6 @@ services:
       ENABLE_RAG_WEB_SEARCH: true
       ENABLE_SEARCH_QUERY_GENERATION: true
 
-      RAG_FULL_CONTEXT: true
       RAG_WEB_SEARCH_FULL_CONTEXT: true
       RAG_WEB_SEARCH_RESULT_COUNT: 3
       RAG_WEB_SEARCH_ENGINE: "jina"
@@ -111,7 +109,8 @@ services:
       AUDIO_TTS_MODEL: "tts-1-hd"
       AUDIO_TTS_VOICE: "alloy"
 
-      ENABLE_API_KEY: false
+      ENABLE_API_KEY: true
+      RAG_EMBEDDING_BATCH_SIZE: 64
 
       WEBUI_URL: "http://localhost:5173"
 

@@ -36,7 +36,7 @@ class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
                     embedding_config=AzureOpenAIEmbeddingConfig(
                         name="text-embedding-ada-002",
                         base_url="https://aihub-dev-openai-che.openai.azure.com/",
-                        api_version="2023-12-01-preview",
+                        api_version="2024-12-01-preview",
                         embedding_tokens_costs_per_thousand=0.0,
                         default_parameter=AzureOpenAIEmbeddingParameter(),
                     )

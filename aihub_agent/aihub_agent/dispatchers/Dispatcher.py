@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import logging
-import traceback
 from typing import Annotated, Any, Awaitable, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
 
 from aihub_lib.agents.AgentConfig import AgentConfig
@@ -24,7 +23,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
@@ -393,8 +392,8 @@ class Dispatcher:
                 if getattr(step_method, "_stop_on_error", False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
+                logger.exception(e)
                 logger.error(f"Error executing step '{step_method.__name__}': {e}")
-                traceback.print_exc()
                 return
 
             # If the step returns events, publish them
