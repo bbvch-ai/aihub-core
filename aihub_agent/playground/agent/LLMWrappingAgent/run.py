@@ -1,7 +1,7 @@
 import asyncio
 
-from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
-from aihub_agent.agents.basic.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
+from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
+from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -24,7 +24,7 @@ async def main():
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://aihub-dev-openai-che.openai.azure.com/",
-                api_version="2023-12-01-preview",
+                api_version="2024-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,
                 default_parameter=AzureOpenAIParameter(temperature=0.0),

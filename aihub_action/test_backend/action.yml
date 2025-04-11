@@ -76,12 +76,51 @@ runs:
       if: inputs.docker_compose_paths != ''
       shell: bash
       run: |
-        while docker compose ps | grep -q -e "unhealthy" -e "health: starting" -e "Restarting"; do
-          echo "Waiting for all services to become healthy..."
-          sleep 5;
+        echo "Waiting for Docker services to become healthy..."
+
+        # Check if Docker is running
+        if ! docker info > /dev/null 2>&1; then
+          echo "Error: Docker is not running or not accessible"
+          exit 1
+        fi
+
+        # Show initial state of containers
+        echo "Initial container status:"
+        docker ps
+
+        # Maximum wait time in seconds (5 minutes)
+        MAX_WAIT=300
+        # Polling interval in seconds
+        INTERVAL=5
+        # Counter
+        ELAPSED=0
+
+        while [ $ELAPSED -lt $MAX_WAIT ]; do
+          # Check if any containers are unhealthy - approach with fewer assumptions about output format
+          UNHEALTHY_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
+          STARTING_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
+
+          if [ -z "$UNHEALTHY_CONTAINERS" ] && [ -z "$STARTING_CONTAINERS" ]; then
+            echo "All Docker services are in a healthy state!"
+            docker ps
+            break
+          fi
+
+          echo "Some containers are still starting or unhealthy:"
+          [ -n "$UNHEALTHY_CONTAINERS" ] && echo "$UNHEALTHY_CONTAINERS" 
+          [ -n "$STARTING_CONTAINERS" ] && echo "$STARTING_CONTAINERS"
+
+          # Sleep for the polling interval
+          sleep $INTERVAL
+          ELAPSED=$((ELAPSED + INTERVAL))
+          echo "Waited for $ELAPSED seconds out of $MAX_WAIT maximum..."
         done
-        docker compose ps
-        echo "All services are healthy!"
+
+        if [ $ELAPSED -ge $MAX_WAIT ]; then
+          echo "⚠️ Timed out waiting for Docker services to become healthy after $MAX_WAIT seconds."
+          docker ps
+          echo "Continuing with tests anyway, but they may fail if services aren't ready."
+        fi
 
     - name: Run Tests with Coverage and Generate Report
       shell: bash

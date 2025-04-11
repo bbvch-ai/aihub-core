@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
 
 from nats.aio.client import Client as NATS
@@ -97,8 +96,8 @@ class JSSubscriber(Generic[TEvent]):
         except MsgAlreadyAckdError:
             pass
         except Exception as e:
-            logger.error(f"Error in message handler: {e}")
-            traceback.print_exc()
+            logger.exception(e)
+            logger.error(f"Error in message handler for subject '{msg.subject}': {e}")
 
     async def _process(self, event, topic, msg):
         """
@@ -109,8 +108,8 @@ class JSSubscriber(Generic[TEvent]):
             try:
                 await self.handler(event, topic)
             except Exception as e:
-                logger.error(f"Error in async handler: {e}")
-                traceback.print_exc()
+                logger.exception(e)
+                logger.error(f"Error in async processor for subject '{msg.subject}': {e}")
 
     @classmethod
     def for_agent_instance_events(

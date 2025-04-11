@@ -15,7 +15,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ControlEvent, StartEvent, StopEvent
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 logger = logging.getLogger(__name__)

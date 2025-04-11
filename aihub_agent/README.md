@@ -27,7 +27,7 @@ To create a new agent:
 <summary>Example</summary>
 
 ```python
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 
 
 class RAGAgent(Agent):
@@ -77,7 +77,7 @@ Each agent must include a **start step** (triggered by a `StartEvent`) and a **s
 <summary>Example</summary>
 
 ```python
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.workflow.decorators import step

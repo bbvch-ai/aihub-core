@@ -1,4 +1,5 @@
 import asyncio
+from time import sleep
 
 import pytest
 from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
@@ -80,6 +81,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
         vector_store,
         documents=nodes_with_relationships,
     )
+    sleep(1)
     yield vector_store
 
 

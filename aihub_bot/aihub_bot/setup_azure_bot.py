@@ -9,11 +9,39 @@ from azure.mgmt.cosmosdb import CosmosDBManagementClient
 from pymongo import MongoClient
 
 
-def run_command(cmd):
-    """Run a shell command and return its stdout, or exit if the command fails."""
-    print(f"Running command: {' '.join(cmd)}")
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True, check=True)
-    return result.stdout
+def run_command(cmd, parse_json=True):
+    """
+    Run a shell command and return its stdout, or exit if the command fails.
+    If parse_json is True, attempt to parse the output as JSON.
+    """
+    cmd_str = cmd if isinstance(cmd, str) else " ".join(cmd)
+    print(f"Running command: {cmd_str}")
+
+    # Use shell=False for security when passing command as a list
+    shell_mode = isinstance(cmd, str)
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=shell_mode, check=True
+    )
+
+    output = result.stdout
+
+    if parse_json:
+        try:
+            # Try to find JSON in the output - look for first '{' character
+            json_start = output.find("{")
+            if json_start >= 0:
+                json_content = output[json_start:]
+                return json.loads(json_content)
+            else:
+                print("No JSON content found in command output.")
+                print(f"Output: {output}")
+                sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse command output as JSON: {e}")
+            print(f"Raw output: {output}")
+            sys.exit(1)
+
+    return output
 
 
 def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
@@ -21,19 +49,27 @@ def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
 
     sign_in_audience = "AzureADMyOrg" if tenant_id is not None else "AzureADandPersonalMicrosoftAccount"
 
+    # First check if app already exists to avoid getting the welcome message
+    check_cmd = ["az", "ad", "app", "list", "--display-name", bot_name, "--query", "[0].appId", "--output", "tsv"]
+
+    try:
+        existing_app_id = run_command(check_cmd, parse_json=False).strip()
+        if existing_app_id and existing_app_id != "":
+            print(f"Found existing Azure AD app with appId: {existing_app_id}")
+            return existing_app_id
+    except subprocess.CalledProcessError:
+        # If command failed, app might not exist, continue to creation
+        pass
+
     # fmt: off
-    cmd = [ "az", "ad", "app", "create",
+    cmd = [
+        "az", "ad", "app", "create",
         "--display-name", bot_name,
         "--sign-in-audience", sign_in_audience,
     ]
     # fmt: on
 
-    output = run_command(cmd)
-    try:
-        app_info = json.loads(output)
-    except json.JSONDecodeError:
-        print("Failed to parse app creation output.")
-        sys.exit(1)
+    app_info = run_command(cmd)
     app_id = app_info.get("appId")
     if not app_id:
         print("Failed to retrieve appId from app registration creation output.")
@@ -52,12 +88,7 @@ def reset_app_credentials(app_id: str) -> str:
     ]
     # fmt: on
 
-    output = run_command(cmd)
-    try:
-        app_creds = json.loads(output)
-    except json.JSONDecodeError:
-        print("Failed to parse app credential reset output.")
-        sys.exit(1)
+    app_creds = run_command(cmd)
     app_password = app_creds.get("password")
     if not app_password:
         print("Failed to retrieve password from app credential reset output.")
@@ -86,10 +117,11 @@ def create_bot_resource(
         "az", "bot", "delete",
         "--name", bot_name,
         "--resource-group", resource_group,
+        "--yes",  # Auto-confirm the deletion
     ]
     # fmt: on
     try:
-        run_command(delete_cmd)
+        run_command(delete_cmd, parse_json=False)
         print(f"Deleted existing Azure Bot resource '{bot_name}'.")
     except subprocess.CalledProcessError:
         print(f"No existing Azure Bot resource '{bot_name}' found.")
@@ -112,12 +144,7 @@ def create_bot_resource(
         cmd.extend(["--tenant-id", tenant_id])
     # fmt: on
 
-    output = run_command(cmd)
-    try:
-        bot_info = json.loads(output)
-    except json.JSONDecodeError:
-        print("Failed to parse bot creation output.")
-        sys.exit(1)
+    bot_info = run_command(cmd)
     print(f"Created Azure Bot with info: {bot_info}")
     return bot_info
 
@@ -212,7 +239,7 @@ def main():
     # Create the Azure AD app registration and reset its credentials.
     app_id = create_app_registration(bot_name=args.bot_name, tenant_id=args.tenant_id)
     app_password = reset_app_credentials(app_id=app_id)
-    print(f"Using newly created app registration credentials:\n  App ID: {app_id}\n  Password: {app_password}")
+    print(f"Using app registration credentials:\n  App ID: {app_id}\n  Password: {app_password}")
 
     system_message = None
     if args.system_message:

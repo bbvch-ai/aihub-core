@@ -4044,6 +4044,49 @@ export const LLMStopEventOutputSchema = {
     title: 'LLMStopEventOutput'
 } as const;
 
+export const LimitChatHistoryEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        limited_history: {
+            items: {
+                '$ref': '#/components/schemas/ChatMessage-Output'
+            },
+            type: 'array',
+            title: 'Limited History',
+            description: 'Limited chat history based on number of input tokens.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['limited_history', '_event_name', '_parent_event_names'],
+    title: 'LimitChatHistoryEvent',
+    description: 'Limits the chat messages based on number of input tokens.'
+} as const;
+
 export const LocaleResponseSchema = {
     properties: {
         lang: {
@@ -4839,6 +4882,45 @@ export const ServiceDTOSchema = {
     title: 'ServiceDTO'
 } as const;
 
+export const StandaloneQuestionCondenserEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        condensed_chat_message: {
+            '$ref': '#/components/schemas/ChatMessage-Output',
+            description: 'Single chat message containing the condensed user question.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['condensed_chat_message', '_event_name', '_parent_event_names'],
+    title: 'StandaloneQuestionCondenserEvent',
+    description: 'Event to condense chat messages into a single standalone question as a chat message.'
+} as const;
+
 export const StartEventSchema = {
     properties: {
         event_id: {
@@ -4931,6 +5013,12 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 ### Use Cases
 - Signaling that a response is ready, and no more actions are needed.
 - Informing the user interface that the conversation or task has concluded.`
+} as const;
+
+export const StopEventOutputSchema = {
+    properties: {},
+    type: 'object',
+    title: 'StopEventOutput'
 } as const;
 
 export const SuiteDTOSchema = {
@@ -5761,6 +5849,9 @@ export const WSServerEventSchema = {
         event: {
             oneOf: [
                 {
+                    '$ref': '#/components/schemas/StartEvent'
+                },
+                {
                     '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
                 },
                 {
@@ -5774,6 +5865,12 @@ export const WSServerEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LimitChatHistoryEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/StandaloneQuestionCondenserEvent'
                 },
                 {
                     '$ref': '#/components/schemas/LLMCostEvent'
@@ -5815,9 +5912,6 @@ export const WSServerEventSchema = {
                     '$ref': '#/components/schemas/ToolEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/StartEvent'
-                },
-                {
                     '$ref': '#/components/schemas/UserMessageEvent'
                 },
                 {
@@ -5831,7 +5925,7 @@ export const WSServerEventSchema = {
                 }
             ],
             title: 'Event',
-            description: 'Payload of the event, containing detailed information.'
+            description: 'Data of the event itself.'
         }
     },
     type: 'object',

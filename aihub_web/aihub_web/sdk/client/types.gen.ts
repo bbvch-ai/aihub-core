@@ -1518,6 +1518,31 @@ export type LlmStopEventOutput = {
 };
 
 /**
+ * Limits the chat messages based on number of input tokens.
+ */
+export type LimitChatHistoryEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Limited chat history based on number of input tokens.
+     */
+    limited_history: Array<ChatMessageOutput>;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<ChatMessageOutput> | Array<string> | undefined;
+};
+
+/**
  * Represents language and test information for a locale.
  */
 export type LocaleResponse = {
@@ -1890,6 +1915,31 @@ export type ServiceDto = {
 };
 
 /**
+ * Event to condense chat messages into a single standalone question as a chat message.
+ */
+export type StandaloneQuestionCondenserEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Single chat message containing the condensed user question.
+     */
+    condensed_chat_message: ChatMessageOutput;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | ChatMessageOutput | Array<string> | undefined;
+};
+
+/**
  * An event signaling the start of a new run within a thread, providing initial context such as
  * user messages, assistant responses, and locale settings.
  *
@@ -1953,6 +2003,10 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
+export type StopEventOutput = {
+    [key: string]: unknown;
 };
 
 export type SuiteDto = {
@@ -2310,9 +2364,9 @@ export type WsServerEvent = {
      */
     event_id: string;
     /**
-     * Payload of the event, containing detailed information.
+     * Data of the event itself.
      */
-    event: AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | StartEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
+    event: StartEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
 };
 
 /**
@@ -2703,6 +2757,34 @@ export type SendEventToLlmWrappingAgentDevAgentSendEventResponses = {
 };
 
 export type SendEventToLlmWrappingAgentDevAgentSendEventResponse = SendEventToLlmWrappingAgentDevAgentSendEventResponses[keyof SendEventToLlmWrappingAgentDevAgentSendEventResponses];
+
+export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventData = {
+    body: UserMessageEventInput;
+    path?: never;
+    query?: {
+        thread_id?: string;
+        display_id?: string;
+    };
+    url: '/agent/bot_in_the_loop_agent/bot_in_the_loop_agent/send_event';
+};
+
+export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventError = SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventErrors[keyof SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventErrors];
+
+export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventResponses = {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+};
+
+export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventResponse = SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventResponses[keyof SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventResponses];
 
 export type ListTokensEndpointData = {
     body?: never;

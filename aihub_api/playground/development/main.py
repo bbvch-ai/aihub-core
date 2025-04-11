@@ -24,7 +24,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent
+from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -68,6 +68,12 @@ async def main():
             "dev_agent",
             start_event_class=UserMessageEvent,
             stop_event_class=LLMStopEvent,
+        )
+        .send_event_to(
+            "BotInTheLoopAgent",
+            "bot_in_the_loop_agent",
+            start_event_class=UserMessageEvent,
+            stop_event_class=StopEvent,
         ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(
@@ -80,7 +86,7 @@ async def main():
                 AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
-                    api_version="2023-12-01-preview",
+                    api_version="2024-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                 ),
             ],

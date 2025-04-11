@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import logging
-import traceback
 from typing import Annotated, Any, Awaitable, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
 
 from aihub_lib.agents.AgentConfig import AgentConfig
@@ -24,7 +23,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_agent.dispatchers.stores.step.StepStore import DistributedStepStore
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
@@ -393,8 +392,8 @@ class Dispatcher:
                 if getattr(step_method, "_stop_on_error", False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
+                logger.exception(e)
                 logger.error(f"Error executing step '{step_method.__name__}': {e}")
-                traceback.print_exc()
                 return
 
             # If the step returns events, publish them
@@ -407,6 +406,19 @@ class Dispatcher:
                 for event in result:
                     if event.is_hitl_request_event:
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
+                        # Complete the event's topic info
+                        event.topic = AgentTopic.from_partial_topic(
+                            partial_topic=event.topic,
+                            agent_class=topic.agent_class,
+                            agent_id=topic.agent_id,
+                            run_id=topic.run_id,
+                            thread_id=topic.thread_id,
+                            display_id=topic.display_id,
+                            event_id=event.event_id,
+                        )
+
+                    if event.is_bitl_request_event:
+                        logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
                         event.topic = AgentTopic.from_partial_topic(
                             partial_topic=event.topic,

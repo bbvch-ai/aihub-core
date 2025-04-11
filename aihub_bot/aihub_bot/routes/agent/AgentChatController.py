@@ -9,8 +9,8 @@ from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
 from nats.aio.client import Client as NATS
 
-from aihub_bot.bots.agent.AgentChatBot import AgentChatBot
-from aihub_bot.bots.agent.StreamAgentChatBot import StreamAgentChatBot
+from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot
+from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
