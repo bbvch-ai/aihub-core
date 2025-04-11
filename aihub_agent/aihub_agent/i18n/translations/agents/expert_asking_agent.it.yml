@@ -52,7 +52,7 @@ knowledge_snippet_prompt: |
   {% endchat %}
 
 knowledge_snippet: |
-  ${content}
+  %{content}
   
   Conoscenza inviata tramite Slack dall'utente %{expert_name} il %{date} alle %{time}.
 

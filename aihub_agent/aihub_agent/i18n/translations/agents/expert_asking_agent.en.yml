@@ -52,7 +52,7 @@ knowledge_snippet_prompt: |
   {% endchat %}
 
 knowledge_snippet: |
-  ${content}
+  %{content}
   
   Knowledge was submitted via Slack by user %{expert_name} on %{date} at %{time}.
 
