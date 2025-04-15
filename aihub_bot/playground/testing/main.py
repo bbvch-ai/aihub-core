@@ -7,7 +7,7 @@ from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestR
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
 )
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -30,7 +30,7 @@ async def main():
                     prompt_tokens_costs_per_thousand=0.00013027,
                     completion_tokens_costs_per_thousand=0.0005211,
                 ),
-                SelfHostedLLMConfig(
+                OpenaiLikeLLMConfig(
                     name="unsloth/Llama-3.2-1B-Instruct",
                     base_url="http://localhost:8182/v1",
                     is_function_calling_model=False,

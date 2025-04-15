@@ -54,6 +54,8 @@ adlfs = "^2024.12.0"
 redis = "^5.2.1"
 openai = "^1.67.0"
 cachetools = "^5.5.2"
+llama-index-llms-google-genai = "^0.1.7"
+google-genai = "^1.10.0"
 
 
 [tool.poetry.group.dev.dependencies]

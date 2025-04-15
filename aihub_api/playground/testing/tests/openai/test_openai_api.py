@@ -6,7 +6,7 @@ from httpx import AsyncClient, ASGITransport
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
@@ -31,7 +31,7 @@ async def api_client():
                 ),
             ],
             chat_models=[
-                SelfHostedLLMConfig(
+                OpenaiLikeLLMConfig(
                     name=CHAT_MODEL,
                     base_url="http://localhost:8182/v1",
                     is_function_calling_model=False,

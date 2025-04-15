@@ -1,5 +1,5 @@
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.core.llms import LLM
 
@@ -40,7 +40,7 @@ class LanguageModelResource(ConfigurableResource[LLM]):
 
     """
 
-    llm_config: ResourceDependency[AzureOpenAILLMConfig | SelfHostedLLMConfig]
+    llm_config: ResourceDependency[AzureOpenAILLMConfig | OpenaiLikeLLMConfig]
 
     def create_resource(self, context: InitResourceContext) -> LLM:
         llm, _ = self.llm_config.to_llama_index(self.llm_config.default_parameter)
