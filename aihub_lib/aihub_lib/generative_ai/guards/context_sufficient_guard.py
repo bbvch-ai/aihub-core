@@ -1,4 +1,4 @@
-from typing import Type
+from typing import List, Optional, Type
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -8,29 +8,45 @@ from pydantic import BaseModel, Field
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
-class GuardResult(BaseModel):
+class ContextGuardResult(BaseModel):
     reasoning: str
     success: bool
+    new_query: Optional[str] = None
 
 
-def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
-    class LocalizedGuardResult(GuardResult):
+def context_guard_result_factory(t: LocaleHandler) -> Type[ContextGuardResult]:
+    class LocalizedContextGuardResult(ContextGuardResult):
         reasoning: str = Field(description=t("lib.guards.context_sufficient_guard.reason"))
         success: bool = Field(description=t("lib.guards.context_sufficient_guard.success"))
+        new_query: Optional[str] = Field(default=None, description=t("lib.guards.context_sufficient_guard.new_query"))
 
-    LocalizedGuardResult.__doc__ = t("lib.guards.context_sufficient_guard.docstring")
-    return LocalizedGuardResult
+    LocalizedContextGuardResult.__doc__ = t("lib.guards.context_sufficient_guard.docstring")
+    return LocalizedContextGuardResult
 
 
-async def context_sufficient_guard(llm: LLM, t: LocaleHandler, user_query: str, context: str) -> GuardResult:
-    prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
-
+async def context_sufficient_guard(
+    llm: LLM,
+    t: LocaleHandler,
+    user_query: str,
+    context: str,
+    prev_queries: List[str],
+) -> ContextGuardResult:
+    sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
+    if prev_queries:
+        prev_queries = "\n".join(prev_queries)
     llm_kwargs = {}
     if not llm.metadata.is_function_calling_model:
         llm_kwargs["tool_choice"] = NOT_GIVEN
 
     result = llm.structured_predict(
-        guard_result_factory(t), prompt, llm_kwargs=llm_kwargs, user_query=user_query, context=context
+        context_guard_result_factory(t),
+        sufficiency_prompt,
+        llm_kwargs=llm_kwargs,
+        user_query=user_query,
+        context=context,
+        prev_queries=prev_queries,
     )
 
-    return GuardResult.model_validate(result)
+    guard_result = ContextGuardResult.model_validate(result)
+
+    return guard_result

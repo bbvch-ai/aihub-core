@@ -1,5 +1,8 @@
 import asyncio
+from pathlib import Path
+
 import pytest
+from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import scenarios, given, when, then, parsers
@@ -53,6 +56,7 @@ def event_loop():
 
 
 scenarios("../tests/features/rag_agent.feature")
+load_dotenv(Path(__file__).parent / ".env")
 
 
 def build_rag_agent_config(
@@ -112,7 +116,11 @@ def azure_agent_config():
         embedding_tokens_costs_per_thousand=0.0,
         default_parameter=AzureOpenAIEmbeddingParameter(),
     )
-    vector_store = create_azure_ai_search_vector_store("development")
+    vector_store = create_azure_ai_search_vector_store(
+        # needed for embedding field
+        vector_store_name="development",
+        semantic_configuration_name="mySemanticConfig",
+    )
 
     return build_rag_agent_config(
         llm_config=llm_config,
@@ -134,7 +142,7 @@ def self_hosted_agent_config(event_loop):
         name="unsloth/Llama-3.2-1B-Instruct",
         base_url="http://localhost:8182/v1",
         api_key=None,
-        context_size=512,
+        context_size=8192,
         is_chat_model=True,
         is_function_calling_model=False,
         default_parameter=SelfHostedLLMParameter(
@@ -187,6 +195,12 @@ def _(azure_agent_config):
     )
 
 
+@given(parsers.parse('check_context_sufficiency set to "{flag}" and max_hops to "{max_hops:d}"'))
+def _(flag: bool, max_hops: int, agent_runner: AgentTestRunner):
+    agent_runner.agent_config.check_context_sufficiency = flag
+    agent_runner.agent_config.max_hops = max_hops
+
+
 @pytest.mark.usefixtures("self_hosted_agent_config")
 @given("a RAGAgent runner with a valid self hosted configuration", target_fixture="agent_runner")
 def _(self_hosted_agent_config):
@@ -231,6 +245,12 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
     assert retriever_event.documents, "RetrieverEvent did not produce documents"
+
+
+@then(parsers.parse('"{count:d}" RetrieverEvent are present'))
+def _(count: int, agent_runner: AgentTestRunner):
+    retriever_events = len(agent_runner.get_events_of_class(RetrieverEvent, True))
+    assert retriever_events == count, f"Expected {count} RetrieverEvents, got {retriever_events}"
 
 
 @then("an InOrderNodeCombinerEvent is present with ordered context message")

@@ -32,3 +32,8 @@ class RAGAgentConfig(AgentConfig):
         default=False,
         description="Whether or not to check if the retrieved context is sufficient for generating a response.",
     )
+    max_hops: int = Field(
+        default=1,
+        description="Maximum number of retrieval hops to perform if context is insufficient.",
+        ge=1,
+    )
