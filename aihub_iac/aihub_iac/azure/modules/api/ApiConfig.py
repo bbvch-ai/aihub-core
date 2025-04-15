@@ -22,8 +22,8 @@ class ApiConfig(BaseModel):
 
     # Azure settings
     app_service_plan_name: str
-    cosmos_account_name: str
-    cosmos_resource_group: str
+    cosmos_account_name: str | None
+    cosmos_resource_group: str | None
 
     # Anonymization settings
     anonym_name: str
@@ -41,7 +41,6 @@ class ApiConfig(BaseModel):
     tenant_id: str
     authority_url: str
 
-    nats_endpoint: str
     version: str
 
     @classmethod
@@ -56,7 +55,6 @@ class ApiConfig(BaseModel):
         anonym_email: str,
         anonym_roles: str,
         anonym_oid: str,
-        nats_endpoint: str,
         version: str,
     ) -> "ApiConfig":
         """Create a configuration from environment variables and ApiConfig"""
@@ -74,7 +72,6 @@ class ApiConfig(BaseModel):
             anonym_email=anonym_email,
             anonym_roles=anonym_roles,
             anonym_oid=anonym_oid,
-            nats_endpoint=nats_endpoint,
             version=version,
             project_name=project_settings.APP_NAME,
             location=project_settings.LOCATION,
@@ -89,29 +86,29 @@ class ApiConfig(BaseModel):
             authority_url=oauth_settings.AUTHORITY_URL,
         )
 
-    @computed_field
+    @property
     def service_name(self) -> str:
         """Generate the service name"""
         project_settings = ProjectSettings()
         return f"{project_settings.APP_NAME}-{APP_SERVICE}-{project_settings.LOCATION_SHORT}-api"
 
-    @computed_field
+    @property
     def cosmos_name(self) -> str:
         """Generate the cosmos name"""
         project_settings = ProjectSettings()
         return f"{project_settings.APP_NAME}-{COSMOS}-{project_settings.LOCATION_SHORT}-api"
 
-    @computed_field
+    @property
     def effective_cosmos_account_name(self) -> str:
         """Get the effective cosmos account name, using the configured value or generating one"""
         return self.cosmos_account_name or self.cosmos_name
 
-    @computed_field
+    @property
     def effective_cosmos_resource_group(self) -> str:
         """Get the effective cosmos resource group, using the configured value or the default"""
         return self.cosmos_resource_group or ProjectSettings().RESOURCE_GROUP
 
-    @computed_field
+    @property
     def effective_docker_image(self) -> str:
         """Generate the full docker image string"""
         return f"DOCKER|{self.repo_image_url}:{self.docker_image_tag}"

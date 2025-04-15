@@ -16,7 +16,6 @@ class NetworkConfig(BaseModel):
     location_short: str
     resource_group: str
     subscription_id: str
-    network_provider: NetworkProvider
 
     @classmethod
     def from_env(cls) -> "NetworkConfig":
@@ -28,35 +27,4 @@ class NetworkConfig(BaseModel):
             location_short=project_settings.LOCATION_SHORT,
             resource_group=project_settings.RESOURCE_GROUP,
             subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
-            network_provider=NetworkProvider(
-                project_settings.RESOURCE_GROUP, project_settings.APP_NAME, project_settings.LOCATION_SHORT
-            ),
         )
-
-    @computed_field
-    def v_net_name(self) -> str:
-        return self.network_provider.v_net_name
-
-    @computed_field
-    def nats_subnet_name(self) -> str:
-        return self.network_provider.nats_subnet_name
-
-    @computed_field
-    def app_subnet_name(self) -> str:
-        return self.network_provider.app_subnet_name
-
-    @computed_field
-    def pg_subnet_name(self) -> str:
-        return self.network_provider.pg_subnet_name
-
-    @computed_field
-    def cap_subnet_name(self) -> str:
-        return self.network_provider.cap_subnet_name
-
-    @computed_field
-    def agents_subnet_name(self) -> str:
-        return self.network_provider.agents_subnet_name
-
-    @computed_field
-    def priv_endpoint_subnet_name(self) -> str:
-        return self.network_provider.priv_endpoint_subnet_name

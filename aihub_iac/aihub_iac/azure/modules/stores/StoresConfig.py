@@ -35,18 +35,18 @@ class StoresConfig(BaseModel):
             postgres_password=postgres_auth_settings.POSTGRES_PASSWORD,
         )
 
-    @computed_field
+    @property
     def ai_search_service_name(self) -> str:
         return f"{self.project_name}-{AI_SEARCH_SERVICE}-{self.location_short}"
 
-    @computed_field
+    @property
     def doc_store_name(self) -> str:
         return f"{self.project_name}-{COSMOS}-{self.location_short}-docstore"
 
-    @computed_field
+    @property
     def api_store_name(self) -> str:
         return f"{self.project_name}-{COSMOS}-{self.location_short}-api"
 
-    @computed_field
+    @property
     def postgres_name(self) -> str:
         return f"{self.project_name}-{POSTGRES}-{self.location_short}"

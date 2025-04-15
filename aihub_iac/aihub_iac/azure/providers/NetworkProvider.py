@@ -1,7 +1,15 @@
 import pulumi
 from pulumi_azure_native import network
 
-from aihub_iac.azure.constants.resources import V_NET, SUB_NET, APP_SERVICE, CONTAINER_INSTANCE, POSTGRES, CONTAINER_APP
+from aihub_iac.azure.constants.resources import (
+    V_NET,
+    SUB_NET,
+    APP_SERVICE,
+    CONTAINER_INSTANCE,
+    POSTGRES,
+    CONTAINER_APP,
+    STORAGE_ACCOUNT,
+)
 
 
 class NetworkProvider:
@@ -9,7 +17,6 @@ class NetworkProvider:
         self.resource_group = resource_group
         self.project_name = project_name
         self.location_short_name = location_short_name
-        self.sub_net_name = f"{self.project_name}-{SUB_NET}-{self.location_short_name}"
 
     def get_subnet(self, subnet_name=None):
         return network.get_subnet_output(
@@ -25,13 +32,22 @@ class NetworkProvider:
         )
 
     def get_nats_subnet(self):
-        self.get_subnet(subnet_name=self.nats_subnet_name)
+        return self.get_subnet(subnet_name=self.nats_subnet_name)
 
     def get_cap_subnet(self):
-        self.get_subnet(subnet_name=self.cap_subnet_name)
+        return self.get_subnet(subnet_name=self.cap_subnet_name)
 
     def get_pg_subnet(self):
-        self.get_subnet(subnet_name=self.pg_subnet_name)
+        return self.get_subnet(subnet_name=self.pg_subnet_name)
+
+    def get_app_subnet(self):
+        return self.get_subnet(subnet_name=self.app_subnet_name)
+
+    def get_nats_storage_subnet(self):
+        return self.get_subnet(subnet_name=self.nats_storage_subnet_name)
+
+    def get_cosmos_subnet(self):
+        return self.get_subnet(subnet_name=self.cosmos_subnet_name)
 
     @property
     def v_net_name(self):
@@ -58,13 +74,17 @@ class NetworkProvider:
         return f"{self.sub_net_name}-{CONTAINER_INSTANCE}-agents"
 
     @property
+    def nats_storage_subnet_name(self):
+        return f"{self.sub_net_name}-{STORAGE_ACCOUNT}-nats"
+
+    @property
+    def cosmos_subnet_name(self):
+        return f"{self.sub_net_name}-{STORAGE_ACCOUNT}-store"
+
+    @property
     def priv_endpoint_subnet_name(self):
         return f"{self.sub_net_name}-priv-endpoint"
 
     @property
     def nats_subnet_name(self):
-        return self.get_subnet(f"{self.sub_net_name}-{CONTAINER_INSTANCE}-nats")
-
-    @property
-    def app_subnet(self):
-        return f"{self.sub_net_name}-{APP_SERVICE}"
+        return f"{self.sub_net_name}-{CONTAINER_INSTANCE}-nats"

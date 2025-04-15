@@ -31,9 +31,9 @@ class UserAssignedIdentity:
             scope_id=scope_id,
         )
 
-    def assign_openai_user(self, account_name: str | None = None):
+    def assign_openai_user(self, account_name: str | None = None, resource_group: str | None = None):
         openai_account = cognitiveservices.get_account(
-            resource_group_name=self.resource_group,
+            resource_group_name=resource_group or self.resource_group,
             account_name=account_name or OpenAI.name(self.project_name, self.location_short_name),
         )
         self.assign_role_to_identity(ROLES.OPENAI_USER, openai_account.id, openai_account.name)
@@ -45,10 +45,6 @@ class UserAssignedIdentity:
         )
         self.assign_role_to_identity(ROLES.CONTRIBUTOR_ROLE_ID, aisearch_account.id, aisearch_account.name)
         self.assign_role_to_identity(ROLES.SEARCH_INDEX_DATA_CONTRIBUTOR, aisearch_account.id, aisearch_account.name)
-
-    @property
-    def user_identity(self):
-        return self.user_identity
 
     @property
     def client_id(self):

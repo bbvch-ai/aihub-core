@@ -19,13 +19,17 @@ class NatsConfig(StorageConfig):
     redis_image_tag: str
     registry_user: str
     registry_pat: str
+    nats_cpu: int = 2
+    nats_memory: int = 4
+    redis_cpu: int = 2
+    redis_memory: int = 4
 
     # Fields with default values
     nats_volume: str = "azurefilevolume"
     redis_volume: str = "azurefilevolumeredis"
 
     @classmethod
-    def from_env(cls, nats_image_tag: str, redis_image_tag: str) -> "NatsConfig":
+    def from_env(cls, nats_image_tag: str, redis_image_tag: str, **kwargs) -> "NatsConfig":
         """Create a configuration from environment variables"""
         project_settings = ProjectSettings()
         registry_settings = RegistrySettings()
@@ -40,21 +44,22 @@ class NatsConfig(StorageConfig):
             subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
             registry_user=registry_settings.REGISTRY_USER,
             registry_pat=registry_settings.REGISTRY_PAT,
+            **kwargs,
         )
 
-    @computed_field
+    @property
     def nats_service_name(self) -> str:
         return f"{self.project_name}-{APP_SERVICE}-{self.location_short}-nats"
 
-    @computed_field
+    @property
     def redis_service_name(self) -> str:
         return f"{self.project_name}-{APP_SERVICE}-{self.location_short}-redis"
 
-    @computed_field
+    @property
     def container_instance_name(self) -> str:
         return f"{self.project_name}-{CONTAINER_INSTANCE}-{self.location_short}-nats"
 
-    @computed_field
+    @property
     def storage_service_name(self) -> str:
         """Service name to use for storage resources"""
         return "nats"

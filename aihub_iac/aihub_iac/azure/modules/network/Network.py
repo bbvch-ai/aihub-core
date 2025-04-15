@@ -5,6 +5,7 @@ from pulumi_azure_native import network
 
 from aihub_iac.azure.constants.resources import V_NET
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
+from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 
 
 class Network(pulumi.ComponentResource):
@@ -15,6 +16,9 @@ class Network(pulumi.ComponentResource):
 
         # Create configuration from environment or use provided config
         self.config = config
+        self.network_provider = NetworkProvider(
+            self.config.resource_group, self.config.project_name, self.config.location_short
+        )
 
         # Store created resources
         self.v_net_name = f"{self.config.project_name}-{V_NET}-{self.config.location_short}"
@@ -37,6 +41,8 @@ class Network(pulumi.ComponentResource):
         self.subnets["private_endpoint"] = self._create_private_endpoint_subnet()
         self.subnets["capp"] = self._create_capp_subnet()
         self.subnets["agents"] = self._create_agents_subnet()
+        self.subnets["nats_storage"] = self._create_nats_storage_subnet()
+        self.subnets["cosmos"] = self._create_cosmos_subnet()
 
         # Export outputs
         self._register_outputs()
@@ -44,8 +50,8 @@ class Network(pulumi.ComponentResource):
     def _create_virtual_network(self) -> network.VirtualNetwork:
         """Create the virtual network"""
         return network.VirtualNetwork(
-            virtual_network_name=self.config.v_net_name(),
-            resource_name=self.config.v_net_name(),
+            virtual_network_name=self.network_provider.v_net_name,
+            resource_name=self.network_provider.v_net_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             address_space=network.AddressSpaceArgs(address_prefixes=["10.0.0.0/16"]),  # 10.0.0.0 - 10.0.255.255
@@ -55,8 +61,8 @@ class Network(pulumi.ComponentResource):
     def _create_nats_subnet(self) -> network.Subnet:
         """Create the NATS subnet"""
         return network.Subnet(
-            name=self.config.nats_subnet_name(),
-            resource_name=self.config.nats_subnet_name(),
+            name=self.network_provider.nats_subnet_name,
+            resource_name=self.network_provider.nats_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.1.0/29",  # 10.0.1.0 - 10.0.1.7
@@ -72,8 +78,8 @@ class Network(pulumi.ComponentResource):
     def _create_app_subnet(self) -> network.Subnet:
         """Create the APP subnet for API, Bot, Dagster, Phoenix"""
         return network.Subnet(
-            name=self.config.app_subnet_name(),
-            resource_name=self.config.app_subnet_name(),
+            name=self.network_provider.app_subnet_name,
+            resource_name=self.network_provider.app_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.2.0/23",  # 10.0.2.0 - 10.0.3.255
@@ -89,8 +95,8 @@ class Network(pulumi.ComponentResource):
     def _create_pg_subnet(self) -> network.Subnet:
         """Create the Postgres subnet"""
         return network.Subnet(
-            name=self.config.pg_subnet_name(),
-            resource_name=self.config.pg_subnet_name(),
+            name=self.network_provider.pg_subnet_name,
+            resource_name=self.network_provider.pg_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.4.0/24",  # 10.0.4.0 - 10.0.4.255
@@ -106,8 +112,8 @@ class Network(pulumi.ComponentResource):
     def _create_private_endpoint_subnet(self) -> network.Subnet:
         """Create the Private Endpoints subnet"""
         return network.Subnet(
-            name=self.config.priv_endpoint_subnet_name(),
-            resource_name=self.config.priv_endpoint_subnet_name(),
+            name=self.network_provider.priv_endpoint_subnet_name,
+            resource_name=self.network_provider.priv_endpoint_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.6.0/24",  # 10.0.6.0 - 10.0.6.255
@@ -117,8 +123,8 @@ class Network(pulumi.ComponentResource):
     def _create_capp_subnet(self) -> network.Subnet:
         """Create the Container Apps subnet"""
         return network.Subnet(
-            name=self.config.cap_subnet_name(),
-            resource_name=self.config.cap_subnet_name(),
+            name=self.network_provider.cap_subnet_name,
+            resource_name=self.network_provider.cap_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.8.0/23",  # 10.0.8.0 - 10.0.10.255
@@ -128,8 +134,8 @@ class Network(pulumi.ComponentResource):
     def _create_agents_subnet(self) -> network.Subnet:
         """Create the Agents subnet"""
         return network.Subnet(
-            name=self.config.agents_subnet_name(),
-            resource_name=self.config.agents_subnet_name(),
+            name=self.network_provider.agents_subnet_name,
+            resource_name=self.network_provider.agents_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.16.0/20",  # 10.0.16.0 - 10.0.31.255
@@ -139,6 +145,28 @@ class Network(pulumi.ComponentResource):
                     service_name="Microsoft.ContainerInstance/containerGroups",
                 )
             ],
+            opts=pulumi.ResourceOptions(parent=self.vnet),
+        )
+
+    def _create_nats_storage_subnet(self) -> network.Subnet:
+        """Create the Agents subnet"""
+        return network.Subnet(
+            name=self.network_provider.nats_storage_subnet_name,
+            resource_name=self.network_provider.nats_storage_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix="10.0.32.0/24",  # 10.0.32.0 - 10.0.32.255
+            opts=pulumi.ResourceOptions(parent=self.vnet),
+        )
+
+    def _create_cosmos_subnet(self) -> network.Subnet:
+        """Create the Agents subnet"""
+        return network.Subnet(
+            name=self.network_provider.cosmos_subnet_name,
+            resource_name=self.network_provider.cosmos_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix="10.0.33.0/24",  # 10.0.32.0 - 10.0.32.255
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
 
