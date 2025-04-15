@@ -21,11 +21,14 @@ from .semantic import (
     RerankerEvent,
     RetrieverEvent,
     ToolEvent,
+    GuardEvent,
 )
 from .user import UserMessageEvent
+from .ControlAndDisplayEvent import ControlAndDisplayEvent
 
 __all__ = [
     "BaseEvent",
+    "ControlAndDisplayEvent",
     "ControlEvent",
     "ExceptionEvent",
     "StartEvent",
@@ -52,6 +55,7 @@ __all__ = [
     "RerankerEvent",
     "RetrieverEvent",
     "ToolEvent",
+    "GuardEvent",
     "UserMessageEvent",
     "GuardRejectionEvent",
     "LimitChatHistoryEvent",

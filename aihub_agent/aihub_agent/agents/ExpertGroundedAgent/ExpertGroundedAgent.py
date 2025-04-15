@@ -158,7 +158,7 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         agent_config: ExpertGroundedAgentConfig,
         t: LocaleHandler,
-    ):
+    ) -> AgentInTheLoop.request:
         await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
             t("agents.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="expert"
@@ -188,7 +188,7 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         event: AgentInTheLoop.response,
         t: LocaleHandler,
-    ):
+    ) -> StopEvent:
         await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.expert_answered"))
         await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.forwarding_expert_info"))
         await displayer.display_chunk(event.stop_event.expert_answer, model_name="expert")
@@ -205,7 +205,7 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         _: AgentInTheLoop.response,
         t: LocaleHandler,
-    ):
+    ) -> StopEvent:
         await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.expert_unable_to_answer"))
         await displayer.display_chunk(
             t("agents.expert_grounded_agent.messages.expert_unable_to_answer"), model_name="expert"
@@ -222,7 +222,7 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         exception_event: AgentInTheLoop.exception,
         t: LocaleHandler,
-    ):
+    ) -> StopEvent:
         await displayer.display_thought(
             t(
                 "agents.expert_grounded_agent.thoughts.expert_error",

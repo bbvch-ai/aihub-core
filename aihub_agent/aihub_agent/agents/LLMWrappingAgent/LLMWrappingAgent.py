@@ -13,10 +13,6 @@ class LLMWrappingAgent(Agent):
         event: UserMessageEvent,
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
-    ) -> LLMEvent:
+    ) -> LLMStopEvent:
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages)
-
-    @step()
-    async def stop_step(self, event: LLMEvent) -> LLMStopEvent:
-        return LLMStopEvent(**event.model_dump())
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages, as_stop_step=True)

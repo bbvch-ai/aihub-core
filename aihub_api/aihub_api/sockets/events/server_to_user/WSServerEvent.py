@@ -119,6 +119,7 @@ class WSServerEvent(BaseModel):
         Construct a WSServerEvent from a PersistedEventEntity, converting persisted event data
         into a client-ready format.
         """
+        print(persisted_event.event_data)
         return cls(
             agent_class=persisted_event.agent_class,
             agent_id=persisted_event.agent_id,
