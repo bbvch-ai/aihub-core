@@ -50,6 +50,12 @@ class BaseChatBot(ActivityHandler):
             and turn_context.activity.members_added is not None
             and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
         ):
+            # When the bot is added to a Teams conversation after deletion,
+            # mark this as an explicit deletion rather than expiration
+            conversation_id = turn_context.activity.conversation.id
+            ConversationTracker.mark_explicitly_deleted(conversation_id)
+
+            # Then delete the conversation if it exists (original behavior)
             self.completion_handler.delete_conversation_if_exists(turn_context=turn_context)
 
         return await super().on_conversation_update_activity(turn_context)
@@ -77,10 +83,11 @@ class BaseChatBot(ActivityHandler):
             )
         )
 
-        # Check if conversation existed before but is now missing (expired)
-        has_existed_before = ConversationTracker.has_existed_before(conversation_id)
-        is_new = ConversationEntity.is_new_conversation(conversation_id)
-        if has_existed_before and is_new:
+        # Check if we should show expiration message
+        if (
+            ConversationTracker.should_show_expiration_message(conversation_id)
+            and turn_context.activity.type == "message"
+        ):
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,

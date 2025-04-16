@@ -29,28 +29,32 @@ class Message(EmbeddedDocument):
 
 
 class ConversationTracker(Document):
-    """
-    Lightweight document to track all conversation IDs that have ever existed.
-    This allows us to detect when a user tries to resume an expired conversation.
-    """
-
     meta = {"collection": "conversation_trackers", "strict": True}
     conversation_id = StringField(required=True, unique=True)
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    explicitly_deleted = BooleanField(default=False)  # Flag for user-initiated deletions
 
     @classmethod
     def track_conversation(cls, conversation_id: str):
-        """Create a tracker for this conversation if it doesn't exist"""
         cls.objects(conversation_id=conversation_id).update_one(
             upsert=True,  # Create if doesn't exist
             set__conversation_id=conversation_id,
+            set__explicitly_deleted=False,  # Always reset deletion flag when tracking
             set_on_insert__created_at=datetime.now(timezone.utc),
         )
 
     @classmethod
-    def has_existed_before(cls, conversation_id: str) -> bool:
-        """Check if this conversation ID has ever existed"""
-        return cls.objects(conversation_id=conversation_id).count() > 0
+    def mark_explicitly_deleted(cls, conversation_id: str):
+        cls.objects(conversation_id=conversation_id).update_one(
+            upsert=True, set__conversation_id=conversation_id, set__explicitly_deleted=True
+        )
+
+    @classmethod
+    def should_show_expiration_message(cls, conversation_id: str) -> bool:
+        tracker = cls.objects(conversation_id=conversation_id).first()
+        exists_now = ConversationEntity.get_conversation_by_conversation_id(conversation_id) is not None
+
+        return tracker is not None and not tracker.explicitly_deleted and not exists_now
 
 
 class ConversationEntity(Document):
