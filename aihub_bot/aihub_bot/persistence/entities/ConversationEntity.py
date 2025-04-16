@@ -29,17 +29,40 @@ class Message(EmbeddedDocument):
 
 
 class ConversationTracker(Document):
+    """
+    Tracks conversation IDs to distinguish between expired and explicitly deleted conversations.
+
+    This class solves the problem of determining whether a missing conversation was:
+    1. Automatically expired by the TTL mechanism (after 1 month of inactivity), or
+    2. Explicitly deleted by a user in Microsoft Teams
+
+    The explicitly_deleted flag exists specifically to handle Microsoft Teams' behavior:
+    In Teams, when a user deletes a conversation, they are starting fresh with the same
+    conversation ID. Without tracking this flag, the system would incorrectly show an
+    "expired conversation" message when a Teams user deliberately deleted their chat history.
+
+    Usage:
+    - Call track_conversation() whenever processing a message in an active conversation
+    - Call mark_explicitly_deleted() when detecting a Teams conversation was deliberately deleted
+      (typically in the on_conversation_update_activity handler for Teams)
+    - Use should_show_expiration_message() to determine if the "conversation expired"
+      notification should be shown to the user
+
+    This enables providing appropriate user feedback only when conversations truly
+    expired due to inactivity, not when they were deliberately reset in Teams.
+    """
+
     meta = {"collection": "conversation_trackers", "strict": True}
     conversation_id = StringField(required=True, unique=True)
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
-    explicitly_deleted = BooleanField(default=False)  # Flag for user-initiated deletions
+    explicitly_deleted = BooleanField(default=False)
 
     @classmethod
     def track_conversation(cls, conversation_id: str):
         cls.objects(conversation_id=conversation_id).update_one(
-            upsert=True,  # Create if doesn't exist
+            upsert=True,
             set__conversation_id=conversation_id,
-            set__explicitly_deleted=False,  # Always reset deletion flag when tracking
+            set__explicitly_deleted=False,
             set_on_insert__created_at=datetime.now(timezone.utc),
         )
 
