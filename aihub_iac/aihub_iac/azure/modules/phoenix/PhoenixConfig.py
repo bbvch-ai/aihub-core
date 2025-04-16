@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel
 
-from aihub_iac.azure.constants.resources import APP_SERVICE, COSMOS, POSTGRES
-from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
+from aihub_iac.azure.constants.resources import APP_SERVICE, POSTGRES
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
 from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings

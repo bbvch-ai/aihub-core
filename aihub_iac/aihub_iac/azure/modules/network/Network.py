@@ -1,7 +1,7 @@
 import pulumi
 from typing import Dict, Optional
 
-from pulumi_azure_native import network
+from pulumi_azure_native import network, app, operationalinsights
 
 from aihub_iac.azure.constants.resources import V_NET
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
@@ -44,6 +44,12 @@ class Network(pulumi.ComponentResource):
         self.subnets["nats_storage"] = self._create_nats_storage_subnet()
         self.subnets["cosmos"] = self._create_cosmos_subnet()
         self.subnets["search"] = self._create_search_subnet()
+
+        # Create logging infrastructure
+        self.log_analytics_workspace = self._create_log_analytics_workspace()
+        self.log_analytics_customer_id, self.log_analytics_shared_key = self._get_log_analytics_credentials()
+
+        self.managed_environment = self._create_managed_environment()
 
         # Export outputs
         self._register_outputs()
@@ -180,6 +186,48 @@ class Network(pulumi.ComponentResource):
             virtual_network_name=self.vnet.name,
             address_prefix="10.0.34.0/24",  # 10.0.34.0 - 10.0.34.255
             opts=pulumi.ResourceOptions(parent=self.vnet),
+        )
+
+    def _create_log_analytics_workspace(self):
+        """Create the Log Analytics workspace"""
+        return operationalinsights.Workspace(
+            workspace_name=self.config.log_analytics_name(),
+            resource_name=self.config.log_analytics_name(),
+            resource_group_name=self.config.resource_group,
+            location=self.config.location,
+            sku=operationalinsights.WorkspaceSkuArgs(name="PerGB2018"),
+            retention_in_days=30,
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def _get_log_analytics_credentials(self):
+        """Get Log Analytics credentials"""
+        shared_keys = operationalinsights.get_shared_keys_output(
+            resource_group_name=self.config.resource_group,
+            workspace_name=self.log_analytics_workspace.name,
+        )
+        customer_id = self.log_analytics_workspace.customer_id
+        shared_key = shared_keys.apply(lambda keys: keys.primary_shared_key)
+        return customer_id, shared_key
+
+    def _create_managed_environment(self):
+        """Create the managed environment for container apps"""
+        return app.ManagedEnvironment(
+            resource_name=self.config.webui_container_env(),
+            environment_name=self.config.webui_container_env(),
+            resource_group_name=self.config.resource_group,
+            location=self.config.location,
+            app_logs_configuration=app.AppLogsConfigurationArgs(
+                destination="log-analytics",
+                log_analytics_configuration=app.LogAnalyticsConfigurationArgs(
+                    customer_id=self.log_analytics_customer_id,
+                    shared_key=self.log_analytics_shared_key,
+                ),
+            ),
+            vnet_configuration=app.VnetConfigurationArgs(
+                infrastructure_subnet_id=self.subnets["capp"].id,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
     def _register_outputs(self):

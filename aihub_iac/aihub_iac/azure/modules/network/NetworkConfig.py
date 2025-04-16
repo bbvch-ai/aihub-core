@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, computed_field
 
-from aihub_iac.azure.constants.resources import APP_SERVICE, CONTAINER_INSTANCE, V_NET
+from aihub_iac.azure.constants.resources import APP_SERVICE, CONTAINER_INSTANCE, V_NET, LOG_WORKSPACE
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
@@ -28,3 +28,7 @@ class NetworkConfig(BaseModel):
             resource_group=project_settings.RESOURCE_GROUP,
             subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
         )
+
+    @computed_field
+    def log_analytics_name(self) -> str:
+        return f"{self.project_name}-{LOG_WORKSPACE}-{self.location_short}-env"
