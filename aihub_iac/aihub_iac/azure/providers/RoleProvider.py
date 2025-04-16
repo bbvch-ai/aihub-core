@@ -15,7 +15,7 @@ class RoleProvider:
         return hashlib.md5(combined_string.encode("utf-8")).hexdigest()[:32]
 
     def assign(self, resource_name: str, role_id: str, assignee_principal_id, scope_id):
-        role_assignment_name = Output.all(assignee_principal_id, role_id, scope_id).apply(
+        role_assignment_name = Output.all(resource_name, assignee_principal_id, role_id, scope_id).apply(
             lambda args: self.generate_deterministic_guid(*args)
         )
 

@@ -117,7 +117,7 @@ class Api(pulumi.ComponentResource):
             *self._get_base_env(),
             *self._get_registry_env(),
             *self._get_oauth_env(),
-            web.NameValuePairArgs(name="WEBSITES_PORT", value="8001"),
+            web.NameValuePairArgs(name="WEBSITES_PORT", value="8000"),
             web.NameValuePairArgs(name="COSMOS_RESOURCE_GROUP_NAME", value=self.config.effective_cosmos_resource_group),
             web.NameValuePairArgs(name="COSMOS_ACCOUNT_NAME", value=self.config.effective_cosmos_account_name),
             web.NameValuePairArgs(name="NATS_ENDPOINT", value=f"nats://{nats_ip}:4222"),

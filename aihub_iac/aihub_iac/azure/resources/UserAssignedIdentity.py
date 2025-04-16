@@ -15,9 +15,9 @@ class UserAssignedIdentity:
         self.location = location
         self.project_name = project_name
         self.location_short_name = location_short_name
-        user_identity_name = f"{self.project_name}-id-{self.location_short_name}-{id_name}"
+        self.user_identity_name = f"{self.project_name}-id-{self.location_short_name}-{id_name}"
         self.user_identity = managedidentity.UserAssignedIdentity(
-            resource_name=user_identity_name,
+            resource_name=self.user_identity_name,
             resource_group_name=self.resource_group,
             location=self.location,
         )
@@ -25,7 +25,7 @@ class UserAssignedIdentity:
 
     def assign_role_to_identity(self, role: ROLES, scope_id, scope_name):
         self.role_assigner.assign(
-            resource_name=f"{self.user_identity.name}_{role.name}_{scope_name}",
+            resource_name=f"{self.user_identity_name}_{role.name}_{scope_name}",
             role_id=role.value,
             assignee_principal_id=self.user_identity.principal_id,
             scope_id=scope_id,

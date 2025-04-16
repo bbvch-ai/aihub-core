@@ -9,6 +9,8 @@ from aihub_iac.azure.constants.resources import (
     POSTGRES,
     CONTAINER_APP,
     STORAGE_ACCOUNT,
+    COSMOS,
+    AI_SEARCH_SERVICE,
 )
 
 
@@ -49,6 +51,9 @@ class NetworkProvider:
     def get_cosmos_subnet(self):
         return self.get_subnet(subnet_name=self.cosmos_subnet_name)
 
+    def get_search_subnet(self):
+        return self.get_subnet(subnet_name=self.search_subnet_name)
+
     @property
     def v_net_name(self):
         return f"{self.project_name}-{V_NET}-{self.location_short_name}"
@@ -79,7 +84,11 @@ class NetworkProvider:
 
     @property
     def cosmos_subnet_name(self):
-        return f"{self.sub_net_name}-{STORAGE_ACCOUNT}-store"
+        return f"{self.sub_net_name}-{COSMOS}-store"
+
+    @property
+    def search_subnet_name(self):
+        return f"{self.sub_net_name}-{AI_SEARCH_SERVICE}-store"
 
     @property
     def priv_endpoint_subnet_name(self):

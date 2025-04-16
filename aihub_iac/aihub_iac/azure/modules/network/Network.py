@@ -43,6 +43,7 @@ class Network(pulumi.ComponentResource):
         self.subnets["agents"] = self._create_agents_subnet()
         self.subnets["nats_storage"] = self._create_nats_storage_subnet()
         self.subnets["cosmos"] = self._create_cosmos_subnet()
+        self.subnets["search"] = self._create_search_subnet()
 
         # Export outputs
         self._register_outputs()
@@ -166,7 +167,18 @@ class Network(pulumi.ComponentResource):
             resource_name=self.network_provider.cosmos_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix="10.0.33.0/24",  # 10.0.32.0 - 10.0.32.255
+            address_prefix="10.0.33.0/24",  # 10.0.33.0 - 10.0.33.255
+            opts=pulumi.ResourceOptions(parent=self.vnet),
+        )
+
+    def _create_search_subnet(self) -> network.Subnet:
+        """Create the Agents subnet"""
+        return network.Subnet(
+            name=self.network_provider.search_subnet_name,
+            resource_name=self.network_provider.search_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix="10.0.34.0/24",  # 10.0.34.0 - 10.0.34.255
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
 
