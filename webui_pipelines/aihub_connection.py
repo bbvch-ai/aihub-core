@@ -18,14 +18,11 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-
 def str_to_object_id(context_id: Optional[str]) -> str:
     if not context_id:
-        logger.error("CONTEXT_ID IS NONE")
         return str(ObjectId())
     hashed = hashlib.md5(context_id.encode()).digest()[:12]
     return str(ObjectId(hashed))
-
 
 def hash_string_sha1(input_string):
     static_salt = f"k2oj3dk2*dk2p&29dkjklUdk(3kKldi39djkd?+lfdfdf"
@@ -34,7 +31,6 @@ def hash_string_sha1(input_string):
     sha1_hash = hashlib.sha1(input_bytes)
     hex_digest = sha1_hash.hexdigest()
     return hex_digest
-
 
 def user_header(__user__: dict):
     username = __user__.get("name")
@@ -50,10 +46,14 @@ def user_header(__user__: dict):
         "X-OpenWebUI-User-Email-Hash": email_hash,
     }
 
-
 def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
     """Transform retriever events into the sources format expected by the UI."""
-    result = {"type": "chat:completion", "data": {"sources": []}}
+    result = {
+        "type": "chat:completion",
+        "data": {
+            "sources": []
+        }
+    }
 
     # Deduplicate documents by their id
     unique_docs = {}
@@ -82,7 +82,7 @@ def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
         section_description = " > ".join(heading_parts) if heading_parts else "Content"
         metadata_entry = {
             "source": f"{source.lower().replace(' ', '-')}-{len(grouped_docs[source]['metadata'])+1}",
-            "name": f"{doc_title} - {section_description}",
+            "name": f"{doc_title} - {section_description}"
         }
         grouped_docs[source]["metadata"].append(metadata_entry)
 
@@ -96,14 +96,11 @@ def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
             continue
 
         # Find the first document with this source to get reference_url if available
-        reference_url = next(
-            (
-                doc.get("metadata", {}).get("reference_url")
-                for doc in unique_docs.values()
-                if doc.get("metadata", {}).get("source") == source_name
-            ),
-            None,
-        )
+        reference_url = next((
+            doc.get("metadata", {}).get("reference_url")
+            for doc in unique_docs.values()
+            if doc.get("metadata", {}).get("source") == source_name
+        ), None)
 
         source_entry = {
             "source": {
@@ -116,13 +113,12 @@ def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
             },
             "document": group_data["documents"],
             "metadata": group_data["metadata"],
-            "distances": group_data["distances"],
+            "distances": group_data["distances"]
         }
 
         result["data"]["sources"].append(source_entry)
 
     return result
-
 
 class Pipe:
     class Valves(BaseModel):
@@ -148,7 +144,6 @@ class Pipe:
 
     def pipes(self):
         """Get available models (synchronous method)"""
-        logger.error("FETCHING MODELS")
         if not self.valves.AIHUB_API_KEY:
             return [{"id": "error", "name": "API Key not provided."}]
 
@@ -161,7 +156,6 @@ class Pipe:
             r = requests.get(f"{self.valves.AIHUB_API_BASE_URL}/models", headers=headers)
             r.raise_for_status()
             models = r.json()
-            logger.error(f"MODELS FETCHED: {models}")
 
             return [
                 {
@@ -176,14 +170,22 @@ class Pipe:
 
     async def get_retriever_events(self, thread_id: str, display_id: str, headers: dict) -> List[Dict]:
         """Query the event API for RetrieverEvents asynchronously"""
-        params = {"thread_id": thread_id, "display_id": display_id, "event_class": "RetrieverEvent"}
+        params = {
+            "thread_id": thread_id,
+            "display_id": display_id,
+            "event_class": "RetrieverEvent"
+        }
 
         # Remove content-type header for GET request
         headers_copy = {k: v for k, v in headers.items() if k.lower() != "content-type"}
 
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             try:
-                response = await client.get(self.valves.EVENT_API_BASE_URL, params=params, headers=headers_copy)
+                response = await client.get(
+                    self.valves.EVENT_API_BASE_URL,
+                    params=params,
+                    headers=headers_copy
+                )
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPStatusError as e:
@@ -194,7 +196,9 @@ class Pipe:
                 logger.error(f"Exception in getting retriever events: {e}")
                 return []
 
-    async def pipe_stream(self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__):
+    async def pipe_stream(
+        self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__
+    ):
         """
         Handle streaming requests, yielding SSE formatted strings.
         This is an async generator function that yields lines of streaming output.
@@ -226,11 +230,11 @@ class Pipe:
         try:
             # Start the streaming request
             async with client.stream(
-                "POST",
-                url=f"{self.valves.AIHUB_API_BASE_URL}/chat/completions",
-                json=payload,
-                headers=headers,
-            ) as stream_response:
+                    "POST",
+                    url=f"{self.valves.AIHUB_API_BASE_URL}/chat/completions",
+                    json=payload,
+                    headers=headers,
+                ) as stream_response:
 
                 # Process the stream line by line
                 async for line in stream_response.aiter_lines():
@@ -253,7 +257,7 @@ class Pipe:
                             data_content = line[6:]
                             if data_content != "[DONE]":
                                 data = json.loads(data_content)
-                                if data.get("choices", [{}])[0].get("finish_reason"):
+                                if data.get('choices', [{}])[0].get('finish_reason'):
                                     # Stream near completion, but don't break yet
                                     pass
                         except Exception:
@@ -294,7 +298,9 @@ class Pipe:
             except Exception as e:
                 logger.error(f"Error processing retriever events: {e}", exc_info=True)
 
-    async def pipe_non_stream(self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__):
+    async def pipe_non_stream(
+        self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__
+    ):
         """
         Handle non-streaming requests, returning a dict with the completion response.
         This is a regular async function that returns a dictionary.
@@ -356,14 +362,15 @@ class Pipe:
             logger.error(f"Error during non-streaming request: {e}", exc_info=True)
             return {"error": f"Request error: {str(e)}"}
 
-    async def pipe(self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__):
+    async def pipe(
+        self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__
+    ):
         """
         Main entry point that dispatches to either streaming or non-streaming handler.
 
         This function acts as a dispatcher that determines whether to handle the request
         as a streaming request or a non-streaming request.
         """
-        logger.error("STARTING PIPE")
         is_streaming = body.get("stream", False)
         logger.debug(f"Request type: {'streaming' if is_streaming else 'non-streaming'}")
 
