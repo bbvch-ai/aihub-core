@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from mongoengine import (
@@ -26,6 +26,31 @@ class Message(EmbeddedDocument):
     content = ListField(EmbeddedDocumentField(Content), required=True)
     role = StringField(required=True)
     name = StringField(required=True)
+
+
+class ConversationTracker(Document):
+    """
+    Lightweight document to track all conversation IDs that have ever existed.
+    This allows us to detect when a user tries to resume an expired conversation.
+    """
+
+    meta = {"collection": "conversation_trackers", "strict": True}
+    conversation_id = StringField(required=True, unique=True)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+    @classmethod
+    def track_conversation(cls, conversation_id: str):
+        """Create a tracker for this conversation if it doesn't exist"""
+        cls.objects(conversation_id=conversation_id).update_one(
+            upsert=True,  # Create if doesn't exist
+            set__conversation_id=conversation_id,
+            set_on_insert__created_at=datetime.now(timezone.utc),
+        )
+
+    @classmethod
+    def has_existed_before(cls, conversation_id: str) -> bool:
+        """Check if this conversation ID has ever existed"""
+        return cls.objects(conversation_id=conversation_id).count() > 0
 
 
 class ConversationEntity(Document):
