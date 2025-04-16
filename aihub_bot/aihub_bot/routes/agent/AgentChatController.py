@@ -52,7 +52,6 @@ class AgentChatController(Controller):
         - Waits for the full response.
         - Sends a message Activity with the response to the Azure Bot Service.
         """
-        # Update TTL index with configured value
         ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(
@@ -108,7 +107,6 @@ class AgentChatController(Controller):
         - Handles Azure Bot Service interactions directed at an AI agent.
         - Streams responses as they are produced by updating the response Activity.
         """
-        # Update TTL index with configured value
         ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(

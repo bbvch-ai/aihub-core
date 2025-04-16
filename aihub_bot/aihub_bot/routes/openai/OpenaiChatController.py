@@ -43,7 +43,6 @@ class OpenaiChatController(Controller):
         ttl_days: int = 30,
         typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
-        # Update TTL index with configured value
         ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(route, tags=self.tags)
@@ -70,7 +69,6 @@ class OpenaiChatController(Controller):
         ttl_days: int = 30,
         typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
-        # Update TTL index with configured value
         ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(route, tags=self.tags)
