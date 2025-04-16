@@ -31,11 +31,13 @@ class BaseChatBot(ActivityHandler):
         path: str,
         completion_handler: CompletionHandler,
         handler_kwargs: Dict[str, Any],
+        typing_timeout_seconds: int = 60,
     ):
         self.path = path
         self.completion_handler = completion_handler
         self.handler_kwargs = handler_kwargs
         self.locale_handler = LocaleHandler()
+        self.typing_timeout_seconds = typing_timeout_seconds
 
     @override
     async def on_conversation_update_activity(self, turn_context: TurnContext):
@@ -80,6 +82,7 @@ class BaseChatBot(ActivityHandler):
                 turn_context=turn_context,
                 signal=typing_stop_signal,
                 t=locale_handler,
+                timeout_seconds=self.typing_timeout_seconds,
             )
         )
 

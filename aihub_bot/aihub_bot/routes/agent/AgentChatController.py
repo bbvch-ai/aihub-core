@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
@@ -37,7 +38,12 @@ class AgentChatController(Controller):
     def __init__(self, route: str = "/agent/chat", is_admin_only=False):
         super().__init__(route, is_admin_only=is_admin_only)
 
-    def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "AgentChatController":
+    def completions_json(
+        self,
+        route: str = "/completions/{agent_class}/{agent_id}/json",
+        ttl_days: int = 30,
+        typing_timeout_seconds: int = 60,
+    ) -> "AgentChatController":
         """
         Registers an endpoint for JSON-based chat completions.
 
@@ -46,6 +52,8 @@ class AgentChatController(Controller):
         - Waits for the full response.
         - Sends a message Activity with the response to the Azure Bot Service.
         """
+        # Update TTL index with configured value
+        ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(
             route,
@@ -74,13 +82,25 @@ class AgentChatController(Controller):
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
         ) -> Response:
             path: str = RoutesService.get_path(request)
-            chat_bot: AgentChatBot = AgentChatBot(nc, external_event_distributor, agent_class, agent_id, path)
+            chat_bot: AgentChatBot = AgentChatBot(
+                nc,
+                external_event_distributor,
+                agent_class,
+                agent_id,
+                path,
+                typing_timeout_seconds=typing_timeout_seconds,
+            )
             adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
 
-    def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "AgentChatController":
+    def completions_stream(
+        self,
+        route: str = "/completions/{agent_class}/{agent_id}/stream",
+        ttl_days: int = 30,
+        typing_timeout_seconds: int = 60,
+    ) -> "AgentChatController":
         """
         Registers an endpoint for streaming chat completions.
 
@@ -88,6 +108,8 @@ class AgentChatController(Controller):
         - Handles Azure Bot Service interactions directed at an AI agent.
         - Streams responses as they are produced by updating the response Activity.
         """
+        # Update TTL index with configured value
+        ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(
             route,
@@ -117,7 +139,12 @@ class AgentChatController(Controller):
         ) -> Response:
             path: str = RoutesService.get_path(request)
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(
-                nc, external_event_distributor, agent_class, agent_id, path
+                nc,
+                external_event_distributor,
+                agent_class,
+                agent_id,
+                path,
+                typing_timeout_seconds=typing_timeout_seconds,
             )
             adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)

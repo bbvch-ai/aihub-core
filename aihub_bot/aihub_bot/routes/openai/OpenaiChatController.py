@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated, Any, Callable, List
 
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -39,7 +40,12 @@ class OpenaiChatController(Controller):
     def json_chat_completion(
         self,
         route: str = "/completions/json",
+        ttl_days: int = 30,
+        typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
+        # Update TTL index with configured value
+        ConversationEntity.update_ttl_index(ttl_days)
+
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
@@ -48,7 +54,11 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = self.get_client(self.chat_models, model_name)
             path = RoutesService.get_path(request)
-            chat_bot = OpenaiChatBot(model_name, client, path)
+
+            chat_bot = OpenaiChatBot(
+                model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
+            )
+
             adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
@@ -57,7 +67,12 @@ class OpenaiChatController(Controller):
     def stream_chat_completion(
         self,
         route: str = "/completions/stream",
+        ttl_days: int = 30,
+        typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
+        # Update TTL index with configured value
+        ConversationEntity.update_ttl_index(ttl_days)
+
         @self.router.post(route, tags=self.tags)
         async def stream_chat_completion(
             request: Request,
@@ -66,7 +81,11 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = self.get_client(self.chat_models, model_name)
             path = RoutesService.get_path(request)
-            chat_bot = StreamOpenaiChatBot(model_name, client, path)
+
+            chat_bot = StreamOpenaiChatBot(
+                model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
+            )
+
             adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 

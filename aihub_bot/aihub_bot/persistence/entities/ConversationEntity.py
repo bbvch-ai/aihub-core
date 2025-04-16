@@ -97,12 +97,28 @@ class ConversationEntity(Document):
     meta = {
         "collection": "bot_conversations",
         "strict": True,
-        "indexes": [{"fields": ["last_activity"], "expireAfterSeconds": 2592000}],  # 30 days (1 month)
     }
     is_mentioned = BooleanField(default=False)
     conversation_id = StringField(required=True)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
     last_activity = DateTimeField(default=datetime.utcnow)
+
+    @classmethod
+    def update_ttl_index(cls, ttl_days: int):
+        collection = cls._get_collection()
+
+        # Convert days to seconds
+        ttl_seconds = ttl_days * 24 * 60 * 60
+
+        # Drop existing TTL index if it exists
+        try:
+            collection.drop_index("last_activity_1")
+        except Exception:
+            # Index might not exist, that's ok
+            pass
+
+        # Create new TTL index
+        collection.create_index([("last_activity", 1)], expireAfterSeconds=ttl_seconds)
 
     @classmethod
     def create_conversation(
