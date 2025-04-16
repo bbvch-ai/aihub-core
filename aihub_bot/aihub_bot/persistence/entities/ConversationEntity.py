@@ -1,6 +1,15 @@
+from datetime import datetime
 from typing import List
 
-from mongoengine import BooleanField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
+from mongoengine import (
+    BooleanField,
+    Document,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    ListField,
+    StringField,
+    DateTimeField,
+)
 
 
 class User(EmbeddedDocument):
@@ -36,10 +45,12 @@ class ConversationEntity(Document):
     meta = {
         "collection": "bot_conversations",
         "strict": True,
+        "indexes": [{"fields": ["last_activity"], "expireAfterSeconds": 2592000}],  # 30 days (1 month)
     }
     is_mentioned = BooleanField(default=False)
     conversation_id = StringField(required=True)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
+    last_activity = DateTimeField(default=datetime.utcnow)
 
     @classmethod
     def create_conversation(
@@ -47,7 +58,7 @@ class ConversationEntity(Document):
         conversation_id: str,
         messages: List[Message],
     ) -> "ConversationEntity":
-        conversation = cls(conversation_id=conversation_id, messages=messages)
+        conversation = cls(conversation_id=conversation_id, messages=messages, last_activity=datetime.utcnow())
         return conversation.save()
 
     @classmethod
@@ -65,6 +76,7 @@ class ConversationEntity(Document):
         if conversation is None:
             conversation = cls.create_conversation(conversation_id, [])
         conversation.messages.extend(messages)
+        conversation.last_activity = datetime.utcnow()
         return conversation.save()
 
     @classmethod
@@ -86,3 +98,7 @@ class ConversationEntity(Document):
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         conversation.is_mentioned = is_mentioned
         return conversation.save()
+
+    @classmethod
+    def is_new_conversation(cls, conversation_id: str) -> bool:
+        return cls.get_conversation_by_conversation_id(conversation_id) is None

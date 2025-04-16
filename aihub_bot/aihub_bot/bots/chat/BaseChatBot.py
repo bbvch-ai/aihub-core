@@ -2,6 +2,9 @@ import asyncio
 from asyncio import Event, Task
 from typing import Any, Dict
 
+from botbuilder.schema import Activity, ActivityTypes
+
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
 from botbuilder.core import ActivityHandler, TurnContext
@@ -63,6 +66,10 @@ class BaseChatBot(ActivityHandler):
     async def _process_message(self, turn_context: TurnContext, is_streaming: bool = False):
         locale_handler = self._get_locale_handler(turn_context)
 
+        # Check if this is a new conversation for a user message
+        conversation_id = turn_context.activity.conversation.id
+        is_new = ConversationEntity.is_new_conversation(conversation_id)
+
         # Start typing indicator
         typing_stop_signal = Event()
         typing_task: Task = asyncio.create_task(
@@ -72,6 +79,20 @@ class BaseChatBot(ActivityHandler):
                 t=locale_handler,
             )
         )
+
+        # If this is a new conversation for a user message, send notification
+        if (
+            is_new
+            and turn_context.activity.type == "message"
+            and hasattr(turn_context.activity, "from_property")
+            and turn_context.activity.from_property.role == "user"
+        ):
+            await turn_context.send_activity(
+                Activity(
+                    type=ActivityTypes.message,
+                    text="Your previous conversation has expired after 1 month of inactivity. This is a new conversation.",
+                )
+            )
 
         # Persist user message
         self.completion_handler.add_user_message_to_conversation(
