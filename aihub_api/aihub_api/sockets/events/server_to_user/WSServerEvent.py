@@ -1,6 +1,7 @@
 import json
 from typing import Annotated, Any, Dict, Optional, Union
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
     AgentEvent,
     AgentInTheLoopExceptionEvent,
@@ -94,6 +95,13 @@ class WSServerEvent(BaseModel):
     The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedEventEntity`,
     allowing previously stored events to be replayed or displayed to users.
     """
+    locale: str = Field(
+        LocaleHandler.DEFAULT_LOCALE,
+        description="The locale in which event name and description is returned.",
+    )
+    event_display_name: Annotated[str, Field(None, description="Display name for the event")]
+    event_display_description: Annotated[str, Field(None, description="Display description for the event")]
+
 
     agent_class: str = Field(..., description="The agent class responsible for this event.")
     agent_id: str = Field(..., description="Unique identifier of the agent instance that produced the event.")
@@ -114,13 +122,15 @@ class WSServerEvent(BaseModel):
     )
 
     @classmethod
-    def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":
+    def from_persisted_event(cls, persisted_event: PersistedEventEntity, locale: Optional[str] = None) -> "WSServerEvent":
         """
         Construct a WSServerEvent from a PersistedEventEntity, converting persisted event data
         into a client-ready format.
         """
-        print(persisted_event.event_data)
+        locale_handler = LocaleHandler(locale=locale)
+        display_event = DisplayEvent.deserialize_event(persisted_event.event_data)
         return cls(
+            locale=locale,
             agent_class=persisted_event.agent_class,
             agent_id=persisted_event.agent_id,
             thread_id=persisted_event.thread_id,
@@ -129,7 +139,9 @@ class WSServerEvent(BaseModel):
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
             event_id=persisted_event.event_id,
-            event=DisplayEvent.deserialize_event(persisted_event.event_data),
+            event=display_event,
+            event_display_name=locale_handler.extract(display_event.display_name),
+            event_display_description=locale_handler.extract(display_event.display_description),
         )
 
     @override
@@ -139,7 +151,10 @@ class WSServerEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         data = super().model_dump(**kwargs)
-        return {**data, "event": self.event.model_dump()}
+        return {
+            **data,
+            "event": self.event.model_dump(**kwargs)
+        }
 
     @override
     def model_dump_json(self, **kwargs: Any) -> str:

@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
@@ -44,6 +45,7 @@ class EventService:
     @staticmethod
     def get_user_events(
         user_oid: str,
+        locale: Optional[str] = None,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         event_class: Optional[str] = None,
@@ -64,7 +66,7 @@ class EventService:
                 display_id=str(display_id) if display_id is not None else None,
                 event_name=event_class,
             )
-        return [WSServerEvent.from_persisted_event(event) for event in persisted_events]
+        return [WSServerEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod
     async def handle_external_event(
@@ -104,9 +106,10 @@ class EventService:
         ws_manager: WebSocketManager,
         external_event_distributor: ExternalEventDistributor,
         user: AuthenticatedUser,
+        t: LocaleHandler,
     ):
         logger.debug(f"User {user.oid} connected to websocket")
-        await ws_manager.connect(websocket, user.oid)
+        await ws_manager.connect(websocket, user.oid, t.locale)
 
         # Process incoming messages
         try:

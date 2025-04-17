@@ -1,13 +1,18 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, RerankerAttributes, SpanAttributes
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever.RetrieverEvent import Document
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class RerankerEvent(SemanticEvent):
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_reranker_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.semantic_reranker_event.description")
+
     input_documents: Optional[List[Document]] = Field(
         None, description="List of input documents provided to the reranker."
     )

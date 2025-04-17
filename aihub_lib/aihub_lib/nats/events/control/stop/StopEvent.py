@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
@@ -22,5 +25,6 @@ class StopEvent(ControlEvent, DisplayEvent):
     - Signaling that a response is ready, and no more actions are needed.
     - Informing the user interface that the conversation or task has concluded.
     """
-
-    pass
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.stop_event.description")

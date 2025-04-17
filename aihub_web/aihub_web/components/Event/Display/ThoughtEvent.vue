@@ -1,9 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Interner Gedanke"
     icon="mingcute:thought-fill"
-    subtitle="Der Agent teilt einen Gedankenschritt mit, welcher ihm dabei hilft, näher zur Erfüllung seiner Aufgabe zu kommen."
   >
     <p class="border-l-4 border-surface-200 pl-3 italic dark:border-surface-600">
       {{ event.event.reasoning_content }}

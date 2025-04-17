@@ -1,4 +1,5 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     UserMessageEvent,
     EmbeddingEvent,
@@ -45,13 +46,17 @@ class FrontendTestingAgent(Agent):
         return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
 
     @step()
-    async def guard_step(self, _: AgentInTheLoop.response) -> GuardEvent:
+    async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> GuardEvent:
+        await displayer.display_thought("Now I need to check the guard")
         return GuardEvent()
 
     @step()
     async def router_step(self, _: GuardEvent) -> RouterEvent:
         routes = [
-            RouteOptions(name="Route A", description="Good Route", instructions="Select This", event=FrontendTestingEventA()),
+            RouteOptions(name="Route A", description="Good Route", instructions="Select This", event=FrontendTestingEventA(
+                display_name=LocaleString(en="Custom Name Event A"),
+                display_description=LocaleString(en="This is a custom description for Event A"),
+            )),
             RouteOptions(name="Route B", description="Bad Route", instructions="Not this", event=FrontendTestingEventB()),
         ]
         return RouterEvent(
@@ -65,8 +70,7 @@ class FrontendTestingAgent(Agent):
         return event.selected_option.event
 
     @step()
-    async def embedding_step(self, _: FrontendTestingEventA, displayer: EventDisplayer) -> EmbeddingEvent:
-        await displayer.display_thought("Now I need to check the guard")
+    async def embedding_step(self, _: FrontendTestingEventA) -> EmbeddingEvent:
         return EmbeddingEvent(
             text="This is the text that was embedded",
             embedding_model_name="text-embedding-ada-002",

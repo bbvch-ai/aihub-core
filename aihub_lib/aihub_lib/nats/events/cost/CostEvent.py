@@ -1,5 +1,7 @@
 from abc import abstractmethod
+from typing import ClassVar
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from ..display import DisplayEvent
 
 
@@ -18,6 +20,9 @@ class CostEvent(DisplayEvent):
     ### Key Point
     - Implementers of `CostEvent` must define `get_total_costs()` to compute the aggregate cost.
     """
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.cost_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.cost_event.description")
 
     @abstractmethod
     def get_total_costs(self) -> float:

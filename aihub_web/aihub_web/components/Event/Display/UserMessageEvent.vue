@@ -2,8 +2,6 @@
   <EventDisplayBase
     :event="event"
     icon="line-md:chat-filled"
-    title="Anfrage via Chat"
-    subtitle="Der Assistent hat eine Nachricht vom Benutzer erhalten, die er zu beantworten versucht. Falls bereits ein Chatverlauf existiert wird dieser dem Assistenten ebenfalls zur Verfügung gestellt"
   >
     <div class="flex flex-col gap-8">
       <div

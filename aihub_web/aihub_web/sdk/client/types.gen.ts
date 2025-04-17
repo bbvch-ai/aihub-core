@@ -88,6 +88,14 @@ export type AgentEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
@@ -96,7 +104,7 @@ export type AgentEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -115,6 +123,14 @@ export type AgentInTheLoopExceptionEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The exception event from the delegated agent containing error details and failure context.
      */
     exception_event: ExceptionEvent;
@@ -127,7 +143,7 @@ export type AgentInTheLoopExceptionEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | ExceptionEvent | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | ExceptionEvent | Array<string> | undefined;
 };
 
 /**
@@ -146,6 +162,14 @@ export type AgentInTheLoopRequestEvent = {
      * The time (in ns since epoch) the event was stored in the event store
      */
     created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
     /**
      * The event that will be sent to the other agent to initiate its task.
      */
@@ -175,7 +199,7 @@ export type AgentInTheLoopRequestEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | StartEvent | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | StartEvent | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -193,6 +217,14 @@ export type AgentInTheLoopResponseEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The stop event from the delegated agent containing the task results and marks the completion.
      */
     stop_event: StopEvent;
@@ -205,7 +237,7 @@ export type AgentInTheLoopResponseEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | StopEvent | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | StopEvent | Array<string> | undefined;
 };
 
 /**
@@ -372,6 +404,14 @@ export type ChainEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * Metadata associated with the chain as a dictionary JSON string. For example, LangChain uses metadata to store user-defined attributes for a chain.
      */
     metadata?: {
@@ -386,7 +426,7 @@ export type ChainEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | ({
+    [key: string]: unknown | string | number | LocaleString | ({
         [key: string]: unknown;
     } | null) | Array<string> | undefined;
 };
@@ -646,6 +686,14 @@ export type ChunkEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The actual chunk of text or data produced at this stage.
      */
     content?: string;
@@ -666,7 +714,7 @@ export type ChunkEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (string | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | Array<string> | undefined;
 };
 
 export type CompletionTokensDetails = {
@@ -749,6 +797,14 @@ export type DisplayEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
@@ -757,7 +813,7 @@ export type DisplayEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 export type Document = {
@@ -839,6 +895,14 @@ export type EmbeddingEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The text represented in the embedding
      */
     text?: string | null;
@@ -859,7 +923,7 @@ export type EmbeddingEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
 };
 
 export type Embeddings = {
@@ -994,6 +1058,14 @@ export type ExceptionEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * A human-readable description of the exception or error that occurred.
      */
     message: string;
@@ -1010,7 +1082,7 @@ export type ExceptionEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 export type File = {
@@ -1066,6 +1138,14 @@ export type GuardRejectionEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * Reason why the Guard rejected the request.
      */
     reason: string;
@@ -1078,7 +1158,7 @@ export type GuardRejectionEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 export type HttpValidationError = {
@@ -1111,6 +1191,14 @@ export type HumanInTheLoopRequestEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The query or prompt presented to the human operator.
      */
     question: string;
@@ -1127,7 +1215,7 @@ export type HumanInTheLoopRequestEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
 };
 
 /**
@@ -1145,6 +1233,14 @@ export type HumanInTheLoopResponseEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The human operator's answer or decision.
      */
     response: string;
@@ -1161,7 +1257,7 @@ export type HumanInTheLoopResponseEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | HumanInTheLoopRequestEvent | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | HumanInTheLoopRequestEvent | Array<string> | undefined;
 };
 
 export type Image = {
@@ -1277,6 +1373,14 @@ export type LlmCostEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
      */
     llm_name: string;
@@ -1289,7 +1393,7 @@ export type LlmCostEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | number | number | string | Array<string> | undefined;
+    [key: string]: unknown | number | number | string | LocaleString | Array<string> | undefined;
 };
 
 export type LlmEvent = {
@@ -1298,6 +1402,14 @@ export type LlmEvent = {
      * The time (in ns since epoch) the event was stored in the event store
      */
     created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
     /**
      * List of messages sent to the LLM as input.
      */
@@ -1365,7 +1477,7 @@ export type LlmEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (Array<Message> | null) | (Array<Message> | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (Array<Message> | null) | (Array<Message> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -1381,6 +1493,14 @@ export type LlmStopEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * List of messages sent to the LLM as input.
      */
     input_messages?: Array<Message> | null;
@@ -1447,7 +1567,7 @@ export type LlmStopEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (Array<Message> | null) | (Array<Message> | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (Array<Message> | null) | (Array<Message> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -1457,6 +1577,14 @@ export type LlmStopEvent = {
 };
 
 export type LlmStopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
     /**
      * List of messages sent to the LLM as input.
      */
@@ -1527,6 +1655,14 @@ export type LimitChatHistoryEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * Limited chat history based on number of input tokens.
      */
     limited_history: Array<ChatMessageOutput>;
@@ -1539,7 +1675,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -1554,6 +1690,13 @@ export type LocaleResponse = {
      * Test string in the specified language
      */
     test: string;
+};
+
+export type LocaleString = {
+    de?: string | null;
+    en?: string | null;
+    fr?: string | null;
+    it?: string | null;
 };
 
 export type Logprob = {
@@ -1779,6 +1922,14 @@ export type RerankerEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * List of input documents provided to the reranker.
      */
     input_documents?: Array<Document> | null;
@@ -1807,7 +1958,7 @@ export type RerankerEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
 export type ResponseFormatJsonObject = {
@@ -1830,6 +1981,14 @@ export type RetrieverEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * List of documents retrieved by the retriever, including document IDs, scores, and content.
      */
     documents?: Array<Document> | null;
@@ -1842,7 +2001,7 @@ export type RetrieverEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (Array<Document> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | Array<string> | undefined;
 };
 
 export type RevokeTokenResponse = {
@@ -1884,6 +2043,14 @@ export type SemanticEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
@@ -1892,7 +2059,7 @@ export type SemanticEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 export type ServiceDto = {
@@ -1924,6 +2091,14 @@ export type StandaloneQuestionCondenserEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * Single chat message containing the condensed user question.
      */
     condensed_chat_message: ChatMessageOutput;
@@ -1936,7 +2111,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | ChatMessageOutput | Array<string> | undefined;
 };
 
 /**
@@ -1957,6 +2132,14 @@ export type StartEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
@@ -1965,7 +2148,7 @@ export type StartEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -1994,6 +2177,14 @@ export type StopEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
      */
@@ -2002,11 +2193,18 @@ export type StopEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 export type StopEventOutput = {
-    [key: string]: unknown;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
 };
 
 export type SuiteDto = {
@@ -2062,6 +2260,14 @@ export type ThoughtEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The actual chunk of text or data produced at this stage.
      */
     content?: string;
@@ -2082,7 +2288,7 @@ export type ThoughtEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (string | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | Array<string> | undefined;
 };
 
 export type ThreadAgentDto = {
@@ -2120,6 +2326,14 @@ export type ToolEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The name of the tool being utilized
      */
     name?: string | null;
@@ -2148,7 +2362,7 @@ export type ToolEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (string | null) | (string | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | ({
         [key: string]: unknown;
     } | null) | ({
         [key: string]: unknown;
@@ -2276,9 +2490,17 @@ export type UserMessageEvent = {
      */
     created_at?: number;
     /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
      */
-    locale?: string | null;
+    locale?: string;
     /**
      * User who sent the message
      */
@@ -2296,10 +2518,18 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (string | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | Array<string> | undefined;
 };
 
 export type UserMessageEventInput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
     /**
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
@@ -2331,6 +2561,18 @@ export type ValidationError = {
  * allowing previously stored events to be replayed or displayed to users.
  */
 export type WsServerEvent = {
+    /**
+     * The locale in which event name and description is returned.
+     */
+    locale?: string;
+    /**
+     * Display name for the event
+     */
+    event_display_name?: string;
+    /**
+     * Display description for the event
+     */
+    event_display_description?: string;
     /**
      * The agent class responsible for this event.
      */

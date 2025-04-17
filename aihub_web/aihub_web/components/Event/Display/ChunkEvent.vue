@@ -1,9 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Teilantwort"
     icon="line-md:text-box"
-    subtitle="Der Assistent hat ein Teil der Antwort generiert und an den Benutzer gesendet, die der Benutzer bereits angezeigt bekommt."
   >
     <div class="py-5">
       <ChatMessage

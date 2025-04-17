@@ -1,6 +1,9 @@
+from typing import ClassVar
+
 from pydantic import Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.cost.CostEvent import CostEvent
 
 
@@ -15,7 +18,9 @@ class LLMCostEvent(CostEvent, LLMCosts):
     engineers, product managers, or finance teams clear insights into where tokens—and money—are
     going.
     """
-
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.llm_cost_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.llm_cost_event.description")
     llm_name: str = Field(..., description="The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.")
 
     def get_total_costs(self) -> float:

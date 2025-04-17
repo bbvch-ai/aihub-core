@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
 
@@ -34,8 +35,11 @@ class UserMessageEvent(StartEvent):
     This flexible design allows mixing and matching start events to adapt how and when workflows
     are triggered, depending on the source of the event.
     """
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.user_message_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.user_message_event.description")
 
-    locale: Optional[str] = Field(
+    locale: str = Field(
         LocaleHandler.DEFAULT_LOCALE,
         description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.",
     )

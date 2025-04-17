@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Type, Union
+from typing import Any, ClassVar, Dict, List, Optional, Type, Union, Tuple
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
@@ -194,8 +194,8 @@ class BaseEvent(BaseModel):
                 ]
 
         # Get event type and parent classes
-        event_name = json_data.get("_event_name")
-        parent_classes = json_data.get("_parent_event_names", [])
+        event_name: str = json_data.get("_event_name")
+        parent_classes: List[str] = json_data.get("_parent_event_names", [])
 
         # If the exact class is registered, try to instantiate it and propagate any validation errors
         if event_name and isinstance(event_name, str):
@@ -208,13 +208,13 @@ class BaseEvent(BaseModel):
         # 2. The event type was null/invalid
 
         # Try to find the most specific parent class
-        candidates = []
+        candidates: List[Tuple[Type[BaseEvent], int]] = []
         if parent_classes and isinstance(parent_classes, list):
             for class_name, event_class in cls._event_registry.items():
                 # Check if this class is in the parent classes list
                 if class_name in parent_classes:
                     # Get inheritance depth (higher means more specific)
-                    depth = get_inheritance_depth(event_class, BaseEvent)
+                    depth: int = get_inheritance_depth(event_class, BaseEvent)
                     if depth >= 0:  # Only consider classes that inherit from BaseEvent
                         candidates.append((event_class, depth))
 
@@ -224,6 +224,12 @@ class BaseEvent(BaseModel):
         # Try to instantiate candidates in order of specificity
         for candidate_class, depth in candidates:
             try:
+                if candidate_class.__name__ == "ControlEvent" and "DisplayEvent" in parent_classes:
+                    candidate_class = cls._event_registry.get("ControlAndDisplayEvent")
+
+                if candidate_class.__name__ == "DisplayEvent" and "ControlEvent" in parent_classes:
+                    candidate_class = cls._event_registry.get("ControlAndDisplayEvent")
+
                 # Create the instance with the parent class
                 event = candidate_class(**json_data)
 

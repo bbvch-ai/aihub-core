@@ -1,7 +1,8 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, ClassVar
 
 from pydantic import BaseModel, Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import BotInTheLoopRequestEvent
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
@@ -24,6 +25,9 @@ class BotInTheLoopResponseEvent(ControlEvent):
     Once a bot operator provides an answer to a `BotInTheLoopRequestEvent`, the response:
     - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on bot input.
     """
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.bitl_response_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.bitl_response_event.description")
 
     response: str = Field(..., description="The bot operator's answer or decision.")
     request_event: BotInTheLoopRequestEvent = Field(

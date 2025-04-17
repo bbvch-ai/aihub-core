@@ -1,0 +1,107 @@
+display_event:
+  name: "display_event"
+  description: "xxx"
+
+aitl_exception_event:
+  name: "Fehler in anderem Agenten"
+  description: "Bei der Bearbeitung der Anfrage ist ein Fehler aufgetreten"
+
+aitl_request_event:
+  name: "Delegation an anderen Agenten"
+  description: "Der Agenten hat eine Anfrage an einen anderen Agenten oder Assistenten weitergeleitet"
+
+aitl_response_event:
+  name: "Erledigte Delegation des anderen Agenten"
+  description: "Der involvierte Assistent hat die Anfrage bearbeitet"
+
+bitl_request_event:
+  name: "bitl_request_event"
+  description: "xxx"
+
+bitl_response_event:
+  name: "bitl_response_event"
+  description: "xxx"
+
+limit_chat_history_event:
+  name: "limit_chat_history_event"
+  description: "xxx"
+
+start_event:
+  name: "start_event"
+  description: "xxx"
+
+stop_event:
+  name: "Stop"
+  description: "Der Assistent hat seine Aufgabe erledigt und gibt das Wort zurück an den Benutzer."
+
+cost_event:
+  name: "cost_event"
+  description: "xxx"
+
+llm_cost_event:
+  name: "Kosten"
+  description: "Bei der Interaktion mit dem Sprachmodell sind Kosten entstanden, die hier aufgelistet sind."
+
+chunk_event:
+  name: "Teilantwort"
+  description: "Der Assistent hat ein Teil der Antwort generiert und an den Benutzer gesendet, die der Benutzer bereits angezeigt bekommt."
+
+thought_event:
+  name: "Interner Gedanke"
+  description: "Der Agent teilt einen Gedankenschritt mit, welcher ihm dabei hilft, näher zur Erfüllung seiner Aufgabe zu kommen."
+
+guard_rejection_event:
+  name: "guard_rejection_event"
+  description: "xxx"
+
+hitl_request_event:
+  name: "Rückfrage des Agenten"
+  description: "Der Assistent hat eine Rückfrage, welche vom User beantwortet werden muss."
+
+hitl_response_event:
+  name: "Rückfrage beantwortet"
+  description: "Der Benutzer hat die Rückfrage beantwortet."
+
+router_event:
+  name: "router_event"
+  description: "xxx"
+
+semantic_agent_event:
+  name: "semantic_agent_event"
+  description: "xxx"
+
+semantic_chain_event:
+  name: "semantic_chain_event"
+  description: "xxx"
+
+semantic_embedding_event:
+  name: "Suche nach Information"
+  description: "Der Agent sucht in seinem Wissensspeicher nach Informationen, die er für die Beantwortung der Anfrage benötigt."
+
+semantic_guard_event:
+  name: "semantic_guard_event"
+  description: "xxx"
+
+semantic_llm_event:
+  name: "Zusammenfassung LLM Interaktion"
+  description: "Eine Teilinteraktion zwischen dem Assistenten und dem Benutzer ist abgeschlossen. Hier wird der Chatverlauf dieser Interaktion angezeigt."
+
+semantic_llm_stop_event:
+  name: "semantic_llm_stop_event"
+  description: "xxx"
+
+semantic_reranker_event:
+  name: "Dokumente sortieren"
+  description: "Sortiere Dokumente nach Relevanz und wähle die passendsten Dokumente für die Aufgabe aus."
+
+semantic_retriever_event:
+  name: "Dokumente Gefunden"
+  description: "Der Assistent hat Dokumente gefunde, welche ihm bei seiner Aufgabe hilfreich sein könnten."
+
+semantic_tool_event:
+  name: "Tool"
+  description: "Der Agent hat ein Tool verwendet, um seine Aufgabe zu erfüllen."
+
+user_message_event:
+  name: "Anfrage via Chat"
+  description: "Der Assistent hat eine Nachricht vom Benutzer erhalten, die er zu beantworten versucht. Falls bereits ein Chatverlauf existiert wird dieser dem Assistenten ebenfalls zur Verfügung gestellt."

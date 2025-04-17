@@ -1,7 +1,8 @@
-from typing import Optional, Type, Union
+from typing import Optional, Type, Union, ClassVar
 
 from pydantic import Field, PrivateAttr
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInTheLoopExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
@@ -21,6 +22,8 @@ class AgentInTheLoopRequestEvent(DisplayEvent):
     - Manages context sharing between agents (thread, display, run IDs)
     - Handles both successful responses and exceptions from the delegated agent
     """
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.aitl_request_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.aitl_request_event.description")
 
     _response: Optional[Type[AgentInTheLoopResponseEvent]] = PrivateAttr(None)
     _exception: Optional[Type[AgentInTheLoopExceptionEvent]] = PrivateAttr(None)

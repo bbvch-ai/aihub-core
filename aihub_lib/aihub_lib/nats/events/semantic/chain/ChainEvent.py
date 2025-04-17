@@ -1,13 +1,18 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class ChainEvent(SemanticEvent):
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_chain_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.semantic_chain_event.description")
+
     metadata: Optional[Dict[str, Any]] = Field(
         None,
         description="Metadata associated with the chain as a dictionary JSON string. "

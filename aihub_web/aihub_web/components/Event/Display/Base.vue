@@ -21,10 +21,10 @@
             </div>
             <div>
               <p class="text-xl font-bold">
-                {{ title }}
+                {{ event.event_display_name }}
               </p>
               <p class="text-sm text-surface-800 dark:text-surface-200">
-                {{ subtitle }}
+                {{ event.event_display_description }}
               </p>
             </div>
           </div>
@@ -45,8 +45,6 @@ import type { WsServerEvent } from '@core/sdk/client'
 defineProps<{
   event: WsServerEvent
   icon: string
-  title: string
-  subtitle: string
 }>()
 </script>
 

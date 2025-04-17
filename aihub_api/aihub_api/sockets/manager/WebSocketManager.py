@@ -4,6 +4,9 @@ from typing import Dict, Set
 from fastapi import WebSocket
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.events import DisplayEvent
+from aihub_lib.nats.topics import AgentTopic
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +55,9 @@ class WebSocketManager:
 
     def __init__(self):
         self.active_connections: Dict[str, Set[WebSocket]] = {}
+        self.user_preferred_locale: Dict[str, str] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: str) -> None:
+    async def connect(self, websocket: WebSocket, user_id: str, locale: str) -> None:
         """
         Register a new active connection for the given user.
 
@@ -63,6 +67,7 @@ class WebSocketManager:
         if user_id not in self.active_connections:
             self.active_connections[user_id] = set()
         self.active_connections[user_id].add(websocket)
+        self.user_preferred_locale[user_id] = locale
 
     async def disconnect(self, websocket: WebSocket, user_id: str) -> None:
         """
@@ -76,7 +81,7 @@ class WebSocketManager:
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
 
-    async def send_event(self, event: WSServerEvent, user_id: str) -> None:
+    async def send_event(self, event: DisplayEvent, topic: AgentTopic, user_id: str) -> None:
         """
         Send a JSON-serialized version of the given event to all active connections of the specified user.
 
@@ -85,7 +90,23 @@ class WebSocketManager:
         """
         logger.debug(f"Sending event {event.model_dump()} to user {user_id}")
         if user_id in self.active_connections:
-            data = event.model_dump()
+            locale = self.user_preferred_locale.get(user_id)
+            locale_handler = LocaleHandler(locale=locale)
+            external_event = WSServerEvent(
+                locale=locale,
+                agent_class=topic.agent_class,
+                agent_id=topic.agent_id,
+                thread_id=topic.thread_id,
+                display_id=topic.display_id,
+                run_id=topic.run_id,
+                event_type=topic.event_type,
+                event_name=topic.event_name,
+                event_id=event.event_id,
+                event=event,
+                event_display_name=locale_handler.extract(event.display_name),
+                event_display_description=locale_handler.extract(event.display_description),
+            )
+            data = external_event.model_dump()
             for ws in list(self.active_connections[user_id]):
                 try:
                     await ws.send_json(data)

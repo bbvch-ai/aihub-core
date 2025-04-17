@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Optional, ClassVar
 
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
 
@@ -17,9 +18,13 @@ class ChunkEvent(DisplayEvent):
     responses as they are generated, improving user experience by not forcing them to wait
     for the entire answer.
     """
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.chunk_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.chunk_event.description")
 
     content: str = Field("", description="The actual chunk of text or data produced at this stage.")
     model_name: str = Field("aihub", description="The name of the AI model generating the chunks.")
     reasoning_content: Optional[str] = Field(
         None, description="The textual representation of the agent’s internal reasoning at a particular point in time."
     )
+

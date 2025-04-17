@@ -1,14 +1,19 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, ClassVar
 
 from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever.Document import Document
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
 class RetrieverEvent(SemanticEvent):
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_retriever_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.semantic_retriever_event.description")
+
     documents: Optional[List[Document]] = Field(
         None,
         description="List of documents retrieved by the retriever, including document IDs, scores, and content.",

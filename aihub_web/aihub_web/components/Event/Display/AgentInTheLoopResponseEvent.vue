@@ -1,9 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Erledigte Delegation des anderen Agenten"
     icon="mdi:robot-happy"
-    subtitle="Der involvierte Assistent hat die Anfrage bearbeitet"
   >
     {{ event.event }}
   </EventDisplayBase>

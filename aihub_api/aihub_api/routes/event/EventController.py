@@ -3,6 +3,7 @@ from typing import Annotated, List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -12,6 +13,7 @@ from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
@@ -50,6 +52,7 @@ class EventController(Controller):
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
             event_class: Annotated[str, Query()] = None,
             user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> List[WSServerEvent]:
             """
             Returns all persisted events visible to the authenticated user.
@@ -61,6 +64,7 @@ class EventController(Controller):
                 )
             return EventService.get_user_events(
                 user.oid,
+                t.locale,
                 str_to_object_id(thread_id) if thread_id else None,
                 str_to_object_id(display_id) if display_id else None,
                 event_class,
@@ -75,6 +79,7 @@ class EventController(Controller):
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor_ws)],
             ws_sender: Annotated[WebSocketSender, Depends(use_ws_sender_ws)],
             ws_manager: Annotated[WebSocketManager, Depends(use_ws_manager_ws)],
+            t: Annotated[LocaleHandler, Depends(use_locale_ws)]
         ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
@@ -111,6 +116,7 @@ class EventController(Controller):
                 ws_manager,
                 external_event_distributor,
                 user,
+                t,
             )
 
         return self

@@ -1,9 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Rückfrage des Agenten"
     icon="mdi:robot-confused"
-    subtitle="Der Assistent hat eine Rückfrage, welche vom User beantwortet werden muss"
   >
     <div class="py-5">
       <ChatMessage

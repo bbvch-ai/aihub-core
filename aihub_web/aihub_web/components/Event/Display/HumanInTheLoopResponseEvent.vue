@@ -1,9 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Rückfrage beantwortet"
     icon="mdi:robot-confused"
-    subtitle="Der Benutzer hat die Rückfrage beantwortet"
   >
     <div class="py-5">
       <ChatMessage

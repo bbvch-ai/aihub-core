@@ -1,3 +1,8 @@
+from typing import ClassVar, Annotated
+
+from pydantic import Field, model_validator
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.BaseEvent import BaseEvent
 
 
@@ -17,5 +22,26 @@ class DisplayEvent(BaseEvent):
     registration, serialization, and deserialization mechanisms, making it simple to integrate
     into a user interface or logging pipeline.
     """
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.display_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.display_event.description")
 
-    pass
+    display_name: Annotated[LocaleString, Field(None, description="Display name for the event")]
+    display_description: Annotated[LocaleString, Field(None, description="Display description for the event")]
+
+    @model_validator(mode='after')
+    def set_default_values(self) -> 'DisplayEvent':
+        """Set default values from class if instance values are None."""
+        if not self.display_name:
+            self.display_name = self.__class__._display_name
+        if not self.display_description:
+            self.display_description = self.__class__._display_description
+        return self
+
+    @classmethod
+    def display_name_from_class(cls):
+        return cls._display_name
+
+    @classmethod
+    def display_description_from_class(cls):
+        return cls._display_description

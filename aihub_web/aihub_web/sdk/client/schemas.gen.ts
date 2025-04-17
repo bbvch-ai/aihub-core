@@ -140,6 +140,14 @@ export const AgentEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -173,6 +181,14 @@ export const AgentInTheLoopExceptionEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         exception_event: {
             '$ref': '#/components/schemas/ExceptionEvent',
@@ -218,6 +234,14 @@ export const AgentInTheLoopRequestEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         start_event: {
             '$ref': '#/components/schemas/StartEvent',
@@ -294,6 +318,14 @@ export const AgentInTheLoopResponseEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         stop_event: {
             '$ref': '#/components/schemas/StopEvent',
@@ -745,6 +777,14 @@ export const ChainEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         metadata: {
             anyOf: [
@@ -1995,6 +2035,14 @@ export const ChunkEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         content: {
             type: 'string',
             title: 'Content',
@@ -2258,6 +2306,14 @@ export const DisplayEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -2439,6 +2495,14 @@ export const EmbeddingEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         text: {
             anyOf: [
@@ -2730,6 +2794,14 @@ export const ExceptionEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         message: {
             type: 'string',
             title: 'Message',
@@ -2903,6 +2975,14 @@ export const GuardRejectionEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         reason: {
             type: 'string',
             title: 'Reason',
@@ -2981,6 +3061,14 @@ export const HumanInTheLoopRequestEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         question: {
             type: 'string',
             title: 'Question',
@@ -3037,6 +3125,14 @@ export const HumanInTheLoopResponseEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         response: {
             type: 'string',
@@ -3429,6 +3525,14 @@ export const LLMCostEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         llm_name: {
             type: 'string',
             title: 'Llm Name',
@@ -3475,6 +3579,14 @@ export const LLMEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         input_messages: {
             anyOf: [
@@ -3678,6 +3790,14 @@ export const LLMStopEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_messages: {
             anyOf: [
                 {
@@ -3871,6 +3991,14 @@ Used during deserialization to decide which subclass to instantiate.`,
 
 export const LLMStopEventOutputSchema = {
     properties: {
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_messages: {
             anyOf: [
                 {
@@ -4055,6 +4183,14 @@ export const LimitChatHistoryEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         limited_history: {
             items: {
                 '$ref': '#/components/schemas/ChatMessage-Output'
@@ -4106,6 +4242,57 @@ export const LocaleResponseSchema = {
     required: ['lang', 'test'],
     title: 'LocaleResponse',
     description: 'Represents language and test information for a locale.'
+} as const;
+
+export const LocaleStringSchema = {
+    properties: {
+        de: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'De'
+        },
+        en: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'En'
+        },
+        fr: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fr'
+        },
+        it: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'It'
+        }
+    },
+    type: 'object',
+    title: 'LocaleString'
 } as const;
 
 export const LogprobSchema = {
@@ -4601,6 +4788,14 @@ export const RerankerEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_documents: {
             anyOf: [
                 {
@@ -4743,6 +4938,14 @@ export const RetrieverEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         documents: {
             anyOf: [
                 {
@@ -4804,6 +5007,14 @@ export const SemanticEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         _event_name: {
             type: 'string',
@@ -4893,6 +5104,14 @@ export const StandaloneQuestionCondenserEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         condensed_chat_message: {
             '$ref': '#/components/schemas/ChatMessage-Output',
             description: 'Single chat message containing the condensed user question.'
@@ -4931,6 +5150,14 @@ export const StartEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         _event_name: {
             type: 'string',
@@ -4975,6 +5202,14 @@ export const StopEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -5016,7 +5251,16 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 } as const;
 
 export const StopEventOutputSchema = {
-    properties: {},
+    properties: {
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        }
+    },
     type: 'object',
     title: 'StopEventOutput'
 } as const;
@@ -5122,6 +5366,14 @@ export const ThoughtEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         content: {
             type: 'string',
@@ -5267,6 +5519,14 @@ export const ToolEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         name: {
             anyOf: [
@@ -5654,15 +5914,16 @@ export const UserMessageEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         locale: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Locale',
             description: 'The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.',
             default: 'de'
@@ -5736,6 +5997,14 @@ are triggered, depending on the source of the event.`
 
 export const UserMessageEventInputSchema = {
     properties: {
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         messages: {
             items: {
                 anyOf: [
@@ -5791,6 +6060,22 @@ export const ValidationErrorSchema = {
 
 export const WSServerEventSchema = {
     properties: {
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale in which event name and description is returned.',
+            default: 'de'
+        },
+        event_display_name: {
+            type: 'string',
+            title: 'Event Display Name',
+            description: 'Display name for the event'
+        },
+        event_display_description: {
+            type: 'string',
+            title: 'Event Display Description',
+            description: 'Display description for the event'
+        },
         agent_class: {
             type: 'string',
             title: 'Agent Class',
