@@ -267,8 +267,12 @@ class CompletionHandler:
         turn_context: TurnContext,
         signal: Event,
         t: LocaleHandler,
+        timeout_seconds: int = 60,
     ):
-        for _ in range(30):
+        # Calculate iterations (2 seconds per activity)
+        iterations = timeout_seconds // 2
+
+        for _ in range(iterations):
             if signal.is_set():
                 break
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))

@@ -14,8 +14,14 @@ class BotServiceResponse:
 
 
 class BotTestRunner(BotRunner):
-    def __init__(self):
-        super().__init__(title="Local AI Hub Bot Service", description="Local version only", origins=[], debug=True)
+    def __init__(self, conversation_ttl_days: float = 30):
+        super().__init__(
+            title="Local AI Hub Bot Service",
+            description="Local version only",
+            origins=[],
+            debug=True,
+            conversation_ttl_days=conversation_ttl_days,
+        )
 
         # Register a route that catches all requests to /service and any sub-URLs.
         self._api_app.add_api_route(
