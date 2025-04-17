@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated, Any, Callable, List
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -40,11 +39,8 @@ class OpenaiChatController(Controller):
     def json_chat_completion(
         self,
         route: str = "/completions/json",
-        ttl_days: int = 30,
         typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
-        ConversationEntity.update_ttl_index(ttl_days)
-
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
@@ -66,11 +62,8 @@ class OpenaiChatController(Controller):
     def stream_chat_completion(
         self,
         route: str = "/completions/stream",
-        ttl_days: int = 30,
         typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
-        ConversationEntity.update_ttl_index(ttl_days)
-
         @self.router.post(route, tags=self.tags)
         async def stream_chat_completion(
             request: Request,

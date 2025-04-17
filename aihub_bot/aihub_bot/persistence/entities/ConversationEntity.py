@@ -104,11 +104,11 @@ class ConversationEntity(Document):
     last_activity = DateTimeField(default=datetime.utcnow)
 
     @classmethod
-    def update_ttl_index(cls, ttl_days: int):
+    def update_ttl_index(cls, ttl_days: float):
         collection = cls._get_collection()
 
         # Convert days to seconds
-        ttl_seconds = ttl_days * 24 * 60 * 60
+        ttl_seconds = int(ttl_days * 24 * 60 * 60)
 
         # Drop existing TTL index if it exists
         try:

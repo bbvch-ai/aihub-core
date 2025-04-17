@@ -12,7 +12,7 @@ enable_logging()
 
 
 async def main():
-    runner = BotTestRunner()
+    runner = BotTestRunner(conversation_ttl_days=60)
 
     runner.mount(
         HealthController().get_health(),
@@ -27,11 +27,9 @@ async def main():
                 ),
             ]
         )
-        .json_chat_completion(ttl_days=60, typing_timeout_seconds=60)
-        .stream_chat_completion(ttl_days=60, typing_timeout_seconds=60),
-        AgentChatController()
-        .completions_json(ttl_days=60, typing_timeout_seconds=60)
-        .completions_stream(ttl_days=60, typing_timeout_seconds=60),
+        .json_chat_completion(typing_timeout_seconds=60)
+        .stream_chat_completion(typing_timeout_seconds=60),
+        AgentChatController().completions_json(typing_timeout_seconds=60).completions_stream(typing_timeout_seconds=60),
         BotInTheLoopController().bot_in_the_loop_response(),
     )
 

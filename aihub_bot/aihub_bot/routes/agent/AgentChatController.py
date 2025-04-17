@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
@@ -41,7 +40,6 @@ class AgentChatController(Controller):
     def completions_json(
         self,
         route: str = "/completions/{agent_class}/{agent_id}/json",
-        ttl_days: int = 30,
         typing_timeout_seconds: int = 60,
     ) -> "AgentChatController":
         """
@@ -52,7 +50,6 @@ class AgentChatController(Controller):
         - Waits for the full response.
         - Sends a message Activity with the response to the Azure Bot Service.
         """
-        ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(
             route,
@@ -97,7 +94,6 @@ class AgentChatController(Controller):
     def completions_stream(
         self,
         route: str = "/completions/{agent_class}/{agent_id}/stream",
-        ttl_days: int = 30,
         typing_timeout_seconds: int = 60,
     ) -> "AgentChatController":
         """
@@ -107,7 +103,6 @@ class AgentChatController(Controller):
         - Handles Azure Bot Service interactions directed at an AI agent.
         - Streams responses as they are produced by updating the response Activity.
         """
-        ConversationEntity.update_ttl_index(ttl_days)
 
         @self.router.post(
             route,
