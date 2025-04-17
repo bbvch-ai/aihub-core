@@ -1,14 +1,16 @@
-import base64
 import pulumi
 
 from typing import List, Optional
 
-from pulumi_azure_native import web, dbforpostgresql, storage, network, app, managedidentity
+from pulumi_azure_native import dbforpostgresql, storage, app, network
 
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
 from aihub_iac.azure.providers.RoleProvider import RoleProvider
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
+from aihub_iac.azure.resources.managed_environment.ManagedEnvironment import ManagedEnvironment
+from aihub_iac.azure.resources.managed_environment.ManagedEnvironmentConfig import ManagedEnvironmentConfig
+from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageResourceFactory
 
 
 class Dagster(pulumi.ComponentResource):
@@ -18,7 +20,10 @@ class Dagster(pulumi.ComponentResource):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name
+        self.stack = stack
         self.config = config
+
+        self.storage_factory = StorageResourceFactory(self.config)
 
         # Initialize providers
         self.network_provider = NetworkProvider(
@@ -41,16 +46,45 @@ class Dagster(pulumi.ComponentResource):
     def _create_resources(self):
         """Create all Dagster infrastructure resources"""
         # Get existing resources
-        self.existing_app_subnet = self.network_provider.get_app_subnet()
-        self.existing_pg_subnet = self.network_provider.get_pg_subnet()
-        self.existing_vnet = self.network_provider.get_vnet()
+        self.vnet = self.network_provider.get_vnet()
+        self.existing_cap_subnet = self.network_provider.get_cap_subnet()
+        self.dagster_storage_subnet = self.network_provider.get_dagster_storage_subnet()
 
         # Create new resources
         self.dagster_database = self._create_postgres_database()
-        self.datalake = self._create_data_lake()  # TODO: Move into vNet
+        self.blob_dns_zone = network.get_private_zone(
+            private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
+        )
+
+        self.storage_account = self.storage_factory.create_storage_account(
+            service_name=self.config.storage_service_name,
+            subnet_id=self.dagster_storage_subnet.id,
+            vnet_id=self.vnet.id,
+            blob_only=True,
+            existing_blob_dns_zone=self.blob_dns_zone,
+        )
+
+        self.datalake = self._create_data_lake()
         self.identity = self._create_identity()
 
-        self.dagster_app_service = self._create_dagster_app_service()
+        managed_env_config = ManagedEnvironmentConfig(
+            resource_group=self.config.resource_group,
+            project_name=self.config.project_name,
+            location=self.config.location,
+            location_short=self.config.location_short,
+            name="dagster",
+        )
+
+        self.managed_environment = ManagedEnvironment(
+            stack=self.stack,
+            name="managed-environment",
+            config=managed_env_config,
+            infrastructure_subnet_id=self.existing_cap_subnet.id,
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.dagster_webserver_app = self._create_dagster_webserver_app()
+        self.dagster_daemon_app = self._create_dagster_daemon_app()
 
         # Export outputs
         self._register_outputs()
@@ -82,21 +116,104 @@ class Dagster(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _create_dagster_app_service(self):
-        """Create the Dagster Container App using an existing managed environment"""
-        # Get the existing managed Container App Environment
-        container_app_env = app.get_managed_environment(
-            resource_group_name=self.config.resource_group,
-            environment_name=self.config.container_apps_environment_name,
+    def _create_proxy_container(self):
+        return app.ContainerArgs(
+            name="oauth2proxy",
+            image="ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest",
+            resources=app.ContainerResourcesArgs(
+                cpu=self.config.proxy_cpu,
+                memory=self.config.proxy_memory,
+            ),
+            env=[
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_HTTP_ADDRESS", value="0.0.0.0:4180"),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_COOKIE_SECURE", value="false"),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_CODE_CHALLENGE_METHOD", value="S256"),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_UPSTREAMS", value="http://localhost:8000"
+                ),  # Updated for Container Apps
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_ALLOWED_GROUPS", value=self.config.oauth2_proxy_allowed_groups
+                ),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_OIDC_GROUPS_CLAIM", value=self.config.oauth2_proxy_oidc_groups_claim
+                ),
+                # Add the original OAuth2 proxy env vars
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_CLIENT_ID", value=self.config.oauth2_proxy_client_id),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_AZURE_TENANT", value=self.config.oauth2_proxy_azure_tenant),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_PROVIDER", value=self.config.oauth2_proxy_provider),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_OIDC_ISSUER_URL", value=self.config.oauth2_proxy_oidc_issuer_url
+                ),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_COOKIE_SECRET", value="{{secretref:oauth2-proxy-cookie-secret}}"
+                ),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_CLIENT_SECRET", value="{{secretref:oauth2-proxy-client-secret}}"
+                ),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_EMAIL_DOMAINS", value=self.config.oauth2_proxy_email_domains),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO", value=self.config.oauth2_proxy_custom_sign_in_logo
+                ),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_REVERSE_PROXY", value=self.config.oauth2_proxy_reverse_proxy),
+                app.EnvironmentVarArgs(
+                    name="OAUTH2_PROXY_REDIRECT_URL",
+                    value=self.config.oauth2_proxy_redirect_url
+                    or f"https://{self.config.dagster_webserver}.{self.config.container_app_domain}",
+                ),
+            ],
         )
 
+    def _create_dagster_webserver_container(self):
+        return app.ContainerArgs(
+            name="dagster-service",
+            image=self.config.effective_docker_image,
+            resources=app.ContainerResourcesArgs(
+                cpu=self.config.webserver_cpu,
+                memory=self.config.webserver_memory,
+            ),
+            env=self._get_dagster_service_and_daemon_env_vars(),
+        )
+
+    def _create_dagster_daemon_container(self):
+        return app.ContainerArgs(
+            name="dagster-daemon",
+            image=self.config.effective_docker_image,
+            resources=app.ContainerResourcesArgs(
+                cpu=self.config.daemon_cpu,
+                memory=self.config.daemon_memory,
+            ),
+            command=["make", "dagster-daemon"],
+            env=self._get_dagster_service_and_daemon_env_vars(),
+        )
+
+    def _get_dagster_service_and_daemon_env_vars(self) -> List[app.EnvironmentVarArgs]:
+        """Get environment variables for the Dagster Service container"""
+        return [
+            app.EnvironmentVarArgs(name="PYTHONUNBUFFERED", value="1"),
+            app.EnvironmentVarArgs(name="DAGSTER_HOME", value="/dagster_home"),
+            # Add database connection info
+            app.EnvironmentVarArgs(
+                name="DAGSTER_PG_HOST",
+                value=f"{self.config.postgres_name}.postgres.database.azure.com",
+            ),
+            app.EnvironmentVarArgs(name="DAGSTER_PG_DB", value=f"{self.config.database_name}"),
+            app.EnvironmentVarArgs(name="DAGSTER_PG_USERNAME", value=self.config.postgres_username),
+            app.EnvironmentVarArgs(name="DAGSTER_PG_PASSWORD", value="{{secretref:postgres-password}}"),
+            # Add Azure-specific variables
+            app.EnvironmentVarArgs(name="APP_NAME", value=self.config.project_name),
+            app.EnvironmentVarArgs(name="VERSION", value=self.config.version),
+            app.EnvironmentVarArgs(name="AZURE_CLIENT_ID", value=self.identity.client_id),
+        ]
+
+    def _create_dagster_webserver_app(self):
+        """Create the Dagster Container App using an existing managed environment"""
         # Create the Container App
         return app.ContainerApp(
-            container_app_name=self.config.dagster_service,
-            resource_name=self.config.dagster_service,
+            container_app_name=self.config.dagster_webserver,
+            resource_name=self.config.dagster_webserver,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
-            managed_environment_id=container_app_env.id,
+            managed_environment_id=self.managed_environment.id,
             identity=app.ManagedServiceIdentityArgs(
                 type=app.ManagedServiceIdentityType.USER_ASSIGNED,
                 user_assigned_identities=[self.identity.user_identity],
@@ -104,8 +221,8 @@ class Dagster(pulumi.ComponentResource):
             configuration=app.ConfigurationArgs(
                 ingress=app.IngressArgs(
                     external=True,
-                    target_port=8000,
-                    transport="auto",
+                    target_port=4180,
+                    allow_insecure=False,
                 ),
                 registries=[
                     app.RegistryCredentialsArgs(
@@ -122,72 +239,55 @@ class Dagster(pulumi.ComponentResource):
                 ],
             ),
             template=app.TemplateArgs(
-                containers=[
-                    app.ContainerArgs(
-                        name="dagster",
-                        image=self.config.effective_docker_image,
-                        resources=app.ContainerResourcesArgs(
-                            cpu=self.config.container_cpu,
-                            memory=self.config.container_memory,
-                        ),
-                        env=self._get_container_env_vars(),
-                    )
-                ],
+                containers=[self._create_proxy_container(), self._create_dagster_webserver_container()],
                 scale=app.ScaleArgs(
-                    min_replicas=self.config.min_replicas,
-                    max_replicas=self.config.max_replicas,
+                    min_replicas=self.config.webserver_min_replicas,
+                    max_replicas=self.config.webserver_max_replicas,
                 ),
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _get_container_env_vars(self) -> List[app.EnvironmentVarArgs]:
-        """Get the environment variables for the container"""
-        # Convert the app settings to container env vars
-        env_vars = [
-            app.EnvironmentVarArgs(name="WEBSITES_PORT", value="8000"),
-            app.EnvironmentVarArgs(
-                name="DAGSTER_SQL_DATABASE_URL",
-                value=f"postgresql://{self.config.postgres_name}.postgres.database.azure.com:5432/{self.config.database_name}?user={self.config.postgres_username}&password={{{{secretref:postgres-password}}}}",
+    def _create_dagster_daemon_app(self):
+        """Create the Dagster Container App using an existing managed environment"""
+        # Create the Container App
+        return app.ContainerApp(
+            container_app_name=self.config.dagster_daemon,
+            resource_name=self.config.dagster_daemon,
+            resource_group_name=self.config.resource_group,
+            location=self.config.location,
+            managed_environment_id=self.managed_environment.id,
+            identity=app.ManagedServiceIdentityArgs(
+                type=app.ManagedServiceIdentityType.USER_ASSIGNED,
+                user_assigned_identities=[self.identity.user_identity],
             ),
-            app.EnvironmentVarArgs(
-                name="DAGSTER_PG_HOST",
-                value=f"postgresql://{self.config.postgres_name}.postgres.database.azure.com:5432/",
+            configuration=app.ConfigurationArgs(
+                registries=[
+                    app.RegistryCredentialsArgs(
+                        server=self.config.registry_url,
+                        username=self.config.registry_user,
+                        password_secret_ref="registry-password",
+                    )
+                ],
+                secrets=[
+                    app.SecretArgs(name="registry-password", value=self.config.registry_pat),
+                    app.SecretArgs(name="postgres-password", value=self.config.postgres_password),
+                ],
             ),
-            app.EnvironmentVarArgs(name="DAGSTER_PG_DB", value=f"{self.config.database_name}"),
-            app.EnvironmentVarArgs(name="AZURE_SUBSCRIPTION_NAME", value=self.config.azure_subscription_name),
-            app.EnvironmentVarArgs(name="APP_NAME", value=self.config.project_name),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_CLIENT_ID", value=self.config.oauth2_proxy_client_id),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_AZURE_TENANT", value=self.config.oauth2_proxy_azure_tenant),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_PROVIDER", value=self.config.oauth2_proxy_provider),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_OIDC_ISSUER_URL", value=self.config.oauth2_proxy_oidc_issuer_url),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_COOKIE_SECRET", value="{{secretref:oauth2-proxy-cookie-secret}}"),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_CLIENT_SECRET", value="{{secretref:oauth2-proxy-client-secret}}"),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_EMAIL_DOMAINS", value=self.config.oauth2_proxy_email_domains),
-            app.EnvironmentVarArgs(
-                name="OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO", value=self.config.oauth2_proxy_custom_sign_in_logo
+            template=app.TemplateArgs(
+                containers=[self._create_dagster_daemon_container()],
+                scale=app.ScaleArgs(
+                    min_replicas=1,
+                    max_replicas=1,
+                ),
             ),
-            app.EnvironmentVarArgs(name="OAUTH2_PROXY_REVERSE_PROXY", value=self.config.oauth2_proxy_reverse_proxy),
-            app.EnvironmentVarArgs(
-                name="OAUTH2_PROXY_REDIRECT_URL",
-                value=self.config.oauth2_proxy_redirect_url
-                or f"https://{self.config.dagster_service}.{self.config.location.lower()}.azurecontainerapps.io",
-            ),
-            app.EnvironmentVarArgs(name="DAGSTER_PG_USERNAME", value=self.config.postgres_username),
-            app.EnvironmentVarArgs(name="VERSION", value=self.config.version),
-        ]
-
-        return env_vars
+            opts=pulumi.ResourceOptions(parent=self),
+        )
 
     def _register_outputs(self):
         """Register outputs for this component"""
         self.register_outputs(
             {
-                "dagster_app_name": self.dagster_app_service.name,
-                # For Container Apps, the URL format is different from App Service
-                "dagster_app_url": pulumi.Output.concat(
-                    "https://", self.dagster_app_service.name, ".", self.config.container_app_domain
-                ),
                 "postgres_database_name": self.dagster_database.name,
                 "datalake_name": self.datalake.name,
             }

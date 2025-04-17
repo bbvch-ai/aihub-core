@@ -22,6 +22,8 @@ class StorageResourceFactory:
         access_tier: storage.AccessTier = storage.AccessTier.HOT,
         is_hns_enabled: bool = True,
         network_rule_set: Optional[storage.NetworkRuleSetArgs] = None,
+        blob_only: bool = False,
+        existing_blob_dns_zone: Optional[network.GetPrivateZoneResult] = None,
     ) -> storage.StorageAccount:
         """
         Create a storage account resource
@@ -59,19 +61,24 @@ class StorageResourceFactory:
         # Create the storage account
         storage_account = storage.StorageAccount(**storage_args)
 
-        blob_dns_zone = self._create_blob_dns_zone(vnet_id)
+        # Create a private endpoint for the blob service
+        if not existing_blob_dns_zone:
+            blob_dns_zone = self._create_blob_dns_zone(vnet_id)
+            dns_zone_id = blob_dns_zone.id
+        else:
+            dns_zone_id = existing_blob_dns_zone.id
 
         # Create private endpoint for blob service
         self._create_storage_private_endpoint(
             account_name=account_name,
             storage_account=storage_account,
             subnet_id=subnet_id,
-            dns_zone_id=blob_dns_zone.id,
+            dns_zone_id=dns_zone_id,
             group_id="blob",
         )
 
         # For file shares, create a private endpoint for the file service
-        if kind in ["StorageV2", "FileStorage"]:
+        if kind in ["StorageV2", "FileStorage"] and not blob_only:
             file_dns_zone = self._create_file_dns_zone(vnet_id)
 
             self._create_storage_private_endpoint(

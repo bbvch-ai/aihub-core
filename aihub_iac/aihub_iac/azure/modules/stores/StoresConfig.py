@@ -44,8 +44,8 @@ class StoresConfig(BaseModel):
         return f"{self.project_name}-{COSMOS}-{self.location_short}-docstore"
 
     @property
-    def api_store_name(self) -> str:
-        return f"{self.project_name}-{COSMOS}-{self.location_short}-api"
+    def store_name(self) -> str:
+        return f"{self.project_name}-{COSMOS}-{self.location_short}"
 
     @property
     def postgres_name(self) -> str:

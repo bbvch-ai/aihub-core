@@ -28,7 +28,3 @@ class NetworkConfig(BaseModel):
             resource_group=project_settings.RESOURCE_GROUP,
             subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
         )
-
-    @computed_field
-    def log_analytics_name(self) -> str:
-        return f"{self.project_name}-{LOG_WORKSPACE}-{self.location_short}-env"

@@ -54,6 +54,9 @@ class NetworkProvider:
     def get_search_subnet(self):
         return self.get_subnet(subnet_name=self.search_subnet_name)
 
+    def get_dagster_storage_subnet(self):
+        return self.get_subnet(subnet_name=self.dagster_storage_subnet_name)
+
     @property
     def v_net_name(self):
         return f"{self.project_name}-{V_NET}-{self.location_short_name}"
@@ -97,3 +100,7 @@ class NetworkProvider:
     @property
     def nats_subnet_name(self):
         return f"{self.sub_net_name}-{CONTAINER_INSTANCE}-nats"
+
+    @property
+    def dagster_storage_subnet_name(self):
+        return f"{self.sub_net_name}-{STORAGE_ACCOUNT}-dagster"

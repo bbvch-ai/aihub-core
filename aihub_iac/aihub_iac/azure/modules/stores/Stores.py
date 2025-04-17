@@ -131,8 +131,8 @@ class Stores(pulumi.ComponentResource):
     def _create_api_db(self) -> documentdb.DatabaseAccount:
         """Create the API Cosmos DB account"""
         return documentdb.DatabaseAccount(
-            resource_name=self.config.api_store_name,
-            account_name=self.config.api_store_name,
+            resource_name=self.config.store_name,
+            account_name=self.config.store_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             kind="MongoDB",
