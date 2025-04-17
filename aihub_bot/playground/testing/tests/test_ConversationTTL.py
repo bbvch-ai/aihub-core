@@ -25,7 +25,8 @@ JSON_ENDPOINT = f"{BASE_URL}/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/jso
 SERVICE_ENDPOINT = f"{BASE_URL}/service"
 
 # Very short TTL for testing (in days)
-TTL_DAYS = 1/86400  # 1 second TTL in days
+TTL_DAYS = 1 / 86400  # 1 second TTL in days
+
 
 @pytest.fixture
 def patch_requests_adapter(monkeypatch, test_runner):
@@ -41,6 +42,7 @@ def patch_requests_adapter(monkeypatch, test_runner):
     monkeypatch.setattr(requests, "Session", session_factory)
     yield
 
+
 @pytest.fixture(scope="function")
 def mongodb_direct_connection():
     """Direct MongoDB connection for basic tests"""
@@ -48,10 +50,10 @@ def mongodb_direct_connection():
     connect(
         db="aihub",
         host="mongodb://admin:admin@localhost:27017/",
-        alias="test_connection"
     )
     yield
-    disconnect(alias="test_connection")
+    disconnect()
+
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def test_runner():
@@ -62,6 +64,7 @@ async def test_runner():
     await runner.start_simulation()
     return runner
 
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def client(test_runner: SimulatedAgentBotTestRunner):
     """Create an HTTP client for testing"""
@@ -70,13 +73,11 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 
+
 @pytest.mark.asyncio
 async def test_ttl_index_setup(mongodb_direct_connection):
     """Test that the TTL index is correctly set up with the right TTL value"""
     # Update the TTL index with our test value
-    # Create a new connection to avoid conflicts
-    from mongoengine.connection import get_db
-    ConversationEntity._meta['db_alias'] = 'test_connection'
     ConversationEntity.update_ttl_index(TTL_DAYS)
 
     # Get index information
@@ -86,29 +87,30 @@ async def test_ttl_index_setup(mongodb_direct_connection):
     # Look for the TTL index on last_activity
     ttl_index_found = False
     for index_name, index_info in indexes.items():
-        if 'last_activity' in [key for key, direction in index_info['key']]:
+        if "last_activity" in [key for key, direction in index_info["key"]]:
             ttl_index_found = True
-            assert 'expireAfterSeconds' in index_info, "TTL index missing expireAfterSeconds"
+            assert "expireAfterSeconds" in index_info, "TTL index missing expireAfterSeconds"
             # Convert our TTL_DAYS to seconds for comparison
             expected_ttl_seconds = int(TTL_DAYS * 24 * 60 * 60)
-            assert index_info['expireAfterSeconds'] == expected_ttl_seconds, "TTL index has wrong expireAfterSeconds value"
+            assert (
+                index_info["expireAfterSeconds"] == expected_ttl_seconds
+            ), "TTL index has wrong expireAfterSeconds value"
 
     assert ttl_index_found, "TTL index not found on last_activity field"
+
 
 @pytest.mark.asyncio
 async def test_conversation_tracker_expired_detection(mongodb_direct_connection):
     """Test that ConversationTracker correctly identifies expired conversations"""
-    # Set the connection alias for our models
-    ConversationEntity._meta['db_alias'] = 'test_connection'
-    ConversationTracker._meta['db_alias'] = 'test_connection'
-
     # Clean up any existing data with our test IDs
     conversation_id = "test_expired_conversation"
     ConversationEntity.objects(conversation_id=conversation_id).delete()
     ConversationTracker.objects(conversation_id=conversation_id).delete()
 
     # 1. Create a conversation entity
-    messages = [Message(user_id="test_user", content=[Content(text="Test", type="text")], role="user", name="Test User")]
+    messages = [
+        Message(user_id="test_user", content=[Content(text="Test", type="text")], role="user", name="Test User")
+    ]
     conversation = ConversationEntity.create_conversation(conversation_id, messages)
 
     # 2. Create a tracker entry
@@ -126,18 +128,17 @@ async def test_conversation_tracker_expired_detection(mongodb_direct_connection)
 
     # 6. Verify should_show_expiration_message returns False (explicitly deleted)
     should_show = ConversationTracker.should_show_expiration_message(conversation_id)
-    assert should_show is False, "should_show_expiration_message should return False for explicitly deleted conversation"
+    assert (
+        should_show is False
+    ), "should_show_expiration_message should return False for explicitly deleted conversation"
 
     # Clean up
     ConversationTracker.objects(conversation_id=conversation_id).delete()
 
+
 @pytest.mark.asyncio
 async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct_connection):
     """Test ConversationTracker distinguishes between explicitly deleted and expired conversations"""
-    # Set the connection alias for our models
-    ConversationEntity._meta['db_alias'] = 'test_connection'
-    ConversationTracker._meta['db_alias'] = 'test_connection'
-
     # Test IDs
     expired_id = "test_expired_conversation"
     deleted_id = "test_deleted_conversation"
@@ -162,14 +163,19 @@ async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct
     should_show_deleted = ConversationTracker.should_show_expiration_message(deleted_id)
 
     assert should_show_expired is True, "should_show_expiration_message should return True for expired conversation"
-    assert should_show_deleted is False, "should_show_expiration_message should return False for explicitly deleted conversation"
+    assert (
+        should_show_deleted is False
+    ), "should_show_expiration_message should return False for explicitly deleted conversation"
 
     # Clean up
     ConversationTracker.objects(conversation_id=expired_id).delete()
     ConversationTracker.objects(conversation_id=deleted_id).delete()
 
+
 @pytest.mark.asyncio(loop_scope="module")
-async def test_conversation_ttl_with_bot(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter):
+async def test_conversation_ttl_with_bot(
+    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter
+):
     """Test creation of a conversation via the bot and verify TTL tracking"""
     # Load the user message template
     with open(Path(__file__).parent / "user_message.json") as file:
@@ -205,8 +211,12 @@ async def test_conversation_ttl_with_bot(test_runner: SimulatedAgentBotTestRunne
     assert tracker is not None, "Conversation tracker was not created"
     assert tracker.explicitly_deleted is False
 
-    # Now delete the conversation manually (simulating TTL expiration)
-    conversation.delete()
+    for _ in range(10):
+        await asyncio.sleep(10)
+        # Check if the conversation still exists
+        conversation = ConversationEntity.get_conversation_by_conversation_id(conversation_id)
+        if conversation is None:
+            break
 
     # Verify the expiration detection works correctly
     should_show = ConversationTracker.should_show_expiration_message(conversation_id)

@@ -49,10 +49,8 @@ class BotRunner(Runner):
     ):
         super().__init__(api_path, title, description, origins, debug)
 
-        # Configure TTL index once during initialization
-        logger.info(f"Setting conversation TTL to {conversation_ttl_days} days")
-        ConversationEntity.update_ttl_index(conversation_ttl_days)
-        self.ttl_days = conversation_ttl_days
+        # Store TTL days in app state for lifetime manager to access
+        self._base_app.state.conversation_ttl_days = conversation_ttl_days
 
     @property
     def lifetime_manager(self) -> AsyncContextManager:

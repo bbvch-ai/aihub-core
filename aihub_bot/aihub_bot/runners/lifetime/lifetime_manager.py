@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -26,6 +27,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         db=ApiConfig().DB_NAME,
         host=CosmosAccess().get_connection_string(),
     )
+
+    # Configure TTL index after connection is established
+    if hasattr(app.state, "conversation_ttl_days"):
+        ttl_days = app.state.conversation_ttl_days
+        logging.info(f"Configuring TTL index with {ttl_days} days")
+        ConversationEntity.update_ttl_index(ttl_days)
 
     try:
         # Connect to NATS and setup JetStream
