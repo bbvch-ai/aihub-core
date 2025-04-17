@@ -30,9 +30,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     # Configure TTL index after connection is established
     if hasattr(app.state, "conversation_ttl_days"):
-        ttl_days = app.state.conversation_ttl_days
-        logging.info(f"Configuring TTL index with {ttl_days} days")
-        ConversationEntity.update_ttl_index(ttl_days)
+        conversation_ttl_days = app.state.conversation_ttl_days
+        logging.info(f"Configuring TTL index with {conversation_ttl_days} days")
+        ConversationEntity.update_ttl_index(conversation_ttl_days)
 
     try:
         # Connect to NATS and setup JetStream

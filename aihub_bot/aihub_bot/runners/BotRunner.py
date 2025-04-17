@@ -30,7 +30,7 @@ class BotRunner(Runner):
 
     ### Usage
     ```python
-    runner = BotRunner(api_path="/api/v1", title="My Bot Service", debug=True, ttl_days=30)
+    runner = BotRunner(api_path="/api/v1", title="My Bot Service", debug=True, conversation_ttl_days=30)
     runner.mount(BotController())  # Mount bot controllers
     app = runner.get_app()  # Get the FastAPI instance
     ```
