@@ -49,6 +49,7 @@ def default_definitions(
     datalake_directory_name: str,
     vector_store_name: str,
     document_store_name: str,
+    dimensions: int = 3072,
 ) -> Definitions:
     document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -83,6 +84,7 @@ def default_definitions(
                 vector_store_name=vector_store_name,
                 document_store_name=document_store_name,
                 namespace_name=namespace_name,
+                dimensions=dimensions,
             ),
             **azure_data_lake_resources(container_name=datalake_container_name, directory_name=datalake_directory_name),
         },
