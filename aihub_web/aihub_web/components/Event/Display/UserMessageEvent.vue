@@ -1,7 +1,9 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="line-md:chat-filled"
+    is-external
   >
     <div class="flex flex-col gap-8">
       <div
@@ -20,9 +22,10 @@
 </template>
 
 <script setup lang="ts">
-import type { UserMessageEvent, WsServerEvent } from '@core/sdk/client'
+import type { ThreadResponse, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: UserMessageEvent }
+  thread: ThreadResponse
 }>()
 </script>

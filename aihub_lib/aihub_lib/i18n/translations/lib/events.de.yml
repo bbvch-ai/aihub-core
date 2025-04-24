@@ -63,8 +63,8 @@ hitl_response_event:
   description: "Der Benutzer hat die Rückfrage beantwortet, und der Assistent kann mit der Aufgabe fortfahren."
 
 router_event:
-  name: "Anfrage weitergeleitet"
-  description: "Die Anfrage wurde an den am besten geeigneten Agenten oder Dienst weitergeleitet."
+  name: "Optimaler Pfad gewählt"
+  description: "Der Assistent hat den optimalen Pfad für das weitere Vorgehen gewählt."
 
 semantic_agent_event:
   name: "Agentenaktivität"

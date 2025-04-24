@@ -1,17 +1,18 @@
 <template>
   <EventDisplayBase
+    is-empty
     :event="event"
+    :thread="thread"
     icon="mdi:robot-happy"
-  >
-    {{ event.event }}
-  </EventDisplayBase>
+  />
 </template>
 
 <script setup lang="ts">
-import type { AgentInTheLoopResponseEvent, WsServerEvent } from '@core/sdk/client'
+import type { AgentInTheLoopResponseEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: AgentInTheLoopResponseEvent }
+  thread: ThreadResponse
 }>()
 </script>
 

@@ -1,4 +1,4 @@
-from typing import Dict, ClassVar
+from typing import ClassVar, Dict
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 
@@ -9,7 +9,8 @@ from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 class AgentEvent(SemanticEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_agent_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.semantic_agent_event.description")
+        "lib.events.semantic_agent_event.description"
+    )
 
     def to_semantic_convention(self) -> Dict[str, str]:
         attributes = {

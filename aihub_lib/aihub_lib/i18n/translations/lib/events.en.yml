@@ -63,8 +63,8 @@ hitl_response_event:
   description: "The user has answered the query, and the assistant can proceed with the task."
 
 router_event:
-  name: "Request Forwarded"
-  description: "The request has been forwarded to the most suitable agent or service."
+  name: "Decided for optimal next path"
+  description: "The assistant decided for the optimal path to go from here."
 
 semantic_agent_event:
   name: "Agent Activity"

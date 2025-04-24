@@ -244,7 +244,15 @@ export const AgentInTheLoopRequestEventSchema = {
             description: 'Display description for the event'
         },
         start_event: {
-            '$ref': '#/components/schemas/StartEvent',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/StartEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/UserMessageEvent'
+                }
+            ],
+            title: 'Start Event',
             description: 'The event that will be sent to the other agent to initiate its task.'
         },
         other_agent_topic: {
@@ -2192,6 +2200,51 @@ export const CompletionUsageSchema = {
     title: 'CompletionUsage'
 } as const;
 
+export const ControlEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'ControlEvent',
+    description: `Represents a system-level or workflow-level signal, often used to coordinate steps,
+indicate state changes, or trigger specific actions in the event-driven architecture.
+
+### Why ControlEvent?
+While \`BaseEvent\` covers the general structure for any event, \`ControlEvent\` marks an event as
+particularly important for controlling the flow of a system. Hence, all events taken as inputs to
+workflow steps must be of type \`ControlEvent\`. Even though other type of events can be returned
+from workflow steps, only 'ControlEvent' influence the flow of the system.
+
+By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type registration and
+serialization, ensuring that control signals are as easy to produce and consume as any other event.`
+} as const;
+
 export const CreateThreadRequestSchema = {
     properties: {
         name: {
@@ -2962,6 +3015,48 @@ export const FunctionDefinitionSchema = {
     type: 'object',
     required: ['name'],
     title: 'FunctionDefinition'
+} as const;
+
+export const GuardEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'GuardEvent'
 } as const;
 
 export const GuardRejectionEventSchema = {
@@ -4997,6 +5092,127 @@ export const RevokeTokenResponseSchema = {
     title: 'RevokeTokenResponse'
 } as const;
 
+export const RouteOptionsSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'For UI purpose only'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'For UI purpose only'
+        },
+        instructions: {
+            type: 'string',
+            title: 'Instructions',
+            description: 'Instructions for LLM when to route here'
+        },
+        event: {
+            '$ref': '#/components/schemas/ControlEvent',
+            description: 'Possible event to route to'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'description', 'instructions', 'event', '_event_name', '_parent_event_names'],
+    title: 'RouteOptions'
+} as const;
+
+export const RouterEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        routes: {
+            items: {
+                '$ref': '#/components/schemas/RouteOptions'
+            },
+            type: 'array',
+            title: 'Routes',
+            description: 'List of options'
+        },
+        selected_option: {
+            '$ref': '#/components/schemas/RouteOptions',
+            description: 'Selected option'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason for the decision'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['routes', 'selected_option', 'reason', '_event_name', '_parent_event_names'],
+    title: 'RouterEvent',
+    description: 'A RouterEvent marks a point where an LLM decided which way to go in the workflow.'
+} as const;
+
 export const SemanticEventSchema = {
     properties: {
         event_id: {
@@ -6165,6 +6381,12 @@ export const WSServerEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/ThoughtEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RouterEvent'
                 },
                 {
                     '$ref': '#/components/schemas/GuardRejectionEvent'

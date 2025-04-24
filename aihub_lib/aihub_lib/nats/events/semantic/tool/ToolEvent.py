@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, ClassVar
+from typing import Any, ClassVar, Dict, Optional
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes, ToolAttributes
 from pydantic import Field
@@ -11,7 +11,8 @@ from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 class ToolEvent(SemanticEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_tool_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.semantic_tool_event.description")
+        "lib.events.semantic_tool_event.description"
+    )
 
     name: Optional[str] = Field(None, description="The name of the tool being utilized")
     description: Optional[str] = Field(None, description="Description of the tool's purpose and functionality")

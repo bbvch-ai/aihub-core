@@ -1,16 +1,23 @@
 import type { WsServerEvent } from '@core/sdk/client'
 
 import {
-  EventDisplayAgentInTheLoopRequestEvent, EventDisplayAgentInTheLoopResponseEvent,
+  EventDisplayAgentInTheLoopRequestEvent,
+  EventDisplayAgentInTheLoopResponseEvent,
   EventDisplayChunkEvent,
-  EventDisplayEmbeddingEvent, EventDisplayHumanInTheLoopRequestEvent, EventDisplayHumanInTheLoopResponseEvent,
+  EventDisplayEmbeddingEvent,
+  EventDisplayHumanInTheLoopRequestEvent,
+  EventDisplayHumanInTheLoopResponseEvent,
   EventDisplayLLMCostEvent,
   EventDisplayLLMEvent,
   EventDisplayRerankerEvent,
-  EventDisplayRetrieverEvent, EventDisplayStopEvent,
+  EventDisplayRetrieverEvent,
+  EventDisplayStopEvent,
   EventDisplayThoughtEvent,
-  EventDisplayToolEvent, EventDisplayUnknownEvent,
+  EventDisplayToolEvent,
+  EventDisplayUnknownEvent,
   EventDisplayUserMessageEvent,
+  EventDisplayGuardEvent,
+  EventDisplayRouterEvent,
 } from '#components'
 
 export default () => {
@@ -29,7 +36,9 @@ export default () => {
       AgentInTheLoopResponseEvent: EventDisplayAgentInTheLoopResponseEvent,
       HumanInTheLoopRequestEvent: EventDisplayHumanInTheLoopRequestEvent,
       HumanInTheLoopResponseEvent: EventDisplayHumanInTheLoopResponseEvent,
+      GuardEvent: EventDisplayGuardEvent,
       StopEvent: EventDisplayStopEvent,
+      RouterEvent: EventDisplayRouterEvent,
     }
     const exact_match = mapping[event.event._event_name]
     if (exact_match) {

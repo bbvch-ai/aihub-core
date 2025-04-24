@@ -1,6 +1,5 @@
-from typing import Any, Dict, ClassVar
+from typing import Any, Dict
 
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 

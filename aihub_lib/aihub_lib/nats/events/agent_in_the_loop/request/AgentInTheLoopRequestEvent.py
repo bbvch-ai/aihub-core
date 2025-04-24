@@ -1,17 +1,19 @@
-from typing import Optional, Type, Union, ClassVar
+from typing import ClassVar, Optional, Type, Union
 
 from pydantic import Field, PrivateAttr
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInTheLoopExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
+from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
-class AgentInTheLoopRequestEvent(DisplayEvent):
+class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     """
     An event delegating a task to another agent at a specific point in a workflow.
 
@@ -22,13 +24,16 @@ class AgentInTheLoopRequestEvent(DisplayEvent):
     - Manages context sharing between agents (thread, display, run IDs)
     - Handles both successful responses and exceptions from the delegated agent
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.aitl_request_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.aitl_request_event.description")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.aitl_request_event.description"
+    )
 
     _response: Optional[Type[AgentInTheLoopResponseEvent]] = PrivateAttr(None)
     _exception: Optional[Type[AgentInTheLoopExceptionEvent]] = PrivateAttr(None)
 
-    start_event: StartEvent = Field(
+    start_event: StartEvent | UserMessageEvent = Field(
         ..., description="The event that will be sent to the other agent to initiate its task."
     )
     other_agent_topic: Union[PartialAgentTopic, AgentTopic] = Field(

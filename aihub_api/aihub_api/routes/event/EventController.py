@@ -13,8 +13,8 @@ from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 
+from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
 from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
@@ -79,7 +79,7 @@ class EventController(Controller):
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor_ws)],
             ws_sender: Annotated[WebSocketSender, Depends(use_ws_sender_ws)],
             ws_manager: Annotated[WebSocketManager, Depends(use_ws_manager_ws)],
-            t: Annotated[LocaleHandler, Depends(use_locale_ws)]
+            t: Annotated[LocaleHandler, Depends(use_locale_ws)],
         ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.

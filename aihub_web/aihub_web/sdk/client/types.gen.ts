@@ -173,7 +173,7 @@ export type AgentInTheLoopRequestEvent = {
     /**
      * The event that will be sent to the other agent to initiate its task.
      */
-    start_event: StartEvent;
+    start_event: StartEvent | UserMessageEvent;
     /**
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
@@ -199,7 +199,7 @@ export type AgentInTheLoopRequestEvent = {
      * Contains the names of all parent classes up until BaseEvent.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | StartEvent | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (StartEvent | UserMessageEvent) | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -734,6 +734,37 @@ export type CompletionUsage = {
     [key: string]: unknown | number | (CompletionTokensDetails | null) | (PromptTokensDetails | null) | undefined;
 };
 
+/**
+ * Represents a system-level or workflow-level signal, often used to coordinate steps,
+ * indicate state changes, or trigger specific actions in the event-driven architecture.
+ *
+ * ### Why ControlEvent?
+ * While `BaseEvent` covers the general structure for any event, `ControlEvent` marks an event as
+ * particularly important for controlling the flow of a system. Hence, all events taken as inputs to
+ * workflow steps must be of type `ControlEvent`. Even though other type of events can be returned
+ * from workflow steps, only 'ControlEvent' influence the flow of the system.
+ *
+ * By subclassing `BaseEvent`, `ControlEvent` benefits from automatic type registration and
+ * serialization, ensuring that control signals are as easy to produce and consume as any other event.
+ */
+export type ControlEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | Array<string> | undefined;
+};
+
 export type CreateThreadRequest = {
     name: string;
     user_ids?: Array<string>;
@@ -1120,6 +1151,32 @@ export type FunctionDefinition = {
         [key: string]: unknown;
     };
     strict?: boolean | null;
+};
+
+export type GuardEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -2008,6 +2065,89 @@ export type RevokeTokenResponse = {
     detail: string;
 };
 
+export type RouteOptions = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
+     * For UI purpose only
+     */
+    name: string;
+    /**
+     * For UI purpose only
+     */
+    description: string;
+    /**
+     * Instructions for LLM when to route here
+     */
+    instructions: string;
+    /**
+     * Possible event to route to
+     */
+    event: ControlEvent;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | ControlEvent | Array<string> | undefined;
+};
+
+/**
+ * A RouterEvent marks a point where an LLM decided which way to go in the workflow.
+ */
+export type RouterEvent = {
+    event_id?: string;
+    /**
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString;
+    /**
+     * List of options
+     */
+    routes: Array<RouteOptions>;
+    /**
+     * Selected option
+     */
+    selected_option: RouteOptions;
+    /**
+     * Reason for the decision
+     */
+    reason: string;
+    /**
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Contains the names of all parent classes up until BaseEvent.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | Array<RouteOptions> | RouteOptions | Array<string> | undefined;
+};
+
 /**
  * A base class for events that must report their data to an OpenInference-compatible tracing system,
  * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
@@ -2608,7 +2748,7 @@ export type WsServerEvent = {
     /**
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
+    event: StartEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
 };
 
 /**

@@ -63,8 +63,8 @@ hitl_response_event:
   description: "L'utente ha risposto alla richiesta, e l'assistente può procedere con il compito."
 
 router_event:
-  name: "Richiesta Inoltrata"
-  description: "La richiesta è stata inoltrata all'agente o al servizio più adatto."
+  name: "Percorso ottimale scelto"
+  description: "L'assistente ha scelto il percorso ottimale per procedere da qui."
 
 semantic_agent_event:
   name: "Attività dell'Agente"

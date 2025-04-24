@@ -19,6 +19,7 @@
           <component
             :is="resolveComponentForEvent(event)"
             :event="event"
+            :thread="thread"
           />
         </div>
       </template>
@@ -41,11 +42,13 @@
 import useEventComponent from '@core/composables/useEventComponent'
 
 import type {
+  ThreadResponse,
   WsServerEvent,
 } from '@core/sdk/client'
 
 defineProps<{
   events: WsServerEvent[]
+  thread: ThreadResponse
 }>()
 
 const { resolveComponentForEvent } = useEventComponent()

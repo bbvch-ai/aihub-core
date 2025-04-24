@@ -2,9 +2,8 @@ import logging
 import re
 from typing import Dict
 
-from starlette.datastructures import Headers, QueryParams
-
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from starlette.datastructures import Headers, QueryParams
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 

@@ -1,0 +1,28 @@
+<template>
+  <div class="flex flex-col gap-2 p-6">
+    <p class="text-xl font-bold">
+      {{ agent?.agent_config.name }}
+    </p>
+    <p class="text-sm">
+      {{ agent?.agent_config.description }}
+    </p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useAgentsStore } from '@core/stores/useAgentsStore'
+
+import type { AgentDto } from '@core/sdk/client'
+
+const route = useRoute()
+
+const agentStore = useAgentsStore()
+
+const { agents } = storeToRefs(agentStore)
+
+const agent = computed<AgentDto | undefined>(() => agents.value?.find(agent => agent.agent_id === route.params.agent_id && agent.agent_class === route.params.agent_class))
+</script>
+
+<style scoped>
+
+</style>

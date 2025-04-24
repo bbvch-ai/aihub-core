@@ -15,6 +15,6 @@ class ThoughtEvent(ChunkEvent):
     revealing the reasoning paths taken by the agent. Useful for debugging, auditing, or
     explaining the agent’s behavior to end-users (e.g., "chain-of-thought" explanations).
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.thought_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.thought_event.description")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.thought_event.description")

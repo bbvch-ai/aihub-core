@@ -28,7 +28,9 @@ from aihub_lib.nats.events import (
     ToolEvent,
     UserMessageEvent,
 )
+from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
+from aihub_lib.nats.events.semantic.guard import GuardEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag
@@ -47,6 +49,8 @@ DisplayEvents = Union[
     Annotated[LLMCostEvent, Tag("LLMCostEvent")],
     Annotated[ChunkEvent, Tag("ChunkEvent")],
     Annotated[ThoughtEvent, Tag("ThoughtEvent")],
+    Annotated[GuardEvent, Tag("GuardEvent")],
+    Annotated[RouterEvent, Tag("RouterEvent")],
     Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")],
     Annotated[SemanticEvent, Tag("SemanticEvent")],
     Annotated[AgentEvent, Tag("AgentEvent")],
@@ -70,10 +74,17 @@ def event_discriminator(event: DisplayEvent) -> str:
     valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
 
     # Return "DisplayEvent" if _event_name is missing or not in valid_tags
-    if not hasattr(event, "_event_name") or event._event_name not in valid_tags:
+    if not hasattr(event, "_event_name"):
         return "DisplayEvent"
 
-    return event._event_name
+    if event._event_name in valid_tags:
+        return event._event_name
+
+    for event_name in event._parent_event_names:
+        if event_name in valid_tags:
+            return event_name
+
+    return "DisplayEvent"
 
 
 class WSServerEvent(BaseModel):
@@ -95,13 +106,13 @@ class WSServerEvent(BaseModel):
     The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedEventEntity`,
     allowing previously stored events to be replayed or displayed to users.
     """
+
     locale: str = Field(
         LocaleHandler.DEFAULT_LOCALE,
         description="The locale in which event name and description is returned.",
     )
     event_display_name: Annotated[str, Field(None, description="Display name for the event")]
     event_display_description: Annotated[str, Field(None, description="Display description for the event")]
-
 
     agent_class: str = Field(..., description="The agent class responsible for this event.")
     agent_id: str = Field(..., description="Unique identifier of the agent instance that produced the event.")
@@ -122,7 +133,9 @@ class WSServerEvent(BaseModel):
     )
 
     @classmethod
-    def from_persisted_event(cls, persisted_event: PersistedEventEntity, locale: Optional[str] = None) -> "WSServerEvent":
+    def from_persisted_event(
+        cls, persisted_event: PersistedEventEntity, locale: Optional[str] = None
+    ) -> "WSServerEvent":
         """
         Construct a WSServerEvent from a PersistedEventEntity, converting persisted event data
         into a client-ready format.
@@ -151,10 +164,7 @@ class WSServerEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         data = super().model_dump(**kwargs)
-        return {
-            **data,
-            "event": self.event.model_dump(**kwargs)
-        }
+        return {**data, "event": self.event.model_dump(**kwargs)}
 
     @override
     def model_dump_json(self, **kwargs: Any) -> str:

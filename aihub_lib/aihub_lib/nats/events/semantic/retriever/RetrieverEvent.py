@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, ClassVar
+from typing import ClassVar, Dict, List, Optional
 
 from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
@@ -12,7 +12,8 @@ from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 class RetrieverEvent(SemanticEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_retriever_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.semantic_retriever_event.description")
+        "lib.events.semantic_retriever_event.description"
+    )
 
     documents: Optional[List[Document]] = Field(
         None,

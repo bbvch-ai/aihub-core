@@ -1,6 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="vaadin:chat"
   >
     <div class="flex flex-col gap-8">
@@ -32,10 +33,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, LlmEvent, WsServerEvent } from '@core/sdk/client'
+import type { ChatMessageOutput, LlmEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: LlmEvent }
+  thread: ThreadResponse
 }>()
 
 const inputMessages = computed<ChatMessageOutput[]>(() => {

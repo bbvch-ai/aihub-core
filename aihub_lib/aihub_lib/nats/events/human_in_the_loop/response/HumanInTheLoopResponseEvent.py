@@ -17,9 +17,11 @@ class HumanInTheLoopResponseEvent(ControlEvent, DisplayEvent):
     - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
     - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_response_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_response_event.description")
+        "lib.events.hitl_response_event.description"
+    )
 
     response: str = Field(..., description="The human operator's answer or decision.")
     request_event: HumanInTheLoopRequestEvent = Field(

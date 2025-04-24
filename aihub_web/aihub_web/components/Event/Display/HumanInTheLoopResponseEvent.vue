@@ -1,7 +1,9 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="mdi:robot-confused"
+    is-external
   >
     <div class="py-5">
       <ChatMessage
@@ -14,12 +16,13 @@
 
 <script setup lang="ts">
 import type {
-  HumanInTheLoopResponseEvent, UserChatMessageInput,
+  HumanInTheLoopResponseEvent, ThreadResponse, UserChatMessageInput,
   WsServerEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: HumanInTheLoopResponseEvent }
+  thread: ThreadResponse
 }>()
 
 const message = computed<UserChatMessageInput>(() => {

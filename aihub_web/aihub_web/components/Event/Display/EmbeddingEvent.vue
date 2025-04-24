@@ -1,6 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="line-md:search-twotone"
   >
     <IconField class="w-full">
@@ -15,10 +16,11 @@
 </template>
 
 <script setup lang="ts">
-import type { EmbeddingEvent, WsServerEvent } from '@core/sdk/client'
+import type { EmbeddingEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: EmbeddingEvent }
+  thread: ThreadResponse
 }>()
 </script>
 

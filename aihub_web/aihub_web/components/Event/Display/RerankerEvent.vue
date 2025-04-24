@@ -1,6 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="iconoir:sort"
   >
     <div class="flex flex-col gap-4">
@@ -25,10 +26,11 @@
 </template>
 
 <script setup lang="ts">
-import type { RerankerEvent, WsServerEvent } from '@core/sdk/client'
+import type { RerankerEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: RerankerEvent }
+  thread: ThreadResponse
 }>()
 </script>
 

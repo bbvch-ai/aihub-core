@@ -1,5 +1,8 @@
 <template>
-  <Card class="!rounded-2xl bg-surface-50 dark:!bg-surface-800">
+  <Card
+    class="!rounded-2xl bg-surface-50 dark:!bg-surface-800"
+    :class="{ 'striped-bg': isExternal || !isFromAgentInThread }"
+  >
     <template #header>
       <div class="absolute -top-3 right-12 rounded bg-surface-50 px-2 py-1 text-xs font-semibold dark:!bg-surface-800">
         {{ event.agent_class }}
@@ -7,7 +10,7 @@
     </template>
     <template #content>
       <Panel
-        toggleable
+        :toggleable="!isEmpty"
         collapsed
         class="panel border-none bg-transparent"
       >
@@ -29,7 +32,10 @@
             </div>
           </div>
         </template>
-        <div class="pt-4">
+        <div
+          v-if="!isEmpty"
+          class="pt-4"
+        >
           <Divider />
           <br>
           <slot />
@@ -40,12 +46,27 @@
 </template>
 
 <script setup lang="ts">
-import type { WsServerEvent } from '@core/sdk/client'
+import type { AgentDto, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   event: WsServerEvent
+  thread: ThreadResponse
   icon: string
-}>()
+  isExternal?: boolean
+  isEmpty?: boolean
+}>(), {
+  isExternal: false,
+  isEmpty: false,
+})
+
+const agentIds = computed<string[]>(() => {
+  const agents = props.thread.agents ?? []
+  return agents.map((agent: AgentDto) => `${agent.agent_class}/${agent.agent_id}`)
+})
+
+const isFromAgentInThread = computed<boolean>(() => {
+  return agentIds.value.includes(`${props.event.agent_class}/${props.event.agent_id}`)
+})
 </script>
 
 <style scoped>
@@ -53,5 +74,14 @@ defineProps<{
   .p-panel-header {
     padding: 0 !important;
   }
+}
+.striped-bg {
+  background: repeating-linear-gradient(
+    -55deg,
+    rgba(155, 155, 155, 0.1),
+    rgba(155, 155, 155, 0.1) 4px,
+    rgba(155, 155, 155, 0) 4px,
+    rgba(155, 155, 155, 0) 8px
+  );
 }
 </style>

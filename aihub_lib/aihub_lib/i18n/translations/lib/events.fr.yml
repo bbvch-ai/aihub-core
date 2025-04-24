@@ -63,8 +63,8 @@ hitl_response_event:
   description: "L'utilisateur a répondu à la demande, et l'assistant peut poursuivre la tâche."
 
 router_event:
-  name: "Demande Transmise"
-  description: "La demande a été transmise à l'agent ou au service le plus approprié."
+  name: "Chemin optimal choisi"
+  description: "L'assistant a choisi le chemin optimal pour la suite."
 
 semantic_agent_event:
   name: "Activité de l'Agent"

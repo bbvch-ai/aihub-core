@@ -10,26 +10,36 @@
     </div>
     <Drawer
       v-model:visible="showSources"
-      header="Sources"
+      :header="thread?.name"
       position="right"
       class="!w-[50vw]"
     >
-      <EventList :events="eventsInDisplay" />
-      <Paginator
-        v-model:first="page"
-        always-show
-        :rows="1"
-        :total-records="uniqueDisplayIds.length"
-      />
+      <div class="flex flex-col gap-8">
+        <div v-if="thread">
+          <ThreadInfo
+            :thread="thread"
+          />
+          <Divider />
+          <EventList
+            :events="eventsInDisplay"
+            :thread="thread"
+          />
+          <Paginator
+            v-model:first="page"
+            always-show
+            :rows="1"
+            :total-records="uniqueDisplayIds.length"
+          />
+        </div>
+      </div>
     </Drawer>
   </div>
 </template>
 
 <script setup lang="ts">
+import { getThread, type ThreadResponse, type WsServerEvent } from '@core/sdk/client'
 import { useEventsStore } from '@core/stores/useEventsStore'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-
-import type { WsServerEvent } from '@core/sdk/client'
 
 const runtimeConfig = useRuntimeConfig()
 
@@ -68,6 +78,19 @@ const eventsInDisplay = computed<WsServerEvent[]>(() => {
   return eventsInThread.value.filter((event) => {
     return event.display_id === selectedDisplay
   })
+})
+
+const { data: thread } = useQuery<ThreadResponse>({
+  key: () => ['thread', activeThreadId.value],
+  staleTime: 1000 * 10, // 5 minutes
+  enabled: true,
+  query: async () => {
+    console.log('Fetching thread2', activeThreadId.value)
+    return await getThread({
+      composable: '$fetch',
+      path: { thread_id: activeThreadId.value },
+    })
+  },
 })
 
 onClickOutside(sourcesPannel, () => {

@@ -1,4 +1,4 @@
-from typing import ClassVar, Annotated
+from typing import Annotated, ClassVar
 
 from pydantic import Field, model_validator
 
@@ -22,15 +22,15 @@ class DisplayEvent(BaseEvent):
     registration, serialization, and deserialization mechanisms, making it simple to integrate
     into a user interface or logging pipeline.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.display_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.display_event.description")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.display_event.description")
 
     display_name: Annotated[LocaleString, Field(None, description="Display name for the event")]
     display_description: Annotated[LocaleString, Field(None, description="Display description for the event")]
 
-    @model_validator(mode='after')
-    def set_default_values(self) -> 'DisplayEvent':
+    @model_validator(mode="after")
+    def set_default_values(self) -> "DisplayEvent":
         """Set default values from class if instance values are None."""
         if not self.display_name:
             self.display_name = self.__class__._display_name

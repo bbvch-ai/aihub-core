@@ -10,7 +10,7 @@
       <Avatar
         :label="avatarLabel"
         size="large"
-        shape="circle"
+        :shape="message.role == 'user' ? 'circle' : 'square'"
         class="shrink-0"
         :class="{ 'bg-surface-800 text-white dark:bg-surface-200 dark:text-black': message.role == 'user' }"
       />

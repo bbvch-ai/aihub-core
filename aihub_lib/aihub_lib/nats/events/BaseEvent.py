@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Type, Union, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, Union
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field

@@ -22,9 +22,9 @@ class ExceptionEvent(ControlEvent, DisplayEvent):
     can stop further processing while also making the error visible in UI dashboards, logs, or
     monitoring tools—giving operators and developers immediate insight into what went wrong.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.exception_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.exception_event.description")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.exception_event.description")
 
     message: str = Field(..., description="A human-readable description of the exception or error that occurred.")
     http_status_code: int = Field(

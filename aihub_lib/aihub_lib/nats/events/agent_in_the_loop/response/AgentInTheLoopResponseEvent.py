@@ -17,9 +17,11 @@ class AgentInTheLoopResponseEvent(ControlEvent, DisplayEvent):
     - Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result
     - Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.aitl_response_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.aitl_response_event.description")
+        "lib.events.aitl_response_event.description"
+    )
 
     stop_event: StopEvent = Field(
         ..., description="The stop event from the delegated agent containing the task results and marks the completion."

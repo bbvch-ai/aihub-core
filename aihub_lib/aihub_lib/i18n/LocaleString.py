@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+
 class LocaleString(BaseModel):
     de: Optional[str] = Field(None)
     en: Optional[str] = Field(None)

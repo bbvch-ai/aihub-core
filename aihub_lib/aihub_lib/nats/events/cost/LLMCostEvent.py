@@ -18,9 +18,9 @@ class LLMCostEvent(CostEvent, LLMCosts):
     engineers, product managers, or finance teams clear insights into where tokens—and money—are
     going.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.llm_cost_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.llm_cost_event.description")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.llm_cost_event.description")
     llm_name: str = Field(..., description="The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.")
 
     def get_total_costs(self) -> float:

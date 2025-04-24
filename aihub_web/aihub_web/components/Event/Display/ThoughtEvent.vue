@@ -1,6 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="mingcute:thought-fill"
   >
     <p class="border-l-4 border-surface-200 pl-3 italic dark:border-surface-600">
@@ -10,10 +11,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ThoughtEvent, WsServerEvent } from '@core/sdk/client'
+import type { ThoughtEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: ThoughtEvent }
+  thread: ThreadResponse
 }>()
 </script>
 

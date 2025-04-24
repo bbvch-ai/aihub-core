@@ -25,6 +25,6 @@ class StopEvent(ControlEvent, DisplayEvent):
     - Signaling that a response is ready, and no more actions are needed.
     - Informing the user interface that the conversation or task has concluded.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.stop_event.description")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.description")

@@ -1,6 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="fluent:money-16-filled"
   >
     <CostsTable
@@ -15,9 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { LlmCostEvent, WsServerEvent } from '@core/sdk/client'
+import type { LlmCostEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: LlmCostEvent }
+  thread: ThreadResponse
 }>()
 </script>

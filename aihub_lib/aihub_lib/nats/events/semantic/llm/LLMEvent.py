@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, ClassVar
+from typing import Any, ClassVar, Dict, List, Optional
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
@@ -12,7 +12,8 @@ from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 class LLMEvent(SemanticEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.semantic_llm_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.semantic_llm_event.description")
+        "lib.events.semantic_llm_event.description"
+    )
 
     input_messages: Optional[List[Message]] = Field(None, description="List of messages sent to the LLM as input.")
     output_messages: Optional[List[Message]] = Field(

@@ -1,14 +1,15 @@
-from typing import Union, ClassVar
+from typing import ClassVar, Union
 
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
-class HumanInTheLoopRequestEvent(DisplayEvent):
+class HumanInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     """
     An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
@@ -17,9 +18,11 @@ class HumanInTheLoopRequestEvent(DisplayEvent):
     - Is a `DisplayEvent`, so it can appear in user interfaces.
     - Carries a question and a topic indicating where the subsequent response should be sent.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_request_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_request_event.description")
+        "lib.events.hitl_request_event.description"
+    )
 
     question: str = Field(..., description="The query or prompt presented to the human operator.")
     topic: Union[PartialAgentTopic, AgentTopic] = Field(

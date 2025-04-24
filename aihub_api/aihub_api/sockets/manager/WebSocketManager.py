@@ -1,12 +1,12 @@
 import logging
 from typing import Dict, Set
 
-from fastapi import WebSocket
-
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics import AgentTopic
+from fastapi import WebSocket
+
+from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 
 logger = logging.getLogger(__name__)
 

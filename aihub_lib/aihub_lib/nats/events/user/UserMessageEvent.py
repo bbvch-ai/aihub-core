@@ -1,4 +1,4 @@
-from typing import List, Optional, ClassVar
+from typing import ClassVar, List
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
@@ -35,9 +35,11 @@ class UserMessageEvent(StartEvent):
     This flexible design allows mixing and matching start events to adapt how and when workflows
     are triggered, depending on the source of the event.
     """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.user_message_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.user_message_event.description")
+        "lib.events.user_message_event.description"
+    )
 
     locale: str = Field(
         LocaleHandler.DEFAULT_LOCALE,

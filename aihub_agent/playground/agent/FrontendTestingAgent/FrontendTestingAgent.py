@@ -53,17 +53,20 @@ class FrontendTestingAgent(Agent):
     @step()
     async def router_step(self, _: GuardEvent) -> RouterEvent:
         routes = [
-            RouteOptions(name="Route A", description="Good Route", instructions="Select This", event=FrontendTestingEventA(
-                display_name=LocaleString(en="Custom Name Event A"),
-                display_description=LocaleString(en="This is a custom description for Event A"),
-            )),
-            RouteOptions(name="Route B", description="Bad Route", instructions="Not this", event=FrontendTestingEventB()),
+            RouteOptions(
+                name="Route A",
+                description="Good Route",
+                instructions="Select This",
+                event=FrontendTestingEventA(
+                    display_name=LocaleString(en="Custom Name Event A"),
+                    display_description=LocaleString(en="This is a custom description for Event A"),
+                ),
+            ),
+            RouteOptions(
+                name="Route B", description="Bad Route", instructions="Not this", event=FrontendTestingEventB()
+            ),
         ]
-        return RouterEvent(
-            routes=routes,
-            selected_option=routes[0],
-            reason="I just took the first one tbh"
-        )
+        return RouterEvent(routes=routes, selected_option=routes[0], reason="I just took the first one tbh")
 
     @step()
     async def unpack_router_step(self, event: RouterEvent) -> FrontendTestingEventA:
@@ -153,8 +156,12 @@ class FrontendTestingAgent(Agent):
         return CustomHumanInTheLoop.invoke(question="Shall I continue?")
 
     @step()
-    async def botl_start(self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> BotInTheLoop.request:
-        await displayer.display_chunk(content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent")
+    async def botl_start(
+        self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer
+    ) -> BotInTheLoop.request:
+        await displayer.display_chunk(
+            content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
+        )
         print("Bot in the loop")
         return BotInTheLoop.invoke(
             user=user_message_event.user,

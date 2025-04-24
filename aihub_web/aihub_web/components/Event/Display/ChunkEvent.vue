@@ -1,6 +1,7 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="line-md:text-box"
   >
     <div class="py-5">
@@ -14,10 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, ChunkEvent, WsServerEvent } from '@core/sdk/client'
+import type { ChatMessageOutput, ChunkEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: ChunkEvent }
+  thread: ThreadResponse
 }>()
 
 const message = computed<ChatMessageOutput>(() => {
