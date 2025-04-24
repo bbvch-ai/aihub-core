@@ -67,6 +67,7 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
     """
 
     vector_store_name: str
+    dimensions: int = 1536
 
     def create_resource(self, context: InitResourceContext) -> AzureAISearchVectorStore:
-        return create_azure_ai_search_vector_store(vector_store_name=self.vector_store_name)
+        return create_azure_ai_search_vector_store(vector_store_name=self.vector_store_name, dimensions=self.dimensions)
