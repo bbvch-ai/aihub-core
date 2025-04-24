@@ -45,7 +45,7 @@ def mongo_aisearch_storage_context_resources(
     vector_store_name: str,
     document_store_name: str,
     namespace_name: str,
-    dimensions: int = 1536,
+    dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
     vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name, dimensions=dimensions)
     doc_store = MongoDocumentStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)

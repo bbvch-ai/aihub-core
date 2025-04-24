@@ -49,7 +49,7 @@ def default_definitions(
     datalake_directory_name: str,
     vector_store_name: str,
     document_store_name: str,
-    dimensions: int = 1536,
+    dimensions: int = 3072,
 ) -> Definitions:
     document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 

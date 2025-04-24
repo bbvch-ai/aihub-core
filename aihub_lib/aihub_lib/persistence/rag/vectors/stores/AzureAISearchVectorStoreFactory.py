@@ -20,7 +20,7 @@ def create_azure_ai_search_vector_store(
     metadata_fields: List[str] | None = None,
     language: str = "de",
     semantic_configuration_name: str = "mySemanticConfig",
-    dimensions: int = 1536,
+    dimensions: int = 3072,
 ) -> AzureAISearchVectorStore:
     search_client_singleton = AISearchAccess()
     index_client = search_client_singleton.get_client()
