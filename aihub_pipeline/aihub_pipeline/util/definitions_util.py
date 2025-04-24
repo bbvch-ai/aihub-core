@@ -84,7 +84,7 @@ def default_definitions(
                 vector_store_name=vector_store_name,
                 document_store_name=document_store_name,
                 namespace_name=namespace_name,
-                dimension=dimensions,
+                dimensions=dimensions,
             ),
             **azure_data_lake_resources(container_name=datalake_container_name, directory_name=datalake_directory_name),
         },
