@@ -3,7 +3,9 @@
     <NavigationTop
       :nav-items="navItems"
     />
-    <NuxtPage />
+    <div class="p-3">
+      <NuxtPage />
+    </div>
   </div>
 </template>
 
@@ -24,13 +26,12 @@ const { agents } = storeToRefs(agentStore)
 const agent = computed<AgentDto | undefined>(() => agents.value?.find(agent => agent.agent_id === route.params.agent_id && agent.agent_class === route.params.agent_class))
 
 const subPath = (path: string) => {
-  return `/admin/agent/agent-${agent.value?.agent_id}-${agent.value?.agent_class}/${path}`
+  return `/admin/agent/agent-${route.params.agent_id}-${route.params.agent_class}/${path}`
 }
 
 const isActive = (path: string) => {
   return () => {
     const localizedPath = localePath(subPath(path))
-    console.log(localizedPath)
     return route.path === localizedPath
   }
 }

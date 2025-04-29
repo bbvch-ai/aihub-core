@@ -1,11 +1,45 @@
 <template>
-  <div class="flex flex-col gap-2 p-6">
-    <p class="text-xl font-bold">
-      {{ agent?.agent_config.name }}
-    </p>
-    <p class="text-sm">
-      {{ agent?.agent_config.description }}
-    </p>
+  <div class="flex flex-col gap-8">
+    <div>
+      <p class="text-xl font-bold">
+        {{ agent?.agent_config.name }}
+      </p>
+      <p class="text-sm">
+        {{ agent?.agent_config.description }}
+      </p>
+    </div>
+    <div class="flex flex-col gap-2">
+      <p class="text-lg font-bold">
+        Start Events
+      </p>
+      <Panel
+        v-for="event in agent?.start_events"
+        :key="event.event_name"
+        :header="event.event_name"
+        toggleable
+        collapsed
+      >
+        <div class="text-sm text-surface-700 dark:text-surface-200">
+          {{ event.event_schema.description }}
+        </div>
+      </Panel>
+    </div>
+    <div class="flex flex-col gap-2">
+      <p class="text-lg font-bold">
+        Stop Events
+      </p>
+      <Panel
+        v-for="event in agent?.stop_events"
+        :key="event.event_name"
+        :header="event.event_name"
+        toggleable
+        collapsed
+      >
+        <div class="text-sm text-surface-700 dark:text-surface-200">
+          {{ event.event_schema.description }}
+        </div>
+      </Panel>
+    </div>
   </div>
 </template>
 

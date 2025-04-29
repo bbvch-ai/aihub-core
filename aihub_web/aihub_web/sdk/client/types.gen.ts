@@ -2437,10 +2437,26 @@ export type ThreadAgentDto = {
 };
 
 export type ThreadResponse = {
+    /**
+     * The thread ID
+     */
     id: string;
+    /**
+     * User given name of thread
+     */
     name: string;
+    /**
+     * List of users in thread
+     */
     users: Array<UserDto>;
+    /**
+     * List of agents in thread
+     */
     agents: Array<AgentDto>;
+    /**
+     * Date at which thread was created
+     */
+    created_at: string;
 };
 
 export type TokenResponse = {
@@ -2889,21 +2905,21 @@ export type GetEventsResponses = {
 
 export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
 
-export type ListUserThreadsData = {
+export type GetUserThreadsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/thread/';
 };
 
-export type ListUserThreadsResponses = {
+export type GetUserThreadsResponses = {
     /**
      * Successful Response
      */
     200: Array<ThreadResponse>;
 };
 
-export type ListUserThreadsResponse = ListUserThreadsResponses[keyof ListUserThreadsResponses];
+export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThreadsResponses];
 
 export type CreateThreadData = {
     body: CreateThreadRequest;

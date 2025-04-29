@@ -1,7 +1,9 @@
 import asyncio
 from typing import List, Optional
 
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
 from nats.aio.client import Client as NATS
@@ -91,13 +93,19 @@ class ThreadService:
         2. Fetch user details (using UserService).
         3. Construct a ThreadResponse DTO containing all details.
         """
-        agents = await asyncio.gather(
-            *(AgentService.get_agent(nc, agent.agent_class, agent.agent_id, t) for agent in entity.agents)
-        )
+        agent_dtos = []
+        for agent in entity.agents:
+            agent_entity = AgentEntity.get_agent(
+                agent_class=agent.agent_class,
+                agent_id=agent.agent_id,
+            )
+            agent_dto = AgentDTO.from_entity(agent_entity, t)
+            agent_dtos.append(agent_dto)
 
         return ThreadResponse(
             id=str(entity.id),
+            created_at=entity.created_at.isoformat() + "Z",  # Add Z to indicate UTC
             name=entity.name,
             users=[UserService.get_user_by_oid(user.user_id) for user in entity.users],
-            agents=agents,
+            agents=agent_dtos,
         )

@@ -72,7 +72,7 @@ class ThreadController(Controller):
 
     def get_user_threads(self, route: str = "/") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
-        async def list_user_threads(
+        async def get_user_threads(
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),

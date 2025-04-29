@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex flex-col gap-2 p-6">
+  <div class="relative flex flex-col gap-2">
     <p class="text-xl font-bold">
       Chat
     </p>

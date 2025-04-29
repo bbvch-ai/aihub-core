@@ -5666,29 +5666,38 @@ export const ThreadResponseSchema = {
     properties: {
         id: {
             type: 'string',
-            title: 'Id'
+            title: 'Id',
+            description: 'The thread ID'
         },
         name: {
             type: 'string',
-            title: 'Name'
+            title: 'Name',
+            description: 'User given name of thread'
         },
         users: {
             items: {
                 '$ref': '#/components/schemas/UserDTO'
             },
             type: 'array',
-            title: 'Users'
+            title: 'Users',
+            description: 'List of users in thread'
         },
         agents: {
             items: {
                 '$ref': '#/components/schemas/AgentDTO'
             },
             type: 'array',
-            title: 'Agents'
+            title: 'Agents',
+            description: 'List of agents in thread'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date at which thread was created'
         }
     },
     type: 'object',
-    required: ['id', 'name', 'users', 'agents'],
+    required: ['id', 'name', 'users', 'agents', 'created_at'],
     title: 'ThreadResponse'
 } as const;
 

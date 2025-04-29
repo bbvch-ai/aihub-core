@@ -25,6 +25,10 @@ class BearerToken(Document):
     meta = {
         "collection": "tokens",
         "strict": False,
+        "indexes": [
+            {"fields": ["token"], "unique": True}
+        ]
+
     }
     version = IntField(default=1, db_field="_version")
     name = StringField(required=True)

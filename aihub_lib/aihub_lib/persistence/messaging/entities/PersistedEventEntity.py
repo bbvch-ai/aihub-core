@@ -16,6 +16,12 @@ class PersistedEventEntity(Document):
     meta = {
         "collection": "events",
         "strict": False,
+        "indexes": [
+            {"fields": ["thread_id", "event_type"]},
+            {"fields": ["agent_id", "event_type"]},
+            {"fields": ["thread_id", "event_parents"]},
+            {"fields": ["run_id"]}
+        ]
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)

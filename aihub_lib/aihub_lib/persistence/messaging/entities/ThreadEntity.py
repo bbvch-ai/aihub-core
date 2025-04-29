@@ -18,6 +18,10 @@ class ThreadEntity(Document):
     meta = {
         "collection": "threads",
         "strict": False,
+        "indexes": [
+            {"fields": ["users.user_id"]},
+            {"fields": ["created_at"]}
+        ]
     }
     name = StringField(required=True)
     created_at = DateTimeField(required=True)

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-[calc(100vh-50px)] w-[250px] flex-col gap-5 overflow-y-auto overflow-x-hidden bg-surface-50 dark:bg-surface-950">
+  <div class="fixed flex h-[calc(100vh-50px)] w-[250px] flex-col gap-5 overflow-y-auto overflow-x-hidden bg-surface-50 dark:bg-surface-950">
     <p class="pl-3 pt-10 text-sm font-medium text-surface-900 dark:text-white">
       {{ title }}
     </p>
@@ -11,7 +11,7 @@
         <div class="w-full pb-1.5 pl-2.5 text-xs font-medium text-surface-500  dark:text-surface-500">
           {{ group }}
         </div>
-        <div class="flex flex-col gap-2 text-surface-700 dark:text-surface-200">
+        <div class="flex flex-col gap-2 pr-2 text-surface-700 dark:text-surface-200">
           <div
             v-for="navItem in navItems"
             :key="navItem.key"
@@ -32,6 +32,7 @@
       </div>
     </div>
   </div>
+  <div class="w-[300px]" />
 </template>
 
 <script setup lang="ts">

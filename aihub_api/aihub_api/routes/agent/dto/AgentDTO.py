@@ -1,10 +1,12 @@
 from typing import List
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel, Field
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
+from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 
 
 class AgentDTO(BaseModel):
@@ -35,3 +37,34 @@ class AgentDTO(BaseModel):
         ...,
         description="A network graph of the agent, showing how different components are connected and interact.",
     )
+
+    @classmethod
+    def from_entity(cls, entity: AgentEntity, t: LocaleHandler) -> "AgentDTO":
+        """Converts an AgentEntity to an AgentDTO."""
+        agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
+
+        start_events = [
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema
+            ) for event in entity.start_events
+        ]
+
+        stop_events = [
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema
+            ) for event in entity.stop_events
+        ]
+
+        network_graph = WorkflowGraph.model_validate(entity.network_graph)
+
+        return cls(
+            agent_class=entity.agent_class,
+            agent_id=entity.agent_id,
+            agent_config=agent_config_dto,
+            is_conversational=entity.is_conversational,
+            start_events=start_events,
+            stop_events=stop_events,
+            network_graph=network_graph
+        )

@@ -42,6 +42,9 @@ class RefDoc(Document):
     meta = {
         "collection": "documents-data",
         "strict": False,
+        "indexes": [
+            {"fields": ["data.metadata.namespace"]}
+        ]
     }
     id = StringField(primary_key=True)
     data = EmbeddedDocumentField(DocumentData, db_field="__data__")  # Renamed for querying convenience

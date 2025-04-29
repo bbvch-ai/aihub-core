@@ -1,5 +1,4 @@
 import logging
-from random import seed
 from typing import AsyncContextManager, List, Optional
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
@@ -13,8 +12,6 @@ from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
-
-seed(0)
 
 
 class ApiRunner(Runner):

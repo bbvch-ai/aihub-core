@@ -85,7 +85,6 @@ const { data: thread } = useQuery<ThreadResponse>({
   staleTime: 1000 * 10, // 5 minutes
   enabled: true,
   query: async () => {
-    console.log('Fetching thread2', activeThreadId.value)
     return await getThread({
       composable: '$fetch',
       path: { thread_id: activeThreadId.value },

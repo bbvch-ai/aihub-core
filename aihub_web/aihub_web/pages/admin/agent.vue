@@ -20,10 +20,6 @@ const route = useRoute()
 const agentStore = useAgentsStore()
 const { agents } = storeToRefs(agentStore)
 
-const activeAgent = computed<AgentDto | undefined>(() => {
-  return agents.value?.find(agent => agent.agent_id === route.params.agent_id && agent.agent_class === route.params.agent_class)
-})
-
 const navItems = computed<Record<string, NavItem[]>>(() => {
   const typeMap: Record<string, NavItem[]> = {}
   agents.value?.forEach((agent: AgentDto) => {
@@ -34,7 +30,7 @@ const navItems = computed<Record<string, NavItem[]>>(() => {
       name: agent.agent_config.name,
       key: `${agent.agent_class}${agent.agent_id}`,
       path: `/admin/agent/agent-${agent.agent_id}-${agent.agent_class}/overview`,
-      isActive: () => activeAgent.value?.agent_id === agent.agent_id && activeAgent.value?.agent_class === agent.agent_class,
+      isActive: () => route.params.agent_id === agent.agent_id && route.params.agent_class === agent.agent_class,
     })
   })
   return typeMap

@@ -16,6 +16,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
 from bson import ObjectId
@@ -90,7 +91,7 @@ class AgentService:
             unique_key = (response.agent_class, response.agent_id)
 
             if unique_key not in unique_agents_dict:
-                unique_agents_dict[unique_key] = AgentDTO(
+                agent_dto = AgentDTO(
                     agent_class=response.agent_class,
                     agent_id=response.agent_id,
                     agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
@@ -99,10 +100,14 @@ class AgentService:
                     stop_events=response.stop_events,
                     network_graph=response.network_graph,
                 )
+                AgentEntity.create_or_update_from_dto(agent_dto)
+                unique_agents_dict[unique_key] = agent_dto
 
         agents = list(unique_agents_dict.values())
 
-        DISCOVER_AGENTS_CACHE[cache_key] = agents
+        if len(agents) > 0:
+            DISCOVER_AGENTS_CACHE[cache_key] = agents
+
         return agents
 
     @staticmethod
@@ -117,14 +122,14 @@ class AgentService:
             return GET_AGENT_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        agent: Optional[AgentDTO] = None
+        agent_dto: Optional[AgentDTO] = None
         agent_found_event = asyncio.Event()
 
         async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: DiscoveryTopic):
-            nonlocal agent
+            nonlocal agent_dto
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
-            agent = AgentDTO(
+            agent_dto = AgentDTO(
                 agent_class=event.agent_class,
                 agent_id=event.agent_id,
                 agent_config=AgentConfigDTO.from_agent_config(event.agent_config, t),
@@ -133,6 +138,7 @@ class AgentService:
                 stop_events=event.stop_events,
                 network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             )
+            AgentEntity.create_or_update_from_dto(agent_dto)
             agent_found_event.set()
 
         topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
@@ -154,9 +160,9 @@ class AgentService:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
-        if agent is not None:
-            GET_AGENT_CACHE[cache_key] = agent
-            return agent
+        if agent_dto is not None:
+            GET_AGENT_CACHE[cache_key] = agent_dto
+            return agent_dto
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
