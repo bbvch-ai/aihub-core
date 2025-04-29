@@ -68,9 +68,6 @@ class AgentConfig(BaseModel):
     def get_step_configs(self) -> Dict[Type[StepConfig], StepConfig]:
         """
         Scans all fields in this AgentConfig and collects any that are `StepConfig` instances.
-
-        Returns:
-            A dictionary mapping StepConfig subclass types to their instantiated configurations.
         """
         step_configs = {}
         for field_name in self.model_fields.keys():

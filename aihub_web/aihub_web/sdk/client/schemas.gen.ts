@@ -2403,6 +2403,119 @@ registration, serialization, and deserialization mechanisms, making it simple to
 into a user interface or logging pipeline.`
 } as const;
 
+export const DisplayStatisticsSchema = {
+    properties: {
+        n_events: {
+            type: 'integer',
+            title: 'N Events',
+            description: 'Total number of events',
+            default: 0
+        },
+        has_errors: {
+            type: 'boolean',
+            title: 'Has Errors',
+            description: 'Has error events',
+            default: false
+        },
+        has_pending: {
+            type: 'boolean',
+            title: 'Has Pending',
+            description: 'Has pending events (more start than stop events)',
+            default: false
+        },
+        is_hitl: {
+            type: 'boolean',
+            title: 'Is Hitl',
+            description: 'Has HITL events',
+            default: false
+        },
+        open_hitl: {
+            type: 'boolean',
+            title: 'Open Hitl',
+            description: 'Has open HITL requests',
+            default: false
+        },
+        is_bitl: {
+            type: 'boolean',
+            title: 'Is Bitl',
+            description: 'Has BITL events',
+            default: false
+        },
+        open_bitl: {
+            type: 'boolean',
+            title: 'Open Bitl',
+            description: 'Has open BITL requests',
+            default: false
+        },
+        is_aitl: {
+            type: 'boolean',
+            title: 'Is Aitl',
+            description: 'Has AITL events',
+            default: false
+        },
+        open_aitl: {
+            type: 'boolean',
+            title: 'Open Aitl',
+            description: 'Has open AITL requests',
+            default: false
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At',
+            description: 'Start time'
+        },
+        ended_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ended At',
+            description: 'End time'
+        },
+        latency: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency',
+            description: 'Latency in seconds'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id',
+            description: 'The display ID'
+        },
+        runs: {
+            items: {
+                '$ref': '#/components/schemas/RunStatistics'
+            },
+            type: 'array',
+            title: 'Runs',
+            description: 'Runs in this display',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['display_id'],
+    title: 'DisplayStatistics',
+    description: 'Statistics for a display, including its runs.'
+} as const;
+
 export const DocumentSchema = {
     properties: {
         id: {
@@ -4529,6 +4642,35 @@ export const MessageRoleSchema = {
     description: 'Message role.'
 } as const;
 
+export const MinimalAgentDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier (e.g., 'my_agent_class')."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: "Unique identifier for the agent instance (e.g., 'agent_123')."
+        },
+        agent_config: {
+            '$ref': '#/components/schemas/AgentConfigDTO',
+            description: 'Configuration details of the agent, including name, description, and prompts.'
+        },
+        is_conversational: {
+            type: 'boolean',
+            title: 'Is Conversational',
+            description: 'Whether the agent can participate in a chat-based conversation'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational'],
+    title: 'MinimalAgentDTO',
+    description: `Encapsulates the data transfer object (DTO) for a minimal agent.
+Only contains minimal information about the agent.`
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -5213,6 +5355,114 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: 'A RouterEvent marks a point where an LLM decided which way to go in the workflow.'
 } as const;
 
+export const RunStatisticsSchema = {
+    properties: {
+        n_events: {
+            type: 'integer',
+            title: 'N Events',
+            description: 'Total number of events',
+            default: 0
+        },
+        has_errors: {
+            type: 'boolean',
+            title: 'Has Errors',
+            description: 'Has error events',
+            default: false
+        },
+        has_pending: {
+            type: 'boolean',
+            title: 'Has Pending',
+            description: 'Has pending events (more start than stop events)',
+            default: false
+        },
+        is_hitl: {
+            type: 'boolean',
+            title: 'Is Hitl',
+            description: 'Has HITL events',
+            default: false
+        },
+        open_hitl: {
+            type: 'boolean',
+            title: 'Open Hitl',
+            description: 'Has open HITL requests',
+            default: false
+        },
+        is_bitl: {
+            type: 'boolean',
+            title: 'Is Bitl',
+            description: 'Has BITL events',
+            default: false
+        },
+        open_bitl: {
+            type: 'boolean',
+            title: 'Open Bitl',
+            description: 'Has open BITL requests',
+            default: false
+        },
+        is_aitl: {
+            type: 'boolean',
+            title: 'Is Aitl',
+            description: 'Has AITL events',
+            default: false
+        },
+        open_aitl: {
+            type: 'boolean',
+            title: 'Open Aitl',
+            description: 'Has open AITL requests',
+            default: false
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At',
+            description: 'Start time'
+        },
+        ended_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ended At',
+            description: 'End time'
+        },
+        latency: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency',
+            description: 'Latency in seconds'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'The run ID'
+        },
+        agent: {
+            '$ref': '#/components/schemas/MinimalAgentDTO',
+            description: 'The agent that ran the run'
+        }
+    },
+    type: 'object',
+    required: ['run_id', 'agent'],
+    title: 'RunStatistics',
+    description: 'Statistics for a single run.'
+} as const;
+
 export const SemanticEventSchema = {
     properties: {
         event_id: {
@@ -5684,7 +5934,7 @@ export const ThreadResponseSchema = {
         },
         agents: {
             items: {
-                '$ref': '#/components/schemas/AgentDTO'
+                '$ref': '#/components/schemas/MinimalAgentDTO'
             },
             type: 'array',
             title: 'Agents',
@@ -5778,11 +6028,48 @@ export const ThreadResponseSchema = {
             ],
             title: 'Latest Interaction',
             description: 'Date of newest event in thread'
+        },
+        latency: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency',
+            description: 'Average latency of the thread in seconds'
+        },
+        displays: {
+            items: {
+                '$ref': '#/components/schemas/DisplayStatistics'
+            },
+            type: 'array',
+            title: 'Displays',
+            description: 'Displays in this thread',
+            default: []
+        },
+        participating_agents: {
+            items: {
+                '$ref': '#/components/schemas/MinimalAgentDTO'
+            },
+            type: 'array',
+            title: 'Participating Agents',
+            description: 'Agents that participated in the thread',
+            default: []
+        },
+        llm_cost: {
+            type: 'number',
+            title: 'Llm Cost',
+            description: 'Total LLM cost of the thread',
+            default: 0
         }
     },
     type: 'object',
     required: ['id', 'name', 'users', 'agents', 'created_at'],
-    title: 'ThreadResponse'
+    title: 'ThreadResponse',
+    description: 'Thread information and statistics.'
 } as const;
 
 export const TokenResponseSchema = {

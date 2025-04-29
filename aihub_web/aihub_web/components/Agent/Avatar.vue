@@ -3,7 +3,12 @@
     <Avatar
       size="large"
       icon="pi pi-verified"
-    />
+    >
+      <Icon
+        :name="agent.agent_config.icon"
+        size="xl"
+      />
+    </Avatar>
     <div
       class="mb-1 flex flex-col justify-center"
     >

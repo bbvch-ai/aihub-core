@@ -847,6 +847,68 @@ export type DisplayEvent = {
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
+/**
+ * Statistics for a display, including its runs.
+ */
+export type DisplayStatistics = {
+    /**
+     * Total number of events
+     */
+    n_events?: number;
+    /**
+     * Has error events
+     */
+    has_errors?: boolean;
+    /**
+     * Has pending events (more start than stop events)
+     */
+    has_pending?: boolean;
+    /**
+     * Has HITL events
+     */
+    is_hitl?: boolean;
+    /**
+     * Has open HITL requests
+     */
+    open_hitl?: boolean;
+    /**
+     * Has BITL events
+     */
+    is_bitl?: boolean;
+    /**
+     * Has open BITL requests
+     */
+    open_bitl?: boolean;
+    /**
+     * Has AITL events
+     */
+    is_aitl?: boolean;
+    /**
+     * Has open AITL requests
+     */
+    open_aitl?: boolean;
+    /**
+     * Start time
+     */
+    started_at?: string | null;
+    /**
+     * End time
+     */
+    ended_at?: string | null;
+    /**
+     * Latency in seconds
+     */
+    latency?: number | null;
+    /**
+     * The display ID
+     */
+    display_id: string;
+    /**
+     * Runs in this display
+     */
+    runs?: Array<RunStatistics>;
+};
+
 export type Document = {
     /**
      * Unique identifier for the document.
@@ -1816,6 +1878,29 @@ export const MessageRole = {
     MODEL: 'model'
 } as const;
 
+/**
+ * Encapsulates the data transfer object (DTO) for a minimal agent.
+ * Only contains minimal information about the agent.
+ */
+export type MinimalAgentDto = {
+    /**
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Unique identifier for the agent instance (e.g., 'agent_123').
+     */
+    agent_id: string;
+    /**
+     * Configuration details of the agent, including name, description, and prompts.
+     */
+    agent_config: AgentConfigDto;
+    /**
+     * Whether the agent can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+};
+
 export type ModelDetails = {
     /**
      * The ID of the model.
@@ -2149,6 +2234,68 @@ export type RouterEvent = {
 };
 
 /**
+ * Statistics for a single run.
+ */
+export type RunStatistics = {
+    /**
+     * Total number of events
+     */
+    n_events?: number;
+    /**
+     * Has error events
+     */
+    has_errors?: boolean;
+    /**
+     * Has pending events (more start than stop events)
+     */
+    has_pending?: boolean;
+    /**
+     * Has HITL events
+     */
+    is_hitl?: boolean;
+    /**
+     * Has open HITL requests
+     */
+    open_hitl?: boolean;
+    /**
+     * Has BITL events
+     */
+    is_bitl?: boolean;
+    /**
+     * Has open BITL requests
+     */
+    open_bitl?: boolean;
+    /**
+     * Has AITL events
+     */
+    is_aitl?: boolean;
+    /**
+     * Has open AITL requests
+     */
+    open_aitl?: boolean;
+    /**
+     * Start time
+     */
+    started_at?: string | null;
+    /**
+     * End time
+     */
+    ended_at?: string | null;
+    /**
+     * Latency in seconds
+     */
+    latency?: number | null;
+    /**
+     * The run ID
+     */
+    run_id: string;
+    /**
+     * The agent that ran the run
+     */
+    agent: MinimalAgentDto;
+};
+
+/**
  * A base class for events that must report their data to an OpenInference-compatible tracing system,
  * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
  * - Influences workflow execution and can control the system flow (like any `ControlEvent`).
@@ -2436,6 +2583,9 @@ export type ThreadAgentDto = {
     agent_class: string;
 };
 
+/**
+ * Thread information and statistics.
+ */
 export type ThreadResponse = {
     /**
      * The thread ID
@@ -2452,7 +2602,7 @@ export type ThreadResponse = {
     /**
      * List of agents in thread
      */
-    agents: Array<AgentDto>;
+    agents: Array<MinimalAgentDto>;
     /**
      * Date at which thread was created
      */
@@ -2505,6 +2655,22 @@ export type ThreadResponse = {
      * Date of newest event in thread
      */
     latest_interaction?: string | null;
+    /**
+     * Average latency of the thread in seconds
+     */
+    latency?: number | null;
+    /**
+     * Displays in this thread
+     */
+    displays?: Array<DisplayStatistics>;
+    /**
+     * Agents that participated in the thread
+     */
+    participating_agents?: Array<MinimalAgentDto>;
+    /**
+     * Total LLM cost of the thread
+     */
+    llm_cost?: number;
 };
 
 export type TokenResponse = {

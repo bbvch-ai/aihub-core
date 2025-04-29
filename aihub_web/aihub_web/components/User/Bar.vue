@@ -39,19 +39,12 @@
           {{ user?.email }}
         </p>
       </div>
-      <OverlayBadge
-        value="4"
-        severity="danger"
-        class="inline-flex"
-        size="small"
-      >
-        <Avatar
-          :image="user?.profile_image ?? undefined"
-          :label="!user?.profile_image ? userInitials : undefined"
-          shape="circle"
-          size="normal"
-        />
-      </OverlayBadge>
+      <Avatar
+        :image="user?.profile_image ?? undefined"
+        :label="!user?.profile_image ? userInitials : undefined"
+        shape="circle"
+        size="normal"
+      />
     </div>
   </div>
 </template>

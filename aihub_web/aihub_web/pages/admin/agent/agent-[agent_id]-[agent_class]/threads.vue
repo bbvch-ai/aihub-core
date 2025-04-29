@@ -1,19 +1,26 @@
 <template>
   <div>
-    <p>Threads</p>
-    <div
-      v-for="thread in (threads ?? [])"
-      :key="thread.id"
-    >
-      {{ thread.name }}
-    </div>
+    <ThreadList
+      :threads="threads ?? []"
+      @selected="toThread"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import useAgentThreads from '@core/composables/useAgentThreads'
 
+import type { ThreadResponse } from '@core/sdk/client'
+
+const router = useRouter()
+const localePath = useLocalePath()
+
 const { data: threads } = useAgentThreads()
+
+const toThread = (thread: ThreadResponse) => {
+  console.log('To thread', thread)
+  router.push(localePath(`/admin/thread/${thread.id}/overview`))
+}
 </script>
 
 <style scoped>
