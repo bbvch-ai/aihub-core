@@ -22,14 +22,7 @@ class ApiUser(EmbeddedDocument):
 
 
 class BearerToken(Document):
-    meta = {
-        "collection": "tokens",
-        "strict": False,
-        "indexes": [
-            {"fields": ["token"], "unique": True}
-        ]
-
-    }
+    meta = {"collection": "tokens", "strict": False, "indexes": [{"fields": ["token"], "unique": True}]}
     version = IntField(default=1, db_field="_version")
     name = StringField(required=True)
     token = StringField(required=False)  # Should be stored as "<object_id>.<random_part>"

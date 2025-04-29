@@ -2457,6 +2457,54 @@ export type ThreadResponse = {
      * Date at which thread was created
      */
     created_at: string;
+    /**
+     * Total number of events in the thread
+     */
+    num_events?: number;
+    /**
+     * Number of turns (StartEvent count)
+     */
+    num_turns?: number;
+    /**
+     * Thread has more StartEvent than StopEvent
+     */
+    has_pending?: boolean;
+    /**
+     * There are ExceptionEvent in the thread
+     */
+    has_errors?: boolean;
+    /**
+     * There are HumanInTheLoopRequest events present
+     */
+    is_hitl?: boolean;
+    /**
+     * There are more HumanInTheLoopRequest than HumanInTheLoopResponse
+     */
+    open_hitl?: boolean;
+    /**
+     * There are BotInTheLoopRequest events present
+     */
+    is_bitl?: boolean;
+    /**
+     * There are more BotInTheLoopRequest than BotInTheLoopResponse
+     */
+    open_bitl?: boolean;
+    /**
+     * There are AgentInTheLoopRequest events present
+     */
+    is_aitl?: boolean;
+    /**
+     * There are more AgentInTheLoopRequest than AgentInTheLoopResponse
+     */
+    open_aitl?: boolean;
+    /**
+     * Date of oldest event in thread
+     */
+    first_interaction?: string | null;
+    /**
+     * Date of newest event in thread
+     */
+    latest_interaction?: string | null;
 };
 
 export type TokenResponse = {
@@ -3111,6 +3159,34 @@ export type GetAgentResponses = {
 };
 
 export type GetAgentResponse = GetAgentResponses[keyof GetAgentResponses];
+
+export type GetAgentThreadsData = {
+    body?: never;
+    path: {
+        agent_class: string;
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agent/{agent_class}/{agent_id}/threads';
+};
+
+export type GetAgentThreadsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAgentThreadsError = GetAgentThreadsErrors[keyof GetAgentThreadsErrors];
+
+export type GetAgentThreadsResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<ThreadResponse>;
+};
+
+export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
 
 export type DiscoverAgentsData = {
     body?: never;

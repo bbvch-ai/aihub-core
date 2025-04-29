@@ -11,22 +11,14 @@
 </template>
 
 <script setup lang="ts">
-import { getUserThreads, type ThreadResponse } from '@core/sdk/client'
+import useThreads from '@core/composables/useThreads'
 
+import type { ThreadResponse } from '@core/sdk/client'
 import type { NavItem } from '@core/types/NavItem'
 
 const route = useRoute()
 
-const { data: threads } = useQuery<ThreadResponse[]>({
-  key: () => ['threads'],
-  staleTime: 1000 * 10, // 5 minutes
-  enabled: true,
-  query: async () => {
-    return await getUserThreads({
-      composable: '$fetch',
-    })
-  },
-})
+const { data: threads } = useThreads()
 
 const navItems = computed<Record<string, NavItem[]>>(() => {
   const typeMap: Record<string, NavItem[]> = {}

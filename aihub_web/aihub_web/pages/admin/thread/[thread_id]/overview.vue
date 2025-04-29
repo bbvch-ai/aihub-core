@@ -3,27 +3,16 @@
     <ThreadInfo
       :thread="thread"
     />
+    <div class="max-w-16">
+      <pre>{{ thread }}</pre>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { getThread, type ThreadResponse } from '@core/sdk/client'
+import useThread from '@core/composables/useThread'
 
-const route = useRoute()
-
-const { data: thread } = useQuery<ThreadResponse>({
-  key: () => ['thread', route.params.thread_id],
-  staleTime: 1000 * 10, // 5 minutes
-  enabled: true,
-  query: async () => {
-    return await getThread({
-      composable: '$fetch',
-      path: {
-        thread_id: route.params.thread_id,
-      },
-    })
-  },
-})
+const { data: thread } = useThread()
 </script>
 
 <style scoped>

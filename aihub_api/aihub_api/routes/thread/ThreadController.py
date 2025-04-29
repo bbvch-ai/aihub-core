@@ -1,13 +1,11 @@
-from typing import Annotated, List
+from typing import List
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security
-from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
@@ -73,14 +71,13 @@ class ThreadController(Controller):
     def get_user_threads(self, route: str = "/") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def get_user_threads(
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[ThreadResponse]:
             """
             Returns all threads that the authenticated user is a member of.
             """
-            return await ThreadService.get_threads_for_user(nc, user.oid, t)
+            return ThreadService.get_threads_for_user(user.oid, t)
 
         return self
 
@@ -88,7 +85,6 @@ class ThreadController(Controller):
         @self.router.post(route, tags=self.tags)
         async def create_thread(
             req: CreateThreadRequest,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadResponse:
@@ -101,9 +97,7 @@ class ThreadController(Controller):
 
             # Todo: Check if all users have access to all agents in thread
 
-            return await ThreadService.create_thread(
-                nc, name=req.name, user_ids=req.user_ids, agent_dtos=req.agents, t=t
-            )
+            return ThreadService.create_thread(name=req.name, user_ids=req.user_ids, agent_dtos=req.agents, t=t)
 
         return self
 
@@ -111,7 +105,6 @@ class ThreadController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_thread(
             thread_id: str,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadResponse:
@@ -119,7 +112,7 @@ class ThreadController(Controller):
             Retrieves details of a specific thread.
             Raises 403 if the user is not a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(nc, thread_id, t)
+            thread = ThreadService.get_thread_by_id(thread_id, t)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_view_exception
             return thread
@@ -131,20 +124,19 @@ class ThreadController(Controller):
         async def add_agent_to_thread(
             thread_id: str,
             req: AddAgentRequest,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadResponse:
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(nc, thread_id, t)
+            thread = ThreadService.get_thread_by_id(thread_id, t)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             # TODO: Check if all users have access to new agent
 
-            return await ThreadService.add_agent_to_thread(nc, thread_id, req.agent_id, req.agent_class, t)
+            return ThreadService.add_agent_to_thread(thread_id, req.agent_id, req.agent_class, t)
 
         return self
 
@@ -156,18 +148,17 @@ class ThreadController(Controller):
             thread_id: str,
             agent_class: str,
             agent_id: str,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadResponse:
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(nc, thread_id, t)
+            thread = ThreadService.get_thread_by_id(thread_id, t)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            return await ThreadService.remove_agent_from_thread(nc, thread_id, agent_class, agent_id, t)
+            return ThreadService.remove_agent_from_thread(thread_id, agent_class, agent_id, t)
 
         return self
 
@@ -176,20 +167,19 @@ class ThreadController(Controller):
         async def add_user_to_thread(
             thread_id: str,
             req: AddUserRequest,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadResponse:
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
-            thread = await ThreadService.get_thread_by_id(nc, thread_id, t)
+            thread = ThreadService.get_thread_by_id(thread_id, t)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             # TODO: Check if new users has access to all agents in thread
 
-            return await ThreadService.add_user_to_thread(nc, thread_id, req.user_id, t)
+            return ThreadService.add_user_to_thread(thread_id, req.user_id, t)
 
         return self
 
@@ -198,17 +188,16 @@ class ThreadController(Controller):
         async def remove_user_from_thread(
             thread_id: str,
             remove_user_id: str,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadResponse:
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
-            thread = await ThreadService.get_thread_by_id(nc, thread_id, t)
+            thread = ThreadService.get_thread_by_id(thread_id, t)
             if user.oid not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            return await ThreadService.remove_user_from_thread(nc, thread_id, remove_user_id, t)
+            return ThreadService.remove_user_from_thread(thread_id, remove_user_id, t)
 
         return self

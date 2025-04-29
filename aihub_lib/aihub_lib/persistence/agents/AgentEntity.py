@@ -1,22 +1,31 @@
+import json
 from datetime import datetime
 from typing import List, Optional
-import json
 
 from bson import ObjectId
 from mongoengine import (
-    DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField,
-    ListField, StringField, BooleanField, DictField, IntField
+    BooleanField,
+    DateTimeField,
+    DictField,
+    Document,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    IntField,
+    ListField,
+    StringField,
 )
 
 
 class EventPayloadField(EmbeddedDocument):
     """Information about an event payload field."""
+
     type = StringField(required=True)
     description = StringField()
 
 
 class EventInfo(EmbeddedDocument):
     """Information about an event."""
+
     name = StringField(required=True)
     full_name = StringField(required=True)
     is_start_event = BooleanField(required=True)
@@ -26,12 +35,14 @@ class EventInfo(EmbeddedDocument):
 
 class InputEventInfo(EmbeddedDocument):
     """Information about an input event for a step."""
+
     event_names = ListField(EmbeddedDocumentField(EventInfo), required=True)
     optional = BooleanField(required=True)
 
 
 class NodeData(EmbeddedDocument):
     """Data for a node in the workflow graph."""
+
     id = StringField(required=True)
     type = StringField(required=True)
     node_id = StringField(required=True)
@@ -46,6 +57,7 @@ class NodeData(EmbeddedDocument):
 
 class EdgeData(EmbeddedDocument):
     """Data for an edge in the workflow graph."""
+
     source = StringField(required=True)
     target = StringField(required=True)
     edge_id = IntField(required=True)
@@ -58,6 +70,7 @@ class EdgeData(EmbeddedDocument):
 
 class EventSpec(EmbeddedDocument):
     """Information about an event specification."""
+
     event_name = StringField(required=True)
     event_schema_json = StringField(required=True)  # Store as JSON string to avoid issues with $ in keys
 
@@ -69,10 +82,7 @@ class EventSpec(EmbeddedDocument):
     @classmethod
     def from_dto(cls, event_dto):
         """Create an EventSpec from a DTO object."""
-        return cls(
-            event_name=event_dto.event_name,
-            event_schema_json=json.dumps(event_dto.event_schema)
-        )
+        return cls(event_name=event_dto.event_name, event_schema_json=json.dumps(event_dto.event_schema))
 
 
 class AgentConfig(EmbeddedDocument):
@@ -89,9 +99,7 @@ class AgentEntity(Document):
     meta = {
         "collection": "agents",
         "strict": False,
-        "indexes": [
-            {"fields": ["agent_class", "agent_id"], "unique": True}
-        ]
+        "indexes": [{"fields": ["agent_class", "agent_id"], "unique": True}],
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
@@ -105,15 +113,15 @@ class AgentEntity(Document):
 
     @classmethod
     def create_agent(
-            cls,
-            agent_class: str,
-            agent_id: str,
-            agent_config: AgentConfig,
-            is_conversational: bool,
-            start_events: List[EventSpec],
-            stop_events: List[EventSpec],
-            network_graph: dict,
-            agent_entity_id: Optional[ObjectId] = None
+        cls,
+        agent_class: str,
+        agent_id: str,
+        agent_config: AgentConfig,
+        is_conversational: bool,
+        start_events: List[EventSpec],
+        stop_events: List[EventSpec],
+        network_graph: dict,
+        agent_entity_id: Optional[ObjectId] = None,
     ) -> "AgentEntity":
         agent = cls(
             id=agent_entity_id or ObjectId(),
@@ -131,19 +139,13 @@ class AgentEntity(Document):
         return agent
 
     @classmethod
-    def create_or_update_from_dto(
-            cls,
-            agent_dto: "AgentDTO"
-    ) -> "AgentEntity":
+    def create_or_update_from_dto(cls, agent_dto) -> "AgentEntity":
         """
         Creates a new AgentEntity from an AgentDTO or updates an existing one if an agent
         with the same agent_class and agent_id already exists.
         """
         # Check if an agent with the same agent_class and agent_id already exists
-        existing_agent = cls.objects(
-            agent_class=agent_dto.agent_class,
-            agent_id=agent_dto.agent_id
-        ).first()
+        existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
 
         agent_config = AgentConfig(
             agent_id=agent_dto.agent_config.agent_id,
@@ -152,7 +154,7 @@ class AgentEntity(Document):
             system_prompt=agent_dto.agent_config.system_prompt,
             color=agent_dto.agent_config.color,
             voice=agent_dto.agent_config.voice,
-            icon=agent_dto.agent_config.icon
+            icon=agent_dto.agent_config.icon,
         )
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
@@ -180,7 +182,7 @@ class AgentEntity(Document):
                 is_conversational=agent_dto.is_conversational,
                 start_events=start_events,
                 stop_events=stop_events,
-                network_graph=network_graph
+                network_graph=network_graph,
             )
 
     @classmethod

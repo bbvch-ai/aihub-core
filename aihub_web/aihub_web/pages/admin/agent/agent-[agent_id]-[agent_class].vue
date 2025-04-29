@@ -40,6 +40,7 @@ const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
     { name: 'Workflow', key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
+    { name: 'Threads', key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
   ]
   if (agent.value?.is_conversational) {
     items.push({ name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },

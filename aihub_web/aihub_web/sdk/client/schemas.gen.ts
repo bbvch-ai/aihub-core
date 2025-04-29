@@ -5694,6 +5694,90 @@ export const ThreadResponseSchema = {
             type: 'string',
             title: 'Created At',
             description: 'Date at which thread was created'
+        },
+        num_events: {
+            type: 'integer',
+            title: 'Num Events',
+            description: 'Total number of events in the thread',
+            default: 0
+        },
+        num_turns: {
+            type: 'integer',
+            title: 'Num Turns',
+            description: 'Number of turns (StartEvent count)',
+            default: 0
+        },
+        has_pending: {
+            type: 'boolean',
+            title: 'Has Pending',
+            description: 'Thread has more StartEvent than StopEvent',
+            default: false
+        },
+        has_errors: {
+            type: 'boolean',
+            title: 'Has Errors',
+            description: 'There are ExceptionEvent in the thread',
+            default: false
+        },
+        is_hitl: {
+            type: 'boolean',
+            title: 'Is Hitl',
+            description: 'There are HumanInTheLoopRequest events present',
+            default: false
+        },
+        open_hitl: {
+            type: 'boolean',
+            title: 'Open Hitl',
+            description: 'There are more HumanInTheLoopRequest than HumanInTheLoopResponse',
+            default: false
+        },
+        is_bitl: {
+            type: 'boolean',
+            title: 'Is Bitl',
+            description: 'There are BotInTheLoopRequest events present',
+            default: false
+        },
+        open_bitl: {
+            type: 'boolean',
+            title: 'Open Bitl',
+            description: 'There are more BotInTheLoopRequest than BotInTheLoopResponse',
+            default: false
+        },
+        is_aitl: {
+            type: 'boolean',
+            title: 'Is Aitl',
+            description: 'There are AgentInTheLoopRequest events present',
+            default: false
+        },
+        open_aitl: {
+            type: 'boolean',
+            title: 'Open Aitl',
+            description: 'There are more AgentInTheLoopRequest than AgentInTheLoopResponse',
+            default: false
+        },
+        first_interaction: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'First Interaction',
+            description: 'Date of oldest event in thread'
+        },
+        latest_interaction: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latest Interaction',
+            description: 'Date of newest event in thread'
         }
     },
     type: 'object',

@@ -1,15 +1,15 @@
-import { getThread, type ThreadResponse } from '@core/sdk/client'
+import { getEvents, type WsServerEvent } from '@core/sdk/client'
 
 export default defineQuery(() => {
   const route = useRoute()
-  return useQuery<ThreadResponse>({
-    key: () => ['thread', route.params.thread_id],
+  return useQuery<WsServerEvent[]>({
+    key: () => ['events', 'thread', route.params.thread_id],
     staleTime: 1000 * 10, // 5 minutes
     enabled: true,
     query: async () => {
-      return await getThread({
+      return await getEvents({
         composable: '$fetch',
-        path: {
+        query: {
           thread_id: route.params.thread_id,
         },
       })

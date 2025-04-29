@@ -20,8 +20,8 @@ class PersistedEventEntity(Document):
             {"fields": ["thread_id", "event_type"]},
             {"fields": ["agent_id", "event_type"]},
             {"fields": ["thread_id", "event_parents"]},
-            {"fields": ["run_id"]}
-        ]
+            {"fields": ["run_id"]},
+        ],
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
@@ -102,6 +102,17 @@ class PersistedEventEntity(Document):
                 event_parents__contains="HumanInTheLoopResponseEvent",
                 event_type=TopicManager.CONTROL_EVENT,
             )
+            .order_by("event_data__created_at")
+        )
+
+    @classmethod
+    def all_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
+        """
+        Retrieves all events (both display and control) for a thread.
+        """
+        return list(
+            cls.objects()
+            .filter(thread_id=thread_id)
             .order_by("event_data__created_at")
         )
 

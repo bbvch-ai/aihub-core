@@ -18,10 +18,7 @@ class ThreadEntity(Document):
     meta = {
         "collection": "threads",
         "strict": False,
-        "indexes": [
-            {"fields": ["users.user_id"]},
-            {"fields": ["created_at"]}
-        ]
+        "indexes": [{"fields": ["users.user_id"]}, {"fields": ["created_at"]}],
     }
     name = StringField(required=True)
     created_at = DateTimeField(required=True)
@@ -47,6 +44,10 @@ class ThreadEntity(Document):
     @classmethod
     def get_threads_by_users(cls, user_ids: List[str]) -> List["ThreadEntity"]:
         return cls.objects().filter(users__user_id__in=user_ids)
+
+    @classmethod
+    def get_threads_by_agent(cls, agent_class: str, agent_id: str) -> List["ThreadEntity"]:
+        return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
 
     @classmethod
     def add_user_to_thread(cls, thread_id: str, user: User) -> "ThreadEntity":

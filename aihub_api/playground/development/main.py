@@ -62,6 +62,7 @@ async def main():
         .remove_user_from_thread(),
         AgentController(auth=auth)
         .get_agent()
+        .get_agent_threads()
         .discover_agents()
         .send_event_to(
             "LLMWrappingAgent",

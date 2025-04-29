@@ -21,6 +21,7 @@ from aihub_api.events.create_output_model import create_output_model
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
 
 
 class AgentController(Controller):
@@ -93,6 +94,23 @@ class AgentController(Controller):
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             return await AgentService.get_agent(nc, agent_class, agent_id, t)
+
+        return self
+
+    def get_agent_threads(self, route: str = "/{agent_class}/{agent_id}/threads") -> "AgentController":
+        @self.router.get(route, tags=self.tags)
+        async def get_agent_threads(
+            agent_class: str,
+            agent_id: str,
+            user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
+        ) -> List[ThreadResponse]:
+            """
+            Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
+            """
+            if not user.has_access_to_agent(agent_class, agent_id):
+                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
+            return await AgentService.get_agent_threads(agent_class, agent_id, t)
 
         return self
 
