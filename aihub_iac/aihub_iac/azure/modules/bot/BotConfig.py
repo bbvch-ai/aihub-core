@@ -96,7 +96,7 @@ class BotConfig(BaseModel):
     def cosmos_name(self) -> str:
         """Generate the cosmos name"""
         project_settings = ProjectSettings()
-        return f"{project_settings.APP_NAME}-{COSMOS}-{project_settings.LOCATION_SHORT}-api"
+        return f"{project_settings.APP_NAME}-{COSMOS}-{project_settings.LOCATION_SHORT}"
 
     @property
     def effective_cosmos_account_name(self) -> str:
