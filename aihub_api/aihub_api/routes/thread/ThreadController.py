@@ -1,5 +1,6 @@
 from typing import List
 
+from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -139,6 +140,20 @@ class ThreadController(Controller):
             return ThreadService.add_agent_to_thread(thread_id, req.agent_id, req.agent_class, t)
 
         return self
+
+    def thread_as_message_history(self, route: str = "/{thread_id}/history") -> "ThreadController":
+        @self.router.get(route, tags=self.tags)
+        async def thread_as_message_history(
+            thread_id: str,
+            user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
+        ) -> HistoryResponse:
+            thread = ThreadService.get_thread_by_id(thread_id, t)
+            if user.oid not in [u.id for u in thread.users]:
+                raise self.not_authorized_to_modify_exception
+
+            return ThreadService.thread_as_message_history(thread_id)
+
 
     def remove_agent_from_thread(
         self, route: str = "/{thread_id}/agents/{agent_class}/{agent_id}"

@@ -18,6 +18,7 @@ export default defineMutation(() => {
           stream: false,
           metadata: {
             thread_id: threadId,
+            reconstruct_history: true,
           },
         },
       }),

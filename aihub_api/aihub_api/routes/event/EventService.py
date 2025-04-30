@@ -76,6 +76,13 @@ class EventService:
         return PersistedEventEntity.all_events_for_thread(thread_id)
 
     @staticmethod
+    def get_all_thread_display_events(thread_id: str) -> List[PersistedEventEntity]:
+        """
+        Retrieves all events (both display and control) for a thread.
+        """
+        return PersistedEventEntity.display_events_for_thread(thread_id)
+
+    @staticmethod
     async def handle_external_event(
         event: ExternalEvent,
         user: AuthenticatedUser,

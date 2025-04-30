@@ -1,7 +1,17 @@
 from datetime import datetime
 from typing import List, Optional
 
+from llama_index.core.base.llms.types import TextBlock, ImageBlock, AudioBlock
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionUserMessageParam, \
+    ChatCompletionContentPartTextParam, ChatCompletionContentPartImageParam, ChatCompletionContentPartInputAudioParam, \
+    ChatCompletionAssistantMessageParam
+from openai.types.chat.chat_completion_content_part_image_param import ImageURL
+from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
+
+from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
+from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
@@ -134,6 +144,80 @@ class ThreadService:
         agent = Agent(agent_id=agent_id, agent_class=agent_class)
         thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
         return ThreadService.thread_response_from_entity(thread, t)
+
+    @staticmethod
+    def thread_as_message_history(thread_id) -> HistoryResponse:
+        persisted_events = EventService.get_all_thread_display_events(thread_id)
+        ws_events = [WSServerEvent.from_persisted_event(event) for event in persisted_events]
+
+        messages: List[ChatCompletionMessageParam] = []
+
+        def is_user_event(event: BaseEvent) -> bool:
+            return event.is_user_message_event or event.is_hitl_response_event
+
+        def is_agent_event(event: BaseEvent) -> bool:
+            return event.is_chunk_event or event.is_hitl_response_event
+
+        continue_chunk = False
+
+        for ws_event in ws_events:
+            event = ws_event.event
+
+            if is_user_event(event):
+                continue_chunk = False
+
+                if len(messages) == 0 or messages[-1]["role"] != "user":
+                    messages.append(ChatCompletionUserMessageParam(role="user", content=[]))
+
+                current_message = messages[-1]
+                if event.is_user_message_event:
+                    print("Is user message", event.messages[-1].blocks)
+                    for block in event.messages[-1].blocks:
+                        print("Block", block)
+                        if isinstance(block, TextBlock):
+                            current_message["content"].append(
+                                ChatCompletionContentPartTextParam(text=block.text, type="text")
+                            )
+                        if isinstance(block, ImageBlock):
+                            current_message["content"].append(
+                                ChatCompletionContentPartImageParam(image_url=ImageURL(url=str(block.url)), type="image_url")
+                            )
+                        if isinstance(block, AudioBlock):
+                            current_message["content"].append(
+                                ChatCompletionContentPartInputAudioParam(input_audio=InputAudio(data=block.audio, format=block.format), type="input_audio")
+                            )
+
+                if event.is_hitl_response_event:
+                    print("Is hitl response", event.response)
+                    current_message["content"].append(
+                        ChatCompletionContentPartTextParam(text=event.response, type="text")
+                    )
+
+            if is_agent_event(event):
+                if len(messages) == 0 or messages[-1]["role"] != "assistant":
+                    messages.append(ChatCompletionAssistantMessageParam(role="assistant", content=[]))
+
+                current_message = messages[-1]
+                if event.is_chunk_event:
+                    print("Is chunk", event.content, continue_chunk)
+                    if continue_chunk:
+                        current_message["content"][-1]["text"] += event.response
+                    else:
+                        current_message["content"].append(
+                            ChatCompletionContentPartTextParam(text=event.content, type="text")
+                        )
+                        continue_chunk = True
+
+                if event.is_hitl_response_event:
+                    print("Is hitl response", event.response)
+                    continue_chunk = False
+                    current_message["content"].append(
+                        ChatCompletionContentPartTextParam(text=event.response, type="text")
+                    )
+
+        print("messages", messages)
+
+        return HistoryResponse(messages=messages)
 
     @staticmethod
     def remove_agent_from_thread(thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadDTO:

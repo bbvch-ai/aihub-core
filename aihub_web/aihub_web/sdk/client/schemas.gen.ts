@@ -1530,13 +1530,12 @@ export const ChatCompletionRequestSchema = {
         metadata: {
             anyOf: [
                 {
-                    type: 'object'
+                    '$ref': '#/components/schemas/Metadata'
                 },
                 {
                     type: 'null'
                 }
-            ],
-            title: 'Metadata'
+            ]
         },
         modalities: {
             anyOf: [
@@ -4748,6 +4747,49 @@ export const MessageRoleSchema = {
     enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
     description: 'Message role.'
+} as const;
+
+export const MetadataSchema = {
+    properties: {
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'The thread ID to which conversation shall e sent.'
+        },
+        display_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Id',
+            description: 'The display ID set for this run.'
+        },
+        reconstruct_history: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reconstruct History',
+            description: 'When set to True, message set on UserMessageEvent will be calculated based on thread event history'
+        }
+    },
+    type: 'object',
+    title: 'Metadata'
 } as const;
 
 export const MinimalAgentDTOSchema = {

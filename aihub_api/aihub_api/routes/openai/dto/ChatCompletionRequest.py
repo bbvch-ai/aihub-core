@@ -93,6 +93,10 @@ def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
 
     return ChatMessage(role=MessageRole(role), blocks=blocks, additional_kwargs=additional_kwargs)
 
+class Metadata(BaseModel):
+    thread_id: Annotated[Optional[str], Field(description="The thread ID to which conversation shall e sent.")] = None
+    display_id: Annotated[Optional[str], Field(description="The display ID set for this run.")] = None
+    reconstruct_history: Annotated[Optional[bool], Field(description="When set to True, message set on UserMessageEvent will be calculated based on thread event history")] = None
 
 class ChatCompletionRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
@@ -112,7 +116,7 @@ class ChatCompletionRequest(BaseModel):
     logprobs: Optional[bool] = None
     max_completion_tokens: Optional[int] = None
     max_tokens: Optional[int] = None
-    metadata: Optional[Dict] = None
+    metadata: Optional[Metadata] = None
     modalities: Optional[List[ChatCompletionModality]] = None
     n: Optional[int] = None
     parallel_tool_calls: Optional[bool] = None

@@ -80,6 +80,12 @@
               </div>
             </Panel>
             <div class="flex flex-col gap-8">
+              <ChatThread
+                :events="eventsInRuns"
+                :thread="thread"
+              />
+            </div>
+            <div class="flex flex-col gap-8">
               <div class="flex w-full items-center justify-end gap-2 pr-4">
                 <span class="font-semibold">
                   Agents:

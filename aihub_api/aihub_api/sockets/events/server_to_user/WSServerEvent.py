@@ -143,7 +143,7 @@ class WSServerEvent(BaseModel):
         locale_handler = LocaleHandler(locale=locale)
         display_event = DisplayEvent.deserialize_event(persisted_event.event_data)
         return cls(
-            locale=locale,
+            locale=locale or locale_handler.DEFAULT_LOCALE,
             agent_class=persisted_event.agent_class,
             agent_id=persisted_event.agent_id,
             thread_id=persisted_event.thread_id,

@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Literal, Optional, Tuple
 
+from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -247,8 +248,13 @@ class OpenaiService:
         external_event_distributor: ExternalEventDistributor,
         locale: Optional[str] = None,
     ):
-        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
-        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+        thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
+
+        if thread_id and chat_completion_request.metadata.reconstruct_history:
+            history = ThreadService.thread_as_message_history(thread_id)
+            user_message = chat_completion_request.messages[-1]
+            chat_completion_request.messages = history.messages + [user_message]
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -303,8 +309,14 @@ class OpenaiService:
         external_event_distributor: ExternalEventDistributor,
         locale: Optional[str] = None,
     ):
-        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
-        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+        thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
+
+        if thread_id and chat_completion_request.metadata.reconstruct_history:
+            history = ThreadService.thread_as_message_history(thread_id)
+            user_message = chat_completion_request.messages[-1]
+            chat_completion_request.messages = history.messages + [user_message]
+
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,

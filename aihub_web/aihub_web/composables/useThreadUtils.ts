@@ -1,4 +1,10 @@
-import type { DisplayStatistics, RunStatistics, ThreadDto, WsServerEvent } from '@core/sdk/client'
+import {
+  chatCompletionWithAssistants, createThread, type CreateThreadRequest,
+  type DisplayStatistics,
+  type RunStatistics,
+  type ThreadDto,
+  type WsServerEvent,
+} from '@core/sdk/client'
 
 export default () => {
   const pendingType = (thread: ThreadDto) => {
@@ -19,8 +25,21 @@ export default () => {
     return display?.runs?.find((run: RunStatistics) => run.run_id == event.run_id)
   }
 
+  const createNewThread = useMutation({
+    mutation: ({ name, user_ids, agents }: CreateThreadRequest) =>
+      createThread({
+        composable: '$fetch',
+        body: {
+          name,
+          user_ids,
+          agents,
+        },
+      }),
+  })
+
   return {
     pendingType,
     runForEvent,
+    createNewThread,
   }
 }

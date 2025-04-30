@@ -39,7 +39,15 @@
 <script setup lang="ts">
 import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
 
-import type { ChatMessageOutput, LlmEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
+import type {
+  AudioContent,
+  ChatMessageOutput,
+  ImageContent,
+  LlmEvent,
+  TextContent,
+  ThreadDto,
+  WsServerEvent,
+} from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: LlmEvent }
@@ -52,12 +60,20 @@ const inputMessages = computed<ChatMessageOutput[]>(() => {
   return props.event.event.input_messages?.map((message) => {
     return {
       role: message.role,
-      blocks: [
-        {
-          block_type: 'text',
-          text: message.content,
-        },
-      ],
+      blocks: message.contents?.map((content: TextContent | ImageContent | AudioContent) => {
+        if (content.type === 'text') {
+          return {
+            block_type: 'text',
+            text: content.text,
+          }
+        }
+        if (content.type === 'image') {
+          return {
+            block_type: 'image',
+            path: content.url,
+          }
+        }
+      }),
     }
   }) ?? []
 })
