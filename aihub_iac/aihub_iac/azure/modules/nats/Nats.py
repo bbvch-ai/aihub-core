@@ -19,8 +19,10 @@ class Nats(pulumi.ComponentResource):
     def __init__(self, stack: str, name: str, config: NatsConfig, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
+        self.name = name
+        self.stack = stack
         self.config = config
-        self.storage_factory = StorageResourceFactory(self.config)
+        self.storage_factory = StorageResourceFactory(self.config, self.stack)
         self.network_provider = NetworkProvider(
             self.config.resource_group, self.config.project_name, self.config.location_short
         )
@@ -155,4 +157,5 @@ class Nats(pulumi.ComponentResource):
                 replace_on_changes=["containers", "volumes"],
                 delete_before_replace=True,
             ),
+            tags={"Stack": self.stack},
         )

@@ -14,6 +14,7 @@ class PrivateEndpointProvider:
         resource_group: str,
         location: str,
         network_provider: NetworkProvider,
+        stack: str,
         parent: pulumi.Resource = None,
     ):
         self.resource_group = resource_group
@@ -22,6 +23,7 @@ class PrivateEndpointProvider:
         self.parent = parent
         self.dns_zones: Dict[str, network.PrivateZone] = {}
         self.vnet_links: Dict[str, network.VirtualNetworkLink] = {}
+        self.stack = stack
 
     def create_dns_zone(self, zone_name: str, zone_domain: str) -> network.PrivateZone:
         """Create a private DNS zone and associated virtual network link."""
@@ -31,6 +33,9 @@ class PrivateEndpointProvider:
             resource_group_name=self.resource_group,
             location="Global",
             opts=pulumi.ResourceOptions(parent=self.parent),
+            tags={
+                "Stack": self.stack,
+            },
         )
 
         vnet_link = network.VirtualNetworkLink(
@@ -44,6 +49,9 @@ class PrivateEndpointProvider:
             registration_enabled=False,
             location="Global",
             opts=pulumi.ResourceOptions(parent=self.parent, depends_on=[dns_zone]),
+            tags={
+                "Stack": self.stack,
+            },
         )
 
         self.dns_zones[zone_name] = dns_zone
@@ -75,7 +83,9 @@ class PrivateEndpointProvider:
                     group_ids=[group_id],
                 )
             ],
-            tags={},
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self.parent, depends_on=depends_on or []),
         )
 

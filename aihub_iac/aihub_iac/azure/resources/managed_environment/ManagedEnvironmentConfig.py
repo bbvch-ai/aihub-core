@@ -2,6 +2,8 @@ import pulumi
 from typing import Optional
 from pulumi_azure_native import app, operationalinsights
 
+from aihub_iac.azure.constants.resources import CONTAINER_APP_ENVIRONMENT, LOG_WORKSPACE
+
 
 class ManagedEnvironmentConfig:
     """Configuration for the Managed Environment"""
@@ -15,8 +17,8 @@ class ManagedEnvironmentConfig:
 
     def log_analytics_name(self) -> str:
         """Get the Log Analytics workspace name"""
-        return f"{self.project_name}-logs-{self.location_short}-{self.name}"
+        return f"{self.project_name}-{LOG_WORKSPACE}-{self.location_short}-{self.name}"
 
     def container_env(self) -> str:
         """Get the container app environment name"""
-        return f"{self.project_name}-capp-{self.location_short}-{self.name}"
+        return f"{self.project_name}-{CONTAINER_APP_ENVIRONMENT}-{self.location_short}-{self.name}"

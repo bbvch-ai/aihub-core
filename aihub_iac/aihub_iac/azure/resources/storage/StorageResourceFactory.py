@@ -9,8 +9,9 @@ from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 class StorageResourceFactory:
     """Factory for creating storage-related resources"""
 
-    def __init__(self, config: StorageConfig):
+    def __init__(self, config: StorageConfig, stack: str):
         self.config = config
+        self.stack = stack
 
     def create_storage_account(
         self,
@@ -24,6 +25,7 @@ class StorageResourceFactory:
         network_rule_set: Optional[storage.NetworkRuleSetArgs] = None,
         blob_only: bool = False,
         existing_blob_dns_zone: Optional[network.GetPrivateZoneResult] = None,
+        existing_file_dns_zone: Optional[network.GetPrivateZoneResult] = None,
     ) -> storage.StorageAccount:
         """
         Create a storage account resource
@@ -52,6 +54,9 @@ class StorageResourceFactory:
             "sku": storage.SkuArgs(name=sku_name),
             "access_tier": access_tier,
             "is_hns_enabled": is_hns_enabled,
+            "tags": {
+                "Stack": self.stack,
+            },
         }
 
         # Add network rules if provided (for service endpoints)
@@ -79,13 +84,17 @@ class StorageResourceFactory:
 
         # For file shares, create a private endpoint for the file service
         if kind in ["StorageV2", "FileStorage"] and not blob_only:
-            file_dns_zone = self._create_file_dns_zone(vnet_id)
+            if not existing_file_dns_zone:
+                file_dns_zone = self._create_file_dns_zone(vnet_id)
+                dns_zone_id = file_dns_zone.id
+            else:
+                dns_zone_id = existing_file_dns_zone.id
 
             self._create_storage_private_endpoint(
                 account_name=account_name,
                 storage_account=storage_account,
                 subnet_id=subnet_id,
-                dns_zone_id=file_dns_zone.id,
+                dns_zone_id=dns_zone_id,
                 group_id="file",
             )
 
@@ -127,6 +136,9 @@ class StorageResourceFactory:
                     private_link_service_id=storage_account.id,
                 )
             ],
+            tags={
+                "Stack": self.stack,
+            },
         )
 
         network.PrivateDnsZoneGroup(

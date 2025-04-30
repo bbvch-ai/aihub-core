@@ -19,6 +19,8 @@ class ManagedEnvironment(pulumi.ComponentResource):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.config = config
+        self.stack = stack
+        self.name = name
 
         # Create resources
         self.log_analytics_workspace = self._create_log_analytics_workspace()
@@ -39,6 +41,9 @@ class ManagedEnvironment(pulumi.ComponentResource):
             sku=operationalinsights.WorkspaceSkuArgs(name="PerGB2018"),
             retention_in_days=30,
             opts=pulumi.ResourceOptions(parent=self),
+            tags={
+                "Stack": self.stack,
+            },
         )
 
     def _get_log_analytics_credentials(self):
@@ -69,6 +74,9 @@ class ManagedEnvironment(pulumi.ComponentResource):
                 infrastructure_subnet_id=infrastructure_subnet_id,
             ),
             opts=pulumi.ResourceOptions(parent=self),
+            tags={
+                "Stack": self.stack,
+            },
         )
 
     def _register_outputs(self):

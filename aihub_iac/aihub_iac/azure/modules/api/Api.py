@@ -25,7 +25,7 @@ class Api(pulumi.ComponentResource):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name
-
+        self.stack = stack
         # Create configuration from environment or use provided config
         self.config = config
 
@@ -95,7 +95,7 @@ class Api(pulumi.ComponentResource):
 
     def _create_identity(self):
         """Create and configure the managed identity"""
-        identity = self.identity_provider.create_identity(self.name)
+        identity = self.identity_provider.create_identity(self.name, self.stack)
 
         # Assign required roles
         identity.assign_role_to_identity(
@@ -138,6 +138,7 @@ class Api(pulumi.ComponentResource):
             app_settings=app_settings,
             identity=identity,
             subnet_id=self.subnet.id,
+            stack=self.stack,
         )
 
     def _get_base_env(self) -> List[web.NameValuePairArgs]:

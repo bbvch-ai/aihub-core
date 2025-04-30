@@ -9,7 +9,7 @@ class IdentityProvider:
         self.project_name = project_name
         self.location_short = location_short
 
-    def create_identity(self, id_name):
+    def create_identity(self, id_name, stack):
         return UserAssignedIdentity(
             resource_group=self.resource_group,
             location=self.location,
@@ -17,4 +17,5 @@ class IdentityProvider:
             project_name=self.project_name,
             location_short_name=self.location_short,
             id_name=id_name,
+            stack=stack,
         )

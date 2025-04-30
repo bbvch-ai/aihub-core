@@ -10,7 +10,7 @@ class WebAppCreator:
             resource_group_name=self.resource_group, name=app_service_plan_name
         )
 
-    def create_webapp(self, docker_image, app_settings, identity, subnet_id):
+    def create_webapp(self, docker_image, app_settings, identity, subnet_id, stack):
         return web.WebApp(
             resource_name=self.service_name,
             name=self.service_name,
@@ -26,4 +26,5 @@ class WebAppCreator:
             virtual_network_subnet_id=subnet_id,
             vnet_route_all_enabled=True,
             server_farm_id=self.app_service_plan.id,
+            tags={"Stack": stack},
         )

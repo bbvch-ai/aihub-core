@@ -27,6 +27,8 @@ class Stores(pulumi.ComponentResource):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         # Create configuration from environment or use provided config
+        self.name = name
+        self.stack = stack
         self.config = config
 
         self.network_provider = NetworkProvider(
@@ -54,12 +56,12 @@ class Stores(pulumi.ComponentResource):
         self.search_dns_zone = self.pe_manager.create_dns_zone("search", "privatelink.search.windows.net")
         self.vector_db = self._create_search_service()
         self.search_private_endpoint = self.pe_manager.create_private_endpoint(
-            self.config.ai_search_service_name,
-            self.vector_db.id,
-            self.search_subnet.id,
-            "searchService",
-            self.search_dns_zone,
-            [self.vector_db],
+            name=self.config.ai_search_service_name,
+            resource_id=self.vector_db.id,
+            subnet_id=self.search_subnet.id,
+            group_id="searchService",
+            dns_zone=self.search_dns_zone,
+            depends_on=[self.vector_db],
         )
 
         # Create Cosmos DB resources
@@ -69,28 +71,31 @@ class Stores(pulumi.ComponentResource):
         # Create document store (Cosmos DB)
         self.document_db = self._create_document_db()
         self.document_db_private_endpoint = self.pe_manager.create_private_endpoint(
-            self.config.doc_store_name,
-            self.document_db.id,
-            self.cosmos_subnet.id,
-            "MongoDB",
-            self.cosmos_dns_zone,
-            [self.document_db],
+            name=self.config.doc_store_name,
+            resource_id=self.document_db.id,
+            subnet_id=self.cosmos_subnet.id,
+            group_id="MongoDB",
+            dns_zone=self.cosmos_dns_zone,
+            depends_on=[self.document_db],
         )
 
         # Create API database (Cosmos DB)
+        self.api_cosmos_subnet = self.network_provider.get_api_cosmos_subnet()
         self.api_db = self._create_api_db()
         self.api_db_private_endpoint = self.pe_manager.create_private_endpoint(
-            self.config.api_store_name,
-            self.api_db.id,
-            self.cosmos_subnet.id,
-            "MongoDB",
-            self.cosmos_dns_zone,
-            [self.api_db],
+            name=self.config.store_name,
+            resource_id=self.api_db.id,
+            subnet_id=self.api_cosmos_subnet.id,
+            group_id="MongoDB",
+            dns_zone=self.cosmos_dns_zone,
+            depends_on=[self.api_db],
         )
 
         # Create PostgreSQL resources
         self.postgres_subnet = self.network_provider.get_pg_subnet()
-        self.postgres_dns_zone = self.pe_manager.create_dns_zone("postgres", "aihub.postgres.database.azure.com")
+        self.postgres_dns_zone = self.pe_manager.create_dns_zone(
+            "postgres", f"privatelink.{self.config.location.lower()}.postgres.database.azure.com"
+        )
         self.postgres_db = self._create_postgres_server()
 
         # Export outputs
@@ -107,7 +112,9 @@ class Stores(pulumi.ComponentResource):
             replica_count=1,
             partition_count=1,
             public_network_access=search.PublicNetworkAccess.DISABLED,
-            tags={},
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -124,7 +131,9 @@ class Stores(pulumi.ComponentResource):
             locations=[documentdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
             capabilities=[documentdb.CapabilityArgs(name="EnableServerless")],
             public_network_access=documentdb.PublicNetworkAccess.DISABLED,
-            tags={},
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -141,7 +150,9 @@ class Stores(pulumi.ComponentResource):
             locations=[documentdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
             capabilities=[documentdb.CapabilityArgs(name="EnableServerless")],
             public_network_access=documentdb.PublicNetworkAccess.DISABLED,
-            tags={},
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -173,6 +184,9 @@ class Stores(pulumi.ComponentResource):
                 delegated_subnet_resource_id=self.postgres_subnet.id,
                 private_dns_zone_arm_resource_id=self.postgres_dns_zone.id,
             ),
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -184,12 +198,12 @@ class Stores(pulumi.ComponentResource):
     def _add_vector_extension(self, server: dbforpostgresql.Server):
         """Add the vector extension to PostgreSQL"""
         dbforpostgresql.Configuration(
-            resource_name="vector-extension",
-            configuration_name="vector-extension",
+            resource_name="azure-extensions",
+            configuration_name="azure.extensions",
             resource_group_name=self.config.resource_group,
             server_name=self.config.postgres_name,
-            value="vector",
-            source="pgvector",
+            value="vector",  # If you have other extensions, add them with commas
+            source="user-override",
             opts=pulumi.ResourceOptions(parent=self, depends_on=[server]),
         )
 

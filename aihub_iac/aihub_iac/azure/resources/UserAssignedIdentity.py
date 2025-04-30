@@ -9,7 +9,14 @@ from aihub_iac.azure.resources.OpenAI import OpenAI
 class UserAssignedIdentity:
 
     def __init__(
-        self, resource_group, location, subscription_id, project_name=None, location_short_name=None, id_name=None
+        self,
+        resource_group,
+        location,
+        subscription_id,
+        stack,
+        project_name=None,
+        location_short_name=None,
+        id_name=None,
     ):
         self.resource_group = resource_group
         self.location = location
@@ -20,6 +27,9 @@ class UserAssignedIdentity:
             resource_name=self.user_identity_name,
             resource_group_name=self.resource_group,
             location=self.location,
+            tags={
+                "Stack": stack,
+            },
         )
         self.role_assigner = RoleProvider(subscription_id)
 
@@ -38,9 +48,9 @@ class UserAssignedIdentity:
         )
         self.assign_role_to_identity(ROLES.OPENAI_USER, openai_account.id, openai_account.name)
 
-    def assign_ai_search_roles(self, account_name: str | None = None):
+    def assign_ai_search_roles(self, account_name: str | None = None, resource_group: str | None = None):
         aisearch_account = search.get_service(
-            resource_group_name=self.resource_group,
+            resource_group_name=resource_group or self.resource_group,
             search_service_name=account_name or AISearch.name(self.project_name, self.location_short_name),
         )
         self.assign_role_to_identity(ROLES.CONTRIBUTOR_ROLE_ID, aisearch_account.id, aisearch_account.name)

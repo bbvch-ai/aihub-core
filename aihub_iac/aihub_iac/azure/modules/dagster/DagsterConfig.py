@@ -62,6 +62,8 @@ class DagsterConfig(StorageConfig):
 
     database_name: str = "dagster"
 
+    additional_env_vars: dict = {}
+
     @classmethod
     def from_env(
         cls,
@@ -78,6 +80,7 @@ class DagsterConfig(StorageConfig):
         oauth2_proxy_cookie_secret: str,
         oauth2_proxy_client_secret: str,
         version: str,
+        additional_env_vars: dict = None,
     ) -> "DagsterConfig":
         """Create a configuration from environment variables"""
         # Load specific settings
@@ -114,6 +117,7 @@ class DagsterConfig(StorageConfig):
             # Database settings
             postgres_username=postgres_settings.POSTGRES_USERNAME,
             postgres_password=postgres_settings.POSTGRES_PASSWORD,
+            additional_env_vars=additional_env_vars or {},
         )
 
     @property

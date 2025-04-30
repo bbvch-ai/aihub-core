@@ -17,6 +17,7 @@ class Phoenix(pulumi.ComponentResource):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name
+        self.stack = stack
         # Create configuration from environment or use provided config
         self.config = config
 
@@ -46,7 +47,7 @@ class Phoenix(pulumi.ComponentResource):
     def _create_resources(self):
         """Create all Phoenix infrastructure resources"""
         self.vnet = self.network_provider.get_vnet()
-        self.subnet = self.network_provider.get_app_subnet()
+        self.subnet = self.network_provider.get_phoenix_subnet()
 
         # Step 2: Create postgres database on existing server
         self.phoenix_database = self._create_postgres_database()
@@ -70,7 +71,7 @@ class Phoenix(pulumi.ComponentResource):
 
     def _create_identity(self):
         """Create and configure the managed identity"""
-        identity = self.identity_provider.create_identity(self.name)
+        identity = self.identity_provider.create_identity(self.name, self.stack)
         return identity
 
     def _create_phoenix_app_service(self):
@@ -103,6 +104,7 @@ class Phoenix(pulumi.ComponentResource):
             app_settings=app_settings,
             identity=identity,
             subnet_id=self.subnet.id,
+            stack=self.stack,
         )
 
     def _get_oauth_env(self) -> List[web.NameValuePairArgs]:

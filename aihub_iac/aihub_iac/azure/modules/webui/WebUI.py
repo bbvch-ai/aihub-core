@@ -1,12 +1,17 @@
-import pulumi
-from typing import Optional
+import os
+import platform
 
-from pulumi_azure_native import app, operationalinsights, dbforpostgresql
+import pulumi
+from typing import Optional, List
+
+from pulumi_azure_native import app, dbforpostgresql, containerinstance, network
 from pulumi_command import local
 
-from aihub_iac.azure.constants.resources import POSTGRES
+from aihub_iac.azure.constants.resources import POSTGRES, CONTAINER_INSTANCE, CONTAINER_APP_ENVIRONMENT
 from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
+from aihub_iac.azure.resources.managed_environment.ManagedEnvironment import ManagedEnvironment
+from aihub_iac.azure.resources.managed_environment.ManagedEnvironmentConfig import ManagedEnvironmentConfig
 from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageResourceFactory
 
 
@@ -22,9 +27,11 @@ class WebUI(pulumi.ComponentResource):
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
+        self.name = name
+        self.stack = stack
         self.config = config
 
-        self.storage_factory = StorageResourceFactory(self.config)
+        self.storage_factory = StorageResourceFactory(self.config, self.stack)
         self.network_provider = NetworkProvider(
             self.config.resource_group, self.config.project_name, self.config.location_short
         )
@@ -48,23 +55,52 @@ class WebUI(pulumi.ComponentResource):
     def _create_resources(self):
         """Create all container app resources in the correct order"""
         # Step 1: Get network resources
-        self.subnet = self.network_provider.get_cap_subnet()
+        self.vnet = self.network_provider.get_vnet()
+        self.webui_subnet = self.network_provider.get_webui_subnet()
+        self.webui_storage_subnet = self.network_provider.get_webui_storage_subnet()
+
+        self.blob_dns_zone = network.get_private_zone(
+            private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
+        )
+        self.file_dns_zone = network.get_private_zone(
+            private_zone_name="privatelink.file.core.windows.net", resource_group_name=self.config.resource_group
+        )
 
         self.storage_account = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name()
+            service_name=self.config.storage_service_name,
+            subnet_id=self.webui_storage_subnet.id,
+            vnet_id=self.vnet.id,
+            existing_blob_dns_zone=self.blob_dns_zone,
+            existing_file_dns_zone=self.file_dns_zone,
         )
         self.storage_account_key = self.storage_factory.get_storage_account_key(self.storage_account)
 
         self.webui_file_share = self.storage_factory.create_file_share("webui", self.storage_account)
 
-        # Step 2: Create logging infrastructure
-        self.log_analytics_workspace = self._create_log_analytics_workspace()
-        self.log_analytics_customer_id, self.log_analytics_shared_key = self._get_log_analytics_credentials()
+        managed_env_config = ManagedEnvironmentConfig(
+            resource_group=self.config.resource_group,
+            project_name=self.config.project_name,
+            location=self.config.location,
+            location_short=self.config.location_short,
+            name="webui",
+        )
 
-        # Step 3: Create managed environment
-        self.managed_environment = self._create_managed_environment()
+        self.managed_environment = ManagedEnvironment(
+            stack=self.stack,
+            name="managed-environment",
+            config=managed_env_config,
+            infrastructure_subnet_id=self.webui_subnet.id,
+            opts=pulumi.ResourceOptions(parent=self),
+        )
 
         self.env_storage = self._create_managed_environments_storage()
+
+        self.app_volumes = [
+            app.VolumeArgs(
+                name=self.config.volume_name,
+                storage_name=self.config.volume_name,
+            )
+        ]
 
         # Step 6: Create container configurations
         self.containers["openwebui"] = self._create_openwebui_container()
@@ -74,7 +110,7 @@ class WebUI(pulumi.ComponentResource):
 
         self.pg_server = self._get_postgres_server()
         self.pg_db = self._create_postgres_db()
-        self.pg_vector_db = self._get_postgres_server()
+        self.pg_vector_db = self._create_pgvector_db()
 
         # Export outputs
         self.register_outputs(
@@ -96,79 +132,24 @@ class WebUI(pulumi.ComponentResource):
         return dbforpostgresql.Database(
             resource_name=self.config.db_name,
             resource_group_name=self.config.resource_group,
-            server_name=self.config.postgres_name(),
+            server_name=self.config.postgres_name,
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
     def _create_pgvector_db(self):
         database = dbforpostgresql.Database(
             resource_name=self.config.pg_vector_db_name,
             resource_group_name=self.config.resource_group,
-            server_name=self.config.postgres_name(),
-        )
-        local.Command(
-            "enable-vector",
-            create=pulumi.Output.concat(
-                "PGPASSWORD='",
-                self.config.postgres_password,
-                "' psql -h ",
-                self.pg_server.fully_qualified_domain_name,
-                " -U ",
-                self.config.postgres_username,
-                " -d ",
-                database.name,
-                " -c 'CREATE EXTENSION IF NOT EXISTS vector;'",
-            ),
-            opts=pulumi.ResourceOptions(depends_on=[database]),
+            server_name=self.config.postgres_name,
+            opts=pulumi.ResourceOptions(parent=self),
         )
         return database
-
-    def _create_log_analytics_workspace(self):
-        """Create the Log Analytics workspace"""
-        return operationalinsights.Workspace(
-            workspace_name=self.config.log_analytics_name(),
-            resource_name=self.config.log_analytics_name(),
-            resource_group_name=self.config.resource_group,
-            location=self.config.location,
-            sku=operationalinsights.WorkspaceSkuArgs(name="PerGB2018"),
-            retention_in_days=30,
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-    def _get_log_analytics_credentials(self):
-        """Get Log Analytics credentials"""
-        shared_keys = operationalinsights.get_shared_keys_output(
-            resource_group_name=self.config.resource_group,
-            workspace_name=self.log_analytics_workspace.name,
-        )
-        customer_id = self.log_analytics_workspace.customer_id
-        shared_key = shared_keys.apply(lambda keys: keys.primary_shared_key)
-        return customer_id, shared_key
-
-    def _create_managed_environment(self):
-        """Create the managed environment for container apps"""
-        return app.ManagedEnvironment(
-            resource_name=self.config.webui_container_env(),
-            environment_name=self.config.webui_container_env(),
-            resource_group_name=self.config.resource_group,
-            location=self.config.location,
-            app_logs_configuration=app.AppLogsConfigurationArgs(
-                destination="log-analytics",
-                log_analytics_configuration=app.LogAnalyticsConfigurationArgs(
-                    customer_id=self.log_analytics_customer_id,
-                    shared_key=self.log_analytics_shared_key,
-                ),
-            ),
-            vnet_configuration=app.VnetConfigurationArgs(
-                infrastructure_subnet_id=self.subnet.id,
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
 
     def _create_managed_environments_storage(self):
         """Create managed environment storage for a volume"""
         return app.ManagedEnvironmentsStorage(
             resource_name=self.config.volume_name,
-            environment_name=self.managed_environment.name,
+            environment_name=f"{self.config.project_name}-{CONTAINER_APP_ENVIRONMENT}-{self.config.location_short}-webui",
             properties=app.ManagedEnvironmentStoragePropertiesArgs(
                 azure_file=app.AzureFilePropertiesArgs(
                     access_mode=app.AccessMode.READ_WRITE,
@@ -186,6 +167,8 @@ class WebUI(pulumi.ComponentResource):
         """Create the OpenWebUI container configuration"""
         api_service_url = f"https://{self.config.api_service_name}.azurewebsites.net/api/v1/openai"
 
+        nats_ip = self._get_nats_private_ip()
+
         default_env_vars = {
             # Tracking & Telemetry
             "SCARF_NO_ANALYTICS": "true",
@@ -194,8 +177,8 @@ class WebUI(pulumi.ComponentResource):
             # Websocket support
             "ENABLE_WEBSOCKET_SUPPORT": "true",
             "WEBSOCKET_MANAGER": "redis",
-            "WEBSOCKET_REDIS_URL": self.config.redis_endpoint,
-            "WEB_CONCURRENCY": 4,
+            "WEBSOCKET_REDIS_URL": f"redis://{nats_ip}:6379/1",
+            "WEB_CONCURRENCY": "4",
             # UI and Security
             "CORS_ALLOW_ORIGIN": "http://localhost:3000",
             "RESET_CONFIG_ON_START": "true",
@@ -206,9 +189,9 @@ class WebUI(pulumi.ComponentResource):
             "ENABLE_CHANNELS": "false",
             "SHOW_ADMIN_DETAILS": "true",
             "DEFAULT_USER_ROLE": "user",
-            "WEBUI_NAME": self.config.openwebui.webui_name,
-            "ADMIN_EMAIL": self.config.openwebui.admin_email,
-            "DEFAULT_LOCALE": self.config.openwebui.default_locale,
+            "WEBUI_NAME": self.config.openwebui_config.webui_name,
+            "ADMIN_EMAIL": self.config.openwebui_config.admin_email,
+            "DEFAULT_LOCALE": self.config.openwebui_config.default_locale,
             # API settings
             "ENABLE_OLLAMA_API": "false",
             "ENABLE_OPENAI_API": "true",
@@ -219,11 +202,11 @@ class WebUI(pulumi.ComponentResource):
             "AUDIO_TTS_OPENAI_API_BASE_URL": api_service_url,
             "IMAGES_OPENAI_API_BASE_URL": api_service_url,
             # API Keys
-            "OPENAI_API_KEY": self.config.openwebui.openai_api_key,
-            "RAG_OPENAI_API_KEY": self.config.openwebui.rag_openai_api_key,
-            "AUDIO_STT_OPENAI_API_KEY": self.config.openwebui.audio_stt_openai_api_key,
-            "AUDIO_TTS_OPENAI_API_KEY": self.config.openwebui.audio_tts_openai_api_key,
-            "IMAGES_OPENAI_API_KEY": self.config.openwebui.images_openai_api_key,
+            "OPENAI_API_KEY": self.config.openwebui_config.openai_api_key,
+            "RAG_OPENAI_API_KEY": self.config.openwebui_config.rag_openai_api_key,
+            "AUDIO_STT_OPENAI_API_KEY": self.config.openwebui_config.audio_stt_openai_api_key,
+            "AUDIO_TTS_OPENAI_API_KEY": self.config.openwebui_config.audio_tts_openai_api_key,
+            "IMAGES_OPENAI_API_KEY": self.config.openwebui_config.images_openai_api_key,
             # Image Generation
             "ENABLE_IMAGE_GENERATION": "true",
             "IMAGE_GENERATION_ENGINE": "openai",
@@ -254,7 +237,7 @@ class WebUI(pulumi.ComponentResource):
             "ENABLE_SEARCH_QUERY_GENERATION": "true",
             "RAG_WEB_SEARCH_RESULT_COUNT": "3",
             "RAG_WEB_SEARCH_ENGINE": "jina",
-            "JINA_API_KEY": self.config.openwebui.jina_api_key,
+            "JINA_API_KEY": self.config.openwebui_config.jina_api_key,
             # Audio settings
             "AUDIO_STT_ENGINE": "openai",
             "AUDIO_STT_MODEL": "whisper-1",
@@ -266,10 +249,10 @@ class WebUI(pulumi.ComponentResource):
             "WEBUI_URL": "http://localhost:3000",
             # OAuth Settings
             "ENABLE_OAUTH_SIGNUP": "true",
-            "OAUTH_CLIENT_ID": self.config.openwebui.oidc_client_id,
-            "OAUTH_CLIENT_SECRET": self.config.openwebui.oidc_client_secret,
-            "OPENID_PROVIDER_URL": self.config.openwebui.oidc_provider_url,
-            "OAUTH_PROVIDER_NAME": self.config.openwebui.oidc_provider_name,
+            "OAUTH_CLIENT_ID": self.config.openwebui_config.oidc_client_id,
+            "OAUTH_CLIENT_SECRET": self.config.openwebui_config.oidc_client_secret,
+            "OPENID_PROVIDER_URL": self.config.openwebui_config.oidc_provider_url,
+            "OAUTH_PROVIDER_NAME": self.config.openwebui_config.oidc_provider_name,
             # Postgres
             "DATABASE_URL": self.connection_string_sqlalchemy_pg,
             # User Credentials
@@ -280,7 +263,7 @@ class WebUI(pulumi.ComponentResource):
         }
 
         # Apply any additional/override environment variables from config
-        for key, value in self.config.openwebui.additional_env_vars.items():
+        for key, value in self.config.openwebui_config.additional_env_vars.items():
             default_env_vars[key] = value
 
         # Convert the dictionary to EnvironmentVariableArgs list
@@ -291,31 +274,56 @@ class WebUI(pulumi.ComponentResource):
 
         return app.ContainerArgs(
             name="openwebui",
-            image=f"ghcr.io/open-webui/open-webui:{self.config.openwebui.image_tag}",
+            image=self.config.effective_docker_image,
             env=env_vars,
             volume_mounts=volume_mounts,
-            resources=app.ContainerResourcesArgs(
-                cpu=self.config.openwebui.resources.cpu, memory=self.config.openwebui.resources.memory
-            ),
+            resources=app.ContainerResourcesArgs(cpu=self.config.cpu, memory=self.config.memory),
         )
+
+    def _get_nats_private_ip(self) -> str:
+        container_group = containerinstance.get_container_group(
+            container_group_name=f"{self.config.project_name}-{CONTAINER_INSTANCE}-{self.config.location_short}-nats",
+            resource_group_name=self.config.resource_group,
+        )
+        if container_group.ip_address is not None and container_group.ip_address.ip is not None:
+            return container_group.ip_address.ip
+        else:
+            raise ValueError(f"No private IP found for container group {container_group.name}")
+
+    def _additional_secrets_from_additional_env_vars(self) -> List[app.SecretArgs]:
+        additional_secrets = []
+        for name, value in self.config.openwebui_config.additional_env_vars.items():
+            if isinstance(value, dict) and "secret_ref" in value and "secret_value" in value:
+                additional_secrets.append(app.SecretArgs(name=value["secret_ref"], value=value["secret_value"]))
+        return additional_secrets
 
     def _create_container_app(self):
         """Create the container app with the configured containers and volumes"""
         container_list = list(self.containers.values())
 
         return app.ContainerApp(
-            container_app_name=self.config.webui_container_app(),
-            resource_name=self.config.webui_container_app(),
+            container_app_name=self.config.webui_container_app,
+            resource_name=self.config.webui_container_app,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             managed_environment_id=self.managed_environment.id,
             configuration=app.ConfigurationArgs(
                 ingress=app.IngressArgs(external=True, target_port=8080, transport="auto"),
+                registries=[
+                    app.RegistryCredentialsArgs(
+                        server=self.config.registry_url,
+                        username=self.config.registry_user,
+                        password_secret_ref="registry-password",
+                    )
+                ],
                 secrets=[
                     app.SecretArgs(
                         name="storage-account-key",
                         value=self.storage_account_key,
-                    )
+                    ),
+                    app.SecretArgs(name="registry-password", value=self.config.registry_pat),
+                    app.SecretArgs(name="postgres-password", value=self.config.postgres_password),
+                    *self._additional_secrets_from_additional_env_vars(),
                 ],
             ),
             template=app.TemplateArgs(
@@ -326,7 +334,7 @@ class WebUI(pulumi.ComponentResource):
                 ),
             ),
             tags={
-                "Stack": self.config.stack,
+                "Stack": self.stack,
             },
             opts=pulumi.ResourceOptions(parent=self, depends_on=list(self.env_storages.values())),
         )
@@ -337,7 +345,7 @@ class WebUI(pulumi.ComponentResource):
             "postgresql://"
             f"{self.config.postgres_username}:"
             f"{self.config.postgres_password}@"
-            f"{self.config.postgres_name()}.postgres.database.azure.com"
+            f"{self.config.postgres_name}.postgres.database.azure.com"
             "/"
             f"{self.config.db_name}"
         )
@@ -348,7 +356,7 @@ class WebUI(pulumi.ComponentResource):
             "postgresql://"
             f"{self.config.postgres_username}:"
             f"{self.config.postgres_password}@"
-            f"{self.config.postgres_name()}.postgres.database.azure.com"
+            f"{self.config.postgres_name}.postgres.database.azure.com"
             "/"
             f"{self.config.pg_vector_db_name}"
         )

@@ -23,7 +23,7 @@ class Dagster(pulumi.ComponentResource):
         self.stack = stack
         self.config = config
 
-        self.storage_factory = StorageResourceFactory(self.config)
+        self.storage_factory = StorageResourceFactory(self.config, self.stack)
 
         # Initialize providers
         self.network_provider = NetworkProvider(
@@ -47,7 +47,7 @@ class Dagster(pulumi.ComponentResource):
         """Create all Dagster infrastructure resources"""
         # Get existing resources
         self.vnet = self.network_provider.get_vnet()
-        self.existing_cap_subnet = self.network_provider.get_cap_subnet()
+        self.existing_cap_subnet = self.network_provider.get_dagster_subnet()
         self.dagster_storage_subnet = self.network_provider.get_dagster_storage_subnet()
 
         # Create new resources
@@ -91,7 +91,7 @@ class Dagster(pulumi.ComponentResource):
 
     def _create_identity(self):
         """Create and configure the managed identity"""
-        return self.identity_provider.create_identity(self.name)
+        return self.identity_provider.create_identity(self.name, self.stack)
 
     def _create_postgres_database(self):
         """Create the Dagster database on the Postgres server"""
@@ -144,12 +144,8 @@ class Dagster(pulumi.ComponentResource):
                 app.EnvironmentVarArgs(
                     name="OAUTH2_PROXY_OIDC_ISSUER_URL", value=self.config.oauth2_proxy_oidc_issuer_url
                 ),
-                app.EnvironmentVarArgs(
-                    name="OAUTH2_PROXY_COOKIE_SECRET", value="{{secretref:oauth2-proxy-cookie-secret}}"
-                ),
-                app.EnvironmentVarArgs(
-                    name="OAUTH2_PROXY_CLIENT_SECRET", value="{{secretref:oauth2-proxy-client-secret}}"
-                ),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_COOKIE_SECRET", secret_ref="oauth2-proxy-cookie-secret"),
+                app.EnvironmentVarArgs(name="OAUTH2_PROXY_CLIENT_SECRET", secret_ref="oauth2-proxy-client-secret"),
                 app.EnvironmentVarArgs(name="OAUTH2_PROXY_EMAIL_DOMAINS", value=self.config.oauth2_proxy_email_domains),
                 app.EnvironmentVarArgs(
                     name="OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO", value=self.config.oauth2_proxy_custom_sign_in_logo
@@ -188,7 +184,7 @@ class Dagster(pulumi.ComponentResource):
 
     def _get_dagster_service_and_daemon_env_vars(self) -> List[app.EnvironmentVarArgs]:
         """Get environment variables for the Dagster Service container"""
-        return [
+        env_vars = [
             app.EnvironmentVarArgs(name="PYTHONUNBUFFERED", value="1"),
             app.EnvironmentVarArgs(name="DAGSTER_HOME", value="/dagster_home"),
             # Add database connection info
@@ -198,16 +194,36 @@ class Dagster(pulumi.ComponentResource):
             ),
             app.EnvironmentVarArgs(name="DAGSTER_PG_DB", value=f"{self.config.database_name}"),
             app.EnvironmentVarArgs(name="DAGSTER_PG_USERNAME", value=self.config.postgres_username),
-            app.EnvironmentVarArgs(name="DAGSTER_PG_PASSWORD", value="{{secretref:postgres-password}}"),
+            app.EnvironmentVarArgs(name="DAGSTER_PG_PASSWORD", secret_ref="postgres-password"),
             # Add Azure-specific variables
             app.EnvironmentVarArgs(name="APP_NAME", value=self.config.project_name),
+            app.EnvironmentVarArgs(name="AZURE_SUBSCRIPTION_ID", value=self.config.subscription_id),
+            app.EnvironmentVarArgs(name="REGION_SHORT", value=self.config.location_short),
             app.EnvironmentVarArgs(name="VERSION", value=self.config.version),
             app.EnvironmentVarArgs(name="AZURE_CLIENT_ID", value=self.identity.client_id),
         ]
 
+        # Add any additional environment variables from the config
+        for name, value in self.config.additional_env_vars.items():
+            # Check if the value is a secret reference
+            if isinstance(value, dict) and "secret_ref" in value:
+                env_vars.append(app.EnvironmentVarArgs(name=name, secret_ref=value["secret_ref"]))
+            else:
+                env_vars.append(app.EnvironmentVarArgs(name=name, value=str(value)))
+
+        return env_vars
+
+    def _additional_secrets_from_additional_env_vars(self) -> List[app.SecretArgs]:
+        additional_secrets = []
+        for name, value in self.config.additional_env_vars.items():
+            if isinstance(value, dict) and "secret_ref" in value and "secret_value" in value:
+                additional_secrets.append(app.SecretArgs(name=value["secret_ref"], value=value["secret_value"]))
+        return additional_secrets
+
     def _create_dagster_webserver_app(self):
         """Create the Dagster Container App using an existing managed environment"""
         # Create the Container App
+
         return app.ContainerApp(
             container_app_name=self.config.dagster_webserver,
             resource_name=self.config.dagster_webserver,
@@ -236,6 +252,7 @@ class Dagster(pulumi.ComponentResource):
                     app.SecretArgs(name="postgres-password", value=self.config.postgres_password),
                     app.SecretArgs(name="oauth2-proxy-cookie-secret", value=self.config.oauth2_proxy_cookie_secret),
                     app.SecretArgs(name="oauth2-proxy-client-secret", value=self.config.oauth2_proxy_client_secret),
+                    *self._additional_secrets_from_additional_env_vars(),
                 ],
             ),
             template=app.TemplateArgs(
@@ -272,6 +289,7 @@ class Dagster(pulumi.ComponentResource):
                 secrets=[
                     app.SecretArgs(name="registry-password", value=self.config.registry_pat),
                     app.SecretArgs(name="postgres-password", value=self.config.postgres_password),
+                    *self._additional_secrets_from_additional_env_vars(),
                 ],
             ),
             template=app.TemplateArgs(
