@@ -191,6 +191,9 @@ class RAGAgent(Agent):
             return ContextSufficientEvent()
 
         prev_queries = await run_context.get("prev_queries", [])
+        hop_count = await run_context.get("hop_count", 1)
+        more_hops_available = hop_count < agent_config.max_hops
+
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await context_sufficient_guard(
                 llm=llm,
@@ -198,14 +201,14 @@ class RAGAgent(Agent):
                 user_query=user_query_event.condensed_chat_message.content,
                 context=event.context_message.content,
                 prev_queries=prev_queries,
+                more_hops_available=more_hops_available,
             )
 
         if guard_result.success:
             await displayer.display_thought(t("agent.thought.context_sufficient"))
             return ContextSufficientEvent()
 
-        hop_count = await run_context.get("hop_count", 1)
-        if hop_count == agent_config.max_hops:
+        if not more_hops_available:
             return ContextInsufficientEvent(reasoning=guard_result.reasoning)
 
         await run_context.set("hop_count", hop_count + 1)
