@@ -2,16 +2,15 @@ import asyncio
 from asyncio import Event, Task
 from typing import Any, Dict
 
-from botbuilder.schema import Activity, ActivityTypes
-
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, ConversationTracker
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
 from botbuilder.core import ActivityHandler, TurnContext
+from botbuilder.schema import Activity, ActivityTypes
 from botframework.connector import Channels
 from typing_extensions import override
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
+from aihub_bot.persistence.entities.ConversationEntity import ConversationTracker
 
 
 class BaseChatBot(ActivityHandler):

@@ -3,7 +3,6 @@ from typing import AsyncContextManager, List, Optional
 
 from aihub_lib.runners.Runner import Runner
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
