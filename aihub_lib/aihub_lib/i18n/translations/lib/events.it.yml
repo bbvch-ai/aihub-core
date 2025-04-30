@@ -102,6 +102,10 @@ semantic_tool_event:
   name: "Utilizzo dello Strumento"
   description: "L'agente sta utilizzando uno strumento specializzato per completare un compito specifico in modo più efficiente."
 
+exception_event:
+  name: "Errore Verificato"
+  description: "Si è verificata un'eccezione o un errore durante il processo, interrompendo o modificando il flusso di lavoro e fornendo dettagli sull'errore."
+
 user_message_event:
   name: "Richiesta dell'Utente"
   description: "L'assistente ha ricevuto un messaggio dall'utente e lo sta elaborando, tenendo conto della cronologia della chat precedente."

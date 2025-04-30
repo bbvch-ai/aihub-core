@@ -894,7 +894,7 @@ export const ChatCompletionSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['scale', 'default']
+                    enum: ['auto', 'default', 'flex']
                 },
                 {
                     type: 'null'
@@ -1038,12 +1038,19 @@ export const ChatCompletionAudioParamSchema = {
     properties: {
         format: {
             type: 'string',
-            enum: ['wav', 'mp3', 'flac', 'opus', 'pcm16'],
+            enum: ['wav', 'aac', 'mp3', 'flac', 'opus', 'pcm16'],
             title: 'Format'
         },
         voice: {
-            type: 'string',
-            enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse'],
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'string',
+                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse']
+                }
+            ],
             title: 'Voice'
         }
     },
@@ -1400,7 +1407,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -3668,16 +3675,33 @@ export const ImagesResponseSchema = {
             title: 'Created'
         },
         data: {
-            items: {
-                '$ref': '#/components/schemas/Image'
-            },
-            type: 'array',
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Image'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Data'
+        },
+        usage: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Usage'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['created', 'data'],
+    required: ['created'],
     title: 'ImagesResponse'
 } as const;
 
@@ -4721,7 +4745,7 @@ export const MessageSchema = {
 
 export const MessageRoleSchema = {
     type: 'string',
-    enum: ['system', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
+    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
     description: 'Message role.'
 } as const;
@@ -6475,6 +6499,47 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    title: 'Usage'
+} as const;
+
+export const UsageInputTokensDetailsSchema = {
+    properties: {
+        image_tokens: {
+            type: 'integer',
+            title: 'Image Tokens'
+        },
+        text_tokens: {
+            type: 'integer',
+            title: 'Text Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['image_tokens', 'text_tokens'],
+    title: 'UsageInputTokensDetails'
 } as const;
 
 export const UserChatMessage_InputSchema = {

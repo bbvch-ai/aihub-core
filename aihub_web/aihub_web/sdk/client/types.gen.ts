@@ -443,10 +443,10 @@ export type ChatCompletion = {
     created: number;
     model: string;
     object: 'chat.completion';
-    service_tier?: ('scale' | 'default') | null;
+    service_tier?: ('auto' | 'default' | 'flex') | null;
     system_fingerprint?: string | null;
     usage?: CompletionUsage | null;
-    [key: string]: unknown | string | Array<Choice> | number | 'chat.completion' | (('scale' | 'default') | null) | (string | null) | (CompletionUsage | null) | undefined;
+    [key: string]: unknown | string | Array<Choice> | number | 'chat.completion' | (('auto' | 'default' | 'flex') | null) | (string | null) | (CompletionUsage | null) | undefined;
 };
 
 export type ChatCompletionAssistantMessageParam = {
@@ -468,8 +468,8 @@ export type ChatCompletionAudio = {
 };
 
 export type ChatCompletionAudioParam = {
-    format: 'wav' | 'mp3' | 'flac' | 'opus' | 'pcm16';
-    voice: 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse';
+    format: 'wav' | 'aac' | 'mp3' | 'flac' | 'opus' | 'pcm16';
+    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer' | 'verse');
 };
 
 export type ChatCompletionContentPartImageParam = {
@@ -550,7 +550,7 @@ export type ChatCompletionRequest = {
     /**
      * ID of the model to use for the chat completion.
      */
-    model: string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Enable streaming response.
      */
@@ -586,7 +586,7 @@ export type ChatCompletionRequest = {
     tools?: Array<ChatCompletionToolParam> | null;
     top_logprobs?: number | null;
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
     } | null) | (boolean | null) | (number | null) | (number | null) | ({
         [key: string]: unknown;
@@ -1430,8 +1430,9 @@ export type ImageUrl = {
 
 export type ImagesResponse = {
     created: number;
-    data: Array<Image>;
-    [key: string]: unknown | number | Array<Image>;
+    data?: Array<Image> | null;
+    usage?: Usage | null;
+    [key: string]: unknown | number | (Array<Image> | null) | (Usage | null) | undefined;
 };
 
 export type InputAudio = {
@@ -1878,13 +1879,14 @@ export type Message = {
 /**
  * Message role.
  */
-export type MessageRole = 'system' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
 
 /**
  * Message role.
  */
 export const MessageRole = {
     SYSTEM: 'system',
+    DEVELOPER: 'developer',
     USER: 'user',
     ASSISTANT: 'assistant',
     FUNCTION: 'function',
@@ -2802,6 +2804,20 @@ export type TranscriptionWord = {
     [key: string]: unknown | number | string;
 };
 
+export type Usage = {
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    output_tokens: number;
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
+};
+
+export type UsageInputTokensDetails = {
+    image_tokens: number;
+    text_tokens: number;
+    [key: string]: unknown | number;
+};
+
 export type UserChatMessageInput = {
     role?: MessageRole;
     additional_kwargs?: {
@@ -3514,23 +3530,23 @@ export type RevokeTokenEndpointResponses = {
 
 export type RevokeTokenEndpointResponse = RevokeTokenEndpointResponses[keyof RevokeTokenEndpointResponses];
 
-export type GetModelsData = {
+export type GetModelsWithAssistantsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsResponses = {
+export type GetModelsWithAssistantsResponses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+export type GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponses[keyof GetModelsWithAssistantsResponses];
 
-export type GetModelData = {
+export type GetModelWithAssistantsData = {
     body?: never;
     path: {
         full_path: string;
@@ -3539,23 +3555,23 @@ export type GetModelData = {
     url: '/openai/models/{full_path}';
 };
 
-export type GetModelErrors = {
+export type GetModelWithAssistantsErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetModelError = GetModelErrors[keyof GetModelErrors];
+export type GetModelWithAssistantsError = GetModelWithAssistantsErrors[keyof GetModelWithAssistantsErrors];
 
-export type GetModelResponses = {
+export type GetModelWithAssistantsResponses = {
     /**
      * Successful Response
      */
     200: ModelDetails;
 };
 
-export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
+export type GetModelWithAssistantsResponse = GetModelWithAssistantsResponses[keyof GetModelWithAssistantsResponses];
 
 export type GetEmbeddingsData = {
     body: EmbeddingsRequest;
@@ -3582,30 +3598,30 @@ export type GetEmbeddingsResponses = {
 
 export type GetEmbeddingsResponse = GetEmbeddingsResponses[keyof GetEmbeddingsResponses];
 
-export type ChatCompletionData = {
+export type ChatCompletionWithAssistantsData = {
     body: ChatCompletionRequest;
     path?: never;
     query?: never;
     url: '/openai/chat/completions';
 };
 
-export type ChatCompletionErrors = {
+export type ChatCompletionWithAssistantsErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ChatCompletionError = ChatCompletionErrors[keyof ChatCompletionErrors];
+export type ChatCompletionWithAssistantsError = ChatCompletionWithAssistantsErrors[keyof ChatCompletionWithAssistantsErrors];
 
-export type ChatCompletionResponses = {
+export type ChatCompletionWithAssistantsResponses = {
     /**
      * Successful Response
      */
     200: ChatCompletion;
 };
 
-export type ChatCompletionResponse = ChatCompletionResponses[keyof ChatCompletionResponses];
+export type ChatCompletionWithAssistantsResponse = ChatCompletionWithAssistantsResponses[keyof ChatCompletionWithAssistantsResponses];
 
 export type GenerateImageData = {
     body: ImageGenerationRequest;

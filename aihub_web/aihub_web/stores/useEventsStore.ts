@@ -1,10 +1,9 @@
 import { getEvents } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
-import ObjectID from 'bson-objectid'
 import { defineStore } from 'pinia'
 
-import type { WsServerEvent, UserMessageEvent, MyUserDto } from '@core/sdk/client'
+import type { WsServerEvent } from '@core/sdk/client'
 
 export const useEventsStore = defineStore('events', () => {
   const { getBearer } = useAuth()
@@ -73,56 +72,6 @@ export const useEventsStore = defineStore('events', () => {
     )
   })
 
-  const sendUserMessageEvent = (thread_id: string, content: string, user: MyUserDto, display_id?: string) => {
-    const userMessageEvent: WsServerEvent & { event: UserMessageEvent } = {
-      locale: 'en',
-      thread_id: thread_id,
-      display_id: display_id ?? (ObjectID()).toHexString(),
-      event_name: 'UserMessageEvent',
-      event: {
-        locale: 'en',
-        messages: [
-          { role: 'user', blocks: [{ block_type: 'text', text: content }] },
-        ],
-        user: {
-          name: user.name,
-          preferred_username: user.email,
-          oid: user.id,
-          roles: [],
-        },
-        _event_name: 'UserMessageEvent',
-        _parent_event_names: ['UserMessageEvent'],
-      },
-    }
-    sendEvent(userMessageEvent)
-  }
-
-  const sendHumanInTheLoopResponse = (thread_id: string, content: string) => {
-    const lastHumanInTheLoopRequestEvent = events.value.findLast((event) => {
-      return (
-        event.thread_id === thread_id
-        && event.event._event_name === 'HumanInTheLoopRequestEvent'
-      )
-    })
-    if (lastHumanInTheLoopRequestEvent) {
-      const humanInTheLoopResponseEvent = {
-        thread_id,
-        display_id: lastHumanInTheLoopRequestEvent.display_id,
-        event: {
-          _event_name: 'HumanInTheLoopResponseEvent',
-          event_id: (ObjectID()).toHexString(),
-          created_at: Date.now() * 1_000_000,
-          response: content,
-          request_event: lastHumanInTheLoopRequestEvent.event,
-        },
-      }
-      sendEvent(humanInTheLoopResponseEvent)
-    }
-    else {
-      console.warn('No HumanInTheLoopRequestEvent found for thread_id', thread_id)
-    }
-  }
-
   const eventsForThread = (thread_id: string, display_id?: string) => {
     return computed<WsServerEvent>(() => {
       return events.value.filter((event) => {
@@ -139,8 +88,6 @@ export const useEventsStore = defineStore('events', () => {
     webSocketsStatus,
     events,
     eventsForThread,
-    sendUserMessageEvent,
-    sendHumanInTheLoopResponse,
     sendEvent,
   }
 })

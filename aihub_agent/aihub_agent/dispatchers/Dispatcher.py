@@ -113,7 +113,7 @@ class Dispatcher:
         self.js_publisher = JSPublisher(self.js)
         self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager)
         self.step_store = DistributedStepStore(redis)
-        self.tracer = RunTraceCoordinator(self.nc, agent_config)
+        self.tracer = RunTraceCoordinator(self.nc, project_name=locale_handler.extract_multi_locale(agent_config.name, "en"))
         self.step_configs = agent_config.get_step_configs()
 
         # Initialization flag

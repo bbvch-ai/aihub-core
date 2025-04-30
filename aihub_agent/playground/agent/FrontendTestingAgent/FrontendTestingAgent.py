@@ -1,3 +1,5 @@
+import random
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -10,7 +12,7 @@ from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
     HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
+    HumanInTheLoopResponseEvent, ExceptionEvent,
 )
 
 from aihub_agent.agents.Agent import Agent
@@ -41,7 +43,9 @@ class CustomHumanInTheLoop(HumanInTheLoop):
 
 class FrontendTestingAgent(Agent):
     @step()
-    async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
+    async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request | ExceptionEvent:
+        if random.random() > 0.5:
+            return ExceptionEvent(message="50% chance that this occurs :)", http_status_code=500)
         print("[OrchestratorAgent.start_step]", event)
         return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
 

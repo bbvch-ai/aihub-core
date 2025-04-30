@@ -1,4 +1,4 @@
-import type { WsServerEvent } from '@core/sdk/client'
+import type { ExceptionEvent, WsServerEvent } from '@core/sdk/client'
 
 import {
   EventDisplayAgentInTheLoopRequestEvent,
@@ -17,7 +17,7 @@ import {
   EventDisplayUnknownEvent,
   EventDisplayUserMessageEvent,
   EventDisplayGuardEvent,
-  EventDisplayRouterEvent,
+  EventDisplayRouterEvent, EventDisplayExceptionEvent,
 } from '#components'
 
 export default () => {
@@ -39,6 +39,7 @@ export default () => {
       GuardEvent: EventDisplayGuardEvent,
       StopEvent: EventDisplayStopEvent,
       RouterEvent: EventDisplayRouterEvent,
+      ExceptionEvent: EventDisplayExceptionEvent,
     }
     const exact_match = mapping[event.event._event_name]
     if (exact_match) {

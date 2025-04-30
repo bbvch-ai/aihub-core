@@ -27,22 +27,26 @@
 <script setup lang="ts">
 import useThread from '@core/composables/useThread'
 import { useEventsStore } from '@core/stores/useEventsStore'
-import { useUserStore } from '@core/stores/useUserStore'
 
 const route = useRoute()
 
 const { data: thread } = useThread()
 
 const eventStore = useEventsStore()
-const userStore = useUserStore()
 
-const { user } = storeToRefs(userStore)
+const { mutate: sendMessages } = useChatCompletions()
 
 const events = eventStore.eventsForThread(route.params.thread_id)
 const userInput = ref('')
 
 const submitMessage = async () => {
-  eventStore.sendUserMessageEvent(thread.value.id, userInput.value, user.value)
+  const agent = thread.value?.agents?.at(0)
+  const agentIdentifier = `${agent?.agent_class}/${agent?.agent_id}`
+  sendMessages({
+    model: agentIdentifier,
+    messages: [{ role: 'user', content: userInput.value }],
+    threadId: route.params.thread_id,
+  })
   userInput.value = ''
 }
 </script>

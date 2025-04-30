@@ -39,7 +39,7 @@ class StreamingResources:
     stop_signal: asyncio.Event
     subscriber: NCSubscriber
     chunk_queue: asyncio.Queue
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent] = None  # Added field to store the final StopEvent
+    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = None  # Added field to store the final StopEvent
 
 
 @dataclass

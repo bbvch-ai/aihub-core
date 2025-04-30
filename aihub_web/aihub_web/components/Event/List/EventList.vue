@@ -10,6 +10,14 @@
           :value="display.display_id"
         >
           {{ displayNameFn(display) }}
+          <i
+            v-if="display.has_errors"
+            class="pi pi-exclamation-triangle text-red-500"
+          />
+          <i
+            v-if="display.has_pending"
+            class="pi pi-exclamation-triangle text-yellow-500"
+          />
         </Tab>
       </TabList>
       <TabPanels>

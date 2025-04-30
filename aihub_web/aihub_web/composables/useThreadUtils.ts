@@ -1,4 +1,4 @@
-import type { ThreadDto } from '@core/sdk/client'
+import type { DisplayStatistics, RunStatistics, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 export default () => {
   const pendingType = (thread: ThreadDto) => {
@@ -13,7 +13,14 @@ export default () => {
     }
     return 'Reason unknown'
   }
+
+  const runForEvent = (thread: ThreadDto, event: WsServerEvent) => {
+    const display = thread?.displays?.find((display: DisplayStatistics) => display.display_id == event.display_id)
+    return display?.runs?.find((run: RunStatistics) => run.run_id == event.run_id)
+  }
+
   return {
     pendingType,
+    runForEvent,
   }
 }

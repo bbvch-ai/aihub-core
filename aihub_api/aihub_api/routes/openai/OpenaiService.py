@@ -265,6 +265,9 @@ class OpenaiService:
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
+        if resources.stop_event.is_exception_event:
+            raise HTTPException(resources.stop_event.http_status_code, resources.stop_event.message)
+
         # Construct final JSON response
         chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
         return ChatCompletion(
@@ -349,6 +352,8 @@ class OpenaiService:
             # Send a final "stop" chunk at the end
             if resources.stop_event.is_hitl_request_event:
                 content = resources.stop_event.question
+            elif resources.stop_event.is_exception_event:
+                content = f"\n\n>[!CAUTION]\n>**Error:** {resources.stop_event.message}\n"
             else:
                 content = ""
             chat_completion_chunk = ChatCompletionChunk(

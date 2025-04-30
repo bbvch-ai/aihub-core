@@ -102,6 +102,10 @@ semantic_tool_event:
   name: "Tool Usage"
   description: "The agent is using a specialized tool to complete a specific task more efficiently."
 
+exception_event:
+  name: "Error Occurred"
+  description: "An exception or error has occurred during the process, halting or adjusting the workflow and providing error details."
+
 user_message_event:
   name: "User Request"
   description: "The assistant has received a message from the user and is processing it, taking into account the previous chat history."

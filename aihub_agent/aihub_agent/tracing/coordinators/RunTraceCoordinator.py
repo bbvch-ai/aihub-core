@@ -70,11 +70,10 @@ class RunTraceCoordinator:
     def __init__(
         self,
         nc: Annotated[NATS, "NATS client for messaging."],
-        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
+        project_name: Annotated[str, "Name that shows up as project in phoenix."],
     ):
         self.nc = nc
 
-        project_name = f"{agent_config.name}"
         endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
         auth_token = PhoenixConfig().PHOENIX_AUTH_TOKEN
         headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}

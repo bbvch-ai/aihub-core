@@ -86,7 +86,7 @@ class ThreadService:
                         stats.latest_event_time = event_time
 
         # Calculate derived statistics
-        stats.has_pending = stats.start_events > stats.stop_events
+        stats.has_pending = stats.start_events > (stats.stop_events + stats.exception_events)
         stats.has_errors = stats.exception_events > 0
         stats.is_hitl = stats.hitl_request_events > 0
         stats.open_hitl = stats.hitl_request_events > stats.hitl_response_events

@@ -102,6 +102,10 @@ semantic_tool_event:
   name: "Utilisation d'Outil"
   description: "L'agent utilise un outil spécialisé pour accomplir une tâche spécifique plus efficacement."
 
+exception_event:
+  name: "Erreur Survenue"
+  description: "Une exception ou une erreur est survenue pendant le processus, arrêtant ou ajustant le flux de travail et fournissant des détails sur l'erreur."
+
 user_message_event:
   name: "Demande de l'Utilisateur"
   description: "L'assistant a reçu un message de l'utilisateur et le traite, en tenant compte de l'historique de chat précédent."

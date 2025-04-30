@@ -3,6 +3,7 @@
     :event="event"
     :thread="thread"
     icon="mdi:robot-confused"
+    :is-warning="isOpen"
   >
     <div class="py-5">
       <ChatMessage
@@ -32,6 +33,11 @@ const props = defineProps<{
 }>()
 
 const agentIcon = useAgentIconFromThread(props.event, props.thread)
+const { runForEvent } = useThreadUtils()
+
+const isOpen = computed<boolean>(() => {
+  return runForEvent(props.thread, props.event)?.open_hitl ?? false
+})
 
 const message = computed<AssistantChatMessageOutput>(() => {
   return {

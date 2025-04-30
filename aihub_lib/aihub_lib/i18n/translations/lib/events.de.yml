@@ -102,6 +102,10 @@ semantic_tool_event:
   name: "Werkzeugeinsatz"
   description: "Der Agent verwendet ein spezialisiertes Werkzeug, um eine bestimmte Aufgabe effizienter zu erledigen."
 
+exception_event:
+  name: "Fehler aufgetreten"
+  description: "Während des Prozesses ist ein Ausnahmefehler aufgetreten, der den Arbeitsablauf unterbricht oder anpasst und Fehlerdetails bereitstellt."
+
 user_message_event:
   name: "Benutzeranfrage"
   description: "Der Assistent hat eine Nachricht vom Benutzer erhalten und verarbeitet diese unter Berücksichtigung des bisherigen Chatverlaufs."

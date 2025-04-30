@@ -76,7 +76,7 @@ class LocaleHandler:
             return locale_data[available_locales[0]]
         raise ValueError("No language keys available")
 
-    def extract_multi_locale(self, locale_data: Dict[str, Any] | LocaleString, locale: str) -> Any:
+    def extract_multi_locale(self, locale_data: Dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         value = getattr(locale_data, locale, None)
         if value:

@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="w-full pl-[50px]">
-      <div class="fixed flex h-[50px] w-full items-center justify-between bg-surface-50 pr-[50px] dark:bg-surface-950">
+      <div class="fixed z-50 flex h-[50px] w-full items-center justify-between bg-surface-50 pr-[50px] dark:bg-surface-950">
         <Breadcrumb
           class="!bg-transparent"
           :home="apps[0]"

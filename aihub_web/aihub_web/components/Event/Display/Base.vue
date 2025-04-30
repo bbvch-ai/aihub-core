@@ -1,10 +1,22 @@
 <template>
   <Card
-    class="!rounded-2xl bg-surface-50 dark:!bg-surface-800"
-    :class="{ 'striped-bg': isExternal || !isFromAgentInThread }"
+    class="!rounded-2xl"
+    :class="{
+      'striped-bg': isExternal || !isFromAgentInThread,
+      'border-2 border-red-500 dark:!border-red-900': isError,
+      'border-2 border-orange-500 dark:!border-orange-700': isWarning,
+      'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
+    }"
   >
     <template #header>
-      <div class="absolute -top-3 right-12 rounded bg-surface-50 px-2 py-1 text-sm font-semibold dark:!bg-surface-800">
+      <div
+        class="absolute -top-3 right-12 rounded px-2 py-1 text-sm font-semibold"
+        :class="{
+          'bg-red-500 text-white dark:!bg-red-900': isError,
+          'bg-orange-500 text-white dark:!bg-orange-700': isWarning,
+          'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
+        }"
+      >
         {{ event.agent_class }}
       </div>
     </template>
@@ -54,9 +66,13 @@ const props = withDefaults(defineProps<{
   icon: string
   isExternal?: boolean
   isEmpty?: boolean
+  isWarning?: boolean
+  isError?: boolean
 }>(), {
   isExternal: false,
   isEmpty: false,
+  isWarning: false,
+  isError: false,
 })
 
 const agentIds = computed<string[]>(() => {
