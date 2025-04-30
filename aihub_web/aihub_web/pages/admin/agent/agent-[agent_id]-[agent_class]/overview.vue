@@ -44,9 +44,9 @@
       <p class="text-xl font-bold">
         Config
       </p>
-      <p class="rounded-lg border border-gray-300 p-3 dark:border-gray-700">
+      <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-700">
         <pre class="text-sm">{{ agent.agent_config }}</pre>
-      </p>
+      </div>
     </div>
   </div>
 </template>

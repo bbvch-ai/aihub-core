@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import List, Optional
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
@@ -7,10 +7,10 @@ from aihub_lib.persistence.messaging.entities.PersistedEventEntity import Persis
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
 
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO, MinimalAgentDTO
+from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
 from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
-from aihub_api.routes.thread.dto.ThreadResponse import DisplayStatistics, EventStatistics, RunStatistics, ThreadResponse
+from aihub_api.routes.thread.dto.ThreadDTO import DisplayStatistics, EventStatistics, RunStatistics, ThreadDTO
 from aihub_api.routes.user.UserService import UserService
 
 
@@ -20,7 +20,7 @@ class ThreadService:
     - Creating threads with specified users and agents.
     - Retrieving threads by ID or by user.
     - Adding or removing agents and users from existing threads.
-    - Converting internal ThreadEntity objects to ThreadResponse DTOs.
+    - Converting internal ThreadEntity objects to ThreadDTO DTOs.
 
     ### Why ThreadService?
     Isolating thread logic here keeps controllers slim and focused on request/response handling.
@@ -106,64 +106,64 @@ class ThreadService:
     @staticmethod
     def create_thread(
         name: str, user_ids: List[str], t: LocaleHandler, agent_dtos: Optional[List[ThreadAgentDTO]] = None
-    ) -> ThreadResponse:
+    ) -> ThreadDTO:
         users = [User(user_id=uid) for uid in user_ids]
         agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
         created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
         return ThreadService.thread_response_from_entity(created_thread, t)
 
     @staticmethod
-    def get_thread_by_id(thread_id: str, t: LocaleHandler) -> ThreadResponse:
+    def get_thread_by_id(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         if not ObjectId.is_valid(thread_id):
             raise ValueError("Invalid thread_id provided.")
         thread = ThreadEntity.get_thread_by_id(thread_id)
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def get_threads_for_user(user_id: str, t: LocaleHandler) -> List[ThreadResponse]:
+    def get_threads_for_user(user_id: str, t: LocaleHandler) -> List[ThreadDTO]:
         threads = ThreadEntity.get_threads_by_user(user_id)
         return [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
 
     @staticmethod
-    def get_threads_for_agent(agent_class: str, agent_id: str, t: LocaleHandler) -> List[ThreadResponse]:
+    def get_threads_for_agent(agent_class: str, agent_id: str, t: LocaleHandler) -> List[ThreadDTO]:
         threads = ThreadEntity.get_threads_by_agent(agent_class, agent_id)
         return [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
 
     @staticmethod
-    def add_agent_to_thread(thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadResponse:
+    def add_agent_to_thread(thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadDTO:
         agent = Agent(agent_id=agent_id, agent_class=agent_class)
         thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def remove_agent_from_thread(thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadResponse:
+    def remove_agent_from_thread(thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.remove_agent_from_thread(thread_id, agent_class, agent_id)
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def add_user_to_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadResponse:
+    def add_user_to_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
         user = User(user_id=user_id)
         thread = ThreadEntity.add_user_to_thread(thread_id, user)
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadResponse:
+    def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.remove_user_from_thread(thread_id, user_id)
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadResponse:
+    def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.delete_thread(thread_id)
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def thread_response_from_entity(entity: ThreadEntity, t: LocaleHandler) -> ThreadResponse:
+    def thread_response_from_entity(entity: ThreadEntity, t: LocaleHandler) -> ThreadDTO:
         """
-        Converts a ThreadEntity into a ThreadResponse:
+        Converts a ThreadEntity into a ThreadDTO:
         1. Fetch agent details (using AgentService).
         2. Fetch user details (using UserService).
         3. Fetch event statistics for the thread.
-        4. Construct a ThreadResponse DTO containing all details.
+        4. Construct a ThreadDTO DTO containing all details.
         5. Calculate enhanced statistics (displays, runs, participating agents, LLM costs).
         """
         agent_dtos = []
@@ -176,7 +176,7 @@ class ThreadService:
             agent_dtos.append(agent_dto)
 
         # Create the base response
-        response = ThreadResponse(
+        response = ThreadDTO(
             id=str(entity.id),
             created_at=entity.created_at.isoformat() + "Z",  # Add Z to indicate UTC
             name=entity.name,
@@ -260,7 +260,11 @@ class ThreadService:
                 if run_stats.ended_at:
                     ended_at = run_stats.ended_at.isoformat() + "Z"
 
-                start_event = next(event for event in run_events if "StartEvent" in event.event_parents)
+                start_event = next(
+                    event
+                    for event in run_events
+                    if "StartEvent" in event.event_parents and not event.agent_class.startswith("UserAgent")
+                )
 
                 agent_entity = AgentEntity.get_agent(
                     agent_class=start_event.agent_class,
@@ -268,22 +272,24 @@ class ThreadService:
                 )
                 agent_dto = MinimalAgentDTO.from_entity(agent_entity, t)
 
-                runs.append(RunStatistics(
-                    agent=agent_dto,
-                    run_id=run_id,
-                    started_at=started_at,
-                    ended_at=ended_at,
-                    latency=run_stats.latency,
-                    n_events=run_stats.n_events,
-                    has_errors=run_stats.has_errors,
-                    has_pending=run_stats.has_pending,
-                    is_hitl=run_stats.is_hitl,
-                    open_hitl=run_stats.open_hitl,
-                    is_bitl=run_stats.is_bitl,
-                    open_bitl=run_stats.open_bitl,
-                    is_aitl=run_stats.is_aitl,
-                    open_aitl=run_stats.open_aitl
-                ))
+                runs.append(
+                    RunStatistics(
+                        agent=agent_dto,
+                        run_id=run_id,
+                        started_at=started_at,
+                        ended_at=ended_at,
+                        latency=run_stats.latency,
+                        n_events=run_stats.n_events,
+                        has_errors=run_stats.has_errors,
+                        has_pending=run_stats.has_pending,
+                        is_hitl=run_stats.is_hitl,
+                        open_hitl=run_stats.open_hitl,
+                        is_bitl=run_stats.is_bitl,
+                        open_bitl=run_stats.open_bitl,
+                        is_aitl=run_stats.is_aitl,
+                        open_aitl=run_stats.open_aitl,
+                    )
+                )
 
             # Format datetime objects to ISO strings
             started_at = None
@@ -293,22 +299,24 @@ class ThreadService:
             if display_stats.ended_at:
                 ended_at = display_stats.ended_at.isoformat() + "Z"
 
-            displays.append(DisplayStatistics(
-                display_id=display_id,
-                started_at=started_at,
-                ended_at=ended_at,
-                latency=display_stats.latency,
-                n_events=display_stats.n_events,
-                has_errors=display_stats.has_errors,
-                has_pending=display_stats.has_pending,
-                is_hitl=display_stats.is_hitl,
-                open_hitl=display_stats.open_hitl,
-                is_bitl=display_stats.is_bitl,
-                open_bitl=display_stats.open_bitl,
-                is_aitl=display_stats.is_aitl,
-                open_aitl=display_stats.open_aitl,
-                runs=runs
-            ))
+            displays.append(
+                DisplayStatistics(
+                    display_id=display_id,
+                    started_at=started_at,
+                    ended_at=ended_at,
+                    latency=display_stats.latency,
+                    n_events=display_stats.n_events,
+                    has_errors=display_stats.has_errors,
+                    has_pending=display_stats.has_pending,
+                    is_hitl=display_stats.is_hitl,
+                    open_hitl=display_stats.open_hitl,
+                    is_bitl=display_stats.is_bitl,
+                    open_bitl=display_stats.open_bitl,
+                    is_aitl=display_stats.is_aitl,
+                    open_aitl=display_stats.open_aitl,
+                    runs=runs,
+                )
+            )
 
         # Get participating agents
         participating_agents = []

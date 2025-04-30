@@ -21,7 +21,7 @@ from aihub_api.events.create_output_model import create_output_model
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 
 
 class AgentController(Controller):
@@ -104,7 +104,7 @@ class AgentController(Controller):
             agent_id: str,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[ThreadResponse]:
+        ) -> List[ThreadDTO]:
             """
             Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
             """

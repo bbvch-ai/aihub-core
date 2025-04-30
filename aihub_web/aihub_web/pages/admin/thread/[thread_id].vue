@@ -32,6 +32,7 @@ const navItems = computed<NavItem[]>(() => {
   return [
     { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
     { name: 'Events', key: 'events', path: subPath('events'), isActive: isActive('events') },
+    { name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
   ]
 })
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed flex h-[calc(100vh-50px)] w-[250px] flex-col gap-5 overflow-y-auto overflow-x-hidden bg-surface-50 dark:bg-surface-950">
+  <div class="fixed flex h-[calc(100vh-50px)] w-[260px] flex-col gap-5 overflow-y-auto overflow-x-hidden bg-surface-50 dark:bg-surface-950">
     <p class="pl-3 pt-10 text-sm font-medium text-surface-900 dark:text-white">
       {{ title }}
     </p>
@@ -32,7 +32,7 @@
       </div>
     </div>
   </div>
-  <div class="w-[300px]" />
+  <div class="min-w-[260px]" />
 </template>
 
 <script setup lang="ts">

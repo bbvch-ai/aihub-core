@@ -9,6 +9,7 @@
       <ChatMessage
         :message="message"
         :name="event.agent_class"
+        :date="new Date(event.event.created_at / 1_000_000)"
       />
     </div>
   </EventDisplayBase>
@@ -16,13 +17,13 @@
 
 <script setup lang="ts">
 import type {
-  HumanInTheLoopResponseEvent, ThreadResponse, UserChatMessageInput,
+  HumanInTheLoopResponseEvent, ThreadDto, UserChatMessageInput,
   WsServerEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: HumanInTheLoopResponseEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
 
 const message = computed<UserChatMessageInput>(() => {

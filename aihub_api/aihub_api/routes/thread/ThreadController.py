@@ -11,7 +11,7 @@ from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
-from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 
@@ -73,7 +73,7 @@ class ThreadController(Controller):
         async def get_user_threads(
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[ThreadResponse]:
+        ) -> List[ThreadDTO]:
             """
             Returns all threads that the authenticated user is a member of.
             """
@@ -87,7 +87,7 @@ class ThreadController(Controller):
             req: CreateThreadRequest,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadResponse:
+        ) -> ThreadDTO:
             """
             Creates a new thread with the specified name, users, and agents.
             Automatically adds the authenticated user if not already included.
@@ -107,7 +107,7 @@ class ThreadController(Controller):
             thread_id: str,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadResponse:
+        ) -> ThreadDTO:
             """
             Retrieves details of a specific thread.
             Raises 403 if the user is not a member of that thread.
@@ -126,7 +126,7 @@ class ThreadController(Controller):
             req: AddAgentRequest,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadResponse:
+        ) -> ThreadDTO:
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
@@ -150,7 +150,7 @@ class ThreadController(Controller):
             agent_id: str,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadResponse:
+        ) -> ThreadDTO:
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
@@ -169,7 +169,7 @@ class ThreadController(Controller):
             req: AddUserRequest,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadResponse:
+        ) -> ThreadDTO:
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
@@ -190,7 +190,7 @@ class ThreadController(Controller):
             remove_user_id: str,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadResponse:
+        ) -> ThreadDTO:
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """

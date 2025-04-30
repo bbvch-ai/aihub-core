@@ -4,7 +4,7 @@ import { useWebSocket } from '@vueuse/core'
 import ObjectID from 'bson-objectid'
 import { defineStore } from 'pinia'
 
-import type { WsServerEvent, UserMessageEvent } from '@core/sdk/client'
+import type { WsServerEvent, UserMessageEvent, MyUserDto } from '@core/sdk/client'
 
 export const useEventsStore = defineStore('events', () => {
   const { getBearer } = useAuth()
@@ -73,21 +73,26 @@ export const useEventsStore = defineStore('events', () => {
     )
   })
 
-  const sendUserMessageEvent = (thread_id: string, content: string, display_id?: string) => {
-    const userMessageEvent: WsServerEvent = {
-      thread_id,
-      display_id: display_id || (ObjectID()).toHexString(),
+  const sendUserMessageEvent = (thread_id: string, content: string, user: MyUserDto, display_id?: string) => {
+    const userMessageEvent: WsServerEvent & { event: UserMessageEvent } = {
+      locale: 'en',
+      thread_id: thread_id,
+      display_id: display_id ?? (ObjectID()).toHexString(),
+      event_name: 'UserMessageEvent',
       event: {
-        _event_name: 'UserMessageEvent',
-        event_id: (ObjectID()).toHexString(),
-        created_at: Date.now() * 1_000_000,
+        locale: 'en',
         messages: [
-          {
-            role: 'user',
-            content,
-          },
+          { role: 'user', blocks: [{ block_type: 'text', text: content }] },
         ],
-      } as UserMessageEvent,
+        user: {
+          name: user.name,
+          preferred_username: user.email,
+          oid: user.id,
+          roles: [],
+        },
+        _event_name: 'UserMessageEvent',
+        _parent_event_names: ['UserMessageEvent'],
+      },
     }
     sendEvent(userMessageEvent)
   }

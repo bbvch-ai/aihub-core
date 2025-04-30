@@ -111,7 +111,7 @@ class WebSocketManager:
                 try:
                     await ws.send_json(data)
                 except Exception:
-                    logger.exception("Failed to send event to a connection, removing it.")
+                    logger.warning("Failed to send event to a connection, removing it.")
                     self.active_connections[user_id].discard(ws)
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]

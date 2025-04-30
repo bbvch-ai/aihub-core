@@ -9,6 +9,7 @@ from aihub_api.routes.user.dto.UserDTO import UserDTO
 
 class BaseEventStatistics(BaseModel):
     """Base class for event statistics with common fields."""
+
     n_events: Annotated[int, Field(description="Total number of events")] = 0
     has_errors: Annotated[bool, Field(description="Has error events")] = False
     has_pending: Annotated[bool, Field(description="Has pending events (more start than stop events)")] = False
@@ -33,6 +34,7 @@ class BaseEventStatistics(BaseModel):
 
 class EventStatistics(BaseEventStatistics):
     """Detailed event statistics with event counts and timing information."""
+
     start_events: Annotated[int, Field(description="Number of start events")] = 0
     stop_events: Annotated[int, Field(description="Number of stop events")] = 0
     exception_events: Annotated[int, Field(description="Number of exception events")] = 0
@@ -48,24 +50,28 @@ class EventStatistics(BaseEventStatistics):
 
 class IdentifiableEventStatistics(BaseEventStatistics):
     """Base class for identifiable event statistics objects like runs and displays."""
+
     started_at: Annotated[Optional[str], Field(description="Start time")] = None
     ended_at: Annotated[Optional[str], Field(description="End time")] = None
 
 
 class RunStatistics(IdentifiableEventStatistics):
     """Statistics for a single run."""
+
     run_id: Annotated[str, Field(description="The run ID")]
     agent: Annotated[MinimalAgentDTO, Field(description="The agent that ran the run")]
 
 
 class DisplayStatistics(IdentifiableEventStatistics):
     """Statistics for a display, including its runs."""
+
     display_id: Annotated[str, Field(description="The display ID")]
     runs: Annotated[List[RunStatistics], Field(description="Runs in this display")] = []
 
 
-class ThreadResponse(BaseModel):
+class ThreadDTO(BaseModel):
     """Thread information and statistics."""
+
     # Basic thread information
     id: Annotated[str, Field(description="The thread ID")]
     name: Annotated[str, Field(description="User given name of thread")]
@@ -81,11 +87,17 @@ class ThreadResponse(BaseModel):
 
     # HITL/BITL/AITL fields
     is_hitl: Annotated[bool, Field(description="There are HumanInTheLoopRequest events present")] = False
-    open_hitl: Annotated[bool, Field(description="There are more HumanInTheLoopRequest than HumanInTheLoopResponse")] = False
+    open_hitl: Annotated[
+        bool, Field(description="There are more HumanInTheLoopRequest than HumanInTheLoopResponse")
+    ] = False
     is_bitl: Annotated[bool, Field(description="There are BotInTheLoopRequest events present")] = False
-    open_bitl: Annotated[bool, Field(description="There are more BotInTheLoopRequest than BotInTheLoopResponse")] = False
+    open_bitl: Annotated[bool, Field(description="There are more BotInTheLoopRequest than BotInTheLoopResponse")] = (
+        False
+    )
     is_aitl: Annotated[bool, Field(description="There are AgentInTheLoopRequest events present")] = False
-    open_aitl: Annotated[bool, Field(description="There are more AgentInTheLoopRequest than AgentInTheLoopResponse")] = False
+    open_aitl: Annotated[
+        bool, Field(description="There are more AgentInTheLoopRequest than AgentInTheLoopResponse")
+    ] = False
 
     # Timing fields
     first_interaction: Annotated[Optional[str], Field(description="Date of oldest event in thread")] = None
@@ -94,5 +106,7 @@ class ThreadResponse(BaseModel):
 
     # Enhanced statistics
     displays: Annotated[List[DisplayStatistics], Field(description="Displays in this thread")] = []
-    participating_agents: Annotated[List[MinimalAgentDTO], Field(description="Agents that participated in the thread")] = []
+    participating_agents: Annotated[
+        List[MinimalAgentDTO], Field(description="Agents that participated in the thread")
+    ] = []
     llm_cost: Annotated[float, Field(description="Total LLM cost of the thread")] = 0.0

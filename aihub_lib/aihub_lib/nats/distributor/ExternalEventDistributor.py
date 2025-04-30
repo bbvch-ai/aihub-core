@@ -68,7 +68,7 @@ class ExternalEventDistributor:
 
         if user_id not in users_in_thread:
             logger.error(f"User {user_id} is not in thread {external_event.thread_id}")
-            raise Exception(f"User {user_id} is not in thread {external_event.thread_id}")
+            raise PermissionError(f"User {user_id} is not in thread {external_event.thread_id}")
 
         if external_event.event.is_start_event:
             run_id = str(ObjectId())
@@ -86,7 +86,7 @@ class ExternalEventDistributor:
             await self._handle_human_in_the_loop_response(thread, external_event)
 
         if external_event.event.is_display_event:
-            await self._handle_display_message(external_event, run_id, user_id)
+            await self._handle_display_message(external_event, run_id, user)
 
         if external_event.event.is_start_event:
             await self._handle_start_event(thread, external_event, run_id)
@@ -118,7 +118,7 @@ class ExternalEventDistributor:
             )
             await self.js_publisher.publish_event(external_event.event, subject)
 
-    async def _handle_display_message(self, external_event: ExternalEvent, run_id: str, user_id: str):
+    async def _handle_display_message(self, external_event: ExternalEvent, run_id: str, user: AuthenticatedUser):
         """
         Handle a DisplayEvent from the user.
 
@@ -129,7 +129,7 @@ class ExternalEventDistributor:
         topic_manager = TopicManager()
         subject = topic_manager.get_subject_for_specific_event_in_agent(
             agent_class="UserAgent",
-            agent_id=user_id,
+            agent_id=user.oid,
             thread_id=external_event.thread_id,
             display_id=external_event.display_id,
             run_id=run_id,

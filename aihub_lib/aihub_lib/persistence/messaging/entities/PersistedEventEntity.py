@@ -110,11 +110,7 @@ class PersistedEventEntity(Document):
         """
         Retrieves all events (both display and control) for a thread.
         """
-        return list(
-            cls.objects()
-            .filter(thread_id=thread_id)
-            .order_by("event_data__created_at")
-        )
+        return list(cls.objects().filter(thread_id=thread_id).order_by("event_data__created_at"))
 
     @classmethod
     def to_message_history(cls, thread_id: str) -> List[UserChatMessage | AssistantChatMessage]:

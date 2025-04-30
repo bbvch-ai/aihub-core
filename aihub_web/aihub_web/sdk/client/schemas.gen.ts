@@ -161,7 +161,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -207,7 +207,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -298,7 +298,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -352,7 +352,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -645,6 +645,41 @@ export const AudioBlockSchema = {
     title: 'AudioBlock'
 } as const;
 
+export const AudioContentSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'audio',
+            title: 'Type',
+            default: 'audio'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        mime_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Mime Type'
+        }
+    },
+    type: 'object',
+    title: 'AudioContent'
+} as const;
+
 export const AuthenticatedUserSchema = {
     properties: {
         name: {
@@ -819,7 +854,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2088,7 +2123,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2224,7 +2259,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2380,7 +2415,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2722,7 +2757,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2992,7 +3027,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3162,7 +3197,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3209,7 +3244,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3307,7 +3342,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3364,7 +3399,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3494,6 +3529,30 @@ export const ImageBlockSchema = {
     },
     type: 'object',
     title: 'ImageBlock'
+} as const;
+
+export const ImageContentSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'image',
+            title: 'Type',
+            default: 'image'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        }
+    },
+    type: 'object',
+    title: 'ImageContent'
 } as const;
 
 export const ImageGenerationRequestSchema = {
@@ -3759,7 +3818,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3977,7 +4036,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4187,7 +4246,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4420,7 +4479,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4628,6 +4687,31 @@ export const MessageSchema = {
             ],
             title: 'Tool Call Id',
             description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
         }
     },
     type: 'object',
@@ -5112,7 +5196,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5211,7 +5295,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5285,7 +5369,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5344,7 +5428,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5495,7 +5579,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5595,7 +5679,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5638,7 +5722,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5689,7 +5773,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5763,6 +5847,24 @@ export const TextBlockSchema = {
     type: 'object',
     required: ['text'],
     title: 'TextBlock'
+} as const;
+
+export const TextContentSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'text',
+            title: 'Type',
+            default: 'text'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        }
+    },
+    type: 'object',
+    required: ['text'],
+    title: 'TextContent'
 } as const;
 
 export const TextToSpeechRequestSchema = {
@@ -5878,7 +5980,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5912,7 +6014,7 @@ export const ThreadAgentDTOSchema = {
     title: 'ThreadAgentDTO'
 } as const;
 
-export const ThreadResponseSchema = {
+export const ThreadDTOSchema = {
     properties: {
         id: {
             type: 'string',
@@ -6068,7 +6170,7 @@ export const ThreadResponseSchema = {
     },
     type: 'object',
     required: ['id', 'name', 'users', 'agents', 'created_at'],
-    title: 'ThreadResponse',
+    title: 'ThreadDTO',
     description: 'Thread information and statistics.'
 } as const;
 
@@ -6185,7 +6287,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -6559,7 +6661,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -6733,16 +6835,16 @@ export const WSServerEventSchema = {
                     '$ref': '#/components/schemas/StartEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
-                },
-                {
                     '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
                 },
                 {
                     '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
                 },
                 {
                     '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'

@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import useThreads from '@core/composables/useThreads'
 
-import type { ThreadResponse } from '@core/sdk/client'
+import type { ThreadDto } from '@core/sdk/client'
 import type { NavItem } from '@core/types/NavItem'
 
 const route = useRoute()
@@ -24,7 +24,7 @@ const navItems = computed<Record<string, NavItem[]>>(() => {
   const typeMap: Record<string, NavItem[]> = {}
 
   // Group threads by day
-  threads.value?.forEach((thread: ThreadResponse) => {
+  threads.value?.forEach((thread: ThreadDto) => {
     // Parse the ISO date string
     const threadDate = new Date(thread.created_at)
 

@@ -94,15 +94,11 @@
         header="Pending"
       >
         <template #body="{ data }">
-          <div
+          <Tag
             v-if="data.has_pending"
-            class="flex"
-          >
-            <Tag
-              severity="warn"
-              :value="pendingType(data)"
-            />
-          </div>
+            severity="warn"
+            :value="pendingType(data)"
+          />
           <Tag
             v-else
             severity="success"
@@ -115,30 +111,21 @@
 </template>
 
 <script setup lang="ts">
-import type { ThreadResponse, UserDto } from '@core/sdk/client'
+import useThreadUtils from '@core/composables/useThreadUtils'
+
+import type { ThreadDto, UserDto } from '@core/sdk/client'
 
 defineProps<{
-  threads: ThreadResponse[]
+  threads: ThreadDto[]
 }>()
 
 const emit = defineEmits<{
-  selected: [thread: ThreadResponse]
+  selected: [thread: ThreadDto]
 }>()
 
 const initials = (user: UserDto) => user.name?.split(' ').map(n => n[0]).join('')
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
-const pendingType = (thread: ThreadResponse) => {
-  if (thread.open_hitl) {
-    return 'Human in the Loop'
-  }
-  if (thread.open_aitl) {
-    return 'Agent in the Loop'
-  }
-  if (thread.open_bitl) {
-    return 'Bot in the Loop'
-  }
-  return 'Reason unknown'
-}
+const { pendingType } = useThreadUtils()
 </script>
 
 <style scoped>

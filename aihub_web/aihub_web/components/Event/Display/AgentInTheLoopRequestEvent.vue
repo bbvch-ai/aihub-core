@@ -33,11 +33,11 @@
 <script setup lang="ts">
 import useEventComponent from '@core/composables/useEventComponent'
 
-import type { AgentInTheLoopRequestEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
+import type { AgentInTheLoopRequestEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: AgentInTheLoopRequestEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
 
 const { resolveComponentForEvent } = useEventComponent()

@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
-from ...control import StopEvent
+from ...control.stop.StopEvent import StopEvent
 from .LLMEvent import LLMEvent
 
 

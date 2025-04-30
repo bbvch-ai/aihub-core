@@ -15,6 +15,8 @@
           :message="message"
           :name="message.role == 'user' ? event.event.user.name : message.role"
           :preferred-username="message.role == 'user' ? event.event.user.preferred_username : ''"
+          :date="new Date(event.event.created_at / 1_000_000)"
+          :icon="agentIcon"
         />
       </div>
     </div>
@@ -22,10 +24,14 @@
 </template>
 
 <script setup lang="ts">
-import type { ThreadResponse, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
+import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
 
-defineProps<{
+import type { ThreadDto, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
+
+const props = defineProps<{
   event: WsServerEvent & { event: UserMessageEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
+
+const agentIcon = useAgentIconFromThread(props.event, props.thread)
 </script>

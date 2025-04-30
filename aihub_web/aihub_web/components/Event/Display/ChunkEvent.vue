@@ -9,18 +9,24 @@
         :message="message"
         :name="`${event.agent_class}/${event.agent_id}`"
         :preferred-username="event.event.model_name"
+        :date="new Date(event.event.created_at / 1_000_000)"
+        :icon="agentIcon"
       />
     </div>
   </EventDisplayBase>
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, ChunkEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
+import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
+
+import type { ChatMessageOutput, ChunkEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: ChunkEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
+
+const agentIcon = useAgentIconFromThread(props.event, props.thread)
 
 const message = computed<ChatMessageOutput>(() => {
   return {

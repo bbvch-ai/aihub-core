@@ -20,16 +20,12 @@
             :thread="thread"
           />
           <Divider />
-          <EventList
-            :events="eventsInDisplay"
-            :thread="thread"
-          />
-          <Paginator
-            v-model:first="page"
-            always-show
-            :rows="1"
-            :total-records="uniqueDisplayIds.length"
-          />
+          <div class="p-3">
+            <EventList
+              :events="eventsInThread"
+              :thread="thread"
+            />
+          </div>
         </div>
       </div>
     </Drawer>
@@ -37,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { getThread, type ThreadResponse, type WsServerEvent } from '@core/sdk/client'
+import { getThread, type ThreadDto, type WsServerEvent } from '@core/sdk/client'
 import { useEventsStore } from '@core/stores/useEventsStore'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
@@ -45,13 +41,10 @@ const runtimeConfig = useRuntimeConfig()
 
 // State for the overlay
 const showSources = ref(false)
-const sourceInfo = ref({})
 const sourcesPannel = useTemplateRef<HTMLElement>('sources')
 
 const { events } = storeToRefs(useEventsStore())
 const activeThreadId = ref<string>('')
-const activeDisplayId = ref<string>('')
-const page = ref<number>(0)
 
 const eventsInThread = computed<WsServerEvent[]>(() => {
   return events.value
@@ -63,24 +56,7 @@ const eventsInThread = computed<WsServerEvent[]>(() => {
     })
 })
 
-const uniqueDisplayIds = computed<string[]>(() => {
-  const displayIds: string[] = []
-  eventsInThread.value.forEach((event: WsServerEvent) => {
-    if (event.display_id && !displayIds.includes(event.display_id)) {
-      displayIds.push(event.display_id)
-    }
-  })
-  return displayIds
-})
-
-const eventsInDisplay = computed<WsServerEvent[]>(() => {
-  const selectedDisplay = uniqueDisplayIds.value[page.value]
-  return eventsInThread.value.filter((event) => {
-    return event.display_id === selectedDisplay
-  })
-})
-
-const { data: thread } = useQuery<ThreadResponse>({
+const { data: thread } = useQuery<ThreadDto>({
   key: () => ['thread', activeThreadId.value],
   staleTime: 1000 * 10, // 5 minutes
   enabled: true,
@@ -107,13 +83,7 @@ const handleMessage = (event: MessageEvent) => {
     // Check if it's the overlay command
     if (data.type === 'show-sources') {
       activeThreadId.value = data.thread_id
-      activeDisplayId.value = data.display_id
       showSources.value = !showSources.value
-      sourceInfo.value = data
-
-      nextTick(() => {
-        page.value = uniqueDisplayIds.value.length - 1
-      })
     }
   }
 }

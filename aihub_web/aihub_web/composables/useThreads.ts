@@ -1,7 +1,7 @@
-import { getUserThreads, type ThreadResponse } from '@core/sdk/client'
+import { getUserThreads, type ThreadDto } from '@core/sdk/client'
 
 export default defineQuery(() => {
-  return useQuery<ThreadResponse[]>({
+  return useQuery<ThreadDto[]>({
     key: () => ['threads'],
     staleTime: 1000 * 10, // 5 minutes
     enabled: true,

@@ -101,7 +101,7 @@ export type AgentEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -140,7 +140,7 @@ export type AgentInTheLoopExceptionEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | ExceptionEvent | Array<string> | undefined;
@@ -196,7 +196,7 @@ export type AgentInTheLoopRequestEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (StartEvent | UserMessageEvent) | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
@@ -234,7 +234,7 @@ export type AgentInTheLoopResponseEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | StopEvent | Array<string> | undefined;
@@ -347,6 +347,12 @@ export type AudioBlock = {
     format?: string | null;
 };
 
+export type AudioContent = {
+    type?: 'audio';
+    url?: string | null;
+    mime_type?: string | null;
+};
+
 export type AuthenticatedUser = {
     /**
      * User's full name
@@ -423,7 +429,7 @@ export type ChainEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | ({
@@ -711,7 +717,7 @@ export type ChunkEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (string | null) | Array<string> | undefined;
@@ -759,7 +765,7 @@ export type ControlEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | Array<string> | undefined;
@@ -841,7 +847,7 @@ export type DisplayEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -1013,7 +1019,7 @@ export type EmbeddingEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
@@ -1172,7 +1178,7 @@ export type ExceptionEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -1235,7 +1241,7 @@ export type GuardEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -1274,7 +1280,7 @@ export type GuardRejectionEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -1331,7 +1337,7 @@ export type HumanInTheLoopRequestEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
@@ -1373,7 +1379,7 @@ export type HumanInTheLoopResponseEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | HumanInTheLoopRequestEvent | Array<string> | undefined;
@@ -1393,6 +1399,11 @@ export type ImageBlock = {
     url?: string | null;
     image_mimetype?: string | null;
     detail?: string | null;
+};
+
+export type ImageContent = {
+    type?: 'image';
+    url?: string | null;
 };
 
 export type ImageGenerationRequest = {
@@ -1509,7 +1520,7 @@ export type LlmCostEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | number | number | string | LocaleString | Array<string> | undefined;
@@ -1593,7 +1604,7 @@ export type LlmEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (Array<Message> | null) | (Array<Message> | null) | ({
@@ -1683,7 +1694,7 @@ export type LlmStopEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (Array<Message> | null) | (Array<Message> | null) | ({
@@ -1791,7 +1802,7 @@ export type LimitChatHistoryEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<ChatMessageOutput> | Array<string> | undefined;
@@ -1858,6 +1869,10 @@ export type Message = {
      * The ID of the tool call, if applicable.
      */
     tool_call_id?: string | null;
+    /**
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
 };
 
 /**
@@ -2097,7 +2112,7 @@ export type RerankerEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
@@ -2140,7 +2155,7 @@ export type RetrieverEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | Array<string> | undefined;
@@ -2186,7 +2201,7 @@ export type RouteOptions = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | ControlEvent | Array<string> | undefined;
@@ -2227,7 +2242,7 @@ export type RouterEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<RouteOptions> | RouteOptions | Array<string> | undefined;
@@ -2343,7 +2358,7 @@ export type SemanticEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -2395,7 +2410,7 @@ export type StandaloneQuestionCondenserEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | ChatMessageOutput | Array<string> | undefined;
@@ -2432,7 +2447,7 @@ export type StartEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -2477,7 +2492,7 @@ export type StopEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
@@ -2503,6 +2518,11 @@ export type SuiteDto = {
 
 export type TextBlock = {
     block_type?: 'text';
+    text: string;
+};
+
+export type TextContent = {
+    type?: 'text';
     text: string;
 };
 
@@ -2572,7 +2592,7 @@ export type ThoughtEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (string | null) | Array<string> | undefined;
@@ -2586,7 +2606,7 @@ export type ThreadAgentDto = {
 /**
  * Thread information and statistics.
  */
-export type ThreadResponse = {
+export type ThreadDto = {
     /**
      * The thread ID
      */
@@ -2729,7 +2749,7 @@ export type ToolEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | ({
@@ -2885,7 +2905,7 @@ export type UserMessageEvent = {
      */
     readonly _event_name: string;
     /**
-     * Contains the names of all parent classes up until BaseEvent.
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | Array<string> | undefined;
@@ -2978,7 +2998,7 @@ export type WsServerEvent = {
     /**
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
+    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent;
 };
 
 /**
@@ -3130,7 +3150,7 @@ export type GetUserThreadsResponses = {
     /**
      * Successful Response
      */
-    200: Array<ThreadResponse>;
+    200: Array<ThreadDto>;
 };
 
 export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThreadsResponses];
@@ -3155,7 +3175,7 @@ export type CreateThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadResponse;
+    200: ThreadDto;
 };
 
 export type CreateThreadResponse = CreateThreadResponses[keyof CreateThreadResponses];
@@ -3182,7 +3202,7 @@ export type GetThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadResponse;
+    200: ThreadDto;
 };
 
 export type GetThreadResponse = GetThreadResponses[keyof GetThreadResponses];
@@ -3209,7 +3229,7 @@ export type AddAgentToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadResponse;
+    200: ThreadDto;
 };
 
 export type AddAgentToThreadResponse = AddAgentToThreadResponses[keyof AddAgentToThreadResponses];
@@ -3238,7 +3258,7 @@ export type RemoveAgentFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadResponse;
+    200: ThreadDto;
 };
 
 export type RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponses[keyof RemoveAgentFromThreadResponses];
@@ -3265,7 +3285,7 @@ export type AddUserToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadResponse;
+    200: ThreadDto;
 };
 
 export type AddUserToThreadResponse = AddUserToThreadResponses[keyof AddUserToThreadResponses];
@@ -3293,7 +3313,7 @@ export type RemoveUserFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadResponse;
+    200: ThreadDto;
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
@@ -3349,7 +3369,7 @@ export type GetAgentThreadsResponses = {
     /**
      * Successful Response
      */
-    200: Array<ThreadResponse>;
+    200: Array<ThreadDto>;
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];

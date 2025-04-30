@@ -19,7 +19,6 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
-from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, FileContent, ImagesResponse
@@ -255,10 +254,7 @@ class OpenaiService:
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=[
-                ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump()))
-                for msg in chat_completion_request.messages
-            ],
+            messages=chat_completion_request.llama_index_messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
@@ -306,15 +302,11 @@ class OpenaiService:
     ):
         thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
         display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
-
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=[
-                ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump()))
-                for msg in chat_completion_request.messages
-            ],
+            messages=chat_completion_request.llama_index_messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),

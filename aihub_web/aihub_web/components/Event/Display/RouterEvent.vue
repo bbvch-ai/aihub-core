@@ -41,11 +41,11 @@
 </template>
 
 <script setup lang="ts">
-import type { RouteOptions, RouterEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
+import type { RouteOptions, RouterEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: RouterEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
 
 const isSelectedRoute = (route: RouteOptions) => {

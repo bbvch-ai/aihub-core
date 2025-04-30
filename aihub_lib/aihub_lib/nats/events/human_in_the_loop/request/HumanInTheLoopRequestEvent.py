@@ -9,7 +9,7 @@ from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
-class HumanInTheLoopRequestEvent(DisplayEvent, ControlEvent):
+class HumanInTheLoopRequestEvent(ControlEvent, DisplayEvent):
     """
     An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 

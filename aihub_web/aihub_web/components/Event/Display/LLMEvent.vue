@@ -14,6 +14,8 @@
           :message="message"
           :name="message.role == 'user' ? 'User' : event.event.chat_model_name"
           :preferred-username="message.role == 'user' ? '' : event.event.provider"
+          :date="new Date(event.event.created_at / 1_000_000)"
+          :icon="agentIcon"
         />
       </div>
       <hr>
@@ -26,6 +28,8 @@
           :message="message"
           :name="message.role == 'user' ? 'User' : event.event.chat_model_name"
           :preferred-username="message.role == 'user' ? '' : event.event.provider"
+          :date="new Date(event.event.created_at / 1_000_000)"
+          :icon="agentIcon"
         />
       </div>
     </div>
@@ -33,12 +37,16 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, LlmEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
+import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
+
+import type { ChatMessageOutput, LlmEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: LlmEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
+
+const agentIcon = useAgentIconFromThread(props.event, props.thread)
 
 const inputMessages = computed<ChatMessageOutput[]>(() => {
   return props.event.event.input_messages?.map((message) => {

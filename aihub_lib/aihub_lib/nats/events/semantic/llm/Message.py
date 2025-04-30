@@ -1,7 +1,28 @@
-from typing import Any, Dict, List, Optional
+import json
+from typing import Any, Dict, List, Literal, Optional, Union
 
-from openinference.semconv.trace import MessageAttributes
+from llama_index.core.base.llms.types import AudioBlock, ChatMessage, ImageBlock, TextBlock
+from openinference.semconv.trace import AudioAttributes, ImageAttributes, MessageAttributes, MessageContentAttributes
 from pydantic import BaseModel, Field
+
+
+class TextContent(BaseModel):
+    type: Literal["text"] = "text"
+    text: str
+
+
+class ImageContent(BaseModel):
+    type: Literal["image"] = "image"
+    url: Optional[str] = None
+
+
+class AudioContent(BaseModel):
+    type: Literal["audio"] = "audio"
+    url: Optional[str] = None
+    mime_type: Optional[str] = None
+
+
+ContentBlock = Union[TextContent, ImageContent, AudioContent]
 
 
 class Message(BaseModel):
@@ -21,14 +42,84 @@ class Message(BaseModel):
         description="JSON representing arguments passed to the function during a function call.",
     )
     tool_call_id: Optional[str] = Field(None, description="The ID of the tool call, if applicable.")
+    contents: Optional[List[ContentBlock]] = Field(
+        None,
+        description="The message contents as an array of content blocks (text, image, audio).",
+    )
 
-    def to_semantic_convention(self, key: str, i: int) -> Dict[str, str]:
-        return {
-            f"{key}.{i}.{MessageAttributes.MESSAGE_ROLE}": self.role,
-            f"{key}.{i}.{MessageAttributes.MESSAGE_CONTENT}": self.content,
-            f"{key}.{i}.{MessageAttributes.MESSAGE_NAME}": self.name,
-            f"{key}.{i}.{MessageAttributes.MESSAGE_TOOL_CALLS}": self.tool_calls,
-            f"{key}.{i}.{MessageAttributes.MESSAGE_FUNCTION_CALL_NAME}": self.function_call_name,
-            f"{key}.{i}.{MessageAttributes.MESSAGE_FUNCTION_CALL_ARGUMENTS_JSON}": self.function_call_arguments_json,
-            f"{key}.{i}.{MessageAttributes.MESSAGE_TOOL_CALL_ID}": self.tool_call_id,
+    def to_semantic_convention(self, key: str, i: int) -> Dict[str, Any]:
+        result: Dict[str, Any] = {}
+        result[f"{key}.{i}.{MessageAttributes.MESSAGE_ROLE}"] = self.role
+        if self.content is not None:
+            result[f"{key}.{i}.{MessageAttributes.MESSAGE_CONTENT}"] = self.content
+        if self.name is not None:
+            result[f"{key}.{i}.{MessageAttributes.MESSAGE_NAME}"] = self.name
+        if self.tool_calls is not None:
+            result[f"{key}.{i}.{MessageAttributes.MESSAGE_TOOL_CALLS}"] = json.dumps(self.tool_calls)
+        if self.function_call_name is not None:
+            result[f"{key}.{i}.{MessageAttributes.MESSAGE_FUNCTION_CALL_NAME}"] = self.function_call_name
+        if self.function_call_arguments_json is not None:
+            result[f"{key}.{i}.{MessageAttributes.MESSAGE_FUNCTION_CALL_ARGUMENTS_JSON}"] = json.dumps(
+                self.function_call_arguments_json
+            )
+        if self.tool_call_id is not None:
+            result[f"{key}.{i}.{MessageAttributes.MESSAGE_TOOL_CALL_ID}"] = self.tool_call_id
+
+        # flatten contents
+        if not self.contents:
+            return result
+
+        for j, block in enumerate(self.contents):
+            base = f"{key}.{i}.{MessageAttributes.MESSAGE_CONTENTS}.{j}"
+            result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_TYPE}"] = block.type
+            if isinstance(block, TextContent):
+                result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_TEXT}"] = block.text
+            elif isinstance(block, ImageContent):
+                if block.url:
+                    result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_IMAGE}.{ImageAttributes.IMAGE_URL}"] = (
+                        block.url
+                    )
+            elif isinstance(block, AudioContent):
+                if block.url:
+                    result[f"{base}.{AudioAttributes.AUDIO_URL}"] = block.url
+                if block.mime_type:
+                    result[f"{base}.{AudioAttributes.AUDIO_MIME_TYPE}"] = block.mime_type
+
+        return result
+
+    @classmethod
+    def from_llama_index(cls, msg: ChatMessage) -> "Message":
+        function_call: Dict[str, Any] = msg.additional_kwargs.get("function_call", {}) or {}
+        message_dict: Dict[str, Any] = {
+            "role": msg.role.value,
+            "name": msg.additional_kwargs.get("name"),
+            "tool_calls": msg.additional_kwargs.get("tool_calls"),
+            "function_call_name": function_call.get("name"),
+            "function_call_arguments_json": function_call.get("arguments"),
+            "tool_call_id": msg.additional_kwargs.get("tool_call_id"),
         }
+        if not msg.blocks:
+            return cls(**{k: v for k, v in message_dict.items() if v is not None})
+
+        contents: List[ContentBlock] = []
+        for block in msg.blocks:
+            cb = cls._process_block(block)
+            if cb:
+                contents.append(cb)
+        if contents:
+            message_dict["contents"] = contents
+        return cls(**{k: v for k, v in message_dict.items() if v is not None})
+
+    @staticmethod
+    def _process_block(block: Any) -> Optional[ContentBlock]:
+        if isinstance(block, TextBlock) or getattr(block, "block_type", None) == "text":
+            text = getattr(block, "text", str(block))
+            return TextContent(text=text)
+        if isinstance(block, ImageBlock) or getattr(block, "block_type", None) == "image":
+            url = getattr(block, "url", None)
+            return ImageContent(url=str(url) if url else None)
+        if isinstance(block, AudioBlock) or getattr(block, "block_type", None) == "audio":
+            url = getattr(block, "url", None)
+            mime = f"audio/{getattr(block, 'format', '')}" if getattr(block, "format", None) else None
+            return AudioContent(url=str(url) if url else None, mime_type=mime)
+        return None

@@ -113,7 +113,7 @@ class Dispatcher:
         self.js_publisher = JSPublisher(self.js)
         self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager)
         self.step_store = DistributedStepStore(redis)
-        self.tracer = RunTraceCoordinator(self.nc)
+        self.tracer = RunTraceCoordinator(self.nc, agent_config)
         self.step_configs = agent_config.get_step_configs()
 
         # Initialization flag

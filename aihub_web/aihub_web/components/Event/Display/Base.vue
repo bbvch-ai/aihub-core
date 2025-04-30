@@ -4,7 +4,7 @@
     :class="{ 'striped-bg': isExternal || !isFromAgentInThread }"
   >
     <template #header>
-      <div class="absolute -top-3 right-12 rounded bg-surface-50 px-2 py-1 text-xs font-semibold dark:!bg-surface-800">
+      <div class="absolute -top-3 right-12 rounded bg-surface-50 px-2 py-1 text-sm font-semibold dark:!bg-surface-800">
         {{ event.agent_class }}
       </div>
     </template>
@@ -46,11 +46,11 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ThreadResponse, WsServerEvent } from '@core/sdk/client'
+import type { AgentDto, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
   event: WsServerEvent
-  thread: ThreadResponse
+  thread: ThreadDto
   icon: string
   isExternal?: boolean
   isEmpty?: boolean

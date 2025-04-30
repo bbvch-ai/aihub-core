@@ -39,10 +39,10 @@ from typing_extensions import override
 # Import all events here that the frontend should be able to display
 DisplayEvents = Union[
     Annotated[StartEvent, Tag("StartEvent")],
-    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
-    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
     Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")],
     Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")],
+    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
+    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
     Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")],
     Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")],
     Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")],

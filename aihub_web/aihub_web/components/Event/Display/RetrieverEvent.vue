@@ -15,11 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import type { RetrieverEvent, ThreadResponse, WsServerEvent } from '@core/sdk/client'
+import type { RetrieverEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: RetrieverEvent }
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
 </script>
 

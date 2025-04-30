@@ -28,10 +28,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ThreadResponse, UserDto } from '@core/sdk/client'
+import type { AgentDto, ThreadDto, UserDto } from '@core/sdk/client'
 
 const props = defineProps<{
-  thread: ThreadResponse
+  thread: ThreadDto
 }>()
 
 const users = computed<UserDto[]>(() => props.thread.users ?? [])

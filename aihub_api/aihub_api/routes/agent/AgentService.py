@@ -26,7 +26,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.thread.dto.ThreadResponse import ThreadResponse
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
@@ -217,7 +217,7 @@ class AgentService:
         return resources.stop_event
 
     @staticmethod
-    async def get_agent_threads(agent_class: str, agent_id: str, t: LocaleHandler) -> List[ThreadResponse]:
+    async def get_agent_threads(agent_class: str, agent_id: str, t: LocaleHandler) -> List[ThreadDTO]:
         """Retrieves all threads that a specific agent is part of."""
         return ThreadService.get_threads_for_agent(agent_class, agent_id, t)
 

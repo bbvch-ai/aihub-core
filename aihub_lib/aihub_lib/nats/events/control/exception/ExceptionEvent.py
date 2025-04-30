@@ -1,13 +1,12 @@
-from typing import ClassVar
+from typing import ClassVar, Dict
 
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
-class ExceptionEvent(ControlEvent, DisplayEvent):
+class ExceptionEvent(SemanticEvent):
     """
     An event signaling that an exception or error has occurred during a run.
 
@@ -31,3 +30,9 @@ class ExceptionEvent(ControlEvent, DisplayEvent):
         500,
         description="HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).",
     )
+
+    def to_semantic_convention(self) -> Dict[str, str]:
+        return {
+            "exception.type": self.http_status_code,
+            "exception.message": self.message,
+        }

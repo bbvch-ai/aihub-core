@@ -8,11 +8,13 @@ from pydantic import BaseModel, Field
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 
+
 class MinimalAgentDTO(BaseModel):
     """
     Encapsulates the data transfer object (DTO) for a minimal agent.
     Only contains minimal information about the agent.
     """
+
     agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
     agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
     agent_config: AgentConfigDTO = Field(
@@ -31,6 +33,7 @@ class MinimalAgentDTO(BaseModel):
             is_conversational=entity.is_conversational,
         )
 
+
 class AgentDTO(MinimalAgentDTO):
     """
     A data transfer object for representing agent information in responses.
@@ -42,6 +45,7 @@ class AgentDTO(MinimalAgentDTO):
 
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
+
     start_events: List[EventSpecs] = Field(
         ..., description="A list of `EventSpecs` representing events that can start this agent's workflow."
     )
