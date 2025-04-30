@@ -35,6 +35,8 @@ class RecursiveNodeSummarizer:
         self.node_id_to_node = {}
 
     def summarize_nodes(self, nodes: List[TextNode]) -> List[TextNode]:
+        if not nodes:
+            return []
         locale = nodes[0].metadata.get(LANGUAGE, NODE_LANGUAGE_ENGLISH)
         locale_handler = LocaleHandler(locale=locale)
         llm_summarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
