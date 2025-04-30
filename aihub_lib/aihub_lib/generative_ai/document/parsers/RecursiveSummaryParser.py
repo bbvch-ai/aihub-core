@@ -1,22 +1,21 @@
 from typing import Dict, List
 
-from i18n import t
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
-    NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
     TYPE,
 )
 
 
 class LLMSummarizer:
-    def __init__(self, llm: LLM, locale: str = NODE_LANGUAGE_ENGLISH):
+    def __init__(self, llm: LLM, t: LocaleHandler):
         self._llm = llm
-        self._summarize_prompt_template = PromptTemplate(t("agent.prompt.summarizer.summarize"), locale=locale)
+        self._summarize_prompt_template = PromptTemplate(t("lib.prompt.summarizer.summarize"))
 
     def summarize(self, text: str) -> str:
         response = self._llm.predict(self._summarize_prompt_template, text=text)
@@ -28,13 +27,14 @@ class RecursiveNodeSummarizer:
         self,
         llm: LLM,
         min_summarization_length: int = 500,
+        t: LocaleHandler = LocaleHandler(),
     ):
         """
         Args:
             llm (LLM): The LLM model to use for summarization.
             min_summarization_length (int): The minimum length of characters needed to create a summary.
         """
-        self.llm_summarizer = LLMSummarizer(llm)
+        self.llm_summarizer = LLMSummarizer(llm=llm, t=t)
         self.min_summarization_length = min_summarization_length
         self.node_id_to_node = {}
 
