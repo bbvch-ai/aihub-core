@@ -69,48 +69,48 @@ class Stores(pulumi.ComponentResource):
         )
 
         # Create Cosmos DB resources
-        pulumi.log.info("Getting cosmos subnet...")
-        self.cosmos_subnet = self.network_provider.get_cosmos_subnet()
-        pulumi.log.info("Creating cosmos DNS zone...")
-        self.cosmos_dns_zone = self.pe_manager.create_dns_zone("cosmos", "privatelink.mongo.cosmos.azure.com")
+        # pulumi.log.info("Getting cosmos subnet...")
+        # self.cosmos_subnet = self.network_provider.get_cosmos_subnet()
+        # pulumi.log.info("Creating cosmos DNS zone...")
+        # self.cosmos_dns_zone = self.pe_manager.create_dns_zone("cosmos", "privatelink.mongo.cosmos.azure.com")
 
         # Create document store (Cosmos DB)
-        pulumi.log.info("Creating document db...")
-        self.document_db = self._create_document_db()
-        pulumi.log.info("Creating document db private endpoint...")
-        self.document_db_private_endpoint = self.pe_manager.create_private_endpoint(
-            name=self.config.doc_store_name,
-            resource_id=self.document_db.id,
-            subnet_id=self.cosmos_subnet.id,
-            group_id="MongoDB",
-            dns_zone=self.cosmos_dns_zone,
-            depends_on=[self.document_db],
-        )
+        # pulumi.log.info("Creating document db...")
+        # self.document_db = self._create_document_db()
+        # pulumi.log.info("Creating document db private endpoint...")
+        # self.document_db_private_endpoint = self.pe_manager.create_private_endpoint(
+        #     name=self.config.doc_store_name,
+        #     resource_id=self.document_db.id,
+        #     subnet_id=self.cosmos_subnet.id,
+        #     group_id="MongoDB",
+        #     dns_zone=self.cosmos_dns_zone,
+        #     depends_on=[self.document_db],
+        # )
 
         # Create API database (Cosmos DB)
-        pulumi.log.info("Getting api cosmos subnet...")
-        self.api_cosmos_subnet = self.network_provider.get_api_cosmos_subnet()
-        pulumi.log.info("Creating cosmos db...")
-        self.api_db = self._create_api_db()
-        pulumi.log.info("Creating cosmos db private endpoint...")
-        self.api_db_private_endpoint = self.pe_manager.create_private_endpoint(
-            name=self.config.store_name,
-            resource_id=self.api_db.id,
-            subnet_id=self.api_cosmos_subnet.id,
-            group_id="MongoDB",
-            dns_zone=self.cosmos_dns_zone,
-            depends_on=[self.api_db],
-        )
+        # pulumi.log.info("Getting api cosmos subnet...")
+        # self.api_cosmos_subnet = self.network_provider.get_api_cosmos_subnet()
+        # pulumi.log.info("Creating cosmos db...")
+        # self.api_db = self._create_api_db()
+        # pulumi.log.info("Creating cosmos db private endpoint...")
+        # self.api_db_private_endpoint = self.pe_manager.create_private_endpoint(
+        #     name=self.config.store_name,
+        #     resource_id=self.api_db.id,
+        #     subnet_id=self.api_cosmos_subnet.id,
+        #     group_id="MongoDB",
+        #     dns_zone=self.cosmos_dns_zone,
+        #     depends_on=[self.api_db],
+        # )
 
         # Create PostgreSQL resources
-        pulumi.log.info("Getting postgres subnet...")
-        self.postgres_subnet = self.network_provider.get_pg_subnet()
-        pulumi.log.info("Creating postgres DNS zone...")
-        self.postgres_dns_zone = self.pe_manager.create_dns_zone(
-            "postgres", f"privatelink.{self.config.location.lower()}.postgres.database.azure.com"
-        )
-        pulumi.log.info("Creating postgres...")
-        self.postgres_db = self._create_postgres_server()
+        # pulumi.log.info("Getting postgres subnet...")
+        # self.postgres_subnet = self.network_provider.get_pg_subnet()
+        # pulumi.log.info("Creating postgres DNS zone...")
+        # self.postgres_dns_zone = self.pe_manager.create_dns_zone(
+        #     "postgres", f"privatelink.{self.config.location.lower()}.postgres.database.azure.com"
+        # )
+        # pulumi.log.info("Creating postgres...")
+        # self.postgres_db = self._create_postgres_server()
 
         # Export outputs
         self._register_outputs()
