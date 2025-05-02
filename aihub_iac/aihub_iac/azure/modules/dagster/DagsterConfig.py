@@ -144,10 +144,5 @@ class DagsterConfig(StorageConfig):
         return f"{project_settings.APP_NAME}{STORAGE_ACCOUNT}{project_settings.LOCATION_SHORT}datalake"
 
     @property
-    def storage_service_name(self) -> str:
-        """Service name to use for storage resources"""
-        return "datalake"
-
-    @property
     def postgres_name(self) -> str:
         return f"{self.project_name}-{POSTGRES}-{self.location_short}"

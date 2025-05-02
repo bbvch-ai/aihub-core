@@ -56,15 +56,14 @@ class Dagster(pulumi.ComponentResource):
             private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
         )
 
-        self.storage_account = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name,
+        self.datalake = self.storage_factory.create_storage_account(
+            service_name=self.config.dagster_datalake,
             subnet_id=self.dagster_storage_subnet.id,
             vnet_id=self.vnet.id,
             blob_only=True,
             existing_blob_dns_zone=self.blob_dns_zone,
         )
 
-        self.datalake = self._create_data_lake()
         self.identity = self._create_identity()
 
         managed_env_config = ManagedEnvironmentConfig(
@@ -99,20 +98,6 @@ class Dagster(pulumi.ComponentResource):
             resource_name=self.config.database_name,
             resource_group_name=self.config.resource_group,
             server_name=self.config.postgres_name,
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-    def _create_data_lake(self):
-        """Create the data lake storage account"""
-        return storage.StorageAccount(
-            resource_name=self.config.dagster_datalake,
-            account_name=self.config.dagster_datalake,
-            resource_group_name=self.config.resource_group,
-            location=self.config.location,
-            kind="StorageV2",
-            sku=storage.SkuArgs(name="Standard_LRS"),
-            access_tier=storage.AccessTier.HOT,
-            is_hns_enabled=True,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
