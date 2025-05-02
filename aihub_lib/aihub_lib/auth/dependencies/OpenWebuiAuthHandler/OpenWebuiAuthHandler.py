@@ -180,12 +180,12 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
                 roles=access_token.roles,
             )
 
-        # user_name_hash = request.headers.get("X-OpenWebUI-User-Name-Hash")
-        # user_email_hash = request.headers.get("X-OpenWebUI-User-Email-Hash")
-        #
-        # if hash_string_sha1(user_name_hash) == user_email_hash or hash_string_sha1(user_email_hash) == user_name_hash:
-        #     logger.warning("User name and email hashes do not match.")
-        #     raise HTTPException(status_code=401, detail="User name and email hashes do not match.")
+        user_name_hash = request.headers.get("X-OpenWebUI-User-Name-Hash")
+        user_email_hash = request.headers.get("X-OpenWebUI-User-Email-Hash")
+
+        if hash_string_sha1(user_name_hash) == user_email_hash or hash_string_sha1(user_email_hash) == user_name_hash:
+            logger.warning("User name and email hashes do not match.")
+            raise HTTPException(status_code=401, detail="User name and email hashes do not match.")
 
         graph_token = self.credential.get_token(self.graph_scope).token
         return await self.get_user_by_email(user_email, graph_token)
