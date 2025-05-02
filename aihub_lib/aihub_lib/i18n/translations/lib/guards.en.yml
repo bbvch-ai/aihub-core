@@ -12,6 +12,7 @@ agent_description_guard:
     <Past Conversation Context>
     {history}
     </Past Conversation Context>
+    Your final output must be exclusively a JSON object with exactly the two keys “success” and “reasoning”. Do not repeat the entire JSON schema or add additional meta information.
   user_message: |
     <User>
     {user}
