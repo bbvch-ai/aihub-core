@@ -7,19 +7,18 @@ export const useThreadEvents = defineQuery(() => {
   const { getBearer } = useAuth()
 
   const route = useRoute()
-  const threadId = route.params.thread_id as string
   const queryCache = useQueryCache()
 
   // Regular REST API query
   const { data: threadEvents, isLoading: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
-    key: () => ['events', 'thread', threadId],
+    key: () => ['events', 'thread', route.params.thread_id],
     staleTime: 1000 * 10, // 10 seconds
     enabled: true,
     query: async () => {
       return await getEvents({
         composable: '$fetch',
         query: {
-          thread_id: threadId,
+          thread_id: route.params.thread_id,
         },
       })
     },
@@ -47,9 +46,9 @@ export const useThreadEvents = defineQuery(() => {
       const event = JSON.parse(rawEventData) as WsServerEvent
 
       // Only process events for the current thread
-      if (event.thread_id === threadId) {
+      if (event.thread_id === route.params.thread_id) {
         // Get current events from cache
-        const currentEvents = queryCache.getQueryData<WsServerEvent[]>(['events', 'thread', threadId]) || []
+        const currentEvents = queryCache.getQueryData<WsServerEvent[]>(['events', 'thread', route.params.thread_id]) || []
 
         // Check if event already exists (avoid duplicates)
         const eventExists = currentEvents.some(e => e.event_id === event.event_id)
@@ -64,7 +63,7 @@ export const useThreadEvents = defineQuery(() => {
           )
 
           // Update the cache with the new array
-          queryCache.setQueryData(['events', 'thread', threadId], updatedEvents)
+          queryCache.setQueryData(['events', 'thread', route.params.thread_id], updatedEvents)
         }
       }
     }
