@@ -71,7 +71,7 @@ class TestAudioChunking:
             assert "start_time" in metadata
             assert "end_time" in metadata
 
-            # Verify no gaps between chunks
+            # Verify no gaps between chunks (excluding overlap)
             if i > 0:
                 prev_end = chunks[i - 1][2]["end_time"]
                 curr_start = metadata["start_time"]
@@ -82,7 +82,6 @@ class TestAudioChunking:
         """Test that chunked audio maintains continuity."""
         # Create a test audio with distinct patterns
         duration = 5 * 60 * 1000  # 5 minutes
-        target_duration = 2 * 60 * 1000  # 2 minutes per chunk
 
         # Create audio with alternating frequencies
         segment1 = Sine(440).to_audio_segment(duration=duration // 3)
@@ -99,31 +98,18 @@ class TestAudioChunking:
         file = UploadFile(filename="test_pattern.wav", file=buffer)
 
         # Chunk the audio
-        chunks = await AudioChunkingService.chunk_audio_file(file, target_duration=target_duration)
+        chunks = await AudioChunkingService.chunk_audio_file(file)
 
         # Verify we have multiple chunks
         assert len(chunks) > 1
 
-        # Calculate expected total duration with overlaps
-        expected_chunks = (duration + target_duration - 1) // target_duration
+        # Verify that total duration is covered
+        total_logical_duration = 0
+        for _, _, metadata in chunks:
+            total_logical_duration += metadata["end_time"] - metadata["start_time"]
 
-        # Each chunk (except first and last) adds one overlap
-        expected_overlap = 0
-        for i, (_, _, metadata) in enumerate(chunks):
-            if metadata.get("overlap_start", False):
-                expected_overlap += AudioChunkingService.OVERLAP_DURATION
-            if metadata.get("overlap_end", False):
-                expected_overlap += AudioChunkingService.OVERLAP_DURATION
-        expected_total_duration = duration + expected_overlap
-
-        # Reconstruct audio from chunks and verify total duration
-        total_duration = 0
-        for buffer, _, metadata in chunks:
-            chunk_audio = AudioSegment.from_wav(buffer)
-            total_duration += len(chunk_audio)
-
-        # Allow for small differences due to rounding
-        assert abs(total_duration - expected_total_duration) < 1000  # Less than 1 second difference
+        # The logical segments should equal the original duration
+        assert total_logical_duration == duration
 
     @pytest.mark.asyncio
     async def test_audio_continuity_without_overlaps(self, create_test_audio):

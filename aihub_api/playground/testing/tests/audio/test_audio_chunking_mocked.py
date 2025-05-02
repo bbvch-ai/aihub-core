@@ -109,7 +109,12 @@ class TestAudioChunkingMocked:
             return mock_audio, "wav"
 
         monkeypatch.setattr(AudioChunkingService, "validate_and_prepare_audio", mock_validate_and_prepare)
-        monkeypatch.setattr(AudioChunkingService, "find_silence_points", lambda x: [])
+
+        # Mock the find_silence_near_middle method to return middle points
+        def mock_find_silence_near_middle(audio, start_ms, end_ms, min_silence_len=None, silence_thresh=None):
+            return start_ms + (end_ms - start_ms) // 2
+
+        monkeypatch.setattr(AudioChunkingService, "find_silence_near_middle", mock_find_silence_near_middle)
 
         file = Mock(spec=UploadFile)
         file.filename = "test.wav"
