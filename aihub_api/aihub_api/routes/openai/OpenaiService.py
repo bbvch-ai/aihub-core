@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Literal, Optional, Tuple
 
+from aihub_api.audio.AudioChunkingService import AudioChunkingService
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -402,9 +403,10 @@ class OpenaiService:
         timestamp_granularities: Optional[List[Literal["word", "segment"]]],
     ) -> Transcription | TranscriptionVerbose | str:
         """
-        Transcribe an audio file to text.
-        Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
+        Transcribe an audio file to text, with automatic chunking for large files.
         """
+        logger.info(f"Starting STT transcription for file: {file.filename}")
+
         models = [model for model in stt_models if model.name == model_name]
         if len(models) == 0:
             raise ValueError(f"Model {model_name} not found.")
@@ -412,21 +414,107 @@ class OpenaiService:
         stt_model_config = models[0]
         client: AsyncOpenAI | AsyncAzureOpenAI = stt_model_config.get_openai_client()
 
-        file_tuple: Tuple[Optional[str], FileContent, Optional[str]] = (
-            file.filename,
-            file.file,
-            file.content_type,
-        )
+        # Check file size
+        file_size = file.size
 
-        return await client.audio.transcriptions.create(
-            model=model_name,
-            file=file_tuple,
-            language=language,
-            prompt=prompt,
-            response_format=response_format,
-            temperature=temperature,
-            timestamp_granularities=timestamp_granularities,
-        )
+        # OpenAI's actual limit
+        MAX_FILE_SIZE = 26_214_400
+
+        logger.info(f"File size: {file_size} bytes, Max size: {MAX_FILE_SIZE} bytes")
+
+        if file_size <= MAX_FILE_SIZE:
+            # Process normally - no chunking needed
+            logger.info("File within size limit, processing without chunking")
+
+            file_tuple: Tuple[Optional[str], FileContent, Optional[str]] = (
+                file.filename,
+                file.file,
+                file.content_type,
+            )
+
+            return await client.audio.transcriptions.create(
+                model=model_name,
+                file=file_tuple,
+                language=language,
+                prompt=prompt,
+                response_format=response_format,
+                temperature=temperature,
+                timestamp_granularities=timestamp_granularities,
+            )
+
+        # File is too large, use chunking
+        logger.info(f"File exceeds size limit, chunking required")
+
+        try:
+            # Chunk the audio file
+            chunks = await AudioChunkingService.chunk_audio_file(file)
+            logger.info(f"Audio file chunked into {len(chunks)} parts")
+
+            # Process each chunk
+            transcription_results = []
+
+            for i, (chunk_buffer, chunk_filename, metadata) in enumerate(chunks):
+                logger.info(f"Processing chunk {i+1}/{len(chunks)}: {chunk_filename}")
+
+                file_tuple = (chunk_filename, chunk_buffer, "audio/wav")
+
+                try:
+                    result = await client.audio.transcriptions.create(
+                        model=model_name,
+                        file=file_tuple,
+                        language=language,
+                        prompt=prompt,
+                        response_format=response_format or "json",  # Force JSON for structured data
+                        temperature=temperature,
+                        timestamp_granularities=timestamp_granularities,
+                    )
+
+                    # Extract text based on response type
+                    if isinstance(result, str):
+                        text = result
+                    elif hasattr(result, "text"):
+                        text = result.text
+                    else:
+                        logger.error(f"Unexpected result type for chunk {i}: {type(result)}")
+                        text = str(result)
+
+                    transcription_results.append((text, metadata))
+                    logger.info(f"Chunk {i+1} transcribed successfully")
+
+                except Exception as e:
+                    logger.error(f"Failed to transcribe chunk {i}: {str(e)}")
+                    # Continue with other chunks rather than failing completely
+                    transcription_results.append((f"[Error transcribing chunk {i}]", metadata))
+
+            # Merge transcriptions
+            merged_text = AudioChunkingService.merge_transcriptions(transcription_results)
+            logger.info("All chunks processed and merged")
+
+            # Return in appropriate format
+            if response_format == "text":
+                return merged_text
+            elif response_format == "srt" or response_format == "vtt":
+                # For these formats, we'd need special handling
+                # For now, return as text with a warning
+                logger.warning(f"Format {response_format} not fully supported with chunking, returning as text")
+                return merged_text
+            elif response_format == "verbose_json":
+                # Create a verbose response
+                return TranscriptionVerbose(
+                    text=merged_text,
+                    task="transcribe",
+                    language=language,
+                    duration=sum(m["end_time"] - m["start_time"] for _, m in transcription_results) / 1000.0,
+                    segments=[],  # Would need to be implemented for full verbose support
+                    words=[],  # Would need to be implemented for full verbose support
+                )
+            else:
+                # Default to JSON format
+                return Transcription(text=merged_text)
+
+        except Exception as e:
+            logger.error(f"Error during audio chunking/transcription: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to process audio file: {str(e)}")
 
     @staticmethod
     async def tts(

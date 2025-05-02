@@ -27,6 +27,7 @@ pyjwt = "^2.10.1"
 llama-index-embeddings-text-embeddings-inference = "^0.3.2"
 python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
+pydub = "^0.25.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
