@@ -1,6 +1,5 @@
 import pytest
 import io
-from unittest.mock import Mock, AsyncMock
 from fastapi import UploadFile, HTTPException
 from pydub.generators import Sine
 from pydub import AudioSegment
@@ -8,62 +7,46 @@ from pydub import AudioSegment
 from aihub_api.audio.AudioChunkingService import AudioChunkingService
 
 
-# Pre-generated audio cache
-_AUDIO_CACHE = {}
-
-
-def get_cached_audio(duration_ms: int, format: str = "wav") -> bytes:
-    """Get audio from cache or generate and cache it."""
-    cache_key = f"{duration_ms}_{format}"
-
-    if cache_key not in _AUDIO_CACHE:
-        # Generate audio only once
-        sine_wave = Sine(440).to_audio_segment(duration=duration_ms)
-        buffer = io.BytesIO()
-        sine_wave.export(buffer, format=format)
-        _AUDIO_CACHE[cache_key] = buffer.getvalue()
-
-    return _AUDIO_CACHE[cache_key]
-
-
 @pytest.fixture
 def create_test_audio():
-    """Creates test audio files with caching."""
+    """Creates test audio files of various sizes and formats."""
 
     def _create_audio(duration_ms: int, format: str = "wav"):
-        audio_bytes = get_cached_audio(duration_ms, format)
-        buffer = io.BytesIO(audio_bytes)
+        # Generate a sine wave
+        sine_wave = Sine(440).to_audio_segment(duration=duration_ms)
 
+        # Export to buffer
+        buffer = io.BytesIO()
+        try:
+            sine_wave.export(buffer, format=format)
+        except FileNotFoundError:
+            if format != "wav":
+                # Fallback to WAV if ffmpeg is not available
+                sine_wave.export(buffer, format="wav")
+            else:
+                raise
+
+        # Get the size before seeking to start
+        buffer.seek(0, io.SEEK_END)
+        size = buffer.tell()
+        buffer.seek(0)
+
+        # Create UploadFile with size
         upload_file = UploadFile(filename=f"test_audio.{format}", file=buffer)
-        upload_file.size = len(audio_bytes)
+        upload_file.size = size  # Set the size attribute
+
         return upload_file
 
     return _create_audio
 
 
-@pytest.fixture
-def mock_audio_segment():
-    """Mock AudioSegment for faster testing."""
-
-    def _mock_segment(duration_ms: int):
-        mock = Mock(spec=AudioSegment)
-        mock.__len__ = Mock(return_value=duration_ms)
-        mock.frame_rate = 44100
-        mock.channels = 2
-        mock.sample_width = 2
-        mock.export = Mock()
-        return mock
-
-    return _mock_segment
-
-
-class TestAudioChunkingOptimized:
+class TestAudioChunking:
 
     @pytest.mark.asyncio
     async def test_small_file_no_chunking(self, create_test_audio):
-        """Test that small files are not chunked - now faster."""
-        # Use smaller duration for testing the same logic
-        file = create_test_audio(10_000)  # 10 seconds instead of 30
+        """Test that small files are not chunked."""
+        # Create a 30-second audio file
+        file = create_test_audio(30_000)
 
         chunks = await AudioChunkingService.chunk_audio_file(file)
 
@@ -72,59 +55,111 @@ class TestAudioChunkingOptimized:
         assert chunks[0][2]["total_chunks"] == 1
 
     @pytest.mark.asyncio
-    async def test_large_file_chunking_mocked(self, monkeypatch):
-        """Test large file chunking with mocked AudioSegment for speed."""
-        # Mock the audio loading and processing
-        mock_audio = Mock(spec=AudioSegment)
-        mock_audio.__len__ = Mock(return_value=15 * 60 * 1000)  # 15 minutes
-        mock_audio.frame_rate = 44100
-        mock_audio.channels = 2
-        mock_audio.sample_width = 2
-
-        # Mock export to create small files
-        def mock_export(buffer, format):
-            buffer.write(b"mock_audio_data")
-
-        mock_audio.export = Mock(side_effect=mock_export)
-
-        # Mock the slice operation for chunking
-        def mock_getitem(slice_obj):
-            chunk = Mock(spec=AudioSegment)
-            if isinstance(slice_obj, slice):
-                start = slice_obj.start or 0
-                stop = slice_obj.stop or len(mock_audio)
-                chunk.__len__ = Mock(return_value=stop - start)
-            else:
-                chunk.__len__ = Mock(return_value=1000)
-            chunk.frame_rate = 44100
-            chunk.channels = 2
-            chunk.sample_width = 2
-            chunk.export = Mock(side_effect=mock_export)
-            return chunk
-
-        mock_audio.__getitem__ = Mock(side_effect=mock_getitem)
-
-        # Mock AudioSegment.from_file
-        async def mock_validate_and_prepare(file):
-            return mock_audio, "wav"
-
-        monkeypatch.setattr(AudioChunkingService, "validate_and_prepare_audio", mock_validate_and_prepare)
-        monkeypatch.setattr(AudioChunkingService, "find_silence_points", lambda x: [])
-
-        file = Mock(spec=UploadFile)
-        file.filename = "test.wav"
-        file.size = 50 * 1024 * 1024  # 50 MB
+    async def test_large_file_chunking(self, create_test_audio):
+        """Test that large files are properly chunked."""
+        # Create a 15-minute audio file
+        file = create_test_audio(15 * 60 * 1000)
 
         chunks = await AudioChunkingService.chunk_audio_file(file)
 
         assert len(chunks) > 1
+
+        # Verify chunk metadata
         for i, (buffer, filename, metadata) in enumerate(chunks):
             assert metadata["chunk_index"] == i
             assert metadata["total_chunks"] == len(chunks)
+            assert "start_time" in metadata
+            assert "end_time" in metadata
+
+            # Verify no gaps between chunks
+            if i > 0:
+                prev_end = chunks[i - 1][2]["end_time"]
+                curr_start = metadata["start_time"]
+                assert curr_start == prev_end
+
+    @pytest.mark.asyncio
+    async def test_audio_continuity(self, create_test_audio):
+        """Test that chunked audio maintains continuity."""
+        # Create a test audio with distinct patterns
+        duration = 5 * 60 * 1000  # 5 minutes
+        target_duration = 2 * 60 * 1000  # 2 minutes per chunk
+
+        # Create audio with alternating frequencies
+        segment1 = Sine(440).to_audio_segment(duration=duration // 3)
+        segment2 = Sine(880).to_audio_segment(duration=duration // 3)
+        segment3 = Sine(440).to_audio_segment(duration=duration // 3)
+
+        test_audio = segment1 + segment2 + segment3
+
+        # Export to buffer
+        buffer = io.BytesIO()
+        test_audio.export(buffer, format="wav")
+        buffer.seek(0)
+
+        file = UploadFile(filename="test_pattern.wav", file=buffer)
+
+        # Chunk the audio
+        chunks = await AudioChunkingService.chunk_audio_file(file, target_duration=target_duration)
+
+        # Verify we have multiple chunks
+        assert len(chunks) > 1
+
+        # Calculate expected total duration with overlaps
+        expected_chunks = (duration + target_duration - 1) // target_duration
+
+        # Each chunk (except first and last) adds one overlap
+        expected_overlap = 0
+        for i, (_, _, metadata) in enumerate(chunks):
+            if metadata.get("overlap_start", False):
+                expected_overlap += AudioChunkingService.OVERLAP_DURATION
+            if metadata.get("overlap_end", False):
+                expected_overlap += AudioChunkingService.OVERLAP_DURATION
+        expected_total_duration = duration + expected_overlap
+
+        # Reconstruct audio from chunks and verify total duration
+        total_duration = 0
+        for buffer, _, metadata in chunks:
+            chunk_audio = AudioSegment.from_wav(buffer)
+            total_duration += len(chunk_audio)
+
+        # Allow for small differences due to rounding
+        assert abs(total_duration - expected_total_duration) < 1000  # Less than 1 second difference
+
+    @pytest.mark.asyncio
+    async def test_audio_continuity_without_overlaps(self, create_test_audio):
+        """Test that the logical audio segments (without overlaps) maintain continuity."""
+        duration = 5 * 60 * 1000  # 5 minutes
+
+        # Create test audio
+        test_audio = Sine(440).to_audio_segment(duration=duration)
+
+        buffer = io.BytesIO()
+        test_audio.export(buffer, format="wav")
+        buffer.seek(0)
+
+        file = UploadFile(filename="test.wav", file=buffer)
+
+        # Chunk the audio
+        chunks = await AudioChunkingService.chunk_audio_file(file)
+
+        # Check that the logical segments cover the entire duration
+        total_logical_duration = 0
+        last_end = 0
+
+        for _, _, metadata in chunks:
+            # Verify no gaps between logical segments
+            assert metadata["start_time"] == last_end
+
+            # Add logical duration (without overlap)
+            total_logical_duration += metadata["end_time"] - metadata["start_time"]
+            last_end = metadata["end_time"]
+
+        # The logical segments should equal the original duration
+        assert total_logical_duration == duration
 
     @pytest.mark.asyncio
     async def test_transcription_merging(self):
-        """Test transcription merging without audio generation."""
+        """Test that transcriptions are properly merged."""
         transcriptions = [
             ("This is the first part of the transcription", {"chunk_index": 0}),
             ("transcription and this is the second part", {"chunk_index": 1, "overlap_start": True}),
@@ -133,6 +168,7 @@ class TestAudioChunkingOptimized:
 
         merged = AudioChunkingService.merge_transcriptions(transcriptions)
 
+        # Should remove duplicate words at boundaries
         assert "transcription transcription" not in merged
         assert "part part" not in merged
         assert (
@@ -141,20 +177,47 @@ class TestAudioChunkingOptimized:
         )
 
     @pytest.mark.asyncio
-    async def test_size_estimation(self, mock_audio_segment):
-        """Test size estimation with mocked audio."""
-        mock_audio = mock_audio_segment(10_000)  # 10 seconds
+    async def test_different_audio_formats(self, create_test_audio):
+        """Test chunking with different audio formats."""
+        formats = ["wav", "mp3", "ogg"]
 
-        estimated_size = AudioChunkingService.estimate_chunk_size(mock_audio)
+        for format in formats:
+            file = create_test_audio(2 * 60 * 1000, format=format)  # 2 minutes
 
-        # Verify the calculation
-        duration_seconds = 10.0
-        expected_size = 44 + int(44100 * 2 * 2 * duration_seconds)
-        assert estimated_size == expected_size
+            chunks = await AudioChunkingService.chunk_audio_file(file)
+
+            assert len(chunks) >= 1
+
+            # Verify all chunks are valid WAV files
+            for buffer, filename, _ in chunks:
+                assert filename.endswith(".wav")
+                # Try to load the chunk to verify it's valid
+                chunk_audio = AudioSegment.from_wav(buffer)
+                assert len(chunk_audio) > 0
+
+    @pytest.mark.asyncio
+    async def test_size_estimation(self):
+        """Test that size estimation is accurate."""
+        # Create a known audio segment
+        audio = Sine(440).to_audio_segment(duration=10_000)  # 10 seconds
+
+        # Export to get actual size
+        buffer = io.BytesIO()
+        audio.export(buffer, format="wav")
+        buffer.seek(0, io.SEEK_END)  # Seek to end to get size
+        actual_size = buffer.tell()
+        buffer.seek(0)  # Reset for potential reuse
+
+        # Estimate size
+        estimated_size = AudioChunkingService.estimate_chunk_size(audio)
+
+        # Should be within 5% of actual size
+        assert abs(estimated_size - actual_size) / actual_size < 0.05
 
     @pytest.mark.asyncio
     async def test_error_handling(self):
-        """Test error handling without actual file operations."""
+        """Test error handling for invalid files."""
+        # Create an invalid file
         invalid_file = UploadFile(filename="invalid.txt", file=io.BytesIO(b"This is not an audio file"))
 
         with pytest.raises(HTTPException) as exc_info:
@@ -165,55 +228,47 @@ class TestAudioChunkingOptimized:
 
 
 @pytest.mark.asyncio
-async def test_full_stt_with_chunking():
-    """Fast integration test with all components mocked."""
-    # Mock the heavy operations
-    mock_chunks = [
-        (io.BytesIO(b"chunk1"), "chunk_001.wav", {"chunk_index": 0}),
-        (io.BytesIO(b"chunk2"), "chunk_002.wav", {"chunk_index": 1}),
-        (io.BytesIO(b"chunk3"), "chunk_003.wav", {"chunk_index": 2}),
-    ]
+async def test_full_stt_with_chunking(create_test_audio):
+    """Integration test for the full STT process with chunking."""
+    from unittest.mock import AsyncMock, MagicMock
 
-    # Mock AudioChunkingService
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(AudioChunkingService, "chunk_audio_file", AsyncMock(return_value=mock_chunks))
+    # Create a large test file
+    large_file = create_test_audio(20 * 60 * 1000)  # 20 minutes
 
-        # Create mock file
-        mock_file = Mock(spec=UploadFile)
-        mock_file.size = 100 * 1024 * 1024  # 100 MB
-        mock_file.filename = "large_test.wav"
+    # Set file size for the mock UploadFile
+    large_file.size = 100 * 1024 * 1024  # 100 MB (larger than limit)
 
-        # Mock OpenAI client
-        mock_client = AsyncMock()
-        mock_client.audio.transcriptions.create = AsyncMock(
-            side_effect=[
-                Mock(text="First chunk transcription"),
-                Mock(text="Second chunk transcription"),
-                Mock(text="Third chunk transcription"),
-            ]
-        )
+    # Mock OpenAI client
+    mock_client = AsyncMock()
+    mock_client.audio.transcriptions.create = AsyncMock(
+        side_effect=[
+            MagicMock(text="First chunk transcription"),
+            MagicMock(text="Second chunk transcription"),
+            MagicMock(text="Third chunk transcription"),
+        ]
+    )
 
-        # Mock model config
-        mock_model_config = Mock()
-        mock_model_config.get_openai_client.return_value = mock_client
-        mock_model_config.name = "test-model"
+    # Mock the STT model config
+    mock_model_config = MagicMock()
+    mock_model_config.get_openai_client.return_value = mock_client
+    mock_model_config.name = "test-model"
 
-        # Test the service
-        from aihub_api.routes.openai.OpenaiService import OpenaiService
+    # Test the service
+    from aihub_api.routes.openai.OpenaiService import OpenaiService
 
-        result = await OpenaiService.stt(
-            stt_models=[mock_model_config],
-            file=mock_file,
-            model_name="test-model",
-            language="en",
-            prompt=None,
-            response_format="json",
-            temperature=0.0,
-            timestamp_granularities=None,
-        )
+    result = await OpenaiService.stt(
+        stt_models=[mock_model_config],
+        file=large_file,
+        model_name="test-model",
+        language="en",
+        prompt=None,
+        response_format="json",
+        temperature=0.0,
+        timestamp_granularities=None,
+    )
 
-        # Verify the result
-        assert hasattr(result, "text")
-        assert "First chunk transcription" in result.text
-        assert "Second chunk transcription" in result.text
-        assert "Third chunk transcription" in result.text
+    # Verify the result
+    assert hasattr(result, "text")
+    assert "First chunk transcription" in result.text
+    assert "Second chunk transcription" in result.text
+    assert "Third chunk transcription" in result.text
