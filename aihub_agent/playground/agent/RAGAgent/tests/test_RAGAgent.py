@@ -14,8 +14,6 @@ from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptE
 from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
@@ -38,6 +36,8 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
+from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
@@ -216,7 +216,7 @@ def _(self_hosted_agent_config):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=30) as topic:
+    async with agent_runner.test_run(delay_before_stop=40) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
