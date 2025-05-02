@@ -130,14 +130,39 @@ class ThreadService:
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def get_threads_for_user(user_id: str, t: LocaleHandler) -> List[ThreadDTO]:
-        threads = ThreadEntity.get_threads_by_user(user_id)
-        return [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
+    def get_paginated_threads_for_user(user_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20) -> tuple[int, List[ThreadDTO]]:
+        """Returns a paginated list of threads that the user is a member of."""
+        skip = (page - 1) * page_size
+        total = ThreadEntity.count_threads_by_user(user_id)
+        threads = ThreadEntity.get_paginated_threads_by_user(user_id, skip=skip, limit=page_size)
+        thread_dtos = [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
+        return total, thread_dtos
 
     @staticmethod
-    def get_threads_for_agent(agent_class: str, agent_id: str, t: LocaleHandler) -> List[ThreadDTO]:
-        threads = ThreadEntity.get_threads_by_agent(agent_class, agent_id)
-        return [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
+    def get_paginated_threads_for_agent(
+            agent_class: str,
+            agent_id: str,
+            t: LocaleHandler,
+            page: int = 1,
+            page_size: int = 20
+    ) -> tuple[int, List[ThreadDTO]]:
+        """
+        Returns a paginated list of threads that a specific agent is part of.
+        """
+        # Calculate skip value for pagination
+        skip = (page - 1) * page_size
+
+        # Get total count of threads for this agent
+        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
+
+        # Get paginated threads
+        threads = ThreadEntity.get_paginated_threads_by_agent(agent_class, agent_id, skip=skip, limit=page_size)
+
+        # Convert to DTOs
+        thread_dtos = [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
+
+        return total, thread_dtos
+
 
     @staticmethod
     def add_agent_to_thread(thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadDTO:

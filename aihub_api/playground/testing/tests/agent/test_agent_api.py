@@ -20,6 +20,7 @@ async def agent_api_client():
     controller = (
         AgentController(auth=auth)
         .discover_agents()
+        .get_agents()
         .get_agent()
         .send_event_to(
             AGENT_CLASS,

@@ -79,6 +79,10 @@ export type AgentDto = {
      * A network graph of the agent, showing how different components are connected and interact.
      */
     network_graph: WorkflowGraph;
+    /**
+     * Indicates whether the agent is online and reachable.
+     */
+    is_online: boolean | null;
 };
 
 export type AgentEvent = {
@@ -2026,6 +2030,29 @@ export type NodeData = {
     stop_on_error?: boolean | null;
 };
 
+export type PaginatedThreadsResponse = {
+    /**
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * List of ThreadDTO objects for the current page
+     */
+    threads: Array<ThreadDto>;
+};
+
 /**
  * Represents a partially qualified agent event topic, where some fields may be unspecified.
  * Wildcards (represented by "*") in the subject translate into None values here.
@@ -3169,15 +3196,33 @@ export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
 export type GetUserThreadsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Page number to retrieve (starting from 1)
+         */
+        page?: number;
+        /**
+         * Number of items per page (maximum 100)
+         */
+        page_size?: number;
+    };
     url: '/thread/';
 };
+
+export type GetUserThreadsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetUserThreadsError = GetUserThreadsErrors[keyof GetUserThreadsErrors];
 
 export type GetUserThreadsResponses = {
     /**
      * Successful Response
      */
-    200: Array<ThreadDto>;
+    200: PaginatedThreadsResponse;
 };
 
 export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThreadsResponses];
@@ -3379,7 +3424,16 @@ export type GetAgentThreadsData = {
         agent_class: string;
         agent_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Page number to retrieve (starting from 1)
+         */
+        page?: number;
+        /**
+         * Number of items per page (maximum 100)
+         */
+        page_size?: number;
+    };
     url: '/agent/{agent_class}/{agent_id}/threads';
 };
 
@@ -3396,10 +3450,26 @@ export type GetAgentThreadsResponses = {
     /**
      * Successful Response
      */
-    200: Array<ThreadDto>;
+    200: PaginatedThreadsResponse;
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
+
+export type GetAgentsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/agent/';
+};
+
+export type GetAgentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<AgentDto>;
+};
+
+export type GetAgentsResponse = GetAgentsResponses[keyof GetAgentsResponses];
 
 export type DiscoverAgentsData = {
     body?: never;

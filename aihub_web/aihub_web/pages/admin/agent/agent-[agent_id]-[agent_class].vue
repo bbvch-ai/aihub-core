@@ -3,16 +3,11 @@
     <NavigationTop
       :nav-items="navItems"
     />
-    <div class="p-3">
-      <NuxtPage />
-    </div>
+    <NuxtPage />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useAgentsStore } from '@core/stores/useAgentsStore'
-
-import type { AgentDto } from '@core/sdk/client'
 import type { NavItem } from '@core/types/NavItem'
 
 import { useLocalePath } from '#i18n'
@@ -20,10 +15,7 @@ import { useLocalePath } from '#i18n'
 const route = useRoute()
 const localePath = useLocalePath()
 
-const agentStore = useAgentsStore()
-const { agents } = storeToRefs(agentStore)
-
-const agent = computed<AgentDto | undefined>(() => agents.value?.find(agent => agent.agent_id === route.params.agent_id && agent.agent_class === route.params.agent_class))
+const { agent } = useAgent()
 
 const subPath = (path: string) => {
   return `/admin/agent/agent-${route.params.agent_id}-${route.params.agent_class}/${path}`

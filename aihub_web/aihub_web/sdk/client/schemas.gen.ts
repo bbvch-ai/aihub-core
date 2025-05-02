@@ -114,10 +114,22 @@ export const AgentDTOSchema = {
         network_graph: {
             '$ref': '#/components/schemas/WorkflowGraph',
             description: 'A network graph of the agent, showing how different components are connected and interact.'
+        },
+        is_online: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Online',
+            description: 'Indicates whether the agent is online and reachable.'
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph'],
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph', 'is_online'],
     title: 'AgentDTO',
     description: `A data transfer object for representing agent information in responses.
 
@@ -5013,6 +5025,42 @@ export const NodeDataSchema = {
     required: ['id', 'type', 'node_id', 'label'],
     title: 'NodeData',
     description: 'Data for a node in the workflow graph.'
+} as const;
+
+export const PaginatedThreadsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        threads: {
+            items: {
+                '$ref': '#/components/schemas/ThreadDTO'
+            },
+            type: 'array',
+            title: 'Threads',
+            description: 'List of ThreadDTO objects for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'threads'],
+    title: 'PaginatedThreadsResponse'
 } as const;
 
 export const PartialAgentTopicSchema = {

@@ -63,6 +63,7 @@ async def main():
         AgentController(auth=auth)
         .get_agent()
         .get_agent_threads()
+        .get_agents()
         .discover_agents()
         .send_event_to(
             "LLMWrappingAgent",

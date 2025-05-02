@@ -1,5 +1,13 @@
 <template>
-  <div class="flex flex-col gap-8">
+  <ProgressBar
+    v-if="agentIsLoading || !agent"
+    mode="indeterminate"
+    style="height: 2px"
+  />
+  <div
+    v-else
+    class="flex flex-col gap-8 p-3"
+  >
     <div>
       <p class="text-xl font-bold">
         {{ agent?.agent_config.name }}
@@ -29,7 +37,7 @@
         Stop Events
       </p>
       <Panel
-        v-for="event in agent?.stop_events"
+        v-for="event in (agent?.stop_events ?? [])"
         :key="event.event_name"
         :header="event.event_name"
         toggleable
@@ -45,24 +53,14 @@
         Config
       </p>
       <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-700">
-        <pre class="text-sm">{{ agent.agent_config }}</pre>
+        <pre class="text-sm">{{ agent?.agent_config }}</pre>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useAgentsStore } from '@core/stores/useAgentsStore'
-
-import type { AgentDto } from '@core/sdk/client'
-
-const route = useRoute()
-
-const agentStore = useAgentsStore()
-
-const { agents } = storeToRefs(agentStore)
-
-const agent = computed<AgentDto | undefined>(() => agents.value?.find(agent => agent.agent_id === route.params.agent_id && agent.agent_class === route.params.agent_class))
+const { agent, agentIsLoading } = useAgent()
 </script>
 
 <style scoped>

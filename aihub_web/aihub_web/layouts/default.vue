@@ -78,7 +78,6 @@
 <script setup lang="ts">
 import logo from '@core/assets/images/logo.png'
 import { getHealth } from '@core/sdk/client'
-import { useSuiteStore } from '@core/stores/useSuiteStore'
 
 import type { MenuItem } from 'primevue/menuitem'
 
@@ -87,7 +86,7 @@ const localeRoute = useLocaleRoute()
 
 const online = ref<boolean>(false)
 
-const { apps } = storeToRefs(useSuiteStore())
+const { apps } = useApps()
 
 const nonAdminApps = computed<MenuItem>(() => {
   return apps.value.filter((app: MenuItem) => !app.path.includes('/admin/'))

@@ -1,20 +1,22 @@
 <template>
+  <ProgressBar
+    v-if="threadIsLoading || threadEventsAreLoading || !thread || !threadEvents"
+    mode="indeterminate"
+    style="height: 2px"
+  />
   <div
-    v-if="thread && events"
+    v-else
   >
     <EventList
-      :events="events"
+      :events="threadEvents"
       :thread="thread"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import useThread from '@core/composables/useThread'
-import useThreadEvents from '@core/composables/useThreadEvents'
-
-const { data: thread } = useThread()
-const { data: events } = useThreadEvents()
+const { thread, threadIsLoading } = useThread()
+const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 </script>
 
 <style scoped>

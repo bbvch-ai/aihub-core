@@ -3,9 +3,7 @@
     <NavigationTop
       :nav-items="navItems"
     />
-    <div class="p-3">
-      <NuxtPage />
-    </div>
+    <NuxtPage />
   </div>
 </template>
 

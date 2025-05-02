@@ -19,6 +19,13 @@ export default defineNuxtConfig({
 
   ssr: false,
 
+  imports: {
+    dirs: [
+      'composables',
+      'composables/**',
+    ],
+  },
+
   css: [
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
   ],

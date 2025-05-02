@@ -1,4 +1,4 @@
-import type { ExceptionEvent, WsServerEvent } from '@core/sdk/client'
+import type { WsServerEvent } from '@core/sdk/client'
 
 import {
   EventDisplayAgentInTheLoopRequestEvent,
@@ -17,10 +17,11 @@ import {
   EventDisplayUnknownEvent,
   EventDisplayUserMessageEvent,
   EventDisplayGuardEvent,
-  EventDisplayRouterEvent, EventDisplayExceptionEvent,
+  EventDisplayRouterEvent,
+  EventDisplayExceptionEvent,
 } from '#components'
 
-export default () => {
+export const useEventComponent = () => {
   const resolveComponentForEvent = (event: WsServerEvent) => {
     const mapping = {
       UserMessageEvent: EventDisplayUserMessageEvent,

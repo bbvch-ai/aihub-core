@@ -111,8 +111,6 @@
 </template>
 
 <script setup lang="ts">
-import useThreadUtils from '@core/composables/useThreadUtils'
-
 import type { ThreadDto, UserDto } from '@core/sdk/client'
 
 defineProps<{

@@ -142,8 +142,6 @@
 </template>
 
 <script setup lang="ts">
-import useEventComponent from '@core/composables/useEventComponent'
-import useThreadUtils from '@core/composables/useThreadUtils'
 import { format } from 'date-fns'
 import { ref } from 'vue'
 

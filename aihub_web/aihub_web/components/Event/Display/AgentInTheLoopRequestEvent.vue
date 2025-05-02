@@ -31,8 +31,6 @@
 </template>
 
 <script setup lang="ts">
-import useEventComponent from '@core/composables/useEventComponent'
-
 import type { AgentInTheLoopRequestEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{

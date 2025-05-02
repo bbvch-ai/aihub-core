@@ -17,8 +17,6 @@
 </template>
 
 <script setup lang="ts">
-import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
-
 import type { ChatMessageOutput, ChunkEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{

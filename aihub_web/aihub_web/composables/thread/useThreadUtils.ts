@@ -1,12 +1,13 @@
 import {
-  chatCompletionWithAssistants, createThread, type CreateThreadRequest,
+  createThread,
+  type CreateThreadRequest,
   type DisplayStatistics,
   type RunStatistics,
   type ThreadDto,
   type WsServerEvent,
 } from '@core/sdk/client'
 
-export default () => {
+export const useThreadUtils = () => {
   const pendingType = (thread: ThreadDto) => {
     if (thread.open_hitl) {
       return 'Human in the Loop'

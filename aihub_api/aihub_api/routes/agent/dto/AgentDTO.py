@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -45,7 +45,6 @@ class AgentDTO(MinimalAgentDTO):
 
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
-
     start_events: List[EventSpecs] = Field(
         ..., description="A list of `EventSpecs` representing events that can start this agent's workflow."
     )
@@ -56,9 +55,10 @@ class AgentDTO(MinimalAgentDTO):
         ...,
         description="A network graph of the agent, showing how different components are connected and interact.",
     )
+    is_online: Optional[bool] = Field(..., description="Indicates whether the agent is online and reachable.")
 
     @classmethod
-    def from_entity(cls, entity: AgentEntity, t: LocaleHandler) -> "AgentDTO":
+    def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: Optional[bool] = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
         agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
 
@@ -80,4 +80,5 @@ class AgentDTO(MinimalAgentDTO):
             start_events=start_events,
             stop_events=stop_events,
             network_graph=network_graph,
+            is_online=is_online,
         )

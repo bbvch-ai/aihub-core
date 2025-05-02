@@ -37,8 +37,6 @@
 </template>
 
 <script setup lang="ts">
-import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
-
 import type {
   AudioContent,
   ChatMessageOutput,

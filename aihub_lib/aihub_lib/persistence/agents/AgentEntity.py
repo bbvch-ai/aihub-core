@@ -186,6 +186,10 @@ class AgentEntity(Document):
             )
 
     @classmethod
+    def get_agents(cls):
+        return cls.objects()
+
+    @classmethod
     def get_agent_by_id(cls, agent_entity_id: str) -> "AgentEntity":
         return cls.objects().get(id=ObjectId(agent_entity_id))
 

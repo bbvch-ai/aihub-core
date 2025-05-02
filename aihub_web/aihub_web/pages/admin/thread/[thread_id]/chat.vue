@@ -1,10 +1,15 @@
 <template>
+  <ProgressBar
+    v-if="threadIsLoading || threadEventsAreLoading || !threadEvents || !thread"
+    mode="indeterminate"
+    style="height: 2px"
+  />
   <div
-    v-if="thread && events"
-    class="relative w-full"
+    v-else
+    class="relative w-full p-3"
   >
     <ChatThread
-      :events="events"
+      :events="threadEvents"
       :thread="thread"
     />
     <div class="pt-16">
@@ -25,18 +30,14 @@
 </template>
 
 <script setup lang="ts">
-import useThread from '@core/composables/useThread'
-import { useEventsStore } from '@core/stores/useEventsStore'
-
 const route = useRoute()
 
-const { data: thread } = useThread()
+const { thread, threadIsLoading } = useThread()
 
-const eventStore = useEventsStore()
+const { sendMessages } = useChatCompletions()
 
-const { mutate: sendMessages } = useChatCompletions()
+const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 
-const events = eventStore.eventsForThread(route.params.thread_id)
 const userInput = ref('')
 
 const submitMessage = async () => {
@@ -45,7 +46,7 @@ const submitMessage = async () => {
   sendMessages({
     model: agentIdentifier,
     messages: [{ role: 'user', content: userInput.value }],
-    threadId: route.params.thread_id,
+    threadId: route.params.thread_id as string,
   })
   userInput.value = ''
 }

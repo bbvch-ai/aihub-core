@@ -1,7 +1,12 @@
 <template>
+  <ProgressBar
+    v-if="threadIsLoading || !thread"
+    mode="indeterminate"
+    style="height: 2px"
+  />
   <div
-    v-if="thread"
-    class="flex flex-col gap-12 pt-4"
+    v-else
+    class="flex flex-col gap-12 p-3"
   >
     <h1 class="text-3xl font-bold">
       Thread: {{ thread.name }}
@@ -67,10 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import useThread from '@core/composables/useThread'
-import useThreadUtils from '@core/composables/useThreadUtils'
-
-const { data: thread } = useThread()
+const { thread, threadIsLoading } = useThread()
 const { pendingType } = useThreadUtils()
 
 const formattedDate = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')

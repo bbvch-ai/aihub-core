@@ -5,22 +5,23 @@
     <NavigationLeft
       title="Available Agents"
       :nav-items-map="navItems"
+      :loading="agentsAreLoading"
     />
     <NuxtPage />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useAgentsStore } from '@core/stores/useAgentsStore'
-
 import type { AgentDto } from '@core/sdk/client'
 import type { NavItem } from '@core/types/NavItem'
 
 const route = useRoute()
-const agentStore = useAgentsStore()
-const { agents } = storeToRefs(agentStore)
+const { agents, agentsAreLoading } = useAgents()
 
 const navItems = computed<Record<string, NavItem[]>>(() => {
+  if (agentsAreLoading.value) {
+    return {}
+  }
   const typeMap: Record<string, NavItem[]> = {}
   agents.value?.forEach((agent: AgentDto) => {
     if (!(agent.agent_class in typeMap)) {

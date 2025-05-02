@@ -1,6 +1,9 @@
 import time
 from typing import Annotated, List, Type
 
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -64,6 +67,21 @@ class AgentController(Controller):
     def __init__(self, route: str = "/agent", auth: AuthHandler | None = None, is_admin_only=True):
         super().__init__(route, auth, is_admin_only=is_admin_only)
 
+    def get_agents(self, route: str = "/") -> "AgentController":
+        @self.router.get(route, tags=self.tags)
+        async def get_agents(
+            nc: Annotated[NATS, Depends(use_nats)],
+            user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
+        ) -> List[AgentDTO]:
+            """
+            Retrieve a list of all discovered agents. Filters out agents the user cannot access.
+            """
+            agents = await AgentService.get_agents(nc, t)
+            return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
+
+        return self
+
     def discover_agents(self, route: str = "/discover") -> "AgentController":
         @self.router.get(route, tags=self.tags)
         async def discover_agents(
@@ -104,13 +122,32 @@ class AgentController(Controller):
             agent_id: str,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[ThreadDTO]:
+            page: PageNumber = 1,
+            page_size: PageSize = 20,
+        ) -> PaginatedThreadsResponse:
             """
             Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
             """
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-            return await AgentService.get_agent_threads(agent_class, agent_id, t)
+
+            total, threads = await AgentService.get_paginated_agent_threads(
+                agent_class,
+                agent_id,
+                t,
+                page=page,
+                page_size=page_size
+            )
+
+            total_pages = (total + page_size - 1) // page_size
+
+            return PaginatedThreadsResponse(
+                threads=threads,
+                total=total,
+                page=page,
+                page_size=page_size,
+                total_pages=total_pages
+            )
 
         return self
 

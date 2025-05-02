@@ -1,13 +1,13 @@
 import { getMyUser, type MyUserDto } from '@core/sdk/client'
 
-export const useUserStore = defineStore('user', () => {
+export default defineQuery(() => {
   const {
     data: user,
     status: loadingUser,
     refresh: refreshUser,
     refetch: refetchUser,
   } = useQuery<MyUserDto>({
-    key: ['my_user'],
+    key: () => ['my_user'],
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {

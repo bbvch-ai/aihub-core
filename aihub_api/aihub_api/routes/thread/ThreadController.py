@@ -1,12 +1,15 @@
-from typing import List
+from typing import List, Annotated
 
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
+from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security
+from fastapi import Depends, HTTPException, Security, Path
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
@@ -74,11 +77,28 @@ class ThreadController(Controller):
         async def get_user_threads(
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[ThreadDTO]:
+            page: PageNumber = 1,
+            page_size: PageSize = 20,
+        ) -> PaginatedThreadsResponse:
             """
             Returns all threads that the authenticated user is a member of.
             """
-            return ThreadService.get_threads_for_user(user.oid, t)
+            total, threads = ThreadService.get_paginated_threads_for_user(
+                user.oid,
+                t,
+                page=page,
+                page_size=page_size
+            )
+
+            total_pages = (total + page_size - 1) // page_size
+
+            return PaginatedThreadsResponse(
+                threads=threads,
+                total=total,
+                page=page,
+                page_size=page_size,
+                total_pages=total_pages
+            )
 
         return self
 
@@ -105,7 +125,7 @@ class ThreadController(Controller):
     def get_thread(self, route: str = "/{thread_id}") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def get_thread(
-            thread_id: str,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
@@ -123,7 +143,7 @@ class ThreadController(Controller):
     def add_agent_to_thread(self, route: str = "/{thread_id}/agents") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def add_agent_to_thread(
-            thread_id: str,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             req: AddAgentRequest,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
@@ -144,7 +164,7 @@ class ThreadController(Controller):
     def thread_as_message_history(self, route: str = "/{thread_id}/history") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def thread_as_message_history(
-            thread_id: str,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> HistoryResponse:
@@ -160,9 +180,9 @@ class ThreadController(Controller):
     ) -> "ThreadController":
         @self.router.delete(route, tags=self.tags)
         async def remove_agent_from_thread(
-            thread_id: str,
-            agent_class: str,
-            agent_id: str,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            agent_class: Annotated[str, Path(title="Agent Class")],
+            agent_id: Annotated[str, Path(title="Agent ID")],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
@@ -180,7 +200,7 @@ class ThreadController(Controller):
     def add_user_to_thread(self, route: str = "/{thread_id}/users") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def add_user_to_thread(
-            thread_id: str,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             req: AddUserRequest,
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
@@ -201,8 +221,8 @@ class ThreadController(Controller):
     def remove_user_from_thread(self, route: str = "/{thread_id}/users/{remove_user_id}") -> "ThreadController":
         @self.router.delete(route, tags=self.tags)
         async def remove_user_from_thread(
-            thread_id: str,
-            remove_user_id: str,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            remove_user_id: Annotated[str, Path(title="User ID")],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:

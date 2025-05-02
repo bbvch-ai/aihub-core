@@ -7,8 +7,8 @@ import {
 
 type MessageType = Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam>
 
-export default defineMutation(() => {
-  return useMutation({
+export const useChatCompletions = defineMutation(() => {
+  const { mutate: sendMessages } = useMutation({
     mutation: ({ model, messages, threadId }: { model: string, messages: MessageType, threadId: string }) =>
       chatCompletionWithAssistants({
         composable: '$fetch',
@@ -23,4 +23,7 @@ export default defineMutation(() => {
         },
       }),
   })
+  return {
+    sendMessages,
+  }
 })

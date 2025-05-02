@@ -1,5 +1,3 @@
-import { getEvents } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import { defineStore } from 'pinia'
 
@@ -9,18 +7,6 @@ export const useEventsStore = defineStore('events', () => {
   const { getBearer } = useAuth()
 
   const newEvents = ref<WsServerEvent[]>([])
-
-  const {
-    data: oldEvents,
-    state: initialRequestState,
-    refresh: refreshEvents,
-    refetch: refetchEvents,
-  } = useQuery<WsServerEvent[]>({
-    key: ['events'],
-    query: () => getEvents({
-      composable: '$fetch',
-    }),
-  })
 
   const {
     data: newEvent,
@@ -57,9 +43,7 @@ export const useEventsStore = defineStore('events', () => {
   // Combine, deduplicate, and sort events by creation date
   const events = computed<WsServerEvent[]>(() => {
     const allEvents = [...newEvents.value]
-    if (oldEvents.value) {
-      allEvents.push(...oldEvents.value)
-    }
+
     // Remove duplicates based on event_id
     const uniqueEventsMap = new Map<string, WsServerEvent>()
     allEvents.forEach((event) => {
@@ -82,9 +66,6 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   return {
-    initialRequestState,
-    refreshEvents,
-    refetchEvents,
     webSocketsStatus,
     events,
     eventsForThread,

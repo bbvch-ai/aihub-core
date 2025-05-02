@@ -24,8 +24,6 @@
 </template>
 
 <script setup lang="ts">
-import useAgentIconFromThread from '@core/composables/useAgentIconFromThread'
-
 import type { ThreadDto, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
 
 const props = defineProps<{

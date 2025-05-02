@@ -1,24 +1,34 @@
 <template>
-  <div
-    class="flex h-full flex-row"
-  >
+  <div class="flex h-full flex-row">
     <NavigationLeft
       title="Threads"
       :nav-items-map="navItems"
+      :has-more="hasMoreThreads"
+      :loading="threadsAreLoading"
+      @load-more="loadMore"
     />
     <NuxtPage />
   </div>
 </template>
 
 <script setup lang="ts">
-import useThreads from '@core/composables/useThreads'
-
 import type { ThreadDto } from '@core/sdk/client'
 import type { NavItem } from '@core/types/NavItem'
 
 const route = useRoute()
 
-const { data: threads } = useThreads()
+const {
+  threads,
+  threadsAreLoading,
+  hasMoreThreads,
+  loadMoreThreads,
+} = useThreads()
+
+const loadMore = () => {
+  if (hasMoreThreads.value && !threadsAreLoading.value) {
+    loadMoreThreads()
+  }
+}
 
 const navItems = computed<Record<string, NavItem[]>>(() => {
   const typeMap: Record<string, NavItem[]> = {}
@@ -52,10 +62,24 @@ const navItems = computed<Record<string, NavItem[]>>(() => {
     typeMap[day].push(navItem)
   })
 
-  // Sort threads within each day group from newest to oldest
-  Object.keys(typeMap).forEach((day) => {
-    typeMap[day].sort((a, b) => {
-      // Find the original threads to compare their dates
+  // Sort day groups by date (newest first)
+  const sortedKeys = Object.keys(typeMap).sort((a, b) => {
+    const [dayA, monthA, yearA] = a.split('.')
+    const [dayB, monthB, yearB] = b.split('.')
+
+    const dateA = new Date(+yearA, +monthA - 1, +dayA)
+    const dateB = new Date(+yearB, +monthB - 1, +dayB)
+
+    return dateB.getTime() - dateA.getTime()
+  })
+
+  // Create a new sorted map
+  const sortedMap: Record<string, NavItem[]> = {}
+  sortedKeys.forEach((key) => {
+    sortedMap[key] = typeMap[key]
+
+    // Sort threads within each day group from newest to oldest
+    sortedMap[key].sort((a, b) => {
       const threadA = threads.value?.find(t => t.id === a.key)
       const threadB = threads.value?.find(t => t.id === b.key)
 
@@ -66,10 +90,6 @@ const navItems = computed<Record<string, NavItem[]>>(() => {
     })
   })
 
-  return typeMap
+  return sortedMap
 })
 </script>
-
-<style scoped>
-
-</style>
