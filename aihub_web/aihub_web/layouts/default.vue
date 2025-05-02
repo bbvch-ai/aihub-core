@@ -1,6 +1,6 @@
 <template>
-  <div class="flex min-h-screen w-full flex-row bg-surface-50 dark:bg-surface-950">
-    <div class="fixed flex h-screen w-[50px] flex-col items-center justify-between bg-white shadow-md shadow-surface-500 dark:bg-surface-900">
+  <div class="flex min-h-screen w-full flex-row bg-white dark:bg-surface-900">
+    <div class="fixed flex h-screen w-[50px] flex-col items-center justify-between bg-surface-50 dark:bg-surface-950">
       <div class="flex h-[50px] w-full items-center justify-center">
         <ServiceSelection />
       </div>
@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="w-full pl-[50px]">
-      <div class="flex h-[50px] w-full items-center justify-between px-2 ">
+      <div class="flex h-[50px] w-full items-center justify-between bg-surface-50 px-2 dark:bg-surface-950">
         <Breadcrumb
           class="!bg-transparent"
           :home="apps[0]"
@@ -59,14 +59,23 @@
           <UserBar />
         </div>
       </div>
-      <div>
+      <div v-if="online">
         <slot />
+      </div>
+      <div
+        v-else
+        class="flex h-screen w-full items-center justify-center"
+      >
+        <div
+          class="loader relative aspect-square w-[64px]"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { getHealth } from '@core/sdk/client'
 import { useSuiteStore } from '@core/stores/useSuiteStore'
 
 import logo from '../assets/images/logo.png'
@@ -75,6 +84,8 @@ import type { MenuItem } from 'primevue/menuitem'
 
 const route = useRoute()
 const localeRoute = useLocaleRoute()
+
+const online = ref<boolean>(false)
 
 const { apps } = storeToRefs(useSuiteStore())
 
@@ -94,8 +105,58 @@ const breadcrumbItems = computed(() => {
   if (!activeApp.value || activeApp.value.path == '/') return []
   return [activeApp.value]
 })
+
+getHealth({
+  composable: '$fetch',
+})
+  .then((response) => {
+    console.log(response)
+    online.value = response.code == 200
+  })
+  .catch(() => {
+    online.value = false
+  })
 </script>
 
 <style scoped>
-
+.loader:before,
+.loader:after {
+  content: "";
+  position: absolute;
+  border-radius: 50px;
+  box-shadow: 0 0 0 3px inset #808080;
+  animation: l4 2.5s infinite;
+}
+.loader:after {
+  animation-delay: -1.25s;
+}
+@keyframes l4 {
+  0% {
+    inset: 0 35px 35px 0;
+  }
+  12.5% {
+    inset: 0 35px 0 0;
+  }
+  25% {
+    inset: 35px 35px 0 0;
+  }
+  37.5% {
+    inset: 35px 0 0 0;
+  }
+  50% {
+    inset: 35px 0 0 35px;
+  }
+  62.5% {
+    inset: 0 0 0 35px;
+  }
+  75% {
+    inset: 0 0 35px 35px;
+  }
+  87.5% {
+    inset: 0 0 35px 0;
+  }
+  100% {
+    inset: 0 35px 35px 0;
+  }
+}
 </style>

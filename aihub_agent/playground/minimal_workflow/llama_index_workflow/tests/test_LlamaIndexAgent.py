@@ -55,19 +55,19 @@ async def _(agent_runner: AgentTestRunner, payload: str):
 
 @then(parsers.parse('the agent should call the LLM to process the message "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
-    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
     assert llm_event.input_messages[0].role == MessageRole.USER
     assert llm_event.input_messages[0].content == payload
 
 
 @then("the agent should stream a partial response")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(ChunkEvent), "Agent did not stream a partial response"
+    assert agent_runner.has_event_of_class(ChunkEvent), "Agent did not stream a partial response"
 
 
 @then("the agent should produce a complete response from the LLM")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_type(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
     assert llm_event.output_messages[0].role == MessageRole.ASSISTANT
     assert llm_event.output_messages[0].content, "Agent did not produce a complete response"
 

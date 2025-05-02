@@ -301,18 +301,18 @@ import random
 
 class ConditionalAgent(Agent):
 
-    @step()
-    async def start_step(self, event: StartEvent) -> EventA | EventB:
-        if random.random() > 0.5:
-            print("[ConditionalAgent.start_step] Sent Event A")
-            return EventA()
-        print("[ConditionalAgent.start_step] Sent Event B")
-        return EventB()
+  @step()
+  async def start_step(self, event: StartEvent) -> EventA | EventB:
+    if random.random() > 0.5:
+      print("[ConditionalAgent.start_step] Sent Event A")
+      return EventA()
+    print("[ConditionalAgent.start_step] Sent Event B")
+    return EventB()
 
-    @step()
-    async def end_step(self, event: EventA | EventB) -> StopEvent:
-        print(f"[ConditionalAgent.end_step] Received {event.__class__.__name__}")
-        return StopEvent()
+  @step()
+  async def end_step(self, event: EventA | EventB) -> StopEvent:
+    print(f"[ConditionalAgent.end_step] Received {event.event_name}")
+    return StopEvent()
 ```
 
 **Key Takeaways:**
@@ -629,7 +629,7 @@ async def main():
       llm=AzureOpenAILLMConfig(
         name="gpt-4o",
         base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2023-12-01-preview",
+        api_version="2024-12-01-preview",
         prompt_tokens_costs_per_thousand=0.0045,
         completion_tokens_costs_per_thousand=0.0133,
         default_parameter=AzureOpenAIParameter(temperature=0.0)

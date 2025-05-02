@@ -44,7 +44,7 @@ async def _(agent_runner: AgentTestRunner, locale: str):
 @then(parsers.parse('an event is present with payload "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
-    assert agent_runner.get_event_of_type(MultiLocaleEvent).payload == payload, "Agent has wrong payload"
+    assert agent_runner.get_event_of_class(MultiLocaleEvent).payload == payload, "Agent has wrong payload"
 
 
 @then("a StopEvent is present")

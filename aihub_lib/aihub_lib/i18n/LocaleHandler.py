@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List
@@ -7,6 +8,8 @@ import yaml
 from typing_extensions import Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
+
+logger = logging.getLogger(__name__)
 
 
 class LocaleHandler:
@@ -20,7 +23,7 @@ class LocaleHandler:
         i18n.set("enable_memoization", True)
 
         locale_paths = locale_paths or []
-        for path in locale_paths + self.get_locale_paths():
+        for path in set(locale_paths + self.get_locale_paths()):
             i18n.load_path.append(path)
 
         i18n.load_path = list(set(i18n.load_path))
@@ -86,7 +89,7 @@ class LocaleHandler:
             return getattr(locale_data, available_locales[0])
         raise ValueError("No language keys available")
 
-    def t_object(self, key: str, locale: str) -> Any:
+    def t_object(self, key: str, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         folder, filename, *path = key.split(".")
         current_file_directory = Path(__file__).resolve().parent

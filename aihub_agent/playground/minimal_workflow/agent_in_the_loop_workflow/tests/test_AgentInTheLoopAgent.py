@@ -71,8 +71,8 @@ def remove_worker_stop_event_from_registry():
     original_registry = copy.deepcopy(BaseEvent._event_registry)
 
     # Remove WorkerStopEvent from the registry
-    if WorkerStopEvent.__name__ in BaseEvent._event_registry:
-        del BaseEvent._event_registry[WorkerStopEvent.__name__]
+    if WorkerStopEvent.event_name_from_class() in BaseEvent._event_registry:
+        del BaseEvent._event_registry[WorkerStopEvent.event_name_from_class()]
 
     # Return the original registry so we can restore it later
     return original_registry
@@ -100,27 +100,27 @@ def check_orchestrator_start(orchestrator_runner: AgentTestRunner):
 
 @then("an AgentInTheLoopRequest is received by the orchestrator")
 def check_agent_in_loop_request(orchestrator_runner: AgentTestRunner):
-    assert orchestrator_runner.has_event_of_type(AgentInTheLoopRequestEvent)
+    assert orchestrator_runner.has_event_of_class(AgentInTheLoopRequestEvent)
 
 
 @then(parsers.parse("an AgentInTheLoopResponse with result {result} is received by the orchestrator"))
 def check_agent_in_loop_response_with_result(orchestrator_runner: AgentTestRunner, result: str):
-    assert orchestrator_runner.has_event_of_type(AgentInTheLoopResponseEvent)
-    response_event = orchestrator_runner.get_events_of_type(AgentInTheLoopResponseEvent)[-1]
+    assert orchestrator_runner.has_event_of_class(AgentInTheLoopResponseEvent)
+    response_event = orchestrator_runner.get_events_of_class(AgentInTheLoopResponseEvent)[-1]
     assert response_event.stop_event.result == int(result)
 
 
 @then("an AgentInTheLoopResponse with exception is received by the orchestrator")
 def check_agent_in_loop_response_with_exception(orchestrator_runner: AgentTestRunner):
-    assert orchestrator_runner.has_event_of_type(AgentInTheLoopExceptionEvent)
-    exception_event = orchestrator_runner.get_events_of_type(AgentInTheLoopExceptionEvent)[-1]
+    assert orchestrator_runner.has_event_of_class(AgentInTheLoopExceptionEvent)
+    exception_event = orchestrator_runner.get_events_of_class(AgentInTheLoopExceptionEvent)[-1]
     assert exception_event.exception_event is not None
 
 
 @then("an AgentInTheLoopResponse with unknown event type is received by the orchestrator")
 def check_agent_in_loop_response_with_unknown_event(orchestrator_runner: AgentTestRunner):
-    assert orchestrator_runner.has_event_of_type(AgentInTheLoopResponseEvent)
-    response_event = orchestrator_runner.get_events_of_type(AgentInTheLoopResponseEvent)[-1]
+    assert orchestrator_runner.has_event_of_class(AgentInTheLoopResponseEvent)
+    response_event = orchestrator_runner.get_events_of_class(AgentInTheLoopResponseEvent)[-1]
 
     # Check if the stop_event is an instance of BaseEvent (fallback) but still has the right data
     assert not isinstance(response_event.stop_event, WorkerStopEvent)
@@ -129,13 +129,13 @@ def check_agent_in_loop_response_with_unknown_event(orchestrator_runner: AgentTe
     assert response_event.stop_event.result == 16
 
     # Verify the unknown type information is preserved
-    assert response_event.stop_event._unknown_type == WorkerStopEvent.__name__
+    assert response_event.stop_event._unknown_event_name == WorkerStopEvent.event_name_from_class()
 
 
 @then(parsers.parse("an OrchestrationResultEvent with result {result} is received by the orchestrator"))
 def check_orchestrator_result(orchestrator_runner: AgentTestRunner, result: str):
     assert orchestrator_runner.has_stop_event
-    result_event = orchestrator_runner.get_events_of_type(OrchestrationResultEvent)[-1]
+    result_event = orchestrator_runner.get_events_of_class(OrchestrationResultEvent)[-1]
     assert result_event.result == int(result)
 
 

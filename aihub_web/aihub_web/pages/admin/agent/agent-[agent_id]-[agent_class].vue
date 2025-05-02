@@ -2,7 +2,7 @@
   <div
     class="overflow-auto rounded-lg border border-surface-200 dark:border-surface-700"
   >
-    <div class="bg-white dark:bg-surface-900">
+    <div class="">
       <div class="flex flex-col gap-6 p-6">
         <div>
           <p class="text-2xl font-bold">
@@ -18,11 +18,11 @@
           </p>
           <div
             v-for="startEvent in startEvents"
-            :key="startEvent.event_type"
+            :key="startEvent.event_name"
           >
             <component
-              :is="startEventComponents[startEvent.event_type]"
-              v-if="startEvent.event_type in startEventComponents"
+              :is="startEventComponents[startEvent.event_name]"
+              v-if="startEvent.event_name in startEventComponents"
             />
           </div>
         </div>

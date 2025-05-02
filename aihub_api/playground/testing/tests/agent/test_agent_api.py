@@ -24,8 +24,8 @@ async def agent_api_client():
         .send_event_to(
             AGENT_CLASS,
             AGENT_ID,
-            start_event_type=UserMessageEvent,
-            stop_event_type=LLMStopEvent,
+            start_event_class=UserMessageEvent,
+            stop_event_class=LLMStopEvent,
         )
     )
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()

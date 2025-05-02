@@ -6,6 +6,7 @@
         <option name="secondarySourceFiles">
           <list>
             <option value="milvus-standalone-docker-compose.yml" />
+            <option value="docker-compose-webui.yml" />
           </list>
         </option>
         <option name="sourceFilePath" value="docker-compose.yml" />

@@ -1,4 +1,5 @@
 import asyncio
+from os.path import join, dirname, abspath, isdir
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.event.EventController import EventController
@@ -23,7 +24,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent
+from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -33,10 +34,17 @@ enable_logging()
 async def main():
     runner = ApiTestRunner()
 
+    frontend_dir = join(
+        dirname(abspath(__file__)), "..", "..", "..", "aihub_web", "aihub_web", ".playground", ".output", "public"
+    )
+    if isdir(join(frontend_dir, "_nuxt")):
+        runner.mount_frontend(frontend_dir)
+
     auth = TokenAndOauth2Handler(
         OpenWebuiAuthHandler(),
         OAuth2AuthHandler(),
     )
+    # auth = NoAuthHandler()
 
     runner.mount(
         HealthController().get_health(),
@@ -58,10 +66,16 @@ async def main():
         .send_event_to(
             "LLMWrappingAgent",
             "dev_agent",
-            start_event_type=UserMessageEvent,
-            stop_event_type=LLMStopEvent,
+            start_event_class=UserMessageEvent,
+            stop_event_class=LLMStopEvent,
+        )
+        .send_event_to(
+            "BotInTheLoopAgent",
+            "bot_in_the_loop_agent",
+            start_event_class=UserMessageEvent,
+            stop_event_class=StopEvent,
         ),
-        TokenController().create_token().list_tokens().revoke_token(),
+        TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(
             auth=auth,
             embedding_models=[
@@ -72,7 +86,7 @@ async def main():
                 AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
-                    api_version="2023-12-01-preview",
+                    api_version="2024-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                 ),
             ],
@@ -85,7 +99,7 @@ async def main():
                 ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
                     api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,

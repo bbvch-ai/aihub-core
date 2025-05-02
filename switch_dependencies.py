@@ -97,6 +97,7 @@ def process_file(pyproject_path: Path, mode: str, local_path: str, remote_tag: s
     pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
 
     subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent)
+    subprocess.run(["poetry", "install"], cwd=pyproject_path.parent)
 
 
 def update_aihub_lib(doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str):

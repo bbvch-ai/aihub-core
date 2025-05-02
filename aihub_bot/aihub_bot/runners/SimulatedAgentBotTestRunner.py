@@ -65,8 +65,9 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         agent_class: str,
         agent_id: str,
         simulated_events: Optional[List[BaseEvent]] = None,
+        conversation_ttl_days: float = 30,
     ):
-        super().__init__()
+        super().__init__(conversation_ttl_days=conversation_ttl_days)
         self.agent_class = agent_class
         self.agent_id = agent_id
         self.topic_manager = AgentInstanceTopicManager(agent_class, agent_id)
@@ -101,8 +102,12 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [EventSpecs(event_type=StartEvent.__name__, event_schema=StartEvent.model_json_schema())]
-        stop_events = [EventSpecs(event_type=StopEvent.__name__, event_schema=StopEvent.model_json_schema())]
+        start_events = [
+            EventSpecs(event_name=StartEvent.event_name_from_class(), event_schema=StartEvent.model_json_schema())
+        ]
+        stop_events = [
+            EventSpecs(event_name=StopEvent.event_name_from_class(), event_schema=StopEvent.model_json_schema())
+        ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -131,17 +136,13 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             self.topic_manager, thread_id=topic.thread_id, display_id=topic.display_id, run_id=topic.run_id
         )
         if event.is_control_event:
-            subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-                event.__class__.__name__, event.event_id
-            )
-            logger.debug(f"Publishing control event {event.__class__.__name__} to {subject}")
+            subject = thread_topic_manager.get_subject_for_control_event_in_thread(event.event_name, event.event_id)
+            logger.debug(f"Publishing control event {event.event_name} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
         if event.is_display_event:
-            subject = thread_topic_manager.get_subject_for_display_event_in_thread(
-                event.__class__.__name__, event.event_id
-            )
-            logger.debug(f"Publishing display event {event.__class__.__name__} to {subject}")
+            subject = thread_topic_manager.get_subject_for_display_event_in_thread(event.event_name, event.event_id)
+            logger.debug(f"Publishing display event {event.event_name} to {subject}")
             await self.js_publisher.publish_event(event, subject)
 
     async def start_simulation(self):

@@ -6,11 +6,10 @@ from pydantic import Field
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
 
 
-class UserMessageEvent(DisplayEvent, StartEvent):
+class UserMessageEvent(StartEvent):
     """
     A start event triggered directly by a user's message, bridging both display and control functionalities.
 

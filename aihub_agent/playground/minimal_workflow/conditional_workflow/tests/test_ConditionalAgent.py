@@ -42,14 +42,14 @@ async def _(value: float, agent_runner: AgentTestRunner):
 
 @then("the agent processes the branch for values greater than 0.5")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(AboveThresholdEvent), "AboveThresholdEvent was not received"
-    assert not agent_runner.has_event_of_type(BelowThresholdEvent), "BelowThresholdEvent was received"
+    assert agent_runner.has_event_of_class(AboveThresholdEvent), "AboveThresholdEvent was not received"
+    assert not agent_runner.has_event_of_class(BelowThresholdEvent), "BelowThresholdEvent was received"
 
 
 @then("the agent processes the branch for values less than or equal to 0.5")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_type(BelowThresholdEvent), "BelowThresholdEvent was not received"
-    assert not agent_runner.has_event_of_type(AboveThresholdEvent), "AboveThresholdEvent was received"
+    assert agent_runner.has_event_of_class(BelowThresholdEvent), "BelowThresholdEvent was not received"
+    assert not agent_runner.has_event_of_class(AboveThresholdEvent), "AboveThresholdEvent was received"
 
 
 @then("the workflow completes successfully")

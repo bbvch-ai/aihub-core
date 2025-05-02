@@ -16,9 +16,10 @@ from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import Az
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
+from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, FileContent, ImagesResponse
@@ -176,6 +177,10 @@ class OpenaiService:
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
         function_args = {k: v for k, v in function_args.items() if v is not None}
+
+        if "metadata" in function_args:
+            del function_args["metadata"]
+
         if function_args.get("stream", False):
 
             async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:
@@ -220,11 +225,17 @@ class OpenaiService:
 
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
-                agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
+                agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor, locale=t.locale
             )
 
         return await OpenaiService.json_assistant(
-            agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor
+            agent_class,
+            agent_id,
+            chat_completion_request,
+            user,
+            nc,
+            external_event_distributor,
+            locale=t.locale,
         )
 
     @staticmethod
@@ -235,23 +246,31 @@ class OpenaiService:
         user: AuthenticatedUser,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
+        locale: Optional[str] = None,
     ):
-        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
+        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.messages,
+            messages=[
+                ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump()))
+                for msg in chat_completion_request.messages
+            ],
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_id),
+            thread_id=str_to_object_id(thread_id),
+            display_id=str_to_object_id(display_id),
+            locale=locale,
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
 
         # Construct final JSON response
-        content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
         return ChatCompletion(
             id=str(uuid.uuid4()),
             object="chat.completion",
@@ -260,7 +279,11 @@ class OpenaiService:
             choices=[
                 JsonChoice(
                     index=0,
-                    message=ChatCompletionMessage(role="assistant", content=content),
+                    message=ChatCompletionMessage(
+                        role="assistant",
+                        content=chat_content.content,
+                        reasoning_content=chat_content.reasoning_content,
+                    ),
                     finish_reason="stop",
                 )
             ],
@@ -279,16 +302,24 @@ class OpenaiService:
         user: AuthenticatedUser,
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
+        locale: Optional[str] = None,
     ):
-        chat_id = chat_completion_request.metadata.get("chat_id") if chat_completion_request.metadata else None
+        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.messages,
+            messages=[
+                ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump()))
+                for msg in chat_completion_request.messages
+            ],
             nc=nc,
             external_event_distributor=external_event_distributor,
-            thread_id=ThreadEntity.to_thread_id(chat_id),
+            thread_id=str_to_object_id(thread_id),
+            display_id=str_to_object_id(display_id),
+            locale=locale,
         )
 
         async def sse_event_generator():
@@ -303,7 +334,16 @@ class OpenaiService:
                         object="chat.completion.chunk",
                         created=int(datetime.now(timezone.utc).timestamp()),
                         model=chunk_event.model_name,
-                        choices=[Choice(index=0, delta=ChoiceDelta(content=chunk_event.content, role="assistant"))],
+                        choices=[
+                            Choice(
+                                index=0,
+                                delta=ChoiceDelta(
+                                    content=chunk_event.content,
+                                    role="assistant",
+                                    reasoning_content=chunk_event.reasoning_content,
+                                ),
+                            ),
+                        ],
                         usage=None,
                     )
                     yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"

@@ -24,6 +24,9 @@ const AIHubPreset = definePreset(Aura, {
           hoverColor: '{stone.900}',
           activeColor: '{stone.800}',
         },
+        surface: {
+          50: '#f9f9f9',
+        },
         highlight: {
           background: '{stone.950}',
           focusBackground: '{stone.700}',
@@ -37,6 +40,10 @@ const AIHubPreset = definePreset(Aura, {
           inverseColor: '{stone.950}',
           hoverColor: '{stone.100}',
           activeColor: '{stone.200}',
+        },
+        surface: {
+          900: '#171717',
+          950: '#0d0d0d',
         },
         highlight: {
           background: 'rgba(250, 250, 250, .16)',

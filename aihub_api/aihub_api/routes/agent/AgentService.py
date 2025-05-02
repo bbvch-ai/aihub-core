@@ -7,7 +7,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import StartEvent, StopEvent
+from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -84,18 +84,23 @@ class AgentService:
         await sleep(1)
         await nc_subscriber.stop()
 
-        agents = [
-            AgentDTO(
-                agent_class=response.agent_class,
-                agent_id=response.agent_id,
-                agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
-                is_conversational=response.is_conversational,
-                start_events=response.start_events,
-                stop_events=response.stop_events,
-                network_graph=response.network_graph,
-            )
-            for response in discovery_responses
-        ]
+        unique_agents_dict = {}
+
+        for response in discovery_responses:
+            unique_key = (response.agent_class, response.agent_id)
+
+            if unique_key not in unique_agents_dict:
+                unique_agents_dict[unique_key] = AgentDTO(
+                    agent_class=response.agent_class,
+                    agent_id=response.agent_id,
+                    agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
+                    is_conversational=response.is_conversational,
+                    start_events=response.start_events,
+                    stop_events=response.stop_events,
+                    network_graph=response.network_graph,
+                )
+
+        agents = list(unique_agents_dict.values())
 
         DISCOVER_AGENTS_CACHE[cache_key] = agents
         return agents
@@ -163,12 +168,12 @@ class AgentService:
         start_event: StartEvent,
         agent_class: str,
         agent_id: str,
-        thread_id: Optional[str] = None,
-        display_id: Optional[str] = None,
-    ) -> StopEvent:
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
+    ) -> StopEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(thread_id)
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
         else:
             thread = ThreadEntity.create_thread(
                 "chat",

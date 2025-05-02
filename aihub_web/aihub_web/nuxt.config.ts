@@ -18,7 +18,6 @@ export default defineNuxtConfig({
   ],
 
   ssr: false,
-  devtools: { enabled: true },
 
   css: [
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
@@ -33,7 +32,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       oidc: {
-        clientId: 'f1f4589c-9140-4dd2-921d-9c01245abf13',
+        clientId: '3dc76991-ddd7-4c2d-9cf9-ac2146f33d23',
         tenantId: '279985bd-2077-4d9d-9797-42238cfc06e2',
       },
     },

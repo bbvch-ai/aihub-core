@@ -14,6 +14,10 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 class DummySuccessAuth(AuthHandler):
     async def __call__(self, *args, **kwargs) -> AuthenticatedUser:
         """Return a successful authenticated user."""
+        return await self.authenticate_token("dummy_token")
+
+    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+        """Return a successful authenticated user."""
         return AuthenticatedUser(
             name="Dummy Success",
             preferred_username="dummy@success.com",
@@ -31,12 +35,20 @@ class DummyFailureAuth(AuthHandler):
         """Raise HTTPException with a 401 error."""
         raise HTTPException(status_code=self.status_code, detail=self.detail)
 
+    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+        """Raise HTTPException with a 401 error."""
+        raise HTTPException(status_code=self.status_code, detail=self.detail)
+
 
 class DummyFailureNon401(AuthHandler):
     def __init__(self, detail: str):
         self.detail = detail
 
     async def __call__(self, *args, **kwargs) -> AuthenticatedUser:
+        """Raise HTTPException with a non-401 error."""
+        raise HTTPException(status_code=500, detail=self.detail)
+
+    async def authenticate_token(self, token: str) -> AuthenticatedUser:
         """Raise HTTPException with a non-401 error."""
         raise HTTPException(status_code=500, detail=self.detail)
 

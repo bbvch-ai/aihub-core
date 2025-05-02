@@ -57,7 +57,7 @@ class AgentInTheLoop:
                 agent_id=agent_id,
                 agent_class=agent_class,
                 event_type=TopicManager.CONTROL_EVENT,
-                event_name=start_event.__class__.__name__,
+                event_name=start_event.event_name,
                 event_id=str(ObjectId()),
             ),
             share_thread_id=share_thread_id,

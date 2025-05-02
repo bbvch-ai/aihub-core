@@ -9,10 +9,10 @@ from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
 from nats.aio.client import Client as NATS
 
-from aihub_bot.bots.agent.AgentChatBot import AgentChatBot
-from aihub_bot.bots.agent.StreamAgentChatBot import StreamAgentChatBot
+from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot
+from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
-from aihub_bot.routes.agent.AgentChatService import AgentChatService
+from aihub_bot.routes.RoutesService import RoutesService
 
 
 class AgentChatController(Controller):
@@ -37,7 +37,11 @@ class AgentChatController(Controller):
     def __init__(self, route: str = "/agent/chat", is_admin_only=False):
         super().__init__(route, is_admin_only=is_admin_only)
 
-    def completions_json(self, route: str = "/completions/{agent_class}/{agent_id}/json") -> "AgentChatController":
+    def completions_json(
+        self,
+        route: str = "/completions/{agent_class}/{agent_id}/json",
+        typing_timeout_seconds: int = 60,
+    ) -> "AgentChatController":
         """
         Registers an endpoint for JSON-based chat completions.
 
@@ -73,14 +77,25 @@ class AgentChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
         ) -> Response:
-            path: str = AgentChatService.get_path(request)
-            chat_bot: AgentChatBot = AgentChatBot(nc, external_event_distributor, agent_class, agent_id, path)
-            adapter: CloudAdapter = AgentChatService.get_adapter(path)
+            path: str = RoutesService.get_path(request)
+            chat_bot: AgentChatBot = AgentChatBot(
+                nc,
+                external_event_distributor,
+                agent_class,
+                agent_id,
+                path,
+                typing_timeout_seconds=typing_timeout_seconds,
+            )
+            adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
 
-    def completions_stream(self, route: str = "/completions/{agent_class}/{agent_id}/stream") -> "AgentChatController":
+    def completions_stream(
+        self,
+        route: str = "/completions/{agent_class}/{agent_id}/stream",
+        typing_timeout_seconds: int = 60,
+    ) -> "AgentChatController":
         """
         Registers an endpoint for streaming chat completions.
 
@@ -115,11 +130,16 @@ class AgentChatController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
         ) -> Response:
-            path: str = AgentChatService.get_path(request)
+            path: str = RoutesService.get_path(request)
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(
-                nc, external_event_distributor, agent_class, agent_id, path
+                nc,
+                external_event_distributor,
+                agent_class,
+                agent_id,
+                path,
+                typing_timeout_seconds=typing_timeout_seconds,
             )
-            adapter: CloudAdapter = AgentChatService.get_adapter(path)
+            adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self

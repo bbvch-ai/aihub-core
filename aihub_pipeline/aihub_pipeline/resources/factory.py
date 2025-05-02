@@ -45,8 +45,9 @@ def mongo_aisearch_storage_context_resources(
     vector_store_name: str,
     document_store_name: str,
     namespace_name: str,
+    dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
-    vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name)
+    vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name, dimensions=dimensions)
     doc_store = MongoDocumentStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
@@ -84,7 +85,7 @@ def default_llm_resources() -> Dict[str, ConfigurableResourceFactory]:
         embedding_config=AzureOpenAIEmbeddingConfig(
             name="text-embedding-ada-002",
             base_url="https://aihub-dev-openai-che.openai.azure.com/",
-            api_version="2023-12-01-preview",
+            api_version="2024-12-01-preview",
             embedding_tokens_costs_per_thousand=0.000019,
             default_parameter=AzureOpenAIEmbeddingParameter(),
         )
@@ -93,7 +94,7 @@ def default_llm_resources() -> Dict[str, ConfigurableResourceFactory]:
         llm_config=AzureOpenAILLMConfig(
             name="gpt-4o-mini",
             base_url="https://aihub-dev-openai-che.openai.azure.com/",
-            api_version="2023-12-01-preview",
+            api_version="2024-12-01-preview",
             prompt_tokens_costs_per_thousand=0.00013599,
             completion_tokens_costs_per_thousand=0.0005440,
             default_parameter=AzureOpenAIParameter(temperature=0.0),

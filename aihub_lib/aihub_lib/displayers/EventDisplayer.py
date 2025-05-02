@@ -10,7 +10,7 @@ from opentelemetry import trace
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, ThoughtEvent
+from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, LLMStopEvent, ThoughtEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -60,12 +60,12 @@ class EventDisplayer:
         Publish a display event, optionally logging its content to the current trace span.
         Useful for any displayable output that needs to be consumed downstream (UI, logs, etc.).
         """
-        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.__class__.__name__, event.event_id)
+        subject = self.topic_manager.get_subject_for_display_event_in_thread(event.event_name, event.event_id)
         attributes = FlatterDict(event.model_dump(), delimiter=".").as_dict()
 
         current_span = trace.get_current_span()
         current_span.add_event(
-            name=f"{event.__class__.__name__}: {content or json.dumps(attributes)}",
+            name=f"{event.event_name}: {content or json.dumps(attributes)}",
             attributes=attributes,
         )
 
@@ -88,7 +88,7 @@ class EventDisplayer:
         Publish an internal reasoning thought as a ThoughtEvent.
         Provides transparency into agent's internal logic or decision-making steps.
         """
-        event = ThoughtEvent(content=thought)
+        event = ThoughtEvent(content="", model_name="", reasoning_content=f"{thought}\n")
         await self.display_event(event, content=thought)
 
     async def display_llm_costs(
@@ -114,7 +114,8 @@ class EventDisplayer:
             List[ChatMessage],
             "The chat messages (prompt + context) to send to the LLM.",
         ],
-    ) -> LLMEvent:
+        as_stop_step: Annotated[bool, "Stop Agent after response finished streaming"] = False,
+    ) -> LLMEvent | LLMStopEvent:
         """
         Stream the LLM's response incrementally as chunked events, then return a final LLMEvent encapsulating
         the entire output.
@@ -164,7 +165,7 @@ class EventDisplayer:
             token_count_prompt = 0
             token_count_completion = 0
 
-        return LLMEvent(
+        llm_event = LLMEvent(
             input_messages=[Message(role=msg.role, content=msg.content) for msg in messages],
             output_messages=[Message(role="assistant", content=aggregate)],
             invocation_parameters=llm_config.model_dump(),
@@ -174,3 +175,8 @@ class EventDisplayer:
             token_count_completion=token_count_completion,
             token_count_total=token_count_prompt + token_count_completion,
         )
+
+        if not as_stop_step:
+            return llm_event
+
+        return LLMStopEvent(**llm_event.model_dump())

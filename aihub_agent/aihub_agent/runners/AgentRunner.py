@@ -18,7 +18,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.Dispatcher import Dispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
@@ -73,6 +73,11 @@ class AgentRunner:
         agent_config: AgentConfig,
         locale_paths: Optional[List[str]] = None,
     ):
+        if not isinstance(agent_type, type):
+            raise ValueError("agent_type must be a class, not an instance or module.")
+        if not issubclass(agent_type, Agent):
+            raise ValueError("agent_type must be a subclass of Agent.")
+
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type
@@ -117,11 +122,13 @@ class AgentRunner:
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [
-            EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in start_events
+            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in start_events
         ]
 
         stop_events = self.agent_type.get_stop_events()
-        stop_event_specs = [EventSpecs(event_type=e.__name__, event_schema=e.model_json_schema()) for e in stop_events]
+        stop_event_specs = [
+            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in stop_events
+        ]
 
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
@@ -252,6 +259,6 @@ class AgentRunner:
             run_id,
         )
         subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-            start_event.__class__.__name__, event_id=start_event.event_id
+            start_event.event_name, event_id=start_event.event_id
         )
         await publisher.publish_event(start_event, subject)

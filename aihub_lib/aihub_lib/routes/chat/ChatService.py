@@ -11,9 +11,11 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import (
+    BaseEvent,
     ChunkEvent,
     DisplayEvent,
     ExceptionEvent,
@@ -22,6 +24,7 @@ from aihub_lib.nats.events import (
     StopEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -51,6 +54,12 @@ class JsonResources:
     )
 
 
+@dataclass
+class ChatContent:
+    content: str
+    reasoning_content: str
+
+
 class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
@@ -62,10 +71,12 @@ class ChatService:
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
+        locale: Optional[str] = None,
     ) -> Tuple[ExternalEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
@@ -73,13 +84,14 @@ class ChatService:
         thread = None
         if thread_id:
             try:
-                thread = ThreadEntity.get_thread_by_id(thread_id)
+                thread = ThreadEntity.get_thread_by_id(str(thread_id))
                 if not thread:
                     raise mongoengine.errors.DoesNotExist()
                 if user.oid not in [u.user_id for u in thread.users]:
                     raise HTTPException(status_code=403, detail="User not part of the thread")
             except mongoengine.errors.DoesNotExist:
                 pass
+
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",
@@ -96,24 +108,33 @@ class ChatService:
         logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
+        display_id = display_id or str(ObjectId())
 
         if len(hitl_requests) != len(hitl_responses):
-            open_hitl_request = hitl_requests[-1]
-            event = HumanInTheLoopResponseEvent(
-                response=messages[-1].content,
-                request_event=HumanInTheLoopRequestEvent.deserialize_event(open_hitl_request.event_data),
+            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
+            topic = open_hitl_request.topic
+            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name] + list(
+                get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
+            )
+            event = HumanInTheLoopResponseEvent.deserialize_event(
+                {
+                    "_event_name": topic.event_name,
+                    "_parent_event_names": parent_classes,
+                    "response": messages[-1].content,
+                    "request_event": open_hitl_request.model_dump(),
+                }
             )
             display_id = event.request_event.topic.display_id
         else:
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
             )
-            display_id = str(ObjectId())
 
         event = ExternalEvent(
-            thread_id=thread_id,
-            display_id=display_id,
+            thread_id=str(thread_id),
+            display_id=str(display_id),
             event=event,
         )
         logger.debug(f"Created event: {event}")
@@ -135,7 +156,9 @@ class ChatService:
         messages: List[ChatMessage],
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
+        locale: Optional[str] = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
@@ -146,7 +169,9 @@ class ChatService:
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            display_id=display_id,
             subscribe_to_thread=True,
+            locale=locale,
         )
 
         stop_signal = asyncio.Event()
@@ -165,6 +190,7 @@ class ChatService:
                 logger.debug(f"Received chunk event: {event}")
                 await chunk_queue.put(event)
             elif event.is_hitl_request_event:
+                logger.debug(f"Received HITL event: {event}")
                 resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
@@ -201,7 +227,9 @@ class ChatService:
         messages: List[ChatMessage],
         nc: NATS,
         external_event_distributor: ExternalEventDistributor,
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        display_id: Optional[ObjectId] = None,
+        locale: Optional[str] = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
@@ -212,7 +240,9 @@ class ChatService:
             agent_id=agent_id,
             messages=messages,
             thread_id=thread_id,
+            display_id=display_id,
             subscribe_to_thread=True,
+            locale=locale,
         )
         return await ChatService.start_json_event_interaction(
             user, agent_class, agent_id, external_event, topic_manager, nc, external_event_distributor
@@ -283,12 +313,14 @@ class ChatService:
     @staticmethod
     def build_json_response_content(
         chunk_events: List[ChunkEvent], stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent]
-    ) -> str:
+    ) -> ChatContent:
         """
         Construct a JSON response from collected chunk events.
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
-        content = "".join(chunk.content for chunk in sorted_chunks)
+        chat_content = ChatContent(content="", reasoning_content="")
+        chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
+        chat_content.reasoning_content = "".join(chunk.reasoning_content or "" for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
-            content += stop_event.question
-        return content
+            chat_content.content += stop_event.question
+        return chat_content

@@ -37,7 +37,7 @@ async def _(agent_runner: AgentTestRunner):
 @then(parsers.parse('5 ParallelEvent events with payloads "{payloads}" are present'))
 def verify_parallel_events_payloads(agent_runner: AgentTestRunner, payloads: str):
     expected_payloads = payloads.split(",")
-    events = agent_runner.get_events_of_type(ParallelEvent)
+    events = agent_runner.get_events_of_class(ParallelEvent)
     actual_payloads = [event.payload for event in events]
     assert len(events) == 5, f"Expected 5 ParallelEvent events but found {len(events)}"
     assert sorted(actual_payloads) == sorted(

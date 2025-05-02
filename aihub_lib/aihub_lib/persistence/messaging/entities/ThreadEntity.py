@@ -1,4 +1,3 @@
-import hashlib
 from datetime import datetime
 from typing import List, Optional
 
@@ -80,10 +79,3 @@ class ThreadEntity(Document):
         thread = cls.get_thread_by_id(thread_id)
         thread.delete()
         return thread
-
-    @staticmethod
-    def to_thread_id(context_id: Optional[str]):
-        if not context_id:
-            return ObjectId()
-        hashed = hashlib.md5(context_id.encode()).digest()[:12]
-        return ObjectId(hashed)

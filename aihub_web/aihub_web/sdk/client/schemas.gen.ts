@@ -129,7 +129,310 @@ event models and the publicly exposed fields in HTTP responses.
 By using \`AgentDTO\`, the API can evolve independently from the internal event representations.`
 } as const;
 
-export const AssistantChatMessageSchema = {
+export const AgentEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'AgentEvent'
+} as const;
+
+export const AgentInTheLoopExceptionEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        exception_event: {
+            '$ref': '#/components/schemas/ExceptionEvent',
+            description: 'The exception event from the delegated agent containing error details and failure context.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['exception_event', '_event_name', '_parent_event_names'],
+    title: 'AgentInTheLoopExceptionEvent',
+    description: `An error response from an agent when a delegated task fails.
+
+### Why AgentInTheLoopExceptionEvent?
+When an agent encounters an error during a delegated task, this event:
+- Signals workflow disruption (since it's a \`ControlEvent\`), allowing error handling in the original agent
+- Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring and debugging of agent failures
+- Provides a dedicated error channel separate from successful responses`
+} as const;
+
+export const AgentInTheLoopRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        start_event: {
+            '$ref': '#/components/schemas/StartEvent',
+            description: 'The event that will be sent to the other agent to initiate its task.'
+        },
+        other_agent_topic: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentTopic'
+                }
+            ],
+            title: 'Other Agent Topic',
+            description: 'A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.'
+        },
+        share_thread_id: {
+            type: 'boolean',
+            title: 'Share Thread Id',
+            description: 'Whether to share the conversation thread context with the other agent.',
+            default: true
+        },
+        share_display_id: {
+            type: 'boolean',
+            title: 'Share Display Id',
+            description: 'Whether to share the display context with the other agent for UI consistency.',
+            default: true
+        },
+        share_run_id: {
+            type: 'boolean',
+            title: 'Share Run Id',
+            description: 'Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!',
+            default: false
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['start_event', 'other_agent_topic', '_event_name', '_parent_event_names'],
+    title: 'AgentInTheLoopRequestEvent',
+    description: `An event delegating a task to another agent at a specific point in a workflow.
+
+### Why AgentInTheLoopRequestEvent?
+In automated workflows, certain tasks may require specialized capabilities from other agents. This event:
+- Is a \`DisplayEvent\`, so the delegation can be monitored in user interfaces
+- Carries a start event that initiates the other agent's task
+- Manages context sharing between agents (thread, display, run IDs)
+- Handles both successful responses and exceptions from the delegated agent`
+} as const;
+
+export const AgentInTheLoopResponseEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        stop_event: {
+            '$ref': '#/components/schemas/StopEvent',
+            description: 'The stop event from the delegated agent containing the task results and marks the completion.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['stop_event', '_event_name', '_parent_event_names'],
+    title: 'AgentInTheLoopResponseEvent',
+    description: `A response from an agent after completing a delegated task.
+
+### Why AgentInTheLoopResponseEvent?
+When an agent completes a task delegated through an \`AgentInTheLoopRequestEvent\`, the response:
+- Influences the workflow (since it's a \`ControlEvent\`), allowing the original agent to resume based on the result
+- Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring of agent interactions`
+} as const;
+
+export const AgentTopicSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'Unique identifier for the specific agent instance.'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'The run ID within the thread.'
+        },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id',
+            description: 'Unique identifier for the conversation or workflow thread.'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id',
+            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type',
+            description: "Type of event (e.g., 'display_event', 'control_event')."
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: "Name of the event (e.g., 'start', 'stop', 'error')."
+        },
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier for this particular event instance.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
+    title: 'AgentTopic',
+    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+
+### Why This Class Exists
+
+In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+routing or logging a complete event identifier.
+
+### Example:
+If an event subject is something like:
+"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+then this AgentTopic can represent it, providing quick field-level access and serialization.`
+} as const;
+
+export const AnnotationSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'url_citation',
+            title: 'Type'
+        },
+        url_citation: {
+            '$ref': '#/components/schemas/AnnotationURLCitation'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['type', 'url_citation'],
+    title: 'Annotation'
+} as const;
+
+export const AnnotationURLCitationSchema = {
+    properties: {
+        end_index: {
+            type: 'integer',
+            title: 'End Index'
+        },
+        start_index: {
+            type: 'integer',
+            title: 'Start Index'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        url: {
+            type: 'string',
+            title: 'Url'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['end_index', 'start_index', 'title', 'url'],
+    title: 'AnnotationURLCitation'
+} as const;
+
+export const AssistantChatMessage_InputSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole',
@@ -137,6 +440,54 @@ export const AssistantChatMessageSchema = {
         },
         additional_kwargs: {
             type: 'object',
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class'
+        }
+    },
+    type: 'object',
+    required: ['agent_id', 'agent_class'],
+    title: 'AssistantChatMessage'
+} as const;
+
+export const AssistantChatMessage_OutputSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
             title: 'Additional Kwargs'
         },
         blocks: {
@@ -254,6 +605,51 @@ export const AudioBlockSchema = {
     title: 'AudioBlock'
 } as const;
 
+export const AuthenticatedUserSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: "User's full name"
+        },
+        preferred_username: {
+            type: 'string',
+            title: 'Preferred Username',
+            description: "User's email address"
+        },
+        oid: {
+            type: 'string',
+            title: 'Oid',
+            description: "User's Object ID"
+        },
+        roles: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Roles',
+            description: "User's roles"
+        }
+    },
+    type: 'object',
+    required: ['preferred_username', 'oid'],
+    title: 'AuthenticatedUser'
+} as const;
+
 export const Body_create_transcription_openai_audio_transcriptions_postSchema = {
     properties: {
         file: {
@@ -337,6 +733,52 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     type: 'object',
     required: ['file', 'model'],
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
+} as const;
+
+export const ChainEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Metadata associated with the chain as a dictionary JSON string. For example, LangChain uses metadata to store user-defined attributes for a chain.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'ChainEvent'
 } as const;
 
 export const ChatCompletionSchema = {
@@ -693,6 +1135,20 @@ export const ChatCompletionMessageSchema = {
             const: 'assistant',
             title: 'Role'
         },
+        annotations: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Annotation'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Annotations'
+        },
         audio: {
             anyOf: [
                 {
@@ -861,7 +1317,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -1068,10 +1524,10 @@ export const ChatCompletionRequestSchema = {
                     '$ref': '#/components/schemas/ResponseFormatText'
                 },
                 {
-                    '$ref': '#/components/schemas/ResponseFormatJSONObject'
+                    '$ref': '#/components/schemas/ResponseFormatJSONSchema'
                 },
                 {
-                    '$ref': '#/components/schemas/ResponseFormatJSONSchema'
+                    '$ref': '#/components/schemas/ResponseFormatJSONObject'
                 },
                 {
                     type: 'null'
@@ -1354,6 +1810,9 @@ export const ChatCompletionUserMessageParamSchema = {
                             },
                             {
                                 '$ref': '#/components/schemas/ChatCompletionContentPartInputAudioParam'
+                            },
+                            {
+                                '$ref': '#/components/schemas/File'
                             }
                         ]
                     },
@@ -1377,7 +1836,7 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessageSchema = {
+export const ChatMessage_InputSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole',
@@ -1385,6 +1844,46 @@ export const ChatMessageSchema = {
         },
         additional_kwargs: {
             type: 'object',
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    title: 'ChatMessage',
+    description: 'Chat message.'
+} as const;
+
+export const ChatMessage_OutputSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
             title: 'Additional Kwargs'
         },
         blocks: {
@@ -1483,6 +1982,73 @@ export const ChoiceLogprobsSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'ChoiceLogprobs'
+} as const;
+
+export const ChunkEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The actual chunk of text or data produced at this stage.',
+            default: ''
+        },
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name of the AI model generating the chunks.',
+            default: 'aihub'
+        },
+        reasoning_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reasoning Content',
+            description: 'The textual representation of the agent’s internal reasoning at a particular point in time.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'ChunkEvent',
+    description: `An event representing a portion of output or generated content (a "chunk") that is
+streamed or delivered in segments—common in incremental output scenarios like LLM
+token streaming.
+
+### Why ChunkEvent?
+In conversational or streaming AI outputs, the model might emit content in pieces rather
+than all at once. \`ChunkEvent\` allows the frontend or other consumers to display partial
+responses as they are generated, improving user experience by not forcing them to wait
+for the entire answer.`
 } as const;
 
 export const CompletionTokensDetailsSchema = {
@@ -1681,6 +2247,102 @@ export const CreateTokenResponseSchema = {
     title: 'CreateTokenResponse'
 } as const;
 
+export const DisplayEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'DisplayEvent',
+    description: `Represents a user-facing event that can be shown to end-users, UIs, or monitoring dashboards.
+Display events are purely informational and never affect the control flow or execution order
+of workflows.
+
+### Why DisplayEvent?
+While \`ControlEvent\` influences the system’s decision-making and progression, \`DisplayEvent\`
+focuses on communicating results, status updates, and other information intended for human
+consumption or passive observation. This separation ensures that even if a display event fails
+to reach a UI, it doesn’t alter the underlying workflow logic or state transitions.
+
+By subclassing \`BaseEvent\`, \`DisplayEvent\` remains fully compatible with the automatic
+registration, serialization, and deserialization mechanisms, making it simple to integrate
+into a user interface or logging pipeline.`
+} as const;
+
+export const DocumentSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the document.'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score representing the relevance of the document.'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the document.'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Optional metadata associated with the document as a dictionary.'
+        }
+    },
+    type: 'object',
+    required: ['id'],
+    title: 'Document'
+} as const;
+
 export const EdgeDataSchema = {
     properties: {
         source: {
@@ -1698,10 +2360,10 @@ export const EdgeDataSchema = {
             title: 'Edge Id',
             description: 'Unique identifier for the edge'
         },
-        event_type: {
+        event_name: {
             type: 'string',
-            title: 'Event Type',
-            description: 'Type of event represented by this edge'
+            title: 'Event Name',
+            description: 'Event represented by this edge'
         },
         event_full_name: {
             type: 'string',
@@ -1728,9 +2390,116 @@ export const EdgeDataSchema = {
         }
     },
     type: 'object',
-    required: ['source', 'target', 'edge_id', 'event_type', 'event_full_name', 'is_start_event', 'is_stop_event', 'payload'],
+    required: ['source', 'target', 'edge_id', 'event_name', 'event_full_name', 'is_start_event', 'is_stop_event', 'payload'],
     title: 'EdgeData',
     description: 'Data for an edge in the workflow graph.'
+} as const;
+
+export const EmbeddingSchema = {
+    properties: {
+        text: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Text',
+            description: 'The text represented by the embedding.'
+        },
+        vector: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'number'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Vector',
+            description: 'The embedding vector as a list of floats.'
+        }
+    },
+    type: 'object',
+    title: 'Embedding'
+} as const;
+
+export const EmbeddingEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        text: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Text',
+            description: 'The text represented in the embedding'
+        },
+        embedding_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Embedding Model Name',
+            description: 'The name of the embedding model used.'
+        },
+        embeddings: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Embedding'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Embeddings',
+            description: 'A list of embedding objects containing text and vector data.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'EmbeddingEvent'
 } as const;
 
 export const EmbeddingsSchema = {
@@ -1933,10 +2702,10 @@ export const EventPayloadFieldSchema = {
 
 export const EventSpecsSchema = {
     properties: {
-        event_type: {
+        event_name: {
             type: 'string',
-            title: 'Event Type',
-            description: 'The type of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.'
+            title: 'Event Name',
+            description: 'The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.'
         },
         event_schema: {
             type: 'object',
@@ -1945,9 +2714,101 @@ export const EventSpecsSchema = {
         }
     },
     type: 'object',
-    required: ['event_type', 'event_schema'],
+    required: ['event_name', 'event_schema'],
     title: 'EventSpecs',
     description: 'Defines a specification for a start event that an agent can handle.'
+} as const;
+
+export const ExceptionEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            description: 'A human-readable description of the exception or error that occurred.'
+        },
+        http_status_code: {
+            type: 'integer',
+            title: 'Http Status Code',
+            description: 'HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).',
+            default: 500
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['message', '_event_name', '_parent_event_names'],
+    title: 'ExceptionEvent',
+    description: `An event signaling that an exception or error has occurred during a run.
+
+### Why ExceptionEvent?
+In a complex, event-driven workflow, errors are inevitable. Some steps might fail due to
+invalid inputs, external service outages, or internal logic errors. The \`ExceptionEvent\`
+provides a unified way to:
+- Halt or adjust the workflow’s control flow as a \`ControlEvent\`.
+- Communicate the error details to end-users or logging systems as a \`DisplayEvent\`.
+
+By appearing as both a control and display event, \`ExceptionEvent\` ensures that the workflow
+can stop further processing while also making the error visible in UI dashboards, logs, or
+monitoring tools—giving operators and developers immediate insight into what went wrong.`
+} as const;
+
+export const FileSchema = {
+    properties: {
+        file: {
+            '$ref': '#/components/schemas/FileFile'
+        },
+        type: {
+            type: 'string',
+            const: 'file',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['file', 'type'],
+    title: 'File'
+} as const;
+
+export const FileFileSchema = {
+    properties: {
+        file_data: {
+            type: 'string',
+            title: 'File Data'
+        },
+        file_id: {
+            type: 'string',
+            title: 'File Id'
+        },
+        filename: {
+            type: 'string',
+            title: 'Filename'
+        }
+    },
+    type: 'object',
+    title: 'FileFile'
 } as const;
 
 export const Function_OutputSchema = {
@@ -2031,6 +2892,52 @@ export const FunctionDefinitionSchema = {
     title: 'FunctionDefinition'
 } as const;
 
+export const GuardRejectionEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'GuardRejectionEvent',
+    description: `A class representing a guard rejection event.
+This event is used to communicate the reason for the rejection to the client.
+
+
+### Why GuardRejectionEvent?
+Safeguarding the system from invalid requests is a critical part of any system. This event
+is used to communicate the reason for the rejection to the client.`
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -2051,11 +2958,122 @@ export const HealthResponseSchema = {
             type: 'string',
             title: 'Status',
             description: 'The health status of the application.'
+        },
+        code: {
+            type: 'integer',
+            title: 'Code',
+            description: 'HTTP status code.'
         }
     },
     type: 'object',
-    required: ['status'],
+    required: ['status', 'code'],
     title: 'HealthResponse'
+} as const;
+
+export const HumanInTheLoopRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['question', 'topic', '_event_name', '_parent_event_names'],
+    title: 'HumanInTheLoopRequestEvent',
+    description: `An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+
+### Why HumanInTheLoopRequestEvent?
+In automated workflows, certain decisions may require human validation. This event:
+- Is a \`DisplayEvent\`, so it can appear in user interfaces.
+- Carries a question and a topic indicating where the subsequent response should be sent.`
+} as const;
+
+export const HumanInTheLoopResponseEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        response: {
+            type: 'string',
+            title: 'Response',
+            description: "The human operator's answer or decision."
+        },
+        request_event: {
+            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['response', 'request_event', '_event_name', '_parent_event_names'],
+    title: 'HumanInTheLoopResponseEvent',
+    description: `A response from a human operator after a HITL request.
+
+### Why HumanInTheLoopResponseEvent?
+Once a human operator provides an answer to a \`HumanInTheLoopRequestEvent\`, the response:
+- Influences the workflow (since it's a \`ControlEvent\`), resuming or altering execution based on human input.
+- Is visible to the UI (since it's also a \`DisplayEvent\`), allowing transparency and auditing.`
 } as const;
 
 export const ImageSchema = {
@@ -2319,13 +3337,13 @@ export const InputAudioSchema = {
 
 export const InputEventInfoSchema = {
     properties: {
-        event_types: {
+        event_names: {
             items: {
                 '$ref': '#/components/schemas/EventInfo'
             },
             type: 'array',
-            title: 'Event Types',
-            description: 'The types of events that can be accepted'
+            title: 'Event Names',
+            description: 'The events that can be accepted'
         },
         optional: {
             type: 'boolean',
@@ -2334,7 +3352,7 @@ export const InputEventInfoSchema = {
         }
     },
     type: 'object',
-    required: ['event_types', 'optional'],
+    required: ['event_names', 'optional'],
     title: 'InputEventInfo',
     description: 'Information about an input event for a step.'
 } as const;
@@ -2368,6 +3386,487 @@ export const JSONSchemaSchema = {
     type: 'object',
     required: ['name'],
     title: 'JSONSchema'
+} as const;
+
+export const LLMCostEventSchema = {
+    properties: {
+        prompt_token_count: {
+            type: 'integer',
+            title: 'Prompt Token Count',
+            description: 'Number of tokens used in the prompt'
+        },
+        completion_token_count: {
+            type: 'integer',
+            title: 'Completion Token Count',
+            description: 'Number of tokens generated in the completion'
+        },
+        embedding_token_count: {
+            type: 'integer',
+            title: 'Embedding Token Count',
+            description: 'Number of tokens used for embeddings'
+        },
+        prompt_tokens_costs: {
+            type: 'number',
+            title: 'Prompt Tokens Costs',
+            description: 'Cost associated with the prompt tokens'
+        },
+        completion_tokens_costs: {
+            type: 'number',
+            title: 'Completion Tokens Costs',
+            description: 'Cost associated with the completion tokens'
+        },
+        embedding_tokens_costs: {
+            type: 'number',
+            title: 'Embedding Tokens Costs',
+            description: 'Cost associated with the embedding tokens'
+        },
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        llm_name: {
+            type: 'string',
+            title: 'Llm Name',
+            description: "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to."
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['prompt_token_count', 'completion_token_count', 'embedding_token_count', 'prompt_tokens_costs', 'completion_tokens_costs', 'embedding_tokens_costs', 'llm_name', '_event_name', '_parent_event_names'],
+    title: 'LLMCostEvent',
+    description: `A concrete event representing the costs associated with Large Language Model operations,
+including prompt, completion, and embedding token usage.
+
+### Why LLMCostEvent?
+For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
+breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
+engineers, product managers, or finance teams clear insights into where tokens—and money—are
+going.`
+} as const;
+
+export const LLMEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        input_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Messages',
+            description: 'List of messages sent to the LLM as input.'
+        },
+        output_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Messages',
+            description: 'List of messages received from the LLM as output.'
+        },
+        invocation_parameters: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Invocation Parameters',
+            description: 'Parameters used during the invocation of the LLM.'
+        },
+        chat_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Chat Model Name',
+            description: 'The name of the language model being utilized.'
+        },
+        provider: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Provider',
+            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
+        },
+        system: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'System',
+            description: 'The AI product as identified by the client or server.'
+        },
+        prompt_template: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template',
+            description: 'The prompt template as a Python f-string.'
+        },
+        prompt_template_variables: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        type: 'string'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Variables',
+            description: 'A dictionary of input variables to the prompt template.'
+        },
+        prompt_template_version: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Version',
+            description: 'The version of the prompt template being used.'
+        },
+        token_count_prompt: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Prompt',
+            description: 'The number of tokens in the prompt.'
+        },
+        token_count_completion: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Completion',
+            description: 'The number of tokens in the completion.'
+        },
+        token_count_total: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Total',
+            description: 'The total number of tokens, including both prompt and completion.'
+        },
+        tools: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tools',
+            description: 'List of tools that are advertised to the LLM to be able to call.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'LLMEvent'
+} as const;
+
+export const LLMStopEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        input_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Messages',
+            description: 'List of messages sent to the LLM as input.'
+        },
+        output_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Messages',
+            description: 'List of messages received from the LLM as output.'
+        },
+        invocation_parameters: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Invocation Parameters',
+            description: 'Parameters used during the invocation of the LLM.'
+        },
+        chat_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Chat Model Name',
+            description: 'The name of the language model being utilized.'
+        },
+        provider: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Provider',
+            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
+        },
+        system: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'System',
+            description: 'The AI product as identified by the client or server.'
+        },
+        prompt_template: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template',
+            description: 'The prompt template as a Python f-string.'
+        },
+        prompt_template_variables: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        type: 'string'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Variables',
+            description: 'A dictionary of input variables to the prompt template.'
+        },
+        prompt_template_version: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Version',
+            description: 'The version of the prompt template being used.'
+        },
+        token_count_prompt: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Prompt',
+            description: 'The number of tokens in the prompt.'
+        },
+        token_count_completion: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Completion',
+            description: 'The number of tokens in the completion.'
+        },
+        token_count_total: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Total',
+            description: 'The total number of tokens, including both prompt and completion.'
+        },
+        tools: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tools',
+            description: 'List of tools that are advertised to the LLM to be able to call.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'LLMStopEvent'
 } as const;
 
 export const LLMStopEventOutputSchema = {
@@ -2545,6 +4044,49 @@ export const LLMStopEventOutputSchema = {
     title: 'LLMStopEventOutput'
 } as const;
 
+export const LimitChatHistoryEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        limited_history: {
+            items: {
+                '$ref': '#/components/schemas/ChatMessage-Output'
+            },
+            type: 'array',
+            title: 'Limited History',
+            description: 'Limited chat history based on number of input tokens.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['limited_history', '_event_name', '_parent_event_names'],
+    title: 'LimitChatHistoryEvent',
+    description: 'Limits the chat messages based on number of input tokens.'
+} as const;
+
 export const LocaleResponseSchema = {
     properties: {
         lang: {
@@ -2564,6 +4106,50 @@ export const LocaleResponseSchema = {
     required: ['lang', 'test'],
     title: 'LocaleResponse',
     description: 'Represents language and test information for a locale.'
+} as const;
+
+export const LogprobSchema = {
+    properties: {
+        token: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token'
+        },
+        bytes: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'number'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Bytes'
+        },
+        logprob: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logprob'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'Logprob'
 } as const;
 
 export const MessageSchema = {
@@ -2855,6 +4441,125 @@ export const NodeDataSchema = {
     description: 'Data for a node in the workflow graph.'
 } as const;
 
+export const PartialAgentTopicSchema = {
+    properties: {
+        agent_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Class',
+            description: 'Agent class or None if unspecified.'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'Agent ID or None if unspecified.'
+        },
+        run_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Run Id',
+            description: 'Run ID or None if unspecified.'
+        },
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'Thread ID or None if unspecified.'
+        },
+        display_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Id',
+            description: 'Display ID or None if unspecified.'
+        },
+        event_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Type',
+            description: 'Event type or None if unspecified.'
+        },
+        event_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Name',
+            description: 'Event name or None if unspecified.'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id',
+            description: 'Event ID or None if unspecified.'
+        }
+    },
+    type: 'object',
+    title: 'PartialAgentTopic',
+    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
+Wildcards (represented by "*") in the subject translate into None values here.
+
+### Why PartialAgentTopic?
+Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+and which remain open (None).
+
+### Use Cases
+- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
+  all display events for a given agent class, regardless of the specific agent instance or thread.
+  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+  unknowns as flexible conditions.`
+} as const;
+
 export const PromptTokensDetailsSchema = {
     properties: {
         audio_tokens: {
@@ -2883,6 +4588,106 @@ export const PromptTokensDetailsSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'PromptTokensDetails'
+} as const;
+
+export const RerankerEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        input_documents: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Document'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Documents',
+            description: 'List of input documents provided to the reranker.'
+        },
+        output_documents: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Document'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Documents',
+            description: 'List of documents outputted by the reranker.'
+        },
+        query: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Query',
+            description: 'The query string used by the reranker.'
+        },
+        rerank_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rerank Model Name',
+            description: 'Name of the reranker model being used.'
+        },
+        top_k: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Top K',
+            description: 'The top K parameter, representing the number of results to be reranked.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'RerankerEvent'
 } as const;
 
 export const ResponseFormatJSONObjectSchema = {
@@ -2927,6 +4732,55 @@ export const ResponseFormatTextSchema = {
     title: 'ResponseFormatText'
 } as const;
 
+export const RetrieverEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        documents: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Document'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Documents',
+            description: 'List of documents retrieved by the retriever, including document IDs, scores, and content.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'RetrieverEvent'
+} as const;
+
 export const RevokeTokenResponseSchema = {
     properties: {
         detail: {
@@ -2938,6 +4792,66 @@ export const RevokeTokenResponseSchema = {
     type: 'object',
     required: ['detail'],
     title: 'RevokeTokenResponse'
+} as const;
+
+export const SemanticEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'SemanticEvent',
+    description: `A base class for events that must report their data to an OpenInference-compatible tracing system,
+such as Arize Phoenix. By inheriting from both \`ControlEvent\` and \`DisplayEvent\`, \`SemanticEvent\`:
+- Influences workflow execution and can control the system flow (like any \`ControlEvent\`).
+- Remains visible to the end-user or UI (like any \`DisplayEvent\`).
+- Introduces the requirement to define a \`to_semantic_convention()\` method,
+  providing structured semantic attributes for OpenInference tracing.
+
+### Why SemanticEvent?
+The primary purpose is to provide a flexible foundation for events that carry semantically rich
+information which should be recorded in tracing and observability tools. By encouraging a
+\`to_semantic_convention()\` method, \`SemanticEvent\` standardizes the process of converting event
+data into a form suitable for advanced analytics, debugging, and telemetry.
+
+### Integrating with OpenInference
+OpenInference mandates a set of semantic conventions for attributes, ensuring that tooling
+(like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of
+\`SemanticEvent\` should implement \`to_semantic_convention()\` to:
+- Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.
+- Use reserved attribute names (e.g. \`llm.model_name\`, \`document.id\`) as defined in the specification.
+
+This allows downstream systems to understand and correlate complex operations like retrieval,
+reranking, or prompt tuning with high-level performance metrics or user outcomes.
+
+### Note
+Since \`to_semantic_convention()\` is not implemented here, subclasses must provide their own logic
+to translate the event’s internal state into OpenInference semantic attributes.`
 } as const;
 
 export const ServiceDTOSchema = {
@@ -2966,6 +4880,145 @@ export const ServiceDTOSchema = {
     type: 'object',
     required: ['name', 'description', 'icon', 'path'],
     title: 'ServiceDTO'
+} as const;
+
+export const StandaloneQuestionCondenserEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        condensed_chat_message: {
+            '$ref': '#/components/schemas/ChatMessage-Output',
+            description: 'Single chat message containing the condensed user question.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['condensed_chat_message', '_event_name', '_parent_event_names'],
+    title: 'StandaloneQuestionCondenserEvent',
+    description: 'Event to condense chat messages into a single standalone question as a chat message.'
+} as const;
+
+export const StartEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'StartEvent',
+    description: `An event signaling the start of a new run within a thread, providing initial context such as
+user messages, assistant responses, and locale settings.
+
+### Why StartEvent?
+The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
+from the StartEvent, initial context for the workflow can be set.
+
+By extending \`ControlEvent\`, \`StartEvent\` influences workflow steps—only \`ControlEvent\` types
+drive the flow. Other event types may provide data or UI updates but do not start or control runs.`
+} as const;
+
+export const StopEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'StopEvent',
+    description: `An event signaling the conclusion of a run within a thread, acting both as a control signal
+and a user-facing message.
+
+### Why StopEvent?
+In many workflows, reaching a terminal state (e.g., producing a final result or hitting an
+end-of-workflow condition) must:
+- Influence the system’s control flow, ensuring no further steps are executed.
+- Provide a visible indicator to the end-user or UI that the process has completed.
+
+By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
+- As a \`ControlEvent\`, it instructs the workflow engine to stop processing subsequent steps.
+- As a \`DisplayEvent\`, it can be shown to users or captured by dashboards, indicating that
+  the run is over and providing any final output or status messages.
+
+### Use Cases
+- Signaling that a response is ready, and no more actions are needed.
+- Informing the user interface that the conversation or task has concluded.`
+} as const;
+
+export const StopEventOutputSchema = {
+    properties: {},
+    type: 'object',
+    title: 'StopEventOutput'
 } as const;
 
 export const SuiteDTOSchema = {
@@ -3059,6 +5112,72 @@ export const TextToSpeechRequestSchema = {
     title: 'TextToSpeechRequest'
 } as const;
 
+export const ThoughtEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The actual chunk of text or data produced at this stage.',
+            default: ''
+        },
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name of the AI model generating the chunks.',
+            default: 'aihub'
+        },
+        reasoning_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reasoning Content',
+            description: 'The textual representation of the agent’s internal reasoning at a particular point in time.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'ThoughtEvent',
+    description: `An event representing the system or agent's internal reasoning process, often displayed as
+a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
+at decisions, though they don't influence control flow (since it's a DisplayEvent).
+
+### Why ThoughtEvent?
+While \`ControlEvent\` affects workflow logic, \`ThoughtEvent\` provides transparency,
+revealing the reasoning paths taken by the agent. Useful for debugging, auditing, or
+explaining the agent’s behavior to end-users (e.g., "chain-of-thought" explanations).`
+} as const;
+
 export const ThreadAgentDTOSchema = {
     properties: {
         agent_id: {
@@ -3138,6 +5257,88 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
+export const ToolEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the tool being utilized'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: "Description of the tool's purpose and functionality"
+        },
+        json_schema: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Json Schema',
+            description: 'The json schema of a tool input'
+        },
+        parameters: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Parameters',
+            description: 'The parameters definition for invoking the tool'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'ToolEvent'
+} as const;
+
 export const TopLogprobSchema = {
     properties: {
         token: {
@@ -3174,6 +5375,20 @@ export const TranscriptionSchema = {
         text: {
             type: 'string',
             title: 'Text'
+        },
+        logprobs: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Logprob'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logprobs'
         }
     },
     additionalProperties: true,
@@ -3304,7 +5519,7 @@ export const TranscriptionWordSchema = {
     title: 'TranscriptionWord'
 } as const;
 
-export const UserChatMessageSchema = {
+export const UserChatMessage_InputSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole',
@@ -3312,6 +5527,50 @@ export const UserChatMessageSchema = {
         },
         additional_kwargs: {
             type: 'object',
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        },
+        user_id: {
+            type: 'string',
+            title: 'User Id'
+        }
+    },
+    type: 'object',
+    required: ['user_id'],
+    title: 'UserChatMessage'
+} as const;
+
+export const UserChatMessage_OutputSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
             title: 'Additional Kwargs'
         },
         blocks: {
@@ -3384,19 +5643,110 @@ export const UserDTOSchema = {
     title: 'UserDTO'
 } as const;
 
+export const UserMessageEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        locale: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Locale',
+            description: 'The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.',
+            default: 'de'
+        },
+        user: {
+            '$ref': '#/components/schemas/AuthenticatedUser',
+            description: 'User who sent the message'
+        },
+        messages: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/ChatMessage-Output'
+                    },
+                    {
+                        '$ref': '#/components/schemas/UserChatMessage-Output'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AssistantChatMessage-Output'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['user', '_event_name', '_parent_event_names'],
+    title: 'UserMessageEvent',
+    description: `A start event triggered directly by a user's message, bridging both display and control functionalities.
+
+### Why UserMessageEvent?
+While \`StartEvent\` influences the workflow’s starting point and \`DisplayEvent\` represents user-facing
+output, a \`UserMessageEvent\` marks a workflow start initiated by a user’s input. This is common in chat
+interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
+- A display event (since it may appear in the UI history).
+- A control event triggering workflow execution from a particular starting step.
+
+By inheriting from \`DisplayEvent\` and \`StartEvent\`:
+- It ensures the event is visible in the user interface, displaying the user’s message.
+- It also sets the workflow in motion, deciding how and where the system responds or which step
+  of the workflow to begin with.
+
+### Use Case
+In an agent workflow, you might have:
+- **UserMessageEvent**: Initiates the workflow at a certain step due to user input.
+- Another start event from an agent or a system event: Initiates the workflow at a different step
+  or with different initial conditions.
+
+This flexible design allows mixing and matching start events to adapt how and when workflows
+are triggered, depending on the source of the event.`
+} as const;
+
 export const UserMessageEventInputSchema = {
     properties: {
         messages: {
             items: {
                 anyOf: [
                     {
-                        '$ref': '#/components/schemas/ChatMessage'
+                        '$ref': '#/components/schemas/ChatMessage-Input'
                     },
                     {
-                        '$ref': '#/components/schemas/UserChatMessage'
+                        '$ref': '#/components/schemas/UserChatMessage-Input'
                     },
                     {
-                        '$ref': '#/components/schemas/AssistantChatMessage'
+                        '$ref': '#/components/schemas/AssistantChatMessage-Input'
                     }
                 ]
             },
@@ -3496,14 +5846,90 @@ export const WSServerEventSchema = {
             title: 'Event Id',
             description: 'Unique identifier of this event instance.'
         },
-        event_data: {
-            type: 'object',
-            title: 'Event Data',
-            description: 'Payload of the event, containing detailed information.'
+        event: {
+            oneOf: [
+                {
+                    '$ref': '#/components/schemas/StartEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LimitChatHistoryEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/StandaloneQuestionCondenserEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LLMCostEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ChunkEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ThoughtEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardRejectionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/SemanticEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ChainEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/EmbeddingEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LLMEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LLMStopEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RerankerEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RetrieverEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ToolEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/UserMessageEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ExceptionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/StopEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/DisplayEvent'
+                }
+            ],
+            title: 'Event',
+            description: 'Data of the event itself.'
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'thread_id', 'display_id', 'event_name', 'event_id', 'event_data'],
+    required: ['agent_class', 'agent_id', 'thread_id', 'display_id', 'event_name', 'event_id', 'event'],
     title: 'WSServerEvent',
     description: `Represents an event sent from the server to a user's WebSocket connection, encapsulating
 details necessary to identify and display the event in a client application.

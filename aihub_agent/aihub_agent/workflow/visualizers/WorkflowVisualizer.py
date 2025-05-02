@@ -15,7 +15,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ControlEvent, StartEvent, StopEvent
 
-from aihub_agent.agents.abstract.Agent import Agent
+from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 logger = logging.getLogger(__name__)
@@ -124,14 +124,14 @@ class WorkflowVisualizer:
         optional_map = getattr(step_method, "_parameter_optional_map", {})
 
         result = {}
-        for param_name, event_types in input_event_mapping.items():
+        for param_name, event_classes in input_event_mapping.items():
             is_optional = optional_map.get(param_name, False)
 
             # Create EventInfo models for each event type
-            event_info_list = [self._get_event_info(et) for et in event_types]
+            event_info_list = [self._get_event_info(et) for et in event_classes]
 
             # Create InputEventInfo model
-            input_event_info = InputEventInfo(event_types=event_info_list, optional=is_optional)
+            input_event_info = InputEventInfo(event_names=event_info_list, optional=is_optional)
 
             result[param_name] = input_event_info
 
@@ -140,7 +140,7 @@ class WorkflowVisualizer:
     def _get_step_output_events(self, step_method: Any) -> List[EventInfo]:
         """Get information about the output events produced by a step."""
         output_events = extract_return_events(step_method)
-        return [self._get_event_info(event_type) for event_type in output_events]
+        return [self._get_event_info(event_class) for event_class in output_events]
 
     def _get_event_info(self, event_class: EventType) -> EventInfo:
         """Get basic information about an event class."""
@@ -148,13 +148,13 @@ class WorkflowVisualizer:
         try:
             payload_info = self._extract_event_payload_info(event_class)
         except Exception as e:
-            logger.warning(f"Failed to extract payload info for {event_class.__name__}: {str(e)}")
+            logger.warning(f"Failed to extract payload info for {event_class.event_name_from_class()}: {str(e)}")
             payload_info = {}
 
         # Create the EventInfo model
         event_info = EventInfo(
-            name=event_class.__name__,
-            full_name=f"{event_class.__module__}.{event_class.__name__}",
+            name=event_class.event_name_from_class(),
+            full_name=f"{event_class.__module__}.{event_class.event_name_from_class()}",
             is_start_event=issubclass(event_class, StartEvent),
             is_stop_event=issubclass(event_class, StopEvent),
             payload=payload_info,
@@ -237,15 +237,15 @@ class WorkflowVisualizer:
         for step_name, step_method in step_names.items():
             # Map events consumed by this step
             input_events = getattr(step_method, "_input_events", set())
-            for event_type in input_events:
-                if issubclass(event_type, ControlEvent):
-                    event_consumers[event_type].add(step_name)
+            for event_class in input_events:
+                if issubclass(event_class, ControlEvent):
+                    event_consumers[event_class].add(step_name)
 
             # Map events produced by this step
             output_events = extract_return_events(step_method)
-            for event_type in output_events:
-                if issubclass(event_type, ControlEvent):
-                    event_producers[event_type].add(step_name)
+            for event_class in output_events:
+                if issubclass(event_class, ControlEvent):
+                    event_producers[event_class].add(step_name)
 
     def _add_event_edges(
         self,
@@ -256,23 +256,23 @@ class WorkflowVisualizer:
         END_NODE: str,
     ) -> None:
         """Add edges to the graph based on event flow."""
-        for event_type in set(event_producers.keys()) | set(event_consumers.keys()):
-            is_start_event = issubclass(event_type, StartEvent)
-            is_stop_event = issubclass(event_type, StopEvent)
-            producers = event_producers[event_type]
-            consumers = event_consumers[event_type]
+        for event_class in set(event_producers.keys()) | set(event_consumers.keys()):
+            is_start_event = issubclass(event_class, StartEvent)
+            is_stop_event = issubclass(event_class, StopEvent)
+            producers = event_producers[event_class]
+            consumers = event_consumers[event_class]
 
             # Extract payload info
             try:
-                payload_fields = self._extract_event_payload_info(event_type)
+                payload_fields = self._extract_event_payload_info(event_class)
             except Exception as e:
-                logger.warning(f"Failed to extract payload info for {event_type.__name__}: {str(e)}")
+                logger.warning(f"Failed to extract payload info for {event_class.event_name_from_class()}: {str(e)}")
                 payload_fields = {}
 
             # Create a base edge model for this event type
             edge_attrs = {
-                "event_type": event_type.__name__,
-                "event_full_name": f"{event_type.__module__}.{event_type.__name__}",
+                "event_name": event_class.event_name_from_class(),
+                "event_full_name": f"{event_class.__module__}.{event_class.event_name_from_class()}",
                 "is_start_event": False,
                 "is_stop_event": False,
                 "payload": payload_fields,
