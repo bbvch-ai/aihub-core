@@ -57,7 +57,7 @@ class Dagster(pulumi.ComponentResource):
         )
 
         self.datalake = self.storage_factory.create_storage_account(
-            service_name=self.config.dagster_datalake,
+            service_name=self.config.storage_service_name,
             subnet_id=self.dagster_storage_subnet.id,
             vnet_id=self.vnet.id,
             blob_only=True,

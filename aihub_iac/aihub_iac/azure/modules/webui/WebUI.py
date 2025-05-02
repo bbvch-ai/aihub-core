@@ -160,7 +160,7 @@ class WebUI(pulumi.ComponentResource):
             ),
             resource_group_name=self.config.resource_group,
             storage_name=self.config.volume_name,
-            opts=pulumi.ResourceOptions(parent=self.managed_environment, depends_on=[self.managed_environment]),
+            opts=pulumi.ResourceOptions(parent=self, depends_on=[self.managed_environment]),
         )
 
     def _create_openwebui_container(self):

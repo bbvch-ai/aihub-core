@@ -138,10 +138,9 @@ class DagsterConfig(StorageConfig):
         return f"{project_settings.APP_NAME}-{CONTAINER_APP}-{project_settings.LOCATION_SHORT}-dagster-daemon"
 
     @property
-    def dagster_datalake(self) -> str:
-        """Generate the full docker image string"""
-        project_settings = ProjectSettings()
-        return f"{project_settings.APP_NAME}{STORAGE_ACCOUNT}{project_settings.LOCATION_SHORT}datalake"
+    def storage_service_name(self) -> str:
+        """Service name to use for storage resources"""
+        return "datalake"
 
     @property
     def postgres_name(self) -> str:
