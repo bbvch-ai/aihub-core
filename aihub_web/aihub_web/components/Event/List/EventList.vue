@@ -26,7 +26,7 @@
           :key="display.display_id"
           :value="display.display_id"
         >
-          <div class="flex flex-col gap-24 pt-4">
+          <div class="flex flex-col gap-12 pt-4">
             <Panel class="panel pt-5">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -79,12 +79,18 @@
                 </div>
               </div>
             </Panel>
-            <div class="flex flex-col gap-8">
-              <ChatThread
-                :events="eventsInRuns"
-                :thread="thread"
-              />
-            </div>
+            <Panel
+              header="Chat"
+              toggleable
+              collapsed
+            >
+              <div class="flex flex-col gap-8">
+                <ChatThread
+                  :events="eventsInRuns"
+                  :thread="thread"
+                />
+              </div>
+            </Panel>
             <div class="flex flex-col gap-8">
               <div class="flex w-full items-center justify-end gap-2 pr-4">
                 <span class="font-semibold">
@@ -142,6 +148,7 @@
 </template>
 
 <script setup lang="ts">
+import { useRouteQuery } from '@vueuse/router'
 import { format } from 'date-fns'
 import { ref } from 'vue'
 
@@ -156,14 +163,20 @@ const props = defineProps<{
   thread: ThreadDto
 }>()
 
+const route = useRoute()
 const { pendingType } = useThreadUtils()
 
-const activeDisplayId = ref<string | undefined>(props.thread.displays?.at(-1)?.display_id)
-const activeRuns = ref<RunStatistics[]>(props.thread.displays?.at(-1)?.runs ?? [])
+const activeDisplayId = useRouteQuery('display')
+const activeRuns = ref<RunStatistics[]>([])
 
-watch(activeDisplayId, () => {
-  activeRuns.value = props.thread.displays?.find((display: DisplayStatistics) => display.display_id === activeDisplayId.value)?.runs ?? []
+onMounted(() => {
+  activeDisplayId.value = activeDisplayId.value ?? props.thread.displays?.at(-1)?.display_id
 })
+
+watch(() => route.query, () => {
+  console.log('activeDisplayId changed', activeDisplayId.value)
+  activeRuns.value = props.thread.displays?.find((display: DisplayStatistics) => display.display_id === activeDisplayId.value)?.runs ?? []
+}, { immediate: true })
 
 const eventsInRuns = computed<WsServerEvent[]>(() => {
   const runIds = activeRuns.value.map((run: RunStatistics) => run.run_id)

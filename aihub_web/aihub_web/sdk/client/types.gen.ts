@@ -854,7 +854,7 @@ export type DisplayEvent = {
 };
 
 /**
- * Statistics for a display, including its runs.
+ * Statistics for a display, including its runs, intended for API response.
  */
 export type DisplayStatistics = {
     /**
@@ -866,7 +866,7 @@ export type DisplayStatistics = {
      */
     has_errors?: boolean;
     /**
-     * Has pending events (more start than stop events)
+     * Has pending events (more start than stop/exception events)
      */
     has_pending?: boolean;
     /**
@@ -894,11 +894,11 @@ export type DisplayStatistics = {
      */
     open_aitl?: boolean;
     /**
-     * Start time
+     * Start time (ISO format string)
      */
     started_at?: string | null;
     /**
-     * End time
+     * End time (ISO format string)
      */
     ended_at?: string | null;
     /**
@@ -910,7 +910,7 @@ export type DisplayStatistics = {
      */
     display_id: string;
     /**
-     * Runs in this display
+     * Runs in this display, sorted by start time
      */
     runs?: Array<RunStatistics>;
 };
@@ -2289,7 +2289,7 @@ export type RouterEvent = {
 };
 
 /**
- * Statistics for a single run.
+ * Statistics for a single run, intended for API response.
  */
 export type RunStatistics = {
     /**
@@ -2301,7 +2301,7 @@ export type RunStatistics = {
      */
     has_errors?: boolean;
     /**
-     * Has pending events (more start than stop events)
+     * Has pending events (more start than stop/exception events)
      */
     has_pending?: boolean;
     /**
@@ -2329,11 +2329,11 @@ export type RunStatistics = {
      */
     open_aitl?: boolean;
     /**
-     * Start time
+     * Start time (ISO format string)
      */
     started_at?: string | null;
     /**
-     * End time
+     * End time (ISO format string)
      */
     ended_at?: string | null;
     /**
@@ -2644,7 +2644,7 @@ export type ThreadAgentDto = {
 };
 
 /**
- * Thread information and statistics.
+ * Thread information and statistics for API response.
  */
 export type ThreadDto = {
     /**
@@ -2660,11 +2660,11 @@ export type ThreadDto = {
      */
     users: Array<UserDto>;
     /**
-     * List of agents in thread
+     * List of agents initially associated with thread
      */
     agents: Array<MinimalAgentDto>;
     /**
-     * Date at which thread was created
+     * Date at which thread was created (ISO format string)
      */
     created_at: string;
     /**
@@ -2676,7 +2676,7 @@ export type ThreadDto = {
      */
     num_turns?: number;
     /**
-     * Thread has more StartEvent than StopEvent
+     * Thread has more StartEvent than StopEvent+ExceptionEvent overall
      */
     has_pending?: boolean;
     /**
@@ -2688,7 +2688,7 @@ export type ThreadDto = {
      */
     is_hitl?: boolean;
     /**
-     * There are more HumanInTheLoopRequest than HumanInTheLoopResponse
+     * More HumanInTheLoopRequest than Response overall
      */
     open_hitl?: boolean;
     /**
@@ -2696,7 +2696,7 @@ export type ThreadDto = {
      */
     is_bitl?: boolean;
     /**
-     * There are more BotInTheLoopRequest than BotInTheLoopResponse
+     * More BotInTheLoopRequest than Response overall
      */
     open_bitl?: boolean;
     /**
@@ -2704,27 +2704,27 @@ export type ThreadDto = {
      */
     is_aitl?: boolean;
     /**
-     * There are more AgentInTheLoopRequest than AgentInTheLoopResponse
+     * More AgentInTheLoopRequest than Response overall
      */
     open_aitl?: boolean;
     /**
-     * Date of oldest event in thread
+     * Date of oldest event in thread (ISO format string)
      */
     first_interaction?: string | null;
     /**
-     * Date of newest event in thread
+     * Date of newest event in thread (ISO format string)
      */
     latest_interaction?: string | null;
     /**
-     * Average latency of the thread in seconds
+     * Overall duration of interactions in seconds
      */
     latency?: number | null;
     /**
-     * Displays in this thread
+     * Displays in this thread, sorted by start time
      */
     displays?: Array<DisplayStatistics>;
     /**
-     * Agents that participated in the thread
+     * All unique agents that participated in the thread's events
      */
     participating_agents?: Array<MinimalAgentDto>;
     /**

@@ -8,9 +8,6 @@
     v-else
     class="flex flex-col gap-12 p-3"
   >
-    <h1 class="text-3xl font-bold">
-      Thread: {{ thread.name }}
-    </h1>
     <Panel
       class="panel pt-5"
     >

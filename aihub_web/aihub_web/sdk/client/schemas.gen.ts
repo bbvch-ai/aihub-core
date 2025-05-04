@@ -491,6 +491,7 @@ export const AssistantChatMessage_InputSchema = {
             default: 'user'
         },
         additional_kwargs: {
+            additionalProperties: true,
             type: 'object',
             title: 'Additional Kwargs'
         },
@@ -844,6 +845,7 @@ export const ChainEventSchema = {
         metadata: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -1944,6 +1946,7 @@ export const ChatMessage_InputSchema = {
             default: 'user'
         },
         additional_kwargs: {
+            additionalProperties: true,
             type: 'object',
             title: 'Additional Kwargs'
         },
@@ -2473,7 +2476,7 @@ export const DisplayStatisticsSchema = {
         has_pending: {
             type: 'boolean',
             title: 'Has Pending',
-            description: 'Has pending events (more start than stop events)',
+            description: 'Has pending events (more start than stop/exception events)',
             default: false
         },
         is_hitl: {
@@ -2522,7 +2525,7 @@ export const DisplayStatisticsSchema = {
                 }
             ],
             title: 'Started At',
-            description: 'Start time'
+            description: 'Start time (ISO format string)'
         },
         ended_at: {
             anyOf: [
@@ -2534,7 +2537,7 @@ export const DisplayStatisticsSchema = {
                 }
             ],
             title: 'Ended At',
-            description: 'End time'
+            description: 'End time (ISO format string)'
         },
         latency: {
             anyOf: [
@@ -2559,14 +2562,14 @@ export const DisplayStatisticsSchema = {
             },
             type: 'array',
             title: 'Runs',
-            description: 'Runs in this display',
+            description: 'Runs in this display, sorted by start time',
             default: []
         }
     },
     type: 'object',
     required: ['display_id'],
     title: 'DisplayStatistics',
-    description: 'Statistics for a display, including its runs.'
+    description: 'Statistics for a display, including its runs, intended for API response.'
 } as const;
 
 export const DocumentSchema = {
@@ -2603,6 +2606,7 @@ export const DocumentSchema = {
         metadata: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -2991,6 +2995,7 @@ export const EventSpecsSchema = {
             description: 'The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.'
         },
         event_schema: {
+            additionalProperties: true,
             type: 'object',
             title: 'Event Schema',
             description: "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow."
@@ -3163,6 +3168,7 @@ export const FunctionDefinitionSchema = {
             title: 'Description'
         },
         parameters: {
+            additionalProperties: true,
             type: 'object',
             title: 'Parameters'
         },
@@ -3766,6 +3772,7 @@ export const JSONSchemaSchema = {
             title: 'Description'
         },
         schema: {
+            additionalProperties: true,
             type: 'object',
             title: 'Schema'
         },
@@ -3923,6 +3930,7 @@ export const LLMEventSchema = {
         invocation_parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -4047,6 +4055,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -4133,6 +4142,7 @@ export const LLMStopEventSchema = {
         invocation_parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -4257,6 +4267,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -4334,6 +4345,7 @@ export const LLMStopEventOutputSchema = {
         invocation_parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -4458,6 +4470,7 @@ export const LLMStopEventOutputSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -4676,6 +4689,7 @@ export const MessageSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -4702,6 +4716,7 @@ export const MessageSchema = {
         function_call_arguments_json: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -5570,7 +5585,7 @@ export const RunStatisticsSchema = {
         has_pending: {
             type: 'boolean',
             title: 'Has Pending',
-            description: 'Has pending events (more start than stop events)',
+            description: 'Has pending events (more start than stop/exception events)',
             default: false
         },
         is_hitl: {
@@ -5619,7 +5634,7 @@ export const RunStatisticsSchema = {
                 }
             ],
             title: 'Started At',
-            description: 'Start time'
+            description: 'Start time (ISO format string)'
         },
         ended_at: {
             anyOf: [
@@ -5631,7 +5646,7 @@ export const RunStatisticsSchema = {
                 }
             ],
             title: 'Ended At',
-            description: 'End time'
+            description: 'End time (ISO format string)'
         },
         latency: {
             anyOf: [
@@ -5658,7 +5673,7 @@ export const RunStatisticsSchema = {
     type: 'object',
     required: ['run_id', 'agent'],
     title: 'RunStatistics',
-    description: 'Statistics for a single run.'
+    description: 'Statistics for a single run, intended for API response.'
 } as const;
 
 export const SemanticEventSchema = {
@@ -6154,12 +6169,12 @@ export const ThreadDTOSchema = {
             },
             type: 'array',
             title: 'Agents',
-            description: 'List of agents in thread'
+            description: 'List of agents initially associated with thread'
         },
         created_at: {
             type: 'string',
             title: 'Created At',
-            description: 'Date at which thread was created'
+            description: 'Date at which thread was created (ISO format string)'
         },
         num_events: {
             type: 'integer',
@@ -6176,7 +6191,7 @@ export const ThreadDTOSchema = {
         has_pending: {
             type: 'boolean',
             title: 'Has Pending',
-            description: 'Thread has more StartEvent than StopEvent',
+            description: 'Thread has more StartEvent than StopEvent+ExceptionEvent overall',
             default: false
         },
         has_errors: {
@@ -6194,7 +6209,7 @@ export const ThreadDTOSchema = {
         open_hitl: {
             type: 'boolean',
             title: 'Open Hitl',
-            description: 'There are more HumanInTheLoopRequest than HumanInTheLoopResponse',
+            description: 'More HumanInTheLoopRequest than Response overall',
             default: false
         },
         is_bitl: {
@@ -6206,7 +6221,7 @@ export const ThreadDTOSchema = {
         open_bitl: {
             type: 'boolean',
             title: 'Open Bitl',
-            description: 'There are more BotInTheLoopRequest than BotInTheLoopResponse',
+            description: 'More BotInTheLoopRequest than Response overall',
             default: false
         },
         is_aitl: {
@@ -6218,7 +6233,7 @@ export const ThreadDTOSchema = {
         open_aitl: {
             type: 'boolean',
             title: 'Open Aitl',
-            description: 'There are more AgentInTheLoopRequest than AgentInTheLoopResponse',
+            description: 'More AgentInTheLoopRequest than Response overall',
             default: false
         },
         first_interaction: {
@@ -6231,7 +6246,7 @@ export const ThreadDTOSchema = {
                 }
             ],
             title: 'First Interaction',
-            description: 'Date of oldest event in thread'
+            description: 'Date of oldest event in thread (ISO format string)'
         },
         latest_interaction: {
             anyOf: [
@@ -6243,7 +6258,7 @@ export const ThreadDTOSchema = {
                 }
             ],
             title: 'Latest Interaction',
-            description: 'Date of newest event in thread'
+            description: 'Date of newest event in thread (ISO format string)'
         },
         latency: {
             anyOf: [
@@ -6255,7 +6270,7 @@ export const ThreadDTOSchema = {
                 }
             ],
             title: 'Latency',
-            description: 'Average latency of the thread in seconds'
+            description: 'Overall duration of interactions in seconds'
         },
         displays: {
             items: {
@@ -6263,7 +6278,7 @@ export const ThreadDTOSchema = {
             },
             type: 'array',
             title: 'Displays',
-            description: 'Displays in this thread',
+            description: 'Displays in this thread, sorted by start time',
             default: []
         },
         participating_agents: {
@@ -6272,7 +6287,7 @@ export const ThreadDTOSchema = {
             },
             type: 'array',
             title: 'Participating Agents',
-            description: 'Agents that participated in the thread',
+            description: "All unique agents that participated in the thread's events",
             default: []
         },
         llm_cost: {
@@ -6285,7 +6300,7 @@ export const ThreadDTOSchema = {
     type: 'object',
     required: ['id', 'name', 'users', 'agents', 'created_at'],
     title: 'ThreadDTO',
-    description: 'Thread information and statistics.'
+    description: 'Thread information and statistics for API response.'
 } as const;
 
 export const TokenResponseSchema = {
@@ -6367,6 +6382,7 @@ export const ToolEventSchema = {
         json_schema: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -6379,6 +6395,7 @@ export const ToolEventSchema = {
         parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -6639,6 +6656,7 @@ export const UserChatMessage_InputSchema = {
             default: 'user'
         },
         additional_kwargs: {
+            additionalProperties: true,
             type: 'object',
             title: 'Additional Kwargs'
         },
@@ -7106,6 +7124,7 @@ export const WorkflowGraphSchema = {
             description: 'Whether the graph is a multigraph'
         },
         graph: {
+            additionalProperties: true,
             type: 'object',
             title: 'Graph',
             description: 'Graph-level attributes'
@@ -7172,6 +7191,7 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
             title: 'Description'
         },
         parameters: {
+            additionalProperties: true,
             type: 'object',
             title: 'Parameters'
         }

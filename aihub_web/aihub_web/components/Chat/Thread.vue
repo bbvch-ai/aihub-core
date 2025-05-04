@@ -6,12 +6,14 @@
       class="flex flex-col gap-2"
     >
       <ChatMessage
+        is-clickable
         :message="message"
         :name="message.name"
         :preferred-username="message.preferredUsername"
         :date="message.date"
         :image="message.userImage"
         :icon="message.icon"
+        @click="() => toDisplay(message)"
       />
     </div>
   </div>
@@ -31,12 +33,16 @@ const props = defineProps<{
   thread: ThreadDto
 }>()
 
+const router = useRouter()
+const localeRoute = useLocaleRoute()
+
 type ExtendedChatMessage = ChatMessageInput & {
   name: string
   preferredUsername: string
   date: Date
   userImage?: string
   icon?: string
+  displayId: string
 }
 
 const user = computed<UserDto>(() => props.thread.users.at(-1)!)
@@ -47,12 +53,18 @@ const getAgentDto = (agent_class: string, agent_id: string) =>
       agent.agent_id === agent_id && agent.agent_class === agent_class,
   )
 
+const toDisplay = (msg: ExtendedChatMessage) => {
+  router.push(localeRoute(`/admin/thread/${props.thread.id}/events?display=${msg.displayId}`))
+}
+
 const createUserMessage = (
   blocks: ChatMessageInput['blocks'],
   timestamp: number,
+  event: WsServerEvent,
 ): ExtendedChatMessage => ({
   role: 'user',
   blocks,
+  displayId: event.display_id,
   name: user.value.name,
   preferredUsername: user.value.email,
   userImage: user.value.profile_image,
@@ -68,6 +80,7 @@ const createAssistantMessage = (
   return {
     role: 'assistant',
     blocks: [{ block_type: 'text', text }],
+    displayId: event.display_id,
     name: agentDto?.agent_config?.name ?? 'Assistant',
     preferredUsername: `${event.agent_class}/${event.agent_id}`,
     icon: agentDto?.agent_config?.icon,
@@ -83,13 +96,14 @@ const messages = computed<ExtendedChatMessage[]>(() => {
 
     if (types.includes('UserMessageEvent')) {
       const blocks = event.event.messages.at(-1)?.blocks ?? []
-      msgs.push(createUserMessage(blocks, created_at))
+      msgs.push(createUserMessage(blocks, created_at, event))
     }
 
     else if (types.includes('HumanInTheLoopResponseEvent')) {
       msgs.push(createUserMessage(
         [{ block_type: 'text', text: event.event.response }],
         created_at,
+        event,
       ))
     }
 

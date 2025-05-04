@@ -4,7 +4,7 @@
     :class="{
       'striped-bg': isExternal || !isFromAgentInThread,
       'border-2 border-red-500 dark:!border-red-900': isError,
-      'border-2 border-orange-500 dark:!border-orange-700': isWarning,
+      'border-2 border-yellow-500 dark:!border-yellow-700': isWarning,
       'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
     }"
   >
@@ -13,7 +13,7 @@
         class="absolute -top-3 right-12 rounded px-2 py-1 text-sm font-semibold"
         :class="{
           'bg-red-500 text-white dark:!bg-red-900': isError,
-          'bg-orange-500 text-white dark:!bg-orange-700': isWarning,
+          'bg-yellow-500 text-white dark:!bg-yellow-700': isWarning,
           'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
         }"
       >

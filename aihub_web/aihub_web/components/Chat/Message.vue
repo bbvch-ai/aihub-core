@@ -22,7 +22,7 @@
       </Avatar>
       <div class="flex w-full flex-col">
         <div
-          class="mb-1 flex items-center gap-2"
+          class="mb-1 line-clamp-1 flex items-center gap-2 text-black dark:text-white"
           :class="justifyClass"
         >
           <p class="text-sm font-bold">
@@ -35,7 +35,8 @@
         <div
           v-for="(block, index) in message.blocks"
           :key="index"
-          class="mb-1 w-full rounded-lg bg-white p-3 dark:bg-surface-700"
+          class="dark:bg-gray-850 mb-1 w-full max-w-[90%] rounded-3xl bg-gray-50  px-5 py-2 "
+          :class="{ 'cursor-pointer': isClickable, 'hover:opacity-80': isClickable }"
         >
           <p v-if="block?.block_type === 'text'">
             {{ block.text }}
@@ -47,7 +48,7 @@
         </div>
         <span
           v-if="props.date"
-          class="flex w-full justify-end text-xs"
+          class="ml-0.5 flex w-full translate-y-px text-xs font-medium text-gray-400"
         >
           {{ useDateFormat(props.date, 'DD.MM.YYYY HH:mm:ss') }}
         </span>
@@ -68,6 +69,7 @@ const props = defineProps<{
   date?: Date
   image?: string
   icon?: string
+  isClickable?: boolean
 }>()
 
 const justifyClass = computed<string[]>(() => {

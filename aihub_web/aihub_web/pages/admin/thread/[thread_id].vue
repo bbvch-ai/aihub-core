@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full">
+  <div class="w-full overflow-x-hidden">
     <NavigationTop
       :nav-items="navItems"
     />
@@ -29,8 +29,9 @@ const isActive = (path: string) => {
 const navItems = computed<NavItem[]>(() => {
   return [
     { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
-    { name: 'Events', key: 'events', path: subPath('events'), isActive: isActive('events') },
+    { name: 'Hierarchy', key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
     { name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
+    { name: 'Events', key: 'events', path: subPath('events'), isActive: isActive('events') },
   ]
 })
 </script>

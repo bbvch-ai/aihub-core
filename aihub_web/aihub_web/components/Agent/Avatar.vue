@@ -1,21 +1,26 @@
 <template>
   <div class="flex gap-2">
     <Avatar
-      size="large"
+      :size="size"
       icon="pi pi-verified"
     >
       <Icon
         :name="agent.agent_config.icon"
-        size="xl"
       />
     </Avatar>
     <div
       class="mb-1 flex flex-col justify-center"
     >
-      <p class="text-sm font-bold">
+      <p
+        class="font-bold"
+        :class="{ 'text-xs': size === 'normal', 'text-sm': size === 'large' }"
+      >
         {{ agent.agent_config.name }}
       </p>
-      <p class="text-sm">
+      <p
+        class="text-sm"
+        :class="{ 'text-xs': size === 'normal', 'text-sm': size === 'large' }"
+      >
         {{ agent.agent_class }} / {{ agent.agent_id }}
       </p>
     </div>
@@ -23,11 +28,16 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto } from '@core/sdk/client'
+import Avatar from 'primevue/avatar'
 
-defineProps<{
-  agent: AgentDto
-}>()
+import type { AgentDto, MinimalAgentDto } from '@core/sdk/client'
+
+withDefaults(defineProps<{
+  size?: 'normal' | 'large'
+  agent: AgentDto | MinimalAgentDto
+}>(), {
+  size: 'large',
+})
 </script>
 
 <style scoped>
