@@ -15,7 +15,6 @@ from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler impor
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.gemini.GeminiLLMConfig import GeminiLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -25,7 +24,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.infrastructure.google.gemini.GeminiConfig import GeminiConfig
 from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging

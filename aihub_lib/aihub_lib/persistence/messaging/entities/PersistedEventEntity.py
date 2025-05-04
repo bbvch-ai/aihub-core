@@ -112,6 +112,159 @@ class PersistedEventEntity(Document):
         """
         return list(cls.objects().filter(thread_id=thread_id).order_by("event_data__created_at"))
 
+    # Inside ThreadService or potentially PersistedEventEntity as a class method
+
+    @classmethod
+    def get_aggregated_run_statistics(cls, thread_id: str) -> List[dict]:
+        """
+        Uses MongoDB aggregation to calculate statistics for each run within a thread.
+        Returns a list of dictionaries, each summarizing a run.
+        """
+        pipeline = [
+            # 1. Match events for the given thread
+            {"$match": {"thread_id": thread_id}},
+            # 2. Add a standardized BSON date field (simplified)
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1_000_000]}}}},
+            # 3. Sort events within the thread by time
+            {"$sort": {"event_time": 1}},
+            # 4. Group events by run_id to calculate run-level stats
+            {
+                "$group": {
+                    "_id": "$run_id",
+                    "display_id": {"$first": "$display_id"},
+                    "first_event_time": {"$min": "$event_time"},
+                    "latest_event_time": {"$max": "$event_time"},
+                    "n_events": {"$sum": 1},
+                    # --- Count specific event types ---
+                    "start_events": {"$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}},
+                    "stop_events": {
+                        "$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}
+                    },  # Added stop count
+                    "exception_events": {
+                        "$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}
+                    },  # Simplified
+                    "hitl_request_events": {
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "hitl_response_events": {
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "bitl_request_events": {
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "bitl_response_events": {
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "aitl_request_events": {
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "aitl_response_events": {
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    # --- Calculate LLM Cost (Simplified) ---
+                    "llm_cost": {
+                        "$sum": {
+                            "$cond": {
+                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},  # Simplified
+                                "then": {
+                                    "$add": [
+                                        {"$ifNull": ["$event_data.prompt_tokens_costs", 0]},
+                                        {"$ifNull": ["$event_data.completion_tokens_costs", 0]},
+                                        {"$ifNull": ["$event_data.embedding_tokens_costs", 0]},
+                                    ]
+                                },
+                                "else": 0,
+                            }
+                        }
+                    },
+                    # --- Collect Agent Info ---
+                    "participating_agents_in_run": {
+                        "$addToSet": {"agent_class": "$agent_class", "agent_id": "$agent_id"}
+                    },
+                    "potential_start_events": {
+                        "$push": {
+                            "agent_class": "$agent_class",
+                            "agent_id": "$agent_id",
+                            "event_time": "$event_time",
+                            "is_start": {"$in": ["StartEvent", "$event_parents"]},
+                            "is_not_user": {"$not": {"$regexMatch": {"input": "$agent_class", "regex": "^UserAgent"}}},
+                        }
+                    },
+                }
+            },
+            # 5. Project/AddFields to calculate derived stats for each run and format output
+            {
+                "$addFields": {
+                    "run_id": "$_id",
+                    "started_at": "$first_event_time",
+                    "ended_at": "$latest_event_time",
+                    "latency": {
+                        "$cond": {
+                            "if": {"$and": ["$first_event_time", "$latest_event_time"]},
+                            "then": {"$divide": [{"$subtract": ["$latest_event_time", "$first_event_time"]}, 1000]},
+                            "else": None,
+                        }
+                    },
+                    "has_pending": {
+                        "$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]
+                    },  # Uses stop_events
+                    "has_errors": {"$gt": ["$exception_events", 0]},
+                    "is_hitl": {"$gt": ["$hitl_request_events", 0]},
+                    "open_hitl": {"$gt": ["$hitl_request_events", "$hitl_response_events"]},
+                    "is_bitl": {"$gt": ["$bitl_request_events", 0]},
+                    "open_bitl": {"$gt": ["$bitl_request_events", "$bitl_response_events"]},
+                    "is_aitl": {"$gt": ["$aitl_request_events", 0]},
+                    "open_aitl": {"$gt": ["$aitl_request_events", "$aitl_response_events"]},
+                    "start_event_info": {
+                        "$first": {
+                            "$filter": {
+                                "input": "$potential_start_events",
+                                "as": "event",
+                                "cond": {"$and": ["$$event.is_start", "$$event.is_not_user"]},
+                            }
+                        }
+                    },
+                }
+            },
+            # 6. Final projection to shape the output document for each run
+            {
+                "$project": {
+                    "_id": 0,
+                    "run_id": 1,
+                    "display_id": 1,
+                    "started_at": 1,
+                    "ended_at": 1,
+                    "latency": 1,
+                    "n_events": 1,
+                    "has_errors": 1,
+                    "has_pending": 1,
+                    "is_hitl": 1,
+                    "open_hitl": 1,
+                    "is_bitl": 1,
+                    "open_bitl": 1,
+                    "is_aitl": 1,
+                    "open_aitl": 1,
+                    "llm_cost": 1,
+                    "participating_agents_in_run": 1,
+                    "start_agent_class": "$start_event_info.agent_class",
+                    "start_agent_id": "$start_event_info.agent_id",
+                    # Include raw counts needed for aggregation
+                    "start_events": 1,
+                    "stop_events": 1,
+                    "exception_events": 1,  # Added stop_events
+                    "hitl_request_events": 1,
+                    "hitl_response_events": 1,
+                    "bitl_request_events": 1,
+                    "bitl_response_events": 1,
+                    "aitl_request_events": 1,
+                    "aitl_response_events": 1,
+                }
+            },
+        ]
+
+        results = list(cls.objects.aggregate(pipeline))
+        return results
+
     @classmethod
     def to_message_history(cls, thread_id: str) -> List[UserChatMessage | AssistantChatMessage]:
         # Retrieve and filter events from the database

@@ -395,7 +395,7 @@ class Dispatcher:
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
                 logger.exception(e)
-                logger.error(f"Error executing step '{step_method.__name__}': {e}")
+                logger.exception(f"Error executing step '{step_method.__name__}': {e}")
                 return
 
             # If the step returns events, publish them

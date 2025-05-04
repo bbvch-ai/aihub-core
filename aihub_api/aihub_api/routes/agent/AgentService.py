@@ -25,7 +25,7 @@ from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO, MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
@@ -53,6 +53,11 @@ class AgentService:
 
     If the agent or agent list isn't found in cache, a new NATS discovery request is performed.
     """
+
+    @staticmethod
+    def get_minimal_agent(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentDTO:
+        agent_entity = AgentEntity.get_agent(agent_class=agent_class, agent_id=agent_id)
+        return MinimalAgentDTO.from_entity(agent_entity, t)
 
     @staticmethod
     async def get_agent(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:

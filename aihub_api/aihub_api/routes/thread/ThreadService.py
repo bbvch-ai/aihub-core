@@ -1,13 +1,22 @@
-from datetime import datetime
-from typing import List, Optional
+import logging
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
+from cachetools import TTLCache, cached
 
+from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
+from aihub_api.routes.thread.dto.statistics.CalculatedThreadStats import CalculatedThreadStats
+from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
+from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
+from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
+from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
-from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
 from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
+from mongoengine import DoesNotExist
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionContentPartImageParam,
@@ -23,9 +32,11 @@ from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
 from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
-from aihub_api.routes.thread.dto.ThreadDTO import DisplayStatistics, EventStatistics, RunStatistics, ThreadDTO
+from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.UserService import UserService
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+
+logger = logging.getLogger(__name__)
 
 
 class ThreadService:
@@ -46,76 +57,6 @@ class ThreadService:
     ### Caching and Performance
     Currently, no caching is implemented here. If needed, caching logic can be added later.
     """
-
-    @staticmethod
-    def calculate_event_statistics(events: List[PersistedEventEntity]) -> EventStatistics:
-        """
-        Calculate statistics for a list of events.
-        Returns an EventStatistics object with statistics like started_at, ended_at, latency, n_events, etc.
-        """
-        stats = EventStatistics(n_events=len(events))
-
-        # Count events and track times
-        for event in events:
-            # Check event types
-            if "StartEvent" in event.event_parents:
-                stats.start_events += 1
-            if "StopEvent" in event.event_parents:
-                stats.stop_events += 1
-            if "ExceptionEvent" in event.event_parents or event.event_name == "ExceptionEvent":
-                stats.exception_events += 1
-            if "HumanInTheLoopRequestEvent" in event.event_parents:
-                stats.hitl_request_events += 1
-            if "HumanInTheLoopResponseEvent" in event.event_parents:
-                stats.hitl_response_events += 1
-            if "BotInTheLoopRequestEvent" in event.event_parents:
-                stats.bitl_request_events += 1
-            if "BotInTheLoopResponseEvent" in event.event_parents:
-                stats.bitl_response_events += 1
-            if "AgentInTheLoopRequestEvent" in event.event_parents:
-                stats.aitl_request_events += 1
-            if "AgentInTheLoopResponseEvent" in event.event_parents:
-                stats.aitl_response_events += 1
-
-            # Track event times
-            if "created_at" in event.event_data:
-                event_time = None
-                created_at = event.event_data["created_at"]
-
-                # Handle different types of created_at values
-                if isinstance(created_at, (int, float)):
-                    # Convert timestamp to datetime
-                    event_time = datetime.fromtimestamp(created_at / 1_000_000_000)
-                elif isinstance(created_at, str):
-                    try:
-                        # Try to parse ISO format string
-                        event_time = datetime.fromisoformat(created_at.rstrip("Z"))
-                    except ValueError:
-                        pass
-
-                if event_time:
-                    if stats.first_event_time is None or event_time < stats.first_event_time:
-                        stats.first_event_time = event_time
-                    if stats.latest_event_time is None or event_time > stats.latest_event_time:
-                        stats.latest_event_time = event_time
-
-        # Calculate derived statistics
-        stats.has_pending = stats.start_events > (stats.stop_events + stats.exception_events)
-        stats.has_errors = stats.exception_events > 0
-        stats.is_hitl = stats.hitl_request_events > 0
-        stats.open_hitl = stats.hitl_request_events > stats.hitl_response_events
-        stats.is_bitl = stats.bitl_request_events > 0
-        stats.open_bitl = stats.bitl_request_events > stats.bitl_response_events
-        stats.is_aitl = stats.aitl_request_events > 0
-        stats.open_aitl = stats.aitl_request_events > stats.aitl_response_events
-
-        # Calculate latency if we have both start and end times
-        if stats.first_event_time and stats.latest_event_time:
-            stats.latency = (stats.latest_event_time - stats.first_event_time).total_seconds()
-            stats.started_at = stats.first_event_time
-            stats.ended_at = stats.latest_event_time
-
-        return stats
 
     @staticmethod
     def create_thread(
@@ -151,18 +92,10 @@ class ThreadService:
         """
         Returns a paginated list of threads that a specific agent is part of.
         """
-        # Calculate skip value for pagination
         skip = (page - 1) * page_size
-
-        # Get total count of threads for this agent
         total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
-
-        # Get paginated threads
         threads = ThreadEntity.get_paginated_threads_by_agent(agent_class, agent_id, skip=skip, limit=page_size)
-
-        # Convert to DTOs
         thread_dtos = [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
-
         return total, thread_dtos
 
     @staticmethod
@@ -197,7 +130,6 @@ class ThreadService:
 
                 current_message = messages[-1]
                 if event.is_user_message_event:
-                    print("Is user message", event.messages[-1].blocks)
                     for block in event.messages[-1].blocks:
                         print("Block", block)
                         if isinstance(block, TextBlock):
@@ -218,7 +150,6 @@ class ThreadService:
                             )
 
                 if event.is_hitl_response_event:
-                    print("Is hitl response", event.response)
                     current_message["content"].append(
                         ChatCompletionContentPartTextParam(text=event.response, type="text")
                     )
@@ -229,7 +160,6 @@ class ThreadService:
 
                 current_message = messages[-1]
                 if event.is_chunk_event:
-                    print("Is chunk", event.content, continue_chunk)
                     if continue_chunk:
                         current_message["content"][-1]["text"] += event.response
                     else:
@@ -239,13 +169,10 @@ class ThreadService:
                         continue_chunk = True
 
                 if event.is_hitl_response_event:
-                    print("Is hitl response", event.response)
                     continue_chunk = False
                     current_message["content"].append(
                         ChatCompletionContentPartTextParam(text=event.response, type="text")
                     )
-
-        print("messages", messages)
 
         return HistoryResponse(messages=messages)
 
@@ -271,181 +198,220 @@ class ThreadService:
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def thread_response_from_entity(entity: ThreadEntity, t: LocaleHandler) -> ThreadDTO:
+    @cached(TTLCache(maxsize=128, ttl=60))
+    def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> Optional[MinimalAgentDTO]:
         """
-        Converts a ThreadEntity into a ThreadDTO:
-        1. Fetch agent details (using AgentService).
-        2. Fetch user details (using UserService).
-        3. Fetch event statistics for the thread.
-        4. Construct a ThreadDTO DTO containing all details.
-        5. Calculate enhanced statistics (displays, runs, participating agents, LLM costs).
+        Fetches agent details and converts to MinimalAgentDTO.
+        Returns None if the agent cannot be found or fetching fails.
         """
-        agent_dtos = []
-        for agent in entity.agents:
-            agent_entity = AgentEntity.get_agent(
-                agent_class=agent.agent_class,
-                agent_id=agent.agent_id,
-            )
-            agent_dto = MinimalAgentDTO.from_entity(agent_entity, t)
-            agent_dtos.append(agent_dto)
+        try:
+            from aihub_api.routes.agent.AgentService import AgentService
+            return AgentService.get_minimal_agent(agent_class, agent_id, t)
+        except DoesNotExist:
+            logger.warning(f"Agent not found: {agent_class}/{agent_id}")
+            return None
+        except Exception as e:
+            logger.exception(f"Error fetching agent {agent_class}/{agent_id}: {e}")
+            return None
 
-        # Create the base response
+    @staticmethod
+    def _process_aggregated_runs(aggregated_runs: List[Dict], t: "LocaleHandler") -> ProcessedRunResults:
+        """
+        Processes raw aggregation results into intermediate display statistics
+        and collects unique participating agent identifiers.
+        """
+        results = ProcessedRunResults()
+
+        for run_data in aggregated_runs:
+            display_id = run_data.get("display_id")
+            if not display_id:
+                logger.warning(f"Skipping run with missing display_id: {run_data.get('run_id')}")
+                continue
+
+            # Get or create the intermediate aggregator for the display
+            if display_id not in results.display_aggregates:
+                results.display_aggregates[display_id] = IntermediateDisplayStats(display_id=display_id)
+            display_agg = results.display_aggregates[display_id]
+
+            # Update counts, times, and cost in the intermediate aggregator
+            display_agg.update_from_run_data(run_data)
+
+            # Attempt to fetch the agent that started the run using the cached method
+            start_agent_class = run_data.get("start_agent_class")
+            start_agent_id = run_data.get("start_agent_id")
+            run_agent_dto = ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
+
+            # Create and add the RunStatistics DTO if the agent was found
+            if run_agent_dto:
+                try:
+                    run_stat_dto = RunStatistics.from_run_data(run_data, run_agent_dto)
+                    display_agg.add_run_dto(run_stat_dto)
+                except Exception as e:
+                    # Log validation or other errors during DTO creation
+                    logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
+            else:
+                logger.warning(
+                    f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent {start_agent_class}/{start_agent_id} could not be fetched."
+                )
+
+            # Collect unique identifiers of all agents participating in the run
+            for agent_info in run_data.get("participating_agents_in_run", []):
+                pa_class = agent_info.get("agent_class")
+                pa_id = agent_info.get("agent_id")
+                if pa_class and pa_id:
+                    results.participating_agent_ids.add(AgentIdentifier(agent_class=pa_class, agent_id=pa_id))
+
+        return results
+
+    @staticmethod
+    def _calculate_overall_thread_stats(
+        display_aggregates: Dict[str, IntermediateDisplayStats],
+    ) -> CalculatedThreadStats:
+        """
+        Calculates overall thread statistics by summing up intermediate display stats.
+        """
+        stats = CalculatedThreadStats()  # Initialize the stats container
+        if not display_aggregates:
+            return stats  # Return default empty stats if no aggregates
+
+        all_start_times: List[datetime] = []
+        all_end_times: List[datetime] = []
+
+        for agg in display_aggregates.values():
+            stats.num_events += agg.n_events
+            stats.num_turns += agg.start_events
+            stats.llm_cost += agg.llm_cost
+            # Sum up individual event counts for overall flags
+            stats.has_errors = stats.has_errors or (agg.exception_events > 0)
+            stats.is_hitl = stats.is_hitl or (agg.hitl_request_events > 0)
+            stats.open_hitl = stats.open_hitl or (agg.hitl_request_events > agg.hitl_response_events)
+            stats.is_bitl = stats.is_bitl or (agg.bitl_request_events > 0)
+            stats.open_bitl = stats.open_bitl or (agg.bitl_request_events > agg.bitl_response_events)
+            stats.is_aitl = stats.is_aitl or (agg.aitl_request_events > 0)
+            stats.open_aitl = stats.open_aitl or (agg.aitl_request_events > agg.aitl_response_events)
+            stats.has_pending = stats.has_pending or (agg.start_events > (agg.stop_events + agg.exception_events))
+
+            if agg.first_event_time:
+                all_start_times.append(agg.first_event_time)
+            if agg.latest_event_time:
+                all_end_times.append(agg.latest_event_time)
+
+        # Calculate overall timing
+        if all_start_times:
+            stats.first_interaction_dt = min(all_start_times)
+        if all_end_times:
+            stats.latest_interaction_dt = max(all_end_times)
+        if stats.first_interaction_dt and stats.latest_interaction_dt:
+            stats.latency = (stats.latest_interaction_dt - stats.first_interaction_dt).total_seconds()
+
+        return stats
+
+    @staticmethod
+    def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
+        """
+        Constructs the comprehensive ThreadDTO from a ThreadEntity, including
+        aggregated event statistics and participating agent/user information.
+        """
+        # 1. Fetch initial users and agents associated directly with the thread
+        #    Leverages the cached agent fetcher.
+        initial_agent_dtos: List[MinimalAgentDTO] = []
+        for agent_ref in entity.agents:
+            dto = ThreadService._fetch_minimal_agent_dto(agent_ref.agent_class, agent_ref.agent_id, t)
+            if dto:
+                initial_agent_dtos.append(dto)
+
+        user_dtos: List[UserDTO] = []
+        for user_ref in entity.users:
+            try:
+                # Assuming UserService provides a method to fetch by OID
+                user_dto = UserService.get_user_by_oid(user_ref.user_id)
+                if user_dto:
+                    user_dtos.append(user_dto)
+            except Exception as e:
+                logger.warning(f"Could not fetch user {user_ref.user_id}: {e}")
+
+        # Create the base response DTO
         response = ThreadDTO(
             id=str(entity.id),
-            created_at=entity.created_at.isoformat() + "Z",  # Add Z to indicate UTC
+            created_at=entity.created_at.isoformat() + "Z",  # Ensure UTC ISO format
             name=entity.name,
-            users=[UserService.get_user_by_oid(user.user_id) for user in entity.users],
-            agents=agent_dtos,
+            users=user_dtos,
+            agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
         )
 
-        # Get all events for the thread to calculate statistics
-        events = EventService.get_all_thread_events(str(entity.id))
-
-        if not events:
+        # 2. Get aggregated run statistics from the database
+        try:
+            # Assumes the DB method returns a list of dictionaries
+            aggregated_runs: List[Dict] = PersistedEventEntity.get_aggregated_run_statistics(str(entity.id))
+        except Exception as e:
+            logger.exception(f"Failed to get aggregated run statistics for thread {entity.id}: {e}")
+            # Return the DTO with only base info if aggregation fails
             return response
 
-        # Calculate thread-level statistics using the helper function
-        thread_stats = ThreadService.calculate_event_statistics(events)
+        if not aggregated_runs:
+            # Return base info if there are no events/runs to process
+            return response
 
-        # Update response with thread-level statistics
-        response.num_events = thread_stats.n_events
-        response.num_turns = thread_stats.start_events
-        response.has_pending = thread_stats.has_pending
-        response.has_errors = thread_stats.has_errors
-        response.is_hitl = thread_stats.is_hitl
-        response.open_hitl = thread_stats.open_hitl
-        response.is_bitl = thread_stats.is_bitl
-        response.open_bitl = thread_stats.open_bitl
-        response.is_aitl = thread_stats.is_aitl
-        response.open_aitl = thread_stats.open_aitl
-        response.latency = thread_stats.latency
+        # 3. Process raw run data into intermediate structures
+        processed_results = ThreadService._process_aggregated_runs(aggregated_runs, t)
 
-        # Set interaction times
-        if thread_stats.first_event_time:
-            response.first_interaction = thread_stats.first_event_time.isoformat() + "Z"
-        if thread_stats.latest_event_time:
-            response.latest_interaction = thread_stats.latest_event_time.isoformat() + "Z"
-
-        # Group events by display_id and run_id
-        displays_dict = {}
-        participating_agent_ids = set()
-        llm_cost = 0.0
-
-        for event in events:
-            # Group events by display_id and run_id
-            display_id = event.display_id
-            run_id = event.run_id
-
-            if display_id not in displays_dict:
-                displays_dict[display_id] = {"events": [], "runs": {}}
-
-            displays_dict[display_id]["events"].append(event)
-
-            if run_id not in displays_dict[display_id]["runs"]:
-                displays_dict[display_id]["runs"][run_id] = []
-
-            displays_dict[display_id]["runs"][run_id].append(event)
-
-            # Track participating agents
-            participating_agent_ids.add((event.agent_class, event.agent_id))
-
-            # Calculate LLM costs
-            if "LLMCostEvent" in event.event_parents or event.event_name == "LLMCostEvent":
-                llm_cost += event.event_data.get("prompt_tokens_costs", 0)
-                llm_cost += event.event_data.get("completion_tokens_costs", 0)
-                llm_cost += event.event_data.get("embedding_tokens_costs", 0)
-
-        # Create display statistics
-        displays = []
-        for display_id, display_data in displays_dict.items():
-            display_events = display_data["events"]
-            display_stats = ThreadService.calculate_event_statistics(display_events)
-
-            # Create runs statistics
-            runs = []
-            for run_id, run_events in display_data["runs"].items():
-                run_stats = ThreadService.calculate_event_statistics(run_events)
-
-                # Format datetime objects to ISO strings
-                started_at = None
-                ended_at = None
-                if run_stats.started_at:
-                    started_at = run_stats.started_at.isoformat() + "Z"
-                if run_stats.ended_at:
-                    ended_at = run_stats.ended_at.isoformat() + "Z"
-
-                start_event = next(
-                    event
-                    for event in run_events
-                    if "StartEvent" in event.event_parents and not event.agent_class.startswith("UserAgent")
-                )
-
-                agent_entity = AgentEntity.get_agent(
-                    agent_class=start_event.agent_class,
-                    agent_id=start_event.agent_id,
-                )
-                agent_dto = MinimalAgentDTO.from_entity(agent_entity, t)
-
-                runs.append(
-                    RunStatistics(
-                        agent=agent_dto,
-                        run_id=run_id,
-                        started_at=started_at,
-                        ended_at=ended_at,
-                        latency=run_stats.latency,
-                        n_events=run_stats.n_events,
-                        has_errors=run_stats.has_errors,
-                        has_pending=run_stats.has_pending,
-                        is_hitl=run_stats.is_hitl,
-                        open_hitl=run_stats.open_hitl,
-                        is_bitl=run_stats.is_bitl,
-                        open_bitl=run_stats.open_bitl,
-                        is_aitl=run_stats.is_aitl,
-                        open_aitl=run_stats.open_aitl,
-                    )
-                )
-
-            # Format datetime objects to ISO strings
-            started_at = None
-            ended_at = None
-            if display_stats.started_at:
-                started_at = display_stats.started_at.isoformat() + "Z"
-            if display_stats.ended_at:
-                ended_at = display_stats.ended_at.isoformat() + "Z"
-
-            displays.append(
-                DisplayStatistics(
-                    display_id=display_id,
-                    started_at=started_at,
-                    ended_at=ended_at,
-                    latency=display_stats.latency,
-                    n_events=display_stats.n_events,
-                    has_errors=display_stats.has_errors,
-                    has_pending=display_stats.has_pending,
-                    is_hitl=display_stats.is_hitl,
-                    open_hitl=display_stats.open_hitl,
-                    is_bitl=display_stats.is_bitl,
-                    open_bitl=display_stats.open_bitl,
-                    is_aitl=display_stats.is_aitl,
-                    open_aitl=display_stats.open_aitl,
-                    runs=runs,
-                )
-            )
-
-        # Get participating agents
-        participating_agents = []
-        for agent_class, agent_id in participating_agent_ids:
+        # 4. Create final Display DTOs from intermediate aggregates
+        final_display_dtos: List[DisplayStatistics] = []
+        for intermediate_stat in processed_results.display_aggregates.values():
             try:
-                agent_entity = AgentEntity.get_agent(agent_class=agent_class, agent_id=agent_id)
-                agent_dto = MinimalAgentDTO.from_entity(agent_entity, t)
-                participating_agents.append(agent_dto)
-            except Exception:
-                # Skip agents that can't be found
-                pass
+                # Use the classmethod which handles internal sorting of runs
+                display_dto = DisplayStatistics.from_intermediate(intermediate_stat)
+                final_display_dtos.append(display_dto)
+            except Exception as e:
+                logger.exception(
+                    f"Error creating DisplayStatistics DTO for display {intermediate_stat.display_id}: {e}"
+                )
+                # Continue processing other displays if one fails
 
-        # Update response with new fields
-        response.displays = displays
-        response.participating_agents = participating_agents
-        response.llm_cost = llm_cost
+        # Sort the final list of displays based on their start time
+        # Use a robust sorting key that handles None values gracefully
+        min_utc_datetime = datetime.min.replace(tzinfo=timezone.utc)
+
+        def display_sort_key(display: DisplayStatistics) -> datetime:
+            if display.started_at:
+                try:
+                    return datetime.fromisoformat(display.started_at.replace("Z", "+00:00"))
+                except (ValueError, TypeError):  # Handle potential format issues or None
+                    logger.warning(f"Could not parse display start time for sorting: {display.started_at}")
+                    return min_utc_datetime
+            return min_utc_datetime  # Displays without a start time sort first
+
+        response.displays = sorted(final_display_dtos, key=display_sort_key)
+
+        # 5. Fetch DTOs for all unique participating agents
+        final_participating_agents: List[MinimalAgentDTO] = []
+        for agent_id in processed_results.participating_agent_ids:
+            # Use the cached fetch method again
+            dto = ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
+            if dto:
+                final_participating_agents.append(dto)
+
+        response.participating_agents = sorted(final_participating_agents, key=lambda a: (a.agent_class, a.agent_id))
+
+        # 6. Calculate overall thread statistics
+        overall_stats: CalculatedThreadStats = ThreadService._calculate_overall_thread_stats(
+            processed_results.display_aggregates
+        )
+
+        # 7. Populate the response DTO with overall statistics
+        response.num_events = overall_stats.num_events
+        response.num_turns = overall_stats.num_turns
+        response.has_pending = overall_stats.has_pending
+        response.has_errors = overall_stats.has_errors
+        response.is_hitl = overall_stats.is_hitl
+        response.open_hitl = overall_stats.open_hitl
+        response.is_bitl = overall_stats.is_bitl
+        response.open_bitl = overall_stats.open_bitl
+        response.is_aitl = overall_stats.is_aitl
+        response.open_aitl = overall_stats.open_aitl
+        response.llm_cost = overall_stats.llm_cost
+        response.first_interaction = overall_stats.first_interaction  # Use property for ISO string
+        response.latest_interaction = overall_stats.latest_interaction  # Use property for ISO string
+        response.latency = overall_stats.latency
 
         return response

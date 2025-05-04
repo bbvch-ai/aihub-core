@@ -97,7 +97,7 @@ class JSSubscriber(Generic[TEvent]):
             pass
         except Exception as e:
             logger.exception(e)
-            logger.error(f"Error in message handler for subject '{msg.subject}': {e}")
+            logger.exception(f"Error in message handler for subject '{msg.subject}': {e}")
 
     async def _process(self, event, topic, msg):
         """
@@ -109,7 +109,7 @@ class JSSubscriber(Generic[TEvent]):
                 await self.handler(event, topic)
             except Exception as e:
                 logger.exception(e)
-                logger.error(f"Error in async processor for subject '{msg.subject}': {e}")
+                logger.exception(f"Error in async processor for subject '{msg.subject}': {e}")
 
     @classmethod
     def for_agent_instance_events(

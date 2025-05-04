@@ -67,7 +67,7 @@ class ExternalEventDistributor:
         users_in_thread = [user.user_id for user in thread.users]
 
         if user_id not in users_in_thread:
-            logger.error(f"User {user_id} is not in thread {external_event.thread_id}")
+            logger.exception(f"User {user_id} is not in thread {external_event.thread_id}")
             raise PermissionError(f"User {user_id} is not in thread {external_event.thread_id}")
 
         if external_event.event.is_start_event:
