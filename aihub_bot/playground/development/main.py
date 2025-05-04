@@ -1,5 +1,6 @@
 import asyncio
 
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
 from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.BotTestRunner import BotTestRunner
@@ -11,7 +12,7 @@ enable_logging()
 
 
 async def main():
-    runner = BotTestRunner()
+    runner = BotTestRunner(conversation_ttl_days=60)
 
     runner.mount(
         HealthController().get_health(),
@@ -26,8 +27,9 @@ async def main():
                 ),
             ]
         )
-        .json_chat_completion()
-        .stream_chat_completion(),
+        .json_chat_completion(typing_timeout_seconds=60)
+        .stream_chat_completion(typing_timeout_seconds=60),
+        AgentChatController().completions_json(typing_timeout_seconds=60).completions_stream(typing_timeout_seconds=60),
         BotInTheLoopController().bot_in_the_loop_response(),
     )
 

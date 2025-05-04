@@ -10,6 +10,7 @@ class OpenaiChatBot(BaseChatBot):
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
         path: str,
+        typing_timeout_seconds: int = 60,
     ):
         super().__init__(
             path=path,
@@ -18,4 +19,5 @@ class OpenaiChatBot(BaseChatBot):
                 "model_name": model_name,
                 "client": client,
             },
+            typing_timeout_seconds=typing_timeout_seconds,
         )

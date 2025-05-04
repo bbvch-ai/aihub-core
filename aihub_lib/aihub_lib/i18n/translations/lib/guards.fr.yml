@@ -14,6 +14,7 @@ agent_description_guard:
     <Historique de la conversation>
     {history}
     </Historique de la conversation>
+    Votre résultat final doit être exclusivement un objet JSON contenant exactement les deux clés « success » et « reasoning ». Ne répétez pas l'ensemble du schéma JSON et n'ajoutez pas de méta-informations supplémentaires.
   user_message: |
     <Utilisateur>
     {user}
@@ -65,22 +66,48 @@ few_shot_guard:
   docstring: |
     Modèle de données pour la décision concernant l'acceptabilité de la requête.
 context_sufficient_guard:
-  prompt: |
-    Je vais te donner un contexte et une question.
-    Si la question peut être répondue avec le contexte fourni, alors la conversation peut continuer (success=True).
-    Si la réponse à la question est impossible avec le contexte, alors la conversation doit être terminée (success=False).
-    Réfléchis d'abord à la manière de décider, puis détermine si la conversation peut se poursuivre avec succès ou non.
-    Question :
-    <Question>
-    {user_query}
-    </Question>
-    Contexte :
-    <Contexte>
-    {context}
-    </Contexte>
+  doc_string: |
+    Résultat de l'évaluation visant à déterminer si le contexte est suffisant pour répondre à la requête de l'utilisateur.
   reason: |
-    Justification de la décision prise.
+    Raisonnement expliquant pourquoi le contexte est ou n'est pas suffisant.
   success: |
-    true si une réponse peut être donnée, false sinon
-  docstring: |
-    Modèle de données pour la décision concernant la possibilité de fournir une réponse.
+    true si le contexte est suffisant pour répondre à la requête de l'utilisateur, false s'il ne l'est pas.
+  new_query: |
+    Une requête révisée pour obtenir de meilleurs résultats de recherche si le contexte était insuffisant, assurez-vous de la différencier suffisamment des requêtes existantes. 
+    des requêtes existantes.
+  prompt: |
+    Je vais vous donner un contexte, une question et les requêtes précédentes si elles ont été générées.
+    Si le contexte fourni permet de répondre à la question, la conversation peut se poursuivre (success=True).
+    Si le contexte ne permet pas de répondre à la question, la conversation doit être interrompue (success=False).
+    
+    Si success=False, vous devez générer une nouvelle requête qui sera utilisée pour recueillir plus d'informations. Lors de la création d'une nouvelle requête :
+
+    1. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : Votre stratégie principale doit consister à remonter les hiérarchies conceptuelles vers des domaines plus larges qui incluraient naturellement des informations sur le sujet d'origine.
+       - Par exemple, si une requête sur les « réseaux neuronaux » ne donne pas de résultats suffisants, passez aux « méthodes d'apprentissage automatique » ou aux « modèles informatiques » au lieu de poser une question différente sur les réseaux neuronaux.
+       - Si un sujet ne donne pas de résultats, réfléchissez au domaine académique, à l'industrie ou au domaine de connaissances auquel il appartient.
+    
+    2. Analysez les requêtes précédentes pour éviter les répétitions ou les variations mineures de la même question.
+    
+    3. Si des concepts de plus haut niveau ont déjà été explorés, essayez ces stratégies alternatives :
+       - Examiner les domaines connexes qui recoupent le sujet principal
+       - rechercher les concepts fondamentaux qui sous-tendent le sujet
+       - Rechercher des informations sur la catégorie ou le système de classification d'origine
+       - Demander des informations sur des principes technologiques ou scientifiques plus larges
+       - Envisager des liens interdisciplinaires avec d'autres domaines
+    
+    4. La nouvelle requête DOIT être clairement distincte de toutes les requêtes précédentes et s'éloigner du sujet spécifique si les approches directes ont échoué.
+    
+    5. Chaque requête successive doit représenter un changement conceptuel plus important que les précédentes.
+
+Question:
+  <Question>
+  { user_query }
+  </Question>
+Contexte:
+  <Context>
+  { context }
+  </Context>
+Requêtes précédentes:
+  <Previous_Queries>
+  { prev_queries }
+  <\Previous_Queries>

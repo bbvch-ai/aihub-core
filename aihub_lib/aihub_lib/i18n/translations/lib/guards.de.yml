@@ -14,6 +14,7 @@ agent_description_guard:
     <vergangener Gesprächsverlauf>
     {history}
     </vergangener Gesprächsverlauf>
+    Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
   user_message: |
     <Benutzer>
     {user}
@@ -65,22 +66,50 @@ few_shot_guard:
   docstring: |
     Datenmodell für die Entscheidung, ob die Anfrage akzeptabel ist oder nicht.
 context_sufficient_guard:
-  prompt: |
-    Ich werde dir einen Kontext und eine Frage geben.
-    Wenn die Frage mit dem bereitgestellten Kontext beantwortet werden kann, dann darf das Gespräch fortgesetzt werden (success=True).
-    Wenn die Beantwortung der Frage mit dem Kontext nicht möglich ist, sollte das Gespräch beendet werden (success=False).
-    Denke zuerst über die Entscheidungsfindung nach und bestimme dann, ob die Konversation erfolgreich fortgesetzt werden kann oder nicht.
-    Frage:
-    <Frage>
-    {user_query}
-    </Frage>
-    Kontext:
-    <Kontext>
-    {context}
-    </Kontext>
+  doc_string: |
+    Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten.
   reason: |
-    Begründung der getroffenen Entscheidung.
+    Begründung, warum der Kontext ausreichend ist oder nicht.
   success: |
-    true wenn die Antwort gegeben werden kann, false wenn nicht
-  docstring: |
-    Datenmodel für die Entscheidung ob eine Antwort gegeben werden kann.
+    true, wenn der Kontext für die Beantwortung der Benutzeranfrage ausreicht, false, wenn er nicht ausreicht.
+  new_query: |
+    Eine überarbeitete Abfrage, um bessere Suchergebnisse zu erhalten, wenn der Kontext unzureichend war, wobei darauf zu achten ist, dass sich die Abfrage ausreichend 
+    von den bestehenden Abfragen unterscheiden.
+  prompt: |
+    Ich gebe Ihnen einen Kontext, eine Frage und frühere Abfragen, falls welche erstellt wurden.
+    Wenn die Frage mit dem angegebenen Kontext beantwortet werden kann, kann die Konversation fortgesetzt werden (success=True).
+    Ist die Beantwortung der Frage mit dem Kontext nicht möglich, sollte die Konversation beendet werden (success=False).
+    
+    Wenn success=False ist, müssen Sie eine neue Abfrage erstellen, mit der Sie weitere Informationen sammeln können. Wenn Sie eine neue Abfrage erstellen:
+
+    1. PRIORISIEREN SIE ÜBERGEORDNETE KONZEPTE: Ihre primäre Strategie sollte darin bestehen, in der Begriffshierarchie nach oben zu gehen, um breitere Bereiche zu finden, die auf natürliche Weise Informationen über das ursprüngliche Thema enthalten würden.
+       - Wenn z. B. die Frage nach „neuronalen Netzen“ unzureichende Ergebnisse liefert, wechseln Sie zu „Methoden des maschinellen Lernens“ oder „Berechnungsmodelle“, anstatt anders nach neuronalen Netzen zu fragen.
+       - Wenn ein Thema keine Ergebnisse liefert, überlegen Sie, zu welchem akademischen Bereich, welcher Branche oder Wissensdomäne es gehört.
+    
+    2. Analysieren Sie die vorherigen Abfragen, um Wiederholungen oder geringfügige Variationen derselben Frage zu vermeiden.
+    
+    3. Wenn übergeordnete Konzepte bereits erforscht wurden, versuchen Sie diese alternativen Strategien:
+       - Untersuchen Sie verwandte Bereiche, die sich mit dem Hauptthema überschneiden.
+       - Suchen Sie nach grundlegenden Konzepten, die das Thema untermauern
+       - Suchen Sie nach Informationen über die übergeordnete Kategorie oder das Klassifizierungssystem
+       - Bitten Sie um Informationen über breitere technologische oder wissenschaftliche Prinzipien
+       - Berücksichtigen Sie interdisziplinäre Verbindungen zu anderen Bereichen.
+    
+    4. Die neue Abfrage MUSS sich deutlich von allen vorherigen Abfragen unterscheiden und sich von dem spezifischen Thema entfernen, wenn direkte Ansätze fehlgeschlagen sind.
+    
+    5. Jede nachfolgende Abfrage sollte eine größere konzeptionelle Veränderung darstellen als die vorhergehenden.
+    
+    Frage:
+    <Question>
+    {user_query}
+    </Question>
+    Kontext:
+    <Context>
+    {context}
+    </Context>
+    Vorherige Abfragen:
+    <Previous_Queries>
+    {prev_queries}
+    <\Previous_Queries>
+
+

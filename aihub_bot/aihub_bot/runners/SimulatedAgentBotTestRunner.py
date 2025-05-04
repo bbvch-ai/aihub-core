@@ -65,8 +65,9 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         agent_class: str,
         agent_id: str,
         simulated_events: Optional[List[BaseEvent]] = None,
+        conversation_ttl_days: float = 30,
     ):
-        super().__init__()
+        super().__init__(conversation_ttl_days=conversation_ttl_days)
         self.agent_class = agent_class
         self.agent_id = agent_id
         self.topic_manager = AgentInstanceTopicManager(agent_class, agent_id)

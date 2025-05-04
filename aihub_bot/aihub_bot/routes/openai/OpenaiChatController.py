@@ -39,6 +39,7 @@ class OpenaiChatController(Controller):
     def json_chat_completion(
         self,
         route: str = "/completions/json",
+        typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
@@ -48,7 +49,11 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = self.get_client(self.chat_models, model_name)
             path = RoutesService.get_path(request)
-            chat_bot = OpenaiChatBot(model_name, client, path)
+
+            chat_bot = OpenaiChatBot(
+                model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
+            )
+
             adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
@@ -57,6 +62,7 @@ class OpenaiChatController(Controller):
     def stream_chat_completion(
         self,
         route: str = "/completions/stream",
+        typing_timeout_seconds: int = 60,
     ) -> "OpenaiChatController":
         @self.router.post(route, tags=self.tags)
         async def stream_chat_completion(
@@ -66,7 +72,11 @@ class OpenaiChatController(Controller):
         ) -> Response:
             client = self.get_client(self.chat_models, model_name)
             path = RoutesService.get_path(request)
-            chat_bot = StreamOpenaiChatBot(model_name, client, path)
+
+            chat_bot = StreamOpenaiChatBot(
+                model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
+            )
+
             adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 

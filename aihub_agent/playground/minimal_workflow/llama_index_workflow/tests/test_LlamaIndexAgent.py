@@ -2,9 +2,9 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import scenarios, given, when, then, parsers
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
-    SelfHostedLLMConfig,
-    SelfHostedLLMParameter,
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
+    OpenaiLikeLLMConfig,
+    OpenaiLikeLLMParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, ChunkEvent, UserMessageEvent
@@ -25,14 +25,14 @@ def _():
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
             system_prompt=LocaleString(en="You are an agent"),
-            llm=SelfHostedLLMConfig(
+            llm=OpenaiLikeLLMConfig(
                 name="unsloth/Llama-3.2-1B-Instruct",
                 base_url="http://localhost:8182/v1",
                 api_key=None,
                 context_size=512,
                 is_chat_model=True,
                 is_function_calling_model=False,
-                default_parameter=SelfHostedLLMParameter(
+                default_parameter=OpenaiLikeLLMParameter(
                     logit_bias=None,
                     logprobs=None,
                 ),

@@ -11,7 +11,7 @@ from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestR
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import SelfHostedLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
 )
@@ -67,7 +67,7 @@ async def main():
                 ),
             ],
             chat_models=[
-                SelfHostedLLMConfig(
+                OpenaiLikeLLMConfig(
                     name="unsloth/Llama-3.2-1B-Instruct",
                     base_url="http://localhost:8182/v1",
                     is_function_calling_model=False,

@@ -13,6 +13,7 @@ class AgentChatBot(BaseChatBot):
         agent_class: str,
         agent_id: str,
         path: str,
+        typing_timeout_seconds: int = 60,
     ):
         super().__init__(
             path=path,
@@ -23,4 +24,5 @@ class AgentChatBot(BaseChatBot):
                 "nc": nc,
                 "external_event_distributor": external_event_distributor,
             },
+            typing_timeout_seconds=typing_timeout_seconds,
         )

@@ -20,6 +20,7 @@ def create_azure_ai_search_vector_store(
     metadata_fields: List[str] | None = None,
     language: str = "de",
     semantic_configuration_name: str = "mySemanticConfig",
+    dimensions: int = 3072,
 ) -> AzureAISearchVectorStore:
     search_client_singleton = AISearchAccess()
     index_client = search_client_singleton.get_client()
@@ -42,4 +43,5 @@ def create_azure_ai_search_vector_store(
         doc_id_field_key=DOCUMENT_ID,
         language_analyzer=f"{language}.microsoft",
         semantic_configuration_name=semantic_configuration_name,
+        embedding_dimensionality=dimensions,
     )

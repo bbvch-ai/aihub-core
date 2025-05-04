@@ -5,10 +5,12 @@ from typing import Any, Dict
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
 from botbuilder.core import ActivityHandler, TurnContext
+from botbuilder.schema import Activity, ActivityTypes
 from botframework.connector import Channels
 from typing_extensions import override
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
+from aihub_bot.persistence.entities.ConversationEntity import ConversationTracker
 
 
 class BaseChatBot(ActivityHandler):
@@ -28,11 +30,13 @@ class BaseChatBot(ActivityHandler):
         path: str,
         completion_handler: CompletionHandler,
         handler_kwargs: Dict[str, Any],
+        typing_timeout_seconds: int = 60,
     ):
         self.path = path
         self.completion_handler = completion_handler
         self.handler_kwargs = handler_kwargs
         self.locale_handler = LocaleHandler()
+        self.typing_timeout_seconds = typing_timeout_seconds
 
     @override
     async def on_conversation_update_activity(self, turn_context: TurnContext):
@@ -47,6 +51,9 @@ class BaseChatBot(ActivityHandler):
             and turn_context.activity.members_added is not None
             and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
         ):
+            conversation_id = turn_context.activity.conversation.id
+            ConversationTracker.mark_explicitly_deleted(conversation_id)
+
             self.completion_handler.delete_conversation_if_exists(turn_context=turn_context)
 
         return await super().on_conversation_update_activity(turn_context)
@@ -62,6 +69,7 @@ class BaseChatBot(ActivityHandler):
 
     async def _process_message(self, turn_context: TurnContext, is_streaming: bool = False):
         locale_handler = self._get_locale_handler(turn_context)
+        conversation_id = turn_context.activity.conversation.id
 
         # Start typing indicator
         typing_stop_signal = Event()
@@ -70,8 +78,24 @@ class BaseChatBot(ActivityHandler):
                 turn_context=turn_context,
                 signal=typing_stop_signal,
                 t=locale_handler,
+                timeout_seconds=self.typing_timeout_seconds,
             )
         )
+
+        # Check if we should show expiration message
+        if (
+            ConversationTracker.should_show_expiration_message(conversation_id)
+            and turn_context.activity.type == "message"
+        ):
+            await turn_context.send_activity(
+                Activity(
+                    type=ActivityTypes.message,
+                    text="This conversation has expired after 1 month of inactivity. Your previous messages are no longer available.",
+                )
+            )
+
+        # Always track this conversation ID
+        ConversationTracker.track_conversation(conversation_id)
 
         # Persist user message
         self.completion_handler.add_user_message_to_conversation(

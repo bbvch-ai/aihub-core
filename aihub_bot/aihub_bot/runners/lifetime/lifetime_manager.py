@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 
 
@@ -26,6 +27,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         db=ApiConfig().DB_NAME,
         host=CosmosAccess().get_connection_string(),
     )
+
+    # Configure TTL index after connection is established
+    if hasattr(app.state, "conversation_ttl_days"):
+        conversation_ttl_days = app.state.conversation_ttl_days
+        logging.info(f"Configuring TTL index with {conversation_ttl_days} days")
+        ConversationEntity.update_ttl_index(conversation_ttl_days)
 
     try:
         # Connect to NATS and setup JetStream

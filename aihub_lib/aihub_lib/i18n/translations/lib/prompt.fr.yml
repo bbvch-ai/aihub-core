@@ -65,7 +65,7 @@ router:
   instructions:
     context_sufficient: |
       Determine whether the user's query can be fulfilled given the available chat history.
-  
+      
       <chat_history>
       {% for message in chat_history %}
       <message role="{{ message.role.value }}">
@@ -77,11 +77,11 @@ router:
       </message>
       {% endfor %}
       </chat_history>
-  
+      
       <user_query>
       {{ query }}
       </user_query>
-  
+      
       <fulfillment_criteria>
       <can_fulfill>
       A query CAN be fulfilled if ANY of the following are true:
@@ -90,7 +90,7 @@ router:
       * The information required is trivial knowledge that most people would know (e.g., "the sky is blue")
       * There is no information in the chat history, but the query also does not require any specific information
       </can_fulfill>
-  
+      
       <cannot_fulfill>
       A query CANNOT be fulfilled if ANY of the following are true:
       * It explicitly asks for information not provided in the chat history and not trivially available
@@ -98,7 +98,7 @@ router:
       * The query can only be insufficiently or partially answered given the available context
       </cannot_fulfill>
       </fulfillment_criteria>
-  
+      
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
 
     expert_answer_sufficient: |
@@ -141,3 +141,14 @@ router:
       </answered_criteria>
 
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
+summarizer:
+  summarize: |
+    Veuillez fournir un résumé concis du texte suivant.
+    Capturez les idées principales et les points clés, en veillant à ce que le résumé soit cohérent et maintienne le contexte original ainsi que les relations entre les idées.
+    Texte pour le résumé:
+
+    <Texte>
+    {text}
+    </Texte>
+
+    Résumé:

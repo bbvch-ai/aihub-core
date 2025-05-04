@@ -1,12 +1,13 @@
 from typing import Dict, List
 
-from i18n import t
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
+    LANGUAGE,
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
     TYPE,
@@ -14,9 +15,9 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 
 
 class LLMSummarizer:
-    def __init__(self, llm: LLM, locale: str = NODE_LANGUAGE_ENGLISH):
+    def __init__(self, llm: LLM, t: LocaleHandler):
         self._llm = llm
-        self._summarize_prompt_template = PromptTemplate(t("agent.prompt.summarizer.summarize"), locale=locale)
+        self._summarize_prompt_template = PromptTemplate(t("lib.prompt.summarizer.summarize"))
 
     def summarize(self, text: str) -> str:
         response = self._llm.predict(self._summarize_prompt_template, text=text)
@@ -27,18 +28,18 @@ class RecursiveNodeSummarizer:
     def __init__(
         self,
         llm: LLM,
-        min_summarization_length: int = 500,
+        min_summarization_length: int = 250,
     ):
-        """
-        Args:
-            llm (LLM): The LLM model to use for summarization.
-            min_summarization_length (int): The minimum length of characters needed to create a summary.
-        """
-        self.llm_summarizer = LLMSummarizer(llm)
+        self._llm = llm
         self.min_summarization_length = min_summarization_length
         self.node_id_to_node = {}
 
     def summarize_nodes(self, nodes: List[TextNode]) -> List[TextNode]:
+        if not nodes:
+            return []
+        locale = nodes[0].metadata.get(LANGUAGE, NODE_LANGUAGE_ENGLISH)
+        locale_handler = LocaleHandler(locale=locale)
+        llm_summarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
         self.node_id_to_node = {node.node_id: node for node in nodes}
         grouped_nodes = self._group_nodes_by_level(nodes)
         max_level = max(grouped_nodes.keys()) if grouped_nodes else 0
@@ -46,17 +47,17 @@ class RecursiveNodeSummarizer:
 
         for level in range(max_level, -1, -1):
             level_nodes = grouped_nodes.get(level, [])
-            summarized_level_nodes = self._summarize_level(level_nodes, summary_nodes, level)
+            summarized_level_nodes = self._summarize_level(level_nodes, summary_nodes, level, llm_summarizer)
             summary_nodes.extend(summarized_level_nodes)
 
         return nodes.copy() + summary_nodes
 
-    def _summarize_summaries(self, child_summaries: List[TextNode], level) -> TextNode:
+    def _summarize_summaries(self, child_summaries: List[TextNode], level: int, summarizer: LLMSummarizer) -> TextNode:
         combined_text = "\n\n".join(node.text for node in child_summaries)
         if len(combined_text) < self.min_summarization_length and level > 0:
             summary = combined_text
         else:
-            summary = self.llm_summarizer.summarize(combined_text)
+            summary = summarizer.summarize(combined_text)
         summary_node = self._create_summary_node(child_summaries[0], summary, level)
 
         for child in child_summaries:
@@ -65,7 +66,11 @@ class RecursiveNodeSummarizer:
         return summary_node
 
     def _summarize_level(
-        self, level_nodes: List[TextNode], child_summaries: List[TextNode], level: int
+        self,
+        level_nodes: List[TextNode],
+        child_summaries: List[TextNode],
+        level: int,
+        summarizer: LLMSummarizer,
     ) -> List[TextNode]:
         summarized_nodes = []
         processed_nodes = set()
@@ -73,7 +78,7 @@ class RecursiveNodeSummarizer:
         if not level_nodes:
             relevant_child_summaries = [node for node in child_summaries if self._get_summary_level(node) == level + 1]
             if relevant_child_summaries:
-                level_summary = self._summarize_summaries(relevant_child_summaries, level)
+                level_summary = self._summarize_summaries(relevant_child_summaries, level, summarizer)
                 return [level_summary]
             return []
 
@@ -88,7 +93,7 @@ class RecursiveNodeSummarizer:
             if len(combined_text) < self.min_summarization_length and level > 0:
                 summary = combined_text
             else:
-                summary = self.llm_summarizer.summarize(combined_text)
+                summary = summarizer.summarize(combined_text)
 
             summary_node = self._create_summary_node(node, summary, level)
             self._set_parent_child(node, summary_node)

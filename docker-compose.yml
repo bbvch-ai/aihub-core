@@ -59,7 +59,7 @@ services:
     command: >
       -hf unsloth/Llama-3.2-1B-Instruct-GGUF
       --port 8182
-      -c 512
+      -c 8192
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
