@@ -66,6 +66,6 @@ def _(llm):
 
 
 @then("structured_predict should be called with prompt:")
-def _(call_args, agent_description, locale_handler, user_query, docstring):
+def _(call_args, locale_handler, docstring):
     prompt = PromptTemplate(locale_handler("lib.guards.agent_description_guard.prompt")).format(**call_args[1])
-    assert prompt == docstring
+    assert prompt.strip() == docstring.strip()
