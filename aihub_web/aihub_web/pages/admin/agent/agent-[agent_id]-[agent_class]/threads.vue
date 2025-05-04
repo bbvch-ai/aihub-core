@@ -5,7 +5,7 @@
       mode="indeterminate"
       style="height: 2px"
     />
-    <div class="card p-3">
+    <div class="p-3">
       <div class="mb-4">
         <h2 class="text-xl font-bold">
           Agent Threads

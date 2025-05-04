@@ -35,7 +35,7 @@
         <div
           v-for="(block, index) in message.blocks"
           :key="index"
-          class="dark:bg-gray-850 mb-1 w-full max-w-[90%] rounded-3xl bg-gray-50  px-5 py-2 "
+          class="mb-1 w-full max-w-[90%] rounded-3xl bg-surface-50 px-5  py-2 dark:bg-surface-800 "
           :class="{ 'cursor-pointer': isClickable, 'hover:opacity-80': isClickable }"
         >
           <p v-if="block?.block_type === 'text'">
@@ -48,7 +48,7 @@
         </div>
         <span
           v-if="props.date"
-          class="ml-0.5 flex w-full translate-y-px text-xs font-medium text-gray-400"
+          class="ml-0.5 flex w-full translate-y-px text-xs font-medium text-surface-400"
         >
           {{ useDateFormat(props.date, 'DD.MM.YYYY HH:mm:ss') }}
         </span>

@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div>
     <DataTable
       :value="threads"
       table-style="min-width: 50rem"
