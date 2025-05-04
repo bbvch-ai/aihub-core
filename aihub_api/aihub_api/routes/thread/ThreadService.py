@@ -1,20 +1,13 @@
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-from cachetools import TTLCache, cached
 
-from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
-from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
-from aihub_api.routes.thread.dto.statistics.CalculatedThreadStats import CalculatedThreadStats
-from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
-from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
-from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
-from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
+from cachetools import TTLCache, cached
 from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
 from mongoengine import DoesNotExist
 from openai.types.chat import (
@@ -29,9 +22,16 @@ from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 
 from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
 from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
+from aihub_api.routes.thread.dto.statistics.CalculatedThreadStats import CalculatedThreadStats
+from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
+from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
+from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
+from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.UserService import UserService
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
@@ -206,6 +206,7 @@ class ThreadService:
         """
         try:
             from aihub_api.routes.agent.AgentService import AgentService
+
             return AgentService.get_minimal_agent(agent_class, agent_id, t)
         except DoesNotExist:
             logger.warning(f"Agent not found: {agent_class}/{agent_id}")
