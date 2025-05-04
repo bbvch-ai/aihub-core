@@ -22,7 +22,7 @@ def create_output_model(event_class: Type[T]) -> Type[BaseModel]:
         f"{event_class.event_name_from_class()}Output",
         __base__=BaseModel,
         **fields,
-        model_config=ConfigDict(
+        __config__=ConfigDict(
             arbitrary_types_allowed=False,
             populate_by_name=True,
             use_enum_values=True,

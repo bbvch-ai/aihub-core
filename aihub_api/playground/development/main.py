@@ -101,14 +101,6 @@ async def main():
                     is_function_calling_model=False,
                     context_size=512,
                 ),
-                GeminiLLMConfig(
-                    name="gemini-2.0-flash",
-                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-                    context_size=1_000_000,
-                    prompt_tokens_costs_per_thousand=0.0045,
-                    completion_tokens_costs_per_thousand=0.0133,
-                    api_key=GeminiConfig().GOOGLE_GEMINI_API_KEY,
-                ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o",
                     base_url="https://bbvaihub-openai-sui.openai.azure.com",
