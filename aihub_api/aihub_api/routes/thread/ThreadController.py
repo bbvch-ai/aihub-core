@@ -1,20 +1,20 @@
-from typing import List, Annotated
+from typing import Annotated
 
-from aihub_api.pagination.type.PageNumber import PageNumber
-from aihub_api.pagination.type.PageSize import PageSize
-from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
-from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security, Path
+from fastapi import Depends, HTTPException, Path, Security
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
+from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
@@ -83,21 +83,12 @@ class ThreadController(Controller):
             """
             Returns all threads that the authenticated user is a member of.
             """
-            total, threads = ThreadService.get_paginated_threads_for_user(
-                user.oid,
-                t,
-                page=page,
-                page_size=page_size
-            )
+            total, threads = ThreadService.get_paginated_threads_for_user(user.oid, t, page=page, page_size=page_size)
 
             total_pages = (total + page_size - 1) // page_size
 
             return PaginatedThreadsResponse(
-                threads=threads,
-                total=total,
-                page=page,
-                page_size=page_size,
-                total_pages=total_pages
+                threads=threads, total=total, page=page, page_size=page_size, total_pages=total_pages
             )
 
         return self
@@ -173,7 +164,6 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.thread_as_message_history(thread_id)
-
 
     def remove_agent_from_thread(
         self, route: str = "/{thread_id}/agents/{agent_class}/{agent_id}"

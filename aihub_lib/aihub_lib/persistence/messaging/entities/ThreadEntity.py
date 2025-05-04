@@ -49,29 +49,25 @@ class ThreadEntity(Document):
     @classmethod
     def count_threads_by_agent(cls, agent_class: str, agent_id: str) -> int:
         """Count the total number of threads that include the specified agent."""
-        return cls.objects().filter(
-            agents__agent_id=agent_id,
-            agents__agent_class=agent_class
-        ).count()
+        return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class).count()
 
     @classmethod
     def get_paginated_threads_by_user(cls, user_id: str, skip: int = 0, limit: int = 20) -> List["ThreadEntity"]:
         """Get a paginated list of threads that include the specified user."""
-        return cls.objects().filter(users__user_id=user_id).order_by('-created_at').skip(skip).limit(limit)
+        return cls.objects().filter(users__user_id=user_id).order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod
     def get_paginated_threads_by_agent(
-            cls,
-            agent_class: str,
-            agent_id: str,
-            skip: int = 0,
-            limit: int = 20
+        cls, agent_class: str, agent_id: str, skip: int = 0, limit: int = 20
     ) -> List["ThreadEntity"]:
         """Get a paginated list of threads that include the specified agent."""
-        return cls.objects().filter(
-            agents__agent_id=agent_id,
-            agents__agent_class=agent_class
-        ).order_by('-created_at').skip(skip).limit(limit)
+        return (
+            cls.objects()
+            .filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
+            .order_by("-created_at")
+            .skip(skip)
+            .limit(limit)
+        )
 
     @classmethod
     def get_threads_by_users(cls, user_ids: List[str]) -> List["ThreadEntity"]:

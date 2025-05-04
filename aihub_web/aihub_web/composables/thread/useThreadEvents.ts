@@ -11,7 +11,7 @@ export const useThreadEvents = defineQuery(() => {
 
   // Regular REST API query
   const { data: threadEvents, isLoading: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
-    key: () => ['events', 'thread', route.params.thread_id],
+    key: () => ['events', 'thread', route.params.thread_id as string],
     staleTime: 1000 * 10, // 10 seconds
     enabled: true,
     query: async () => {
@@ -59,7 +59,7 @@ export const useThreadEvents = defineQuery(() => {
 
           // Sort events if needed
           updatedEvents.sort((a, b) =>
-            (a.event.created_at || 0) - (b.event.created_at || 0),
+            (a.event.created_at ?? 0) - (b.event.created_at ?? 0),
           )
 
           // Update the cache with the new array

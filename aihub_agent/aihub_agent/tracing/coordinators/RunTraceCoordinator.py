@@ -4,7 +4,6 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Annotated, Any, AsyncIterator, Callable, Dict, List, Optional
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.context.BaseContext import BaseContext
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent

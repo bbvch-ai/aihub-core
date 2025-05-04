@@ -1,27 +1,31 @@
 from datetime import datetime
 from typing import List, Optional
 
-from llama_index.core.base.llms.types import TextBlock, ImageBlock, AudioBlock
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionUserMessageParam, \
-    ChatCompletionContentPartTextParam, ChatCompletionContentPartImageParam, ChatCompletionContentPartInputAudioParam, \
-    ChatCompletionAssistantMessageParam
-from openai.types.chat.chat_completion_content_part_image_param import ImageURL
-from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
-
-from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
+from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
+from openai.types.chat import (
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionContentPartImageParam,
+    ChatCompletionContentPartInputAudioParam,
+    ChatCompletionContentPartTextParam,
+    ChatCompletionMessageParam,
+    ChatCompletionUserMessageParam,
+)
+from openai.types.chat.chat_completion_content_part_image_param import ImageURL
+from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 
 from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
 from aihub_api.routes.event.EventService import EventService
+from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import DisplayStatistics, EventStatistics, RunStatistics, ThreadDTO
 from aihub_api.routes.user.UserService import UserService
+from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 
 
 class ThreadService:
@@ -130,7 +134,9 @@ class ThreadService:
         return ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def get_paginated_threads_for_user(user_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20) -> tuple[int, List[ThreadDTO]]:
+    def get_paginated_threads_for_user(
+        user_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
+    ) -> tuple[int, List[ThreadDTO]]:
         """Returns a paginated list of threads that the user is a member of."""
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_user(user_id)
@@ -140,11 +146,7 @@ class ThreadService:
 
     @staticmethod
     def get_paginated_threads_for_agent(
-            agent_class: str,
-            agent_id: str,
-            t: LocaleHandler,
-            page: int = 1,
-            page_size: int = 20
+        agent_class: str, agent_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
     ) -> tuple[int, List[ThreadDTO]]:
         """
         Returns a paginated list of threads that a specific agent is part of.
@@ -162,7 +164,6 @@ class ThreadService:
         thread_dtos = [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
 
         return total, thread_dtos
-
 
     @staticmethod
     def add_agent_to_thread(thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadDTO:
@@ -205,11 +206,15 @@ class ThreadService:
                             )
                         if isinstance(block, ImageBlock):
                             current_message["content"].append(
-                                ChatCompletionContentPartImageParam(image_url=ImageURL(url=str(block.url)), type="image_url")
+                                ChatCompletionContentPartImageParam(
+                                    image_url=ImageURL(url=str(block.url)), type="image_url"
+                                )
                             )
                         if isinstance(block, AudioBlock):
                             current_message["content"].append(
-                                ChatCompletionContentPartInputAudioParam(input_audio=InputAudio(data=block.audio, format=block.format), type="input_audio")
+                                ChatCompletionContentPartInputAudioParam(
+                                    input_audio=InputAudio(data=block.audio, format=block.format), type="input_audio"
+                                )
                             )
 
                 if event.is_hitl_response_event:

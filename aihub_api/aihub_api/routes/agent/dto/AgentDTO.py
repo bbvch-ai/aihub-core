@@ -45,6 +45,7 @@ class AgentDTO(MinimalAgentDTO):
 
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
+
     start_events: List[EventSpecs] = Field(
         ..., description="A list of `EventSpecs` representing events that can start this agent's workflow."
     )

@@ -71,12 +71,20 @@ class AgentService:
 
         all_agents = discovered_agents.copy()
         for saved_agent in saved_agents:
-            was_discovered = len([a for a in discovered_agents if a.agent_id == saved_agent.agent_id and a.agent_class == saved_agent.agent_class]) > 0
+            was_discovered = (
+                len(
+                    [
+                        a
+                        for a in discovered_agents
+                        if a.agent_id == saved_agent.agent_id and a.agent_class == saved_agent.agent_class
+                    ]
+                )
+                > 0
+            )
             if not was_discovered:
                 all_agents.append(saved_agent)
 
         return all_agents
-
 
     @staticmethod
     async def discover_agent(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:
@@ -105,7 +113,7 @@ class AgentService:
                 start_events=event.start_events,
                 stop_events=event.stop_events,
                 network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-                is_online=True
+                is_online=True,
             )
             AgentEntity.create_or_update_from_dto(agent_dto)
             agent_found_event.set()
@@ -182,7 +190,7 @@ class AgentService:
                     start_events=response.start_events,
                     stop_events=response.stop_events,
                     network_graph=response.network_graph,
-                    is_online=True
+                    is_online=True,
                 )
                 AgentEntity.create_or_update_from_dto(agent_dto)
                 unique_agents_dict[unique_key] = agent_dto
@@ -244,11 +252,7 @@ class AgentService:
 
     @staticmethod
     async def get_paginated_agent_threads(
-            agent_class: str,
-            agent_id: str,
-            t: LocaleHandler,
-            page: int = 1,
-            page_size: int = 20
+        agent_class: str, agent_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
     ) -> tuple[int, List[ThreadDTO]]:
         """
         Retrieves a paginated list of threads that a specific agent is part of.
@@ -263,13 +267,7 @@ class AgentService:
         Returns:
         - A tuple containing (total_count, paginated_threads)
         """
-        return ThreadService.get_paginated_threads_for_agent(
-            agent_class,
-            agent_id,
-            t,
-            page=page,
-            page_size=page_size
-        )
+        return ThreadService.get_paginated_threads_for_agent(agent_class, agent_id, t, page=page, page_size=page_size)
 
     @staticmethod
     def clear_cache() -> None:

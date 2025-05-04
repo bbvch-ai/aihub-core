@@ -1,29 +1,31 @@
 <template>
-  <ProgressBar
-    v-if="isLoading || !threads"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div class="card p-3">
-    <div class="mb-4">
-      <h2 class="text-xl font-bold">
-        Agent Threads
-      </h2>
-    </div>
-
-    <ThreadList
-      :threads="threads"
-      @selected="toThread"
+  <div>
+    <ProgressBar
+      v-if="isLoading || !threads"
+      mode="indeterminate"
+      style="height: 2px"
     />
+    <div class="card p-3">
+      <div class="mb-4">
+        <h2 class="text-xl font-bold">
+          Agent Threads
+        </h2>
+      </div>
 
-    <div class="mt-4">
-      <Paginator
-        :rows="pageSize"
-        :total-records="pagination.total"
-        :rows-per-page-options="[10, 20, 30, 50]"
-        :first="(currentPage - 1) * pageSize"
-        @page="onPageChange"
+      <ThreadList
+        :threads="threads"
+        @selected="toThread"
       />
+
+      <div class="mt-4">
+        <Paginator
+          :rows="pageSize"
+          :total-records="pagination.total"
+          :rows-per-page-options="[10, 20, 30, 50]"
+          :first="(currentPage - 1) * pageSize"
+          @page="onPageChange"
+        />
+      </div>
     </div>
   </div>
 </template>

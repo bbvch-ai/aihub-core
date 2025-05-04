@@ -10,7 +10,7 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
-from fastapi.params import Query, Path
+from fastapi.params import Path, Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 

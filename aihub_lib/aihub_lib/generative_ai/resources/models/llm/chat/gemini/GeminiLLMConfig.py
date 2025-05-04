@@ -28,6 +28,7 @@ class GeminiLLMConfig(ChatLLMConfig):
     """
     Configuration for gemini language model.
     """
+
     prompt_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand prompt tokens.")]
     completion_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand completion tokens.")]
     api_key: Annotated[Optional[str], Field(None, description="API key if required by the local endpoint.")]
@@ -46,17 +47,14 @@ class GeminiLLMConfig(ChatLLMConfig):
         client = genai.Client(
             api_key=self.api_key,
         )
+
         def token_counter(content: str) -> List[int]:
-            response = client.models.count_tokens(
-                model=f"models/{self.name}",
-                contents=content
-            )
+            response = client.models.count_tokens(model=f"models/{self.name}", contents=content)
             return [0] * response.total_tokens
+
         return token_counter
 
-    def to_llama_index(
-        self, model_parameter: Optional[GeminiLLMParameter] = None
-    ) -> Tuple[OpenAILike, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: Optional[GeminiLLMParameter] = None) -> Tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an Gemini model in openai compatible mode and a LLMCostTracker.
         This uses the OpenAILike wrapper since it mimics OpenAI-like APIs.

@@ -12,7 +12,8 @@ from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
     HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent, ExceptionEvent,
+    HumanInTheLoopResponseEvent,
+    ExceptionEvent,
 )
 
 from aihub_agent.agents.Agent import Agent

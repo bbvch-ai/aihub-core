@@ -1,9 +1,6 @@
 import time
 from typing import Annotated, List, Type
 
-from aihub_api.pagination.type.PageNumber import PageNumber
-from aihub_api.pagination.type.PageSize import PageSize
-from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -22,9 +19,11 @@ from stringcase import snakecase
 from aihub_api.events.create_input_model import create_input_model
 from aihub_api.events.create_output_model import create_output_model
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
+from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 
 
 class AgentController(Controller):
@@ -132,21 +131,13 @@ class AgentController(Controller):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
             total, threads = await AgentService.get_paginated_agent_threads(
-                agent_class,
-                agent_id,
-                t,
-                page=page,
-                page_size=page_size
+                agent_class, agent_id, t, page=page, page_size=page_size
             )
 
             total_pages = (total + page_size - 1) // page_size
 
             return PaginatedThreadsResponse(
-                threads=threads,
-                total=total,
-                page=page,
-                page_size=page_size,
-                total_pages=total_pages
+                threads=threads, total=total, page=page, page_size=page_size, total_pages=total_pages
             )
 
         return self

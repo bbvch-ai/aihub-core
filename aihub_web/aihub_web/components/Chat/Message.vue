@@ -70,10 +70,6 @@ const props = defineProps<{
   icon?: string
 }>()
 
-const avatarLabel = computed(() => {
-  return props.name?.at(0) || 'U'
-})
-
 const justifyClass = computed<string[]>(() => {
   return [props.message.role === 'user' ? 'justify-end' : 'justify-start']
 })
