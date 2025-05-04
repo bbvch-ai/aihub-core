@@ -24,9 +24,9 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
-    SelfHostedLLMConfig,
-    SelfHostedLLMParameter,
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
+    OpenaiLikeLLMConfig,
+    OpenaiLikeLLMParameter,
 )
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -138,14 +138,14 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    llm_config = SelfHostedLLMConfig(
+    llm_config = OpenaiLikeLLMConfig(
         name="unsloth/Llama-3.2-1B-Instruct",
         base_url="http://localhost:8182/v1",
         api_key=None,
         context_size=8192,
         is_chat_model=True,
         is_function_calling_model=False,
-        default_parameter=SelfHostedLLMParameter(
+        default_parameter=OpenaiLikeLLMParameter(
             logit_bias=None,
             logprobs=None,
         ),

@@ -2,13 +2,13 @@ import asyncio
 
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
-from aihub_agent.agents.rag.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.rag.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.rag.RAGAgent import RAGAgent
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.llm.chat.self_hosted.SelfHostedLLMConfig import (
-    SelfHostedLLMConfig,
-    SelfHostedLLMParameter,
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
+    OpenaiLikeLLMConfig,
+    OpenaiLikeLLMParameter,
 )
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
@@ -31,14 +31,14 @@ async def main():
             system_prompt=LocaleString(
                 en="You're an agent answering user requests. Only use the context information provided."
             ),
-            llm=SelfHostedLLMConfig(
+            llm=OpenaiLikeLLMConfig(
                 name="unsloth/Llama-3.2-1B-Instruct",
                 base_url="http://localhost:8182/v1",
                 api_key=None,
                 context_size=512,
                 is_chat_model=True,
                 is_function_calling_model=False,
-                default_parameter=SelfHostedLLMParameter(
+                default_parameter=OpenaiLikeLLMParameter(
                     logit_bias=None,
                     logprobs=None,
                 ),
