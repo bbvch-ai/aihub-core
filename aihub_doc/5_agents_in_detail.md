@@ -292,7 +292,7 @@ foundational principles.
 #### Example 1: Conditional Logic with `ConditionalAgent`
 
 This agent demonstrates how an agent can conditionally produce different output events. Based on a random value, the
-start step returns either `FrontendTestingEventA` or `EventB`. The next step (`end_step`) then proceeds depending on which event it
+start step returns either `EventA` or `EventB`. The next step (`end_step`) then proceeds depending on which event it
 receives.
 
 ```python
@@ -302,15 +302,15 @@ import random
 class ConditionalAgent(Agent):
 
   @step()
-  async def start_step(self, event: StartEvent) -> FrontendTestingEventA | EventB:
+  async def start_step(self, event: StartEvent) -> EventA | EventB:
     if random.random() > 0.5:
       print("[ConditionalAgent.start_step] Sent Event A")
-      return FrontendTestingEventA()
+      return EventA()
     print("[ConditionalAgent.start_step] Sent Event B")
     return EventB()
 
   @step()
-  async def end_step(self, event: FrontendTestingEventA | EventB) -> StopEvent:
+  async def end_step(self, event: EventA | EventB) -> StopEvent:
     print(f"[ConditionalAgent.end_step] Received {event.event_name}")
     return StopEvent()
 ```
@@ -319,7 +319,7 @@ class ConditionalAgent(Agent):
 
 - **Conditional Flow:** The agent chooses one path based on a condition (in this case random, but could be domain
   logic).
-- **Typed Input/Output Events:** The `end_step` can handle either `FrontendTestingEventA` or `EventB` without complex conditional logic
+- **Typed Input/Output Events:** The `end_step` can handle either `EventA` or `EventB` without complex conditional logic
   in the step itself.
 - **Transparency:** Observing which event was returned is easy, as each event type is distinct.
 
@@ -327,10 +327,10 @@ class ConditionalAgent(Agent):
 flowchart TD
 
     StartEvent([StartEvent]) -->|triggers| StartStep((start_step))
-    StartStep -->|returns either| FrontendTestingEventA[/FrontendTestingEventA/]
+    StartStep -->|returns either| EventA[/EventA/]
     StartStep -->|or| EventB[/EventB/]
 
-    FrontendTestingEventA --> EndStep((end_step))
+    EventA --> EndStep((end_step))
     EventB --> EndStep
 
     EndStep --> StopEvent([StopEvent])
@@ -346,17 +346,17 @@ class ContextAgent(Agent):
 
     @step()
     async def start_step(self, event: CustomStartEvent, thread_context: ThreadContext,
-                         run_context: RunContext) -> FrontendTestingEventA:
+                         run_context: RunContext) -> EventA:
         thread_count = await thread_context.get("count", 0)
         run_count = await run_context.get("count", 0)
         print(f"[ContextAgent.start_step] Payload is '{event.payload}'")
         print(f"[ContextAgent.start_step] Called {thread_count} times in thread, {run_count} times in run")
         await thread_context.set("count", thread_count + 1)
         await run_context.set("count", run_count + 1)
-        return FrontendTestingEventA()
+        return EventA()
 
     @step()
-    async def end_step(self, event: FrontendTestingEventA, thread_context: ThreadContext, run_context: RunContext) -> StopEvent:
+    async def end_step(self, event: EventA, thread_context: ThreadContext, run_context: RunContext) -> StopEvent:
         payload = await run_context.get("payload", [])
         print(f"[ContextAgent.end_step] Payload is '{payload}'")
 
@@ -378,8 +378,8 @@ class ContextAgent(Agent):
 flowchart TD
 
     CustomStartEvent([CustomStartEvent]) --> StartStep((start_step))
-    StartStep --> FrontendTestingEventA[/FrontendTestingEventA/]
-    FrontendTestingEventA --> EndStep((end_step))
+    StartStep --> EventA[/EventA/]
+    EventA --> EndStep((end_step))
     EndStep --> StopEvent([StopEvent])
 
 ```
@@ -387,18 +387,18 @@ flowchart TD
 #### Example 3: Parallel Execution with `FanOutAgent`
 
 This example illustrates how an agent can “fan out” multiple events and then recombine their results. The `start_step`
-returns a list of `FrontendTestingEventA` instances, which can be processed in parallel by subsequent steps.
+returns a list of `EventA` instances, which can be processed in parallel by subsequent steps.
 
 ```python
 class FanOutAgent(Agent):
 
     @step()
-    async def start_step(self, event: StartEvent) -> List[FrontendTestingEventA]:
+    async def start_step(self, event: StartEvent) -> List[EventA]:
         print("[FanOutAgent.start_step]", event)
-        return [FrontendTestingEventA(payload=str(i)) for i in range(1, 6)]  # Events A1, A2, A3, A4, A5
+        return [EventA(payload=str(i)) for i in range(1, 6)]  # Events A1, A2, A3, A4, A5
 
     @step()
-    async def process_a(self, event: FrontendTestingEventA) -> EventB:
+    async def process_a(self, event: EventA) -> EventB:
         print("[FanOutAgent.process_a]", event)
         return EventB(payload=event.payload)
 
@@ -410,7 +410,7 @@ class FanOutAgent(Agent):
 
 **Key Takeaways:**
 
-- **Parallelism:** Multiple `FrontendTestingEventA` instances can trigger multiple `process_a` executions in parallel.
+- **Parallelism:** Multiple `EventA` instances can trigger multiple `process_a` executions in parallel.
 - **Collecting Results:** The `stop_step` expects a fixed list of 5 `EventB` events. Once all are produced, it
   aggregates them and concludes the run.
 - **Flexibility:** This pattern is useful for batch processing tasks or concurrently querying multiple data sources.
@@ -419,11 +419,11 @@ class FanOutAgent(Agent):
 flowchart TD
 
     StartEvent([StartEvent]) --> StartStep((start_step))
-    StartStep -->|"FrontendTestingEventA(1..5)"| A1[/FrontendTestingEventA/]
-    StartStep --> A2[/FrontendTestingEventA/]
-    StartStep --> A3[/FrontendTestingEventA/]
-    StartStep --> A4[/FrontendTestingEventA/]
-    StartStep --> A5[/FrontendTestingEventA/]
+    StartStep -->|"EventA(1..5)"| A1[/EventA/]
+    StartStep --> A2[/EventA/]
+    StartStep --> A3[/EventA/]
+    StartStep --> A4[/EventA/]
+    StartStep --> A5[/EventA/]
 
     A1 --> ProcessA((process_a))
     A2 --> ProcessA

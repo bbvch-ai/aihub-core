@@ -3,12 +3,11 @@ from typing import Annotated, ClassVar, List
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 
 
-class RouterEvent(ControlEvent, DisplayEvent):
+class RouterEvent(ControlAndDisplayEvent):
     """
     A RouterEvent marks a point where an LLM decided which way to go in the workflow.
     """

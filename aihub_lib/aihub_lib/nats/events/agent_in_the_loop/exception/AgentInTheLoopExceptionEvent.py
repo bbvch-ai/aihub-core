@@ -3,12 +3,11 @@ from typing import ClassVar
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
-class AgentInTheLoopExceptionEvent(ControlEvent, DisplayEvent):
+class AgentInTheLoopExceptionEvent(ControlAndDisplayEvent):
     """
     An error response from an agent when a delegated task fails.
 

@@ -8,19 +8,19 @@ aitl_exception_event:
 
 aitl_request_event:
   name: "Task Delegation to Another Agent"
-  description: "The agent has forwarded a task to another agent or assistant to benefit from their specialized knowledge."
+  description: "The agent has forwarded a task to another agent to benefit from their specialized knowledge."
 
 aitl_response_event:
   name: "Delegated Agent Response"
   description: "The other agent has successfully processed the assigned task and sent back a response."
 
 bitl_request_event:
-  name: "Bot Request"
-  description: "A request was forwarded to a specialized bot to complete a specific task."
+  name: "Agent Request"
+  description: "A request was forwarded to a specialized agent to complete a specific task."
 
 bitl_response_event:
-  name: "Bot Response"
-  description: "The specialized bot has processed the request and sent back a response."
+  name: "Agent Response"
+  description: "The specialized agent has processed the request and sent back a response."
 
 limit_chat_history_event:
   name: "Chat History Limited"
@@ -32,7 +32,7 @@ start_event:
 
 stop_event:
   name: "Process Completed"
-  description: "The assistant has completed its task and is returning control to the user."
+  description: "The agent has completed its task and is returning control to the user."
 
 cost_event:
   name: "Cost Overview"
@@ -44,7 +44,7 @@ llm_cost_event:
 
 chunk_event:
   name: "Partial Response"
-  description: "The assistant has generated a part of the answer and sent it to the user, which is already being displayed."
+  description: "The agent has generated a part of the answer and sent it to the user, which is already being displayed."
 
 thought_event:
   name: "Thought Process"
@@ -56,15 +56,15 @@ guard_rejection_event:
 
 hitl_request_event:
   name: "User Query"
-  description: "The assistant needs additional information from the user to continue with the task."
+  description: "The agent needs additional information from the user to continue with the task."
 
 hitl_response_event:
   name: "User Response Received"
-  description: "The user has answered the query, and the assistant can proceed with the task."
+  description: "The user has answered the query, and the agent can proceed with the task."
 
 router_event:
   name: "Decided for optimal next path"
-  description: "The assistant decided for the optimal path to go from here."
+  description: "The agent decided for the optimal path to go from here."
 
 semantic_agent_event:
   name: "Agent Activity"
@@ -96,7 +96,7 @@ semantic_reranker_event:
 
 semantic_retriever_event:
   name: "Documents Found"
-  description: "The assistant has found relevant documents that could be helpful in processing the task."
+  description: "The agent has found relevant documents that could be helpful in processing the task."
 
 semantic_tool_event:
   name: "Tool Usage"
@@ -108,4 +108,4 @@ exception_event:
 
 user_message_event:
   name: "User Request"
-  description: "The assistant has received a message from the user and is processing it, taking into account the previous chat history."
+  description: "The agent has received a message from the user and is processing it, taking into account the previous chat history."

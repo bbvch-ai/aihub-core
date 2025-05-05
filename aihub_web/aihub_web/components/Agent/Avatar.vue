@@ -18,7 +18,6 @@
         {{ agent.agent_config.name }}
       </p>
       <p
-        class="text-sm"
         :class="{ 'text-xs': size === 'normal', 'text-sm': size === 'large' }"
       >
         {{ agent.agent_class }} / {{ agent.agent_id }}

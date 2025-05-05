@@ -8,19 +8,19 @@ aitl_exception_event:
 
 aitl_request_event:
   name: "Délégation de Tâche à un Autre Agent"
-  description: "L'agent a transmis une tâche à un autre agent ou assistant pour bénéficier de ses connaissances spécialisées."
+  description: "L'agent a transmis une tâche à un autre agent pour bénéficier de ses connaissances spécialisées."
 
 aitl_response_event:
   name: "Réponse de l'Agent Délégué"
   description: "L'autre agent a traité avec succès la tâche assignée et a renvoyé une réponse."
 
 bitl_request_event:
-  name: "Demande au Bot"
-  description: "Une demande a été transmise à un bot spécialisé pour accomplir une tâche spécifique."
+  name: "Demande au Agent"
+  description: "Une demande a été transmise à un agent spécialisé pour accomplir une tâche spécifique."
 
 bitl_response_event:
-  name: "Réponse du Bot"
-  description: "Le bot spécialisé a traité la demande et a renvoyé une réponse."
+  name: "Réponse du Agent"
+  description: "Le agent spécialisé a traité la demande et a renvoyé une réponse."
 
 limit_chat_history_event:
   name: "Historique de Chat Limité"
@@ -32,7 +32,7 @@ start_event:
 
 stop_event:
   name: "Processus Terminé"
-  description: "L'assistant a terminé sa tâche et rend le contrôle à l'utilisateur."
+  description: "L'agent a terminé sa tâche et rend le contrôle à l'utilisateur."
 
 cost_event:
   name: "Aperçu des Coûts"
@@ -44,7 +44,7 @@ llm_cost_event:
 
 chunk_event:
   name: "Réponse Partielle"
-  description: "L'assistant a généré une partie de la réponse et l'a envoyée à l'utilisateur, qui est déjà affichée."
+  description: "L'agent a généré une partie de la réponse et l'a envoyée à l'utilisateur, qui est déjà affichée."
 
 thought_event:
   name: "Processus de Réflexion"
@@ -56,15 +56,15 @@ guard_rejection_event:
 
 hitl_request_event:
   name: "Demande à l'Utilisateur"
-  description: "L'assistant a besoin d'informations supplémentaires de l'utilisateur pour poursuivre la tâche."
+  description: "L'agent a besoin d'informations supplémentaires de l'utilisateur pour poursuivre la tâche."
 
 hitl_response_event:
   name: "Réponse de l'Utilisateur Reçue"
-  description: "L'utilisateur a répondu à la demande, et l'assistant peut poursuivre la tâche."
+  description: "L'utilisateur a répondu à la demande, et l'agent peut poursuivre la tâche."
 
 router_event:
   name: "Chemin optimal choisi"
-  description: "L'assistant a choisi le chemin optimal pour la suite."
+  description: "L'agent a choisi le chemin optimal pour la suite."
 
 semantic_agent_event:
   name: "Activité de l'Agent"
@@ -96,7 +96,7 @@ semantic_reranker_event:
 
 semantic_retriever_event:
   name: "Documents Trouvés"
-  description: "L'assistant a trouvé des documents pertinents qui pourraient être utiles dans le traitement de la tâche."
+  description: "L'agent a trouvé des documents pertinents qui pourraient être utiles dans le traitement de la tâche."
 
 semantic_tool_event:
   name: "Utilisation d'Outil"
@@ -108,4 +108,4 @@ exception_event:
 
 user_message_event:
   name: "Demande de l'Utilisateur"
-  description: "L'assistant a reçu un message de l'utilisateur et le traite, en tenant compte de l'historique de chat précédent."
+  description: "L'agent a reçu un message de l'utilisateur et le traite, en tenant compte de l'historique de chat précédent."

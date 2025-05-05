@@ -95,8 +95,8 @@ def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
 
 
 class Metadata(BaseModel):
-    thread_id: Annotated[Optional[str], Field(description="The thread ID to which conversation shall e sent.")] = None
-    display_id: Annotated[Optional[str], Field(description="The display ID set for this run.")] = None
+    thread_id: Annotated[Optional[str], Field(description="Provide thread ID to continue conversation in an existing thread.")] = None
+    display_id: Annotated[Optional[str], Field(description="Gives control over display ID used for this run.")] = None
     reconstruct_history: Annotated[
         Optional[bool],
         Field(

@@ -78,7 +78,7 @@ class EventService:
     @staticmethod
     def get_all_thread_display_events(thread_id: str) -> List[PersistedEventEntity]:
         """
-        Retrieves all events (both display and control) for a thread.
+        Retrieves all display events for a thread.
         """
         return PersistedEventEntity.display_events_for_thread(thread_id)
 

@@ -8,19 +8,19 @@ aitl_exception_event:
 
 aitl_request_event:
   name: "Delegation an anderen Agenten"
-  description: "Der Agent hat eine Aufgabe an einen anderen Agenten oder Assistenten weitergeleitet, um von dessen Spezialwissen zu profitieren."
+  description: "Der Agent hat eine Aufgabe an einen anderen Agenten weitergeleitet, um von dessen Spezialwissen zu profitieren."
 
 aitl_response_event:
   name: "Antwort des delegierten Agenten"
   description: "Der andere Agent hat die ihm zugewiesene Aufgabe erfolgreich bearbeitet und eine Antwort zurückgesendet."
 
 bitl_request_event:
-  name: "Anfrage an Bot"
-  description: "Eine Anfrage wurde an einen spezialisierten Bot weitergeleitet, um eine bestimmte Aufgabe zu erledigen."
+  name: "Anfrage an Agent"
+  description: "Eine Anfrage wurde an einen spezialisierten Agent weitergeleitet, um eine bestimmte Aufgabe zu erledigen."
 
 bitl_response_event:
-  name: "Antwort vom Bot"
-  description: "Der spezialisierte Bot hat die Anfrage bearbeitet und eine Antwort zurückgesendet."
+  name: "Antwort vom Agent"
+  description: "Der spezialisierte Agent hat die Anfrage bearbeitet und eine Antwort zurückgesendet."
 
 limit_chat_history_event:
   name: "Chatverlauf begrenzt"
@@ -32,7 +32,7 @@ start_event:
 
 stop_event:
   name: "Prozess beendet"
-  description: "Der Assistent hat seine Aufgabe abgeschlossen und gibt das Wort zurück an den Benutzer."
+  description: "Der Agent hat seine Aufgabe abgeschlossen und gibt das Wort zurück an den Benutzer."
 
 cost_event:
   name: "Kostenübersicht"
@@ -44,7 +44,7 @@ llm_cost_event:
 
 chunk_event:
   name: "Teilantwort"
-  description: "Der Assistent hat einen Teil der Antwort generiert und an den Benutzer gesendet, der bereits angezeigt wird."
+  description: "Der Agent hat einen Teil der Antwort generiert und an den Benutzer gesendet, der bereits angezeigt wird."
 
 thought_event:
   name: "Gedankengang"
@@ -52,19 +52,19 @@ thought_event:
 
 guard_rejection_event:
   name: "Anfrage abgelehnt"
-  description: "Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstößen abgelehnt."
+  description: "Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstössen abgelehnt."
 
 hitl_request_event:
   name: "Rückfrage an Benutzer"
-  description: "Der Assistent benötigt zusätzliche Informationen vom Benutzer, um die Aufgabe fortsetzen zu können."
+  description: "Der Agent benötigt zusätzliche Informationen vom Benutzer, um die Aufgabe fortsetzen zu können."
 
 hitl_response_event:
   name: "Benutzerantwort erhalten"
-  description: "Der Benutzer hat die Rückfrage beantwortet, und der Assistent kann mit der Aufgabe fortfahren."
+  description: "Der Benutzer hat die Rückfrage beantwortet, und der Agent kann mit der Aufgabe fortfahren."
 
 router_event:
   name: "Optimaler Pfad gewählt"
-  description: "Der Assistent hat den optimalen Pfad für das weitere Vorgehen gewählt."
+  description: "Der Agent hat den optimalen Pfad für das weitere Vorgehen gewählt."
 
 semantic_agent_event:
   name: "Agentenaktivität"
@@ -96,7 +96,7 @@ semantic_reranker_event:
 
 semantic_retriever_event:
   name: "Dokumente gefunden"
-  description: "Der Assistent hat relevante Dokumente gefunden, die bei der Bearbeitung der Aufgabe hilfreich sein könnten."
+  description: "Der Agent hat relevante Dokumente gefunden, die bei der Bearbeitung der Aufgabe hilfreich sein könnten."
 
 semantic_tool_event:
   name: "Werkzeugeinsatz"
@@ -108,4 +108,4 @@ exception_event:
 
 user_message_event:
   name: "Benutzeranfrage"
-  description: "Der Assistent hat eine Nachricht vom Benutzer erhalten und verarbeitet diese unter Berücksichtigung des bisherigen Chatverlaufs."
+  description: "Der Agent hat eine Nachricht vom Benutzer erhalten und verarbeitet diese unter Berücksichtigung des bisherigen Chatverlaufs."

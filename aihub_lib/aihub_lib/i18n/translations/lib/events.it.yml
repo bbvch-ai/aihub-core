@@ -8,19 +8,19 @@ aitl_exception_event:
 
 aitl_request_event:
   name: "Delega del Compito a un Altro Agente"
-  description: "L'agente ha inoltrato un compito a un altro agente o assistente per beneficiare delle sue conoscenze specializzate."
+  description: "L'agente ha inoltrato un compito a un altro agente per beneficiare delle sue conoscenze specializzate."
 
 aitl_response_event:
   name: "Risposta dell'Agente Delegato"
   description: "L'altro agente ha elaborato con successo il compito assegnato e ha inviato una risposta."
 
 bitl_request_event:
-  name: "Richiesta al Bot"
-  description: "Una richiesta è stata inoltrata a un bot specializzato per completare un compito specifico."
+  name: "Richiesta al Agente"
+  description: "Una richiesta è stata inoltrata a un agente specializzato per completare un compito specifico."
 
 bitl_response_event:
-  name: "Risposta dal Bot"
-  description: "Il bot specializzato ha elaborato la richiesta e ha inviato una risposta."
+  name: "Risposta dal Agente"
+  description: "Il agente specializzato ha elaborato la richiesta e ha inviato una risposta."
 
 limit_chat_history_event:
   name: "Cronologia Chat Limitata"
@@ -32,7 +32,7 @@ start_event:
 
 stop_event:
   name: "Processo Completato"
-  description: "L'assistente ha completato il suo compito e sta restituendo il controllo all'utente."
+  description: "L'agente ha completato il suo compito e sta restituendo il controllo all'utente."
 
 cost_event:
   name: "Panoramica dei Costi"
@@ -44,7 +44,7 @@ llm_cost_event:
 
 chunk_event:
   name: "Risposta Parziale"
-  description: "L'assistente ha generato una parte della risposta e l'ha inviata all'utente, che è già visualizzata."
+  description: "L'agente ha generato una parte della risposta e l'ha inviata all'utente, che è già visualizzata."
 
 thought_event:
   name: "Processo di Pensiero"
@@ -56,15 +56,15 @@ guard_rejection_event:
 
 hitl_request_event:
   name: "Richiesta all'Utente"
-  description: "L'assistente ha bisogno di informazioni aggiuntive dall'utente per continuare con il compito."
+  description: "L'agente ha bisogno di informazioni aggiuntive dall'utente per continuare con il compito."
 
 hitl_response_event:
   name: "Risposta dell'Utente Ricevuta"
-  description: "L'utente ha risposto alla richiesta, e l'assistente può procedere con il compito."
+  description: "L'utente ha risposto alla richiesta, e l'agente può procedere con il compito."
 
 router_event:
   name: "Percorso ottimale scelto"
-  description: "L'assistente ha scelto il percorso ottimale per procedere da qui."
+  description: "L'agente ha scelto il percorso ottimale per procedere da qui."
 
 semantic_agent_event:
   name: "Attività dell'Agente"
@@ -96,7 +96,7 @@ semantic_reranker_event:
 
 semantic_retriever_event:
   name: "Documenti Trovati"
-  description: "L'assistente ha trovato documenti rilevanti che potrebbero essere utili nell'elaborazione del compito."
+  description: "L'agente ha trovato documenti rilevanti che potrebbero essere utili nell'elaborazione del compito."
 
 semantic_tool_event:
   name: "Utilizzo dello Strumento"
@@ -108,4 +108,4 @@ exception_event:
 
 user_message_event:
   name: "Richiesta dell'Utente"
-  description: "L'assistente ha ricevuto un messaggio dall'utente e lo sta elaborando, tenendo conto della cronologia della chat precedente."
+  description: "L'agente ha ricevuto un messaggio dall'utente e lo sta elaborando, tenendo conto della cronologia della chat precedente."

@@ -174,7 +174,6 @@ onMounted(() => {
 })
 
 watch(() => route.query, () => {
-  console.log('activeDisplayId changed', activeDisplayId.value)
   activeRuns.value = props.thread.displays?.find((display: DisplayStatistics) => display.display_id === activeDisplayId.value)?.runs ?? []
 }, { immediate: true })
 

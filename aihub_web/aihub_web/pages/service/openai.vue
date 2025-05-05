@@ -74,7 +74,6 @@ onClickOutside(sourcesPannel, () => {
 
 // Function to handle incoming messages
 const handleMessage = (event: MessageEvent) => {
-  console.log('Received message:', event)
   // Since we're in development, the origin will be localhost
   // In production, you'd check for your app's actual domain
   if (event.origin === runtimeConfig.public.webui.url) {

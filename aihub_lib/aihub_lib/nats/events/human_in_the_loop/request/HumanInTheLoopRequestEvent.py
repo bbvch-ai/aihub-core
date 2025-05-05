@@ -3,13 +3,12 @@ from typing import ClassVar, Union
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
-class HumanInTheLoopRequestEvent(ControlEvent, DisplayEvent):
+class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
     """
     An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 

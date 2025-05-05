@@ -56,11 +56,16 @@ class AgentService:
 
     @staticmethod
     def get_minimal_agent(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentDTO:
+        """Returns minimal details for an agent from database."""
         agent_entity = AgentEntity.get_agent(agent_class=agent_class, agent_id=agent_id)
         return MinimalAgentDTO.from_entity(agent_entity, t)
 
     @staticmethod
     async def get_agent(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:
+        """
+        Returns details for a given agent. If agent is online, use live information reported by the agent,
+        otherwise, use saved information from the database.
+        """
         try:
             return await AgentService.discover_agent(nc, agent_class, agent_id, t)
         except HTTPException:
@@ -71,6 +76,10 @@ class AgentService:
 
     @staticmethod
     async def get_agents(nc: NATS, t: LocaleHandler) -> List[AgentDTO]:
+        """
+        Returns both agents that are online (answer to a discovery broadcast) and agents
+        that are saved in the database.
+        """
         discovered_agents = await AgentService.discover_agents(nc, t)
         saved_agents = [AgentDTO.from_entity(agent, t) for agent in AgentEntity.get_agents()]
 

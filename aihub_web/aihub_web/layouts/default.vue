@@ -109,7 +109,6 @@ getHealth({
   composable: '$fetch',
 })
   .then((response) => {
-    console.log(response)
     online.value = response.code == 200
   })
   .catch(() => {

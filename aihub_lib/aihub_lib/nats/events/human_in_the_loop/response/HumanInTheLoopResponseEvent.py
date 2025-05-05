@@ -3,12 +3,11 @@ from typing import ClassVar
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 
 
-class HumanInTheLoopResponseEvent(ControlEvent, DisplayEvent):
+class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
     """
     A response from a human operator after a HITL request.
 

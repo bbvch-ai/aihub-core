@@ -74,7 +74,7 @@ class AgentController(Controller):
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
-            Retrieve a list of all discovered agents. Filters out agents the user cannot access.
+            Retrieve a list of all agents, both online (discoverable) and offline (not discoverable).
             """
             agents = await AgentService.get_agents(nc, t)
             return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
@@ -89,7 +89,7 @@ class AgentController(Controller):
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
-            Retrieve a list of all discovered agents. Filters out agents the user cannot access.
+            Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
             agents = await AgentService.discover_agents(nc, t)
             return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]

@@ -60,7 +60,7 @@ Dieser Abschnitt beschreibt die Aufgabenstellung des bbv AI Hubs und die Ziele d
 
 Die Anwendung "bbv AI-Hub" wird entwickelt, um die Einführung und Implementierung von Generativer Künstlicher Intelligenz (KI) 
 in Unternehmen zu vereinfachen und effizienter zu gestalten. Sie bietet ein schnelles und kostengünstiges Setup, 
-das es Unternehmen jeder Größe ermöglicht, die Vorteile der KI zu nutzen. Der Fokus liegt auf der Bereitstellung 
+das es Unternehmen jeder Grösse ermöglicht, die Vorteile der KI zu nutzen. Der Fokus liegt auf der Bereitstellung 
 spezialisierter KI-Agenten, die als virtuelle Mitarbeiter mit klaren "Jobbeschreibungen" spezifische Aufgaben übernehmen. 
 Der "bbv AI-Hub" ermöglicht zudem die Kollaboration zwischen verschiedenen Agenten und menschlichen Mitarbeitern, 
 um Schwarmintelligenz zu erzeugen und die Benutzererfahrung zu verbessern.
@@ -97,7 +97,7 @@ dient auch als Marketing-Instrument während der aktuell KI-Hype-Phase.
 >**Inhalt**
 >
 >Die Top-3 bis Top-5 der Qualitätsanforderungen für die Architektur,
->deren Erfüllung oder Einhaltung den maßgeblichen Stakeholdern besonders
+>deren Erfüllung oder Einhaltung den massgeblichen Stakeholdern besonders
 >wichtig sind. Gemeint sind hier wirklich Qualitätsziele, die nicht
 >unbedingt mit den Zielen des Projekts übereinstimmen. Beachten Sie den
 >Unterschied.
@@ -111,7 +111,7 @@ dient auch als Marketing-Instrument während der aktuell KI-Hype-Phase.
 >**Motivation**
 >
 >Weil Qualitätsziele grundlegende Architekturentscheidungen oft
->maßgeblich beeinflussen, sollten Sie die für Ihre Stakeholder relevanten
+>massgeblich beeinflussen, sollten Sie die für Ihre Stakeholder relevanten
 >Qualitätsziele kennen, möglichst konkret und operationalisierbar.
 >
 >**Form**

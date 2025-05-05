@@ -23,7 +23,7 @@ from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, FileContent, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
-from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
+from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from starlette.responses import StreamingResponse
@@ -248,13 +248,9 @@ class OpenaiService:
         external_event_distributor: ExternalEventDistributor,
         locale: Optional[str] = None,
     ):
-        thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
-        display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
-
+        thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
-            history = ThreadService.thread_as_message_history(thread_id)
-            user_message = chat_completion_request.messages[-1]
-            chat_completion_request.messages = history.messages + [user_message]
+            chat_completion_request.messages = OpenaiService._reconstruct_history(chat_completion_request, thread_id)<
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -309,13 +305,9 @@ class OpenaiService:
         external_event_distributor: ExternalEventDistributor,
         locale: Optional[str] = None,
     ):
-        thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
-        display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
-
+        thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
-            history = ThreadService.thread_as_message_history(thread_id)
-            user_message = chat_completion_request.messages[-1]
-            chat_completion_request.messages = history.messages + [user_message]
+            chat_completion_request.messages = OpenaiService._reconstruct_history(chat_completion_request, thread_id)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
@@ -454,3 +446,15 @@ class OpenaiService:
         tts_model_config = models[0]
         client: AsyncOpenAI | AsyncAzureOpenAI = tts_model_config.get_openai_client()
         return await client.audio.speech.create(**function_args)
+
+    @staticmethod
+    def _extract_thread_and_display_id(chat_completion_request: ChatCompletionRequest) -> Tuple[Optional[str], Optional[str]]:
+        thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
+        return thread_id, display_id
+
+    @staticmethod
+    def _reconstruct_history(chat_completion_request: ChatCompletionRequest, thread_id: str) -> List[ChatCompletionMessageParam]:
+        history = ThreadService.thread_as_message_history(thread_id)
+        user_message = chat_completion_request.messages[-1]
+        return history.messages + [user_message]
