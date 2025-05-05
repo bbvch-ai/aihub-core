@@ -24,8 +24,7 @@ export const useThreadEvents = defineQuery(() => {
     },
   })
 
-  // WebSocket setup
-  const { data: newEvent } = useWebSocket<string>(`ws://localhost:8000/api/v1/event/ws`, {
+  const { data: newEvent } = useWebSocket<string>('ws://localhost:8000/api/v1/event/ws', {
     autoReconnect: {
       retries: -1,
       delay: 1000,

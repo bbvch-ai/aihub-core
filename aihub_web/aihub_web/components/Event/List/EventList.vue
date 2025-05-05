@@ -184,7 +184,7 @@ const eventsInRuns = computed<WsServerEvent[]>(() => {
 
 const { resolveComponentForEvent } = useEventComponent()
 
-const displayNameFn = (display: DisplayStatistics) => format(new Date(display.started_at), 'yyyy.MM.dd HH:mm')
+const displayNameFn = (display: DisplayStatistics) => format(new Date(display.started_at), 'dd.MM.yyyy HH:mm')
 const runNameFn = (run: RunStatistics) => run.agent.agent_config.name
 const formattedDate = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
 </script>

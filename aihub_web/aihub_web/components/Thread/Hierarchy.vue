@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { format } from 'date-fns' // Adjust path if needed
+import { format } from 'date-fns'
 import OrganizationChart, { type OrganizationChartNode } from 'primevue/organizationchart'
 import { computed } from 'vue'
 

@@ -39,7 +39,7 @@ const navItems = computed<Record<string, NavItem[]>>(() => {
     const threadDate = new Date(thread.created_at)
 
     // Format date as DD.MM.YYYY
-    const day = threadDate.toLocaleDateString('de-DE', {
+    const day = threadDate.toLocaleDateString('de-CH', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
