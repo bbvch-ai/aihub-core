@@ -4,7 +4,7 @@ from fastapi import UploadFile, HTTPException
 from pydub.generators import Sine
 from pydub import AudioSegment
 
-from aihub_api.audio.AudioChunkingService import AudioChunkingService
+from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk, ChunkMetadata
 
 
 @pytest.fixture
@@ -51,8 +51,8 @@ class TestAudioChunking:
         chunks = await AudioChunkingService.chunk_audio_file(file)
 
         assert len(chunks) == 1
-        assert chunks[0][2]["chunk_index"] == 0
-        assert chunks[0][2]["total_chunks"] == 1
+        assert chunks[0].metadata.chunk_index == 0
+        assert chunks[0].metadata.total_chunks == 1
 
     @pytest.mark.asyncio
     async def test_large_file_chunking(self, create_test_audio):
@@ -65,16 +65,16 @@ class TestAudioChunking:
         assert len(chunks) > 1
 
         # Verify chunk metadata
-        for i, (buffer, filename, metadata) in enumerate(chunks):
-            assert metadata["chunk_index"] == i
-            assert metadata["total_chunks"] == len(chunks)
-            assert "start_time" in metadata
-            assert "end_time" in metadata
+        for i, chunk in enumerate(chunks):
+            assert chunk.metadata.chunk_index == i
+            assert chunk.metadata.total_chunks == len(chunks)
+            assert hasattr(chunk.metadata, "start_time")
+            assert hasattr(chunk.metadata, "end_time")
 
             # Verify no gaps between chunks (excluding overlap)
             if i > 0:
-                prev_end = chunks[i - 1][2]["end_time"]
-                curr_start = metadata["start_time"]
+                prev_end = chunks[i - 1].metadata.end_time
+                curr_start = chunk.metadata.start_time
                 assert curr_start == prev_end
 
     @pytest.mark.asyncio
@@ -105,8 +105,8 @@ class TestAudioChunking:
 
         # Verify that total duration is covered
         total_logical_duration = 0
-        for _, _, metadata in chunks:
-            total_logical_duration += metadata["end_time"] - metadata["start_time"]
+        for chunk in chunks:
+            total_logical_duration += chunk.metadata.end_time - chunk.metadata.start_time
 
         # The logical segments should equal the original duration
         assert total_logical_duration == duration
@@ -132,35 +132,16 @@ class TestAudioChunking:
         total_logical_duration = 0
         last_end = 0
 
-        for _, _, metadata in chunks:
+        for chunk in chunks:
             # Verify no gaps between logical segments
-            assert metadata["start_time"] == last_end
+            assert chunk.metadata.start_time == last_end
 
             # Add logical duration (without overlap)
-            total_logical_duration += metadata["end_time"] - metadata["start_time"]
-            last_end = metadata["end_time"]
+            total_logical_duration += chunk.metadata.end_time - chunk.metadata.start_time
+            last_end = chunk.metadata.end_time
 
         # The logical segments should equal the original duration
         assert total_logical_duration == duration
-
-    @pytest.mark.asyncio
-    async def test_transcription_merging(self):
-        """Test that transcriptions are properly merged."""
-        transcriptions = [
-            ("This is the first part of the transcription", {"chunk_index": 0}),
-            ("transcription and this is the second part", {"chunk_index": 1, "overlap_start": True}),
-            ("part with some more text at the end", {"chunk_index": 2, "overlap_start": True}),
-        ]
-
-        merged = AudioChunkingService.merge_transcriptions(transcriptions)
-
-        # Should remove duplicate words at boundaries
-        assert "transcription transcription" not in merged
-        assert "part part" not in merged
-        assert (
-            "This is the first part of the transcription and this is the second part with some more text at the end"
-            in merged
-        )
 
     @pytest.mark.asyncio
     async def test_different_audio_formats(self, create_test_audio):
@@ -175,10 +156,10 @@ class TestAudioChunking:
             assert len(chunks) >= 1
 
             # Verify all chunks are valid WAV files
-            for buffer, filename, _ in chunks:
-                assert filename.endswith(".wav")
+            for chunk in chunks:
+                assert chunk.filename.endswith(".wav")
                 # Try to load the chunk to verify it's valid
-                chunk_audio = AudioSegment.from_wav(buffer)
+                chunk_audio = AudioSegment.from_wav(chunk.buffer)
                 assert len(chunk_audio) > 0
 
     @pytest.mark.asyncio
@@ -195,7 +176,7 @@ class TestAudioChunking:
         buffer.seek(0)  # Reset for potential reuse
 
         # Estimate size
-        estimated_size = AudioChunkingService.estimate_chunk_size(audio)
+        estimated_size = AudioChunkingService._estimate_chunk_size(audio)
 
         # Should be within 5% of actual size
         assert abs(estimated_size - actual_size) / actual_size < 0.05

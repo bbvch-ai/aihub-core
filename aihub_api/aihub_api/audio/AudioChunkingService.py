@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Annotated
 
 from fastapi import UploadFile, HTTPException
 from pydub import AudioSegment
@@ -67,7 +67,7 @@ class AudioChunkingService:
     This approach allows processing files of any size while maintaining high transcription quality.
     """
 
-    # Conservative limits (24MB + 2MB buffer stays under OpenAI's 25MB limit)
+    # Conservative limits (24MB + 1MB buffer stays under OpenAI's 25MB limit)
     MAX_CHUNK_SIZE = 24 * 1024 * 1024
     OVERLAP_DURATION = 5 * 1000  # 5-second overlap prevents losing context at boundaries
     MIN_SILENCE_LEN = 500  # 500 ms is the typical minimum pause in natural speech
@@ -85,19 +85,13 @@ class AudioChunkingService:
         filename = file.filename or "audio"
         file_ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "wav"
 
-        with tempfile.NamedTemporaryFile(suffix=f".{file_ext}", delete=False) as temp_file:
-            temp_file.write(content)
-            temp_file_path = temp_file.name
-
+        audio_bytes = io.BytesIO(content)
         try:
-            audio = AudioSegment.from_file(temp_file_path)
+            audio = AudioSegment.from_file(audio_bytes, format=file_ext)
             return PreparedAudio(audio=audio, format=file_ext)
         except Exception as e:
             logger.error(f"Failed to load audio file: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Invalid audio file: {str(e)}")
-        finally:
-            if os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
 
     @staticmethod
     def _find_silence_near_middle(
@@ -106,7 +100,7 @@ class AudioChunkingService:
         end_ms: int,
         min_silence_len: Optional[int] = None,
         silence_thresh: Optional[int] = None,
-    ) -> int:
+    ) -> Annotated[int, "ms"]:
         """
         Splitting audio at silence points preserves natural speech flow and
         prevents cutting words in half, which improves transcription quality.
@@ -314,26 +308,3 @@ class AudioChunkingService:
                 merged_text.append(chunk_text)
 
         return " ".join(merged_text)
-
-    @staticmethod
-    def merge_raw_transcriptions(transcriptions: List[Tuple[str, Dict[str, Any]]], remove_overlap: bool = True) -> str:
-        """
-        Maintains backward compatibility with existing code that uses
-        the original tuple format instead of TranscriptionChunk objects.
-        """
-        chunks = []
-        for text, metadata_dict in transcriptions:
-            metadata = ChunkMetadata(
-                start_time=metadata_dict.get("start_time", 0),
-                end_time=metadata_dict.get("end_time", 0),
-                chunk_index=metadata_dict.get("chunk_index", 0),
-                total_chunks=metadata_dict.get("total_chunks", 1),
-                original_duration=metadata_dict.get("end_time", 0) - metadata_dict.get("start_time", 0),
-                overlap_start=metadata_dict.get("overlap_start", False),
-                overlap_end=metadata_dict.get("overlap_end", False),
-                actual_start=metadata_dict.get("actual_start"),
-                actual_end=metadata_dict.get("actual_end"),
-            )
-            chunks.append(TranscriptionChunk(text=text, metadata=metadata))
-
-        return AudioChunkingService.merge_transcriptions(chunks, remove_overlap)

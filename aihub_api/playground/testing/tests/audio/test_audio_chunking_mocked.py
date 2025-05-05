@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 import io
 from unittest.mock import Mock, AsyncMock
@@ -5,8 +7,13 @@ from fastapi import UploadFile, HTTPException
 from pydub.generators import Sine
 from pydub import AudioSegment
 
-from aihub_api.audio.AudioChunkingService import AudioChunkingService
-
+from aihub_api.audio.AudioChunkingService import (
+    AudioChunkingService,
+    TranscriptionChunk,
+    ChunkMetadata,
+    PreparedAudio,
+    AudioChunk,
+)
 
 # Pre-generated audio cache
 _AUDIO_CACHE = {}
@@ -68,8 +75,8 @@ class TestAudioChunkingMocked:
         chunks = await AudioChunkingService.chunk_audio_file(file)
 
         assert len(chunks) == 1
-        assert chunks[0][2]["chunk_index"] == 0
-        assert chunks[0][2]["total_chunks"] == 1
+        assert chunks[0].metadata.chunk_index == 0
+        assert chunks[0].metadata.total_chunks == 1
 
     @pytest.mark.asyncio
     async def test_large_file_chunking_mocked(self, monkeypatch):
@@ -106,34 +113,53 @@ class TestAudioChunkingMocked:
 
         # Mock AudioSegment.from_file
         async def mock_validate_and_prepare(file):
-            return mock_audio, "wav"
+            return PreparedAudio(mock_audio, "wav")
 
-        monkeypatch.setattr(AudioChunkingService, "validate_and_prepare_audio", mock_validate_and_prepare)
+        monkeypatch.setattr(AudioChunkingService, "_validate_and_prepare_audio", mock_validate_and_prepare)
 
         # Mock the find_silence_near_middle method to return middle points
         def mock_find_silence_near_middle(audio, start_ms, end_ms, min_silence_len=None, silence_thresh=None):
             return start_ms + (end_ms - start_ms) // 2
 
-        monkeypatch.setattr(AudioChunkingService, "find_silence_near_middle", mock_find_silence_near_middle)
+        monkeypatch.setattr(AudioChunkingService, "_find_silence_near_middle", mock_find_silence_near_middle)
 
         file = Mock(spec=UploadFile)
         file.filename = "test.wav"
         file.size = 50 * 1024 * 1024  # 50 MB
 
-        chunks = await AudioChunkingService.chunk_audio_file(file)
+        chunks: List[AudioChunk] = await AudioChunkingService.chunk_audio_file(file)
 
         assert len(chunks) > 1
-        for i, (buffer, filename, metadata) in enumerate(chunks):
-            assert metadata["chunk_index"] == i
-            assert metadata["total_chunks"] == len(chunks)
+        for i, chunk in enumerate(chunks):
+            assert chunk.metadata.chunk_index == i
+            assert chunk.metadata.total_chunks == len(chunks)
 
     @pytest.mark.asyncio
     async def test_transcription_merging(self):
         """Test transcription merging without audio generation."""
         transcriptions = [
-            ("This is the first part of the transcription", {"chunk_index": 0}),
-            ("transcription and this is the second part", {"chunk_index": 1, "overlap_start": True}),
-            ("part with some more text at the end", {"chunk_index": 2, "overlap_start": True}),
+            TranscriptionChunk(
+                "This is the first part of the transcription",
+                ChunkMetadata(start_time=0, end_time=1, chunk_index=0, total_chunks=3, original_duration=3),
+            ),
+            TranscriptionChunk(
+                "transcription and this is the second part",
+                ChunkMetadata(
+                    start_time=1,
+                    end_time=2,
+                    chunk_index=1,
+                    total_chunks=3,
+                    original_duration=3,
+                    overlap_start=True,
+                    overlap_end=True,
+                ),
+            ),
+            TranscriptionChunk(
+                "part with some more text at the end",
+                ChunkMetadata(
+                    start_time=2, end_time=3, chunk_index=2, total_chunks=3, original_duration=3, overlap_start=True
+                ),
+            ),
         ]
 
         merged = AudioChunkingService.merge_transcriptions(transcriptions)
@@ -150,7 +176,7 @@ class TestAudioChunkingMocked:
         """Test size estimation with mocked audio."""
         mock_audio = mock_audio_segment(10_000)  # 10 seconds
 
-        estimated_size = AudioChunkingService.estimate_chunk_size(mock_audio)
+        estimated_size = AudioChunkingService._estimate_chunk_size(mock_audio)
 
         # Verify the calculation
         duration_seconds = 10.0
@@ -174,9 +200,21 @@ async def test_full_stt_with_chunking():
     """Fast integration test with all components mocked."""
     # Mock the heavy operations
     mock_chunks = [
-        (io.BytesIO(b"chunk1"), "chunk_001.wav", {"chunk_index": 0}),
-        (io.BytesIO(b"chunk2"), "chunk_002.wav", {"chunk_index": 1}),
-        (io.BytesIO(b"chunk3"), "chunk_003.wav", {"chunk_index": 2}),
+        AudioChunk(
+            io.BytesIO(b"chunk1"),
+            "chunk_001.wav",
+            ChunkMetadata(chunk_index=0, total_chunks=3, start_time=0, end_time=1, original_duration=3),
+        ),
+        AudioChunk(
+            io.BytesIO(b"chunk2"),
+            "chunk_002.wav",
+            ChunkMetadata(chunk_index=1, total_chunks=3, start_time=1, end_time=2, original_duration=3),
+        ),
+        AudioChunk(
+            io.BytesIO(b"chunk3"),
+            "chunk_003.wav",
+            ChunkMetadata(chunk_index=2, total_chunks=3, start_time=2, end_time=3, original_duration=3),
+        ),
     ]
 
     # Mock AudioChunkingService
