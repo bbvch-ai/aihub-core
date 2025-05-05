@@ -145,7 +145,7 @@ class Network(pulumi.ComponentResource):
         self._create_subnet_nsg(
             self.network_provider.pg_subnet_name,
             subnet,
-            [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WEBUI_SUBNET_PREFIX],
+            [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX],
         )
         return subnet
 
