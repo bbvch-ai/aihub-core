@@ -1,12 +1,16 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
+from aihub_lib.generative_ai.utils.build_hierarchical_budget_aware_context import (
+    build_hierarchical_budget_aware_context,
+)
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.generative_ai.utils.TokenBudget import TokenBudget
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.context.run.RunContext import RunContext
@@ -15,6 +19,7 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -152,6 +157,42 @@ class RAGAgent(Agent):
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
             )
         return RetrieverEvent.from_nodes(nodes)
+
+    @step()
+    async def build_hierarchical_context_step(
+        self,
+        event: RetrieverEvent,
+        agent_config: RAGAgentConfig,
+    ) -> RetrieverEvent:
+        """
+        Enhances retrieved nodes with hierarchical context by adding parent summaries
+        and applying token budget constraints.
+        """
+        content_nodes = []
+        summary_nodes = []
+
+        for node in event.documents:
+            if node.node.metadata.get(TYPE) == NODE_TYPE_SUMMARY:
+                summary_nodes.append(node)
+            else:
+                content_nodes.append(node)
+
+        token_budget = TokenBudget(
+            max_tokens=agent_config.context_token_limit,
+            summary_allocation=agent_config.summary_allocation,
+            content_allocation=agent_config.content_allocation,
+            parent_allocation=agent_config.parent_allocation,
+        )
+
+        enhanced_nodes = build_hierarchical_budget_aware_context(
+            content_nodes=content_nodes,
+            summary_nodes=summary_nodes,
+            vector_store=agent_config.vector_store,
+            token_budget=token_budget,
+            max_parent_levels=agent_config.max_parent_levels,
+        )
+
+        return RetrieverEvent.from_nodes(enhanced_nodes)
 
     @step()
     async def order_nodes_by_documents_step(

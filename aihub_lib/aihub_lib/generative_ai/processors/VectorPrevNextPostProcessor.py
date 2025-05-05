@@ -55,11 +55,6 @@ def get_backward_nodes(
 class VectorPrevNextPostProcessor(BaseNodePostprocessor):
     """
     Post-processor to fetch additional nodes from the vector store based on node relationships.
-
-    Attributes:
-        vectorstore (BasePydanticVectorStore): The vector store.
-        num_nodes (int): Number of additional nodes to fetch (default is 1).
-        mode (ModeOptions): Direction to fetch nodes. Options are NEXT, PREVIOUS, or BOTH.
     """
 
     vectorstore: BasePydanticVectorStore
