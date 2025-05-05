@@ -3,8 +3,8 @@ from typing import ClassVar
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.events.control.stop.StopEvent import StopEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
 class AgentInTheLoopResponseEvent(ControlAndDisplayEvent):

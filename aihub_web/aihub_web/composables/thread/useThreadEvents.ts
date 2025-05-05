@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 
 export const useThreadEvents = defineQuery(() => {
   const { getBearer } = useAuth()
+  const runtimeConfig = useRuntimeConfig()
 
   const route = useRoute()
   const queryCache = useQueryCache()
@@ -24,7 +25,7 @@ export const useThreadEvents = defineQuery(() => {
     },
   })
 
-  const { data: newEvent } = useWebSocket<string>('ws://localhost:8000/api/v1/event/ws', {
+  const { data: newEvent } = useWebSocket<string>(runtimeConfig.public.ws.endpoint, {
     autoReconnect: {
       retries: -1,
       delay: 1000,

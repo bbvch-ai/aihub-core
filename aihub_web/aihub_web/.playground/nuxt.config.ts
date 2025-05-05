@@ -12,6 +12,9 @@ export default defineNuxtConfig({
       webui: {
         url: 'http://localhost:8080',
       },
+      ws: {
+        endpoint: 'ws://localhost:8000/api/v1/event/ws',
+      },
     },
   },
   compatibilityDate: '2024-12-03',

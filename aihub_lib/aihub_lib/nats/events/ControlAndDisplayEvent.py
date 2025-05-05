@@ -12,4 +12,5 @@ class ControlAndDisplayEvent(ControlEvent, DisplayEvent):
     It is not mandatory to use this class, it is totally fine to do multi-inheritance from display and control event,
     however, for simplicity, it is considered good practice to use this class instead.
     """
+
     pass

@@ -2,7 +2,7 @@ import { getUserThreads, type ThreadDto } from '@core/sdk/client'
 import { useInfiniteQuery } from '@pinia/colada'
 
 export const useThreads = defineQuery(() => {
-  const PAGE_SIZE = 3
+  const PAGE_SIZE = 10
 
   const {
     state,
