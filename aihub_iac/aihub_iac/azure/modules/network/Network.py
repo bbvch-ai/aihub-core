@@ -421,7 +421,10 @@ class Network(pulumi.ComponentResource):
             location=self.config.location,
             security_rules=security_rules,
             id=subnet.id,
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                replace_on_changes=["security_rules"],
+            ),
             tags={
                 "Stack": self.stack,
             },
