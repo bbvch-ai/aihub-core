@@ -247,6 +247,9 @@ class Dagster(pulumi.ComponentResource):
                     max_replicas=self.config.webserver_max_replicas,
                 ),
             ),
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -284,6 +287,9 @@ class Dagster(pulumi.ComponentResource):
                     max_replicas=1,
                 ),
             ),
+            tags={
+                "Stack": self.stack,
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
