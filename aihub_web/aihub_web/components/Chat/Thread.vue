@@ -35,6 +35,7 @@ const props = defineProps<{
 
 const router = useRouter()
 const localeRoute = useLocaleRoute()
+const { t } = useI18n()
 
 type ExtendedChatMessage = ChatMessageInput & {
   name: string
@@ -81,7 +82,7 @@ const createAssistantMessage = (
     role: 'assistant',
     blocks: [{ block_type: 'text', text }],
     displayId: event.display_id,
-    name: agentDto?.agent_config?.name ?? 'Assistant',
+    name: agentDto?.agent_config?.name ?? t('chat.assistant'),
     preferredUsername: `${event.agent_class}/${event.agent_id}`,
     icon: agentDto?.agent_config?.icon,
     date: new Date(timestamp / 1_000_000),

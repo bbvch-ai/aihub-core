@@ -3,7 +3,7 @@
     class="flex h-full flex-row"
   >
     <NavigationLeft
-      title="Available Agents"
+      :title="$t('agent.availableAgents')"
       :nav-items-map="navItems"
       :loading="agentsAreLoading"
     />

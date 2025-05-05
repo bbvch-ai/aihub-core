@@ -8,17 +8,19 @@ import {
 } from '@core/sdk/client'
 
 export const useThreadUtils = () => {
+  const { t } = useI18n()
+
   const pendingType = (thread: ThreadDto) => {
     if (thread.open_hitl) {
-      return 'Human in the Loop'
+      return t('threadUtils.pendingTypes.hitl')
     }
     if (thread.open_aitl) {
-      return 'Agent in the Loop'
+      return t('threadUtils.pendingTypes.aitl')
     }
     if (thread.open_bitl) {
-      return 'Bot in the Loop'
+      return t('threadUtils.pendingTypes.bitl')
     }
-    return 'Reason unknown'
+    return t('threadUtils.pendingTypes.unknown')
   }
 
   const runForEvent = (thread: ThreadDto, event: WsServerEvent) => {

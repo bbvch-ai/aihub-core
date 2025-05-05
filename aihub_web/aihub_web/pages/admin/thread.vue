@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full flex-row">
     <NavigationLeft
-      title="Threads"
+      :title="$t('thread.title')"
       :nav-items-map="navItems"
       :has-more="hasMoreThreads"
       :loading="threadsAreLoading"

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from llama_index.core.base.llms.types import AudioBlock, ChatMessage, ImageBlock, TextBlock
 from openinference.semconv.trace import AudioAttributes, ImageAttributes, MessageAttributes, MessageContentAttributes
@@ -7,19 +7,23 @@ from pydantic import BaseModel, Field
 
 
 class TextContent(BaseModel):
-    type: Literal["text"] = "text"
-    text: str
+    type: Annotated[Literal["text"], Field(..., description="Block type, must be 'text' for TextContent")] = "text"
+    text: Annotated[str, Field(..., description="Text content of the message")]
 
 
 class ImageContent(BaseModel):
-    type: Literal["image"] = "image"
-    url: Optional[str] = None
+    type: Annotated[Literal["image"], Field(..., description="Block type, must be 'image' for ImageContent")] = "image"
+    url: Annotated[
+        Optional[str], Field(..., description="Base64 encoded image or url pointing to externally stored image")
+    ] = None
 
 
 class AudioContent(BaseModel):
-    type: Literal["audio"] = "audio"
-    url: Optional[str] = None
-    mime_type: Optional[str] = None
+    type: Annotated[Literal["audio"], Field(..., description="Block type, must be 'audio' for AudioContent")] = "audio"
+    url: Annotated[
+        Optional[str], Field(..., description="Base64 encoded audio or url pointing to externally stored audio")
+    ] = None
+    mime_type: Annotated[Optional[str], "Mime type, most often 'audio/wav'"] = None
 
 
 ContentBlock = Union[TextContent, ImageContent, AudioContent]

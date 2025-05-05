@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
 
@@ -12,24 +12,30 @@ class IntermediateDisplayStats(BaseModel):
     Uses datetime objects internally. Not intended for direct API response.
     """
 
-    display_id: str
-    runs: List[RunStatistics] = []
+    display_id: Annotated[str, Field(..., description="Unique identifier for the display")]
+    runs: Annotated[
+        List[RunStatistics], Field(default_factory=list, description="List of run statistics for this display")
+    ] = []
 
     # Raw counts
-    n_events: int = 0
-    start_events: int = 0
-    stop_events: int = 0
-    exception_events: int = 0
-    hitl_request_events: int = 0
-    hitl_response_events: int = 0
-    bitl_request_events: int = 0
-    bitl_response_events: int = 0
-    aitl_request_events: int = 0
-    aitl_response_events: int = 0
-    llm_cost: float = 0.0
+    n_events: Annotated[int, Field(..., description="Total number of events in this display")] = 0
+    start_events: Annotated[int, Field(..., description="Number of start events in this display")] = 0
+    stop_events: Annotated[int, Field(..., description="Number of stop events in this display")] = 0
+    exception_events: Annotated[int, Field(..., description="Number of exception events in this display")] = 0
+    hitl_request_events: Annotated[int, Field(..., description="Number of Human-In-The-Loop request events")] = 0
+    hitl_response_events: Annotated[int, Field(..., description="Number of Human-In-The-Loop response events")] = 0
+    bitl_request_events: Annotated[int, Field(..., description="Number of Bot-In-The-Loop request events")] = 0
+    bitl_response_events: Annotated[int, Field(..., description="Number of Bot-In-The-Loop response events")] = 0
+    aitl_request_events: Annotated[int, Field(..., description="Number of AI-In-The-Loop request events")] = 0
+    aitl_response_events: Annotated[int, Field(..., description="Number of AI-In-The-Loop response events")] = 0
+    llm_cost: Annotated[float, Field(..., description="Total cost incurred by LLM operations")] = 0.0
 
-    first_event_time: Optional[datetime] = None
-    latest_event_time: Optional[datetime] = None
+    first_event_time: Annotated[
+        Optional[datetime], Field(None, description="Timestamp of the first event in this display")
+    ] = None
+    latest_event_time: Annotated[
+        Optional[datetime], Field(None, description="Timestamp of the most recent event in this display")
+    ] = None
 
     def update_from_run_data(self, run_data: Dict[str, Any]):
         """Updates counts and times based on raw data dictionary from aggregation."""

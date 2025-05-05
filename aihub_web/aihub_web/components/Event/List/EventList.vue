@@ -31,7 +31,7 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="font-semibold">
-                    First Interaction:
+                    {{ $t('eventList.firstInteraction') }}
                   </span>
                   <Tag
                     :value="formattedDate(display.started_at)"
@@ -40,7 +40,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="font-semibold">
-                    Last Interaction:
+                    {{ $t('eventList.lastInteraction') }}
                   </span>
                   <Tag
                     :value="formattedDate(display.ended_at)"
@@ -49,7 +49,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="font-semibold">
-                    Pending:
+                    {{ $t('eventList.pending') }}
                   </span>
                   <Tag
                     v-if="display.has_pending"
@@ -59,28 +59,28 @@
                   <Tag
                     v-else
                     severity="success"
-                    value="No"
+                    :value="$t('eventList.no')"
                   />
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="font-semibold">
-                    Status:
+                    {{ $t('eventList.status') }}
                   </span>
                   <Tag
                     v-if="display.has_errors"
                     severity="danger"
-                    value="Error"
+                    :value="$t('eventList.error')"
                   />
                   <Tag
                     v-else
                     severity="success"
-                    value="Successfull"
+                    :value="$t('eventList.successful')"
                   />
                 </div>
               </div>
             </Panel>
             <Panel
-              header="Chat"
+              :header="$t('eventList.chat')"
               toggleable
               collapsed
             >
@@ -94,7 +94,7 @@
             <div class="flex flex-col gap-8">
               <div class="flex w-full items-center justify-end gap-2 pr-4">
                 <span class="font-semibold">
-                  Agents:
+                  {{ $t('eventList.agents') }}
                 </span>
                 <MultiSelect
                   v-model="activeRuns"

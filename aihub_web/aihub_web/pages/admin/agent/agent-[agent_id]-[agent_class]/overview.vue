@@ -18,7 +18,7 @@
     </div>
     <div class="flex flex-col gap-2">
       <p class="text-lg font-bold">
-        Start Events
+        {{ $t('agent.overview.startEvents') }}
       </p>
       <Panel
         v-for="event in agent?.start_events"
@@ -34,7 +34,7 @@
     </div>
     <div class="flex flex-col gap-2">
       <p class="text-lg font-bold">
-        Stop Events
+        {{ $t('agent.overview.stopEvents') }}
       </p>
       <Panel
         v-for="event in (agent?.stop_events ?? [])"
@@ -50,7 +50,7 @@
     </div>
     <div>
       <p class="text-xl font-bold">
-        Config
+        {{ $t('agent.overview.config') }}
       </p>
       <div class="rounded-lg border border-surface-300 p-3 dark:border-surface-700">
         <pre class="text-sm">{{ agent?.agent_config }}</pre>

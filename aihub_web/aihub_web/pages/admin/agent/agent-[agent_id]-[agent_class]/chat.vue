@@ -1,7 +1,7 @@
 <template>
   <div class="relative flex flex-col gap-2 p-3">
     <p class="text-xl font-bold">
-      Chat
+      {{ $t('agent.chat.title') }}
     </p>
     <div>
       <div />
@@ -14,7 +14,7 @@
           cols="30"
         />
         <Button
-          label="Create Thread and Send"
+          :label="$t('agent.chat.createThreadAndSend')"
           class="w-full"
           @click="submitMessage"
         />
@@ -31,6 +31,7 @@ const userInput = ref<string>('')
 const route = useRoute()
 const router = useRouter()
 const localeRoute = useLocaleRoute()
+const { t } = useI18n()
 
 const { user } = useUser()
 
@@ -39,7 +40,7 @@ const { createNewThread } = useThreadUtils()
 
 const submitMessage = async () => {
   const thread = await createNewThread.mutateAsync({
-    name: 'Manually created thread',
+    name: t('agent.chat.manuallyCreatedThread'),
     user_ids: [user.value.id],
     agents: [{
       agent_id: route.params.agent_id as string,

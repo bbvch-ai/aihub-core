@@ -21,10 +21,10 @@
     >
       <div>
         <h2 class="text-xl">
-          Services
+          {{ $t('service.selection.title') }}
         </h2>
         <p class="text-sm">
-          Here are all the services listed that you have activated
+          {{ $t('service.selection.description') }}
         </p>
       </div>
       <IconField>
@@ -36,7 +36,7 @@
           v-model="search"
           size="small"
           type="text"
-          placeholder="Search"
+          :placeholder="$t('service.selection.search')"
           autofocus
           fluid
           @keydown.enter="onEnter"

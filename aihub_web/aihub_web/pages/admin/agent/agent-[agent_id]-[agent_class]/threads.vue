@@ -8,7 +8,7 @@
     <div class="p-3">
       <div class="mb-4">
         <h2 class="text-xl font-bold">
-          Agent Threads
+          {{ $t('agent.threads.title') }}
         </h2>
       </div>
 

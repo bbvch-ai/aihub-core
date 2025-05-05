@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Annotated, Dict, Set
 
 from pydantic import BaseModel, Field
 
@@ -9,5 +9,11 @@ from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import Inte
 class ProcessedRunResults(BaseModel):
     """Holds the results after processing raw aggregated run data."""
 
-    display_aggregates: Dict[str, IntermediateDisplayStats] = Field(default_factory=dict)
-    participating_agent_ids: Set[AgentIdentifier] = Field(default_factory=set)
+    display_aggregates: Annotated[
+        Dict[str, IntermediateDisplayStats],
+        Field(default_factory=dict, description="Aggregated statistics for each display, keyed by display ID"),
+    ]
+    participating_agent_ids: Annotated[
+        Set[AgentIdentifier],
+        Field(default_factory=set, description="Set of agent identifiers that participated in the thread"),
+    ]

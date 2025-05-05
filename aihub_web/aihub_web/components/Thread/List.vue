@@ -8,11 +8,11 @@
     >
       <Column
         field="name"
-        header="Name"
+        :header="t('thread.list.name')"
       />
       <Column
         field="agents"
-        header="Agents"
+        :header="t('thread.list.agents')"
       >
         <template #body="{ data }">
           <AvatarGroup>
@@ -33,7 +33,7 @@
       </Column>
       <Column
         field="users"
-        header="Users"
+        :header="t('thread.users')"
       >
         <template #body="{ data }">
           <AvatarGroup>
@@ -50,7 +50,7 @@
       </Column>
       <Column
         field="Created"
-        header="Created"
+        :header="t('thread.list.created')"
       >
         <template #body="{ data }">
           <p>{{ formatted(data.created_at) }}</p>
@@ -58,7 +58,7 @@
       </Column>
       <Column
         field="num_turns"
-        header="Number of Turns"
+        :header="t('thread.list.numTurns')"
       >
         <template #body="{ data }">
           <Badge :value="data.num_turns" />
@@ -66,7 +66,7 @@
       </Column>
       <Column
         field="num_events"
-        header="Number of Events"
+        :header="t('thread.list.numEvents')"
       >
         <template #body="{ data }">
           <Badge :value="data.num_events" />
@@ -74,24 +74,24 @@
       </Column>
       <Column
         field="has_errors"
-        header="Status"
+        :header="t('thread.list.status')"
       >
         <template #body="{ data }">
           <Tag
             v-if="data.has_errors"
             severity="danger"
-            value="Error"
+            :value="t('eventList.error')"
           />
           <Tag
             v-else
             severity="success"
-            value="Successfull"
+            :value="t('eventList.successful')"
           />
         </template>
       </Column>
       <Column
         field="has_errors"
-        header="Pending"
+        :header="t('thread.list.pending')"
       >
         <template #body="{ data }">
           <Tag
@@ -102,7 +102,7 @@
           <Tag
             v-else
             severity="success"
-            value="No"
+            :value="t('eventList.no')"
           />
         </template>
       </Column>
@@ -112,6 +112,8 @@
 
 <script setup lang="ts">
 import type { ThreadDto, UserDto } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 defineProps<{
   threads: ThreadDto[]

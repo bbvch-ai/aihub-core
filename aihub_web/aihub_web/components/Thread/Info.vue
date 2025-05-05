@@ -5,7 +5,7 @@
     <div class="flex w-full">
       <div class="flex w-1/2 flex-col gap-2">
         <h3 class="font-bold">
-          Users
+          {{ t('thread.users') }}
         </h3>
         <UserAvatar
           v-for="user in users"
@@ -15,7 +15,7 @@
       </div>
       <div class="flex w-1/2 flex-col gap-2">
         <h3 class="font-bold">
-          Assistants
+          {{ t('thread.assistants') }}
         </h3>
         <AgentAvatar
           v-for="agent in agents"
@@ -29,6 +29,8 @@
 
 <script setup lang="ts">
 import type { AgentDto, ThreadDto, UserDto } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   thread: ThreadDto

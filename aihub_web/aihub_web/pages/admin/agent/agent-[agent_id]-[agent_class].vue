@@ -14,6 +14,7 @@ import { useLocalePath } from '#i18n'
 
 const route = useRoute()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const { agent } = useAgent()
 
@@ -30,12 +31,12 @@ const isActive = (path: string) => {
 
 const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
-    { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
-    { name: 'Workflow', key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
-    { name: 'Threads', key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
+    { name: t('agent.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
+    { name: t('agent.navigation.workflow'), key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
+    { name: t('agent.navigation.threads'), key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
   ]
   if (agent.value?.is_conversational) {
-    items.push({ name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
+    items.push({ name: t('agent.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
     )
   }
   return items

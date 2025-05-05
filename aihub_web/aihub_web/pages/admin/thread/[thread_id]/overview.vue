@@ -14,7 +14,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="font-semibold">
-            First Interaction:
+            {{ $t('eventList.firstInteraction') }}
           </span>
           <Tag
             :value="formattedDate(thread.first_interaction)"
@@ -23,7 +23,7 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">
-            Last Interaction:
+            {{ $t('eventList.lastInteraction') }}
           </span>
           <Tag
             :value="formattedDate(thread.latest_interaction)"
@@ -32,7 +32,7 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">
-            Pending:
+            {{ $t('eventList.pending') }}
           </span>
           <Tag
             v-if="thread.has_pending"
@@ -42,22 +42,22 @@
           <Tag
             v-else
             severity="success"
-            value="No"
+            :value="$t('eventList.no')"
           />
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">
-            Status:
+            {{ $t('eventList.status') }}
           </span>
           <Tag
             v-if="thread.has_errors"
             severity="danger"
-            value="Error"
+            :value="$t('eventList.error')"
           />
           <Tag
             v-else
             severity="success"
-            value="Successfull"
+            :value="$t('eventList.successful')"
           />
         </div>
       </div>

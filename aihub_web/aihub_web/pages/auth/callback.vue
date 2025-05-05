@@ -5,7 +5,7 @@
       class="text-center"
     >
       <h1 class="mb-4 text-2xl">
-        Logging you in...
+        {{ $t('auth.callback.loggingIn') }}
       </h1>
       <div class="mx-auto size-12 animate-spin rounded-full border-y-2 border-white" />
     </div>
@@ -15,11 +15,11 @@
       class="text-center"
     >
       <h1 class="mb-4 text-2xl text-red-500">
-        Login Error
+        {{ $t('auth.callback.loginError') }}
       </h1>
       <p>{{ error }}</p>
       <p class="mt-4">
-        Redirecting to login page...
+        {{ $t('auth.callback.redirectingToLogin') }}
       </p>
     </div>
   </div>
@@ -42,7 +42,7 @@ $auth.signinRedirectCallback()
   })
   .catch((err) => {
     console.error('Error during authentication callback:', err)
-    error.value = err.message || 'An error occurred during login. Please try again.'
+    error.value = err.message || $i18n.t('auth.callback.genericError')
     // After 3 seconds, redirect to login page
     setTimeout(() => {
       navigateTo(`/${$i18n.locale.value}/auth/login`)
