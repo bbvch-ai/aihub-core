@@ -199,7 +199,7 @@ class PersistedEventEntity(Document):
                     "run_id": "$_id",
                     "started_at": "$first_event_time",
                     "ended_at": "$latest_event_time",
-                    "latency": {
+                    "duration": {
                         "$cond": {
                             "if": {"$and": ["$first_event_time", "$latest_event_time"]},
                             "then": {"$divide": [{"$subtract": ["$latest_event_time", "$first_event_time"]}, 1000]},
@@ -235,7 +235,7 @@ class PersistedEventEntity(Document):
                     "display_id": 1,
                     "started_at": 1,
                     "ended_at": 1,
-                    "latency": 1,
+                    "duration": 1,
                     "n_events": 1,
                     "has_errors": 1,
                     "has_pending": 1,
@@ -368,37 +368,35 @@ class PersistedEventEntity(Document):
         Uses MongoDB aggregation to calculate time-based statistics for a thread.
         Returns a list of dictionaries, each representing a time bucket with event counts.
         """
-        # Calculate time range and resolution
         if time_range == "1h":
             now = datetime.now(timezone.utc)
             start_time = now - timedelta(hours=1)
             resolution = "1m"
             interval_seconds = 60  # 1 minute
         else:
-            # For all other ranges, set "now" to the end of today
             now = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
 
             if time_range == "24h":
                 start_time = now - timedelta(hours=24)
                 resolution = "1h"
-                interval_seconds = 3600  # 1 hour
+                interval_seconds = 60 * 60  # 1 hour
             elif time_range == "30d":
                 start_time = now - timedelta(days=30)
                 resolution = "1d"
-                interval_seconds = 86400  # 1 day
+                interval_seconds = 60 * 60 * 24  # 1 day
             elif time_range == "365d":
                 start_time = now - timedelta(days=365)
                 resolution = "1w"
-                interval_seconds = 604800  # 1 week
+                interval_seconds = 60 * 60 * 24 * 7  # 1 week
             else:
                 raise ValueError(f"Invalid time range: {time_range}")
 
-        # Create the aggregation pipeline
         pipeline = [
             # 1. Match events for the given thread within the time range
             {
                 "$match": {
                     "thread_id": thread_id,
+                    "event_type": TopicManager.DISPLAY_EVENT,
                     "event_data.created_at": {
                         "$gte": int(start_time.timestamp() * 1e9),  # Convert to microseconds
                         "$lte": int(now.timestamp() * 1e9),  # Convert to microseconds
@@ -477,6 +475,8 @@ class PersistedEventEntity(Document):
                                     "$hitl_events",
                                     "$bitl_events",
                                     "$aitl_events",
+                                    "$start_events",
+                                    "$stop_events",
                                 ]
                             }
                         ]
@@ -511,7 +511,6 @@ class PersistedEventEntity(Document):
             }
         ]
 
-        # Execute the aggregation pipeline
         results = list(cls.objects.aggregate(pipeline))
 
         # Ensure MongoDB results have timezone info
@@ -522,12 +521,10 @@ class PersistedEventEntity(Document):
                 result["end_time"] = result["end_time"].replace(tzinfo=timezone.utc)
 
 
-        # Fill in missing buckets with zero counts
         filled_results = []
         current_time = start_time
 
         while current_time < now:
-            # Find the bucket for the current time
             bucket = next(
                 (
                     b for b in results
@@ -539,7 +536,6 @@ class PersistedEventEntity(Document):
             if bucket:
                 filled_results.append(bucket)
             else:
-                # Create an empty bucket
                 filled_results.append({
                     "start_time": current_time,
                     "end_time": current_time + timedelta(seconds=interval_seconds),
@@ -553,7 +549,6 @@ class PersistedEventEntity(Document):
                     "other_events": 0,
                 })
 
-            # Move to the next bucket
             current_time += timedelta(seconds=interval_seconds)
 
         return filled_results, start_time, now, resolution

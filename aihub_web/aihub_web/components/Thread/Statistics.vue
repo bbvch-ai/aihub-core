@@ -10,7 +10,7 @@
     </div>
     <div
       v-if="!threadStatisticsAreLoading && threadStatistics"
-      class="flex flex-col gap-3"
+      class="grid grid-cols-1 lg:grid-cols-2"
     >
       <div
         v-for="bar in bars"
@@ -23,6 +23,7 @@
           :thread="thread"
           :statistics="threadStatistics"
           :bars="bar.bars"
+          :title="bar.title"
         />
       </div>
     </div>

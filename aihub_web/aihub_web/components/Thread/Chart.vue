@@ -19,6 +19,7 @@ import type { ApexOptions } from 'apexcharts'
 const props = defineProps<{
   statistics: ThreadTimeStatisticsDto
   thread: ThreadDto
+  title: string
   bars: Array<{ key: keyof EventBucket, name: string, color?: string }>
 }>()
 
@@ -137,9 +138,6 @@ const chartOptions = computed<ApexOptions>(() => {
     xaxis: {
       type: 'category',
       categories: categories,
-      title: {
-        text: resolution ? `Time (${resolution} resolution)` : 'Time',
-      },
       labels: {
         formatter: getXAxisLabelFormatter(),
         rotate: -45,
@@ -153,7 +151,7 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     yaxis: {
       title: {
-        text: 'Number of Events',
+        text: `# ${props.title}`,
       },
       min: 0,
       labels: {
@@ -188,17 +186,12 @@ const chartOptions = computed<ApexOptions>(() => {
           return date.toLocaleDateString('de-CH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
         },
       },
-      y: {
-        formatter: function (val: number) {
-          return val + ' events'
-        },
-      },
     },
     colors: seriesColors.length > 0 ? seriesColors : undefined,
     noData: {
-      text: 'No event data available for this period.',
+      text: 'No data available for this period.',
       align: 'center',
-      verticalAlign: 'middle',
+      verticalAlign: 'top',
       style: {
         fontSize: '14px',
       },

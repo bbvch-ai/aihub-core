@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field
@@ -28,7 +28,7 @@ class CalculatedThreadStats(BaseModel):
     latest_interaction_dt: Annotated[
         Optional[datetime], Field(None, description="Timestamp of the most recent interaction in this thread")
     ] = None
-    latency: Annotated[Optional[float], Field(None, description="Response latency in seconds")] = None
+    duration: Annotated[Optional[float], Field(None, description="Response duration in seconds")] = None
 
     @property
     def first_interaction(self) -> Optional[str]:

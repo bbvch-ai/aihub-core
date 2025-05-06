@@ -303,7 +303,7 @@ class ThreadService:
         if all_end_times:
             stats.latest_interaction_dt = max(all_end_times)
         if stats.first_interaction_dt and stats.latest_interaction_dt:
-            stats.latency = (stats.latest_interaction_dt - stats.first_interaction_dt).total_seconds()
+            stats.duration = (stats.latest_interaction_dt - stats.first_interaction_dt).total_seconds()
 
         return stats
 
@@ -366,7 +366,7 @@ class ThreadService:
 
         response = ThreadDTO(
             id=str(entity.id),
-            created_at=entity.created_at.isoformat() + "Z",
+            created_at=RunStatistics.format_datetime(entity.created_at),
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
@@ -437,6 +437,6 @@ class ThreadService:
         response.llm_cost = overall_stats.llm_cost
         response.first_interaction = overall_stats.first_interaction
         response.latest_interaction = overall_stats.latest_interaction
-        response.latency = overall_stats.latency
+        response.duration = overall_stats.duration
 
         return response

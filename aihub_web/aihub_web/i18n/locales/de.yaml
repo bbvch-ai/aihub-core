@@ -31,7 +31,7 @@ eventList:
   firstInteraction: "Erste Interaktion:"
   lastInteraction: "Letzte Interaktion:"
   costs: "Kosten:"
-  latency: "Latenz:"
+  duration: "Dauer:"
   pending: "Ausstehend:"
   no: "Nein"
   status: "Status:"
@@ -72,8 +72,6 @@ agent:
     title: "Chat"
     createThreadAndSend: "Thread erstellen und senden"
     manuallyCreatedThread: "Manuell erstellter Thread"
-  threads:
-    title: "Agent-Threads"
   navigation:
     basic: "Basis"
     workflow: "Arbeitsablauf"

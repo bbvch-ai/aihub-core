@@ -908,9 +908,9 @@ export type DisplayStatistics = {
      */
     ended_at?: string | null;
     /**
-     * Latency in seconds
+     * Duration in seconds
      */
-    latency?: number | null;
+    duration?: number | null;
     /**
      * The display ID
      */
@@ -2392,9 +2392,9 @@ export type RunStatistics = {
      */
     ended_at?: string | null;
     /**
-     * Latency in seconds
+     * Duration in seconds
      */
-    latency?: number | null;
+    duration?: number | null;
     /**
      * The run ID
      */
@@ -2779,7 +2779,7 @@ export type ThreadDto = {
     /**
      * Overall duration of interactions in seconds
      */
-    latency?: number | null;
+    duration?: number | null;
     /**
      * Displays in this thread, sorted by start time
      */

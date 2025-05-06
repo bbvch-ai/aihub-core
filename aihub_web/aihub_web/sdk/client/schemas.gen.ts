@@ -2541,7 +2541,7 @@ export const DisplayStatisticsSchema = {
             title: 'Ended At',
             description: 'End time (ISO format string)'
         },
-        latency: {
+        duration: {
             anyOf: [
                 {
                     type: 'number'
@@ -2550,8 +2550,8 @@ export const DisplayStatisticsSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Latency',
-            description: 'Latency in seconds'
+            title: 'Duration',
+            description: 'Duration in seconds'
         },
         display_id: {
             type: 'string',
@@ -5714,7 +5714,7 @@ export const RunStatisticsSchema = {
             title: 'Ended At',
             description: 'End time (ISO format string)'
         },
-        latency: {
+        duration: {
             anyOf: [
                 {
                     type: 'number'
@@ -5723,8 +5723,8 @@ export const RunStatisticsSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Latency',
-            description: 'Latency in seconds'
+            title: 'Duration',
+            description: 'Duration in seconds'
         },
         run_id: {
             type: 'string',
@@ -6328,7 +6328,7 @@ export const ThreadDTOSchema = {
             title: 'Latest Interaction',
             description: 'Date of newest event in thread (ISO format string)'
         },
-        latency: {
+        duration: {
             anyOf: [
                 {
                     type: 'number'
@@ -6337,7 +6337,7 @@ export const ThreadDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Latency',
+            title: 'Duration',
             description: 'Overall duration of interactions in seconds'
         },
         displays: {

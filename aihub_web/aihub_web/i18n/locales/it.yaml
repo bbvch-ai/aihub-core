@@ -70,8 +70,6 @@ agent:
     title: "Chat"
     createThreadAndSend: "Crea Thread e Invia"
     manuallyCreatedThread: "Thread creato manualmente"
-  threads:
-    title: "Thread dell'Agente"
   navigation:
     basic: "Base"
     workflow: "Flusso di lavoro"
