@@ -360,9 +360,6 @@ class WorkflowVisualizer:
     def to_pydantic(self) -> WorkflowGraph:
         """
         Convert the workflow graph to a Pydantic model.
-
-        Returns:
-            A fully typed WorkflowGraph Pydantic model representing the workflow.
         """
         if self.graph is None:
             self.build_workflow_graph()

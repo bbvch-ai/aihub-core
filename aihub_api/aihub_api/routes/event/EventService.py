@@ -69,13 +69,6 @@ class EventService:
         return [WSServerEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod
-    def get_all_thread_events(thread_id: str) -> List[PersistedEventEntity]:
-        """
-        Retrieves all events (both display and control) for a thread.
-        """
-        return PersistedEventEntity.all_events_for_thread(thread_id)
-
-    @staticmethod
     def get_all_thread_display_events(thread_id: str) -> List[PersistedEventEntity]:
         """
         Retrieves all display events for a thread.

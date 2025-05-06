@@ -3,7 +3,7 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from llama_index.core.base.llms.types import AudioBlock, ChatMessage, ImageBlock, TextBlock
 from openinference.semconv.trace import AudioAttributes, ImageAttributes, MessageAttributes, MessageContentAttributes
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class TextContent(BaseModel):
@@ -34,7 +34,6 @@ class Message(BaseModel):
         ...,
         description="The role of the message, such as 'user', 'assistant', or 'system'.",
     )
-    content: Optional[str] = Field(None, description="The content of the message.")
     name: Optional[str] = Field(None, description="The name of the function or agent generating the message.")
     tool_calls: Optional[List[Dict[str, Any]]] = Field(
         None,
@@ -50,6 +49,19 @@ class Message(BaseModel):
         None,
         description="The message contents as an array of content blocks (text, image, audio).",
     )
+
+    @computed_field
+    @property
+    def content(self) -> str:
+        content = ""
+        for block in self.contents:
+            if isinstance(block, TextContent):
+                content += block.text
+        return content
+
+    @classmethod
+    def from_string(cls, role: str, content: str, name: Optional[str] = None) -> "Message":
+        return cls(role=role, contents=[TextContent(text=content)], name=name)
 
     def to_semantic_convention(self, key: str, i: int) -> Dict[str, Any]:
         result: Dict[str, Any] = {}

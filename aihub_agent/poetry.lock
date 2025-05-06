@@ -2397,14 +2397,14 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-llms-google-genai"
-version = "0.1.11"
+version = "0.1.12"
 description = "llama-index llms google genai integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_llms_google_genai-0.1.11-py3-none-any.whl", hash = "sha256:24433ec1d52597379d6968d85c09e1cffc4c8b51157a1d66c15dae597339c180"},
-    {file = "llama_index_llms_google_genai-0.1.11.tar.gz", hash = "sha256:44fc78c4a8201a853971381c8e9fa37d2057c0b19a2f80e6cf2ba7c20b50a7a8"},
+    {file = "llama_index_llms_google_genai-0.1.12-py3-none-any.whl", hash = "sha256:08f0c132b3b4f9705f968b2757289d116646cbdd16a7ba61cca86bf04073176d"},
+    {file = "llama_index_llms_google_genai-0.1.12.tar.gz", hash = "sha256:cba7538b9ee22cfa40a1628d74232ee631c90cd025c2c2b99ce5fbea16f8d953"},
 ]
 
 [package.dependencies]
@@ -4782,14 +4782,14 @@ stats = ["scipy (>=1.7)", "statsmodels (>=0.12)"]
 
 [[package]]
 name = "setuptools"
-version = "80.3.0"
+version = "80.3.1"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "setuptools-80.3.0-py3-none-any.whl", hash = "sha256:a65cffc4fb86167e3020b3ef58e08226baad8b29a3b34ce2c9d07e901bac481d"},
-    {file = "setuptools-80.3.0.tar.gz", hash = "sha256:ec8308eb180b2312062b1c5523204acf872cd8b0a9e6c2ae76431b22bc4065d7"},
+    {file = "setuptools-80.3.1-py3-none-any.whl", hash = "sha256:ea8e00d7992054c4c592aeb892f6ad51fe1b4d90cc6947cc45c45717c40ec537"},
+    {file = "setuptools-80.3.1.tar.gz", hash = "sha256:31e2c58dbb67c99c289f51c16d899afedae292b978f8051efaf6262d8212f927"},
 ]
 
 [package.extras]

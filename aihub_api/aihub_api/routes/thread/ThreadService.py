@@ -129,7 +129,7 @@ class ThreadService:
                     messages.append(ChatCompletionUserMessageParam(role="user", content=[]))
 
                 current_message = messages[-1]
-                if event.is_user_message_event:
+                if event.is_user_message_event and len(event.messages) > 0:
                     for block in event.messages[-1].blocks:
                         if isinstance(block, TextBlock):
                             current_message["content"].append(

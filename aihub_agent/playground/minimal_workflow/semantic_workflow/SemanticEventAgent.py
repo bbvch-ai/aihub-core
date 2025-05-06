@@ -39,12 +39,12 @@ class SemanticEventAgent(Agent):
     async def llm_step(self, event: RerankerEvent) -> LLMStopEvent:
         return LLMStopEvent(
             input_messages=[
-                Message(
+                Message.from_string(
                     role="user",
                     content="Given these documents, what do you want to tell me?",
                 )
             ],
-            output_messages=[Message(role="agent", content="Everything is important!")],
+            output_messages=[Message.from_string(role="agent", content="Everything is important!")],
             invocation_parameters={"temperature": 0.7},
             chat_model_name="gpt-4o",
             provider="azure",

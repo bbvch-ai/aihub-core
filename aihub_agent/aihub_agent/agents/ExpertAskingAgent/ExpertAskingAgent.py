@@ -48,7 +48,7 @@ class ExpertAskingAgent(Agent):
         t: AgentLocaleHandler,
     ) -> BotInTheLoop.request:
         await displayer.display_thought(
-            t("agents.expert_asking_agent.thoughts.asking_question", question=question_event.question_to_expert)
+            t("agent.expert_asking_agent.thoughts.asking_question", question=question_event.question_to_expert)
         )
 
         chat_history = await run_context.get("chat_history", [])
@@ -79,7 +79,7 @@ class ExpertAskingAgent(Agent):
         expert_response = expert_response_event.response
         expert_name = expert_response_event.responder.user_name
         await displayer.display_thought(
-            t("agents.expert_asking_agent.thoughts.expert_responded", response=expert_response)
+            t("agent.expert_asking_agent.thoughts.expert_responded", response=expert_response)
         )
 
         loop_count = await run_context.get("loop_count", 0)
@@ -122,7 +122,7 @@ class ExpertAskingAgent(Agent):
         displayer: EventDisplayer,
         t: AgentLocaleHandler,
     ) -> ExpertAnswerSufficientEvent | ExpertAnswerInsufficientEvent:
-        await displayer.display_thought(t("agents.expert_asking_agent.thoughts.determine_sufficient"))
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
         return router_event.selected_option.event
 
     @step(
@@ -139,14 +139,14 @@ class ExpertAskingAgent(Agent):
         t: AgentLocaleHandler,
         run_context: RunContext,
     ) -> KnowledgeSnippetEvent:
-        await displayer.display_thought(t("agents.expert_asking_agent.thoughts.answer_sufficient"))
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.answer_sufficient"))
 
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             chat = RichPromptTemplate(
-                template_str=t("agents.expert_asking_agent.knowledge_snippet_prompt")
+                template_str=t("agent.expert_asking_agent.knowledge_snippet_prompt")
             ).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
@@ -167,13 +167,13 @@ class ExpertAskingAgent(Agent):
         displayer: EventDisplayer,
         t: AgentLocaleHandler,
     ) -> AnswerStopEvent:
-        await displayer.display_thought(t("agents.expert_asking_agent.thoughts.saving_knowledge"))
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.saving_knowledge"))
         client = OpenWebuiClient(
             base_url=agent_config.open_webui_api_url,
             token=agent_config.open_webui_api_key,
         )
         knowledge_snippet = t(
-            "agents.expert_asking_agent.knowledge_snippet",
+            "agent.expert_asking_agent.knowledge_snippet",
             content=knowledge_snippet_event.content,
             expert_name=expert_answer_event.expert_name,
             date=datetime.datetime.now().strftime("%Y.%m.%d"),
@@ -187,7 +187,7 @@ class ExpertAskingAgent(Agent):
             file=bytes_content,
             filename=filename,
         )
-        await displayer.display_thought(t("agents.expert_asking_agent.thoughts.knowledge_saved", filename=filename))
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.knowledge_saved", filename=filename))
         await asyncio.sleep(1)
         await client.knowledge.add_file_to_knowledge(
             knowledge_id=agent_config.open_webui_knowledge_id,
@@ -211,16 +211,16 @@ class ExpertAskingAgent(Agent):
     ) -> AskExpertEvent | NoAnswerStopEvent:
         loop_count = await run_context.get("loop_count", 0)
         if loop_count >= agent_config.loop_max:
-            await displayer.display_thought(t("agents.expert_asking_agent.thoughts.max_questions_reached"))
-            await displayer.display_thought(t("agents.expert_asking_agent.thoughts.returning_insufficient"))
+            await displayer.display_thought(t("agent.expert_asking_agent.thoughts.max_questions_reached"))
+            await displayer.display_thought(t("agent.expert_asking_agent.thoughts.returning_insufficient"))
             return NoAnswerStopEvent()
 
-        await displayer.display_thought(t("agents.expert_asking_agent.thoughts.answer_not_sufficient"))
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.answer_not_sufficient"))
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(template_str=t("agents.expert_asking_agent.follow_up_question")).format_messages(
+            chat = RichPromptTemplate(template_str=t("agent.expert_asking_agent.follow_up_question")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,
             )

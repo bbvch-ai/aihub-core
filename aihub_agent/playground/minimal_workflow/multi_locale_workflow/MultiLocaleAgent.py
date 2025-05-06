@@ -14,12 +14,12 @@ class MultiLocaleAgent(Agent):
     ) -> MultiLocaleEvent:
         print(f"[MultiLocaleAgent.start_step] Start step in locale {event.locale}.")
         print(f"[MultiLocaleAgent.start_step] Lib Core says: {t('lib.common.test')}.")
-        print(f"[MultiLocaleAgent.start_step] Agents Core says: {t('agents.thought.test')}.")
+        print(f"[MultiLocaleAgent.start_step] Agents Core says: {t('agent.thought.test')}.")
         print(f"[MultiLocaleAgent.start_step] Local Agent says: {t('myagent.myscope.test')}.")
         print(f"[MultiLocaleAgent.start_step] Config says: {t(agent_config.locale_path)}.")
         return MultiLocaleEvent(payload=t(agent_config.locale_path))
 
     @step()
-    async def end_step(self, event: MultiLocaleEvent) -> StopEvent:
+    async def end_step(self, _: MultiLocaleEvent) -> StopEvent:
         print("[MultiLocaleAgent.stop_step] Stop step.")
         return StopEvent()
