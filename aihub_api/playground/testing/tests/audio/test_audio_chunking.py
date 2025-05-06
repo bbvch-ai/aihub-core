@@ -1,7 +1,7 @@
 import pytest
 import io
 from fastapi import UploadFile
-from pydub.generators import Square, SignalGenerator, Sine
+from pydub.generators import Sine
 from pydub import AudioSegment
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService
@@ -32,7 +32,6 @@ def create_test_audio():
 
 
 class TestAudioChunking:
-
     @pytest.mark.asyncio
     async def test_small_file_no_chunking(self, create_test_audio):
         """Test that small files are not chunked."""

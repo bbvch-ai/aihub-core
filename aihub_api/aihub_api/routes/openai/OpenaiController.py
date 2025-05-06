@@ -14,7 +14,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, File, Form, Security, UploadFile, HTTPException
+from fastapi import Body, Depends, File, Form, HTTPException, Security, UploadFile
 from llama_index.llms.openai import OpenAI
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse

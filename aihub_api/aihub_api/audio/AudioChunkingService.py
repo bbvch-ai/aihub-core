@@ -1,12 +1,7 @@
-import io
 import logging
-import os
-import tempfile
-from dataclasses import dataclass
-from typing import List, Optional, Tuple, Dict, Any, Annotated
+from typing import Annotated, List
 
-from fastapi import UploadFile, HTTPException
-from openai.types.audio import TranscriptionVerbose, Transcription
+from openai.types.audio import Transcription, TranscriptionVerbose
 from pydub import AudioSegment
 from pydub.silence import detect_nonsilent
 
@@ -34,13 +29,12 @@ class AudioChunkingService:
     # Conservative limits (20MB + 5MB buffer stays under OpenAI's 25MB limit)
     MAX_CHUNK_SIZE: Annotated[int, "bytes"] = 20 * 1024 * 1024
     MIN_SILENCE_LEN: Annotated[int, "ms"] = 500  # 500 ms is the typical minimum pause in natural speech
-    SILENCE_THRESH: Annotated[int, "dB"] = (
-        -40
-    )  # -40dB threshold identifies most speech pauses without excessive chunking
+    SILENCE_THRESH: Annotated[
+        int, "dB"
+    ] = -40  # -40dB threshold identifies most speech pauses without excessive chunking
 
     @staticmethod
     async def chunk_audio(audio: AudioSegment, file_size: Annotated[int, "bytes"]) -> List[AudioSegment]:
-
         total_duration: Annotated[int, "ms"] = len(audio)
         max_duration: Annotated[int, "ms"] = int(total_duration / (file_size / AudioChunkingService.MAX_CHUNK_SIZE))
         nonsilent_chunks: Annotated[List[List[int]], "[[start: ms, end: ms]]"] = detect_nonsilent(
@@ -65,9 +59,14 @@ class AudioChunkingService:
     @staticmethod
     def merge_transcriptions(transcription_chunks: List[TranscriptionChunk]) -> str:
         if isinstance(transcription_chunks[0], str):
-            get_text = lambda x: x
+
+            def get_text(x: str):
+                return x
+
         else:
-            get_text = lambda x: x.text
+
+            def get_text(x: Transcription | TranscriptionVerbose):
+                return x.text
 
         merged_words: List[str] = []
         for chunk in transcription_chunks:

@@ -4,9 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Literal, Optional, Tuple
 
-from pydub import AudioSegment
-
-from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -24,13 +21,15 @@ from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, Stream
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
-from openai.types import CompletionUsage, FileContent, ImagesResponse
+from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+from pydub import AudioSegment
 from starlette.responses import StreamingResponse
 
+from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
