@@ -51,7 +51,7 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread()
-        .get_thread_time_statistics(),
+        .get_thread_event_timeseries(),
         AgentController(auth=auth).get_agent().discover_agents(),
         OpenaiController(
             auth=auth,

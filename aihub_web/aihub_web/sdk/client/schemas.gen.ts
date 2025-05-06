@@ -183,6 +183,57 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
+export const AgentEventTimeseriesSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The agent class'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'The agent ID'
+        },
+        time_range: {
+            type: 'string',
+            enum: ['1h', '24h', '30d', '365d'],
+            title: 'Time Range',
+            description: 'Time range for the statistics'
+        },
+        resolution: {
+            type: 'string',
+            enum: ['1m', '1h', '1d', '1w'],
+            title: 'Resolution',
+            description: 'Resolution of the buckets'
+        },
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the entire range'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the entire range'
+        },
+        buckets: {
+            items: {
+                '$ref': '#/components/schemas/EventBucket'
+            },
+            type: 'array',
+            title: 'Buckets',
+            description: 'List of time buckets with event counts'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
+    title: 'AgentEventTimeseries',
+    description: 'Statistics for a thread over a specific time range with bucketed data.'
+} as const;
+
 export const AgentInTheLoopExceptionEventSchema = {
     properties: {
         event_id: {
@@ -6371,7 +6422,7 @@ export const ThreadDTOSchema = {
     description: 'Thread information and statistics for API response.'
 } as const;
 
-export const ThreadTimeStatisticsDTOSchema = {
+export const ThreadEventTimeseriesSchema = {
     properties: {
         thread_id: {
             type: 'string',
@@ -6413,7 +6464,7 @@ export const ThreadTimeStatisticsDTOSchema = {
     },
     type: 'object',
     required: ['thread_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
-    title: 'ThreadTimeStatisticsDTO',
+    title: 'ThreadEventTimeseries',
     description: 'Statistics for a thread over a specific time range with bucketed data.'
 } as const;
 

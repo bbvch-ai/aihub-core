@@ -19,4 +19,4 @@ class BaseEventStatistics(BaseModel):
     open_aitl: Annotated[bool, Field(description="Has open AITL requests")] = False
     started_at: Annotated[Optional[str], Field(description="Start time (ISO format string)")] = None
     ended_at: Annotated[Optional[str], Field(description="End time (ISO format string)")] = None
-    latency: Annotated[Optional[float], Field(description="Latency in seconds")] = None
+    duration: Annotated[Optional[float], Field(description="Duration in seconds")] = None

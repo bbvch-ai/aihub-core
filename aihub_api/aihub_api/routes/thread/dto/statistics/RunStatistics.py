@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Any, Dict, Optional
 
 from pydantic import Field
@@ -35,7 +35,7 @@ class RunStatistics(BaseEventStatistics):
             open_bitl=run_data.get("open_bitl", False),
             is_aitl=run_data.get("is_aitl", False),
             open_aitl=run_data.get("open_aitl", False),
-            started_at=run_started_at_dt.isoformat().replace("+00:00", "Z") if run_started_at_dt else None,
-            ended_at=run_ended_at_dt.isoformat().replace("+00:00", "Z") if run_ended_at_dt else None,
-            latency=run_data.get("latency"),
+            started_at=(run_started_at_dt.replace(tzinfo=timezone.utc) if run_started_at_dt and run_started_at_dt.tzinfo is None else run_started_at_dt).isoformat().replace("+00:00", "Z") if run_started_at_dt else None,
+            ended_at=(run_ended_at_dt.replace(tzinfo=timezone.utc) if run_ended_at_dt and run_ended_at_dt.tzinfo is None else run_ended_at_dt).isoformat().replace("+00:00", "Z") if run_ended_at_dt else None,
+            duration=run_data.get("duration"),
         )

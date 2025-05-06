@@ -34,12 +34,12 @@ class DisplayStatistics(BaseEventStatistics):
         is_aitl = intermediate.aitl_request_events > 0
         open_aitl = intermediate.aitl_request_events > intermediate.aitl_response_events
 
-        # Calculate latency from intermediate datetime objects
-        latency = None
+        # Calculate duration from intermediate datetime objects
+        duration = None
         started_at_dt = intermediate.first_event_time
         ended_at_dt = intermediate.latest_event_time
         if started_at_dt and ended_at_dt:
-            latency = (ended_at_dt - started_at_dt).total_seconds()
+            duration = (ended_at_dt - started_at_dt).total_seconds()
 
         def sort_key(run: RunStatistics):
             started_at_str = run.started_at
@@ -67,7 +67,7 @@ class DisplayStatistics(BaseEventStatistics):
             open_bitl=open_bitl,
             is_aitl=is_aitl,
             open_aitl=open_aitl,
-            started_at=started_at_dt.isoformat().replace("+00:00", "Z") if started_at_dt else None,
-            ended_at=ended_at_dt.isoformat().replace("+00:00", "Z") if ended_at_dt else None,
-            latency=latency,
+            started_at=(started_at_dt.replace(tzinfo=timezone.utc) if started_at_dt and started_at_dt.tzinfo is None else started_at_dt).isoformat().replace("+00:00", "Z") if started_at_dt else None,
+            ended_at=(ended_at_dt.replace(tzinfo=timezone.utc) if ended_at_dt and ended_at_dt.tzinfo is None else ended_at_dt).isoformat().replace("+00:00", "Z") if ended_at_dt else None,
+            duration=duration,
         )

@@ -7,6 +7,7 @@ from mongoengine import DictField, Document, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
@@ -188,7 +189,7 @@ class PersistedEventEntity(Document):
                             "agent_id": "$agent_id",
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
-                            "is_not_user": {"$not": {"$regexMatch": {"input": "$agent_class", "regex": "^UserAgent"}}},
+                            "is_not_user": {"$ne": ["$agent_class", "UserAgent"]}
                         }
                     },
                 }
@@ -359,15 +360,25 @@ class PersistedEventEntity(Document):
         return message_history
 
     @classmethod
-    def get_thread_time_statistics(
+    def get_event_timeseries(
         cls,
-        thread_id: str,
         time_range: Literal["1h", "24h", "30d", "365d"],
-    ) -> Tuple[List[Dict], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
+        thread_id: Optional[str] = None,
+        agent_class: Optional[str] = None,
+        agent_id: Optional[str] = None,
+    ) -> Tuple[List[EventBucket], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
         """
-        Uses MongoDB aggregation to calculate time-based statistics for a thread.
-        Returns a list of dictionaries, each representing a time bucket with event counts.
+        Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
+        Requires either thread_id OR both agent_class and agent_id.
+        Returns a list of dictionaries, each representing a time bucket with event counts,
+        the start time, end time, and resolution of the analysis.
         """
+        if not thread_id and not (agent_class and agent_id):
+            raise ValueError("Either thread_id or both agent_class and agent_id must be provided.")
+        if thread_id and (agent_class or agent_id):
+            raise ValueError("Provide either thread_id OR (agent_class and agent_id), not both.")
+
+        # Determine time window and resolution
         if time_range == "1h":
             now = datetime.now(timezone.utc)
             start_time = now - timedelta(hours=1)
@@ -391,18 +402,25 @@ class PersistedEventEntity(Document):
             else:
                 raise ValueError(f"Invalid time range: {time_range}")
 
+        # Construct the initial match filter based on provided identifiers
+        match_filter: Dict[str, any] = {
+            "event_type": "display_event",
+            "event_data.created_at": {
+                "$gte": int(start_time.timestamp() * 1e9),  # Convert to nanoseconds
+                "$lte": int(now.timestamp() * 1e9),      # Convert to nanoseconds
+            }
+        }
+
+        if thread_id:
+            match_filter["thread_id"] = thread_id
+        elif agent_class and agent_id:
+            match_filter["agent_class"] = agent_class
+            match_filter["agent_id"] = agent_id
+
+
         pipeline = [
-            # 1. Match events for the given thread within the time range
-            {
-                "$match": {
-                    "thread_id": thread_id,
-                    "event_type": TopicManager.DISPLAY_EVENT,
-                    "event_data.created_at": {
-                        "$gte": int(start_time.timestamp() * 1e9),  # Convert to microseconds
-                        "$lte": int(now.timestamp() * 1e9),  # Convert to microseconds
-                    }
-                }
-            },
+            # 1. Match events for the given criteria within the time range
+            {"$match": match_filter},
             # 2. Add a standardized BSON date field
             {
                 "$addFields": {
@@ -534,20 +552,31 @@ class PersistedEventEntity(Document):
             )
 
             if bucket:
-                filled_results.append(bucket)
+                filled_results.append(EventBucket(
+                    start_time=bucket["start_time"],
+                    end_time=bucket["end_time"],
+                    total_events=bucket["total_events"],
+                    start_events=bucket["start_events"],
+                    stop_events=bucket["stop_events"],
+                    exception_events=bucket["exception_events"],
+                    hitl_events=bucket["hitl_events"],
+                    bitl_events=bucket["bitl_events"],
+                    aitl_events=bucket["aitl_events"],
+                    other_events=bucket["other_events"],
+                ))
             else:
-                filled_results.append({
-                    "start_time": current_time,
-                    "end_time": current_time + timedelta(seconds=interval_seconds),
-                    "total_events": 0,
-                    "start_events": 0,
-                    "stop_events": 0,
-                    "exception_events": 0,
-                    "hitl_events": 0,
-                    "bitl_events": 0,
-                    "aitl_events": 0,
-                    "other_events": 0,
-                })
+                filled_results.append(EventBucket(
+                    start_time=current_time,
+                    end_time=current_time + timedelta(seconds=interval_seconds),
+                    total_events=0,
+                    start_events=0,
+                    stop_events=0,
+                    exception_events=0,
+                    hitl_events=0,
+                    bitl_events=0,
+                    aitl_events=0,
+                    other_events=0,
+                ))
 
             current_time += timedelta(seconds=interval_seconds)
 

@@ -16,7 +16,7 @@ from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
-from aihub_api.routes.thread.dto.statistics.ThreadTimeStatisticsDTO import ThreadTimeStatisticsDTO
+from aihub_api.routes.thread.dto.statistics.ThreadEventTimeseries import ThreadEventTimeseries
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 
@@ -126,7 +126,7 @@ class ThreadController(Controller):
             Raises 403 if the user is not a member of that thread.
             """
             thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_view_exception
             return thread
 
@@ -143,8 +143,7 @@ class ThreadController(Controller):
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             # TODO: Check if all users have access to new agent
@@ -160,15 +159,14 @@ class ThreadController(Controller):
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> HistoryResponse:
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.thread_as_message_history(thread_id)
 
-    def get_thread_time_statistics(self, route: str = "/{thread_id}/statistics/time") -> "ThreadController":
+    def get_thread_event_timeseries(self, route: str = "/{thread_id}/event/timeseries") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
-        async def get_thread_time_statistics(
+        async def get_thread_event_timeseries(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             time_range: Annotated[
                 Literal["1h", "24h", "30d", "365d"],
@@ -178,8 +176,7 @@ class ThreadController(Controller):
                 ),
             ] = "24h",
             user: AuthenticatedUser = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
-        ) -> ThreadTimeStatisticsDTO:
+        ) -> ThreadEventTimeseries:
             """
             Retrieves time-based statistics for a thread.
             Returns event counts in time buckets with resolution based on the time range:
@@ -190,11 +187,10 @@ class ThreadController(Controller):
 
             Raises 403 if the user is not a member of that thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_view_exception
 
-            return ThreadService.get_thread_time_statistics(thread_id, time_range)
+            return ThreadService.get_thread_event_timeseries(thread_id, time_range)
 
         return self
 
@@ -212,8 +208,7 @@ class ThreadController(Controller):
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.remove_agent_from_thread(thread_id, agent_class, agent_id, t)
@@ -231,8 +226,7 @@ class ThreadController(Controller):
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             # TODO: Check if new users has access to all agents in thread
@@ -252,8 +246,7 @@ class ThreadController(Controller):
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.remove_user_from_thread(thread_id, remove_user_id, t)

@@ -19,7 +19,7 @@ export const useThreadEvents = defineQuery(() => {
       return await getEvents({
         composable: '$fetch',
         query: {
-          thread_id: route.params.thread_id,
+          thread_id: route.params.thread_id as string,
         },
       })
     },
@@ -72,6 +72,7 @@ export const useThreadEvents = defineQuery(() => {
         if (parents.includes('StopEvent') || parents.includes('ExceptionEvent')) {
           console.log('Invalidating', ['threads', event.thread_id])
           queryCache.invalidateQueries({ key: ['threads', event.thread_id] })
+          queryCache.invalidateQueries({ key: ['agent', event.agent_class, event.agent_id] })
         }
       }
     }

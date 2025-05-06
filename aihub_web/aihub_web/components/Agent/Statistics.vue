@@ -9,7 +9,7 @@
       />
     </div>
     <div
-      v-if="!threadEventTimeseriesIsLoading && threadEventTimeseries"
+      v-if="!agentEventTimeseriesIsLoading && agentEventTimeseries"
       class="grid grid-cols-1 lg:grid-cols-2"
     >
       <div
@@ -20,7 +20,7 @@
           {{ bar.title }}
         </h3>
         <EventTimeseries
-          :statistics="threadEventTimeseries"
+          :statistics="agentEventTimeseries"
           :bars="bar.bars"
           :title="bar.title"
         />
@@ -30,17 +30,15 @@
 </template>
 
 <script setup lang="ts">
-import { useThreadEventTimeseries } from '@core/composables/thread/useThreadEventTimeseries'
-
-import type { EventBucket, ThreadDto } from '@core/sdk/client'
+import type { AgentDto, EventBucket } from '@core/sdk/client'
 
 defineProps<{
-  thread: ThreadDto
+  agent: AgentDto
 }>()
 
 const options = ref<string[]>(['1h', '24h', '30d', '365d'])
 
-const { threadEventTimeseries, threadEventTimeseriesIsLoading, timeRange } = useThreadEventTimeseries()
+const { agentEventTimeseries, agentEventTimeseriesIsLoading, timeRange } = useAgentEventTimeseries()
 
 const bars = computed<{ title: string, key: string, bars: { key: keyof EventBucket, name: string, color?: string }[] }[]>(() => [
   {

@@ -1,7 +1,9 @@
 import asyncio
 from asyncio import sleep
-from typing import List, Optional
+from typing import List, Optional, Literal
 
+from aihub_api.routes.agent.dto.AgentEventTimeseries import AgentEventTimeseries
+from aihub_api.routes.event.EventService import EventService
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -272,6 +274,27 @@ class AgentService:
         Retrieves a paginated list of threads that a specific agent is part of.
         """
         return ThreadService.get_paginated_threads_for_agent(agent_class, agent_id, t, page=page, page_size=page_size)
+
+    @staticmethod
+    def get_agent_event_timeseries(
+            agent_class: str, agent_id: str, time_range: Literal["1h", "24h", "30d", "365d"]
+    ) -> AgentEventTimeseries:
+        """Gets time-based statistics for a thread."""
+        buckets, start_time, end_time, resolution = EventService.get_event_timeseries(
+            time_range=time_range,
+            agent_class=agent_class,
+            agent_id=agent_id
+        )
+
+        return AgentEventTimeseries(
+            agent_class=agent_class,
+            agent_id=agent_id,
+            time_range=time_range,
+            resolution=resolution,
+            start_time=start_time,
+            end_time=end_time,
+            buckets=buckets,
+        )
 
     @staticmethod
     def clear_cache() -> None:

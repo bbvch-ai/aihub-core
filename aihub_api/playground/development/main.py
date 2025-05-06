@@ -60,10 +60,11 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread()
-        .get_thread_time_statistics(),
+        .get_thread_event_timeseries(),
         AgentController(auth=auth)
         .get_agent()
         .get_agent_threads()
+        .get_agent_event_timeseries()
         .get_agents()
         .discover_agents()
         .send_event_to(

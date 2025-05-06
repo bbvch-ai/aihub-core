@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Literal, Optional
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
@@ -30,7 +31,7 @@ from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStat
 from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
 from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
 from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
-from aihub_api.routes.thread.dto.statistics.ThreadTimeStatisticsDTO import EventBucket, ThreadTimeStatisticsDTO
+from aihub_api.routes.thread.dto.statistics.ThreadEventTimeseries import ThreadEventTimeseries
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
@@ -74,6 +75,11 @@ class ThreadService:
             raise ValueError("Invalid thread_id provided.")
         thread = ThreadEntity.get_thread_by_id(thread_id)
         return ThreadService.thread_response_from_entity(thread, t)
+
+    @staticmethod
+    def user_in_thread(thread_id: str, user: AuthenticatedUser) -> bool:
+        thread = ThreadEntity.get_thread_by_id(thread_id)
+        return user.oid in [u.user_id for u in thread.users]
 
     @staticmethod
     def get_paginated_threads_for_user(
@@ -308,31 +314,16 @@ class ThreadService:
         return stats
 
     @staticmethod
-    def get_thread_time_statistics(
+    def get_thread_event_timeseries(
         thread_id: str, time_range: Literal["1h", "24h", "30d", "365d"]
-    ) -> ThreadTimeStatisticsDTO:
+    ) -> ThreadEventTimeseries:
         """Gets time-based statistics for a thread."""
-        buckets_data, start_time, end_time, resolution = PersistedEventEntity.get_thread_time_statistics(
-            thread_id, time_range
+        buckets, start_time, end_time, resolution = PersistedEventEntity.get_event_timeseries(
+            time_range=time_range,
+            thread_id=thread_id,
         )
 
-        buckets = [
-            EventBucket(
-                start_time=bucket["start_time"],
-                end_time=bucket["end_time"],
-                total_events=bucket["total_events"],
-                start_events=bucket["start_events"],
-                stop_events=bucket["stop_events"],
-                exception_events=bucket["exception_events"],
-                hitl_events=bucket["hitl_events"],
-                bitl_events=bucket["bitl_events"],
-                aitl_events=bucket["aitl_events"],
-                other_events=bucket["other_events"],
-            )
-            for bucket in buckets_data
-        ]
-
-        return ThreadTimeStatisticsDTO(
+        return ThreadEventTimeseries(
             thread_id=thread_id,
             time_range=time_range,
             resolution=resolution,
@@ -366,7 +357,7 @@ class ThreadService:
 
         response = ThreadDTO(
             id=str(entity.id),
-            created_at=RunStatistics.format_datetime(entity.created_at),
+            created_at=(entity.created_at.replace(tzinfo=timezone.utc) if entity.created_at.tzinfo is None else entity.created_at).isoformat().replace("+00:00", "Z"),
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),

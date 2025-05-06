@@ -13,12 +13,11 @@
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { ThreadDto, ThreadTimeStatisticsDto, EventBucket } from '@core/sdk/client' // Adjust path as needed
+import type { AgentEventTimeseries, EventBucket, ThreadEventTimeseries } from '@core/sdk/client' // Adjust path as needed
 import type { ApexOptions } from 'apexcharts'
 
 const props = defineProps<{
-  statistics: ThreadTimeStatisticsDto
-  thread: ThreadDto
+  statistics: ThreadEventTimeseries | AgentEventTimeseries
   title: string
   bars: Array<{ key: keyof EventBucket, name: string, color?: string }>
 }>()
@@ -79,12 +78,7 @@ const chartOptions = computed<ApexOptions>(() => {
         }
         return date.toLocaleTimeString('de-CH', options)
       }
-      else {
-        // For 30d, show e.g., "May 01" or "01. Mai"
-        return date.toLocaleDateString('de-CH', { month: 'short', day: '2-digit' })
-      }
-      // Default fallback (should ideally be covered by above)
-      return date.toLocaleDateString('de-CH')
+      return date.toLocaleDateString('de-CH', { month: 'short', day: '2-digit' })
     }
   }
 

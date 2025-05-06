@@ -6,63 +6,65 @@
   />
   <div
     v-else
-    class="flex flex-col gap-8 p-3"
+    class="flex flex-col gap-16 p-3"
   >
-    <div>
-      <p class="text-xl font-bold">
-        {{ agent?.agent_config.name }}
-      </p>
-      <p class="text-sm">
-        {{ agent?.agent_config.description }}
-      </p>
-    </div>
-    <div class="flex flex-col gap-2">
-      <p class="text-lg font-bold">
-        {{ $t('agent.overview.startEvents') }}
-      </p>
-      <Panel
-        v-for="event in agent?.start_events"
-        :key="event.event_name"
-        :header="event.event_name"
-        toggleable
-        collapsed
-      >
-        <div class="text-sm text-surface-700 dark:text-surface-200">
-          {{ event.event_schema.description }}
+    <Panel
+      class="panel pt-5"
+    >
+      <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">
+            {{ t('agent.overview.name') }}
+          </span>
+          <Tag
+            :value="agent.agent_config.name"
+            severity="secondary"
+          />
         </div>
-      </Panel>
-    </div>
-    <div class="flex flex-col gap-2">
-      <p class="text-lg font-bold">
-        {{ $t('agent.overview.stopEvents') }}
-      </p>
-      <Panel
-        v-for="event in (agent?.stop_events ?? [])"
-        :key="event.event_name"
-        :header="event.event_name"
-        toggleable
-        collapsed
-      >
-        <div class="text-sm text-surface-700 dark:text-surface-200">
-          {{ event.event_schema.description }}
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">
+            {{ t('agent.overview.class') }}
+          </span>
+          <Tag
+            :value="agent.agent_class"
+            severity="secondary"
+          />
         </div>
-      </Panel>
-    </div>
-    <div>
-      <p class="text-xl font-bold">
-        {{ $t('agent.overview.config') }}
-      </p>
-      <div class="rounded-lg border border-surface-300 p-3 dark:border-surface-700">
-        <pre class="text-sm">{{ agent?.agent_config }}</pre>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">
+            {{ t('agent.overview.agentId') }}
+          </span>
+          <Tag
+            :value="agent.agent_id"
+            severity="secondary"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">
+            {{ t('agent.overview.status') }}
+          </span>
+          <Tag
+            :value="agent.is_online ? t('agent.overview.online') : t('agent.overview.offline')"
+            :severity="agent.is_online ? 'success' : 'error' "
+          />
+        </div>
       </div>
-    </div>
+    </Panel>
+    <AgentStatistics
+      :agent="agent"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 const { agent, agentIsLoading } = useAgent()
+const { t } = useI18n()
 </script>
 
 <style scoped>
-
+::v-deep(.panel) {
+  .p-panel-header {
+    padding: 0 !important;
+  }
+}
 </style>

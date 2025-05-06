@@ -35,8 +35,12 @@
         <div
           v-for="(block, index) in message.blocks"
           :key="index"
-          class="mb-1 w-full max-w-[90%] rounded-3xl bg-surface-50 px-5  py-2 dark:bg-surface-800 "
-          :class="{ 'cursor-pointer': isClickable, 'hover:opacity-80': isClickable }"
+          class="mb-1 w-full max-w-[90%] rounded-3xl text-lg"
+          :class="{
+            'cursor-pointer': isClickable,
+            'hover:opacity-80': isClickable,
+            'bg-surface-50 px-5 py-2 dark:bg-surface-800': message.role == 'user',
+          }"
         >
           <p v-if="block?.block_type === 'text'">
             {{ block.text }}
