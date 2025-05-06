@@ -56,6 +56,7 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread()
+        .get_thread_time_statistics()
     )
     runner.mount(controller)
     await runner.start_simulation()

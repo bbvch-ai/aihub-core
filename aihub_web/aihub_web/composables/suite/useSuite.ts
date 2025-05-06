@@ -3,7 +3,7 @@ import { getSuite, type SuiteDto } from '@core/sdk/client'
 export const useSuite = defineQuery(() => {
   const {
     data: suite,
-    isLoading: suiteIsLoading,
+    isPending: suiteIsLoading,
   } = useQuery<SuiteDto>({
     key: () => ['suite'],
     staleTime: 1000 * 60 * 5, // 5 minutes

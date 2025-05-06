@@ -272,7 +272,7 @@ class BaseEvent(BaseModel):
         created_at = event_dict["created_at"]
 
         # Convert ns timestamp to a readable datetime
-        created_datetime = datetime.fromtimestamp(created_at / 1_000_000_000)
+        created_datetime = datetime.fromtimestamp(created_at / 1e9)
         event_dict["created_at"] = created_datetime.strftime("%Y-%m-%d %H:%M:%S.%f") + f"{created_at % 1_000:03d}"
         return event_dict
 

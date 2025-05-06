@@ -59,7 +59,8 @@ async def main():
         .add_agent_to_thread()
         .remove_agent_from_thread()
         .add_user_to_thread()
-        .remove_user_from_thread(),
+        .remove_user_from_thread()
+        .get_thread_time_statistics(),
         AgentController(auth=auth)
         .get_agent()
         .get_agent_threads()

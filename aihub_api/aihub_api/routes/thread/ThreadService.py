@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
@@ -30,6 +30,7 @@ from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStat
 from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
 from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
 from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
+from aihub_api.routes.thread.dto.statistics.ThreadTimeStatisticsDTO import EventBucket, ThreadTimeStatisticsDTO
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
@@ -307,6 +308,40 @@ class ThreadService:
         return stats
 
     @staticmethod
+    def get_thread_time_statistics(
+        thread_id: str, time_range: Literal["1h", "24h", "30d", "365d"]
+    ) -> ThreadTimeStatisticsDTO:
+        """Gets time-based statistics for a thread."""
+        buckets_data, start_time, end_time, resolution = PersistedEventEntity.get_thread_time_statistics(
+            thread_id, time_range
+        )
+
+        buckets = [
+            EventBucket(
+                start_time=bucket["start_time"],
+                end_time=bucket["end_time"],
+                total_events=bucket["total_events"],
+                start_events=bucket["start_events"],
+                stop_events=bucket["stop_events"],
+                exception_events=bucket["exception_events"],
+                hitl_events=bucket["hitl_events"],
+                bitl_events=bucket["bitl_events"],
+                aitl_events=bucket["aitl_events"],
+                other_events=bucket["other_events"],
+            )
+            for bucket in buckets_data
+        ]
+
+        return ThreadTimeStatisticsDTO(
+            thread_id=thread_id,
+            time_range=time_range,
+            resolution=resolution,
+            start_time=start_time,
+            end_time=end_time,
+            buckets=buckets,
+        )
+
+    @staticmethod
     def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
         """
         Constructs the comprehensive ThreadDTO from a ThreadEntity, including
@@ -323,17 +358,15 @@ class ThreadService:
         user_dtos: List[UserDTO] = []
         for user_ref in entity.users:
             try:
-                # Assuming UserService provides a method to fetch by OID
                 user_dto = UserService.get_user_by_oid(user_ref.user_id)
                 if user_dto:
                     user_dtos.append(user_dto)
             except Exception as e:
                 logger.warning(f"Could not fetch user {user_ref.user_id}: {e}")
 
-        # Create the base response DTO
         response = ThreadDTO(
             id=str(entity.id),
-            created_at=entity.created_at.isoformat() + "Z",  # Ensure UTC ISO format
+            created_at=entity.created_at.isoformat() + "Z",
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
@@ -341,15 +374,12 @@ class ThreadService:
 
         # 2. Get aggregated run statistics from the database
         try:
-            # Assumes the DB method returns a list of dictionaries
             aggregated_runs: List[Dict] = PersistedEventEntity.get_aggregated_run_statistics(str(entity.id))
         except Exception as e:
             logger.exception(f"Failed to get aggregated run statistics for thread {entity.id}: {e}")
-            # Return the DTO with only base info if aggregation fails
             return response
 
         if not aggregated_runs:
-            # Return base info if there are no events/runs to process
             return response
 
         # 3. Process raw run data into intermediate structures
@@ -359,34 +389,29 @@ class ThreadService:
         final_display_dtos: List[DisplayStatistics] = []
         for intermediate_stat in processed_results.display_aggregates.values():
             try:
-                # Use the classmethod which handles internal sorting of runs
                 display_dto = DisplayStatistics.from_intermediate(intermediate_stat)
                 final_display_dtos.append(display_dto)
             except Exception as e:
                 logger.exception(
                     f"Error creating DisplayStatistics DTO for display {intermediate_stat.display_id}: {e}"
                 )
-                # Continue processing other displays if one fails
 
-        # Sort the final list of displays based on their start time
-        # Use a robust sorting key that handles None values gracefully
         min_utc_datetime = datetime.min.replace(tzinfo=timezone.utc)
 
         def display_sort_key(display: DisplayStatistics) -> datetime:
             if display.started_at:
                 try:
                     return datetime.fromisoformat(display.started_at.replace("Z", "+00:00"))
-                except (ValueError, TypeError):  # Handle potential format issues or None
+                except (ValueError, TypeError):
                     logger.warning(f"Could not parse display start time for sorting: {display.started_at}")
                     return min_utc_datetime
-            return min_utc_datetime  # Displays without a start time sort first
+            return min_utc_datetime
 
         response.displays = sorted(final_display_dtos, key=display_sort_key)
 
         # 5. Fetch DTOs for all unique participating agents
         final_participating_agents: List[MinimalAgentDTO] = []
         for agent_id in processed_results.participating_agent_ids:
-            # Use the cached fetch method again
             dto = ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
             if dto:
                 final_participating_agents.append(dto)
@@ -410,8 +435,8 @@ class ThreadService:
         response.is_aitl = overall_stats.is_aitl
         response.open_aitl = overall_stats.open_aitl
         response.llm_cost = overall_stats.llm_cost
-        response.first_interaction = overall_stats.first_interaction  # Use property for ISO string
-        response.latest_interaction = overall_stats.latest_interaction  # Use property for ISO string
+        response.first_interaction = overall_stats.first_interaction
+        response.latest_interaction = overall_stats.latest_interaction
         response.latency = overall_stats.latency
 
         return response

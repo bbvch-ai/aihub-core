@@ -1,11 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Path, Security
+from fastapi import Depends, HTTPException, Path, Query, Security
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
@@ -16,6 +16,7 @@ from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
+from aihub_api.routes.thread.dto.statistics.ThreadTimeStatisticsDTO import ThreadTimeStatisticsDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 
@@ -164,6 +165,38 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.thread_as_message_history(thread_id)
+
+    def get_thread_time_statistics(self, route: str = "/{thread_id}/statistics/time") -> "ThreadController":
+        @self.router.get(route, tags=self.tags)
+        async def get_thread_time_statistics(
+            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            time_range: Annotated[
+                Literal["1h", "24h", "30d", "365d"],
+                Query(
+                    title="Time Range",
+                    description="Time range for the statistics (1h, 24h, 30d, 365d)",
+                ),
+            ] = "24h",
+            user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
+        ) -> ThreadTimeStatisticsDTO:
+            """
+            Retrieves time-based statistics for a thread.
+            Returns event counts in time buckets with resolution based on the time range:
+            - 1h: 1 minute resolution
+            - 24h: 1 hour resolution
+            - 30d: 1 day resolution
+            - 365d: 1 week resolution
+
+            Raises 403 if the user is not a member of that thread.
+            """
+            thread = ThreadService.get_thread_by_id(thread_id, t)
+            if user.oid not in [u.id for u in thread.users]:
+                raise self.not_authorized_to_view_exception
+
+            return ThreadService.get_thread_time_statistics(thread_id, time_range)
+
+        return self
 
     def remove_agent_from_thread(
         self, route: str = "/{thread_id}/agents/{agent_class}/{agent_id}"

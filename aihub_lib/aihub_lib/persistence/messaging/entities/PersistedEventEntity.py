@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
+from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
@@ -124,7 +125,7 @@ class PersistedEventEntity(Document):
             # 1. Match events for the given thread
             {"$match": {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
-            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1_000_000]}}}},
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
             # 4. Group events by run_id to calculate run-level stats
@@ -356,3 +357,203 @@ class PersistedEventEntity(Document):
             )
 
         return message_history
+
+    @classmethod
+    def get_thread_time_statistics(
+        cls,
+        thread_id: str,
+        time_range: Literal["1h", "24h", "30d", "365d"],
+    ) -> Tuple[List[Dict], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
+        """
+        Uses MongoDB aggregation to calculate time-based statistics for a thread.
+        Returns a list of dictionaries, each representing a time bucket with event counts.
+        """
+        # Calculate time range and resolution
+        if time_range == "1h":
+            now = datetime.now(timezone.utc)
+            start_time = now - timedelta(hours=1)
+            resolution = "1m"
+            interval_seconds = 60  # 1 minute
+        else:
+            # For all other ranges, set "now" to the end of today
+            now = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
+
+            if time_range == "24h":
+                start_time = now - timedelta(hours=24)
+                resolution = "1h"
+                interval_seconds = 3600  # 1 hour
+            elif time_range == "30d":
+                start_time = now - timedelta(days=30)
+                resolution = "1d"
+                interval_seconds = 86400  # 1 day
+            elif time_range == "365d":
+                start_time = now - timedelta(days=365)
+                resolution = "1w"
+                interval_seconds = 604800  # 1 week
+            else:
+                raise ValueError(f"Invalid time range: {time_range}")
+
+        # Create the aggregation pipeline
+        pipeline = [
+            # 1. Match events for the given thread within the time range
+            {
+                "$match": {
+                    "thread_id": thread_id,
+                    "event_data.created_at": {
+                        "$gte": int(start_time.timestamp() * 1e9),  # Convert to microseconds
+                        "$lte": int(now.timestamp() * 1e9),  # Convert to microseconds
+                    }
+                }
+            },
+            # 2. Add a standardized BSON date field
+            {
+                "$addFields": {
+                    "event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}
+                }
+            },
+            # 3. Create time buckets based on the resolution
+            {
+                "$addFields": {
+                    "time_bucket": {
+                        "$subtract": [
+                            {"$toLong": "$event_time"},
+                            {"$mod": [{"$toLong": "$event_time"}, interval_seconds * 1000]}  # Convert to milliseconds
+                        ]
+                    }
+                }
+            },
+            # 4. Group events by time bucket
+            {
+                "$group": {
+                    "_id": "$time_bucket",
+                    "start_time": {"$first": {"$toDate": "$time_bucket"}},
+                    "total_events": {"$sum": 1},
+                    "start_events": {
+                        "$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "stop_events": {
+                        "$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "exception_events": {
+                        "$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "hitl_request_events": {
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "hitl_response_events": {
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "bitl_request_events": {
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "bitl_response_events": {
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "aitl_request_events": {
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "aitl_response_events": {
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                    },
+                }
+            },
+            # 5. Calculate combined event counts
+            {
+                "$addFields": {
+                    "hitl_events": {"$add": ["$hitl_request_events", "$hitl_response_events"]},
+                    "bitl_events": {"$add": ["$bitl_request_events", "$bitl_response_events"]},
+                    "aitl_events": {"$add": ["$aitl_request_events", "$aitl_response_events"]},
+                }
+            },
+            # 6. Calculate other events
+            {
+                "$addFields": {
+                    "other_events": {
+                        "$subtract": [
+                            "$total_events",
+                            {
+                                "$add": [
+                                    "$exception_events",
+                                    "$hitl_events",
+                                    "$bitl_events",
+                                    "$aitl_events",
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            # 7. Add end_time field (start_time + interval)
+            {
+                "$addFields": {
+                    "end_time": {"$toDate": {"$add": ["$_id", interval_seconds * 1000]}}  # Convert to milliseconds
+                }
+            },
+            # 8. Project the final fields
+            {
+                "$project": {
+                    "_id": 0,
+                    "start_time": 1,
+                    "end_time": 1,
+                    "total_events": 1,
+                    "start_events": 1,
+                    "stop_events": 1,
+                    "exception_events": 1,
+                    "hitl_events": 1,
+                    "bitl_events": 1,
+                    "aitl_events": 1,
+                    "other_events": 1,
+                }
+            },
+            # 9. Sort by start_time
+            {
+                "$sort": {"start_time": 1}
+            }
+        ]
+
+        # Execute the aggregation pipeline
+        results = list(cls.objects.aggregate(pipeline))
+
+        # Ensure MongoDB results have timezone info
+        for result in results:
+            if result["start_time"].tzinfo is None:
+                result["start_time"] = result["start_time"].replace(tzinfo=timezone.utc)
+            if result["end_time"].tzinfo is None:
+                result["end_time"] = result["end_time"].replace(tzinfo=timezone.utc)
+
+
+        # Fill in missing buckets with zero counts
+        filled_results = []
+        current_time = start_time
+
+        while current_time < now:
+            # Find the bucket for the current time
+            bucket = next(
+                (
+                    b for b in results
+                    if b["start_time"] <= current_time < b["end_time"]
+                ),
+                None
+            )
+
+            if bucket:
+                filled_results.append(bucket)
+            else:
+                # Create an empty bucket
+                filled_results.append({
+                    "start_time": current_time,
+                    "end_time": current_time + timedelta(seconds=interval_seconds),
+                    "total_events": 0,
+                    "start_events": 0,
+                    "stop_events": 0,
+                    "exception_events": 0,
+                    "hitl_events": 0,
+                    "bitl_events": 0,
+                    "aitl_events": 0,
+                    "other_events": 0,
+                })
+
+            # Move to the next bucket
+            current_time += timedelta(seconds=interval_seconds)
+
+        return filled_results, start_time, now, resolution

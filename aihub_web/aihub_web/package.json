@@ -64,6 +64,7 @@
     "@vue-flow/minimap": "^1.5.2",
     "@vueuse/integrations": "^13.0.0",
     "@vueuse/router": "^13.1.0",
+    "apexcharts": "^4.7.0",
     "bson-objectid": "^2.0.4",
     "change-case": "^5",
     "class-variance-authority": "^0.7.1",
@@ -77,6 +78,7 @@
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
-    "tailwindcss-primeui": "^0.5.1"
+    "tailwindcss-primeui": "^0.5.1",
+    "vue3-apexcharts": "^1.8.0"
   }
 }

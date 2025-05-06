@@ -6,7 +6,7 @@
   />
   <div
     v-else
-    class="flex flex-col gap-12 p-3"
+    class="flex flex-col gap-16 p-3"
   >
     <Panel
       class="panel pt-5"
@@ -32,32 +32,20 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">
-            {{ $t('eventList.pending') }}
+            {{ $t('eventList.latency') }}
           </span>
           <Tag
-            v-if="thread.has_pending"
-            severity="warn"
-            :value="pendingType(thread)"
-          />
-          <Tag
-            v-else
-            severity="success"
-            :value="$t('eventList.no')"
+            :value="thread.latency + 's'"
+            severity="secondary"
           />
         </div>
         <div class="flex items-center gap-2">
           <span class="font-semibold">
-            {{ $t('eventList.status') }}
+            {{ $t('eventList.costs') }}
           </span>
           <Tag
-            v-if="thread.has_errors"
-            severity="danger"
-            :value="$t('eventList.error')"
-          />
-          <Tag
-            v-else
-            severity="success"
-            :value="$t('eventList.successful')"
+            :value="thread.llm_cost.toFixed(6) + 'CHF'"
+            severity="secondary"
           />
         </div>
       </div>
@@ -65,6 +53,7 @@
     <ThreadInfo
       :thread="thread"
     />
+    <ThreadStatistics :thread="thread" />
   </div>
 </template>
 

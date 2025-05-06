@@ -9,7 +9,7 @@ export const useThreads = defineQuery(() => {
     loadMore: loadMoreThreads,
     isLoading: threadsAreLoading,
   } = useInfiniteQuery({
-    key: () => ['user-threads'],
+    key: () => ['threads'],
     query: async ({ nextPage }) => {
       if (nextPage === null) return null
 

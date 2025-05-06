@@ -352,7 +352,13 @@ export type AudioBlock = {
 };
 
 export type AudioContent = {
+    /**
+     * Block type, must be 'audio' for AudioContent
+     */
     type?: 'audio';
+    /**
+     * Base64 encoded audio or url pointing to externally stored audio
+     */
     url?: string | null;
     mime_type?: string | null;
 };
@@ -1079,6 +1085,52 @@ export type EmbeddingsResponse = {
 };
 
 /**
+ * Represents a time bucket with event counts by type.
+ */
+export type EventBucket = {
+    /**
+     * Start time of the bucket
+     */
+    start_time: Date;
+    /**
+     * End time of the bucket
+     */
+    end_time: Date;
+    /**
+     * Total number of events in this bucket
+     */
+    total_events?: number;
+    /**
+     * Number of start events
+     */
+    start_events?: number;
+    /**
+     * Number of stop events
+     */
+    stop_events?: number;
+    /**
+     * Number of exception events
+     */
+    exception_events?: number;
+    /**
+     * Number of Human-In-The-Loop events (requests + responses)
+     */
+    hitl_events?: number;
+    /**
+     * Number of Bot-In-The-Loop events (requests + responses)
+     */
+    bitl_events?: number;
+    /**
+     * Number of Agent-In-The-Loop events (requests + responses)
+     */
+    aitl_events?: number;
+    /**
+     * Number of other events
+     */
+    other_events?: number;
+};
+
+/**
  * Information about an event.
  */
 export type EventInfo = {
@@ -1402,7 +1454,13 @@ export type ImageBlock = {
 };
 
 export type ImageContent = {
+    /**
+     * Block type, must be 'image' for ImageContent
+     */
     type?: 'image';
+    /**
+     * Base64 encoded image or url pointing to externally stored image
+     */
     url?: string | null;
 };
 
@@ -1843,10 +1901,6 @@ export type Message = {
      */
     role: string;
     /**
-     * The content of the message.
-     */
-    content?: string | null;
-    /**
      * The name of the function or agent generating the message.
      */
     name?: string | null;
@@ -1874,6 +1928,7 @@ export type Message = {
      * The message contents as an array of content blocks (text, image, audio).
      */
     contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    readonly content: string;
 };
 
 /**
@@ -1897,11 +1952,11 @@ export const MessageRole = {
 
 export type Metadata = {
     /**
-     * The thread ID to which conversation shall e sent.
+     * Provide thread ID to continue conversation in an existing thread.
      */
     thread_id?: string | null;
     /**
-     * The display ID set for this run.
+     * Gives control over display ID used for this run.
      */
     display_id?: string | null;
     /**
@@ -2562,7 +2617,13 @@ export type TextBlock = {
 };
 
 export type TextContent = {
+    /**
+     * Block type, must be 'text' for TextContent
+     */
     type?: 'text';
+    /**
+     * Text content of the message
+     */
     text: string;
 };
 
@@ -2731,6 +2792,36 @@ export type ThreadDto = {
      * Total LLM cost of the thread
      */
     llm_cost?: number;
+};
+
+/**
+ * Statistics for a thread over a specific time range with bucketed data.
+ */
+export type ThreadTimeStatisticsDto = {
+    /**
+     * The thread ID
+     */
+    thread_id: string;
+    /**
+     * Time range for the statistics
+     */
+    time_range: '1h' | '24h' | '30d' | '365d';
+    /**
+     * Resolution of the buckets
+     */
+    resolution: '1m' | '1h' | '1d' | '1w';
+    /**
+     * Start time of the entire range
+     */
+    start_time: Date;
+    /**
+     * End time of the entire range
+     */
+    end_time: Date;
+    /**
+     * List of time buckets with event counts
+     */
+    buckets: Array<EventBucket>;
 };
 
 export type TokenResponse = {
@@ -2966,14 +3057,6 @@ export type UserMessageEvent = {
 };
 
 export type UserMessageEventInput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString;
     /**
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
@@ -3389,6 +3472,38 @@ export type RemoveUserFromThreadResponses = {
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
+
+export type GetThreadTimeStatisticsData = {
+    body?: never;
+    path: {
+        thread_id: string;
+    };
+    query?: {
+        /**
+         * Time range for the statistics (1h, 24h, 30d, 365d)
+         */
+        time_range?: '1h' | '24h' | '30d' | '365d';
+    };
+    url: '/thread/{thread_id}/statistics/time';
+};
+
+export type GetThreadTimeStatisticsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetThreadTimeStatisticsError = GetThreadTimeStatisticsErrors[keyof GetThreadTimeStatisticsErrors];
+
+export type GetThreadTimeStatisticsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadTimeStatisticsDto;
+};
+
+export type GetThreadTimeStatisticsResponse = GetThreadTimeStatisticsResponses[keyof GetThreadTimeStatisticsResponses];
 
 export type GetAgentData = {
     body?: never;

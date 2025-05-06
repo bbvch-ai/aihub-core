@@ -664,6 +664,7 @@ export const AudioContentSchema = {
             type: 'string',
             const: 'audio',
             title: 'Type',
+            description: "Block type, must be 'audio' for AudioContent",
             default: 'audio'
         },
         url: {
@@ -675,7 +676,8 @@ export const AudioContentSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Url'
+            title: 'Url',
+            description: 'Base64 encoded audio or url pointing to externally stored audio'
         },
         mime_type: {
             anyOf: [
@@ -2924,6 +2926,75 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
+export const EventBucketSchema = {
+    properties: {
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the bucket'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the bucket'
+        },
+        total_events: {
+            type: 'integer',
+            title: 'Total Events',
+            description: 'Total number of events in this bucket',
+            default: 0
+        },
+        start_events: {
+            type: 'integer',
+            title: 'Start Events',
+            description: 'Number of start events',
+            default: 0
+        },
+        stop_events: {
+            type: 'integer',
+            title: 'Stop Events',
+            description: 'Number of stop events',
+            default: 0
+        },
+        exception_events: {
+            type: 'integer',
+            title: 'Exception Events',
+            description: 'Number of exception events',
+            default: 0
+        },
+        hitl_events: {
+            type: 'integer',
+            title: 'Hitl Events',
+            description: 'Number of Human-In-The-Loop events (requests + responses)',
+            default: 0
+        },
+        bitl_events: {
+            type: 'integer',
+            title: 'Bitl Events',
+            description: 'Number of Bot-In-The-Loop events (requests + responses)',
+            default: 0
+        },
+        aitl_events: {
+            type: 'integer',
+            title: 'Aitl Events',
+            description: 'Number of Agent-In-The-Loop events (requests + responses)',
+            default: 0
+        },
+        other_events: {
+            type: 'integer',
+            title: 'Other Events',
+            description: 'Number of other events',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['start_time', 'end_time'],
+    title: 'EventBucket',
+    description: 'Represents a time bucket with event counts by type.'
+} as const;
+
 export const EventInfoSchema = {
     properties: {
         name: {
@@ -3561,6 +3632,7 @@ export const ImageContentSchema = {
             type: 'string',
             const: 'image',
             title: 'Type',
+            description: "Block type, must be 'image' for ImageContent",
             default: 'image'
         },
         url: {
@@ -3572,7 +3644,8 @@ export const ImageContentSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Url'
+            title: 'Url',
+            description: 'Base64 encoded image or url pointing to externally stored image'
         }
     },
     type: 'object',
@@ -4661,18 +4734,6 @@ export const MessageSchema = {
             title: 'Role',
             description: "The role of the message, such as 'user', 'assistant', or 'system'."
         },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'The content of the message.'
-        },
         name: {
             anyOf: [
                 {
@@ -4762,10 +4823,15 @@ export const MessageSchema = {
             ],
             title: 'Contents',
             description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
         }
     },
     type: 'object',
-    required: ['role'],
+    required: ['role', 'content'],
     title: 'Message'
 } as const;
 
@@ -4788,7 +4854,7 @@ export const MetadataSchema = {
                 }
             ],
             title: 'Thread Id',
-            description: 'The thread ID to which conversation shall e sent.'
+            description: 'Provide thread ID to continue conversation in an existing thread.'
         },
         display_id: {
             anyOf: [
@@ -4800,7 +4866,7 @@ export const MetadataSchema = {
                 }
             ],
             title: 'Display Id',
-            description: 'The display ID set for this run.'
+            description: 'Gives control over display ID used for this run.'
         },
         reconstruct_history: {
             anyOf: [
@@ -5984,11 +6050,13 @@ export const TextContentSchema = {
             type: 'string',
             const: 'text',
             title: 'Type',
+            description: "Block type, must be 'text' for TextContent",
             default: 'text'
         },
         text: {
             type: 'string',
-            title: 'Text'
+            title: 'Text',
+            description: 'Text content of the message'
         }
     },
     type: 'object',
@@ -6301,6 +6369,52 @@ export const ThreadDTOSchema = {
     required: ['id', 'name', 'users', 'agents', 'created_at'],
     title: 'ThreadDTO',
     description: 'Thread information and statistics for API response.'
+} as const;
+
+export const ThreadTimeStatisticsDTOSchema = {
+    properties: {
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id',
+            description: 'The thread ID'
+        },
+        time_range: {
+            type: 'string',
+            enum: ['1h', '24h', '30d', '365d'],
+            title: 'Time Range',
+            description: 'Time range for the statistics'
+        },
+        resolution: {
+            type: 'string',
+            enum: ['1m', '1h', '1d', '1w'],
+            title: 'Resolution',
+            description: 'Resolution of the buckets'
+        },
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the entire range'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the entire range'
+        },
+        buckets: {
+            items: {
+                '$ref': '#/components/schemas/EventBucket'
+            },
+            type: 'array',
+            title: 'Buckets',
+            description: 'List of time buckets with event counts'
+        }
+    },
+    type: 'object',
+    required: ['thread_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
+    title: 'ThreadTimeStatisticsDTO',
+    description: 'Statistics for a thread over a specific time range with bucketed data.'
 } as const;
 
 export const TokenResponseSchema = {
@@ -6868,14 +6982,6 @@ are triggered, depending on the source of the event.`
 
 export const UserMessageEventInputSchema = {
     properties: {
-        display_name: {
-            '$ref': '#/components/schemas/LocaleString',
-            description: 'Display name for the event'
-        },
-        display_description: {
-            '$ref': '#/components/schemas/LocaleString',
-            description: 'Display description for the event'
-        },
         messages: {
             items: {
                 anyOf: [

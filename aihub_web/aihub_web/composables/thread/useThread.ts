@@ -3,9 +3,9 @@ import { useRoute } from 'vue-router'
 
 export const useThread = defineQuery(() => {
   const route = useRoute()
-  const { data: thread, isLoading: threadIsLoading } = useQuery<ThreadDto>({
+  const { data: thread, isPending: threadIsLoading } = useQuery<ThreadDto>({
     key: () => ['threads', route.params.thread_id as string],
-    staleTime: 1000 * 10, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {
       return await getThread({

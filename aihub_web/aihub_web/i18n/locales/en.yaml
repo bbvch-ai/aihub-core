@@ -30,6 +30,8 @@ chat:
 eventList:
   firstInteraction: "First Interaction:"
   lastInteraction: "Last Interaction:"
+  costs: "Costs:"
+  latency: "Latency:"
   pending: "Pending:"
   no: "No"
   status: "Status:"
