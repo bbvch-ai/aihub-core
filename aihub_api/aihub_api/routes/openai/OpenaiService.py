@@ -404,12 +404,10 @@ class OpenaiService:
         timestamp_granularities: Optional[List[Literal["word", "segment"]]],
     ) -> Transcription | TranscriptionVerbose | str:
         """
-        This method bridges the gap between API size limitations and practical
-        audio file sizes. Rather than rejecting large files, we intelligently
-        split them at optimal points, process them in parallel, and reconstruct
-        the transcription into a seamless result.
+        Transcribe an audio file to text.
+        Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
+        Handles chunking of large audio files to comply with API size limits.
         """
-
         models = [model for model in stt_models if model.name == model_name]
         if len(models) == 0:
             raise ValueError(f"Model {model_name} not found.")
