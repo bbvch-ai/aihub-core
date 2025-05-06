@@ -64,8 +64,8 @@ class JSPublisher(Generic[TEvent]):
             except asyncio.TimeoutError:
                 logger.warning(f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}")
             except Exception as e:
-                logger.error(f"NATS error while publishing event: {e}")
+                logger.exception(f"NATS error while publishing event: {e}")
 
             await asyncio.sleep(1)  # Wait before retrying
 
-        logger.error(f"Failed to publish event {event.event_name} after {retries} attempts")
+        logger.exception(f"Failed to publish event {event.event_name} after {retries} attempts")

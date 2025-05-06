@@ -1,0 +1,111 @@
+display_event:
+  name: "Evento di Visualizzazione"
+  description: "Un evento che mostra informazioni all'utente senza influenzare il flusso di lavoro."
+
+aitl_exception_event:
+  name: "Errore nella Delega del Compito"
+  description: "Un altro agente a cui è stato delegato un compito ha segnalato un errore e non ha potuto elaborare la richiesta."
+
+aitl_request_event:
+  name: "Delega del Compito a un Altro Agente"
+  description: "L'agente ha inoltrato un compito a un altro agente per beneficiare delle sue conoscenze specializzate."
+
+aitl_response_event:
+  name: "Risposta dell'Agente Delegato"
+  description: "L'altro agente ha elaborato con successo il compito assegnato e ha inviato una risposta."
+
+bitl_request_event:
+  name: "Richiesta al Agente"
+  description: "Una richiesta è stata inoltrata a un agente specializzato per completare un compito specifico."
+
+bitl_response_event:
+  name: "Risposta dal Agente"
+  description: "Il agente specializzato ha elaborato la richiesta e ha inviato una risposta."
+
+limit_chat_history_event:
+  name: "Cronologia Chat Limitata"
+  description: "La cronologia della chat è stata abbreviata per motivi di efficienza, mantenendo solo le parti più rilevanti."
+
+start_event:
+  name: "Processo Avviato"
+  description: "Un nuovo processo o compito è stato avviato."
+
+stop_event:
+  name: "Processo Completato"
+  description: "L'agente ha completato il suo compito e sta restituendo il controllo all'utente."
+
+cost_event:
+  name: "Panoramica dei Costi"
+  description: "Una panoramica dei costi sostenuti per le operazioni eseguite."
+
+llm_cost_event:
+  name: "Costi del Modello di Linguaggio"
+  description: "Sono stati sostenuti costi durante l'interazione con il modello di linguaggio, che sono elencati qui."
+
+chunk_event:
+  name: "Risposta Parziale"
+  description: "L'agente ha generato una parte della risposta e l'ha inviata all'utente, che è già visualizzata."
+
+thought_event:
+  name: "Processo di Pensiero"
+  description: "L'agente condivide il suo processo di pensiero interno, che lo aiuta a comprendere e risolvere il compito."
+
+guard_rejection_event:
+  name: "Richiesta Respinta"
+  description: "La richiesta è stata respinta per motivi di sicurezza o a causa di violazioni delle politiche."
+
+hitl_request_event:
+  name: "Richiesta all'Utente"
+  description: "L'agente ha bisogno di informazioni aggiuntive dall'utente per continuare con il compito."
+
+hitl_response_event:
+  name: "Risposta dell'Utente Ricevuta"
+  description: "L'utente ha risposto alla richiesta, e l'agente può procedere con il compito."
+
+router_event:
+  name: "Percorso ottimale scelto"
+  description: "L'agente ha scelto il percorso ottimale per procedere da qui."
+
+semantic_agent_event:
+  name: "Attività dell'Agente"
+  description: "Un agente specializzato sta eseguendo un compito come parte del processo complessivo."
+
+semantic_chain_event:
+  name: "Azioni Concatenate"
+  description: "Una serie di azioni interconnesse viene eseguita per risolvere un problema complesso."
+
+semantic_embedding_event:
+  name: "Ricerca di Informazioni"
+  description: "L'agente sta cercando nella sua base di conoscenza informazioni rilevanti per rispondere alla richiesta."
+
+semantic_guard_event:
+  name: "Controllo di Sicurezza"
+  description: "La richiesta viene controllata per la sicurezza e la conformità alle politiche."
+
+semantic_llm_event:
+  name: "Interazione con il Modello di Linguaggio"
+  description: "È stata eseguita un'interazione con il modello di linguaggio per elaborare o generare informazioni."
+
+semantic_llm_stop_event:
+  name: "Interazione con il Modello di Linguaggio Completata"
+  description: "L'interazione con il modello di linguaggio è stata completata."
+
+semantic_reranker_event:
+  name: "Ottimizzazione della Rilevanza"
+  description: "I documenti trovati vengono ordinati per rilevanza per selezionare le informazioni più appropriate per il compito."
+
+semantic_retriever_event:
+  name: "Documenti Trovati"
+  description: "L'agente ha trovato documenti rilevanti che potrebbero essere utili nell'elaborazione del compito."
+
+semantic_tool_event:
+  name: "Utilizzo dello Strumento"
+  description: "L'agente sta utilizzando uno strumento specializzato per completare un compito specifico in modo più efficiente."
+
+exception_event:
+  name: "Errore Verificato"
+  description: "Si è verificata un'eccezione o un errore durante il processo, interrompendo o modificando il flusso di lavoro e fornendo dettagli sull'errore."
+
+user_message_event:
+  name: "Richiesta dell'Utente"
+  description: "L'agente ha ricevuto un messaggio dall'utente e lo sta elaborando, tenendo conto della cronologia della chat precedente."

@@ -20,6 +20,7 @@ async def agent_api_client():
     controller = (
         AgentController(auth=auth)
         .discover_agents()
+        .get_agents()
         .get_agent()
         .send_event_to(
             AGENT_CLASS,
@@ -67,6 +68,7 @@ async def test_get_agent(agent_api_client):
 async def test_send_event_to_agent(agent_api_client):
     """Test POST /agent/{agent_class}/{agent_id}/send_event returns correct agent details."""
     user_message = create_input_model(UserMessageEvent)(messages=[ChatMessage(role="user", content="Hey!")])
+    print(user_message.model_dump_json())
     response = await agent_api_client.post(
         f"/agent/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
     )

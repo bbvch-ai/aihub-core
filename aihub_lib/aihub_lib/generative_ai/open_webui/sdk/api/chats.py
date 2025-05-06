@@ -80,7 +80,6 @@ class ChatsClient(BaseClient):
 
         # Create the form data
         form_data = ChatForm(chat=chat_data)
-        print(form_data.model_dump())
 
         # Send the request
         response = await self.post("/api/v1/chats/new", json_data=form_data.model_dump())

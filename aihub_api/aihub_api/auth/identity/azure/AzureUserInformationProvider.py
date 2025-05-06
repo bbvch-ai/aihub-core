@@ -1,4 +1,5 @@
 import base64
+import logging
 
 import httpx
 from azure.identity import DefaultAzureCredential
@@ -6,6 +7,8 @@ from cachetools import TTLCache, cached
 
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
 from aihub_api.routes.user.dto.UserDTO import UserDTO
+
+logger = logging.getLogger(__name__)
 
 
 class AzureUserInformationProvider(BaseUserInformationProvider):
@@ -59,7 +62,7 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
             else:
                 data_url = None
         except Exception as e:
-            print(f"Failed to fetch profile image: {e}")
+            logger.warning(f"Failed to fetch profile image: {e}")
             data_url = None
 
         # Return user information with the base64 encoded profile image as a data URI

@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional
+from typing import Annotated, Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.context.BaseContext import BaseContext
@@ -12,10 +12,12 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from nats.aio.client import Client as NATS
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+from openinference.semconv.resource import ResourceAttributes
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.propagate import extract, inject
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
@@ -64,13 +66,17 @@ class RunTraceCoordinator:
     finalizes the run’s trace, ensuring all spans are ended properly.
     """
 
-    def __init__(self, nc: NATS):
+    def __init__(
+        self,
+        nc: Annotated[NATS, "NATS client for messaging."],
+        project_name: Annotated[str, "Name that shows up as project in phoenix."],
+    ):
         self.nc = nc
 
         endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
         auth_token = PhoenixConfig().PHOENIX_AUTH_TOKEN
         headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}
-        tracer_provider = TracerProvider()
+        tracer_provider = TracerProvider(resource=Resource({ResourceAttributes.PROJECT_NAME: project_name}))
         set_tracer_provider(tracer_provider)
         tracer_provider.add_span_processor(
             BatchSpanProcessor(

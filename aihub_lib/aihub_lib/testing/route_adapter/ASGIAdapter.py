@@ -37,7 +37,6 @@ class ASGIAdapter(BaseAdapter):
 
     def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):
         # Use TestClient to call the app instead of going over the network.
-        print("Intercepted request")
         response = self.client.request(
             method=request.method,
             url=request.url,

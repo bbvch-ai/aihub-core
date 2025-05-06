@@ -1,8 +1,10 @@
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
-class StopEvent(ControlEvent, DisplayEvent):
+class StopEvent(ControlAndDisplayEvent):
     """
     An event signaling the conclusion of a run within a thread, acting both as a control signal
     and a user-facing message.
@@ -23,4 +25,5 @@ class StopEvent(ControlEvent, DisplayEvent):
     - Informing the user interface that the conversation or task has concluded.
     """
 
-    pass
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.description")

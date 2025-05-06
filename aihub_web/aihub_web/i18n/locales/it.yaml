@@ -1,0 +1,99 @@
+test: "Questo è un test"
+welcome: "Benvenuto in bbv ai-hub"
+
+user:
+  logout: "Disconnetti"
+  language: "Lingua"
+  languages:
+    en: "Inglese"
+    de: "Tedesco"
+    it: "Italiano"
+    fr: "Francese"
+
+thread:
+  users: "Utenti"
+  assistants: "Assistenti"
+  list:
+    name: "Nome"
+    agents: "Agenti"
+    created: "Creato"
+    numTurns: "Numero di Turni"
+    numEvents: "Numero di Eventi"
+    status: "Stato"
+    pending: "In attesa"
+  title: "Thread"
+
+chat:
+  assistant: "Assistente"
+  document: "Documento"
+
+eventList:
+  firstInteraction: "Prima Interazione:"
+  lastInteraction: "Ultima Interazione:"
+  pending: "In attesa:"
+  no: "No"
+  status: "Stato:"
+  error: "Errore"
+  successful: "Riuscito"
+  chat: "Chat"
+  agents: "Agenti:"
+
+threadUtils:
+  pendingTypes:
+    hitl: "Umano nel Loop"
+    aitl: "Agente nel Loop"
+    bitl: "Bot nel Loop"
+    unknown: "Motivo sconosciuto"
+
+costs:
+  table:
+    count: "Conteggio"
+    cost: "Costo"
+    input: "Input"
+    output: "Output"
+    embedding: "Embedding"
+    total: "Totale"
+    currency: "CHF"
+
+service:
+  selection:
+    title: "Servizi"
+    description: "Ecco tutti i servizi elencati che hai attivato"
+    search: "Cerca"
+
+agent:
+  overview:
+    startEvents: "Eventi di Avvio"
+    stopEvents: "Eventi di Arresto"
+    config: "Configurazione"
+  chat:
+    title: "Chat"
+    createThreadAndSend: "Crea Thread e Invia"
+    manuallyCreatedThread: "Thread creato manualmente"
+  threads:
+    title: "Thread dell'Agente"
+  navigation:
+    basic: "Base"
+    workflow: "Flusso di lavoro"
+    threads: "Thread"
+    chat: "Chat"
+  availableAgents: "Agenti Disponibili"
+
+auth:
+  renew:
+    processing: "Elaborazione del rinnovo silenzioso del token..."
+  callback:
+    processing: "Elaborazione del callback di autenticazione..."
+    loggingIn: "Accesso in corso..."
+    loginError: "Errore di Accesso"
+    redirectingToLogin: "Reindirizzamento alla pagina di accesso..."
+    genericError: "Si è verificato un errore durante l'accesso. Riprova."
+  login:
+    title: "Accedi"
+    description: "Accedi per utilizzare l'applicazione"
+    tagline: "Sperimenta il futuro dell'intelligenza artificiale"
+    welcome: "Benvenuto nell'AI Hub di {companyName}"
+    pleaseLogin: "Per favore, accedi"
+    loginWithMicrosoft: "Accedi con Microsoft"
+    customSolutions: "Soluzioni AI personalizzate per la tua azienda"
+    logoAlt: "Logo dell'azienda"

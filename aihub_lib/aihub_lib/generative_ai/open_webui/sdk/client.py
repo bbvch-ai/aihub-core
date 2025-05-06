@@ -98,7 +98,7 @@ class BaseClient:
             except Exception as e:
                 detail = response.text or str(e)
 
-            logger.error(f"API error {response.status_code}: {detail}")
+            logger.exception(f"API error {response.status_code}: {detail}")
             raise OpenWebuiAPIError(response.status_code, detail, response.text)
 
         return response
@@ -129,10 +129,10 @@ class BaseClient:
                 return await self._handle_response(response)
 
         except httpx.RequestError as e:
-            logger.error(f"Request error: {str(e)}")
+            logger.exception(f"Request error: {str(e)}")
             raise OpenWebuiAPIError(status_code=0, detail=f"Connection error: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
+            logger.exception(f"Unexpected error: {str(e)}")
             raise
 
     async def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> httpx.Response:

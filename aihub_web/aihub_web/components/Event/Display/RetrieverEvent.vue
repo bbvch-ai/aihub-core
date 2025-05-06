@@ -1,9 +1,8 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Dokumente Gefunden"
+    :thread="thread"
     icon="line-md:document-twotone"
-    subtitle="Der Assistent hat Dokumente gefunde, welche ihm bei seiner Aufgabe hilfreich sein könnten"
   >
     <div class="flex flex-col gap-4">
       <ChatSourceDocument
@@ -16,10 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import type { RetrieverEvent, WsServerEvent } from '@core/sdk/client'
+import type { RetrieverEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: RetrieverEvent }
+  thread: ThreadDto
 }>()
 </script>
 

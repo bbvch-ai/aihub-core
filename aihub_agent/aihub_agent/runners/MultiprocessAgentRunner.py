@@ -122,7 +122,7 @@ class MultiprocessAgentRunner:
             except KeyboardInterrupt:
                 logger.info(f"Process {process_index}: Received KeyboardInterrupt")
             except Exception as e:
-                logger.error(f"Process {process_index}: Error while running: {e}", exc_info=True)
+                logger.exception(f"Process {process_index}: Error while running: {e}")
             finally:
                 # Ensure proper cleanup
                 if runner and hasattr(runner, "stop") and not stop_loop.is_set():
@@ -133,7 +133,7 @@ class MultiprocessAgentRunner:
         try:
             asyncio.run(_run_agent())
         except Exception as e:
-            logger.error(f"Error in agent process {process_index}: {e}", exc_info=True)
+            logger.exception(f"Error in agent process {process_index}: {e}")
 
     def start(self):
         """

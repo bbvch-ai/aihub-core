@@ -23,9 +23,6 @@ class TokenAuthHandler(BearerAuthHandler):
 
     If any of these checks fail (e.g., if the token is missing, malformed, not found, or expired),
     an `HTTPException` with a 401 Unauthorized status is raised.
-
-    Returns:
-        AuthenticatedUser: A user instance constructed from the token's associated API user details.
     """
 
     async def __call__(

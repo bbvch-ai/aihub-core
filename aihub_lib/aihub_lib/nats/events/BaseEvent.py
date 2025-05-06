@@ -82,10 +82,19 @@ class BaseEvent(BaseModel):
     @computed_field
     @property
     def _parent_event_names(self) -> List[str]:
-        """Contains the names of all parent classes up until BaseEvent."""
+        """Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance."""
         if self._unknown_parent_classes is not None:
             return self._unknown_parent_classes
-        return [self.event_name] + list(get_parent_classes_until_base(self.__class__, BaseEvent))
+
+        result = [self.event_name]
+        parent_classes = get_parent_classes_until_base(self.__class__, BaseEvent)
+        class_dict = {cls.__name__: cls for cls in self.__class__.__mro__ if cls.__name__ in parent_classes}
+        sorted_parent_classes = sorted(
+            list(parent_classes), key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
+        )
+
+        result.extend(sorted_parent_classes)
+        return result
 
     @property
     def is_display_event(self) -> bool:
@@ -194,8 +203,8 @@ class BaseEvent(BaseModel):
                 ]
 
         # Get event type and parent classes
-        event_name = json_data.get("_event_name")
-        parent_classes = json_data.get("_parent_event_names", [])
+        event_name: str = json_data.get("_event_name")
+        parent_classes: List[str] = json_data.get("_parent_event_names", [])
 
         # If the exact class is registered, try to instantiate it and propagate any validation errors
         if event_name and isinstance(event_name, str):
@@ -208,35 +217,33 @@ class BaseEvent(BaseModel):
         # 2. The event type was null/invalid
 
         # Try to find the most specific parent class
-        candidates = []
         if parent_classes and isinstance(parent_classes, list):
-            for class_name, event_class in cls._event_registry.items():
-                # Check if this class is in the parent classes list
-                if class_name in parent_classes:
-                    # Get inheritance depth (higher means more specific)
-                    depth = get_inheritance_depth(event_class, BaseEvent)
-                    if depth >= 0:  # Only consider classes that inherit from BaseEvent
-                        candidates.append((event_class, depth))
+            for class_name in parent_classes:
+                event_class = cls._event_registry.get(class_name)
+                if event_class:
+                    try:
+                        # Special case handling for control and display events
+                        if event_class.__name__ == "ControlEvent" and "DisplayEvent" in parent_classes:
+                            event_class = cls._event_registry.get("ControlAndDisplayEvent")
 
-        # Sort candidates by depth (most specific/deepest first)
-        candidates.sort(key=lambda x: x[1], reverse=True)
+                        if event_class.__name__ == "DisplayEvent" and "ControlEvent" in parent_classes:
+                            event_class = cls._event_registry.get("ControlAndDisplayEvent")
 
-        # Try to instantiate candidates in order of specificity
-        for candidate_class, depth in candidates:
-            try:
-                # Create the instance with the parent class
-                event = candidate_class(**json_data)
+                        # Create the instance with the parent class
+                        event = event_class(**json_data)
 
-                # Set the private attributes since this isn't the exact original class
-                event._unknown_event_name = event_name
-                event._unknown_data = json_data
-                event._unknown_parent_classes = parent_classes
+                        # Set the private attributes since this isn't the exact original class
+                        event._unknown_event_name = event_name
+                        event._unknown_data = json_data
+                        event._unknown_parent_classes = parent_classes
 
-                logger.warning(f"{event_name} not found in registry. Using closest parent {candidate_class.__name__}.")
+                        logger.warning(
+                            f"{event_name} not found in registry. Using closest parent {event_class.__name__}."
+                        )
 
-                return event
-            except Exception as e:
-                logger.warning(f"Failed to create {candidate_class.__name__} instance: {e}. Trying next candidate.")
+                        return event
+                    except Exception as e:
+                        logger.warning(f"Failed to create {event_class.__name__} instance: {e}. Trying next candidate.")
 
         # If all else fails, fall back to BaseEvent
         logger.warning(f"{event_name} not found in registry. Using fallback {cls.__name__}.")

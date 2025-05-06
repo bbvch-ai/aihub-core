@@ -19,6 +19,13 @@ export default defineNuxtConfig({
 
   ssr: false,
 
+  imports: {
+    dirs: [
+      'composables',
+      'composables/**',
+    ],
+  },
+
   css: [
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
   ],
@@ -72,10 +79,22 @@ export default defineNuxtConfig({
       {
         code: 'en',
         file: 'en.yaml',
+        name: 'English',
       },
       {
         code: 'de',
         file: 'de.yaml',
+        name: 'Deutsch',
+      },
+      {
+        code: 'it',
+        file: 'it.yaml',
+        name: 'Italiano',
+      },
+      {
+        code: 'fr',
+        file: 'fr.yaml',
+        name: 'Français',
       },
     ],
     lazy: true,

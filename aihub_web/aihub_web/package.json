@@ -63,6 +63,7 @@
     "@vue-flow/core": "^1.42.4",
     "@vue-flow/minimap": "^1.5.2",
     "@vueuse/integrations": "^13.0.0",
+    "@vueuse/router": "^13.1.0",
     "bson-objectid": "^2.0.4",
     "change-case": "^5",
     "class-variance-authority": "^0.7.1",

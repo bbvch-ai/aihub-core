@@ -166,8 +166,8 @@ class EventDisplayer:
             token_count_completion = 0
 
         llm_event = LLMEvent(
-            input_messages=[Message(role=msg.role, content=msg.content) for msg in messages],
-            output_messages=[Message(role="assistant", content=aggregate)],
+            input_messages=[Message.from_llama_index(msg) for msg in messages],
+            output_messages=[Message.from_string(role="assistant", content=aggregate, name=llm_config.name)],
             invocation_parameters=llm_config.model_dump(),
             chat_model_name=llm_config.name,
             provider=llm_config.__class__.__name__,

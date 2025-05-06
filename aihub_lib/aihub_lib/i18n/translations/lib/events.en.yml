@@ -1,0 +1,111 @@
+display_event:
+  name: "Display Event"
+  description: "An event that displays information to the user without affecting the workflow."
+
+aitl_exception_event:
+  name: "Error in Task Delegation"
+  description: "Another agent to which a task was delegated reported an error and couldn't process the request."
+
+aitl_request_event:
+  name: "Task Delegation to Another Agent"
+  description: "The agent has forwarded a task to another agent to benefit from their specialized knowledge."
+
+aitl_response_event:
+  name: "Delegated Agent Response"
+  description: "The other agent has successfully processed the assigned task and sent back a response."
+
+bitl_request_event:
+  name: "Agent Request"
+  description: "A request was forwarded to a specialized agent to complete a specific task."
+
+bitl_response_event:
+  name: "Agent Response"
+  description: "The specialized agent has processed the request and sent back a response."
+
+limit_chat_history_event:
+  name: "Chat History Limited"
+  description: "The chat history has been shortened for efficiency, keeping only the most relevant parts."
+
+start_event:
+  name: "Process Started"
+  description: "A new process or task has been initiated."
+
+stop_event:
+  name: "Process Completed"
+  description: "The agent has completed its task and is returning control to the user."
+
+cost_event:
+  name: "Cost Overview"
+  description: "An overview of the costs incurred for the operations performed."
+
+llm_cost_event:
+  name: "Language Model Costs"
+  description: "Costs have been incurred during interaction with the language model, which are listed here."
+
+chunk_event:
+  name: "Partial Response"
+  description: "The agent has generated a part of the answer and sent it to the user, which is already being displayed."
+
+thought_event:
+  name: "Thought Process"
+  description: "The agent shares its internal thought process, which helps it understand and solve the task."
+
+guard_rejection_event:
+  name: "Request Rejected"
+  description: "The request was rejected for security reasons or due to policy violations."
+
+hitl_request_event:
+  name: "User Query"
+  description: "The agent needs additional information from the user to continue with the task."
+
+hitl_response_event:
+  name: "User Response Received"
+  description: "The user has answered the query, and the agent can proceed with the task."
+
+router_event:
+  name: "Decided for optimal next path"
+  description: "The agent decided for the optimal path to go from here."
+
+semantic_agent_event:
+  name: "Agent Activity"
+  description: "A specialized agent is performing a task as part of the overall process."
+
+semantic_chain_event:
+  name: "Chained Actions"
+  description: "A series of interconnected actions is being executed to solve a complex problem."
+
+semantic_embedding_event:
+  name: "Information Search"
+  description: "The agent is searching its knowledge base for relevant information to answer the request."
+
+semantic_guard_event:
+  name: "Security Check"
+  description: "The request is being checked for security and compliance with policies."
+
+semantic_llm_event:
+  name: "Language Model Interaction"
+  description: "An interaction with the language model has been performed to process or generate information."
+
+semantic_llm_stop_event:
+  name: "Language Model Interaction Completed"
+  description: "The interaction with the language model has been completed."
+
+semantic_reranker_event:
+  name: "Relevance Optimization"
+  description: "Found documents are being sorted by relevance to select the most appropriate information for the task."
+
+semantic_retriever_event:
+  name: "Documents Found"
+  description: "The agent has found relevant documents that could be helpful in processing the task."
+
+semantic_tool_event:
+  name: "Tool Usage"
+  description: "The agent is using a specialized tool to complete a specific task more efficiently."
+
+exception_event:
+  name: "Error Occurred"
+  description: "An exception or error has occurred during the process, halting or adjusting the workflow and providing error details."
+
+user_message_event:
+  name: "User Request"
+  description: "The agent has received a message from the user and is processing it, taking into account the previous chat history."

@@ -1,13 +1,28 @@
 <template>
-  <Card class="!rounded-2xl bg-surface-50 dark:!bg-surface-800">
+  <Card
+    class="!rounded-2xl"
+    :class="{
+      'striped-bg': isExternal || !isFromAgentInThread,
+      'border-2 border-red-500 dark:!border-red-900': isError,
+      'border-2 border-yellow-500 dark:!border-yellow-700': isWarning,
+      'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
+    }"
+  >
     <template #header>
-      <div class="absolute -top-3 right-12 rounded bg-surface-50 px-2 py-1 text-xs font-semibold dark:!bg-surface-800">
+      <div
+        class="absolute -top-3 right-12 rounded px-2 py-1 text-sm font-semibold"
+        :class="{
+          'bg-red-500 text-white dark:!bg-red-900': isError,
+          'bg-yellow-500 text-white dark:!bg-yellow-700': isWarning,
+          'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
+        }"
+      >
         {{ event.agent_class }}
       </div>
     </template>
     <template #content>
       <Panel
-        toggleable
+        :toggleable="!isEmpty"
         collapsed
         class="panel border-none bg-transparent"
       >
@@ -21,15 +36,18 @@
             </div>
             <div>
               <p class="text-xl font-bold">
-                {{ title }}
+                {{ event.event_display_name }}
               </p>
               <p class="text-sm text-surface-800 dark:text-surface-200">
-                {{ subtitle }}
+                {{ event.event_display_description }}
               </p>
             </div>
           </div>
         </template>
-        <div class="pt-4">
+        <div
+          v-if="!isEmpty"
+          class="pt-4"
+        >
           <Divider />
           <br>
           <slot />
@@ -40,14 +58,31 @@
 </template>
 
 <script setup lang="ts">
-import type { WsServerEvent } from '@core/sdk/client'
+import type { AgentDto, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   event: WsServerEvent
+  thread: ThreadDto
   icon: string
-  title: string
-  subtitle: string
-}>()
+  isExternal?: boolean
+  isEmpty?: boolean
+  isWarning?: boolean
+  isError?: boolean
+}>(), {
+  isExternal: false,
+  isEmpty: false,
+  isWarning: false,
+  isError: false,
+})
+
+const agentIds = computed<string[]>(() => {
+  const agents = props.thread.agents ?? []
+  return agents.map((agent: AgentDto) => `${agent.agent_class}/${agent.agent_id}`)
+})
+
+const isFromAgentInThread = computed<boolean>(() => {
+  return agentIds.value.includes(`${props.event.agent_class}/${props.event.agent_id}`)
+})
 </script>
 
 <style scoped>
@@ -55,5 +90,14 @@ defineProps<{
   .p-panel-header {
     padding: 0 !important;
   }
+}
+.striped-bg {
+  background: repeating-linear-gradient(
+    -55deg,
+    rgba(155, 155, 155, 0.1),
+    rgba(155, 155, 155, 0.1) 4px,
+    rgba(155, 155, 155, 0) 4px,
+    rgba(155, 155, 155, 0) 8px
+  );
 }
 </style>

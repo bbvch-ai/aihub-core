@@ -1,9 +1,8 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Zusammenfassung LLM Interaktion"
+    :thread="thread"
     icon="vaadin:chat"
-    subtitle="Eine Teilinteraktion zwischen dem Assistenten und dem Benutzer ist abgeschlossen. Hier wird der Chatverlauf dieser Interaktion angezeigt."
   >
     <div class="flex flex-col gap-8">
       <div
@@ -15,6 +14,8 @@
           :message="message"
           :name="message.role == 'user' ? 'User' : event.event.chat_model_name"
           :preferred-username="message.role == 'user' ? '' : event.event.provider"
+          :date="new Date(event.event.created_at / 1_000_000)"
+          :icon="agentIcon"
         />
       </div>
       <hr>
@@ -27,6 +28,8 @@
           :message="message"
           :name="message.role == 'user' ? 'User' : event.event.chat_model_name"
           :preferred-username="message.role == 'user' ? '' : event.event.provider"
+          :date="new Date(event.event.created_at / 1_000_000)"
+          :icon="agentIcon"
         />
       </div>
     </div>
@@ -34,22 +37,41 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, LlmEvent, WsServerEvent } from '@core/sdk/client'
+import type {
+  AudioContent,
+  ChatMessageOutput,
+  ImageContent,
+  LlmEvent,
+  TextContent,
+  ThreadDto,
+  WsServerEvent,
+} from '@core/sdk/client'
 
 const props = defineProps<{
   event: WsServerEvent & { event: LlmEvent }
+  thread: ThreadDto
 }>()
+
+const agentIcon = useAgentIconFromThread(props.event, props.thread)
 
 const inputMessages = computed<ChatMessageOutput[]>(() => {
   return props.event.event.input_messages?.map((message) => {
     return {
       role: message.role,
-      blocks: [
-        {
-          block_type: 'text',
-          text: message.content,
-        },
-      ],
+      blocks: message.contents?.map((content: TextContent | ImageContent | AudioContent) => {
+        if (content.type === 'text') {
+          return {
+            block_type: 'text',
+            text: content.text,
+          }
+        }
+        if (content.type === 'image') {
+          return {
+            block_type: 'image',
+            path: content.url,
+          }
+        }
+      }),
     }
   }) ?? []
 })

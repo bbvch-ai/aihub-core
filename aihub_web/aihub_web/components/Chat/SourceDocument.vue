@@ -17,7 +17,7 @@
       </div>
     </template>
     <template #title>
-      {{ document.metadata.document_title ?? "Dokument" }}
+      {{ document.metadata.document_title ?? t('chat.document') }}
     </template>
     <template #content>
       <p class="m-0">
@@ -42,6 +42,8 @@
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
 import type { Document } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 defineProps<{
   document: Document

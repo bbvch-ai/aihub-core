@@ -1,17 +1,17 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Stop"
+    :thread="thread"
     icon="icon-park-twotone:success"
-    subtitle="Der Assistent hat seine Aufgabe erledigt und gibt das Wort zurück an den Benutzer"
   />
 </template>
 
 <script setup lang="ts">
-import type { StopEvent, WsServerEvent } from '@core/sdk/client'
+import type { StopEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: StopEvent }
+  thread: ThreadDto
 }>()
 </script>
 

@@ -21,10 +21,10 @@
     >
       <div>
         <h2 class="text-xl">
-          Services
+          {{ $t('service.selection.title') }}
         </h2>
         <p class="text-sm">
-          Here are all the services listed that you have activated
+          {{ $t('service.selection.description') }}
         </p>
       </div>
       <IconField>
@@ -36,7 +36,7 @@
           v-model="search"
           size="small"
           type="text"
-          placeholder="Search"
+          :placeholder="$t('service.selection.search')"
           autofocus
           fluid
           @keydown.enter="onEnter"
@@ -44,7 +44,7 @@
       </IconField>
     </div>
     <div class="relative flex max-w-[460px] flex-wrap gap-10 p-5">
-      <template v-if="loadingSuite !== 'success'">
+      <template v-if="appsLoading">
         <skeleton
           v-for="i in 6"
           :key="i"
@@ -79,15 +79,13 @@
 </template>
 
 <script setup lang="ts">
-import { useSuiteStore } from '@core/stores/useSuiteStore'
-
 import type { MenuItem } from 'primevue/menuitem'
 
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 const route = useRoute()
 
-const { loadingSuite, apps } = storeToRefs(useSuiteStore())
+const { apps, appsLoading } = useApps()
 
 const shownApps = computed(() => {
   return search.value ? apps.value.filter((app: MenuItem) => app.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value

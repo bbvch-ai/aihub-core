@@ -59,7 +59,7 @@
 >        Überblick über die enthaltenen Bausteine sowie deren
 >        Schnittstellen.
 >
->    -   als Liste von Blackbox-Beschreibungen der Bausteine, gemäß dem
+>    -   als Liste von Blackbox-Beschreibungen der Bausteine, gemäss dem
 >        Blackbox-Template (siehe unten). Diese Liste können Sie, je nach
 >        Werkzeug, etwa in Form von Unterkapiteln (Text), Unter-Seiten
 >        (Wiki) oder geschachtelten Elementen (Modellierungswerkzeug)
