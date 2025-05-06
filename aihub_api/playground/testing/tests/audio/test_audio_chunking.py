@@ -40,7 +40,7 @@ class TestAudioChunking:
         file_ext = file.filename.split(".")[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
 
-        chunks = await AudioChunkingService.chunk_audio(audio, file.size)
+        chunks = await AudioChunkingService.chunk_audio(audio)
 
         assert len(chunks) == 1
 
@@ -52,7 +52,7 @@ class TestAudioChunking:
         file_ext = file.filename.split(".")[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
 
-        chunks = await AudioChunkingService.chunk_audio(audio, file.size)
+        chunks = await AudioChunkingService.chunk_audio(audio)
 
         assert len(chunks) > 1
 
@@ -82,7 +82,7 @@ class TestAudioChunking:
             file_ext = file.filename.split(".")[-1].lower()
             audio = AudioSegment.from_file(file.file, format=file_ext)
 
-            chunks = await AudioChunkingService.chunk_audio(audio, file.size)
+            chunks = await AudioChunkingService.chunk_audio(audio)
 
             assert len(chunks) >= 1
 

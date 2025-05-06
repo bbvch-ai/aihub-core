@@ -34,21 +34,34 @@ class AudioChunkingService:
     ] = -40  # -40dB threshold identifies most speech pauses without excessive chunking
 
     @staticmethod
-    async def chunk_audio(audio: AudioSegment, file_size: Annotated[int, "bytes"]) -> List[AudioSegment]:
+    async def chunk_audio(audio: AudioSegment) -> List[AudioSegment]:
+        file_size: Annotated[int, "bytes"] = len(audio.raw_data)
         total_duration: Annotated[int, "ms"] = len(audio)
         max_duration: Annotated[int, "ms"] = int(total_duration / (file_size / AudioChunkingService.MAX_CHUNK_SIZE))
+
+        if total_duration <= max_duration:
+            return [audio]
+
         nonsilent_chunks: Annotated[List[List[int]], "[[start: ms, end: ms]]"] = detect_nonsilent(
             audio,
             min_silence_len=AudioChunkingService.MIN_SILENCE_LEN,
             silence_thresh=AudioChunkingService.SILENCE_THRESH,
+            seek_step=10,  # 10 ms step for faster processing
         )
         segments: List[AudioSegment] = []
         segment: Annotated[List[List[int]], "[[start: ms, end: ms]]"] = []
         for chunk in nonsilent_chunks:
-            _, end = chunk
-            if len(segment) > 0 and end - segment[0][0] > max_duration:
-                segments.append(audio[segment[0][0] : segment[-1][1]])
-                segment = [segment[-1]]  # Overlap the last chunk
+            _, chunk_end = chunk
+            if segment:
+                segment_start = segment[0][0]
+                segment_end = segment[-1][-1]
+
+                if chunk_end - segment_start > max_duration:
+                    segments.append(audio[segment_start:segment_end])
+                    if len(segment) > 1:
+                        segment = segment[-1:]
+                    else:
+                        logger.warning(f"Chunk too large for overlap: {segment}")
 
             segment.append(chunk)
         if segment:
@@ -67,6 +80,8 @@ class AudioChunkingService:
 
             def get_text(x: Transcription | TranscriptionVerbose):
                 return x.text
+
+        print(transcription_chunks)
 
         merged_words: List[str] = []
         for chunk in transcription_chunks:

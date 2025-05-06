@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -417,11 +418,13 @@ class OpenaiService:
 
         file_ext = file.filename.rsplit(".", 1)[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
-        audio_chunks: List[AudioSegment] = await AudioChunkingService.chunk_audio(audio, file_size=file.size)
+        audio_chunks: List[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
         transcription_chunks: List[TranscriptionChunk] = []
 
         for i, audio_chunk in enumerate(audio_chunks):
-            file_tuple = (file.filename, audio_chunk, "audio/wav")
+            buffer = io.BytesIO()
+            audio_chunk.export(buffer, format="wav")
+            file_tuple = (file.filename, buffer, "audio/wav")
 
             result: TranscriptionChunk = await client.audio.transcriptions.create(
                 model=model_name,
