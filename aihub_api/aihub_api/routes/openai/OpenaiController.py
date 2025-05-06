@@ -14,7 +14,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, File, Form, HTTPException, Security, UploadFile
+from fastapi import Body, Depends, File, Form, Security, UploadFile
 from llama_index.llms.openai import OpenAI
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
@@ -234,7 +234,7 @@ class OpenaiController(Controller):
         @self.router.post(
             route,
             summary="Create transcription",
-            description="Transcribes audio into the input language. Large files are automatically chunked and processed.",
+            description="Transcribes audio into the input language.",
             tags=self.tags,
         )
         async def create_transcription(
@@ -250,39 +250,16 @@ class OpenaiController(Controller):
             ),
             user: AuthenticatedUser = Security(self.auth),
         ) -> Transcription | TranscriptionVerbose | str:
-            # Log request details
-            logger.info(f"STT request received - File: {file.filename}, Model: {model}, Format: {response_format}")
-
-            # Quick size check for logging purposes
-            file_size = file.size
-            logger.info(f"File size: {file_size / (1024*1024):.2f} MB")
-
-            try:
-                result = await OpenaiService.stt(
-                    self.stt_models,
-                    file,
-                    model,
-                    language,
-                    prompt,
-                    response_format,
-                    temperature,
-                    timestamp_granularities,
-                )
-
-                logger.info(f"STT transcription completed successfully for {file.filename}")
-                return result
-
-            except ValueError as e:
-                logger.error(f"STT model error: {str(e)}")
-                raise HTTPException(status_code=404, detail=str(e))
-
-            except HTTPException as e:
-                logger.error(f"STT HTTP error: {str(e)}")
-                raise e
-
-            except Exception as e:
-                logger.error(f"STT unexpected error: {str(e)}", exc_info=True)
-                raise HTTPException(status_code=500, detail=f"An error occurred during transcription: {str(e)}")
+            return await OpenaiService.stt(
+                self.stt_models,
+                file,
+                model,
+                language,
+                prompt,
+                response_format,
+                temperature,
+                timestamp_granularities,
+            )
 
         return self
 

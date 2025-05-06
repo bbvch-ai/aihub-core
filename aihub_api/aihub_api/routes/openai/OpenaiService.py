@@ -409,7 +409,6 @@ class OpenaiService:
         split them at optimal points, process them in parallel, and reconstruct
         the transcription into a seamless result.
         """
-        logger.info(f"Starting STT transcription for file: {file.filename}")
 
         models = [model for model in stt_models if model.name == model_name]
         if len(models) == 0:
