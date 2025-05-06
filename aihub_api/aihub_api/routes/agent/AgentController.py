@@ -1,7 +1,6 @@
 import time
-from typing import Annotated, List, Type, Literal
+from typing import Annotated, List, Literal, Type
 
-from aihub_api.routes.agent.dto.AgentEventTimeseries import AgentEventTimeseries
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -24,6 +23,7 @@ from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentEventTimeseries import AgentEventTimeseries
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 
 
@@ -143,7 +143,9 @@ class AgentController(Controller):
 
         return self
 
-    def get_agent_event_timeseries(self, route: str = "/{agent_class}/{agent_id}/event/timeseries") -> "AgentController":
+    def get_agent_event_timeseries(
+        self, route: str = "/{agent_class}/{agent_id}/event/timeseries"
+    ) -> "AgentController":
         @self.router.get(route, tags=self.tags)
         async def get_agent_event_timeseries(
             agent_class: str,
@@ -165,7 +167,7 @@ class AgentController(Controller):
             - 30d: 1 day resolution
             - 365d: 1 week resolution
 
-            Raises 403 if the user is not a member of that thread.
+            Raises 403 if the user lacks access.
             """
             if not user.has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")

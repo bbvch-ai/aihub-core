@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List, Optional, Literal, Tuple
+from typing import List, Literal, Optional, Tuple
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -11,13 +11,13 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
-from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 logger = logging.getLogger(__name__)
 
@@ -138,10 +138,10 @@ class EventService:
 
     @staticmethod
     def get_event_timeseries(
-            time_range: Literal["1h", "24h", "30d", "365d"],
-            thread_id: Optional[str] = None,
-            agent_class: Optional[str] = None,
-            agent_id: Optional[str] = None,
+        time_range: Literal["1h", "24h", "30d", "365d"],
+        thread_id: Optional[str] = None,
+        agent_class: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> Tuple[List[EventBucket], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
         return PersistedEventEntity.get_event_timeseries(
             time_range=time_range,

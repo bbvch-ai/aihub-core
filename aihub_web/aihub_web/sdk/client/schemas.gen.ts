@@ -231,7 +231,7 @@ export const AgentEventTimeseriesSchema = {
     type: 'object',
     required: ['agent_class', 'agent_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
     title: 'AgentEventTimeseries',
-    description: 'Statistics for a thread over a specific time range with bucketed data.'
+    description: 'Timeseries of events for a given agent and time-range.'
 } as const;
 
 export const AgentInTheLoopExceptionEventSchema = {
@@ -6465,7 +6465,7 @@ export const ThreadEventTimeseriesSchema = {
     type: 'object',
     required: ['thread_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
     title: 'ThreadEventTimeseries',
-    description: 'Statistics for a thread over a specific time range with bucketed data.'
+    description: 'Timeseries of events for a given thread and time-range.'
 } as const;
 
 export const TokenResponseSchema = {

@@ -356,7 +356,7 @@ export const getAgentThreads = <TComposable extends Composable, DefaultT extends
  * - 30d: 1 day resolution
  * - 365d: 1 week resolution
  *
- * Raises 403 if the user is not a member of that thread.
+ * Raises 403 if the user lacks access.
  */
 export const getAgentEventTimeseries = <TComposable extends Composable, DefaultT extends GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponse>(options: Options<TComposable, GetAgentEventTimeseriesData, GetAgentEventTimeseriesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetAgentEventTimeseriesResponse | DefaultT, GetAgentEventTimeseriesError, DefaultT>({

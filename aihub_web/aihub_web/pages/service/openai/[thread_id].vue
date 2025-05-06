@@ -44,6 +44,3 @@ const closeThread = () => {
   router.push(localeRoute('/service/openai'))
 }
 </script>
-
-<style scoped>
-</style>

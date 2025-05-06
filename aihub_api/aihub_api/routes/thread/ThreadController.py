@@ -15,8 +15,8 @@ from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
-from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.dto.statistics.ThreadEventTimeseries import ThreadEventTimeseries
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 

@@ -68,6 +68,12 @@ agent:
     startEvents: "Start Events"
     stopEvents: "Stop Events"
     config: "Config"
+    name: "Name:"
+    class: "Class:"
+    agentId: "Agent ID:"
+    status: "Status:"
+    online: "Online"
+    offline: "Offline"
   chat:
     title: "Chat"
     createThreadAndSend: "Create Thread and Send"

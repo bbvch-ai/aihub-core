@@ -68,6 +68,12 @@ agent:
     startEvents: "Start-Ereignisse"
     stopEvents: "Stop-Ereignisse"
     config: "Konfiguration"
+    name: "Name:"
+    class: "Klasse:"
+    agentId: "Agent-ID:"
+    status: "Status:"
+    online: "Online"
+    offline: "Offline"
   chat:
     title: "Chat"
     createThreadAndSend: "Thread erstellen und senden"

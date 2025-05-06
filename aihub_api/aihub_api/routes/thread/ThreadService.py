@@ -357,7 +357,13 @@ class ThreadService:
 
         response = ThreadDTO(
             id=str(entity.id),
-            created_at=(entity.created_at.replace(tzinfo=timezone.utc) if entity.created_at.tzinfo is None else entity.created_at).isoformat().replace("+00:00", "Z"),
+            created_at=(
+                entity.created_at.replace(tzinfo=timezone.utc)
+                if entity.created_at.tzinfo is None
+                else entity.created_at
+            )
+            .isoformat()
+            .replace("+00:00", "Z"),
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),

@@ -67,7 +67,21 @@ class DisplayStatistics(BaseEventStatistics):
             open_bitl=open_bitl,
             is_aitl=is_aitl,
             open_aitl=open_aitl,
-            started_at=(started_at_dt.replace(tzinfo=timezone.utc) if started_at_dt and started_at_dt.tzinfo is None else started_at_dt).isoformat().replace("+00:00", "Z") if started_at_dt else None,
-            ended_at=(ended_at_dt.replace(tzinfo=timezone.utc) if ended_at_dt and ended_at_dt.tzinfo is None else ended_at_dt).isoformat().replace("+00:00", "Z") if ended_at_dt else None,
+            started_at=(
+                started_at_dt.replace(tzinfo=timezone.utc)
+                if started_at_dt and started_at_dt.tzinfo is None
+                else started_at_dt
+            )
+            .isoformat()
+            .replace("+00:00", "Z")
+            if started_at_dt
+            else None,
+            ended_at=(
+                ended_at_dt.replace(tzinfo=timezone.utc) if ended_at_dt and ended_at_dt.tzinfo is None else ended_at_dt
+            )
+            .isoformat()
+            .replace("+00:00", "Z")
+            if ended_at_dt
+            else None,
             duration=duration,
         )

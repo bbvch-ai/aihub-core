@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
@@ -189,7 +189,7 @@ class PersistedEventEntity(Document):
                             "agent_id": "$agent_id",
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
-                            "is_not_user": {"$ne": ["$agent_class", "UserAgent"]}
+                            "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
                         }
                     },
                 }
@@ -402,13 +402,12 @@ class PersistedEventEntity(Document):
             else:
                 raise ValueError(f"Invalid time range: {time_range}")
 
-        # Construct the initial match filter based on provided identifiers
         match_filter: Dict[str, any] = {
             "event_type": "display_event",
             "event_data.created_at": {
-                "$gte": int(start_time.timestamp() * 1e9),  # Convert to nanoseconds
-                "$lte": int(now.timestamp() * 1e9),      # Convert to nanoseconds
-            }
+                "$gte": int(start_time.timestamp() * 1e9),
+                "$lte": int(now.timestamp() * 1e9),
+            },
         }
 
         if thread_id:
@@ -417,23 +416,18 @@ class PersistedEventEntity(Document):
             match_filter["agent_class"] = agent_class
             match_filter["agent_id"] = agent_id
 
-
         pipeline = [
             # 1. Match events for the given criteria within the time range
             {"$match": match_filter},
             # 2. Add a standardized BSON date field
-            {
-                "$addFields": {
-                    "event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}
-                }
-            },
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Create time buckets based on the resolution
             {
                 "$addFields": {
                     "time_bucket": {
                         "$subtract": [
                             {"$toLong": "$event_time"},
-                            {"$mod": [{"$toLong": "$event_time"}, interval_seconds * 1000]}  # Convert to milliseconds
+                            {"$mod": [{"$toLong": "$event_time"}, interval_seconds * 1000]},  # Convert to milliseconds
                         ]
                     }
                 }
@@ -444,15 +438,9 @@ class PersistedEventEntity(Document):
                     "_id": "$time_bucket",
                     "start_time": {"$first": {"$toDate": "$time_bucket"}},
                     "total_events": {"$sum": 1},
-                    "start_events": {
-                        "$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "stop_events": {
-                        "$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "exception_events": {
-                        "$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}
-                    },
+                    "start_events": {"$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}},
+                    "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
+                    "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
                     "hitl_request_events": {
                         "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
@@ -496,7 +484,7 @@ class PersistedEventEntity(Document):
                                     "$start_events",
                                     "$stop_events",
                                 ]
-                            }
+                            },
                         ]
                     }
                 }
@@ -524,9 +512,7 @@ class PersistedEventEntity(Document):
                 }
             },
             # 9. Sort by start_time
-            {
-                "$sort": {"start_time": 1}
-            }
+            {"$sort": {"start_time": 1}},
         ]
 
         results = list(cls.objects.aggregate(pipeline))
@@ -538,45 +524,42 @@ class PersistedEventEntity(Document):
             if result["end_time"].tzinfo is None:
                 result["end_time"] = result["end_time"].replace(tzinfo=timezone.utc)
 
-
         filled_results = []
         current_time = start_time
 
         while current_time < now:
-            bucket = next(
-                (
-                    b for b in results
-                    if b["start_time"] <= current_time < b["end_time"]
-                ),
-                None
-            )
+            bucket = next((b for b in results if b["start_time"] <= current_time < b["end_time"]), None)
 
             if bucket:
-                filled_results.append(EventBucket(
-                    start_time=bucket["start_time"],
-                    end_time=bucket["end_time"],
-                    total_events=bucket["total_events"],
-                    start_events=bucket["start_events"],
-                    stop_events=bucket["stop_events"],
-                    exception_events=bucket["exception_events"],
-                    hitl_events=bucket["hitl_events"],
-                    bitl_events=bucket["bitl_events"],
-                    aitl_events=bucket["aitl_events"],
-                    other_events=bucket["other_events"],
-                ))
+                filled_results.append(
+                    EventBucket(
+                        start_time=bucket["start_time"],
+                        end_time=bucket["end_time"],
+                        total_events=bucket["total_events"],
+                        start_events=bucket["start_events"],
+                        stop_events=bucket["stop_events"],
+                        exception_events=bucket["exception_events"],
+                        hitl_events=bucket["hitl_events"],
+                        bitl_events=bucket["bitl_events"],
+                        aitl_events=bucket["aitl_events"],
+                        other_events=bucket["other_events"],
+                    )
+                )
             else:
-                filled_results.append(EventBucket(
-                    start_time=current_time,
-                    end_time=current_time + timedelta(seconds=interval_seconds),
-                    total_events=0,
-                    start_events=0,
-                    stop_events=0,
-                    exception_events=0,
-                    hitl_events=0,
-                    bitl_events=0,
-                    aitl_events=0,
-                    other_events=0,
-                ))
+                filled_results.append(
+                    EventBucket(
+                        start_time=current_time,
+                        end_time=current_time + timedelta(seconds=interval_seconds),
+                        total_events=0,
+                        start_events=0,
+                        stop_events=0,
+                        exception_events=0,
+                        hitl_events=0,
+                        bitl_events=0,
+                        aitl_events=0,
+                        other_events=0,
+                    )
+                )
 
             current_time += timedelta(seconds=interval_seconds)
 

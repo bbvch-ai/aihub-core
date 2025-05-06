@@ -1,13 +1,12 @@
 from datetime import datetime
-from typing import Annotated, Literal, List
-
-from pydantic import BaseModel, Field
+from typing import Annotated, List, Literal
 
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
+from pydantic import BaseModel, Field
 
 
 class AgentEventTimeseries(BaseModel):
-    """Statistics for a thread over a specific time range with bucketed data."""
+    """Timeseries of events for a given agent and time-range."""
 
     agent_class: Annotated[str, Field(description="The agent class")]
     agent_id: Annotated[str, Field(description="The agent ID")]

@@ -112,7 +112,7 @@ export type AgentEvent = {
 };
 
 /**
- * Statistics for a thread over a specific time range with bucketed data.
+ * Timeseries of events for a given agent and time-range.
  */
 export type AgentEventTimeseries = {
     /**
@@ -2829,7 +2829,7 @@ export type ThreadDto = {
 };
 
 /**
- * Statistics for a thread over a specific time range with bucketed data.
+ * Timeseries of events for a given thread and time-range.
  */
 export type ThreadEventTimeseries = {
     /**

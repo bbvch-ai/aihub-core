@@ -10,7 +10,6 @@ export const useThreadEvents = defineQuery(() => {
   const route = useRoute()
   const queryCache = useQueryCache()
 
-  // Regular REST API query
   const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
     key: () => ['thread', route.params.thread_id as string, 'events'],
     staleTime: 1000 * 10, // 10 seconds
@@ -67,7 +66,7 @@ export const useThreadEvents = defineQuery(() => {
           queryCache.setQueryData(key, updatedEvents)
         }
 
-        // Invalidate thread queries on stop event
+        // Invalidate queries on stop event
         const parents = event.event._parent_event_names
         if (parents.includes('StopEvent') || parents.includes('ExceptionEvent')) {
           console.log('Invalidating', ['threads', event.thread_id])
