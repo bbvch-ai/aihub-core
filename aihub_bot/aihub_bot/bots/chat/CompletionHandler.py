@@ -279,7 +279,7 @@ class CompletionHandler:
             await asyncio.sleep(2)
 
         if not signal.is_set():
-            logger.error(f"Timeout while waiting for a response to Activity:\n{turn_context.activity}")
+            logger.exception(f"Timeout while waiting for a response to Activity:\n{turn_context.activity}")
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,
@@ -295,7 +295,7 @@ class CompletionHandler:
         typing_stop_signal: Event,
         t: LocaleHandler,
     ) -> str:
-        logger.error(f"Exception: {exception}\nTurnContext: {turn_context}")
+        logger.exception(f"Exception: {exception}\nTurnContext: {turn_context}")
         typing_stop_signal.set()
         await typing_task
         response = t("bot.error.generic_error")

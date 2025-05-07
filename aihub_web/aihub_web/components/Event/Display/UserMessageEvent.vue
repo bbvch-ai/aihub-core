@@ -1,9 +1,9 @@
 <template>
   <EventDisplayBase
     :event="event"
+    :thread="thread"
     icon="line-md:chat-filled"
-    title="Anfrage via Chat"
-    subtitle="Der Assistent hat eine Nachricht vom Benutzer erhalten, die er zu beantworten versucht. Falls bereits ein Chatverlauf existiert wird dieser dem Assistenten ebenfalls zur Verfügung gestellt"
+    is-external
   >
     <div class="flex flex-col gap-8">
       <div
@@ -15,6 +15,8 @@
           :message="message"
           :name="message.role == 'user' ? event.event.user.name : message.role"
           :preferred-username="message.role == 'user' ? event.event.user.preferred_username : ''"
+          :date="new Date(event.event.created_at / 1_000_000)"
+          :icon="agentIcon"
         />
       </div>
     </div>
@@ -22,9 +24,12 @@
 </template>
 
 <script setup lang="ts">
-import type { UserMessageEvent, WsServerEvent } from '@core/sdk/client'
+import type { ThreadDto, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
 
-defineProps<{
+const props = defineProps<{
   event: WsServerEvent & { event: UserMessageEvent }
+  thread: ThreadDto
 }>()
+
+const agentIcon = useAgentIconFromThread(props.event, props.thread)
 </script>

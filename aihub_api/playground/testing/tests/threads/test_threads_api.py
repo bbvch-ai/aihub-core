@@ -115,7 +115,8 @@ async def test_get_user_threads(api_client, create_thread_request):
     thread_id = create_response.json()["id"]
     response = await api_client.get(f"{THREAD_BASE}/")
     assert response.status_code == 200, f"Response: {response.text}"
-    threads = response.json()
+    paged_response = response.json()
+    threads = paged_response["threads"]
     assert len(threads) > 0
     assert any(thread["id"] == thread_id for thread in threads)
 

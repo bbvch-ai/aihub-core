@@ -1,9 +1,8 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Dokumente sortieren"
+    :thread="thread"
     icon="iconoir:sort"
-    subtitle="Sortiere Dokumente nach Relevanz und wähle die passendsten Dokumente für die Aufgabe aus."
   >
     <div class="flex flex-col gap-4">
       <IconField class="w-full">
@@ -27,10 +26,11 @@
 </template>
 
 <script setup lang="ts">
-import type { RerankerEvent, WsServerEvent } from '@core/sdk/client'
+import type { RerankerEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: RerankerEvent }
+  thread: ThreadDto
 }>()
 </script>
 

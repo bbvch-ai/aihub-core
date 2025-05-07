@@ -111,7 +111,7 @@ class OpenaiController(Controller):
             response_model=ModelResponse,
             tags=self.tags,
         )
-        async def get_models(
+        async def get_models_with_assistants(
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
@@ -144,7 +144,7 @@ class OpenaiController(Controller):
             description="Retrieves a model or ai-hub assistant instance, providing basic information about the model such as the owner and permissioning.",
             tags=self.tags,
         )
-        async def get_model(
+        async def get_model_with_assistants(
             full_path: str,
             nc: Annotated[NATS, Depends(use_nats)],
             user: AuthenticatedUser = Security(self.auth),
@@ -204,7 +204,7 @@ class OpenaiController(Controller):
             description="Creates a model or ai-hub assistant response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
             tags=self.tags,
         )
-        async def chat_completion(
+        async def chat_completion_with_assistants(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
             external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],

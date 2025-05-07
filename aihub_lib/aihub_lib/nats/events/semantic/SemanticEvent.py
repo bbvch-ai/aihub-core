@@ -1,10 +1,9 @@
 from typing import Any, Dict
 
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
-class SemanticEvent(ControlEvent, DisplayEvent):
+class SemanticEvent(ControlAndDisplayEvent):
     """
     A base class for events that must report their data to an OpenInference-compatible tracing system,
     such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:

@@ -1,0 +1,99 @@
+test: "Ceci est un test"
+welcome: "Bienvenue sur bbv ai-hub"
+
+user:
+  logout: "Déconnexion"
+  language: "Langue"
+  languages:
+    en: "Anglais"
+    de: "Allemand"
+    it: "Italien"
+    fr: "Français"
+
+thread:
+  users: "Utilisateurs"
+  assistants: "Assistants"
+  list:
+    name: "Nom"
+    agents: "Agents"
+    created: "Créé"
+    numTurns: "Nombre de Tours"
+    numEvents: "Nombre d'Événements"
+    status: "Statut"
+    pending: "En attente"
+  title: "Fils de discussion"
+
+chat:
+  assistant: "Assistant"
+  document: "Document"
+
+eventList:
+  firstInteraction: "Première Interaction:"
+  lastInteraction: "Dernière Interaction:"
+  pending: "En attente:"
+  no: "Non"
+  status: "Statut:"
+  error: "Erreur"
+  successful: "Réussi"
+  chat: "Chat"
+  agents: "Agents:"
+
+threadUtils:
+  pendingTypes:
+    hitl: "Humain dans la Boucle"
+    aitl: "Agent dans la Boucle"
+    bitl: "Bot dans la Boucle"
+    unknown: "Raison inconnue"
+
+costs:
+  table:
+    count: "Comptage"
+    cost: "Coût"
+    input: "Entrée"
+    output: "Sortie"
+    embedding: "Intégration"
+    total: "Total"
+    currency: "CHF"
+
+service:
+  selection:
+    title: "Services"
+    description: "Voici tous les services listés que vous avez activés"
+    search: "Rechercher"
+
+agent:
+  overview:
+    startEvents: "Événements de Démarrage"
+    stopEvents: "Événements d'Arrêt"
+    config: "Configuration"
+  chat:
+    title: "Chat"
+    createThreadAndSend: "Créer un Fil et Envoyer"
+    manuallyCreatedThread: "Fil créé manuellement"
+  threads:
+    title: "Fils de l'Agent"
+  navigation:
+    basic: "Base"
+    workflow: "Flux de travail"
+    threads: "Fils"
+    chat: "Chat"
+  availableAgents: "Agents Disponibles"
+
+auth:
+  renew:
+    processing: "Traitement du renouvellement silencieux du jeton..."
+  callback:
+    processing: "Traitement du rappel d'authentification..."
+    loggingIn: "Connexion en cours..."
+    loginError: "Erreur de Connexion"
+    redirectingToLogin: "Redirection vers la page de connexion..."
+    genericError: "Une erreur s'est produite lors de la connexion. Veuillez réessayer."
+  login:
+    title: "Connexion"
+    description: "Veuillez vous connecter pour accéder à l'application"
+    tagline: "Découvrez le futur de l'intelligence artificielle"
+    welcome: "Bienvenue sur l'AI Hub de {companyName}"
+    pleaseLogin: "Veuillez vous connecter"
+    loginWithMicrosoft: "Connexion avec Microsoft"
+    customSolutions: "Solutions IA personnalisées pour votre entreprise"
+    logoAlt: "Logo de l'entreprise"

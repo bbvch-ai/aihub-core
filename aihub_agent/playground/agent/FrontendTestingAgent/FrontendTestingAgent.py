@@ -1,4 +1,7 @@
+import random
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     UserMessageEvent,
     EmbeddingEvent,
@@ -10,13 +13,20 @@ from aihub_lib.nats.events import (
     HumanInTheLoop,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    ExceptionEvent,
 )
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
+from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
+from aihub_lib.nats.events.router.RouteOptions import RouteOptions
+from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding
+from aihub_lib.nats.events.semantic.guard import GuardEvent
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, SOURCE, CREATED_AT, REFERENCE_URL
+from playground.agent.FrontendTestingAgent.events.FrontendTestingEventA import FrontendTestingEventA
+from playground.agent.FrontendTestingAgent.events.FrontendTestingEventB import FrontendTestingEventB
 
 
 class CustomHumanInTheLoopRequestEvent(HumanInTheLoopRequestEvent):
@@ -34,13 +44,41 @@ class CustomHumanInTheLoop(HumanInTheLoop):
 
 class FrontendTestingAgent(Agent):
     @step()
-    async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
+    async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request | ExceptionEvent:
+        if random.random() > 0.5:
+            return ExceptionEvent(message="50% chance that this occurs :)", http_status_code=500)
         print("[OrchestratorAgent.start_step]", event)
         return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
 
     @step()
-    async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> EmbeddingEvent:
+    async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> GuardEvent:
         await displayer.display_thought("Now I need to check the guard")
+        return GuardEvent()
+
+    @step()
+    async def router_step(self, _: GuardEvent) -> RouterEvent:
+        routes = [
+            RouteOptions(
+                name="Route A",
+                description="Good Route",
+                instructions="Select This",
+                event=FrontendTestingEventA(
+                    display_name=LocaleString(en="Custom Name Event A"),
+                    display_description=LocaleString(en="This is a custom description for Event A"),
+                ),
+            ),
+            RouteOptions(
+                name="Route B", description="Bad Route", instructions="Not this", event=FrontendTestingEventB()
+            ),
+        ]
+        return RouterEvent(routes=routes, selected_option=routes[0], reason="I just took the first one tbh")
+
+    @step()
+    async def unpack_router_step(self, event: RouterEvent) -> FrontendTestingEventA:
+        return event.selected_option.event
+
+    @step()
+    async def embedding_step(self, _: FrontendTestingEventA) -> EmbeddingEvent:
         return EmbeddingEvent(
             text="This is the text that was embedded",
             embedding_model_name="text-embedding-ada-002",
@@ -123,6 +161,20 @@ class FrontendTestingAgent(Agent):
         return CustomHumanInTheLoop.invoke(question="Shall I continue?")
 
     @step()
-    async def stop(self, event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
-        await displayer.display_chunk(content=f"All done: {event.response}", model_name="FrontendTestingAgent")
+    async def botl_start(
+        self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer
+    ) -> BotInTheLoop.request:
+        await displayer.display_chunk(
+            content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
+        )
+        print("Bot in the loop")
+        return BotInTheLoop.invoke(
+            user=user_message_event.user,
+            question="Make some noise",
+            slack_channel_id="C08MK7Z8GU9",
+        )
+
+    @step()
+    async def stop(self, event: BotInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+        await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()

@@ -133,7 +133,7 @@ package "Client Data Sources" {
 >
 >Technische Schnittstellen (Kanäle, Übertragungsmedien) zwischen dem
 >System und seiner Umwelt. Zusätzlich eine Erklärung (*mapping*), welche
->fachlichen Ein- und Ausgaben über welche technischen Kanäle fließen.
+>fachlichen Ein- und Ausgaben über welche technischen Kanäle fliessen.
 >
 >**Motivation**
 >

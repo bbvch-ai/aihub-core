@@ -79,7 +79,7 @@ class ContentExtractor:
                 file_info = ContentExtractor._from_slack_file(file, slack_token)
                 content.append(ContentExtractor._to_content(file_info))
             except Exception as e:
-                logger.error(f"Error processing Slack file: {e}")
+                logger.exception(f"Error processing Slack file: {e}")
 
         return content
 
@@ -109,7 +109,7 @@ class ContentExtractor:
 
                 content.append(ContentExtractor._to_content(file_info))
             except Exception as e:
-                logger.error(f"Error processing attachment: {e}")
+                logger.exception(f"Error processing attachment: {e}")
                 content.append(
                     Content(
                         text=f"<file name='{attachment.name or 'unknown'}'>Error processing file: {str(e)}</file>",
@@ -161,7 +161,7 @@ class ContentExtractor:
             file_info.content_type = response.headers.get("content-type")
 
         except Exception as e:
-            logger.error(f"Error fetching file {file_info.name}: {e}")
+            logger.exception(f"Error fetching file {file_info.name}: {e}")
             raise
 
         return file_info
@@ -195,7 +195,7 @@ class ContentExtractor:
                 text = file_info.content_bytes.decode("utf-8", errors="replace")
                 return Content(text=f"<file name='{file_info.name}'>{text}</file>", type="text")
             except Exception as e:
-                logger.error(f"Error decoding file {file_info.name}: {e}")
+                logger.exception(f"Error decoding file {file_info.name}: {e}")
 
         # Default case for unsupported types
         logger.warning(f"Unsupported file type: {file_info.content_type}")

@@ -39,7 +39,9 @@ class StreamingResources:
     stop_signal: asyncio.Event
     subscriber: NCSubscriber
     chunk_queue: asyncio.Queue
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent] = None  # Added field to store the final StopEvent
+    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = (
+        None  # Added field to store the final StopEvent
+    )
 
 
 @dataclass
@@ -113,7 +115,7 @@ class ChatService:
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
-            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name] + list(
+            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name_from_class()] + list(
                 get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
             )
             event = HumanInTheLoopResponseEvent.deserialize_event(

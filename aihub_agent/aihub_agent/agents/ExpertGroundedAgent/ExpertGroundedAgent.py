@@ -57,8 +57,8 @@ class ExpertGroundedAgent(Agent):
         chat_history = event.messages[:-1]
         user_query = event.messages[-1].content
 
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.user_asked", user_query=user_query))
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.need_to_determine_context"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_asked", user_query=user_query))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.need_to_determine_context"))
 
         instructions = RichPromptTemplate(
             template_str=t("lib.prompt.router.instructions.context_sufficient"),
@@ -105,7 +105,7 @@ class ExpertGroundedAgent(Agent):
         _: ContextSufficientEvent,
         t: LocaleHandler,
     ) -> LLMStopEvent:
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.can_answer_question"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.can_answer_question"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, event.messages, as_stop_step=True)
 
@@ -120,9 +120,9 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> HumanInTheLoop.request:
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.context_not_sufficient"))
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.asking_for_consent"))
-        return HumanInTheLoop.invoke(question=t("agents.expert_grounded_agent.messages.consent_question"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
+        return HumanInTheLoop.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
 
     @step(
         name=LocaleString(en="Consent Answer"),
@@ -136,12 +136,12 @@ class ExpertGroundedAgent(Agent):
         t: LocaleHandler,
     ) -> UserRequestsExpertEvent | StopEvent:
         if "yes" in event.response.lower() or "ja" in event.response.lower():
-            await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.user_consented"))
+            await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_consented"))
             return UserRequestsExpertEvent()
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.user_declined"))
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.waiting_for_instructions"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.waiting_for_instructions"))
         await displayer.display_chunk(
-            t("agents.expert_grounded_agent.messages.user_declined_confirmation"), model_name="gpt-4o"
+            t("agent.expert_grounded_agent.messages.user_declined_confirmation"), model_name="gpt-4o"
         )
 
         return StopEvent()
@@ -158,14 +158,14 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         agent_config: ExpertGroundedAgentConfig,
         t: LocaleHandler,
-    ):
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.forwarding_to_expert"))
+    ) -> AgentInTheLoop.request:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
-            t("agents.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="expert"
         )
         await displayer.display_chunk("\n", model_name="expert")
         await displayer.display_chunk(
-            t("agents.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="expert"
         )
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_asking_agent_class,
@@ -188,9 +188,9 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         event: AgentInTheLoop.response,
         t: LocaleHandler,
-    ):
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.expert_answered"))
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.forwarding_expert_info"))
+    ) -> StopEvent:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_answered"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_expert_info"))
         await displayer.display_chunk(event.stop_event.expert_answer, model_name="expert")
         return StopEvent()
 
@@ -205,10 +205,10 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         _: AgentInTheLoop.response,
         t: LocaleHandler,
-    ):
-        await displayer.display_thought(t("agents.expert_grounded_agent.thoughts.expert_unable_to_answer"))
+    ) -> StopEvent:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_unable_to_answer"))
         await displayer.display_chunk(
-            t("agents.expert_grounded_agent.messages.expert_unable_to_answer"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_unable_to_answer"), model_name="expert"
         )
         return StopEvent()
 
@@ -222,15 +222,15 @@ class ExpertGroundedAgent(Agent):
         displayer: EventDisplayer,
         exception_event: AgentInTheLoop.exception,
         t: LocaleHandler,
-    ):
+    ) -> StopEvent:
         await displayer.display_thought(
             t(
-                "agents.expert_grounded_agent.thoughts.expert_error",
+                "agent.expert_grounded_agent.thoughts.expert_error",
                 error_code=exception_event.exception_event.http_status_code,
                 error_message=exception_event.exception_event.message,
             )
         )
         await displayer.display_chunk(
-            t("agents.expert_grounded_agent.messages.expert_error_occurred"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_error_occurred"), model_name="expert"
         )
         return StopEvent()

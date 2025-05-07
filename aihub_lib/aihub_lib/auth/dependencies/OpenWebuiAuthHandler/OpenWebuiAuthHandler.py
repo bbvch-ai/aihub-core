@@ -58,7 +58,9 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
             response = await client.get(search_url, headers=headers)
 
         if response.status_code != 200:
-            logger.error(f"Failed to query Microsoft Graph. Status: {response.status_code}, Response: {response.text}")
+            logger.exception(
+                f"Failed to query Microsoft Graph. Status: {response.status_code}, Response: {response.text}"
+            )
             raise HTTPException(status_code=500, detail="Failed to resolve user identity")
 
         user_data = response.json()

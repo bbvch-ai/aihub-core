@@ -22,11 +22,12 @@ class LocaleHandler:
         i18n.set("skip_locale_root_data", True)
         i18n.set("enable_memoization", True)
 
+        i18n_load_path = i18n.config.get("load_path").copy()
         locale_paths = locale_paths or []
         for path in set(locale_paths + self.get_locale_paths()):
-            i18n.load_path.append(path)
+            i18n_load_path.append(path)
 
-        i18n.load_path = list(set(i18n.load_path))
+        i18n.config.set("load_path", list(set(i18n_load_path)))
 
     @property
     def locale(self):
@@ -76,7 +77,7 @@ class LocaleHandler:
             return locale_data[available_locales[0]]
         raise ValueError("No language keys available")
 
-    def extract_multi_locale(self, locale_data: Dict[str, Any] | LocaleString, locale: str) -> Any:
+    def extract_multi_locale(self, locale_data: Dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         value = getattr(locale_data, locale, None)
         if value:

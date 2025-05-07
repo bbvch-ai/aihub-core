@@ -157,11 +157,11 @@ class JetStreamEventStore:
                                 self._add_event_to_store(topic.run_id, event)
                                 msg_count += 1
                             except Exception as e:
-                                logger.error(f"Error processing replayed message: {e}")
+                                logger.exception(f"Error processing replayed message: {e}")
                     except Exception as e:
                         if "timeout" in str(e).lower():
                             break  # No more messages
-                        logger.error(f"Error fetching messages: {e}")
+                        logger.exception(f"Error fetching messages: {e}")
                         break
 
                 logger.info(f"Replayed {msg_count} historical events")
@@ -176,7 +176,7 @@ class JetStreamEventStore:
                 logger.info("Event store initialization complete")
 
             except Exception as e:
-                logger.error(f"Error initializing event store: {e}")
+                logger.exception(f"Error initializing event store: {e}")
                 raise
 
     async def stop(self):
@@ -235,7 +235,7 @@ class JetStreamEventStore:
             # Acknowledge the message
             await msg.ack()
         except Exception as e:
-            logger.error(f"Error handling new event: {e}")
+            logger.exception(f"Error handling new event: {e}")
             # Still ack the message to avoid redelivery
             try:
                 await msg.ack()

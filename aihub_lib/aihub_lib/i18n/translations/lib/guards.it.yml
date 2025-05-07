@@ -29,6 +29,7 @@ agent_description_guard:
     <CronologiaConversazionePrecedente>
     {history}
     </CronologiaConversazionePrecedente>
+    L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
 few_shot_guard:
   prompt: |
     Riceverete diversi esempi che mostrano quali richieste dell'utente sono consentite e quali no. Ogni risposta di esempio è composta da due chiavi:

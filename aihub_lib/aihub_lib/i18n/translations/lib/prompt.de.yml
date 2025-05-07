@@ -67,7 +67,7 @@ router:
   instructions:
     context_sufficient: |
       Bestimmen Sie, ob die Anfrage des Benutzers anhand des verfügbaren Chat-Verlaufs erfüllt werden kann.
-  
+      
       <chat_history>
       {% for message in chat_history %}
       <message role="{{ message.role.value }}">
@@ -79,11 +79,11 @@ router:
       </message>
       {% endfor %}
       </chat_history>
-  
+      
       <user_query>
       {{ query }}
       </user_query>
-  
+      
       <fulfillment_criteria>
       <can_fulfill>
       Eine Anfrage KANN erfüllt werden, wenn EINER der folgenden Punkte zutrifft:
@@ -92,7 +92,7 @@ router:
       * Die erforderlichen Informationen sind triviales Wissen, das die meisten Menschen kennen würden (z.B. "der Himmel ist blau")
       * Es gibt keine Informationen im Chat-Verlauf, aber die Anfrage erfordert auch keine spezifischen Informationen
       </can_fulfill>
-  
+      
       <cannot_fulfill>
       Eine Anfrage KANN NICHT erfüllt werden, wenn EINER der folgenden Punkte zutrifft:
       * Sie fragt explizit nach Informationen, die nicht im Chat-Verlauf vorhanden und nicht trivial verfügbar sind
@@ -100,7 +100,7 @@ router:
       * Die Anfrage kann aufgrund des verfügbaren Kontexts nur unzureichend oder teilweise beantwortet werden
       </cannot_fulfill>
       </fulfillment_criteria>
-  
+      
       Analysieren Sie die Benutzeranfrage sorgfältig in Bezug auf den Chat-Verlauf. Bestimmen Sie, ob die Anfrage basierend auf den oben genannten Kriterien erfüllt werden kann. Geben Sie eine klare Ja/Nein-Entscheidung mit detaillierter Begründung an.
 
     expert_answer_sufficient: |
@@ -143,3 +143,14 @@ router:
       </answered_criteria>
 
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
+summarizer:
+  summarize: |
+    Erstelle eine kurze und prägnante Zusammenfassung des folgenden Textes.
+    Fasse die Hauptideen und Schlüsselpunkte zusammen, stelle sicher, dass die Zusammenfassung kohärent ist und den ursprünglichen Kontext und die Beziehungen zwischen den Ideen beibehält.
+    Text zur Zusammenfassung:
+
+    <Text>
+    {text}
+    </Text>
+
+    Zusammenfassung:

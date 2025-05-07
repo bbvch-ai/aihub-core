@@ -3,40 +3,40 @@
     <thead>
       <tr>
         <th />
-        <th>Anzahl</th>
-        <th>Kosten</th>
+        <th>{{ $t('costs.table.count') }}</th>
+        <th>{{ $t('costs.table.cost') }}</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td class="font-bold">
-          Input
+          {{ $t('costs.table.input') }}
         </td>
         <td>{{ promptTokenCount }} </td>
-        <td>{{ promptTokensCosts }} CHF</td>
+        <td>{{ promptTokensCosts }} {{ $t('costs.table.currency') }}</td>
       </tr>
       <tr>
         <td class="font-bold">
-          Output
+          {{ $t('costs.table.output') }}
         </td>
         <td>{{ completionTokenCount }}</td>
-        <td>{{ completionTokensCosts }} CHF</td>
+        <td>{{ completionTokensCosts }} {{ $t('costs.table.currency') }}</td>
       </tr>
       <tr v-if="embeddingTokenCount">
         <td class="font-bold">
-          Embedding
+          {{ $t('costs.table.embedding') }}
         </td>
         <td>{{ embeddingTokenCount }}</td>
-        <td>{{ embeddingTokensCosts }} CHF</td>
+        <td>{{ embeddingTokensCosts }} {{ $t('costs.table.currency') }}</td>
       </tr>
       <tr
         class="font-bold"
       >
         <td>
-          Total
+          {{ $t('costs.table.total') }}
         </td>
         <td>{{ promptTokenCount + completionTokenCount + embeddingTokenCount }}</td>
-        <td>{{ promptTokensCosts + completionTokensCosts + embeddingTokensCosts }} CHF</td>
+        <td>{{ promptTokensCosts + completionTokensCosts + embeddingTokensCosts }} {{ $t('costs.table.currency') }}</td>
       </tr>
     </tbody>
   </table>

@@ -1,6 +1,7 @@
 import json
 from typing import Annotated, Any, Dict, Optional, Union
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
     AgentEvent,
     AgentInTheLoopExceptionEvent,
@@ -27,7 +28,9 @@ from aihub_lib.nats.events import (
     ToolEvent,
     UserMessageEvent,
 )
+from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
+from aihub_lib.nats.events.semantic.guard import GuardEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag
@@ -36,16 +39,18 @@ from typing_extensions import override
 # Import all events here that the frontend should be able to display
 DisplayEvents = Union[
     Annotated[StartEvent, Tag("StartEvent")],
-    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
-    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
     Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")],
     Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")],
+    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
+    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
     Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")],
     Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")],
     Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")],
     Annotated[LLMCostEvent, Tag("LLMCostEvent")],
     Annotated[ChunkEvent, Tag("ChunkEvent")],
     Annotated[ThoughtEvent, Tag("ThoughtEvent")],
+    Annotated[GuardEvent, Tag("GuardEvent")],
+    Annotated[RouterEvent, Tag("RouterEvent")],
     Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")],
     Annotated[SemanticEvent, Tag("SemanticEvent")],
     Annotated[AgentEvent, Tag("AgentEvent")],
@@ -69,10 +74,17 @@ def event_discriminator(event: DisplayEvent) -> str:
     valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
 
     # Return "DisplayEvent" if _event_name is missing or not in valid_tags
-    if not hasattr(event, "_event_name") or event._event_name not in valid_tags:
+    if not hasattr(event, "_event_name"):
         return "DisplayEvent"
 
-    return event._event_name
+    if event._event_name in valid_tags:
+        return event._event_name
+
+    for event_name in event._parent_event_names:
+        if event_name in valid_tags:
+            return event_name
+
+    return "DisplayEvent"
 
 
 class WSServerEvent(BaseModel):
@@ -95,6 +107,13 @@ class WSServerEvent(BaseModel):
     allowing previously stored events to be replayed or displayed to users.
     """
 
+    locale: str = Field(
+        LocaleHandler.DEFAULT_LOCALE,
+        description="The locale in which event name and description is returned.",
+    )
+    event_display_name: Annotated[str, Field(None, description="Display name for the event")]
+    event_display_description: Annotated[str, Field(None, description="Display description for the event")]
+
     agent_class: str = Field(..., description="The agent class responsible for this event.")
     agent_id: str = Field(..., description="Unique identifier of the agent instance that produced the event.")
     thread_id: str = Field(
@@ -114,12 +133,17 @@ class WSServerEvent(BaseModel):
     )
 
     @classmethod
-    def from_persisted_event(cls, persisted_event: PersistedEventEntity) -> "WSServerEvent":
+    def from_persisted_event(
+        cls, persisted_event: PersistedEventEntity, locale: Optional[str] = None
+    ) -> "WSServerEvent":
         """
         Construct a WSServerEvent from a PersistedEventEntity, converting persisted event data
         into a client-ready format.
         """
+        locale_handler = LocaleHandler(locale=locale)
+        display_event = DisplayEvent.deserialize_event(persisted_event.event_data)
         return cls(
+            locale=locale or locale_handler.DEFAULT_LOCALE,
             agent_class=persisted_event.agent_class,
             agent_id=persisted_event.agent_id,
             thread_id=persisted_event.thread_id,
@@ -128,7 +152,9 @@ class WSServerEvent(BaseModel):
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
             event_id=persisted_event.event_id,
-            event=DisplayEvent.deserialize_event(persisted_event.event_data),
+            event=display_event,
+            event_display_name=locale_handler.extract(display_event.display_name),
+            event_display_description=locale_handler.extract(display_event.display_description),
         )
 
     @override
@@ -138,7 +164,7 @@ class WSServerEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         data = super().model_dump(**kwargs)
-        return {**data, "event": self.event.model_dump()}
+        return {**data, "event": self.event.model_dump(**kwargs)}
 
     @override
     def model_dump_json(self, **kwargs: Any) -> str:

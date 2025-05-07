@@ -1,19 +1,18 @@
 <template>
   <EventDisplayBase
+    is-empty
     :event="event"
-    title="Erledigte Delegation des anderen Agenten"
+    :thread="thread"
     icon="mdi:robot-happy"
-    subtitle="Der involvierte Assistent hat die Anfrage bearbeitet"
-  >
-    {{ event.event }}
-  </EventDisplayBase>
+  />
 </template>
 
 <script setup lang="ts">
-import type { AgentInTheLoopResponseEvent, WsServerEvent } from '@core/sdk/client'
+import type { AgentInTheLoopResponseEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: AgentInTheLoopResponseEvent }
+  thread: ThreadDto
 }>()
 </script>
 

@@ -1,2 +1,99 @@
 test: "This is test"
 welcome: "Welcome to bbv ai-hub"
+
+user:
+  logout: "Logout"
+  language: "Language"
+  languages:
+    en: "English"
+    de: "German"
+    it: "Italian"
+    fr: "French"
+
+thread:
+  users: "Users"
+  assistants: "Assistants"
+  list:
+    name: "Name"
+    agents: "Agents"
+    created: "Created"
+    numTurns: "Number of Turns"
+    numEvents: "Number of Events"
+    status: "Status"
+    pending: "Pending"
+  title: "Threads"
+
+chat:
+  assistant: "Assistant"
+  document: "Document"
+
+eventList:
+  firstInteraction: "First Interaction:"
+  lastInteraction: "Last Interaction:"
+  pending: "Pending:"
+  no: "No"
+  status: "Status:"
+  error: "Error"
+  successful: "Successful"
+  chat: "Chat"
+  agents: "Agents:"
+
+threadUtils:
+  pendingTypes:
+    hitl: "Human in the Loop"
+    aitl: "Agent in the Loop"
+    bitl: "Bot in the Loop"
+    unknown: "Reason unknown"
+
+costs:
+  table:
+    count: "Count"
+    cost: "Cost"
+    input: "Input"
+    output: "Output"
+    embedding: "Embedding"
+    total: "Total"
+    currency: "CHF"
+
+service:
+  selection:
+    title: "Services"
+    description: "Here are all the services listed that you have activated"
+    search: "Search"
+
+agent:
+  overview:
+    startEvents: "Start Events"
+    stopEvents: "Stop Events"
+    config: "Config"
+  chat:
+    title: "Chat"
+    createThreadAndSend: "Create Thread and Send"
+    manuallyCreatedThread: "Manually created thread"
+  threads:
+    title: "Agent Threads"
+  navigation:
+    basic: "Basic"
+    workflow: "Workflow"
+    threads: "Threads"
+    chat: "Chat"
+  availableAgents: "Available Agents"
+
+auth:
+  renew:
+    processing: "Processing silent token renewal..."
+  callback:
+    processing: "Processing authentication callback..."
+    loggingIn: "Logging you in..."
+    loginError: "Login Error"
+    redirectingToLogin: "Redirecting to login page..."
+    genericError: "An error occurred during login. Please try again."
+  login:
+    title: "Login"
+    description: "Please log in to access the application"
+    tagline: "Experience the future of artificial intelligence"
+    welcome: "Welcome to the AI Hub of {companyName}"
+    pleaseLogin: "Please log in"
+    loginWithMicrosoft: "Login with Microsoft"
+    customSolutions: "Custom AI solutions for your company"
+    logoAlt: "Logo of company"

@@ -14,7 +14,7 @@ def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
     fields = {}
     for name, field_info in event_class.model_fields.items():
         # Skip fields with generated values
-        if name not in ["event_id", "created_at", "user", "locale"]:
+        if name not in ["event_id", "created_at", "user", "locale", "display_name", "display_description"]:
             fields[name] = (field_info.annotation, field_info)
 
     # Create a new model with the filtered fields
@@ -22,7 +22,7 @@ def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
         f"{event_class.event_name_from_class()}Input",
         __base__=BaseModel,
         **fields,
-        model_config=ConfigDict(
+        __config__=ConfigDict(
             arbitrary_types_allowed=False,
             populate_by_name=True,
             use_enum_values=True,

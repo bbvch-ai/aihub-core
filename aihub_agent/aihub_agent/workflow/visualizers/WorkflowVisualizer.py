@@ -235,11 +235,12 @@ class WorkflowVisualizer:
     ) -> None:
         """Build mappings between events and their producers/consumers."""
         for step_name, step_method in step_names.items():
-            # Map events consumed by this step
-            input_events = getattr(step_method, "_input_events", set())
-            for event_class in input_events:
-                if issubclass(event_class, ControlEvent):
-                    event_consumers[event_class].add(step_name)
+            # Map events consumed by this step - use the input_event_mapping
+            input_event_mapping = getattr(step_method, "_input_event_mapping", {})
+            for param_name, event_classes in input_event_mapping.items():
+                for event_class in event_classes:
+                    if issubclass(event_class, ControlEvent):
+                        event_consumers[event_class].add(step_name)
 
             # Map events produced by this step
             output_events = extract_return_events(step_method)
@@ -260,7 +261,7 @@ class WorkflowVisualizer:
             is_start_event = issubclass(event_class, StartEvent)
             is_stop_event = issubclass(event_class, StopEvent)
             producers = event_producers[event_class]
-            consumers = event_consumers[event_class]
+            consumers = event_consumers.get(event_class, set())
 
             # Extract payload info
             try:
@@ -291,6 +292,54 @@ class WorkflowVisualizer:
                     for consumer in consumers:
                         self._add_edge(G, producer, consumer, **edge_attrs)
 
+        # Add special connections for "in the loop" patterns
+        self._add_in_the_loop_edges(G, event_producers, event_consumers)
+
+    def _add_in_the_loop_edges(
+        self,
+        G: nx.DiGraph,
+        event_producers: Dict[EventType, Set[str]],
+        event_consumers: Dict[EventType, Set[str]],
+    ) -> None:
+        """
+        Add special edges for request-response pairs in "in the loop" patterns.
+        """
+        # Find all request event producers and response event consumers
+        request_events = {}
+        response_events = {}
+
+        # Collect all events by name
+        for event_class, producers in event_producers.items():
+            name = event_class.__name__
+            if "Request" in name and "Response" not in name:
+                request_events[name] = (event_class, producers)
+
+        for event_class, consumers in event_consumers.items():
+            name = event_class.__name__
+            if "Response" in name and "Request" not in name:
+                response_events[name] = (event_class, consumers)
+
+        # Match request-response pairs using direct name transformation
+        for req_name, (req_class, producers) in request_events.items():
+            # Get expected response name by replacing "Request" with "Response"
+            expected_resp_name = req_name.replace("Request", "Response")
+
+            # If we have a matching response event, create edges
+            if expected_resp_name in response_events:
+                resp_class, consumers = response_events[expected_resp_name]
+
+                # Connect all producers to all consumers
+                for producer in producers:
+                    for consumer in consumers:
+                        edge_attrs = {
+                            "event_name": f"{req_name[:req_name.rfind('Request')]}",
+                            "event_full_name": f"{req_class.__module__}.{req_name} → {resp_class.__module__}.{expected_resp_name}",
+                            "is_start_event": False,
+                            "is_stop_event": False,
+                            "payload": {},
+                        }
+                        self._add_edge(G, producer, consumer, **edge_attrs)
+
     def _add_edge(self, G: nx.DiGraph, source: str, target: str, **attributes: Any) -> None:
         """
         Add an edge to the graph with the given attributes.
@@ -311,9 +360,6 @@ class WorkflowVisualizer:
     def to_pydantic(self) -> WorkflowGraph:
         """
         Convert the workflow graph to a Pydantic model.
-
-        Returns:
-            A fully typed WorkflowGraph Pydantic model representing the workflow.
         """
         if self.graph is None:
             self.build_workflow_graph()
