@@ -78,6 +78,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
 
     - name: Install FFmpeg
+      if: inputs.install_ffmpeg == 'true'
       shell: bash
       run: make install-ffmpeg
       working-directory: ${{ inputs.working_directory }}
