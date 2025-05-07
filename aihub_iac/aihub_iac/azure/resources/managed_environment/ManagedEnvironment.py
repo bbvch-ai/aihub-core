@@ -32,7 +32,6 @@ class ManagedEnvironment(pulumi.ComponentResource):
         self._register_outputs()
 
     def _create_log_analytics_workspace(self):
-        """Create the Log Analytics workspace"""
         return operationalinsights.Workspace(
             workspace_name=self.config.log_analytics_name(),
             resource_name=self.config.log_analytics_name(),
@@ -47,7 +46,6 @@ class ManagedEnvironment(pulumi.ComponentResource):
         )
 
     def _get_log_analytics_credentials(self):
-        """Get Log Analytics credentials"""
         shared_keys = operationalinsights.get_shared_keys_output(
             resource_group_name=self.config.resource_group,
             workspace_name=self.log_analytics_workspace.name,
@@ -57,7 +55,6 @@ class ManagedEnvironment(pulumi.ComponentResource):
         return customer_id, shared_key
 
     def _create_managed_environment(self, infrastructure_subnet_id: pulumi.Output[str]):
-        """Create the managed environment for container apps"""
         return app.ManagedEnvironment(
             resource_name=self.config.container_env(),
             environment_name=self.config.container_env(),
@@ -80,7 +77,6 @@ class ManagedEnvironment(pulumi.ComponentResource):
         )
 
     def _register_outputs(self):
-        """Register outputs for this component"""
         outputs = {
             "managed_environment_id": self.managed_environment.id,
             "managed_environment_name": self.managed_environment.name,

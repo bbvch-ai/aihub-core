@@ -5,7 +5,7 @@ from pydantic_settings import SettingsConfigDict, BaseSettings
 
 
 class PhoenixSettings(BaseSettings):
-    CLIENT_SECRET: Optional[str] = Field(default=None, description="-")
+    PHOENIX_CLIENT_SECRET: Optional[str] = Field(default=None, description="-")
     PHOENIX_SECRET: Optional[str] = Field(default=None, description="-")
 
     model_config = SettingsConfigDict(

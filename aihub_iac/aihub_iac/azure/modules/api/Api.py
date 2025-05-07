@@ -4,7 +4,6 @@ import pulumi
 
 from pulumi_azure_native import web, documentdb, containerinstance
 
-from aihub_iac.azure.constants.resources import CONTAINER_INSTANCE
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.modules.api.ApiConfig import ApiConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
@@ -76,9 +75,9 @@ class Api(pulumi.ComponentResource):
             }
         )
 
-    def _get_container_group_private_ip(self) -> str:
+    def _get_nats_container_group_private_ip(self) -> str:
         container_group = containerinstance.get_container_group(
-            container_group_name=f"{self.config.project_name}-{CONTAINER_INSTANCE}-{self.config.location_short}-nats",
+            container_group_name=self.config.nats_container_group_name,
             resource_group_name=self.config.resource_group,
         )
         if container_group.ip_address is not None and container_group.ip_address.ip is not None:
@@ -112,7 +111,7 @@ class Api(pulumi.ComponentResource):
 
     def _create_webapp(self):
         """Create the web app with all required configuration"""
-        nats_ip = self._get_container_group_private_ip()
+        nats_ip = self._get_nats_container_group_private_ip()
         app_settings = [
             *self._get_base_env(),
             *self._get_registry_env(),

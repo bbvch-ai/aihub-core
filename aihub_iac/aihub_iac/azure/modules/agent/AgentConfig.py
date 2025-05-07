@@ -1,88 +1,67 @@
-from pydantic import BaseModel, Field, computed_field
-from aihub_iac.azure.constants.resources import COSMOS, AI_SEARCH_SERVICE, APP_SERVICE
-from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
+from typing import ClassVar, Optional
+
+from pydantic import Field
+from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
+from aihub_iac.azure.resources.BaseConfig import BaseConfig
+
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(BaseConfig):
 
-    # Project and environment settings
-    project_name: str
-    location: str
-    location_short: str
-    resource_group: str
-    subscription_id: str
+    _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
 
     # Docker Image settings
-    repo_image_url: str
-    image_tag: str
+    repo_image_url: str = Field(description="URL of the Docker repository")
+    docker_image_tag: str = Field(description="Tag of the Docker image")
 
     # Registry settings
-    registry_user: str
-    registry_pat: str
+    registry_user: str = Field(
+        default_factory=lambda: AgentConfig._registry_settings.REGISTRY_USER,
+        description="Registry username for authentication",
+    )
+    registry_pat: str = Field(
+        default_factory=lambda: AgentConfig._registry_settings.REGISTRY_PAT,
+        description="Registry personal access token for authentication",
+    )
 
     # Service endpoints
-    phoenix_service_name: str
-    phoenix_auth_token: str
+    phoenix_auth_token: str = Field(description="Authentication token for Phoenix service")
 
     # resources
-    cpu: float = 0.5
-    memory_in_gb: float = 0.5
+    cpu: float = Field(default=0.5, description="CPU allocation in cores")
+    memory_in_gb: float = Field(default=0.5, description="Memory allocation in GB")
 
     # AI resources
-    ai_search_name: str | None = None
-    ai_search_resource_group: str | None = None
-    doc_store_name: str | None = None
-    doc_store_resource_group: str | None = None
+    ai_search_name: Optional[str] = Field(default=None, description="Name of the AI search service")
+    ai_search_resource_group: Optional[str] = Field(default=None, description="Resource group for AI search")
+    doc_store_name: Optional[str] = Field(default=None, description="Name of the document store")
+    doc_store_resource_group: Optional[str] = Field(default=None, description="Resource group for document store")
 
-    doc_store_cosmos_account_name: str | None
-    doc_store_cosmos_resource_group: str | None
+    doc_store_cosmos_account_name: Optional[str] = Field(
+        default=None, description="Name of the Cosmos DB account for document storage"
+    )
+    doc_store_cosmos_resource_group: Optional[str] = Field(
+        default=None, description="Resource group for Cosmos DB document storage"
+    )
 
     # Other settings
-    log_level: str = Field(default="WARNING")
+    log_level: str = Field(default="WARNING", description="Logging level for the application")
 
-    @classmethod
-    def from_env(
-        cls,
-        repo_image_url: str,
-        docker_image_tag: str,
-        phoenix_auth_token: str,
-        doc_store_cosmos_account_name: str | None = None,
-        doc_store_cosmos_resource_group: str | None = None,
-        ai_search_name: str | None = None,
-        ai_search_resource_group: str | None = None,
-    ):
-
-        project_settings = ProjectSettings()
-        registry_settings = RegistrySettings()
-
-        return cls(
-            project_name=project_settings.APP_NAME,
-            location=project_settings.LOCATION,
-            location_short=project_settings.LOCATION_SHORT,
-            resource_group=project_settings.RESOURCE_GROUP,
-            subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
-            repo_image_url=repo_image_url,
-            image_tag=docker_image_tag,
-            registry_user=registry_settings.REGISTRY_USER,
-            registry_pat=registry_settings.REGISTRY_PAT,
-            phoenix_service_name=f"{project_settings.APP_NAME}-{APP_SERVICE}-{project_settings.LOCATION_SHORT}-phoenix",
-            phoenix_auth_token=phoenix_auth_token,
-            ai_search_name=ai_search_name,
-            ai_search_resource_group=ai_search_resource_group,
-            doc_store_cosmos_account_name=doc_store_cosmos_account_name,
-            doc_store_cosmos_resource_group=doc_store_cosmos_resource_group,
-        )
+    @property
+    def phoenix_service_name(self) -> str:
+        """Generate the phoenix service name"""
+        return self.resource_namer.app_service_name("phoenix")
 
     @property
     def effective_docker_image(self) -> str:
         """Generate the full docker image string"""
-        return f"{self.repo_image_url}:{self.image_tag}"
+        return f"{self.repo_image_url}:{self.docker_image_tag}"
 
     @property
     def effective_doc_store_cosmos_account_name(self) -> str:
         """Generate the cosmos name"""
-        return self.doc_store_cosmos_account_name or f"{self.project_name}-{COSMOS}-{self.location_short}-docstore"
+        return self.doc_store_cosmos_account_name or self.resource_namer.cosmos_name("docstore")
 
     @property
     def effective_doc_store_cosmos_resource_group(self) -> str:
@@ -91,10 +70,20 @@ class AgentConfig(BaseModel):
 
     @property
     def effective_ai_search_name(self) -> str:
-        """Generate the cosmos name"""
-        return self.ai_search_name or f"{self.project_name}-{AI_SEARCH_SERVICE}-{self.location_short}"
+        """Generate the AI search name, using the configured value or a default based on the project name, AI search service, and location"""
+        return self.ai_search_name or f"{self.resource_namer.ai_search_name}"
 
     @property
     def effective_ai_search_resource_group(self) -> str:
         """Get the effective cosmos resource group, using the configured value or the default"""
         return self.ai_search_resource_group or self.resource_group
+
+    @property
+    def nats_container_group_name(self) -> str:
+        return self.resource_namer.container_instance_name(NatsConfig.DEFAULT_NATS_SUFFIX)
+
+    def container_group_name(self, name: str) -> str:
+        return self.resource_namer.container_group_name(name)
+
+    def container_instance_name(self, name: str) -> str:
+        return self.resource_namer.container_instance_name(name)

@@ -16,7 +16,6 @@ from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageReso
 
 
 class WebUI(pulumi.ComponentResource):
-    """A Pulumi component resource for deploying container applications"""
 
     def __init__(
         self,

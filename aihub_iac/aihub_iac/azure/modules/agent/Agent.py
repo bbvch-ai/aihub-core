@@ -5,13 +5,14 @@ import time
 
 from pulumi_azure_native import containerinstance
 
-from aihub_iac.azure.constants.resources import CONTAINER_INSTANCE, CONTAINER_GROUP
 from aihub_iac.azure.modules.agent.AgentConfig import AgentConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 
 
 class Agent(pulumi.ComponentResource):
+
+    PORT = 8080
 
     def __init__(
         self,
@@ -66,13 +67,13 @@ class Agent(pulumi.ComponentResource):
 
     def _create_container_instance(self):
         """Create the container instance with proper configuration"""
-        group_name = f"{self.config.project_name}-{CONTAINER_GROUP}-{self.config.location_short}-{self.name}"
+        group_name = self.config.container_group_name(self.name)
         deployment_timestamp = str(int(time.time()))
 
         env_vars = self._get_environment_variables()
 
         agent_container = containerinstance.ContainerArgs(
-            name=f"{self.config.project_name}-{CONTAINER_INSTANCE}-{self.config.location_short}-{self.name}",
+            name=self.config.container_instance_name(self.name),
             image=self.config.effective_docker_image,
             resources=containerinstance.ResourceRequirementsArgs(
                 requests=containerinstance.ResourceRequestsArgs(
@@ -80,7 +81,7 @@ class Agent(pulumi.ComponentResource):
                     memory_in_gb=self.config.memory_in_gb,
                 ),
             ),
-            ports=[containerinstance.ContainerPortArgs(port=8080)],
+            ports=[containerinstance.ContainerPortArgs(port=self.PORT)],
             environment_variables=env_vars,
         )
 
@@ -90,11 +91,13 @@ class Agent(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             os_type="Linux",
-            restart_policy=containerinstance.ContainerGroupRestartPolicy.NEVER,
+            restart_policy=containerinstance.ContainerGroupRestartPolicy.ALWAYS,
             ip_address=containerinstance.IpAddressArgs(
                 type=containerinstance.ContainerGroupIpAddressType.PRIVATE,
                 ports=[
-                    containerinstance.PortArgs(port=8080, protocol=containerinstance.ContainerGroupNetworkProtocol.TCP),
+                    containerinstance.PortArgs(
+                        port=self.PORT, protocol=containerinstance.ContainerGroupNetworkProtocol.TCP
+                    ),
                 ],
             ),
             containers=[agent_container],
@@ -121,9 +124,9 @@ class Agent(pulumi.ComponentResource):
             ),
         )
 
-    def _get_container_group_private_ip(self) -> str:
+    def _get_nats_container_group_private_ip(self) -> str:
         container_group = containerinstance.get_container_group(
-            container_group_name=f"{self.config.project_name}-{CONTAINER_INSTANCE}-{self.config.location_short}-nats",
+            container_group_name=self.config.nats_container_group_name,
             resource_group_name=self.config.resource_group,
         )
         if container_group.ip_address is not None and container_group.ip_address.ip is not None:
@@ -133,7 +136,7 @@ class Agent(pulumi.ComponentResource):
 
     def _get_environment_variables(self) -> List[containerinstance.EnvironmentVariableArgs]:
         """Define the environment variables for the container"""
-        nats_ip = self._get_container_group_private_ip()
+        nats_ip = self._get_nats_container_group_private_ip()
         return [
             containerinstance.EnvironmentVariableArgs(
                 name="NATS_ENDPOINT",

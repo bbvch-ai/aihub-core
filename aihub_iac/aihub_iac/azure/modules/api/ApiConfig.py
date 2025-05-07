@@ -1,114 +1,75 @@
-from pydantic import BaseModel, Field, computed_field
+from typing import ClassVar, Optional
 
-from aihub_iac.azure.constants.resources import APP_SERVICE, COSMOS
+from pydantic import Field
+
+from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
+from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
-from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
-class ApiConfig(BaseModel):
-    """Configuration class for API service infrastructure"""
+class ApiConfig(BaseConfig):
 
-    # Project and environment settings
-    project_name: str
-    location: str
-    location_short: str
-    resource_group: str
-    subscription_id: str
+    _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
+    _oauth_settings: ClassVar[OAuthSettings] = OAuthSettings()
+
+    DEFAULT_API_SUFFIX: ClassVar[str] = "api"
 
     # Docker Image settings
-    repo_image_url: str
-    docker_image_tag: str
+    repo_image_url: str = Field(description="URL of the Docker repository")
+    docker_image_tag: str = Field(description="Tag of the Docker image")
 
     # Azure settings
-    app_service_plan_name: str
-    cosmos_account_name: str | None
-    cosmos_resource_group: str | None
+    app_service_plan_name: str = Field(description="Name of the Azure App Service Plan")
+    cosmos_account_name: Optional[str] = Field(description="Name of the Azure Cosmos DB account")
+    cosmos_resource_group: Optional[str] = Field(description="Name of the Azure Cosmos DB resource group")
 
     # Anonymization settings
-    anonym_name: str
-    anonym_email: str
-    anonym_roles: str
-    anonym_oid: str
+    anonym_name: str = Field(default="Aihub API", description="Anonymized name for the API service")
+    anonym_email: str = Field(default="api@ai-agents.ch", description="Anonymized email for the API service")
+    anonym_roles: str = Field(default='["AllAgents"]', description="Anonymized roles for the API service")
+    anonym_oid: str = Field(default="1234567890", description="Anonymized OID for the API service")
 
     # Registry settings
-    registry_user: str
-    registry_pat: str
-    registry_url: str
+    registry_user: str = Field(
+        default_factory=lambda: ApiConfig._registry_settings.REGISTRY_USER,
+        description="Registry username for authentication",
+    )
+    registry_pat: str = Field(
+        default_factory=lambda: ApiConfig._registry_settings.REGISTRY_PAT,
+        description="Registry personal access token for authentication",
+    )
+    registry_url: str = Field(
+        default_factory=lambda: ApiConfig._registry_settings.REGISTRY_URL,
+        description="Registry URL for authentication",
+    )
 
     # OAuth2 settings
-    client_id: str
-    tenant_id: str
-    authority_url: str
+    client_id: str = Field(default_factory=lambda: ApiConfig._oauth_settings.CLIENT_ID, description="Client ID")
+    tenant_id: str = Field(default_factory=lambda: ApiConfig._oauth_settings.TENANT_ID, description="Tenant ID")
+    authority_url: str = Field(
+        default_factory=lambda: ApiConfig._oauth_settings.AUTHORITY_URL,
+        description="Authority URL for OAuth2 authentication",
+    )
 
-    version: str
-
-    @classmethod
-    def from_env(
-        cls,
-        repo_image_url: str,
-        docker_image_tag: str,
-        app_service_plan_name: str,
-        cosmos_account_name: str | None,
-        cosmos_resource_group: str | None,
-        anonym_name: str,
-        anonym_email: str,
-        anonym_roles: str,
-        anonym_oid: str,
-        version: str,
-    ) -> "ApiConfig":
-        """Create a configuration from environment variables and ApiConfig"""
-        project_settings = ProjectSettings()
-        registry_settings = RegistrySettings()
-        oauth_settings = OAuthSettings()
-
-        return cls(
-            repo_image_url=repo_image_url,
-            docker_image_tag=docker_image_tag,
-            app_service_plan_name=app_service_plan_name,
-            cosmos_account_name=cosmos_account_name,
-            cosmos_resource_group=cosmos_resource_group,
-            anonym_name=anonym_name,
-            anonym_email=anonym_email,
-            anonym_roles=anonym_roles,
-            anonym_oid=anonym_oid,
-            version=version,
-            project_name=project_settings.APP_NAME,
-            location=project_settings.LOCATION,
-            location_short=project_settings.LOCATION_SHORT,
-            resource_group=project_settings.RESOURCE_GROUP,
-            subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
-            registry_user=registry_settings.REGISTRY_USER,
-            registry_pat=registry_settings.REGISTRY_PAT,
-            registry_url=registry_settings.REGISTRY_URL,
-            client_id=oauth_settings.CLIENT_ID,
-            tenant_id=oauth_settings.TENANT_ID,
-            authority_url=oauth_settings.AUTHORITY_URL,
-        )
+    version: str = Field(description="Version of the API service")
 
     @property
     def service_name(self) -> str:
-        """Generate the service name"""
-        project_settings = ProjectSettings()
-        return f"{project_settings.APP_NAME}-{APP_SERVICE}-{project_settings.LOCATION_SHORT}-api"
-
-    @property
-    def cosmos_name(self) -> str:
-        """Generate the cosmos name"""
-        project_settings = ProjectSettings()
-        return f"{project_settings.APP_NAME}-{COSMOS}-{project_settings.LOCATION_SHORT}"
+        return self.resource_namer.app_service_name(ApiConfig.DEFAULT_API_SUFFIX)
 
     @property
     def effective_cosmos_account_name(self) -> str:
-        """Get the effective cosmos account name, using the configured value or generating one"""
-        return self.cosmos_account_name or self.cosmos_name
+        return self.cosmos_account_name or self.resource_namer.cosmos_name()
 
     @property
     def effective_cosmos_resource_group(self) -> str:
-        """Get the effective cosmos resource group, using the configured value or the default"""
-        return self.cosmos_resource_group or ProjectSettings().RESOURCE_GROUP
+        return self.cosmos_resource_group or self.resource_group
+
+    @property
+    def nats_container_group_name(self) -> str:
+        return self.resource_namer.container_instance_name(NatsConfig.DEFAULT_NATS_SUFFIX)
 
     @property
     def effective_docker_image(self) -> str:
-        """Generate the full docker image string"""
         return f"DOCKER|{self.repo_image_url}:{self.docker_image_tag}"

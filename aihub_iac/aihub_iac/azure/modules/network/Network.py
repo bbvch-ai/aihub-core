@@ -32,16 +32,12 @@ class Network(pulumi.ComponentResource):
     def __init__(self, stack: str, name: str, config: NetworkConfig, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
-        # Create configuration from environment or use provided config
         self.name = name
         self.stack = stack
         self.config = config
         self.network_provider = NetworkProvider(
             self.config.resource_group, self.config.project_name, self.config.location_short
         )
-
-        # Store created resources
-        self.v_net_name = f"{self.config.project_name}-{V_NET}-{self.config.location_short}"
 
         self.vnet = None
         self.subnets = {}
@@ -59,7 +55,6 @@ class Network(pulumi.ComponentResource):
         self.subnets["nats_storage"] = self._create_nats_storage_subnet()
         self.subnets["app"] = self._create_app_subnet()
         self.subnets["pg"] = self._create_pg_subnet()
-        # self.subnets["private_endpoint"] = self._create_private_endpoint_subnet()
         self.subnets["capp"] = self._create_capp_subnet()
         self.subnets["agents"] = self._create_agents_subnet()
         self.subnets["stores_cosmos"] = self._create_stores_cosmos_subnet()
@@ -148,16 +143,6 @@ class Network(pulumi.ComponentResource):
             [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WEBUI_SUBNET_PREFIX],
         )
         return subnet
-
-    def _create_private_endpoint_subnet(self) -> network.Subnet:  # ToDo: Maybe Delete
-        return network.Subnet(
-            name=self.network_provider.priv_endpoint_subnet_name,
-            resource_name=self.network_provider.priv_endpoint_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=PRIVATE_ENDPOINT_SUBNET_PREFIX,  # 10.0.6.0 - 10.0.6.255
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
 
     def _create_capp_subnet(self) -> network.Subnet:
         return network.Subnet(

@@ -1,88 +1,66 @@
-from pydantic import BaseModel
+from typing import ClassVar
 
-from aihub_iac.azure.constants.resources import APP_SERVICE, POSTGRES
+from pydantic import Field
+
+from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
-from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
-class PhoenixConfig(BaseModel):
+class PhoenixConfig(BaseConfig):
     """Configuration class for API service infrastructure"""
 
-    # Project and environment settings
-    project_name: str
-    location: str
-    location_short: str
-    resource_group: str
-    subscription_id: str
+    _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
+    _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
+
+    DEFAULT_PHOENIX_SUFFIX: ClassVar[str] = "phoenix"
 
     # Docker Image settings
-    repo_image_url: str = "ghcr.io/bbvch-ai/aihub-core/phoenix"
-    docker_image_tag: str
+    repo_image_url: str = Field(
+        default="ghcr.io/bbvch-ai/aihub-core/phoenix", description="URL of the Docker repository"
+    )
+    docker_image_tag: str = Field(description="Tag of the Docker image")
 
     # Azure settings
-    app_service_plan_name: str
+    app_service_plan_name: str = Field(description="Name of the Azure App Service Plan")
 
     # Registry settings
-    registry_user: str
-    registry_pat: str
-    registry_url: str
+    registry_user: str = Field(
+        default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_USER,
+        description="Registry username for authentication",
+    )
+    registry_pat: str = Field(
+        default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_PAT,
+        description="Registry personal access token for authentication",
+    )
+    registry_url: str = Field(
+        default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_URL,
+        description="Registry URL for authentication",
+    )
 
     # OAuth2 settings
-    client_id: str
-    client_secret: str
-    oidc_config_url: str
+    client_id: str = Field(description="Client ID for OAuth2 authentication")
+    client_secret: str = Field(description="Client secret for OAuth2 authentication")
+    oidc_config_url: str = Field(description="OIDC configuration URL for OAuth2 authentication")
 
-    phoenix_secret: str
+    phoenix_secret: str = Field(description="Secret for Phoenix authentication")
 
-    version: str
+    version: str = Field(description="Version of the Phoenix service")
 
-    postgres_password: str
-    postgres_username: str
+    postgres_username: str = Field(
+        default_factory=lambda: PhoenixConfig._postgres_settings.POSTGRES_USERNAME,
+        description="Username for the PostgreSQL database",
+    )
+    postgres_password: str = Field(
+        default_factory=lambda: PhoenixConfig._postgres_settings.POSTGRES_PASSWORD,
+        description="Password for the PostgreSQL database",
+    )
 
     database_name: str = "phoenix"
 
-    @classmethod
-    def from_env(
-        cls,
-        docker_image_tag: str,
-        app_service_plan_name: str,
-        phoenix_secret: str,
-        version: str,
-        client_id: str,
-        client_secret: str,
-        oidc_config_url: str,
-    ) -> "PhoenixConfig":
-        """Create a configuration from environment variables and ApiConfig"""
-        project_settings = ProjectSettings()
-        registry_settings = RegistrySettings()
-        postgres_settings = PostgresAuthSettings()
-
-        return cls(
-            docker_image_tag=docker_image_tag,
-            app_service_plan_name=app_service_plan_name,
-            version=version,
-            project_name=project_settings.APP_NAME,
-            location=project_settings.LOCATION,
-            location_short=project_settings.LOCATION_SHORT,
-            resource_group=project_settings.RESOURCE_GROUP,
-            subscription_id=project_settings.ARM_SUBSCRIPTION_ID,
-            registry_user=registry_settings.REGISTRY_USER,
-            registry_pat=registry_settings.REGISTRY_PAT,
-            registry_url=registry_settings.REGISTRY_URL,
-            phoenix_secret=phoenix_secret,
-            client_id=client_id,
-            client_secret=client_secret,
-            oidc_config_url=oidc_config_url,
-            postgres_username=postgres_settings.POSTGRES_USERNAME,
-            postgres_password=postgres_settings.POSTGRES_PASSWORD,
-        )
-
     @property
     def service_name(self) -> str:
-        """Generate the service name"""
-        project_settings = ProjectSettings()
-        return f"{project_settings.APP_NAME}-{APP_SERVICE}-{project_settings.LOCATION_SHORT}-phoenix"
+        return self.resource_namer.app_service_name(PhoenixConfig.DEFAULT_PHOENIX_SUFFIX)
 
     @property
     def effective_docker_image(self) -> str:
@@ -91,4 +69,4 @@ class PhoenixConfig(BaseModel):
 
     @property
     def postgres_name(self) -> str:
-        return f"{self.project_name}-{POSTGRES}-{self.location_short}"
+        return self.resource_namer.postgres_name()
