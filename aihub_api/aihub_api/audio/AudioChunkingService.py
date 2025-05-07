@@ -81,8 +81,6 @@ class AudioChunkingService:
             def get_text(x: Transcription | TranscriptionVerbose):
                 return x.text
 
-        print(transcription_chunks)
-
         merged_words: List[str] = []
         for chunk in transcription_chunks:
             chunk_text = get_text(chunk)
