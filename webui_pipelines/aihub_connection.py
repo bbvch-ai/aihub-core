@@ -165,7 +165,7 @@ class Pipe:
                 for model in models.get("data", [])
             ]
         except Exception as e:
-            logger.error(f"Error fetching models: {e}")
+            logger.exception(f"Error fetching models: {e}")
             return [{"id": "error", "name": f"Error fetching models: {e}"}]
 
     async def get_retriever_events(self, thread_id: str, display_id: str, headers: dict) -> List[Dict]:
@@ -190,10 +190,10 @@ class Pipe:
                 return response.json()
             except httpx.HTTPStatusError as e:
                 error_body = await e.response.aread()
-                logger.error(f"HTTP error querying events: {e.response.status_code} - {error_body.decode()}")
+                logger.exception(f"HTTP error querying events: {e.response.status_code} - {error_body.decode()}")
                 return []
             except Exception as e:
-                logger.error(f"Exception in getting retriever events: {e}")
+                logger.exception(f"Exception in getting retriever events: {e}")
                 return []
 
     async def pipe_stream(
@@ -274,11 +274,11 @@ class Pipe:
             except Exception:
                 error_detail = "(Could not decode error body)"
 
-            logger.error(f"HTTP error during streaming: {e.response.status_code} - {error_detail}")
+            logger.exception(f"HTTP error during streaming: {e.response.status_code} - {error_detail}")
             yield f"data: {json.dumps({'error': f'API Error: Status {e.response.status_code}'})}\n\n"
 
         except Exception as e:
-            logger.error(f"Error during streaming: {e}", exc_info=True)
+            logger.exception(f"Error during streaming: {e}")
             yield f"data: {json.dumps({'error': f'Request error: {str(e)}'})}\n\n"
 
         finally:
@@ -296,7 +296,7 @@ class Pipe:
                 else:
                     logger.debug("No retriever events found after stream completed")
             except Exception as e:
-                logger.error(f"Error processing retriever events: {e}", exc_info=True)
+                logger.exception(f"Error processing retriever events: {e}")
 
     async def pipe_non_stream(
         self, body: dict, __user__: dict, __metadata__: dict, __event_emitter__, __request__
@@ -355,11 +355,11 @@ class Pipe:
             except Exception:
                 error_detail = "(Could not decode error body)"
 
-            logger.error(f"HTTP error: {e.response.status_code} - {error_detail}")
+            logger.exception(f"HTTP error: {e.response.status_code} - {error_detail}")
             return {"error": f"API Error: Status {e.response.status_code} - {error_detail}"}
 
         except Exception as e:
-            logger.error(f"Error during non-streaming request: {e}", exc_info=True)
+            logger.exception(f"Error during non-streaming request: {e}")
             return {"error": f"Request error: {str(e)}"}
 
     async def pipe(

@@ -36,13 +36,6 @@ from playground.performance.PerformanceTestingAgent.events.ParallelEvent import 
 async def benchmark_jetstream(n_events: int, payload_kb: int) -> Dict[str, Any]:
     """
     Benchmark NATS JetStream performance.
-
-    Args:
-        n_events: Number of events to publish
-        payload_kb: Size of each event payload in KB
-
-    Returns:
-        Dictionary with performance metrics
     """
     # Connect to NATS
     nc = await nats.connect("nats://localhost:4222")

@@ -54,10 +54,6 @@ class LLMCostTracker:
     def get_total_costs(self) -> LLMCosts:
         """
         Computes and returns the total token usage and corresponding costs so far.
-
-        Returns:
-            LLMCosts: An instance detailing prompt, completion, and embedding token usage
-                      plus calculated costs.
         """
         return LLMCosts(
             prompt_token_count=self._token_counter.prompt_llm_token_count,

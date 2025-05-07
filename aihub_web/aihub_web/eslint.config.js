@@ -31,7 +31,7 @@ export default withNuxt(
     },
     settings: {
       tailwindcss: {
-        whitelist: ['pi', 'pi-search'],
+        whitelist: ['pi', 'pi-search', 'pi-chevron-right', 'panel', 'loader', 'striped-bg', 'pi-exclamation-triangle', 'customized-timeline', 'pi-spin', 'pi-spinner'],
       },
     },
   },

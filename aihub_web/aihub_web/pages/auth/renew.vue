@@ -1,6 +1,6 @@
 <template>
   <div class="hidden">
-    Processing silent token renewal...
+    {{ $t('auth.renew.processing') }}
   </div>
 </template>
 

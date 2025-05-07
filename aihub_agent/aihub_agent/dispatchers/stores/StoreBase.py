@@ -63,7 +63,7 @@ class StoreBase:
                 await self.redis.delete(*keys_to_delete)
                 logger.debug(f"Deleted {len(keys_to_delete)} keys for run store '{self.prefix}_{run_id}'")
         except Exception as e:
-            logger.error(f"Error deleting run store '{self.prefix}_{run_id}': {e}")
+            logger.exception(f"Error deleting run store '{self.prefix}_{run_id}': {e}")
 
     async def get_value(
         self, run_id: str, key: str, default_value: T = None, transform_func: Callable[[bytes], T] = None
@@ -79,7 +79,7 @@ class StoreBase:
                 return transform_func(value)
             return value  # type: ignore
         except Exception as e:
-            logger.error(f"Error retrieving key '{redis_key}': {e}")
+            logger.exception(f"Error retrieving key '{redis_key}': {e}")
             return default_value
 
     async def get_json_value(self, run_id: str, key: str, default_value: Any = None) -> Any:
@@ -97,7 +97,7 @@ class StoreBase:
             await self.redis.set(redis_key, value, ex=self.default_ttl)
             return True
         except Exception as e:
-            logger.error(f"Error storing value for key '{redis_key}': {e}")
+            logger.exception(f"Error storing value for key '{redis_key}': {e}")
             return False
 
     async def put_json_value(self, run_id: str, key: str, value: Any) -> bool:
@@ -106,7 +106,7 @@ class StoreBase:
             serialized = json.dumps(value).encode()
             return await self.put_value(run_id, key, serialized)
         except Exception as e:
-            logger.error(f"Error serializing JSON value for key '{key}': {e}")
+            logger.exception(f"Error serializing JSON value for key '{key}': {e}")
             return False
 
     async def append_to_list(self, run_id: str, key: str, value: bytes) -> bool:
@@ -117,7 +117,7 @@ class StoreBase:
             await self.redis.expire(redis_key, self.default_ttl)
             return True
         except Exception as e:
-            logger.error(f"Error appending to list '{redis_key}': {e}")
+            logger.exception(f"Error appending to list '{redis_key}': {e}")
             return False
 
     async def append_json_to_list(self, run_id: str, key: str, value: Any) -> bool:
@@ -126,7 +126,7 @@ class StoreBase:
             serialized = json.dumps(value).encode()
             return await self.append_to_list(run_id, key, serialized)
         except Exception as e:
-            logger.error(f"Error serializing JSON value for list '{key}': {e}")
+            logger.exception(f"Error serializing JSON value for list '{key}': {e}")
             return False
 
     async def get_list(self, run_id: str, key: str, transform_func: Callable[[bytes], T] = None) -> List[T]:
@@ -146,7 +146,7 @@ class StoreBase:
 
             return result
         except Exception as e:
-            logger.error(f"Error retrieving list '{redis_key}': {e}")
+            logger.exception(f"Error retrieving list '{redis_key}': {e}")
             return result
 
     async def increment_counter(self, run_id: str, key: str, amount: int = 1) -> int:
@@ -157,5 +157,5 @@ class StoreBase:
             await self.redis.expire(redis_key, self.default_ttl)
             return count
         except Exception as e:
-            logger.error(f"Error incrementing counter '{redis_key}': {e}")
+            logger.exception(f"Error incrementing counter '{redis_key}': {e}")
             return 0

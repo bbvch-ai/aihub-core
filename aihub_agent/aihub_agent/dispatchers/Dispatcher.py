@@ -113,7 +113,9 @@ class Dispatcher:
         self.js_publisher = JSPublisher(self.js)
         self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager)
         self.step_store = DistributedStepStore(redis)
-        self.tracer = RunTraceCoordinator(self.nc)
+        self.tracer = RunTraceCoordinator(
+            self.nc, project_name=locale_handler.extract_multi_locale(agent_config.name, "en")
+        )
         self.step_configs = agent_config.get_step_configs()
 
         # Initialization flag
@@ -393,7 +395,7 @@ class Dispatcher:
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
                 logger.exception(e)
-                logger.error(f"Error executing step '{step_method.__name__}': {e}")
+                logger.exception(f"Error executing step '{step_method.__name__}': {e}")
                 return
 
             # If the step returns events, publish them

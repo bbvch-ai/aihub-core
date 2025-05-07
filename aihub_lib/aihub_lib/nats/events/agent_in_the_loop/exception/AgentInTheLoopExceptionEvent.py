@@ -1,11 +1,13 @@
+from typing import ClassVar
+
 from pydantic import Field
 
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
+from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
-class AgentInTheLoopExceptionEvent(ControlEvent, DisplayEvent):
+class AgentInTheLoopExceptionEvent(ControlAndDisplayEvent):
     """
     An error response from an agent when a delegated task fails.
 
@@ -15,6 +17,11 @@ class AgentInTheLoopExceptionEvent(ControlEvent, DisplayEvent):
     - Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures
     - Provides a dedicated error channel separate from successful responses
     """
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.aitl_exception_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.aitl_exception_event.description"
+    )
 
     exception_event: ExceptionEvent = Field(
         ..., description="The exception event from the delegated agent containing error details and failure context."

@@ -56,6 +56,7 @@ async def _(agent_runner: AgentTestRunner, payload: str):
 @then(parsers.parse('the agent should call the LLM to process the message "{payload}"'))
 def _(agent_runner: AgentTestRunner, payload: str):
     llm_event = agent_runner.get_event_of_class(LLMEvent)
+    print(llm_event.input_messages)
     assert llm_event.input_messages[0].role == MessageRole.USER
     assert llm_event.input_messages[0].content == payload
 

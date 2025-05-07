@@ -5,6 +5,7 @@ from .agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLo
 from .BaseEvent import BaseEvent
 from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
+from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
 from .discovery import AgentDiscoveryResponseEvent, DiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
@@ -16,6 +17,7 @@ from .semantic import (
     AgentEvent,
     ChainEvent,
     EmbeddingEvent,
+    GuardEvent,
     LLMEvent,
     LLMStopEvent,
     RerankerEvent,
@@ -26,6 +28,7 @@ from .user import UserMessageEvent
 
 __all__ = [
     "BaseEvent",
+    "ControlAndDisplayEvent",
     "ControlEvent",
     "ExceptionEvent",
     "StartEvent",
@@ -52,6 +55,7 @@ __all__ = [
     "RerankerEvent",
     "RetrieverEvent",
     "ToolEvent",
+    "GuardEvent",
     "UserMessageEvent",
     "GuardRejectionEvent",
     "LimitChatHistoryEvent",

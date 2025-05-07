@@ -40,7 +40,7 @@ class TokenAndOauth2Handler(AuthHandler):
             errors.append(f"Bearer authentication failed: {str(e)}")
 
         # If no strategy succeeded, raise an error with all failure details.
-        logger.error("Authentication failed for both OAuth2 and Bearer: %s", errors)
+        logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
         raise HTTPException(status_code=401, detail=" | ".join(errors))
 
     async def authenticate_token(self, token: str) -> AuthenticatedUser:
@@ -65,5 +65,5 @@ class TokenAndOauth2Handler(AuthHandler):
             errors.append(f"Bearer authentication failed: {str(e)}")
 
         # If no strategy succeeded, raise an error with all failure details.
-        logger.error("Authentication failed for both OAuth2 and Bearer: %s", errors)
+        logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
         raise HTTPException(status_code=401, detail=" | ".join(errors))

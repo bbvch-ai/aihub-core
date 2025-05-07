@@ -72,7 +72,7 @@ class BaseContext:
             logger.debug(f"Retrieved key '{redis_key}' with value: {val}")
             return val
         except Exception as e:
-            logger.error(f"Error getting key '{redis_key}': {e}")
+            logger.exception(f"Error getting key '{redis_key}': {e}")
             return default
 
     async def delete(self, key: str):
@@ -82,7 +82,7 @@ class BaseContext:
             await self.redis.delete(redis_key)
             logger.debug(f"Deleted key '{redis_key}'")
         except Exception as e:
-            logger.error(f"Error deleting key '{redis_key}': {e}")
+            logger.exception(f"Error deleting key '{redis_key}': {e}")
 
     async def delete_all(self):
         """
@@ -105,7 +105,7 @@ class BaseContext:
                 await self.redis.delete(*keys_to_delete)
                 logger.debug(f"Deleted {len(keys_to_delete)} keys from store '{self.store_name}'")
         except Exception as e:
-            logger.error(f"Error deleting all keys for store '{self.store_name}': {e}")
+            logger.exception(f"Error deleting all keys for store '{self.store_name}': {e}")
 
         # No need to clear _redis as we can reuse the connection
 
@@ -140,10 +140,10 @@ class BaseContext:
                         original_key = key.decode().split(":", 1)[1]
                         all_data[original_key] = json.loads(value.decode())
                 except Exception as e:
-                    logger.error(f"Error retrieving value for key '{key.decode()}': {e}")
+                    logger.exception(f"Error retrieving value for key '{key.decode()}': {e}")
             return all_data
         except Exception as e:
-            logger.error(f"Error retrieving all keys for store '{self.store_name}': {e}")
+            logger.exception(f"Error retrieving all keys for store '{self.store_name}': {e}")
             return {}
 
     async def to_serializable(self) -> dict:

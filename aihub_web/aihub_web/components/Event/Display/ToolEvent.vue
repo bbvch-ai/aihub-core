@@ -1,9 +1,8 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Tool"
+    :thread="thread"
     icon="mynaui:tool"
-    subtitle="Internal thought of the agent"
   >
     <p class="text-2xl font-bold">
       {{ event.event.name }}
@@ -30,10 +29,11 @@
 <script setup lang="ts">
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
-import type { ToolEvent, WsServerEvent } from '@core/sdk/client'
+import type { ThreadDto, ToolEvent, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: ToolEvent }
+  thread: ThreadDto
 }>()
 </script>
 

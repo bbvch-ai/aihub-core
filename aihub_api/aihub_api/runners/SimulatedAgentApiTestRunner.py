@@ -247,7 +247,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             ),
             LLMStopEvent(
                 output_messages=[
-                    Message(role="assistant", content="First chunk.\nSecond chunk"),
+                    Message.from_string(role="assistant", content="First chunk.\nSecond chunk"),
                 ]
             ),
         ]

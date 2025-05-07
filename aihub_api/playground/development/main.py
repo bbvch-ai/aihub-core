@@ -15,7 +15,6 @@ from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler impor
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.gemini.GeminiLLMConfig import GeminiLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -25,7 +24,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.infrastructure.google.gemini.GeminiConfig import GeminiConfig
 from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
@@ -64,6 +62,8 @@ async def main():
         .remove_user_from_thread(),
         AgentController(auth=auth)
         .get_agent()
+        .get_agent_threads()
+        .get_agents()
         .discover_agents()
         .send_event_to(
             "LLMWrappingAgent",
@@ -98,14 +98,6 @@ async def main():
                     base_url="http://localhost:8182/v1",
                     is_function_calling_model=False,
                     context_size=512,
-                ),
-                GeminiLLMConfig(
-                    name="gemini-2.0-flash",
-                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-                    context_size=1_000_000,
-                    prompt_tokens_costs_per_thousand=0.0045,
-                    completion_tokens_costs_per_thousand=0.0133,
-                    api_key=GeminiConfig().GOOGLE_GEMINI_API_KEY,
                 ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o",

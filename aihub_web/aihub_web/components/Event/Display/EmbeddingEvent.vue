@@ -1,9 +1,8 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Suche nach Information"
+    :thread="thread"
     icon="line-md:search-twotone"
-    subtitle="Der Agent sucht in seinem Wissensspeicher nach Informationen, die er für die Beantwortung der Anfrage benötigt."
   >
     <IconField class="w-full">
       <InputIcon class="pi pi-search" />
@@ -17,10 +16,11 @@
 </template>
 
 <script setup lang="ts">
-import type { EmbeddingEvent, WsServerEvent } from '@core/sdk/client'
+import type { EmbeddingEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: EmbeddingEvent }
+  thread: ThreadDto
 }>()
 </script>
 

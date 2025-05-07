@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen flex-col md:flex-row">
     <div class="order-2 flex h-3/5 w-full items-center justify-center bg-neutral-950 p-10 text-4xl text-surface-300 md:order-1 md:h-auto md:w-3/5">
-      <span>Erleben Sie die Zukunft der künstlichen Intelligenz</span>
+      <span>{{ $t('auth.login.tagline') }}</span>
     </div>
 
     <!-- Right Panel: Login -->
@@ -15,20 +15,20 @@
         >
           <img
             :src="logo"
-            alt="Logo of company"
+            :alt="$t('auth.login.logoAlt')"
             class="w-32 rounded lg:w-32"
           >
         </a>
         <div class="flex flex-col gap-2 text-center">
           <h2 class="text-xl text-white">
-            Willkommen im AI Hub von {{ companyName }}
+            {{ $t('auth.login.welcome', { companyName }) }}
           </h2>
           <p class="text-surface-400">
-            Bitte loggen Sie sich ein
+            {{ $t('auth.login.pleaseLogin') }}
           </p>
         </div>
         <Button
-          label="Login with Microsoft"
+          :label="$t('auth.login.loginWithMicrosoft')"
           icon="pi pi-microsoft"
           icon-pos="right"
           class="!bg-white !text-black"
@@ -41,7 +41,7 @@
         rel="noopener noreferrer"
         class="hidden text-surface-400 sm:block"
       >
-        Individuelle KI-Lösungen für Ihr Unternehmen
+        {{ $t('auth.login.customSolutions') }}
       </a>
     </div>
   </div>

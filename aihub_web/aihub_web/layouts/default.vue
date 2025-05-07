@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="w-full pl-[50px]">
-      <div class="flex h-[50px] w-full items-center justify-between bg-surface-50 px-2 dark:bg-surface-950">
+      <div class="fixed z-50 flex h-[50px] w-full items-center justify-between bg-surface-50 pr-[50px] dark:bg-surface-950">
         <Breadcrumb
           class="!bg-transparent"
           :home="apps[0]"
@@ -59,6 +59,7 @@
           <UserBar />
         </div>
       </div>
+      <div class="h-[50px] w-full" />
       <div v-if="online">
         <slot />
       </div>
@@ -75,10 +76,8 @@
 </template>
 
 <script setup lang="ts">
+import logo from '@core/assets/images/logo.png'
 import { getHealth } from '@core/sdk/client'
-import { useSuiteStore } from '@core/stores/useSuiteStore'
-
-import logo from '../assets/images/logo.png'
 
 import type { MenuItem } from 'primevue/menuitem'
 
@@ -87,7 +86,7 @@ const localeRoute = useLocaleRoute()
 
 const online = ref<boolean>(false)
 
-const { apps } = storeToRefs(useSuiteStore())
+const { apps } = useApps()
 
 const nonAdminApps = computed<MenuItem>(() => {
   return apps.value.filter((app: MenuItem) => !app.path.includes('/admin/'))
@@ -110,7 +109,6 @@ getHealth({
   composable: '$fetch',
 })
   .then((response) => {
-    console.log(response)
     online.value = response.code == 200
   })
   .catch(() => {

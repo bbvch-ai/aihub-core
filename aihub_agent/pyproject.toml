@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "v0.150.0"
+version = "v0.151.0"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -13,15 +13,15 @@ license = "Proprietary"
 python = ">=3.11, <3.12"
 pydantic = "^2.10.3"
 nats-py = "^2.9.0"
-openinference-instrumentation-llama-index = "^3.0.4"
-opentelemetry-sdk = "^1.28.2"
-opentelemetry-api = "^1.28.2"
+openinference-instrumentation-llama-index = "^4.2.1"
+opentelemetry-sdk = "^1.32.1"
+opentelemetry-api = "^1.32.1"
 pytest-asyncio = "^0.24.0"
-llama-index-core = "^0.12.7"
+llama-index-core = "^0.12.33.post1"
 mongoengine = "^0.29.1"
 python-i18n = "^0.3.9"
 flatdict = "^4.0.1"
-opentelemetry-exporter-otlp = "^1.29.0"
+opentelemetry-exporter-otlp = "^1.32.1"
 pydantic-settings = "^2.7.0"
 colorlog = "^6.9.0"
 llama-index-llms-openai = "^0.3.12"
@@ -33,7 +33,7 @@ stringcase = "^1.2.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.150.0"
+tag = "v0.151.0"
 subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]

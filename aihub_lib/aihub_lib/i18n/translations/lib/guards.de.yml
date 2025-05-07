@@ -36,7 +36,7 @@ few_shot_guard:
     "success": ein Boolean (true oder false), der angibt, ob die Anfrage zulässig ist.
     "reasoning": ein String, der die Begründung für diese Entscheidung enthält.
     Wichtig:
-    Ihre finale Ausgabe muss ausschließlich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
+    Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
 
     Ihre Aufgabe ist es, zu bestimmen, ob eine neue Benutzeranfrage basierend auf diesen Beispielen zulässig ist.
 
@@ -97,7 +97,7 @@ context_sufficient_guard:
     
     4. Die neue Abfrage MUSS sich deutlich von allen vorherigen Abfragen unterscheiden und sich von dem spezifischen Thema entfernen, wenn direkte Ansätze fehlgeschlagen sind.
     
-    5. Jede nachfolgende Abfrage sollte eine größere konzeptionelle Veränderung darstellen als die vorhergehenden.
+    5. Jede nachfolgende Abfrage sollte eine grössere konzeptionelle Veränderung darstellen als die vorhergehenden.
     
     Frage:
     <Question>

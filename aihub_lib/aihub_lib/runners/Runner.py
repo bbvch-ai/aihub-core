@@ -93,6 +93,7 @@ class Runner(abc.ABC):
             version=ApiConfig().VERSION or ".dev",
             lifespan=self.lifetime_manager,
             debug=self.debug,
+            redirect_slashes=True,
         )
 
     def _get_api_app(self) -> FastAPI:
@@ -105,6 +106,7 @@ class Runner(abc.ABC):
             description=self.description,
             version=ApiConfig().VERSION or ".dev",
             debug=self.debug,
+            redirect_slashes=True,
         )
 
         return app

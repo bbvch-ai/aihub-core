@@ -114,10 +114,22 @@ export const AgentDTOSchema = {
         network_graph: {
             '$ref': '#/components/schemas/WorkflowGraph',
             description: 'A network graph of the agent, showing how different components are connected and interact.'
+        },
+        is_online: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Online',
+            description: 'Indicates whether the agent is online and reachable.'
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph'],
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph', 'is_online'],
     title: 'AgentDTO',
     description: `A data transfer object for representing agent information in responses.
 
@@ -140,6 +152,14 @@ export const AgentEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -153,7 +173,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -174,6 +194,14 @@ export const AgentInTheLoopExceptionEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         exception_event: {
             '$ref': '#/components/schemas/ExceptionEvent',
             description: 'The exception event from the delegated agent containing error details and failure context.'
@@ -191,7 +219,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -219,8 +247,24 @@ export const AgentInTheLoopRequestEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         start_event: {
-            '$ref': '#/components/schemas/StartEvent',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/StartEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/UserMessageEvent'
+                }
+            ],
+            title: 'Start Event',
             description: 'The event that will be sent to the other agent to initiate its task.'
         },
         other_agent_topic: {
@@ -266,7 +310,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -295,6 +339,14 @@ export const AgentInTheLoopResponseEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         stop_event: {
             '$ref': '#/components/schemas/StopEvent',
             description: 'The stop event from the delegated agent containing the task results and marks the completion.'
@@ -312,7 +364,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -439,6 +491,7 @@ export const AssistantChatMessage_InputSchema = {
             default: 'user'
         },
         additional_kwargs: {
+            additionalProperties: true,
             type: 'object',
             title: 'Additional Kwargs'
         },
@@ -605,6 +658,41 @@ export const AudioBlockSchema = {
     title: 'AudioBlock'
 } as const;
 
+export const AudioContentSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'audio',
+            title: 'Type',
+            default: 'audio'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        mime_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Mime Type'
+        }
+    },
+    type: 'object',
+    title: 'AudioContent'
+} as const;
+
 export const AuthenticatedUserSchema = {
     properties: {
         name: {
@@ -746,9 +834,18 @@ export const ChainEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         metadata: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -771,7 +868,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -811,7 +908,7 @@ export const ChatCompletionSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['scale', 'default']
+                    enum: ['auto', 'default', 'flex']
                 },
                 {
                     type: 'null'
@@ -955,12 +1052,19 @@ export const ChatCompletionAudioParamSchema = {
     properties: {
         format: {
             type: 'string',
-            enum: ['wav', 'mp3', 'flac', 'opus', 'pcm16'],
+            enum: ['wav', 'aac', 'mp3', 'flac', 'opus', 'pcm16'],
             title: 'Format'
         },
         voice: {
-            type: 'string',
-            enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse'],
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'string',
+                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse']
+                }
+            ],
             title: 'Voice'
         }
     },
@@ -1317,7 +1421,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -1440,13 +1544,12 @@ export const ChatCompletionRequestSchema = {
         metadata: {
             anyOf: [
                 {
-                    type: 'object'
+                    '$ref': '#/components/schemas/Metadata'
                 },
                 {
                     type: 'null'
                 }
-            ],
-            title: 'Metadata'
+            ]
         },
         modalities: {
             anyOf: [
@@ -1843,6 +1946,7 @@ export const ChatMessage_InputSchema = {
             default: 'user'
         },
         additional_kwargs: {
+            additionalProperties: true,
             type: 'object',
             title: 'Additional Kwargs'
         },
@@ -1995,6 +2099,14 @@ export const ChunkEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         content: {
             type: 'string',
             title: 'Content',
@@ -2032,7 +2144,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2142,6 +2254,51 @@ export const CompletionUsageSchema = {
     type: 'object',
     required: ['completion_tokens', 'prompt_tokens', 'total_tokens'],
     title: 'CompletionUsage'
+} as const;
+
+export const ControlEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'ControlEvent',
+    description: `Represents a system-level or workflow-level signal, often used to coordinate steps,
+indicate state changes, or trigger specific actions in the event-driven architecture.
+
+### Why ControlEvent?
+While \`BaseEvent\` covers the general structure for any event, \`ControlEvent\` marks an event as
+particularly important for controlling the flow of a system. Hence, all events taken as inputs to
+workflow steps must be of type \`ControlEvent\`. Even though other type of events can be returned
+from workflow steps, only 'ControlEvent' influence the flow of the system.
+
+By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type registration and
+serialization, ensuring that control signals are as easy to produce and consume as any other event.`
 } as const;
 
 export const CreateThreadRequestSchema = {
@@ -2258,6 +2415,14 @@ export const DisplayEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -2271,7 +2436,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2292,6 +2457,119 @@ to reach a UI, it doesn’t alter the underlying workflow logic or state transit
 By subclassing \`BaseEvent\`, \`DisplayEvent\` remains fully compatible with the automatic
 registration, serialization, and deserialization mechanisms, making it simple to integrate
 into a user interface or logging pipeline.`
+} as const;
+
+export const DisplayStatisticsSchema = {
+    properties: {
+        n_events: {
+            type: 'integer',
+            title: 'N Events',
+            description: 'Total number of events',
+            default: 0
+        },
+        has_errors: {
+            type: 'boolean',
+            title: 'Has Errors',
+            description: 'Has error events',
+            default: false
+        },
+        has_pending: {
+            type: 'boolean',
+            title: 'Has Pending',
+            description: 'Has pending events (more start than stop/exception events)',
+            default: false
+        },
+        is_hitl: {
+            type: 'boolean',
+            title: 'Is Hitl',
+            description: 'Has HITL events',
+            default: false
+        },
+        open_hitl: {
+            type: 'boolean',
+            title: 'Open Hitl',
+            description: 'Has open HITL requests',
+            default: false
+        },
+        is_bitl: {
+            type: 'boolean',
+            title: 'Is Bitl',
+            description: 'Has BITL events',
+            default: false
+        },
+        open_bitl: {
+            type: 'boolean',
+            title: 'Open Bitl',
+            description: 'Has open BITL requests',
+            default: false
+        },
+        is_aitl: {
+            type: 'boolean',
+            title: 'Is Aitl',
+            description: 'Has AITL events',
+            default: false
+        },
+        open_aitl: {
+            type: 'boolean',
+            title: 'Open Aitl',
+            description: 'Has open AITL requests',
+            default: false
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At',
+            description: 'Start time (ISO format string)'
+        },
+        ended_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ended At',
+            description: 'End time (ISO format string)'
+        },
+        latency: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency',
+            description: 'Latency in seconds'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id',
+            description: 'The display ID'
+        },
+        runs: {
+            items: {
+                '$ref': '#/components/schemas/RunStatistics'
+            },
+            type: 'array',
+            title: 'Runs',
+            description: 'Runs in this display, sorted by start time',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['display_id'],
+    title: 'DisplayStatistics',
+    description: 'Statistics for a display, including its runs, intended for API response.'
 } as const;
 
 export const DocumentSchema = {
@@ -2328,6 +2606,7 @@ export const DocumentSchema = {
         metadata: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -2440,6 +2719,14 @@ export const EmbeddingEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         text: {
             anyOf: [
                 {
@@ -2492,7 +2779,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2708,6 +2995,7 @@ export const EventSpecsSchema = {
             description: 'The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.'
         },
         event_schema: {
+            additionalProperties: true,
             type: 'object',
             title: 'Event Schema',
             description: "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow."
@@ -2729,6 +3017,14 @@ export const ExceptionEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         message: {
             type: 'string',
@@ -2754,7 +3050,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2872,6 +3168,7 @@ export const FunctionDefinitionSchema = {
             title: 'Description'
         },
         parameters: {
+            additionalProperties: true,
             type: 'object',
             title: 'Parameters'
         },
@@ -2892,6 +3189,48 @@ export const FunctionDefinitionSchema = {
     title: 'FunctionDefinition'
 } as const;
 
+export const GuardEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['_event_name', '_parent_event_names'],
+    title: 'GuardEvent'
+} as const;
+
 export const GuardRejectionEventSchema = {
     properties: {
         event_id: {
@@ -2902,6 +3241,14 @@ export const GuardRejectionEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
         },
         reason: {
             type: 'string',
@@ -2921,7 +3268,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -2981,6 +3328,14 @@ export const HumanInTheLoopRequestEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         question: {
             type: 'string',
             title: 'Question',
@@ -3011,7 +3366,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3038,6 +3393,14 @@ export const HumanInTheLoopResponseEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         response: {
             type: 'string',
             title: 'Response',
@@ -3060,7 +3423,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3192,6 +3555,30 @@ export const ImageBlockSchema = {
     title: 'ImageBlock'
 } as const;
 
+export const ImageContentSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'image',
+            title: 'Type',
+            default: 'image'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        }
+    },
+    type: 'object',
+    title: 'ImageContent'
+} as const;
+
 export const ImageGenerationRequestSchema = {
     properties: {
         prompt: {
@@ -3305,16 +3692,33 @@ export const ImagesResponseSchema = {
             title: 'Created'
         },
         data: {
-            items: {
-                '$ref': '#/components/schemas/Image'
-            },
-            type: 'array',
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/Image'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Data'
+        },
+        usage: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Usage'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['created', 'data'],
+    required: ['created'],
     title: 'ImagesResponse'
 } as const;
 
@@ -3368,6 +3772,7 @@ export const JSONSchemaSchema = {
             title: 'Description'
         },
         schema: {
+            additionalProperties: true,
             type: 'object',
             title: 'Schema'
         },
@@ -3429,6 +3834,14 @@ export const LLMCostEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         llm_name: {
             type: 'string',
             title: 'Llm Name',
@@ -3447,7 +3860,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3476,6 +3889,14 @@ export const LLMEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_messages: {
             anyOf: [
                 {
@@ -3509,6 +3930,7 @@ export const LLMEventSchema = {
         invocation_parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -3633,6 +4055,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -3657,7 +4080,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3678,6 +4101,14 @@ export const LLMStopEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_messages: {
             anyOf: [
                 {
@@ -3711,6 +4142,7 @@ export const LLMStopEventSchema = {
         invocation_parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -3835,6 +4267,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -3859,7 +4292,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -3871,6 +4304,14 @@ Used during deserialization to decide which subclass to instantiate.`,
 
 export const LLMStopEventOutputSchema = {
     properties: {
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_messages: {
             anyOf: [
                 {
@@ -3904,6 +4345,7 @@ export const LLMStopEventOutputSchema = {
         invocation_parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -4028,6 +4470,7 @@ export const LLMStopEventOutputSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -4055,6 +4498,14 @@ export const LimitChatHistoryEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         limited_history: {
             items: {
                 '$ref': '#/components/schemas/ChatMessage-Output'
@@ -4076,7 +4527,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4106,6 +4557,57 @@ export const LocaleResponseSchema = {
     required: ['lang', 'test'],
     title: 'LocaleResponse',
     description: 'Represents language and test information for a locale.'
+} as const;
+
+export const LocaleStringSchema = {
+    properties: {
+        de: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'De'
+        },
+        en: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'En'
+        },
+        fr: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fr'
+        },
+        it: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'It'
+        }
+    },
+    type: 'object',
+    title: 'LocaleString'
 } as const;
 
 export const LogprobSchema = {
@@ -4187,6 +4689,7 @@ export const MessageSchema = {
             anyOf: [
                 {
                     items: {
+                        additionalProperties: true,
                         type: 'object'
                     },
                     type: 'array'
@@ -4213,6 +4716,7 @@ export const MessageSchema = {
         function_call_arguments_json: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -4233,6 +4737,31 @@ export const MessageSchema = {
             ],
             title: 'Tool Call Id',
             description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
         }
     },
     type: 'object',
@@ -4242,9 +4771,81 @@ export const MessageSchema = {
 
 export const MessageRoleSchema = {
     type: 'string',
-    enum: ['system', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
+    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
     description: 'Message role.'
+} as const;
+
+export const MetadataSchema = {
+    properties: {
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'The thread ID to which conversation shall e sent.'
+        },
+        display_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Id',
+            description: 'The display ID set for this run.'
+        },
+        reconstruct_history: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reconstruct History',
+            description: 'When set to True, message set on UserMessageEvent will be calculated based on thread event history'
+        }
+    },
+    type: 'object',
+    title: 'Metadata'
+} as const;
+
+export const MinimalAgentDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier (e.g., 'my_agent_class')."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: "Unique identifier for the agent instance (e.g., 'agent_123')."
+        },
+        agent_config: {
+            '$ref': '#/components/schemas/AgentConfigDTO',
+            description: 'Configuration details of the agent, including name, description, and prompts.'
+        },
+        is_conversational: {
+            type: 'boolean',
+            title: 'Is Conversational',
+            description: 'Whether the agent can participate in a chat-based conversation'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational'],
+    title: 'MinimalAgentDTO',
+    description: `Encapsulates the data transfer object (DTO) for a minimal agent.
+Only contains minimal information about the agent.`
 } as const;
 
 export const ModelDetailsSchema = {
@@ -4441,6 +5042,42 @@ export const NodeDataSchema = {
     description: 'Data for a node in the workflow graph.'
 } as const;
 
+export const PaginatedThreadsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        threads: {
+            items: {
+                '$ref': '#/components/schemas/ThreadDTO'
+            },
+            type: 'array',
+            title: 'Threads',
+            description: 'List of ThreadDTO objects for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'threads'],
+    title: 'PaginatedThreadsResponse'
+} as const;
+
 export const PartialAgentTopicSchema = {
     properties: {
         agent_class: {
@@ -4601,6 +5238,14 @@ export const RerankerEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         input_documents: {
             anyOf: [
                 {
@@ -4680,7 +5325,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4743,6 +5388,14 @@ export const RetrieverEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         documents: {
             anyOf: [
                 {
@@ -4771,7 +5424,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4794,7 +5447,7 @@ export const RevokeTokenResponseSchema = {
     title: 'RevokeTokenResponse'
 } as const;
 
-export const SemanticEventSchema = {
+export const RouteOptionsSchema = {
     properties: {
         event_id: {
             type: 'string',
@@ -4804,6 +5457,33 @@ export const SemanticEventSchema = {
             type: 'integer',
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'For UI purpose only'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'For UI purpose only'
+        },
+        instructions: {
+            type: 'string',
+            title: 'Instructions',
+            description: 'Instructions for LLM when to route here'
+        },
+        event: {
+            '$ref': '#/components/schemas/ControlEvent',
+            description: 'Possible event to route to'
         },
         _event_name: {
             type: 'string',
@@ -4818,7 +5498,217 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'description', 'instructions', 'event', '_event_name', '_parent_event_names'],
+    title: 'RouteOptions'
+} as const;
+
+export const RouterEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        routes: {
+            items: {
+                '$ref': '#/components/schemas/RouteOptions'
+            },
+            type: 'array',
+            title: 'Routes',
+            description: 'List of options'
+        },
+        selected_option: {
+            '$ref': '#/components/schemas/RouteOptions',
+            description: 'Selected option'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason for the decision'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['routes', 'selected_option', 'reason', '_event_name', '_parent_event_names'],
+    title: 'RouterEvent',
+    description: 'A RouterEvent marks a point where an LLM decided which way to go in the workflow.'
+} as const;
+
+export const RunStatisticsSchema = {
+    properties: {
+        n_events: {
+            type: 'integer',
+            title: 'N Events',
+            description: 'Total number of events',
+            default: 0
+        },
+        has_errors: {
+            type: 'boolean',
+            title: 'Has Errors',
+            description: 'Has error events',
+            default: false
+        },
+        has_pending: {
+            type: 'boolean',
+            title: 'Has Pending',
+            description: 'Has pending events (more start than stop/exception events)',
+            default: false
+        },
+        is_hitl: {
+            type: 'boolean',
+            title: 'Is Hitl',
+            description: 'Has HITL events',
+            default: false
+        },
+        open_hitl: {
+            type: 'boolean',
+            title: 'Open Hitl',
+            description: 'Has open HITL requests',
+            default: false
+        },
+        is_bitl: {
+            type: 'boolean',
+            title: 'Is Bitl',
+            description: 'Has BITL events',
+            default: false
+        },
+        open_bitl: {
+            type: 'boolean',
+            title: 'Open Bitl',
+            description: 'Has open BITL requests',
+            default: false
+        },
+        is_aitl: {
+            type: 'boolean',
+            title: 'Is Aitl',
+            description: 'Has AITL events',
+            default: false
+        },
+        open_aitl: {
+            type: 'boolean',
+            title: 'Open Aitl',
+            description: 'Has open AITL requests',
+            default: false
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At',
+            description: 'Start time (ISO format string)'
+        },
+        ended_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ended At',
+            description: 'End time (ISO format string)'
+        },
+        latency: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency',
+            description: 'Latency in seconds'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'The run ID'
+        },
+        agent: {
+            '$ref': '#/components/schemas/MinimalAgentDTO',
+            description: 'The agent that ran the run'
+        }
+    },
+    type: 'object',
+    required: ['run_id', 'agent'],
+    title: 'RunStatistics',
+    description: 'Statistics for a single run, intended for API response.'
+} as const;
+
+export const SemanticEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4893,6 +5783,14 @@ export const StandaloneQuestionCondenserEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         condensed_chat_message: {
             '$ref': '#/components/schemas/ChatMessage-Output',
             description: 'Single chat message containing the condensed user question.'
@@ -4910,7 +5808,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4932,6 +5830,14 @@ export const StartEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -4945,7 +5851,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -4975,6 +5881,14 @@ export const StopEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -4988,7 +5902,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5016,7 +5930,16 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 } as const;
 
 export const StopEventOutputSchema = {
-    properties: {},
+    properties: {
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        }
+    },
     type: 'object',
     title: 'StopEventOutput'
 } as const;
@@ -5053,6 +5976,24 @@ export const TextBlockSchema = {
     type: 'object',
     required: ['text'],
     title: 'TextBlock'
+} as const;
+
+export const TextContentSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            const: 'text',
+            title: 'Type',
+            default: 'text'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        }
+    },
+    type: 'object',
+    required: ['text'],
+    title: 'TextContent'
 } as const;
 
 export const TextToSpeechRequestSchema = {
@@ -5123,6 +6064,14 @@ export const ThoughtEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         content: {
             type: 'string',
             title: 'Content',
@@ -5160,7 +6109,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5194,34 +6143,164 @@ export const ThreadAgentDTOSchema = {
     title: 'ThreadAgentDTO'
 } as const;
 
-export const ThreadResponseSchema = {
+export const ThreadDTOSchema = {
     properties: {
         id: {
             type: 'string',
-            title: 'Id'
+            title: 'Id',
+            description: 'The thread ID'
         },
         name: {
             type: 'string',
-            title: 'Name'
+            title: 'Name',
+            description: 'User given name of thread'
         },
         users: {
             items: {
                 '$ref': '#/components/schemas/UserDTO'
             },
             type: 'array',
-            title: 'Users'
+            title: 'Users',
+            description: 'List of users in thread'
         },
         agents: {
             items: {
-                '$ref': '#/components/schemas/AgentDTO'
+                '$ref': '#/components/schemas/MinimalAgentDTO'
             },
             type: 'array',
-            title: 'Agents'
+            title: 'Agents',
+            description: 'List of agents initially associated with thread'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date at which thread was created (ISO format string)'
+        },
+        num_events: {
+            type: 'integer',
+            title: 'Num Events',
+            description: 'Total number of events in the thread',
+            default: 0
+        },
+        num_turns: {
+            type: 'integer',
+            title: 'Num Turns',
+            description: 'Number of turns (StartEvent count)',
+            default: 0
+        },
+        has_pending: {
+            type: 'boolean',
+            title: 'Has Pending',
+            description: 'Thread has more StartEvent than StopEvent+ExceptionEvent overall',
+            default: false
+        },
+        has_errors: {
+            type: 'boolean',
+            title: 'Has Errors',
+            description: 'There are ExceptionEvent in the thread',
+            default: false
+        },
+        is_hitl: {
+            type: 'boolean',
+            title: 'Is Hitl',
+            description: 'There are HumanInTheLoopRequest events present',
+            default: false
+        },
+        open_hitl: {
+            type: 'boolean',
+            title: 'Open Hitl',
+            description: 'More HumanInTheLoopRequest than Response overall',
+            default: false
+        },
+        is_bitl: {
+            type: 'boolean',
+            title: 'Is Bitl',
+            description: 'There are BotInTheLoopRequest events present',
+            default: false
+        },
+        open_bitl: {
+            type: 'boolean',
+            title: 'Open Bitl',
+            description: 'More BotInTheLoopRequest than Response overall',
+            default: false
+        },
+        is_aitl: {
+            type: 'boolean',
+            title: 'Is Aitl',
+            description: 'There are AgentInTheLoopRequest events present',
+            default: false
+        },
+        open_aitl: {
+            type: 'boolean',
+            title: 'Open Aitl',
+            description: 'More AgentInTheLoopRequest than Response overall',
+            default: false
+        },
+        first_interaction: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'First Interaction',
+            description: 'Date of oldest event in thread (ISO format string)'
+        },
+        latest_interaction: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latest Interaction',
+            description: 'Date of newest event in thread (ISO format string)'
+        },
+        latency: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency',
+            description: 'Overall duration of interactions in seconds'
+        },
+        displays: {
+            items: {
+                '$ref': '#/components/schemas/DisplayStatistics'
+            },
+            type: 'array',
+            title: 'Displays',
+            description: 'Displays in this thread, sorted by start time',
+            default: []
+        },
+        participating_agents: {
+            items: {
+                '$ref': '#/components/schemas/MinimalAgentDTO'
+            },
+            type: 'array',
+            title: 'Participating Agents',
+            description: "All unique agents that participated in the thread's events",
+            default: []
+        },
+        llm_cost: {
+            type: 'number',
+            title: 'Llm Cost',
+            description: 'Total LLM cost of the thread',
+            default: 0
         }
     },
     type: 'object',
-    required: ['id', 'name', 'users', 'agents'],
-    title: 'ThreadResponse'
+    required: ['id', 'name', 'users', 'agents', 'created_at'],
+    title: 'ThreadDTO',
+    description: 'Thread information and statistics for API response.'
 } as const;
 
 export const TokenResponseSchema = {
@@ -5268,6 +6347,14 @@ export const ToolEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         name: {
             anyOf: [
                 {
@@ -5295,6 +6382,7 @@ export const ToolEventSchema = {
         json_schema: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -5307,6 +6395,7 @@ export const ToolEventSchema = {
         parameters: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -5329,7 +6418,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5519,6 +6608,47 @@ export const TranscriptionWordSchema = {
     title: 'TranscriptionWord'
 } as const;
 
+export const UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    title: 'Usage'
+} as const;
+
+export const UsageInputTokensDetailsSchema = {
+    properties: {
+        image_tokens: {
+            type: 'integer',
+            title: 'Image Tokens'
+        },
+        text_tokens: {
+            type: 'integer',
+            title: 'Text Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['image_tokens', 'text_tokens'],
+    title: 'UsageInputTokensDetails'
+} as const;
+
 export const UserChatMessage_InputSchema = {
     properties: {
         role: {
@@ -5526,6 +6656,7 @@ export const UserChatMessage_InputSchema = {
             default: 'user'
         },
         additional_kwargs: {
+            additionalProperties: true,
             type: 'object',
             title: 'Additional Kwargs'
         },
@@ -5654,15 +6785,16 @@ export const UserMessageEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         locale: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Locale',
             description: 'The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.',
             default: 'de'
@@ -5702,7 +6834,7 @@ Used during deserialization to decide which subclass to instantiate.`,
             },
             type: 'array',
             title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent.',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
             readOnly: true
         }
     },
@@ -5736,6 +6868,14 @@ are triggered, depending on the source of the event.`
 
 export const UserMessageEventInputSchema = {
     properties: {
+        display_name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Display description for the event'
+        },
         messages: {
             items: {
                 anyOf: [
@@ -5791,6 +6931,22 @@ export const ValidationErrorSchema = {
 
 export const WSServerEventSchema = {
     properties: {
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale in which event name and description is returned.',
+            default: 'de'
+        },
+        event_display_name: {
+            type: 'string',
+            title: 'Event Display Name',
+            description: 'Display name for the event'
+        },
+        event_display_description: {
+            type: 'string',
+            title: 'Event Display Description',
+            description: 'Display description for the event'
+        },
         agent_class: {
             type: 'string',
             title: 'Agent Class',
@@ -5852,16 +7008,16 @@ export const WSServerEventSchema = {
                     '$ref': '#/components/schemas/StartEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
-                },
-                {
                     '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
                 },
                 {
                     '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
                 },
                 {
                     '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
@@ -5880,6 +7036,12 @@ export const WSServerEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/ThoughtEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RouterEvent'
                 },
                 {
                     '$ref': '#/components/schemas/GuardRejectionEvent'
@@ -5962,6 +7124,7 @@ export const WorkflowGraphSchema = {
             description: 'Whether the graph is a multigraph'
         },
         graph: {
+            additionalProperties: true,
             type: 'object',
             title: 'Graph',
             description: 'Graph-level attributes'
@@ -6028,6 +7191,7 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
             title: 'Description'
         },
         parameters: {
+            additionalProperties: true,
             type: 'object',
             title: 'Parameters'
         }

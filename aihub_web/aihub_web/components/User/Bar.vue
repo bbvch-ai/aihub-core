@@ -39,30 +39,21 @@
           {{ user?.email }}
         </p>
       </div>
-      <OverlayBadge
-        value="4"
-        severity="danger"
-        class="inline-flex"
-        size="small"
-      >
-        <Avatar
-          :image="user?.profile_image ?? undefined"
-          :label="!user?.profile_image ? userInitials : undefined"
-          shape="circle"
-          size="normal"
-        />
-      </OverlayBadge>
+      <Avatar
+        :image="user?.profile_image ?? undefined"
+        :label="!user?.profile_image ? userInitials : undefined"
+        shape="circle"
+        size="normal"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useUserStore } from '@core/stores/useUserStore'
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 
-const userStore = useUserStore()
-const { user, loadingUser } = storeToRefs(userStore)
+const { user, loadingUser } = useUser()
 
 const userInitials = computed(() =>
   user.value?.name?.split(' ').map(n => n[0]).join(''),

@@ -68,8 +68,8 @@ class WebuiAgent(Agent):
 
         # Create and return the stop event
         return LLMStopEvent(
-            input_messages=[Message(role=msg.role, content=msg.content) for msg in event.messages],
-            output_messages=[Message(role="assistant", content=aggregate)],
+            input_messages=[Message.from_llama_index(msg) for msg in event.messages],
+            output_messages=[Message.from_string(role="assistant", content=aggregate)],
             invocation_parameters=request_body,
             chat_model_name=agent_config.assistant_name,
             provider="open-webui",

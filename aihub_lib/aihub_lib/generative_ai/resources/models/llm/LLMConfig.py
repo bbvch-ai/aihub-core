@@ -45,9 +45,6 @@ class LLMConfig(ResourceConfig):
         """
         Merge default model parameters with provided ones. The merged dictionary excludes any
         fields starting with '_'.
-
-        Returns:
-            A dictionary of final model parameters to pass to the LLM or embedding.
         """
         model_params_dict = model_parameter.model_dump() if model_parameter else {}
         default_params_dict = self.default_parameter.model_dump()

@@ -1,9 +1,8 @@
 <template>
   <EventDisplayBase
     :event="event"
-    title="Kosten"
+    :thread="thread"
     icon="fluent:money-16-filled"
-    subtitle="Bei der Interaktion mit dem Sprachmodell sind Kosten entstanden, die hier aufgelistet sind."
   >
     <CostsTable
       :prompt-token-count="event.event.prompt_token_count"
@@ -17,9 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { LlmCostEvent, WsServerEvent } from '@core/sdk/client'
+import type { LlmCostEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
 
 defineProps<{
   event: WsServerEvent & { event: LlmCostEvent }
+  thread: ThreadDto
 }>()
 </script>

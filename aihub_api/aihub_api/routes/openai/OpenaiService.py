@@ -19,12 +19,11 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
-from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, FileContent, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
-from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
+from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from starlette.responses import StreamingResponse
@@ -35,6 +34,7 @@ from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
 from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
 from aihub_api.routes.openai.dto.ModelResponse import ModelResponse
+from aihub_api.routes.thread.ThreadService import ThreadService
 
 logger = logging.getLogger(__name__)
 
@@ -248,17 +248,15 @@ class OpenaiService:
         external_event_distributor: ExternalEventDistributor,
         locale: Optional[str] = None,
     ):
-        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
-        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+        thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
+        if thread_id and chat_completion_request.metadata.reconstruct_history:
+            chat_completion_request.messages = OpenaiService._reconstruct_history(chat_completion_request, thread_id)
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=[
-                ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump()))
-                for msg in chat_completion_request.messages
-            ],
+            messages=chat_completion_request.llama_index_messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
@@ -268,6 +266,9 @@ class OpenaiService:
         # Wait until all events are processed
         await resources.stop_signal.wait()
         await resources.subscriber.stop()
+
+        if resources.stop_event.is_exception_event:
+            raise HTTPException(resources.stop_event.http_status_code, resources.stop_event.message)
 
         # Construct final JSON response
         chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
@@ -304,17 +305,15 @@ class OpenaiService:
         external_event_distributor: ExternalEventDistributor,
         locale: Optional[str] = None,
     ):
-        thread_id = chat_completion_request.metadata.get("thread_id") if chat_completion_request.metadata else None
-        display_id = chat_completion_request.metadata.get("display_id") if chat_completion_request.metadata else None
+        thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
+        if thread_id and chat_completion_request.metadata.reconstruct_history:
+            chat_completion_request.messages = OpenaiService._reconstruct_history(chat_completion_request, thread_id)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=[
-                ChatMessage(**(msg if isinstance(msg, dict) else msg.model_dump()))
-                for msg in chat_completion_request.messages
-            ],
+            messages=chat_completion_request.llama_index_messages,
             nc=nc,
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
@@ -357,6 +356,8 @@ class OpenaiService:
             # Send a final "stop" chunk at the end
             if resources.stop_event.is_hitl_request_event:
                 content = resources.stop_event.question
+            elif resources.stop_event.is_exception_event:
+                content = f"\n\n>[!CAUTION]\n>**Error:** {resources.stop_event.message}\n"
             else:
                 content = ""
             chat_completion_chunk = ChatCompletionChunk(
@@ -445,3 +446,19 @@ class OpenaiService:
         tts_model_config = models[0]
         client: AsyncOpenAI | AsyncAzureOpenAI = tts_model_config.get_openai_client()
         return await client.audio.speech.create(**function_args)
+
+    @staticmethod
+    def _extract_thread_and_display_id(
+        chat_completion_request: ChatCompletionRequest,
+    ) -> Tuple[Optional[str], Optional[str]]:
+        thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
+        display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
+        return thread_id, display_id
+
+    @staticmethod
+    def _reconstruct_history(
+        chat_completion_request: ChatCompletionRequest, thread_id: str
+    ) -> List[ChatCompletionMessageParam]:
+        history = ThreadService.thread_as_message_history(thread_id)
+        user_message = chat_completion_request.messages[-1]
+        return history.messages + [user_message]
