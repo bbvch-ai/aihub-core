@@ -91,7 +91,7 @@ const chartOptions = computed<ApexOptions>(() => {
       const dataPointIndex = opts?.i ?? 0
 
       // Determine max labels based on time range to avoid clutter
-      let maxLabels = 31
+      let maxLabels = 31 // For 1 month, all days have labels, for 1 year, each month has exactly 12 labels
       if (time_range === '1h') maxLabels = 12 // e.g., every 5 minutes for 1 hour
       else if (time_range === '24h') maxLabels = 8 // e.g., every 3 hours for 24 hours
 

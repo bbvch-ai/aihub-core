@@ -3087,15 +3087,11 @@ export const EventTimeseriesSchema = {
             description: 'Event Name to filter for'
         },
         time_range: {
-            type: 'string',
-            enum: ['1h', '24h', '30d', '365d'],
-            title: 'Time Range',
+            '$ref': '#/components/schemas/TimeRange',
             description: 'Time range for the statistics'
         },
         resolution: {
-            type: 'string',
-            enum: ['1m', '1h', '1d', '1w'],
-            title: 'Resolution',
+            '$ref': '#/components/schemas/Resolution',
             description: 'Resolution of the buckets'
         },
         start_time: {
@@ -5448,6 +5444,12 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'RerankerEvent'
 } as const;
 
+export const ResolutionSchema = {
+    type: 'string',
+    enum: ['1m', '1h', '1d', '1w'],
+    title: 'Resolution'
+} as const;
+
 export const ResponseFormatJSONObjectSchema = {
     properties: {
         type: {
@@ -6416,6 +6418,12 @@ export const ThreadDTOSchema = {
     required: ['id', 'name', 'users', 'agents', 'created_at'],
     title: 'ThreadDTO',
     description: 'Thread information and statistics for API response.'
+} as const;
+
+export const TimeRangeSchema = {
+    type: 'string',
+    enum: ['1h', '24h', '30d', '365d'],
+    title: 'TimeRange'
 } as const;
 
 export const TokenResponseSchema = {

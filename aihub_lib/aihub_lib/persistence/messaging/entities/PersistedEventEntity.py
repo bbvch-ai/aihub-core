@@ -1,6 +1,8 @@
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
@@ -17,8 +19,54 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-EVENT_TIMESERIES_TIME_RANGE = Literal["1h", "24h", "30d", "365d"]
-EVENT_TIMESERIES_RESOLUTION = Literal["1m", "1h", "1d", "1w"]
+class TimeRange(Enum):
+    ONE_HOUR = "1h"
+    TWENTY_FOUR_HOURS = "24h"
+    THIRTY_DAYS = "30d"
+    THREE_SIXTY_FIVE_DAYS = "365d"
+
+
+class Resolution(Enum):
+    ONE_MINUTE = "1m"
+    ONE_HOUR = "1h"
+    ONE_DAY = "1d"
+    ONE_WEEK = "1w"
+
+
+@dataclass(frozen=True)
+class TimeRangeDetailConfig:
+    resolution: Resolution
+    interval_seconds: int
+    delta: timedelta
+    align_to_end_of_day: bool
+
+
+TIME_RANGE_CONFIG: Dict[TimeRange, TimeRangeDetailConfig] = {
+    TimeRange.ONE_HOUR: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_MINUTE,
+        interval_seconds=60,
+        delta=timedelta(hours=1),
+        align_to_end_of_day=False,
+    ),
+    TimeRange.TWENTY_FOUR_HOURS: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_HOUR,
+        interval_seconds=60 * 60,
+        delta=timedelta(hours=24),
+        align_to_end_of_day=True,
+    ),
+    TimeRange.THIRTY_DAYS: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_DAY,
+        interval_seconds=60 * 60 * 24,
+        delta=timedelta(days=30),
+        align_to_end_of_day=True,
+    ),
+    TimeRange.THREE_SIXTY_FIVE_DAYS: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_WEEK,
+        interval_seconds=60 * 60 * 24 * 7,
+        delta=timedelta(days=365),
+        align_to_end_of_day=True,
+    ),
+}
 
 
 class PersistedEventEntity(Document):
@@ -378,12 +426,12 @@ class PersistedEventEntity(Document):
     @classmethod
     def get_event_timeseries(
         cls,
-        time_range: Literal["1h", "24h", "30d", "365d"],
+        time_range: TimeRange,
         thread_id: Optional[ObjectId] = None,
         agent_id: Optional[ObjectId] = None,
         agent_class: Optional[str] = None,
         event_name: Optional[str] = None,
-    ) -> Tuple[List[EventBucket], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
+    ) -> Tuple[List[EventBucket], datetime, datetime, Resolution]:
         """
         Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
         Counts total events, optionally filtered by a specific event_name.
@@ -391,35 +439,23 @@ class PersistedEventEntity(Document):
         Returns a list of EventBucket instances (start_time, end_time, total_events),
         the overall start time, end time, and resolution of the analysis.
         """
-        resolution_val: Literal["1m", "1h", "1d", "1w"]
-        interval_seconds: int
+        config = TIME_RANGE_CONFIG.get(time_range)
 
-        if time_range == "1h":
-            now = datetime.now(timezone.utc)
-            start_time = now - timedelta(hours=1)
-            resolution_val = "1m"
-            interval_seconds = 60
+        current_utc_time = datetime.now(timezone.utc)
+        if config.align_to_end_of_day:
+            end_time_boundary = current_utc_time.replace(hour=23, minute=59, second=59, microsecond=999999)
         else:
-            now = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
-            if time_range == "24h":
-                start_time = now - timedelta(hours=24)
-                resolution_val = "1h"
-                interval_seconds = 60 * 60
-            elif time_range == "30d":
-                start_time = now - timedelta(days=30)
-                resolution_val = "1d"
-                interval_seconds = 60 * 60 * 24
-            elif time_range == "365d":
-                start_time = now - timedelta(days=365)
-                resolution_val = "1w"
-                interval_seconds = 60 * 60 * 24 * 7
-            else:
-                raise ValueError(f"Invalid time range: {time_range}")
+            end_time_boundary = current_utc_time
+
+        start_time = end_time_boundary - config.delta
+        if time_range == TimeRange.ONE_HOUR:  # Compare with Enum member
+            start_time = current_utc_time - config.delta
+            end_time_boundary = current_utc_time
 
         match_filter: Dict[str, Any] = {
             "event_data.created_at": {
                 "$gte": int(start_time.timestamp() * 1e9),
-                "$lte": int(now.timestamp() * 1e9),
+                "$lte": int(end_time_boundary.timestamp() * 1e9),
             },
         }
 
@@ -444,7 +480,7 @@ class PersistedEventEntity(Document):
                     "time_bucket": {
                         "$subtract": [
                             {"$toLong": "$event_time"},
-                            {"$mod": [{"$toLong": "$event_time"}, interval_seconds * 1000]},
+                            {"$mod": [{"$toLong": "$event_time"}, config.interval_seconds * 1000]},
                         ]
                     }
                 }
@@ -467,7 +503,9 @@ class PersistedEventEntity(Document):
             # 6. Add end_time field (derived from bucket start + interval)
             {
                 "$addFields": {
-                    "end_time": {"$toDate": {"$add": ["$_id", interval_seconds * 1000]}}  # $_id is time_bucket (ms)
+                    "end_time": {
+                        "$toDate": {"$add": ["$_id", config.interval_seconds * 1000]}
+                    }  # $_id is time_bucket (ms)
                 }
             },
             # 7. Project the final simplified fields
@@ -494,14 +532,14 @@ class PersistedEventEntity(Document):
         filled_results: List[EventBucket] = []
         current_loop_time = start_time
 
-        if interval_seconds >= 3600:
+        if config.interval_seconds >= 3600:
             current_loop_time = current_loop_time.replace(minute=0, second=0, microsecond=0)
-        if interval_seconds >= 86400:
+        if config.interval_seconds >= 86400:
             current_loop_time = current_loop_time.replace(hour=0)
 
         idx = 0
-        while current_loop_time < now:
-            current_bucket_end_time = current_loop_time + timedelta(seconds=interval_seconds)
+        while current_loop_time < end_time_boundary:
+            current_bucket_end_time = current_loop_time + timedelta(seconds=config.interval_seconds)
             bucket_data = None
 
             if idx < len(results):
@@ -519,8 +557,8 @@ class PersistedEventEntity(Document):
                     )
                 )
             else:
-                actual_end_time = min(current_bucket_end_time, now)
-                if current_loop_time < now:
+                actual_end_time = min(current_bucket_end_time, end_time_boundary)
+                if current_loop_time < end_time_boundary:
                     filled_results.append(
                         EventBucket(
                             start_time=current_loop_time,
@@ -530,15 +568,15 @@ class PersistedEventEntity(Document):
                     )
 
             current_loop_time = current_bucket_end_time
-            # Safety break for the unlikely event that 'now' isn't reached due to floating point issues with many small intervals
+            # Safety break for the unlikely event that 'end_time_boundary' isn't reached due to floating point issues with many small intervals
             if (
-                len(filled_results) > ((now - start_time).total_seconds() / interval_seconds) + 10
-                and interval_seconds > 0
+                len(filled_results) > ((end_time_boundary - start_time).total_seconds() / config.interval_seconds) + 10
+                and config.interval_seconds > 0
             ):
                 # This condition suggests we've created significantly more buckets than expected
                 logger.warning(
-                    f"Exiting fill loop early due to excessive bucket count. Current loop time: {current_loop_time}, Now: {now}"
+                    f"Exiting fill loop early due to excessive bucket count. Current loop time: {current_loop_time}, end_time_boundary: {end_time_boundary}"
                 )
                 break
 
-        return filled_results, start_time, now, resolution_val
+        return filled_results, start_time, end_time_boundary, config.resolution

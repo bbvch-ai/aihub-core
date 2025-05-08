@@ -2,7 +2,10 @@ import { useRouteQuery } from '@vueuse/router'
 
 import type { EventChartInput } from '@core/types/EventChartInput'
 
+import { useI18n } from '#imports'
+
 export const useBasicEventStatistics = () => {
+  const { t } = useI18n()
   const timeRange = useRouteQuery<'1h' | '24h' | '30d' | '365d'>('range', '30d')
   const { timeseries: startSeries, timeseriesIsLoading: startIsLoading } = useEventTimeseries({
     eventName: 'StartEvent',
@@ -40,34 +43,34 @@ export const useBasicEventStatistics = () => {
 
   const charts = computed<EventChartInput[]>(() => [
     {
-      title: 'Agent Invocations',
+      title: t('eventStatistics.charts.agentInvocations'),
       isLoading: startIsLoading.value,
       timeseriesInputs: [
-        { name: 'Agent Start', color: 'var(--p-surface-600)', timeseries: startSeries.value },
+        { name: t('eventStatistics.charts.agentStart'), color: 'var(--p-surface-600)', timeseries: startSeries.value },
       ],
     },
     {
-      title: 'End Events',
+      title: t('eventStatistics.charts.endEvents'),
       isLoading: stopIsLoading.value || exstepsionIsLoading.value || hitlIsLoading.value || bitlIsLoading.value,
       timeseriesInputs: [
-        { name: 'Success', color: 'var(--p-green-600)', timeseries: stopSeries.value },
-        { name: 'Open (Human in the loop)', color: 'var(--p-yellow-500)', timeseries: hitlSeries.value },
-        { name: 'Open (Bot in the Loop)', color: 'var(--p-yellow-600)', timeseries: bitlSeries.value },
-        { name: 'Error', color: 'var(--p-red-600)', timeseries: exceptionSeries.value },
+        { name: t('eventStatistics.charts.success'), color: 'var(--p-green-600)', timeseries: stopSeries.value },
+        { name: t('eventStatistics.charts.openHumanInTheLoop'), color: 'var(--p-yellow-500)', timeseries: hitlSeries.value },
+        { name: t('eventStatistics.charts.openBotInTheLoop'), color: 'var(--p-yellow-600)', timeseries: bitlSeries.value },
+        { name: t('eventStatistics.charts.error'), color: 'var(--p-red-600)', timeseries: exceptionSeries.value },
       ],
     },
     {
-      title: 'Delegations',
+      title: t('eventStatistics.charts.delegations'),
       isLoading: aitlIsLoading.value,
       timeseriesInputs: [
-        { name: 'Delegated Task (Agent in the Loop)', color: 'var(--p-blue-600)', timeseries: aitlSeries.value },
+        { name: t('eventStatistics.charts.delegatedTaskAgentInTheLoop'), color: 'var(--p-blue-600)', timeseries: aitlSeries.value },
       ],
     },
     {
-      title: 'All Events',
+      title: t('eventStatistics.charts.allEvents'),
       isLoading: allIsLoading.value,
       timeseriesInputs: [
-        { name: 'All Events', color: 'var(--p-surface-600)', timeseries: allSeries.value },
+        { name: t('eventStatistics.charts.allEvents'), color: 'var(--p-surface-600)', timeseries: allSeries.value },
       ],
     },
   ])

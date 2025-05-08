@@ -1183,11 +1183,11 @@ export type EventTimeseries = {
     /**
      * Time range for the statistics
      */
-    time_range: '1h' | '24h' | '30d' | '365d';
+    time_range: TimeRange;
     /**
      * Resolution of the buckets
      */
-    resolution: '1m' | '1h' | '1d' | '1w';
+    resolution: Resolution;
     /**
      * Start time of the entire range
      */
@@ -2227,6 +2227,15 @@ export type RerankerEvent = {
     [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
+export type Resolution = '1m' | '1h' | '1d' | '1w';
+
+export const Resolution = {
+    '1M': '1m',
+    '1H': '1h',
+    '1D': '1d',
+    '1W': '1w'
+} as const;
+
 export type ResponseFormatJsonObject = {
     type: 'json_object';
 };
@@ -2808,6 +2817,15 @@ export type ThreadDto = {
     llm_cost?: number;
 };
 
+export type TimeRange = '1h' | '24h' | '30d' | '365d';
+
+export const TimeRange = {
+    '1H': '1h',
+    '24H': '24h',
+    '30D': '30d',
+    '365D': '365d'
+} as const;
+
 export type TokenResponse = {
     /**
      * The token ID
@@ -3266,7 +3284,7 @@ export type GetEventTimeseriesData = {
         /**
          * Time range for the statistics (1h, 24h, 30d, 365d)
          */
-        time_range: '1h' | '24h' | '30d' | '365d';
+        time_range: TimeRange;
     };
     query?: {
         thread_id?: string;

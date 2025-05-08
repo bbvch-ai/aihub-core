@@ -63,9 +63,13 @@
 <script setup lang="ts">
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { de } from 'date-fns/locale/de'
+import { enUS } from 'date-fns/locale/en-US'
+import { frCH } from 'date-fns/locale/fr-CH'
+import { itCH } from 'date-fns/locale/it-CH'
 
 const { thread, threadIsLoading } = useThread()
 const { timeRange, charts } = useBasicEventStatistics()
+const { locale } = useI18n()
 
 const firstInteraction = computed<string>(() => {
   return useDateFormat(new Date(thread.value?.first_interaction), 'DD.MM.YYYY HH:mm:ss')
@@ -86,7 +90,7 @@ const duration = computed<string>(() => {
   if (duration.days || duration.weeks) {
     duration.minutes = 0
   }
-  return formatDuration(duration, { locale: de })
+  return formatDuration(duration, { locale: { de, en: enUS, fr: frCH, it: itCH }[locale.value as 'de' | 'en' | 'fr' | 'it'] })
 })
 </script>
 

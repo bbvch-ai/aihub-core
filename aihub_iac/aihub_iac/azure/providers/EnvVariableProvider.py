@@ -1,4 +1,3 @@
-
 from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 
 

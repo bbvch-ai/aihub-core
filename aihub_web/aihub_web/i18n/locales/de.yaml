@@ -57,6 +57,19 @@ costs:
     total: "Total"
     currency: "CHF"
 
+eventStatistics:
+  charts:
+    agentInvocations: "Agent-Aufrufe"
+    agentStart: "Agent-Start"
+    endEvents: "End-Ereignisse"
+    success: "Erfolg"
+    openHumanInTheLoop: "Offen (Mensch in der Schleife)"
+    openBotInTheLoop: "Offen (Bot in der Schleife)"
+    error: "Fehler"
+    delegations: "Delegierungen"
+    delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
+    allEvents: "Alle Ereignisse"
+
 service:
   selection:
     title: "Dienste"

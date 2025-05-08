@@ -57,6 +57,19 @@ costs:
     total: "Total"
     currency: "CHF"
 
+eventStatistics:
+  charts:
+    agentInvocations: "Invocations d'Agent"
+    agentStart: "Démarrage d'Agent"
+    endEvents: "Événements de Fin"
+    success: "Succès"
+    openHumanInTheLoop: "Ouvert (Humain dans la Boucle)"
+    openBotInTheLoop: "Ouvert (Bot dans la Boucle)"
+    error: "Erreur"
+    delegations: "Délégations"
+    delegatedTaskAgentInTheLoop: "Tâche Déléguée (Agent dans la Boucle)"
+    allEvents: "Tous les Événements"
+
 service:
   selection:
     title: "Services"

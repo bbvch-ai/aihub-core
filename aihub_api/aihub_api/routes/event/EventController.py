@@ -7,7 +7,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import EVENT_TIMESERIES_TIME_RANGE
+from aihub_lib.persistence.messaging.entities.PersistedEventEntity import TimeRange
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
@@ -151,7 +151,7 @@ class EventController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_event_timeseries(
             time_range: Annotated[
-                EVENT_TIMESERIES_TIME_RANGE,
+                TimeRange,
                 Path(
                     title="Time Range",
                     description="Time range for the statistics (1h, 24h, 30d, 365d)",

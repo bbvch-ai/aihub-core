@@ -8,10 +8,7 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import (
-    EVENT_TIMESERIES_TIME_RANGE,
-    PersistedEventEntity,
-)
+from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity, TimeRange
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -140,7 +137,7 @@ class EventService:
 
     @staticmethod
     def get_event_timeseries(
-        time_range: EVENT_TIMESERIES_TIME_RANGE,
+        time_range: TimeRange,
         thread_id: Optional[ObjectId] = None,
         agent_id: Optional[ObjectId] = None,
         agent_class: Optional[str] = None,

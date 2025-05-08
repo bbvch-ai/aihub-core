@@ -17,7 +17,7 @@
       <div
         v-for="(chart, index) in charts"
         :key="index"
-        class="flex w-full items-center justify-center"
+        class="flex h-[350px] w-full items-center justify-center"
       >
         <EventTimeseries
           v-if="!chart.isLoading"
@@ -26,7 +26,7 @@
         />
         <ProgressSpinner
           v-else
-          class="size-3"
+          class="size-12"
         />
       </div>
     </div>

@@ -1,4 +1,3 @@
-
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 
 
