@@ -10,12 +10,12 @@ class OpenWebUIConfig(BaseModel):
     admin_email: str = Field(description="Admin email for web UI")
     default_locale: str = Field(description="Default locale for web UI")
 
-    aihub_api_key: Optional[str] = Field(description="AIHub API key")
-    custom_openai_api_key: Optional[str] = Field(description="OpenAI API key")
-    custom_rag_openai_api_key: Optional[str] = Field(description="OpenAI API key for RAG")
-    custom_audio_stt_openai_api_key: Optional[str] = Field(description="OpenAI API key for audio STT")
-    custom_audio_tts_openai_api_key: Optional[str] = Field(description="OpenAI API key for audio TTS")
-    custom_images_openai_api_key: Optional[str] = Field(description="OpenAI API key for images")
+    aihub_api_key: Optional[str] = Field(None, description="AIHub API key")
+    custom_openai_api_key: Optional[str] = Field(None, description="OpenAI API key")
+    custom_rag_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for RAG")
+    custom_audio_stt_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for audio STT")
+    custom_audio_tts_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for audio TTS")
+    custom_images_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for images")
     jina_api_key: str = Field(description="Jina API key")
 
     oidc_client_id: str = Field(description="OIDC client ID")

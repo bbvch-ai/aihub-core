@@ -6,12 +6,14 @@ from aihub_iac.azure.modules.api.ApiConfig import ApiConfig
 from aihub_iac.azure.modules.webui.OpenWebUIConfig import OpenWebUIConfig
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
+from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
 class WebUIConfig(StorageConfig):
     """Configuration class for Nats infrastructure"""
 
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
+    _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
 
     DEFAULT_WEBUI_SUFFIX: ClassVar[str] = "webui"
 
@@ -62,7 +64,7 @@ class WebUIConfig(StorageConfig):
 
     @property
     def webui_container_app(self) -> str:
-        return self.resource_namer.container_app(WebUIConfig.DEFAULT_WEBUI_SUFFIX)
+        return self.resource_namer.container_app_name(WebUIConfig.DEFAULT_WEBUI_SUFFIX)
 
     @property
     def webui_storage(self) -> str:
