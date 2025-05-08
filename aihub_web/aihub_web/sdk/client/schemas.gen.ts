@@ -3122,7 +3122,7 @@ export const EventTimeseriesSchema = {
     type: 'object',
     required: ['thread_id', 'agent_id', 'agent_class', 'event_name', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
     title: 'EventTimeseries',
-    description: 'Timeseries of events for a given thread and time-range.'
+    description: 'Timeseries of events for a given time-range.'
 } as const;
 
 export const ExceptionEventSchema = {

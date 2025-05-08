@@ -4,8 +4,8 @@ from pydantic import Field
 
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
-from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
+from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
 class DagsterConfig(StorageConfig):

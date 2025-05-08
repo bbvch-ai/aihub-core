@@ -12,7 +12,7 @@ export const useThreadEvents = defineQuery(() => {
 
   const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
     key: () => ['thread', route.params.thread_id as string, 'events'],
-    staleTime: 1000 * 10, // 10 seconds
+    staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {
       return await getEvents({

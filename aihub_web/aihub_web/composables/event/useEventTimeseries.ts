@@ -15,7 +15,7 @@ export const useEventTimeseries = ({ eventName, timeRange }: { eventName?: strin
 
   const { data: timeseries, isPending: timeseriesIsLoading } = useQuery<EventTimeseries>({
     key: () => ['events', 'timeseries', timeRange.value, query],
-    staleTime: 1000, // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {
       return await getEventTimeseries({

@@ -1,8 +1,7 @@
-from typing import Optional, List
+import time
+from typing import List, Optional
 
 import pulumi
-import time
-
 from pulumi_azure_native import containerinstance
 
 from aihub_iac.azure.modules.agent.AgentConfig import AgentConfig
@@ -11,7 +10,6 @@ from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 
 
 class Agent(pulumi.ComponentResource):
-
     PORT = 8080
 
     def __init__(

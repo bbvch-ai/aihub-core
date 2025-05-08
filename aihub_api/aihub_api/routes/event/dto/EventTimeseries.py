@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class EventTimeseries(BaseModel):
-    """Timeseries of events for a given thread and time-range."""
+    """Timeseries of events for a given time-range."""
 
     thread_id: Annotated[Optional[str], Field(description="The thread ID to filter for")]
     agent_id: Annotated[Optional[str], Field(description="The Agent ID to filter for")]

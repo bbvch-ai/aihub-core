@@ -1,16 +1,17 @@
-from pydantic import BaseModel
 from typing import Optional
 
+from pydantic import BaseModel
+
 from aihub_iac.azure.constants.resources import (
-    COSMOS,
-    APP_SERVICE,
     AI_SEARCH_SERVICE,
+    APP_SERVICE,
     CONTAINER_APP,
-    POSTGRES,
-    CONTAINER_INSTANCE,
-    CONTAINER_GROUP,
-    LOG_WORKSPACE,
     CONTAINER_APP_ENVIRONMENT,
+    CONTAINER_GROUP,
+    CONTAINER_INSTANCE,
+    COSMOS,
+    LOG_WORKSPACE,
+    POSTGRES,
     V_NET,
 )
 

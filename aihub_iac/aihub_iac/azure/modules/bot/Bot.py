@@ -1,8 +1,7 @@
-from typing import Optional, List
+from typing import List, Optional
 
 import pulumi
-
-from pulumi_azure_native import web, documentdb, containerinstance
+from pulumi_azure_native import containerinstance, documentdb, web
 
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.modules.bot.BotConfig import BotConfig

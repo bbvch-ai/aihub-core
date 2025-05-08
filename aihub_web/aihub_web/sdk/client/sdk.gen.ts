@@ -117,14 +117,12 @@ export const getEvents = <TComposable extends Composable, DefaultT extends GetEv
 
 /**
  * Get Event Timeseries
- * Retrieves time-based statistics for a thread.
+ * Retrieves time-based statistics.
  * Returns event counts in time buckets with resolution based on the time range:
  * - 1h: 1 minute resolution
  * - 24h: 1 hour resolution
  * - 30d: 1 day resolution
  * - 365d: 1 week resolution
- *
- * Raises 403 if the user is not a member of that thread.
  */
 export const getEventTimeseries = <TComposable extends Composable, DefaultT extends GetEventTimeseriesResponse = GetEventTimeseriesResponse>(options: Options<TComposable, GetEventTimeseriesData, GetEventTimeseriesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetEventTimeseriesResponse | DefaultT, GetEventTimeseriesError, DefaultT>({

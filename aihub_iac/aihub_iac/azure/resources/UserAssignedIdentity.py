@@ -1,4 +1,4 @@
-from pulumi_azure_native import managedidentity, cognitiveservices, search
+from pulumi_azure_native import cognitiveservices, managedidentity, search
 
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.providers.RoleProvider import RoleProvider
@@ -7,7 +7,6 @@ from aihub_iac.azure.resources.OpenAI import OpenAI
 
 
 class UserAssignedIdentity:
-
     def __init__(
         self,
         resource_group,

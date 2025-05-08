@@ -38,7 +38,6 @@ const chartSeries = computed(() => {
     .filter(series => series.data.some(value => value > 0))
 })
 
-// Computed property for the chart options
 const chartOptions = computed<ApexOptions>(() => {
   const representativeTimeseries = props.seriesInputs?.find(s => s.timeseries?.buckets?.length > 0)?.timeseries
 

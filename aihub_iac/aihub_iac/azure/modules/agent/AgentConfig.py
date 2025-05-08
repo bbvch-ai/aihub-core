@@ -1,14 +1,13 @@
 from typing import ClassVar, Optional
 
 from pydantic import Field
+
 from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
-
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
 class AgentConfig(BaseConfig):
-
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
 
     # Docker Image settings

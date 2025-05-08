@@ -134,7 +134,7 @@ class PersistedEventEntity(Document):
             {"$match": {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
             {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
-            # 3. Sort events within the thread by time (optional but good practice before first group)
+            # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
             # 4. Group by run_id and event_id to de-duplicate events
             # We take the first occurrence of each event_id within a run.
@@ -388,7 +388,6 @@ class PersistedEventEntity(Document):
         Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
         Counts total events, optionally filtered by a specific event_name.
         If event_name is NOT provided, it aggregates over all events of type display_event.
-        Requires either thread_id OR both agent_class and agent_id.
         Returns a list of EventBucket instances (start_time, end_time, total_events),
         the overall start time, end time, and resolution of the analysis.
         """

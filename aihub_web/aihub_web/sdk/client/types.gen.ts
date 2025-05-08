@@ -1161,7 +1161,7 @@ export type EventSpecs = {
 };
 
 /**
- * Timeseries of events for a given thread and time-range.
+ * Timeseries of events for a given time-range.
  */
 export type EventTimeseries = {
     /**

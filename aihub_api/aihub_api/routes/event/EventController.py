@@ -164,14 +164,12 @@ class EventController(Controller):
             user: AuthenticatedUser = Security(self.auth),
         ) -> EventTimeseries:
             """
-            Retrieves time-based statistics for a thread.
+            Retrieves time-based statistics.
             Returns event counts in time buckets with resolution based on the time range:
             - 1h: 1 minute resolution
             - 24h: 1 hour resolution
             - 30d: 1 day resolution
             - 365d: 1 week resolution
-
-            Raises 403 if the user is not a member of that thread.
             """
             return EventService.get_event_timeseries(
                 time_range, agent_id=agent_id, agent_class=agent_class, event_name=event_name, thread_id=thread_id

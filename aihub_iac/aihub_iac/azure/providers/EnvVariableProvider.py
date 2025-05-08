@@ -1,10 +1,8 @@
-import os
 
 from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 
 
 class EnvVariableProvider:
-
     @staticmethod
     def get_environment_variables():
         project_name = ProjectSettings().APP_NAME

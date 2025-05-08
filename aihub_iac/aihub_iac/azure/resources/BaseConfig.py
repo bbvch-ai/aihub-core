@@ -8,7 +8,6 @@ from aihub_iac.azure.settings.ProjectSettings import ProjectSettings
 
 
 class BaseConfig(BaseModel):
-
     _project_settings: ClassVar[ProjectSettings] = ProjectSettings()
 
     # Project and environment settings
