@@ -132,7 +132,7 @@ const chartOptions = computed<ApexOptions>(() => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: resolution === '1m' ? '80%' : resolution === '1h' ? '70%' : '50%',
+        columnWidth: resolution === '1m' ? '80%' : '50%',
         dataLabels: {
           total: {
             enabled: true,

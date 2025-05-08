@@ -48,7 +48,7 @@ export const useBasicEventStatistics = () => {
     },
     {
       title: 'End Events',
-      isLoading: allIsLoading.value || exstepsionIsLoading.value || hitlIsLoading.value || bitlIsLoading.value,
+      isLoading: stopIsLoading.value || exstepsionIsLoading.value || hitlIsLoading.value || bitlIsLoading.value,
       timeseriesInputs: [
         { name: 'Success', color: 'var(--p-green-600)', timeseries: stopSeries.value },
         { name: 'Open (Human in the loop)', color: 'var(--p-yellow-500)', timeseries: hitlSeries.value },

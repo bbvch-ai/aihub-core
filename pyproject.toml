@@ -13,7 +13,7 @@ python = ">=3.11, <3.12"
 
 [tool.poetry.group.dev.dependencies]
 tomlkit = "^0.13.2"
-black = { extras = ["jupyter"], version = "^24.10.0" }
+black = { extras = ["jupyter"], version = "^25.1.0" }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
