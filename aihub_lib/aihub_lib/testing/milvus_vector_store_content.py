@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from llama_index.core import Document
+from llama_index.core import Document, StorageContext, VectorStoreIndex
 from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.schema import TextNode
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from pymilvus import MilvusClient
 
@@ -43,16 +44,32 @@ def fill_collection(
     embed_model: SelfHostedEmbeddingConfig,
     vector_store: MilvusVectorStore,
     documents: Optional[List[Document]] = None,
+    nodes: Optional[List[TextNode]] = None,
 ):
     if documents is None:
         documents = DEFAULT_DOCUMENTS
 
     embeddings, _ = embed_model.to_llama_index(model_parameter=None)
+
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+
+    # Create index with the nodes and storage context
+    index = VectorStoreIndex(
+        storage_context=storage_context,
+        show_progress=True,
+        embed_model=embeddings,
+        nodes = nodes,
+    )
+
     pipeline: IngestionPipeline = IngestionPipeline(
         transformations=[embeddings],
         vector_store=vector_store,
     )
-    pipeline.run(documents=documents)
+    if nodes:
+         pass
+    else:
+        pipeline.run(documents=documents)
 
 
 def drop_collection(

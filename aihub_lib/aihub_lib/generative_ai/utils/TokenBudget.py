@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, List, Literal
 
-from llama_index.core.schema import NodeWithScore, TextNode
+from llama_index.core.schema import NodeWithScore
 from llama_index.core.utilities.token_counting import TokenCounter
 
 
@@ -40,10 +40,10 @@ class TokenBudget:
         self.token_counter = token_counter or TokenCounter()
 
     def estimate_tokens(self, text: str) -> int:
-        return self.token_counter.estimate_tokens(text)
+        return self.token_counter.get_string_tokens(text)
 
     def add_node(
-        self, node: TextNode, budget_type: Literal[BudgetType.SUMMARY, BudgetType.CONTENT, BudgetType.PARENT]
+        self, node: NodeWithScore, budget_type: Literal[BudgetType.SUMMARY, BudgetType.CONTENT, BudgetType.PARENT]
     ) -> bool:
         """
         Add a node to the context if it fits in the budget.
@@ -57,19 +57,19 @@ class TokenBudget:
 
         if used + tokens <= budget:
             self.tokens_used[budget_type] += tokens
-            self.selected_nodes.append(NodeWithScore(node=node))
+            self.selected_nodes.append(node)
             self.selected_ids.add(node.node_id)
             return True
 
         return False
 
-    def add_summary_node(self, node: TextNode) -> bool:
+    def add_summary_node(self, node: NodeWithScore) -> bool:
         return self.add_node(node, BudgetType.SUMMARY)
 
-    def add_content_node(self, node: TextNode) -> bool:
+    def add_content_node(self, node: NodeWithScore) -> bool:
         return self.add_node(node, BudgetType.CONTENT)
 
-    def add_parent_node(self, node: TextNode) -> bool:
+    def add_parent_node(self, node: NodeWithScore) -> bool:
         return self.add_node(node, BudgetType.PARENT)
 
     def get_usage_stats(self) -> Dict[str, int]:
