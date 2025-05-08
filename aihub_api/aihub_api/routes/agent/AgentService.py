@@ -273,7 +273,6 @@ class AgentService:
         """
         return ThreadService.get_paginated_threads_for_agent(agent_class, agent_id, t, page=page, page_size=page_size)
 
-
     @staticmethod
     def clear_cache() -> None:
         """

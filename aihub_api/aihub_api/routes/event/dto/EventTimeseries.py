@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, Field
-
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import EVENT_TIMESERIES_TIME_RANGE, \
-    EVENT_TIMESERIES_RESOLUTION
+from aihub_lib.persistence.messaging.entities.PersistedEventEntity import (
+    EVENT_TIMESERIES_RESOLUTION,
+    EVENT_TIMESERIES_TIME_RANGE,
+)
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
+from pydantic import BaseModel, Field
 
 
 class EventTimeseries(BaseModel):

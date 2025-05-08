@@ -142,7 +142,6 @@ class AgentController(Controller):
 
         return self
 
-
     def send_event_to(
         self,
         agent_class,

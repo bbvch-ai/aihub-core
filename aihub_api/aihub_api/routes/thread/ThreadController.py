@@ -1,11 +1,11 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Path, Query, Security
+from fastapi import Depends, HTTPException, Path, Security
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber

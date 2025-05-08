@@ -69,7 +69,6 @@ export const useThreadEvents = defineQuery(() => {
         // Invalidate queries on stop event
         const parents = event.event._parent_event_names
         if (parents.includes('StopEvent') || parents.includes('ExceptionEvent')) {
-          console.log('Invalidating', ['threads', event.thread_id])
           queryCache.invalidateQueries({ key: ['threads', event.thread_id] })
           queryCache.invalidateQueries({ key: ['agent', event.agent_class, event.agent_id] })
         }

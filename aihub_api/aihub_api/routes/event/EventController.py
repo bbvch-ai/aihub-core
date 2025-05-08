@@ -14,13 +14,13 @@ from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Path, Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from .dto.EventTimeseries import EventTimeseries
 
 from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
 from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
 from ...sockets.sender.WebSocketSender import WebSocketSender
+from .dto.EventTimeseries import EventTimeseries
 from .EventService import EventService
 
 logger = logging.getLogger(__name__)
@@ -174,11 +174,7 @@ class EventController(Controller):
             Raises 403 if the user is not a member of that thread.
             """
             return EventService.get_event_timeseries(
-                time_range,
-                agent_id=agent_id,
-                agent_class=agent_class,
-                event_name=event_name,
-                thread_id=thread_id
+                time_range, agent_id=agent_id, agent_class=agent_class, event_name=event_name, thread_id=thread_id
             )
 
         return self

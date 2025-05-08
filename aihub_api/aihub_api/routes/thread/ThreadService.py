@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -311,7 +311,6 @@ class ThreadService:
             stats.duration = (stats.latest_interaction_dt - stats.first_interaction_dt).total_seconds()
 
         return stats
-
 
     @staticmethod
     def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
