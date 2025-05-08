@@ -53,7 +53,7 @@
     <ThreadInfo
       :thread="thread"
     />
-    <ThreadStatistics :thread="thread" />
+    <EventStatistics :charts="charts" />
   </div>
 </template>
 
@@ -84,6 +84,13 @@ const duration = computed<string>(() => {
   }
   return formatDuration(duration, { locale: de })
 })
+
+const charts = computed(() => [
+  { title: 'Interactions', display: [
+    { eventName: 'StartEvent', name: 'Starts', color: '#ff0000' },
+    { eventName: 'StopEvent', name: 'Stops', color: '#00ff00' },
+  ] },
+])
 </script>
 
 <style scoped>

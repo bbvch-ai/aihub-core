@@ -1,7 +1,7 @@
 import logging
-from datetime import datetime
-from typing import List, Literal, Optional, Tuple
+from typing import List, Optional
 
+from aihub_api.routes.event.dto.EventTimeseries import EventTimeseries
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
@@ -9,9 +9,9 @@ from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDis
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity, \
+    EVENT_TIMESERIES_TIME_RANGE
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -136,16 +136,32 @@ class EventService:
             logger.debug(f"User {user.oid} disconnected from websocket")
             await ws_manager.disconnect(websocket, user.oid)
 
+
     @staticmethod
     def get_event_timeseries(
-        time_range: Literal["1h", "24h", "30d", "365d"],
-        thread_id: Optional[str] = None,
-        agent_class: Optional[str] = None,
-        agent_id: Optional[str] = None,
-    ) -> Tuple[List[EventBucket], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
-        return PersistedEventEntity.get_event_timeseries(
+            time_range: EVENT_TIMESERIES_TIME_RANGE,
+            thread_id: Optional[ObjectId] = None,
+            agent_id: Optional[ObjectId] = None,
+            agent_class: Optional[str] = None,
+            event_name: Optional[str] = None,
+    ) -> EventTimeseries:
+        """Gets time-based statistics for a thread."""
+        buckets, start_time, end_time, resolution = PersistedEventEntity.get_event_timeseries(
             time_range=time_range,
-            thread_id=thread_id,
-            agent_class=agent_class,
             agent_id=agent_id,
+            agent_class=agent_class,
+            event_name=event_name,
+            thread_id=thread_id
+        )
+
+        return EventTimeseries(
+            agent_id=agent_id,
+            agent_class=agent_class,
+            event_name=event_name,
+            thread_id=thread_id,
+            time_range=time_range,
+            resolution=resolution,
+            start_time=start_time,
+            end_time=end_time,
+            buckets=buckets,
         )

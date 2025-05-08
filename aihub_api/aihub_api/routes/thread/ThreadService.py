@@ -31,7 +31,6 @@ from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStat
 from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
 from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
 from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
-from aihub_api.routes.thread.dto.statistics.ThreadEventTimeseries import ThreadEventTimeseries
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
@@ -313,24 +312,6 @@ class ThreadService:
 
         return stats
 
-    @staticmethod
-    def get_thread_event_timeseries(
-        thread_id: str, time_range: Literal["1h", "24h", "30d", "365d"]
-    ) -> ThreadEventTimeseries:
-        """Gets time-based statistics for a thread."""
-        buckets, start_time, end_time, resolution = PersistedEventEntity.get_event_timeseries(
-            time_range=time_range,
-            thread_id=thread_id,
-        )
-
-        return ThreadEventTimeseries(
-            thread_id=thread_id,
-            time_range=time_range,
-            resolution=resolution,
-            start_time=start_time,
-            end_time=end_time,
-            buckets=buckets,
-        )
 
     @staticmethod
     def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:

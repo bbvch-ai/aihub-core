@@ -7,12 +7,14 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.persistence.messaging.entities.PersistedEventEntity import EVENT_TIMESERIES_TIME_RANGE
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Path, Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from .dto.EventTimeseries import EventTimeseries
 
 from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
@@ -141,6 +143,42 @@ class EventController(Controller):
                 external_event_distributor,
                 user,
                 t,
+            )
+
+        return self
+
+    def get_event_timeseries(self, route: str = "/timeseries/{time_range}") -> "EventController":
+        @self.router.get(route, tags=self.tags)
+        async def get_event_timeseries(
+            time_range: Annotated[
+                EVENT_TIMESERIES_TIME_RANGE,
+                Path(
+                    title="Time Range",
+                    description="Time range for the statistics (1h, 24h, 30d, 365d)",
+                ),
+            ],
+            thread_id: Annotated[str, Query()] = None,
+            agent_id: Annotated[str, Query(title="Agent ID")] = None,
+            agent_class: Annotated[str, Query(title="Agent Class")] = None,
+            event_name: Annotated[str, Query(title="Event Name")] = None,
+            user: AuthenticatedUser = Security(self.auth),
+        ) -> EventTimeseries:
+            """
+            Retrieves time-based statistics for a thread.
+            Returns event counts in time buckets with resolution based on the time range:
+            - 1h: 1 minute resolution
+            - 24h: 1 hour resolution
+            - 30d: 1 day resolution
+            - 365d: 1 week resolution
+
+            Raises 403 if the user is not a member of that thread.
+            """
+            return EventService.get_event_timeseries(
+                time_range,
+                agent_id=agent_id,
+                agent_class=agent_class,
+                event_name=event_name,
+                thread_id=thread_id
             )
 
         return self

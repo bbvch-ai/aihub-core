@@ -183,57 +183,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
-export const AgentEventTimeseriesSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The agent class'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The agent ID'
-        },
-        time_range: {
-            type: 'string',
-            enum: ['1h', '24h', '30d', '365d'],
-            title: 'Time Range',
-            description: 'Time range for the statistics'
-        },
-        resolution: {
-            type: 'string',
-            enum: ['1m', '1h', '1d', '1w'],
-            title: 'Resolution',
-            description: 'Resolution of the buckets'
-        },
-        start_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Start Time',
-            description: 'Start time of the entire range'
-        },
-        end_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'End Time',
-            description: 'End time of the entire range'
-        },
-        buckets: {
-            items: {
-                '$ref': '#/components/schemas/EventBucket'
-            },
-            type: 'array',
-            title: 'Buckets',
-            description: 'List of time buckets with event counts'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
-    title: 'AgentEventTimeseries',
-    description: 'Timeseries of events for a given agent and time-range.'
-} as const;
-
 export const AgentInTheLoopExceptionEventSchema = {
     properties: {
         event_id: {
@@ -2996,48 +2945,6 @@ export const EventBucketSchema = {
             title: 'Total Events',
             description: 'Total number of events in this bucket',
             default: 0
-        },
-        start_events: {
-            type: 'integer',
-            title: 'Start Events',
-            description: 'Number of start events',
-            default: 0
-        },
-        stop_events: {
-            type: 'integer',
-            title: 'Stop Events',
-            description: 'Number of stop events',
-            default: 0
-        },
-        exception_events: {
-            type: 'integer',
-            title: 'Exception Events',
-            description: 'Number of exception events',
-            default: 0
-        },
-        hitl_events: {
-            type: 'integer',
-            title: 'Hitl Events',
-            description: 'Number of Human-In-The-Loop events (requests + responses)',
-            default: 0
-        },
-        bitl_events: {
-            type: 'integer',
-            title: 'Bitl Events',
-            description: 'Number of Bot-In-The-Loop events (requests + responses)',
-            default: 0
-        },
-        aitl_events: {
-            type: 'integer',
-            title: 'Aitl Events',
-            description: 'Number of Agent-In-The-Loop events (requests + responses)',
-            default: 0
-        },
-        other_events: {
-            type: 'integer',
-            title: 'Other Events',
-            description: 'Number of other events',
-            default: 0
         }
     },
     type: 'object',
@@ -3127,6 +3034,95 @@ export const EventSpecsSchema = {
     required: ['event_name', 'event_schema'],
     title: 'EventSpecs',
     description: 'Defines a specification for a start event that an agent can handle.'
+} as const;
+
+export const EventTimeseriesSchema = {
+    properties: {
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'The thread ID to filter for'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'The Agent ID to filter for'
+        },
+        agent_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Class',
+            description: 'The Agent Class to filter for'
+        },
+        event_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Name',
+            description: 'Event Name to filter for'
+        },
+        time_range: {
+            type: 'string',
+            enum: ['1h', '24h', '30d', '365d'],
+            title: 'Time Range',
+            description: 'Time range for the statistics'
+        },
+        resolution: {
+            type: 'string',
+            enum: ['1m', '1h', '1d', '1w'],
+            title: 'Resolution',
+            description: 'Resolution of the buckets'
+        },
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the entire range'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the entire range'
+        },
+        buckets: {
+            items: {
+                '$ref': '#/components/schemas/EventBucket'
+            },
+            type: 'array',
+            title: 'Buckets',
+            description: 'List of time buckets with event counts'
+        }
+    },
+    type: 'object',
+    required: ['thread_id', 'agent_id', 'agent_class', 'event_name', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
+    title: 'EventTimeseries',
+    description: 'Timeseries of events for a given thread and time-range.'
 } as const;
 
 export const ExceptionEventSchema = {
@@ -6420,52 +6416,6 @@ export const ThreadDTOSchema = {
     required: ['id', 'name', 'users', 'agents', 'created_at'],
     title: 'ThreadDTO',
     description: 'Thread information and statistics for API response.'
-} as const;
-
-export const ThreadEventTimeseriesSchema = {
-    properties: {
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'The thread ID'
-        },
-        time_range: {
-            type: 'string',
-            enum: ['1h', '24h', '30d', '365d'],
-            title: 'Time Range',
-            description: 'Time range for the statistics'
-        },
-        resolution: {
-            type: 'string',
-            enum: ['1m', '1h', '1d', '1w'],
-            title: 'Resolution',
-            description: 'Resolution of the buckets'
-        },
-        start_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Start Time',
-            description: 'Start time of the entire range'
-        },
-        end_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'End Time',
-            description: 'End time of the entire range'
-        },
-        buckets: {
-            items: {
-                '$ref': '#/components/schemas/EventBucket'
-            },
-            type: 'array',
-            title: 'Buckets',
-            description: 'List of time buckets with event counts'
-        }
-    },
-    type: 'object',
-    required: ['thread_id', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
-    title: 'ThreadEventTimeseries',
-    description: 'Timeseries of events for a given thread and time-range.'
 } as const;
 
 export const TokenResponseSchema = {

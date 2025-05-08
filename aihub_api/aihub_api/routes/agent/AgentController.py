@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, List, Literal, Type
+from typing import Annotated, List, Type
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -23,7 +23,6 @@ from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.agent.dto.AgentEventTimeseries import AgentEventTimeseries
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 
 
@@ -143,38 +142,6 @@ class AgentController(Controller):
 
         return self
 
-    def get_agent_event_timeseries(
-        self, route: str = "/{agent_class}/{agent_id}/event/timeseries"
-    ) -> "AgentController":
-        @self.router.get(route, tags=self.tags)
-        async def get_agent_event_timeseries(
-            agent_class: str,
-            agent_id: str,
-            time_range: Annotated[
-                Literal["1h", "24h", "30d", "365d"],
-                Query(
-                    title="Time Range",
-                    description="Time range for the statistics (1h, 24h, 30d, 365d)",
-                ),
-            ] = "24h",
-            user: AuthenticatedUser = Security(self.auth),
-        ) -> AgentEventTimeseries:
-            """
-            Retrieves time-based statistics for events produced by an agent.
-            Returns event counts in time buckets with resolution based on the time range:
-            - 1h: 1 minute resolution
-            - 24h: 1 hour resolution
-            - 30d: 1 day resolution
-            - 365d: 1 week resolution
-
-            Raises 403 if the user lacks access.
-            """
-            if not user.has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-
-            return AgentService.get_agent_event_timeseries(agent_class, agent_id, time_range)
-
-        return self
 
     def send_event_to(
         self,

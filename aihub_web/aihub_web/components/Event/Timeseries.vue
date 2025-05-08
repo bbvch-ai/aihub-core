@@ -6,6 +6,7 @@
       :options="chartOptions"
       :series="chartSeries"
     />
+    <pre>inputs: {{ seriesInputs }}</pre>
   </ClientOnly>
 </template>
 
@@ -13,58 +14,96 @@
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { AgentEventTimeseries, EventBucket, ThreadEventTimeseries } from '@core/sdk/client'
+import type { EventBucket } from '@core/sdk/client'
+import type { TimeseriesInput } from '@core/types/TimeseriesInput'
 import type { ApexOptions } from 'apexcharts'
 
 const props = defineProps<{
-  statistics: ThreadEventTimeseries | AgentEventTimeseries
   title: string
-  bars: Array<{ key: keyof EventBucket, name: string, color?: string }>
+  seriesInputs: TimeseriesInput[]
 }>()
 
 const isDark = useDark({ storageKey: 'dark' })
 
 const chartSeries = computed(() => {
-  if (!props.statistics || !props.statistics.buckets || props.statistics.buckets.length === 0) {
+  if (!props.seriesInputs || props.seriesInputs.length === 0) {
     return []
   }
 
-  return props.bars.map(eventType => ({
-    name: eventType.name,
-    data: props.statistics.buckets.map(bucket => bucket[eventType.key] || 0),
-  })).filter(series => series.data.some(value => value > 0))
+  return props.seriesInputs
+    .map(input => ({
+      name: input.name,
+      data: input.timeseries.value?.buckets?.map(bucket => bucket.total_events || 0) ?? [],
+    }))
+    .filter(series => series.data.some(value => value > 0))
 })
 
+// Computed property for the chart options
 const chartOptions = computed<ApexOptions>(() => {
-  const { buckets, time_range, resolution } = props.statistics
+  const representativeTimeseries = props.seriesInputs?.find(s => s.timeseries.value?.buckets?.length > 0)?.timeseries
 
-  const categories = buckets.map((bucket) => {
+  if (!representativeTimeseries) {
+    // Fallback options if no data is available to derive categories, etc.
+    return {
+      chart: {
+        type: 'bar',
+        height: 350,
+        foreColor: isDark.value ? 'var(--p-surface-200)' : 'var(--p-surface-800)',
+      },
+      theme: {
+        mode: isDark.value ? 'dark' : 'light',
+      },
+      noData: {
+        text: 'No data available for this period.',
+        align: 'center',
+        verticalAlign: 'middle',
+        style: {
+          fontSize: '14px',
+        },
+      },
+      yaxis: {
+        title: {
+          text: `# ${props.title}`,
+        },
+      },
+      legend: {
+        show: false,
+      },
+    }
+  }
+
+  const { buckets, time_range, resolution } = representativeTimeseries.value
+
+  // Generate categories for the X-axis from bucket start times
+  const categories = buckets.map((bucket: EventBucket) => {
     const date = new Date(bucket.start_time)
     return date.toISOString()
   })
 
-  const seriesColors = props.bars
-    .filter(eventType =>
-      buckets.some(bucket => (bucket[eventType.key] || 0) > 0),
+  const activeSeriesColors = props.seriesInputs
+    .filter(input =>
+      input.timeseries.value.buckets.some(bucket => (bucket.total_events || 0) > 0) && input.color,
     )
-    .map(eventType => eventType.color).filter(color => color !== undefined) as string[]
+    .map(input => input.color!)
 
   const getXAxisLabelFormatter = () => {
-    return function (value: string, timestamp?: number, opts?: { dataPointIndex?: number }) {
+    return (value: string, timestamp?: number, opts?: { dataPointIndex?: number }) => {
       const date = new Date(value)
       const dataPointIndex = opts?.dataPointIndex ?? 0
 
+      // Determine max labels based on time range to avoid clutter
       let maxLabels = 10
-      if (time_range === '1h') maxLabels = 12
-      else if (time_range === '24h') maxLabels = 8
+      if (time_range === '1h') maxLabels = 12 // e.g., every 5 minutes for 1 hour
+      else if (time_range === '24h') maxLabels = 8 // e.g., every 3 hours for 24 hours
 
       const totalDataPoints = categories.length
       const skipInterval = Math.max(1, Math.ceil(totalDataPoints / maxLabels))
 
-      if (dataPointIndex % skipInterval !== 0) {
-        return '' // Skip this label
+      if (dataPointIndex % skipInterval !== 0 && dataPointIndex !== totalDataPoints - 1) {
+        return ''
       }
 
+      // Format date based on time range
       if (time_range === '1h' || time_range === '24h') {
         const options: Intl.DateTimeFormatOptions = {
           hour: '2-digit',
@@ -86,12 +125,9 @@ const chartOptions = computed<ApexOptions>(() => {
         show: false,
       },
       zoom: {
-        enabled: true,
+        enabled: false,
       },
       foreColor: isDark.value ? 'var(--p-surface-200)' : 'var(--p-surface-800)',
-    },
-    theme: {
-      mode: isDark.value,
     },
     plotOptions: {
       bar: {
@@ -131,7 +167,7 @@ const chartOptions = computed<ApexOptions>(() => {
         formatter: getXAxisLabelFormatter(),
         rotate: -45,
         rotateAlways: true,
-        hideOverlappingLabels: true,
+        hideOverlappingLabels: false,
         trim: true,
         style: {
           fontSize: '10px',
@@ -168,11 +204,11 @@ const chartOptions = computed<ApexOptions>(() => {
         },
       },
     },
-    colors: seriesColors.length > 0 ? seriesColors : undefined,
+    colors: activeSeriesColors.length > 0 ? activeSeriesColors : undefined,
     noData: {
       text: 'No data available for this period.',
       align: 'center',
-      verticalAlign: 'top',
+      verticalAlign: 'middle',
       style: {
         fontSize: '14px',
       },

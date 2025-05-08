@@ -1,5 +1,6 @@
+import logging
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Any
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
@@ -13,6 +14,11 @@ if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
     from aihub_lib.nats.topics import AgentTopic
 
+logger = logging.getLogger(__name__)
+
+
+EVENT_TIMESERIES_TIME_RANGE = Literal["1h", "24h", "30d", "365d"]
+EVENT_TIMESERIES_RESOLUTION = Literal["1m", "1h", "1d", "1w"]
 
 class PersistedEventEntity(Document):
     meta = {
@@ -363,46 +369,45 @@ class PersistedEventEntity(Document):
     def get_event_timeseries(
         cls,
         time_range: Literal["1h", "24h", "30d", "365d"],
-        thread_id: Optional[str] = None,
+        thread_id: Optional[ObjectId] = None,
+        agent_id: Optional[ObjectId] = None,
         agent_class: Optional[str] = None,
-        agent_id: Optional[str] = None,
+        event_name: Optional[str] = None,
     ) -> Tuple[List[EventBucket], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
         """
         Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
+        Counts total events, optionally filtered by a specific event_name.
+        If event_name is NOT provided, it aggregates over all events of type display_event.
         Requires either thread_id OR both agent_class and agent_id.
-        Returns a list of dictionaries, each representing a time bucket with event counts,
-        the start time, end time, and resolution of the analysis.
+        Returns a list of EventBucket instances (start_time, end_time, total_events),
+        the overall start time, end time, and resolution of the analysis.
         """
-        if not thread_id and not (agent_class and agent_id):
-            raise ValueError("Either thread_id or both agent_class and agent_id must be provided.")
-        if thread_id and (agent_class or agent_id):
-            raise ValueError("Provide either thread_id OR (agent_class and agent_id), not both.")
+        resolution_val: Literal["1m", "1h", "1d", "1w"]
+        interval_seconds: int
 
-        # Determine time window and resolution
         if time_range == "1h":
             now = datetime.now(timezone.utc)
             start_time = now - timedelta(hours=1)
-            resolution = "1m"
-            interval_seconds = 60  # 1 minute
+            resolution_val = "1m"
+            interval_seconds = 60
         else:
             now = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
-
             if time_range == "24h":
                 start_time = now - timedelta(hours=24)
-                resolution = "1h"
-                interval_seconds = 60 * 60  # 1 hour
+                resolution_val = "1h"
+                interval_seconds = 60 * 60
             elif time_range == "30d":
                 start_time = now - timedelta(days=30)
-                resolution = "1d"
-                interval_seconds = 60 * 60 * 24  # 1 day
+                resolution_val = "1d"
+                interval_seconds = 60 * 60 * 24
             elif time_range == "365d":
                 start_time = now - timedelta(days=365)
-                resolution = "1w"
-                interval_seconds = 60 * 60 * 24 * 7  # 1 week
+                resolution_val = "1w"
+                interval_seconds = 60 * 60 * 24 * 7
             else:
                 raise ValueError(f"Invalid time range: {time_range}")
 
-        match_filter: Dict[str, any] = {
+        match_filter: Dict[str, Any] = {
             "event_type": "display_event",
             "event_data.created_at": {
                 "$gte": int(start_time.timestamp() * 1e9),
@@ -412,155 +417,117 @@ class PersistedEventEntity(Document):
 
         if thread_id:
             match_filter["thread_id"] = thread_id
-        elif agent_class and agent_id:
+
+        if agent_class and agent_id:
             match_filter["agent_class"] = agent_class
             match_filter["agent_id"] = agent_id
 
-        pipeline = [
-            # 1. Match events for the given criteria within the time range
+        if event_name:
+            match_filter["event_parents"] = event_name
+
+        pipeline: List[Dict[str, Any]] = [
+            # 1. Match events based on primary criteria and optionally event_name
             {"$match": match_filter},
+
             # 2. Add a standardized BSON date field
             {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
-            # 3. Create time buckets based on the resolution
+
+            # 3. Create time buckets (timestamp in milliseconds)
             {
                 "$addFields": {
                     "time_bucket": {
                         "$subtract": [
                             {"$toLong": "$event_time"},
-                            {"$mod": [{"$toLong": "$event_time"}, interval_seconds * 1000]},  # Convert to milliseconds
+                            {"$mod": [{"$toLong": "$event_time"}, interval_seconds * 1000]},
                         ]
                     }
                 }
             },
-            # 4. Group events by time bucket
+
+            # 4. Group events by time bucket and count them
             {
                 "$group": {
-                    "_id": "$time_bucket",
-                    "start_time": {"$first": {"$toDate": "$time_bucket"}},
-                    "total_events": {"$sum": 1},
-                    "start_events": {"$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}},
-                    "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
-                    "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
-                    "hitl_request_events": {
-                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "hitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "bitl_request_events": {
-                        "$sum": {"$cond": [{"$in": ["BotInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "bitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["BotInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "aitl_request_events": {
-                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
-                    },
-                    "aitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
-                    },
+                    "_id": "$time_bucket", # Group by the millisecond timestamp of the bucket start
+                    "start_time": {"$first": {"$toDate": "$time_bucket"}}, # Convert bucket start ms to Date
+                    "total_events": {"$sum": 1} # Count documents in each bucket
                 }
             },
-            # 5. Calculate combined event counts
+
+            # 5. Add end_time field (derived from bucket start + interval)
             {
                 "$addFields": {
-                    "hitl_events": {"$add": ["$hitl_request_events", "$hitl_response_events"]},
-                    "bitl_events": {"$add": ["$bitl_request_events", "$bitl_response_events"]},
-                    "aitl_events": {"$add": ["$aitl_request_events", "$aitl_response_events"]},
+                    "end_time": {"$toDate": {"$add": ["$_id", interval_seconds * 1000]}} # $_id is time_bucket (ms)
                 }
             },
-            # 6. Calculate other events
-            {
-                "$addFields": {
-                    "other_events": {
-                        "$subtract": [
-                            "$total_events",
-                            {
-                                "$add": [
-                                    "$exception_events",
-                                    "$hitl_events",
-                                    "$bitl_events",
-                                    "$aitl_events",
-                                    "$start_events",
-                                    "$stop_events",
-                                ]
-                            },
-                        ]
-                    }
-                }
-            },
-            # 7. Add end_time field (start_time + interval)
-            {
-                "$addFields": {
-                    "end_time": {"$toDate": {"$add": ["$_id", interval_seconds * 1000]}}  # Convert to milliseconds
-                }
-            },
-            # 8. Project the final fields
+
+            # 6. Project the final simplified fields
             {
                 "$project": {
                     "_id": 0,
                     "start_time": 1,
                     "end_time": 1,
                     "total_events": 1,
-                    "start_events": 1,
-                    "stop_events": 1,
-                    "exception_events": 1,
-                    "hitl_events": 1,
-                    "bitl_events": 1,
-                    "aitl_events": 1,
-                    "other_events": 1,
                 }
             },
-            # 9. Sort by start_time
+
+            # 7. Sort by start_time
             {"$sort": {"start_time": 1}},
         ]
 
         results = list(cls.objects.aggregate(pipeline))
 
-        # Ensure MongoDB results have timezone info
         for result in results:
             if result["start_time"].tzinfo is None:
                 result["start_time"] = result["start_time"].replace(tzinfo=timezone.utc)
             if result["end_time"].tzinfo is None:
                 result["end_time"] = result["end_time"].replace(tzinfo=timezone.utc)
 
-        filled_results = []
-        current_time = start_time
+        filled_results: List[EventBucket] = []
+        current_loop_time = start_time
 
-        while current_time < now:
-            bucket = next((b for b in results if b["start_time"] <= current_time < b["end_time"]), None)
+        # Align current_loop_time for consistent bucket iteration start
+        if interval_seconds >= 3600: # Hourly or more
+            current_loop_time = current_loop_time.replace(minute=0, second=0, microsecond=0)
+        if interval_seconds >= 86400: # Daily or more
+            current_loop_time = current_loop_time.replace(hour=0)
 
-            if bucket:
+        idx = 0
+        while current_loop_time < now:
+            current_bucket_end_time = current_loop_time + timedelta(seconds=interval_seconds)
+            bucket_data = None
+
+            if idx < len(results):
+                res_start_time = results[idx]["start_time"]
+                if res_start_time >= current_loop_time and res_start_time < current_bucket_end_time:
+                    bucket_data = results[idx]
+                    idx += 1
+
+            if bucket_data:
                 filled_results.append(
                     EventBucket(
-                        start_time=bucket["start_time"],
-                        end_time=bucket["end_time"],
-                        total_events=bucket["total_events"],
-                        start_events=bucket["start_events"],
-                        stop_events=bucket["stop_events"],
-                        exception_events=bucket["exception_events"],
-                        hitl_events=bucket["hitl_events"],
-                        bitl_events=bucket["bitl_events"],
-                        aitl_events=bucket["aitl_events"],
-                        other_events=bucket["other_events"],
+                        start_time=bucket_data["start_time"],
+                        end_time=bucket_data["end_time"],
+                        total_events=bucket_data["total_events"],
                     )
                 )
             else:
-                filled_results.append(
-                    EventBucket(
-                        start_time=current_time,
-                        end_time=current_time + timedelta(seconds=interval_seconds),
-                        total_events=0,
-                        start_events=0,
-                        stop_events=0,
-                        exception_events=0,
-                        hitl_events=0,
-                        bitl_events=0,
-                        aitl_events=0,
-                        other_events=0,
+                actual_end_time = min(current_bucket_end_time, now)
+                # Only add bucket if its start time is less than the overall 'now'
+                if current_loop_time < now:
+                    filled_results.append(
+                        EventBucket(
+                            start_time=current_loop_time,
+                            end_time=actual_end_time,
+                            total_events=0,
+                        )
                     )
-                )
 
-            current_time += timedelta(seconds=interval_seconds)
+            current_loop_time = current_bucket_end_time
+            # Safety break for the unlikely event that 'now' isn't reached due to floating point issues with many small intervals
+            if len(filled_results) > ( (now - start_time).total_seconds() / interval_seconds ) + 10 and interval_seconds > 0 :
+                # This condition suggests we've created significantly more buckets than expected
+                logger.warning(f"Exiting fill loop early due to excessive bucket count. Current loop time: {current_loop_time}, Now: {now}")
+                break
 
-        return filled_results, start_time, now, resolution
+
+        return filled_results, start_time, now, resolution_val

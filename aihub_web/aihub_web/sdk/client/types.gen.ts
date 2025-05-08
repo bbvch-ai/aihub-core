@@ -112,40 +112,6 @@ export type AgentEvent = {
 };
 
 /**
- * Timeseries of events for a given agent and time-range.
- */
-export type AgentEventTimeseries = {
-    /**
-     * The agent class
-     */
-    agent_class: string;
-    /**
-     * The agent ID
-     */
-    agent_id: string;
-    /**
-     * Time range for the statistics
-     */
-    time_range: '1h' | '24h' | '30d' | '365d';
-    /**
-     * Resolution of the buckets
-     */
-    resolution: '1m' | '1h' | '1d' | '1w';
-    /**
-     * Start time of the entire range
-     */
-    start_time: Date;
-    /**
-     * End time of the entire range
-     */
-    end_time: Date;
-    /**
-     * List of time buckets with event counts
-     */
-    buckets: Array<EventBucket>;
-};
-
-/**
  * An error response from an agent when a delegated task fails.
  *
  * ### Why AgentInTheLoopExceptionEvent?
@@ -1134,34 +1100,6 @@ export type EventBucket = {
      * Total number of events in this bucket
      */
     total_events?: number;
-    /**
-     * Number of start events
-     */
-    start_events?: number;
-    /**
-     * Number of stop events
-     */
-    stop_events?: number;
-    /**
-     * Number of exception events
-     */
-    exception_events?: number;
-    /**
-     * Number of Human-In-The-Loop events (requests + responses)
-     */
-    hitl_events?: number;
-    /**
-     * Number of Bot-In-The-Loop events (requests + responses)
-     */
-    bitl_events?: number;
-    /**
-     * Number of Agent-In-The-Loop events (requests + responses)
-     */
-    aitl_events?: number;
-    /**
-     * Number of other events
-     */
-    other_events?: number;
 };
 
 /**
@@ -1220,6 +1158,48 @@ export type EventSpecs = {
     event_schema: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Timeseries of events for a given thread and time-range.
+ */
+export type EventTimeseries = {
+    /**
+     * The thread ID to filter for
+     */
+    thread_id: string | null;
+    /**
+     * The Agent ID to filter for
+     */
+    agent_id: string | null;
+    /**
+     * The Agent Class to filter for
+     */
+    agent_class: string | null;
+    /**
+     * Event Name to filter for
+     */
+    event_name: string | null;
+    /**
+     * Time range for the statistics
+     */
+    time_range: '1h' | '24h' | '30d' | '365d';
+    /**
+     * Resolution of the buckets
+     */
+    resolution: '1m' | '1h' | '1d' | '1w';
+    /**
+     * Start time of the entire range
+     */
+    start_time: Date;
+    /**
+     * End time of the entire range
+     */
+    end_time: Date;
+    /**
+     * List of time buckets with event counts
+     */
+    buckets: Array<EventBucket>;
 };
 
 /**
@@ -2828,36 +2808,6 @@ export type ThreadDto = {
     llm_cost?: number;
 };
 
-/**
- * Timeseries of events for a given thread and time-range.
- */
-export type ThreadEventTimeseries = {
-    /**
-     * The thread ID
-     */
-    thread_id: string;
-    /**
-     * Time range for the statistics
-     */
-    time_range: '1h' | '24h' | '30d' | '365d';
-    /**
-     * Resolution of the buckets
-     */
-    resolution: '1m' | '1h' | '1d' | '1w';
-    /**
-     * Start time of the entire range
-     */
-    start_time: Date;
-    /**
-     * End time of the entire range
-     */
-    end_time: Date;
-    /**
-     * List of time buckets with event counts
-     */
-    buckets: Array<EventBucket>;
-};
-
 export type TokenResponse = {
     /**
      * The token ID
@@ -3310,6 +3260,41 @@ export type GetEventsResponses = {
 
 export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
 
+export type GetEventTimeseriesData = {
+    body?: never;
+    path: {
+        /**
+         * Time range for the statistics (1h, 24h, 30d, 365d)
+         */
+        time_range: '1h' | '24h' | '30d' | '365d';
+    };
+    query?: {
+        thread_id?: string;
+        agent_id?: string;
+        agent_class?: string;
+        event_name?: string;
+    };
+    url: '/event/timeseries/{time_range}';
+};
+
+export type GetEventTimeseriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetEventTimeseriesError = GetEventTimeseriesErrors[keyof GetEventTimeseriesErrors];
+
+export type GetEventTimeseriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: EventTimeseries;
+};
+
+export type GetEventTimeseriesResponse = GetEventTimeseriesResponses[keyof GetEventTimeseriesResponses];
+
 export type GetUserThreadsData = {
     body?: never;
     path?: never;
@@ -3507,38 +3492,6 @@ export type RemoveUserFromThreadResponses = {
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
 
-export type GetThreadEventTimeseriesData = {
-    body?: never;
-    path: {
-        thread_id: string;
-    };
-    query?: {
-        /**
-         * Time range for the statistics (1h, 24h, 30d, 365d)
-         */
-        time_range?: '1h' | '24h' | '30d' | '365d';
-    };
-    url: '/thread/{thread_id}/event/timeseries';
-};
-
-export type GetThreadEventTimeseriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetThreadEventTimeseriesError = GetThreadEventTimeseriesErrors[keyof GetThreadEventTimeseriesErrors];
-
-export type GetThreadEventTimeseriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: ThreadEventTimeseries;
-};
-
-export type GetThreadEventTimeseriesResponse = GetThreadEventTimeseriesResponses[keyof GetThreadEventTimeseriesResponses];
-
 export type GetAgentData = {
     body?: never;
     path: {
@@ -3603,39 +3556,6 @@ export type GetAgentThreadsResponses = {
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
-
-export type GetAgentEventTimeseriesData = {
-    body?: never;
-    path: {
-        agent_class: string;
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Time range for the statistics (1h, 24h, 30d, 365d)
-         */
-        time_range?: '1h' | '24h' | '30d' | '365d';
-    };
-    url: '/agent/{agent_class}/{agent_id}/event/timeseries';
-};
-
-export type GetAgentEventTimeseriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetAgentEventTimeseriesError = GetAgentEventTimeseriesErrors[keyof GetAgentEventTimeseriesErrors];
-
-export type GetAgentEventTimeseriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: AgentEventTimeseries;
-};
-
-export type GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
 
 export type GetAgentsData = {
     body?: never;

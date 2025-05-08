@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import sleep
-from typing import List, Literal, Optional
+from typing import List, Optional
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
@@ -26,8 +26,6 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO, MinimalAgentDTO
-from aihub_api.routes.agent.dto.AgentEventTimeseries import AgentEventTimeseries
-from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
@@ -275,24 +273,6 @@ class AgentService:
         """
         return ThreadService.get_paginated_threads_for_agent(agent_class, agent_id, t, page=page, page_size=page_size)
 
-    @staticmethod
-    def get_agent_event_timeseries(
-        agent_class: str, agent_id: str, time_range: Literal["1h", "24h", "30d", "365d"]
-    ) -> AgentEventTimeseries:
-        """Gets time-based statistics for an agent."""
-        buckets, start_time, end_time, resolution = EventService.get_event_timeseries(
-            time_range=time_range, agent_class=agent_class, agent_id=agent_id
-        )
-
-        return AgentEventTimeseries(
-            agent_class=agent_class,
-            agent_id=agent_id,
-            time_range=time_range,
-            resolution=resolution,
-            start_time=start_time,
-            end_time=end_time,
-            buckets=buckets,
-        )
 
     @staticmethod
     def clear_cache() -> None:

@@ -51,34 +51,32 @@ async def main():
         SuiteController(auth=auth).get_suite(),
         UserController(auth=auth).get_my_user(),
         I18nController(auth=auth).get_my_locale(),
-        EventController(auth=auth).ws().get_events(),
+        EventController(auth=auth).ws().get_events().get_event_timeseries(),
         ThreadController(auth=auth)
-        .get_user_threads()
-        .create_thread()
-        .get_thread()
-        .add_agent_to_thread()
-        .remove_agent_from_thread()
-        .add_user_to_thread()
-        .remove_user_from_thread()
-        .get_thread_event_timeseries(),
+            .get_user_threads()
+            .create_thread()
+            .get_thread()
+            .add_agent_to_thread()
+            .remove_agent_from_thread()
+            .add_user_to_thread()
+            .remove_user_from_thread(),
         AgentController(auth=auth)
-        .get_agent()
-        .get_agent_threads()
-        .get_agent_event_timeseries()
-        .get_agents()
-        .discover_agents()
-        .send_event_to(
-            "LLMWrappingAgent",
-            "dev_agent",
-            start_event_class=UserMessageEvent,
-            stop_event_class=LLMStopEvent,
-        )
-        .send_event_to(
-            "BotInTheLoopAgent",
-            "bot_in_the_loop_agent",
-            start_event_class=UserMessageEvent,
-            stop_event_class=StopEvent,
-        ),
+            .get_agent()
+            .get_agent_threads()
+            .get_agents()
+            .discover_agents()
+            .send_event_to(
+                "LLMWrappingAgent",
+                "dev_agent",
+                start_event_class=UserMessageEvent,
+                stop_event_class=LLMStopEvent,
+            )
+            .send_event_to(
+                "BotInTheLoopAgent",
+                "bot_in_the_loop_agent",
+                start_event_class=UserMessageEvent,
+                stop_event_class=StopEvent,
+            ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(
             auth=auth,
