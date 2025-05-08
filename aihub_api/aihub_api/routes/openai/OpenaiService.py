@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -21,13 +22,15 @@ from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, Stream
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
 from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
-from openai.types import CompletionUsage, FileContent, ImagesResponse
+from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+from pydub import AudioSegment
 from starlette.responses import StreamingResponse
 
+from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
@@ -404,6 +407,7 @@ class OpenaiService:
         """
         Transcribe an audio file to text.
         Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
+        Handles chunking of large audio files to comply with API size limits.
         """
         models = [model for model in stt_models if model.name == model_name]
         if len(models) == 0:
@@ -412,21 +416,45 @@ class OpenaiService:
         stt_model_config = models[0]
         client: AsyncOpenAI | AsyncAzureOpenAI = stt_model_config.get_openai_client()
 
-        file_tuple: Tuple[Optional[str], FileContent, Optional[str]] = (
-            file.filename,
-            file.file,
-            file.content_type,
-        )
+        file_ext = file.filename.rsplit(".", 1)[-1].lower()
+        audio = AudioSegment.from_file(file.file, format=file_ext)
+        audio_chunks: List[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
+        transcription_chunks: List[TranscriptionChunk] = []
 
-        return await client.audio.transcriptions.create(
-            model=model_name,
-            file=file_tuple,
-            language=language,
-            prompt=prompt,
-            response_format=response_format,
-            temperature=temperature,
-            timestamp_granularities=timestamp_granularities,
-        )
+        for i, audio_chunk in enumerate(audio_chunks):
+            buffer = io.BytesIO()
+            audio_chunk.export(buffer, format="wav")
+            file_tuple = (file.filename, buffer, "audio/wav")
+
+            result: TranscriptionChunk = await client.audio.transcriptions.create(
+                model=model_name,
+                file=file_tuple,
+                language=language,
+                prompt=prompt,
+                response_format=response_format,
+                temperature=temperature,
+                timestamp_granularities=timestamp_granularities,
+            )
+
+            transcription_chunks.append(result)
+
+        merged_text: str = AudioChunkingService.merge_transcriptions(transcription_chunks)
+
+        if response_format == "text":
+            return merged_text
+        elif response_format == "srt" or response_format == "vtt":
+            logger.warning(f"Format {response_format} not fully supported with chunking, returning as text")
+            return merged_text
+        elif response_format == "verbose_json":
+            return TranscriptionVerbose(
+                text=merged_text,
+                language=language,
+                duration=len(audio) / 1000,  # Convert milliseconds to seconds
+                segments=[],
+                words=[],
+            )
+        else:
+            return Transcription(text=merged_text)
 
     @staticmethod
     async def tts(
