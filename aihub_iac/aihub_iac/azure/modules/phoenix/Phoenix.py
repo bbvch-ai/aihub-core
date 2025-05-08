@@ -1,12 +1,11 @@
-import pulumi
-
 from typing import List, Optional
 
-from pulumi_azure_native import web, dbforpostgresql
+import pulumi
+from pulumi_azure_native import dbforpostgresql, web
 
 from aihub_iac.azure.modules.phoenix.PhoenixConfig import PhoenixConfig
-from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
+from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.providers.WebAppCreator import WebAppCreator
 
 

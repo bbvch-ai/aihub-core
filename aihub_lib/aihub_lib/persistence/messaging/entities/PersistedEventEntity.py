@@ -1,4 +1,8 @@
-from typing import TYPE_CHECKING, List, Optional
+import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
@@ -6,10 +10,63 @@ from mongoengine import DictField, Document, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
     from aihub_lib.nats.topics import AgentTopic
+
+logger = logging.getLogger(__name__)
+
+
+class TimeRange(Enum):
+    ONE_HOUR = "1h"
+    TWENTY_FOUR_HOURS = "24h"
+    THIRTY_DAYS = "30d"
+    THREE_SIXTY_FIVE_DAYS = "365d"
+
+
+class Resolution(Enum):
+    ONE_MINUTE = "1m"
+    ONE_HOUR = "1h"
+    ONE_DAY = "1d"
+    ONE_WEEK = "1w"
+
+
+@dataclass(frozen=True)
+class TimeRangeDetailConfig:
+    resolution: Resolution
+    interval_seconds: int
+    delta: timedelta
+    align_to_end_of_day: bool
+
+
+TIME_RANGE_CONFIG: Dict[TimeRange, TimeRangeDetailConfig] = {
+    TimeRange.ONE_HOUR: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_MINUTE,
+        interval_seconds=60,
+        delta=timedelta(hours=1),
+        align_to_end_of_day=False,
+    ),
+    TimeRange.TWENTY_FOUR_HOURS: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_HOUR,
+        interval_seconds=60 * 60,
+        delta=timedelta(hours=24),
+        align_to_end_of_day=True,
+    ),
+    TimeRange.THIRTY_DAYS: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_DAY,
+        interval_seconds=60 * 60 * 24,
+        delta=timedelta(days=30),
+        align_to_end_of_day=True,
+    ),
+    TimeRange.THREE_SIXTY_FIVE_DAYS: TimeRangeDetailConfig(
+        resolution=Resolution.ONE_WEEK,
+        interval_seconds=60 * 60 * 24 * 7,
+        delta=timedelta(days=365),
+        align_to_end_of_day=True,
+    ),
+}
 
 
 class PersistedEventEntity(Document):
@@ -124,25 +181,36 @@ class PersistedEventEntity(Document):
             # 1. Match events for the given thread
             {"$match": {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
-            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1_000_000]}}}},
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
-            # 4. Group events by run_id to calculate run-level stats
+            # 4. Group by run_id and event_id to de-duplicate events
+            # We take the first occurrence of each event_id within a run.
+            # All fields needed for the subsequent $group stage must be preserved here.
             {
                 "$group": {
-                    "_id": "$run_id",
+                    "_id": {"run_id": "$run_id", "event_id": "$event_id"},
+                    "run_id_val": {"$first": "$run_id"},  # Keep run_id for next stage
+                    "display_id": {"$first": "$display_id"},
+                    "event_time": {"$first": "$event_time"},
+                    "event_parents": {"$first": "$event_parents"},
+                    "agent_class": {"$first": "$agent_class"},
+                    "agent_id": {"$first": "$agent_id"},
+                    "event_data": {"$first": "$event_data"},  # For LLM cost calculation
+                }
+            },
+            # 5. Group events by run_id to calculate run-level stats
+            # This stage now operates on the de-duplicated events from the previous stage.
+            {
+                "$group": {
+                    "_id": "$run_id_val",
                     "display_id": {"$first": "$display_id"},
                     "first_event_time": {"$min": "$event_time"},
                     "latest_event_time": {"$max": "$event_time"},
                     "n_events": {"$sum": 1},
-                    # --- Count specific event types ---
                     "start_events": {"$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}},
-                    "stop_events": {
-                        "$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}
-                    },  # Added stop count
-                    "exception_events": {
-                        "$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}
-                    },  # Simplified
+                    "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
+                    "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
                     "hitl_request_events": {
                         "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
@@ -161,11 +229,11 @@ class PersistedEventEntity(Document):
                     "aitl_response_events": {
                         "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
                     },
-                    # --- Calculate LLM Cost (Simplified) ---
+                    # --- Calculate LLM Cost ---
                     "llm_cost": {
                         "$sum": {
                             "$cond": {
-                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},  # Simplified
+                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},
                                 "then": {
                                     "$add": [
                                         {"$ifNull": ["$event_data.prompt_tokens_costs", 0]},
@@ -187,27 +255,25 @@ class PersistedEventEntity(Document):
                             "agent_id": "$agent_id",
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
-                            "is_not_user": {"$not": {"$regexMatch": {"input": "$agent_class", "regex": "^UserAgent"}}},
+                            "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
                         }
                     },
                 }
             },
-            # 5. Project/AddFields to calculate derived stats for each run and format output
+            # 6. Project/AddFields to calculate derived stats for each run and format output
             {
                 "$addFields": {
                     "run_id": "$_id",
                     "started_at": "$first_event_time",
                     "ended_at": "$latest_event_time",
-                    "latency": {
+                    "duration": {
                         "$cond": {
                             "if": {"$and": ["$first_event_time", "$latest_event_time"]},
                             "then": {"$divide": [{"$subtract": ["$latest_event_time", "$first_event_time"]}, 1000]},
                             "else": None,
                         }
                     },
-                    "has_pending": {
-                        "$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]
-                    },  # Uses stop_events
+                    "has_pending": {"$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]},
                     "has_errors": {"$gt": ["$exception_events", 0]},
                     "is_hitl": {"$gt": ["$hitl_request_events", 0]},
                     "open_hitl": {"$gt": ["$hitl_request_events", "$hitl_response_events"]},
@@ -226,7 +292,7 @@ class PersistedEventEntity(Document):
                     },
                 }
             },
-            # 6. Final projection to shape the output document for each run
+            # 7. Final projection to shape the output document for each run
             {
                 "$project": {
                     "_id": 0,
@@ -234,7 +300,7 @@ class PersistedEventEntity(Document):
                     "display_id": 1,
                     "started_at": 1,
                     "ended_at": 1,
-                    "latency": 1,
+                    "duration": 1,
                     "n_events": 1,
                     "has_errors": 1,
                     "has_pending": 1,
@@ -251,7 +317,7 @@ class PersistedEventEntity(Document):
                     # Include raw counts needed for aggregation
                     "start_events": 1,
                     "stop_events": 1,
-                    "exception_events": 1,  # Added stop_events
+                    "exception_events": 1,
                     "hitl_request_events": 1,
                     "hitl_response_events": 1,
                     "bitl_request_events": 1,
@@ -356,3 +422,161 @@ class PersistedEventEntity(Document):
             )
 
         return message_history
+
+    @classmethod
+    def get_event_timeseries(
+        cls,
+        time_range: TimeRange,
+        thread_id: Optional[ObjectId] = None,
+        agent_id: Optional[ObjectId] = None,
+        agent_class: Optional[str] = None,
+        event_name: Optional[str] = None,
+    ) -> Tuple[List[EventBucket], datetime, datetime, Resolution]:
+        """
+        Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
+        Counts total events, optionally filtered by a specific event_name.
+        If event_name is NOT provided, it aggregates over all events of type display_event.
+        Returns a list of EventBucket instances (start_time, end_time, total_events),
+        the overall start time, end time, and resolution of the analysis.
+        """
+        config = TIME_RANGE_CONFIG.get(time_range)
+
+        current_utc_time = datetime.now(timezone.utc)
+        if config.align_to_end_of_day:
+            end_time_boundary = current_utc_time.replace(hour=23, minute=59, second=59, microsecond=999999)
+        else:
+            end_time_boundary = current_utc_time
+
+        start_time = end_time_boundary - config.delta
+        if time_range == TimeRange.ONE_HOUR:  # Compare with Enum member
+            start_time = current_utc_time - config.delta
+            end_time_boundary = current_utc_time
+
+        match_filter: Dict[str, Any] = {
+            "event_data.created_at": {
+                "$gte": int(start_time.timestamp() * 1e9),
+                "$lte": int(end_time_boundary.timestamp() * 1e9),
+            },
+        }
+
+        if thread_id:
+            match_filter["thread_id"] = thread_id
+
+        if agent_class and agent_id:
+            match_filter["agent_class"] = agent_class
+            match_filter["agent_id"] = agent_id
+
+        if event_name:
+            match_filter["event_parents"] = event_name
+
+        pipeline: List[Dict[str, Any]] = [
+            # 1. Match events based on primary criteria
+            {"$match": match_filter},
+            # 2. Add a standardized BSON date field
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
+            # 3. Create time buckets (timestamp in milliseconds)
+            {
+                "$addFields": {
+                    "time_bucket": {
+                        "$subtract": [
+                            {"$toLong": "$event_time"},
+                            {"$mod": [{"$toLong": "$event_time"}, config.interval_seconds * 1000]},
+                        ]
+                    }
+                }
+            },
+            # 4. Group by time_bucket and event_id to de-duplicate events
+            {
+                "$group": {
+                    "_id": {"time_bucket": "$time_bucket", "event_id": "$event_id"},
+                    "time_bucket_val": {"$first": "$time_bucket"},
+                }
+            },
+            # 5. Group events by time bucket and count them
+            {
+                "$group": {
+                    "_id": "$time_bucket_val",  #
+                    "start_time": {"$first": {"$toDate": "$time_bucket_val"}},
+                    "total_events": {"$sum": 1},
+                }
+            },
+            # 6. Add end_time field (derived from bucket start + interval)
+            {
+                "$addFields": {
+                    "end_time": {
+                        "$toDate": {"$add": ["$_id", config.interval_seconds * 1000]}
+                    }  # $_id is time_bucket (ms)
+                }
+            },
+            # 7. Project the final simplified fields
+            {
+                "$project": {
+                    "_id": 0,
+                    "start_time": 1,
+                    "end_time": 1,
+                    "total_events": 1,
+                }
+            },
+            # 8. Sort by start_time
+            {"$sort": {"start_time": 1}},
+        ]
+
+        results = list(cls.objects.aggregate(pipeline))
+
+        for result in results:
+            if result["start_time"].tzinfo is None:
+                result["start_time"] = result["start_time"].replace(tzinfo=timezone.utc)
+            if result["end_time"].tzinfo is None:
+                result["end_time"] = result["end_time"].replace(tzinfo=timezone.utc)
+
+        filled_results: List[EventBucket] = []
+        current_loop_time = start_time
+
+        if config.interval_seconds >= 3600:
+            current_loop_time = current_loop_time.replace(minute=0, second=0, microsecond=0)
+        if config.interval_seconds >= 86400:
+            current_loop_time = current_loop_time.replace(hour=0)
+
+        idx = 0
+        while current_loop_time < end_time_boundary:
+            current_bucket_end_time = current_loop_time + timedelta(seconds=config.interval_seconds)
+            bucket_data = None
+
+            if idx < len(results):
+                res_start_time = results[idx]["start_time"]
+                if res_start_time >= current_loop_time and res_start_time < current_bucket_end_time:
+                    bucket_data = results[idx]
+                    idx += 1
+
+            if bucket_data:
+                filled_results.append(
+                    EventBucket(
+                        start_time=bucket_data["start_time"],
+                        end_time=bucket_data["end_time"],
+                        total_events=bucket_data["total_events"],
+                    )
+                )
+            else:
+                actual_end_time = min(current_bucket_end_time, end_time_boundary)
+                if current_loop_time < end_time_boundary:
+                    filled_results.append(
+                        EventBucket(
+                            start_time=current_loop_time,
+                            end_time=actual_end_time,
+                            total_events=0,
+                        )
+                    )
+
+            current_loop_time = current_bucket_end_time
+            # Safety break for the unlikely event that 'end_time_boundary' isn't reached due to floating point issues with many small intervals
+            if (
+                len(filled_results) > ((end_time_boundary - start_time).total_seconds() / config.interval_seconds) + 10
+                and config.interval_seconds > 0
+            ):
+                # This condition suggests we've created significantly more buckets than expected
+                logger.warning(
+                    f"Exiting fill loop early due to excessive bucket count. Current loop time: {current_loop_time}, end_time_boundary: {end_time_boundary}"
+                )
+                break
+
+        return filled_results, start_time, end_time_boundary, config.resolution

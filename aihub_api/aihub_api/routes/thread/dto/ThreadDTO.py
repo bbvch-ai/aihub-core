@@ -41,7 +41,7 @@ class ThreadDTO(BaseModel):
     latest_interaction: Annotated[
         Optional[str], Field(description="Date of newest event in thread (ISO format string)")
     ] = None
-    latency: Annotated[Optional[float], Field(description="Overall duration of interactions in seconds")] = None
+    duration: Annotated[Optional[float], Field(description="Overall duration of interactions in seconds")] = None
 
     # Enhanced statistics / Contents
     displays: Annotated[

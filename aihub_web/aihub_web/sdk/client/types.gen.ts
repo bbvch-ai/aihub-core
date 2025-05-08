@@ -352,7 +352,13 @@ export type AudioBlock = {
 };
 
 export type AudioContent = {
+    /**
+     * Block type, must be 'audio' for AudioContent
+     */
     type?: 'audio';
+    /**
+     * Base64 encoded audio or url pointing to externally stored audio
+     */
     url?: string | null;
     mime_type?: string | null;
 };
@@ -902,9 +908,9 @@ export type DisplayStatistics = {
      */
     ended_at?: string | null;
     /**
-     * Latency in seconds
+     * Duration in seconds
      */
-    latency?: number | null;
+    duration?: number | null;
     /**
      * The display ID
      */
@@ -1079,6 +1085,24 @@ export type EmbeddingsResponse = {
 };
 
 /**
+ * Represents a time bucket with event counts by type.
+ */
+export type EventBucket = {
+    /**
+     * Start time of the bucket
+     */
+    start_time: Date;
+    /**
+     * End time of the bucket
+     */
+    end_time: Date;
+    /**
+     * Total number of events in this bucket
+     */
+    total_events?: number;
+};
+
+/**
  * Information about an event.
  */
 export type EventInfo = {
@@ -1134,6 +1158,48 @@ export type EventSpecs = {
     event_schema: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Timeseries of events for a given time-range.
+ */
+export type EventTimeseries = {
+    /**
+     * The thread ID to filter for
+     */
+    thread_id: string | null;
+    /**
+     * The Agent ID to filter for
+     */
+    agent_id: string | null;
+    /**
+     * The Agent Class to filter for
+     */
+    agent_class: string | null;
+    /**
+     * Event Name to filter for
+     */
+    event_name: string | null;
+    /**
+     * Time range for the statistics
+     */
+    time_range: TimeRange;
+    /**
+     * Resolution of the buckets
+     */
+    resolution: Resolution;
+    /**
+     * Start time of the entire range
+     */
+    start_time: Date;
+    /**
+     * End time of the entire range
+     */
+    end_time: Date;
+    /**
+     * List of time buckets with event counts
+     */
+    buckets: Array<EventBucket>;
 };
 
 /**
@@ -1402,7 +1468,13 @@ export type ImageBlock = {
 };
 
 export type ImageContent = {
+    /**
+     * Block type, must be 'image' for ImageContent
+     */
     type?: 'image';
+    /**
+     * Base64 encoded image or url pointing to externally stored image
+     */
     url?: string | null;
 };
 
@@ -1843,10 +1915,6 @@ export type Message = {
      */
     role: string;
     /**
-     * The content of the message.
-     */
-    content?: string | null;
-    /**
      * The name of the function or agent generating the message.
      */
     name?: string | null;
@@ -1874,6 +1942,7 @@ export type Message = {
      * The message contents as an array of content blocks (text, image, audio).
      */
     contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    readonly content: string;
 };
 
 /**
@@ -1897,11 +1966,11 @@ export const MessageRole = {
 
 export type Metadata = {
     /**
-     * The thread ID to which conversation shall e sent.
+     * Provide thread ID to continue conversation in an existing thread.
      */
     thread_id?: string | null;
     /**
-     * The display ID set for this run.
+     * Gives control over display ID used for this run.
      */
     display_id?: string | null;
     /**
@@ -2158,6 +2227,15 @@ export type RerankerEvent = {
     [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
+export type Resolution = '1m' | '1h' | '1d' | '1w';
+
+export const Resolution = {
+    '1M': '1m',
+    '1H': '1h',
+    '1D': '1d',
+    '1W': '1w'
+} as const;
+
 export type ResponseFormatJsonObject = {
     type: 'json_object';
 };
@@ -2337,9 +2415,9 @@ export type RunStatistics = {
      */
     ended_at?: string | null;
     /**
-     * Latency in seconds
+     * Duration in seconds
      */
-    latency?: number | null;
+    duration?: number | null;
     /**
      * The run ID
      */
@@ -2562,7 +2640,13 @@ export type TextBlock = {
 };
 
 export type TextContent = {
+    /**
+     * Block type, must be 'text' for TextContent
+     */
     type?: 'text';
+    /**
+     * Text content of the message
+     */
     text: string;
 };
 
@@ -2718,7 +2802,7 @@ export type ThreadDto = {
     /**
      * Overall duration of interactions in seconds
      */
-    latency?: number | null;
+    duration?: number | null;
     /**
      * Displays in this thread, sorted by start time
      */
@@ -2732,6 +2816,15 @@ export type ThreadDto = {
      */
     llm_cost?: number;
 };
+
+export type TimeRange = '1h' | '24h' | '30d' | '365d';
+
+export const TimeRange = {
+    '1H': '1h',
+    '24H': '24h',
+    '30D': '30d',
+    '365D': '365d'
+} as const;
 
 export type TokenResponse = {
     /**
@@ -2967,14 +3060,6 @@ export type UserMessageEvent = {
 
 export type UserMessageEventInput = {
     /**
-     * Display name for the event
-     */
-    display_name?: LocaleString;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString;
-    /**
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
     messages?: Array<ChatMessageInput | UserChatMessageInput | AssistantChatMessageInput>;
@@ -3192,6 +3277,41 @@ export type GetEventsResponses = {
 };
 
 export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
+
+export type GetEventTimeseriesData = {
+    body?: never;
+    path: {
+        /**
+         * Time range for the statistics (1h, 24h, 30d, 365d)
+         */
+        time_range: TimeRange;
+    };
+    query?: {
+        thread_id?: string;
+        agent_id?: string;
+        agent_class?: string;
+        event_name?: string;
+    };
+    url: '/event/timeseries/{time_range}';
+};
+
+export type GetEventTimeseriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetEventTimeseriesError = GetEventTimeseriesErrors[keyof GetEventTimeseriesErrors];
+
+export type GetEventTimeseriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: EventTimeseries;
+};
+
+export type GetEventTimeseriesResponse = GetEventTimeseriesResponses[keyof GetEventTimeseriesResponses];
 
 export type GetUserThreadsData = {
     body?: never;

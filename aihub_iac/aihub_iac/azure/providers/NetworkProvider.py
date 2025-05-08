@@ -1,16 +1,15 @@
-import pulumi
 from pulumi_azure_native import network
 
 from aihub_iac.azure.constants.resources import (
-    V_NET,
-    SUB_NET,
-    APP_SERVICE,
-    CONTAINER_INSTANCE,
-    POSTGRES,
-    CONTAINER_APP,
-    STORAGE_ACCOUNT,
-    COSMOS,
     AI_SEARCH_SERVICE,
+    APP_SERVICE,
+    CONTAINER_APP,
+    CONTAINER_INSTANCE,
+    COSMOS,
+    POSTGRES,
+    STORAGE_ACCOUNT,
+    SUB_NET,
+    V_NET,
 )
 
 

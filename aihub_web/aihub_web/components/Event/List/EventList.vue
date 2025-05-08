@@ -2,6 +2,7 @@
   <div>
     <Tabs
       v-model:value="activeDisplayId"
+      scrollable
     >
       <TabList>
         <Tab
@@ -28,7 +29,7 @@
         >
           <div class="flex flex-col gap-12 pt-4">
             <Panel class="panel pt-5">
-              <div class="flex items-center justify-between">
+              <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
                 <div class="flex items-center gap-2">
                   <span class="font-semibold">
                     {{ $t('eventList.firstInteraction') }}

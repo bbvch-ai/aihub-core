@@ -1,13 +1,9 @@
-import os
-import platform
+from typing import List, Optional
 
 import pulumi
-from typing import Optional, List
+from pulumi_azure_native import app, containerinstance, dbforpostgresql, network
 
-from pulumi_azure_native import app, dbforpostgresql, containerinstance, network
-from pulumi_command import local
-
-from aihub_iac.azure.constants.resources import POSTGRES, CONTAINER_INSTANCE, CONTAINER_APP_ENVIRONMENT
+from aihub_iac.azure.constants.resources import CONTAINER_APP_ENVIRONMENT, CONTAINER_INSTANCE, POSTGRES
 from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.managed_environment.ManagedEnvironment import ManagedEnvironment
@@ -16,7 +12,6 @@ from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageReso
 
 
 class WebUI(pulumi.ComponentResource):
-
     def __init__(
         self,
         stack: str,

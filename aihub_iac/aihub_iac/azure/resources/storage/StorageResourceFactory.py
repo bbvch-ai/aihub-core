@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import storage, network
+from pulumi_azure_native import network, storage
 
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 

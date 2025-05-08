@@ -1,9 +1,8 @@
+from typing import Optional
+
 import pulumi
-from typing import Dict, Optional
+from pulumi_azure_native import network
 
-from pulumi_azure_native import network, app, operationalinsights
-
-from aihub_iac.azure.constants.resources import V_NET
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 

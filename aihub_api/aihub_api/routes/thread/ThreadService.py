@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
@@ -73,6 +74,11 @@ class ThreadService:
             raise ValueError("Invalid thread_id provided.")
         thread = ThreadEntity.get_thread_by_id(thread_id)
         return ThreadService.thread_response_from_entity(thread, t)
+
+    @staticmethod
+    def user_in_thread(thread_id: str, user: AuthenticatedUser) -> bool:
+        thread = ThreadEntity.get_thread_by_id(thread_id)
+        return user.oid in [u.user_id for u in thread.users]
 
     @staticmethod
     def get_paginated_threads_for_user(
@@ -302,7 +308,7 @@ class ThreadService:
         if all_end_times:
             stats.latest_interaction_dt = max(all_end_times)
         if stats.first_interaction_dt and stats.latest_interaction_dt:
-            stats.latency = (stats.latest_interaction_dt - stats.first_interaction_dt).total_seconds()
+            stats.duration = (stats.latest_interaction_dt - stats.first_interaction_dt).total_seconds()
 
         return stats
 
@@ -323,17 +329,21 @@ class ThreadService:
         user_dtos: List[UserDTO] = []
         for user_ref in entity.users:
             try:
-                # Assuming UserService provides a method to fetch by OID
                 user_dto = UserService.get_user_by_oid(user_ref.user_id)
                 if user_dto:
                     user_dtos.append(user_dto)
             except Exception as e:
                 logger.warning(f"Could not fetch user {user_ref.user_id}: {e}")
 
-        # Create the base response DTO
         response = ThreadDTO(
             id=str(entity.id),
-            created_at=entity.created_at.isoformat() + "Z",  # Ensure UTC ISO format
+            created_at=(
+                entity.created_at.replace(tzinfo=timezone.utc)
+                if entity.created_at.tzinfo is None
+                else entity.created_at
+            )
+            .isoformat()
+            .replace("+00:00", "Z"),
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
@@ -341,15 +351,12 @@ class ThreadService:
 
         # 2. Get aggregated run statistics from the database
         try:
-            # Assumes the DB method returns a list of dictionaries
             aggregated_runs: List[Dict] = PersistedEventEntity.get_aggregated_run_statistics(str(entity.id))
         except Exception as e:
             logger.exception(f"Failed to get aggregated run statistics for thread {entity.id}: {e}")
-            # Return the DTO with only base info if aggregation fails
             return response
 
         if not aggregated_runs:
-            # Return base info if there are no events/runs to process
             return response
 
         # 3. Process raw run data into intermediate structures
@@ -359,34 +366,29 @@ class ThreadService:
         final_display_dtos: List[DisplayStatistics] = []
         for intermediate_stat in processed_results.display_aggregates.values():
             try:
-                # Use the classmethod which handles internal sorting of runs
                 display_dto = DisplayStatistics.from_intermediate(intermediate_stat)
                 final_display_dtos.append(display_dto)
             except Exception as e:
                 logger.exception(
                     f"Error creating DisplayStatistics DTO for display {intermediate_stat.display_id}: {e}"
                 )
-                # Continue processing other displays if one fails
 
-        # Sort the final list of displays based on their start time
-        # Use a robust sorting key that handles None values gracefully
         min_utc_datetime = datetime.min.replace(tzinfo=timezone.utc)
 
         def display_sort_key(display: DisplayStatistics) -> datetime:
             if display.started_at:
                 try:
                     return datetime.fromisoformat(display.started_at.replace("Z", "+00:00"))
-                except (ValueError, TypeError):  # Handle potential format issues or None
+                except (ValueError, TypeError):
                     logger.warning(f"Could not parse display start time for sorting: {display.started_at}")
                     return min_utc_datetime
-            return min_utc_datetime  # Displays without a start time sort first
+            return min_utc_datetime
 
         response.displays = sorted(final_display_dtos, key=display_sort_key)
 
         # 5. Fetch DTOs for all unique participating agents
         final_participating_agents: List[MinimalAgentDTO] = []
         for agent_id in processed_results.participating_agent_ids:
-            # Use the cached fetch method again
             dto = ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
             if dto:
                 final_participating_agents.append(dto)
@@ -410,8 +412,8 @@ class ThreadService:
         response.is_aitl = overall_stats.is_aitl
         response.open_aitl = overall_stats.open_aitl
         response.llm_cost = overall_stats.llm_cost
-        response.first_interaction = overall_stats.first_interaction  # Use property for ISO string
-        response.latest_interaction = overall_stats.latest_interaction  # Use property for ISO string
-        response.latency = overall_stats.latency
+        response.first_interaction = overall_stats.first_interaction
+        response.latest_interaction = overall_stats.latest_interaction
+        response.duration = overall_stats.duration
 
         return response

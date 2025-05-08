@@ -6,12 +6,6 @@
       style="height: 2px"
     />
     <div class="p-3">
-      <div class="mb-4">
-        <h2 class="text-xl font-bold">
-          {{ $t('agent.threads.title') }}
-        </h2>
-      </div>
-
       <ThreadList
         :threads="threads"
         @selected="toThread"

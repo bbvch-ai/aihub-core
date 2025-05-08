@@ -94,8 +94,8 @@ const isFromAgentInThread = computed<boolean>(() => {
 .striped-bg {
   background: repeating-linear-gradient(
     -55deg,
-    rgba(155, 155, 155, 0.1),
-    rgba(155, 155, 155, 0.1) 4px,
+    rgba(155, 155, 155, 0.08),
+    rgba(155, 155, 155, 0.08) 4px,
     rgba(155, 155, 155, 0) 4px,
     rgba(155, 155, 155, 0) 8px
   );

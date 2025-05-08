@@ -2,7 +2,6 @@ from aihub_iac.azure.resources.RessourceNamer import ResourceNamer
 
 
 class ManagedEnvironmentConfig:
-
     def __init__(self, resource_group: str, project_name: str, location: str, location_short: str, name: str):
         self.resource_group = resource_group
         self.project_name = project_name

@@ -1,10 +1,10 @@
 import hashlib
+
 from pulumi import Output
 from pulumi_azure_native import authorization
 
 
 class RoleProvider:
-
     def __init__(self, subscription_id=None, location_short_name=None):
         if subscription_id is not None:
             self.subscription_id = subscription_id

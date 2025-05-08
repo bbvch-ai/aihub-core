@@ -9,7 +9,6 @@ from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
 class ApiConfig(BaseConfig):
-
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
     _oauth_settings: ClassVar[OAuthSettings] = OAuthSettings()
 

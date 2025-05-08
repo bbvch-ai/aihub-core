@@ -30,6 +30,8 @@ chat:
 eventList:
   firstInteraction: "Erste Interaktion:"
   lastInteraction: "Letzte Interaktion:"
+  costs: "Kosten:"
+  duration: "Dauer:"
   pending: "Ausstehend:"
   no: "Nein"
   status: "Status:"
@@ -55,6 +57,19 @@ costs:
     total: "Total"
     currency: "CHF"
 
+eventStatistics:
+  charts:
+    agentInvocations: "Agent-Aufrufe"
+    agentStart: "Agent-Start"
+    endEvents: "End-Ereignisse"
+    success: "Erfolg"
+    openHumanInTheLoop: "Offen (Mensch in der Schleife)"
+    openBotInTheLoop: "Offen (Bot in der Schleife)"
+    error: "Fehler"
+    delegations: "Delegierungen"
+    delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
+    allEvents: "Alle Ereignisse"
+
 service:
   selection:
     title: "Dienste"
@@ -66,12 +81,16 @@ agent:
     startEvents: "Start-Ereignisse"
     stopEvents: "Stop-Ereignisse"
     config: "Konfiguration"
+    name: "Name:"
+    class: "Klasse:"
+    agentId: "Agent-ID:"
+    status: "Status:"
+    online: "Online"
+    offline: "Offline"
   chat:
     title: "Chat"
     createThreadAndSend: "Thread erstellen und senden"
     manuallyCreatedThread: "Manuell erstellter Thread"
-  threads:
-    title: "Agent-Threads"
   navigation:
     basic: "Basis"
     workflow: "Arbeitsablauf"

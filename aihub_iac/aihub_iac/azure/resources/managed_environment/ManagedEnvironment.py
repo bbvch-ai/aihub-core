@@ -1,5 +1,6 @@
-import pulumi
 from typing import Optional
+
+import pulumi
 from pulumi_azure_native import app, operationalinsights
 
 from aihub_iac.azure.resources.managed_environment.ManagedEnvironmentConfig import ManagedEnvironmentConfig

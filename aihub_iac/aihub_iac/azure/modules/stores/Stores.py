@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import search, documentdb, dbforpostgresql, network
+from pulumi_azure_native import dbforpostgresql, documentdb, search
 
 from aihub_iac.azure.modules.stores.StoresConfig import StoresConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider

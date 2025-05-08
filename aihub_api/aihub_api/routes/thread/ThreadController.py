@@ -125,7 +125,7 @@ class ThreadController(Controller):
             Raises 403 if the user is not a member of that thread.
             """
             thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_view_exception
             return thread
 
@@ -142,8 +142,7 @@ class ThreadController(Controller):
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             # TODO: Check if all users have access to new agent
@@ -159,8 +158,7 @@ class ThreadController(Controller):
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> HistoryResponse:
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.thread_as_message_history(thread_id)
@@ -179,8 +177,7 @@ class ThreadController(Controller):
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.remove_agent_from_thread(thread_id, agent_class, agent_id, t)
@@ -198,8 +195,7 @@ class ThreadController(Controller):
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             # TODO: Check if new users has access to all agents in thread
@@ -219,8 +215,7 @@ class ThreadController(Controller):
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
-            thread = ThreadService.get_thread_by_id(thread_id, t)
-            if user.oid not in [u.id for u in thread.users]:
+            if not ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
             return ThreadService.remove_user_from_thread(thread_id, remove_user_id, t)

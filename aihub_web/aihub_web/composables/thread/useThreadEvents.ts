@@ -10,16 +10,15 @@ export const useThreadEvents = defineQuery(() => {
   const route = useRoute()
   const queryCache = useQueryCache()
 
-  // Regular REST API query
-  const { data: threadEvents, isLoading: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
-    key: () => ['events', 'thread', route.params.thread_id as string],
-    staleTime: 1000 * 10, // 10 seconds
+  const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
+    key: () => ['thread', route.params.thread_id as string, 'events'],
+    staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {
       return await getEvents({
         composable: '$fetch',
         query: {
-          thread_id: route.params.thread_id,
+          thread_id: route.params.thread_id as string,
         },
       })
     },
@@ -48,7 +47,8 @@ export const useThreadEvents = defineQuery(() => {
       // Only process events for the current thread
       if (event.thread_id === route.params.thread_id) {
         // Get current events from cache
-        const currentEvents = queryCache.getQueryData<WsServerEvent[]>(['events', 'thread', route.params.thread_id]) || []
+        const key = ['thread', route.params.thread_id, 'events']
+        const currentEvents = queryCache.getQueryData<WsServerEvent[]>(key) || []
 
         // Check if event already exists (avoid duplicates)
         const eventExists = currentEvents.some(e => e.event_id === event.event_id)
@@ -63,7 +63,14 @@ export const useThreadEvents = defineQuery(() => {
           )
 
           // Update the cache with the new array
-          queryCache.setQueryData(['events', 'thread', route.params.thread_id], updatedEvents)
+          queryCache.setQueryData(key, updatedEvents)
+        }
+
+        // Invalidate queries on stop event
+        const parents = event.event._parent_event_names
+        if (parents.includes('StopEvent') || parents.includes('ExceptionEvent')) {
+          queryCache.invalidateQueries({ key: ['threads', event.thread_id] })
+          queryCache.invalidateQueries({ key: ['agent', event.agent_class, event.agent_id] })
         }
       }
     }
