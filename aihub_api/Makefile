@@ -31,3 +31,8 @@ test-cov:
 
 pr-ready: sort-imports format lint
 	@echo "Running full check (format, sort)..."
+
+
+install-ffmpeg:
+	@echo "Installing ffmpeg..."
+	sudo apt-get update; sudo apt-get install -y ffmpeg

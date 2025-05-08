@@ -15,6 +15,11 @@ inputs:
     description: 'Use local core'
     required: false
     default: 'false'
+  install_ffmpeg:
+    description: 'Install ffmpeg'
+    required: false
+    default: 'false'
+
 
 runs:
   using: "composite"
@@ -70,6 +75,12 @@ runs:
     - name: Install Dependencies
       shell: bash
       run: poetry install --no-interaction --no-root
+      working-directory: ${{ inputs.working_directory }}
+
+    - name: Install FFmpeg
+      if: inputs.install_ffmpeg == 'true'
+      shell: bash
+      run: make install-ffmpeg
       working-directory: ${{ inputs.working_directory }}
 
     - name: Wait for Docker services to become healthy

@@ -24,6 +24,8 @@ jobs:
         with:
           scopes: |
             aihub
+            iac
+            ci-cd
             agent-custom
             agent-xp
             avatar
