@@ -53,7 +53,10 @@
     <ThreadInfo
       :thread="thread"
     />
-    <EventStatistics :charts="charts" />
+    <EventStatistics
+      v-model="timeRange"
+      :charts="charts"
+    />
   </div>
 </template>
 
@@ -62,6 +65,7 @@ import { formatDuration, intervalToDuration } from 'date-fns'
 import { de } from 'date-fns/locale/de'
 
 const { thread, threadIsLoading } = useThread()
+const { timeRange, charts } = useBasicEventStatistics()
 
 const firstInteraction = computed<string>(() => {
   return useDateFormat(new Date(thread.value?.first_interaction), 'DD.MM.YYYY HH:mm:ss')
@@ -84,13 +88,6 @@ const duration = computed<string>(() => {
   }
   return formatDuration(duration, { locale: de })
 })
-
-const charts = computed(() => [
-  { title: 'Interactions', display: [
-    { eventName: 'StartEvent', name: 'Starts', color: '#ff0000' },
-    { eventName: 'StopEvent', name: 'Stops', color: '#00ff00' },
-  ] },
-])
 </script>
 
 <style scoped>

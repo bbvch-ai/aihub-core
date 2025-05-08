@@ -1,12 +1,12 @@
 <template>
   <ClientOnly>
     <apexchart
+      class="w-full"
       type="bar"
       height="350"
       :options="chartOptions"
       :series="chartSeries"
     />
-    <pre>inputs: {{ seriesInputs }}</pre>
   </ClientOnly>
 </template>
 
@@ -33,14 +33,14 @@ const chartSeries = computed(() => {
   return props.seriesInputs
     .map(input => ({
       name: input.name,
-      data: input.timeseries.value?.buckets?.map(bucket => bucket.total_events || 0) ?? [],
+      data: input.timeseries?.buckets?.map(bucket => bucket.total_events || 0) ?? [],
     }))
     .filter(series => series.data.some(value => value > 0))
 })
 
 // Computed property for the chart options
 const chartOptions = computed<ApexOptions>(() => {
-  const representativeTimeseries = props.seriesInputs?.find(s => s.timeseries.value?.buckets?.length > 0)?.timeseries
+  const representativeTimeseries = props.seriesInputs?.find(s => s.timeseries?.buckets?.length > 0)?.timeseries
 
   if (!representativeTimeseries) {
     // Fallback options if no data is available to derive categories, etc.
@@ -72,7 +72,7 @@ const chartOptions = computed<ApexOptions>(() => {
     }
   }
 
-  const { buckets, time_range, resolution } = representativeTimeseries.value
+  const { buckets, time_range, resolution } = representativeTimeseries
 
   // Generate categories for the X-axis from bucket start times
   const categories = buckets.map((bucket: EventBucket) => {
@@ -82,17 +82,17 @@ const chartOptions = computed<ApexOptions>(() => {
 
   const activeSeriesColors = props.seriesInputs
     .filter(input =>
-      input.timeseries.value.buckets.some(bucket => (bucket.total_events || 0) > 0) && input.color,
+      input.timeseries.buckets.some(bucket => (bucket.total_events || 0) > 0) && input.color,
     )
     .map(input => input.color!)
 
   const getXAxisLabelFormatter = () => {
-    return (value: string, timestamp?: number, opts?: { dataPointIndex?: number }) => {
+    return (value: string, _: string, opts?: { i?: number }) => {
       const date = new Date(value)
-      const dataPointIndex = opts?.dataPointIndex ?? 0
+      const dataPointIndex = opts?.i ?? 0
 
       // Determine max labels based on time range to avoid clutter
-      let maxLabels = 10
+      let maxLabels = 31
       if (time_range === '1h') maxLabels = 12 // e.g., every 5 minutes for 1 hour
       else if (time_range === '24h') maxLabels = 8 // e.g., every 3 hours for 24 hours
 
@@ -186,6 +186,8 @@ const chartOptions = computed<ApexOptions>(() => {
       forceNiceScale: true,
     },
     legend: {
+      show: true,
+      showForSingleSeries: true,
       position: 'top',
       offsetY: 0,
     },

@@ -3,7 +3,7 @@ import {
 } from '@core/sdk/client'
 import { useRoute } from 'vue-router'
 
-export const useEventTimeseries = ({ eventName, timeRange }: { eventName: string, timeRange: Ref<string> }) => {
+export const useEventTimeseries = ({ eventName, timeRange }: { eventName?: string, timeRange: Ref<string> }) => {
   const route = useRoute()
 
   const query = {

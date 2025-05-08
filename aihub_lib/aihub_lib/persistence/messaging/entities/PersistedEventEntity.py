@@ -133,24 +133,41 @@ class PersistedEventEntity(Document):
             {"$match": {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
             {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
-            # 3. Sort events within the thread by time
+            # 3. Sort events within the thread by time (optional but good practice before first group)
             {"$sort": {"event_time": 1}},
-            # 4. Group events by run_id to calculate run-level stats
+
+            # 4. Group by run_id and event_id to de-duplicate events
+            # We take the first occurrence of each event_id within a run.
+            # All fields needed for the subsequent $group stage must be preserved here.
             {
                 "$group": {
-                    "_id": "$run_id",
+                    "_id": {"run_id": "$run_id", "event_id": "$event_id"},
+                    "run_id_val": {"$first": "$run_id"}, # Keep run_id for next stage
+                    "display_id": {"$first": "$display_id"},
+                    "event_time": {"$first": "$event_time"},
+                    "event_parents": {"$first": "$event_parents"},
+                    "agent_class": {"$first": "$agent_class"},
+                    "agent_id": {"$first": "$agent_id"},
+                    "event_data": {"$first": "$event_data"}, # For LLM cost calculation
+                }
+            },
+
+            # 5. Group events by run_id to calculate run-level stats
+            # This stage now operates on the de-duplicated events from the previous stage.
+            {
+                "$group": {
+                    "_id": "$run_id_val",
                     "display_id": {"$first": "$display_id"},
                     "first_event_time": {"$min": "$event_time"},
                     "latest_event_time": {"$max": "$event_time"},
                     "n_events": {"$sum": 1},
-                    # --- Count specific event types ---
                     "start_events": {"$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}},
                     "stop_events": {
                         "$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}
-                    },  # Added stop count
+                    },
                     "exception_events": {
                         "$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}
-                    },  # Simplified
+                    },
                     "hitl_request_events": {
                         "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
@@ -169,11 +186,11 @@ class PersistedEventEntity(Document):
                     "aitl_response_events": {
                         "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
                     },
-                    # --- Calculate LLM Cost (Simplified) ---
+                    # --- Calculate LLM Cost ---
                     "llm_cost": {
                         "$sum": {
                             "$cond": {
-                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},  # Simplified
+                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},
                                 "then": {
                                     "$add": [
                                         {"$ifNull": ["$event_data.prompt_tokens_costs", 0]},
@@ -200,7 +217,7 @@ class PersistedEventEntity(Document):
                     },
                 }
             },
-            # 5. Project/AddFields to calculate derived stats for each run and format output
+            # 6. Project/AddFields to calculate derived stats for each run and format output
             {
                 "$addFields": {
                     "run_id": "$_id",
@@ -215,7 +232,7 @@ class PersistedEventEntity(Document):
                     },
                     "has_pending": {
                         "$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]
-                    },  # Uses stop_events
+                    },
                     "has_errors": {"$gt": ["$exception_events", 0]},
                     "is_hitl": {"$gt": ["$hitl_request_events", 0]},
                     "open_hitl": {"$gt": ["$hitl_request_events", "$hitl_response_events"]},
@@ -234,7 +251,7 @@ class PersistedEventEntity(Document):
                     },
                 }
             },
-            # 6. Final projection to shape the output document for each run
+            # 7. Final projection to shape the output document for each run
             {
                 "$project": {
                     "_id": 0,
@@ -259,7 +276,7 @@ class PersistedEventEntity(Document):
                     # Include raw counts needed for aggregation
                     "start_events": 1,
                     "stop_events": 1,
-                    "exception_events": 1,  # Added stop_events
+                    "exception_events": 1,
                     "hitl_request_events": 1,
                     "hitl_response_events": 1,
                     "bitl_request_events": 1,
@@ -367,12 +384,12 @@ class PersistedEventEntity(Document):
 
     @classmethod
     def get_event_timeseries(
-        cls,
-        time_range: Literal["1h", "24h", "30d", "365d"],
-        thread_id: Optional[ObjectId] = None,
-        agent_id: Optional[ObjectId] = None,
-        agent_class: Optional[str] = None,
-        event_name: Optional[str] = None,
+            cls,
+            time_range: Literal["1h", "24h", "30d", "365d"],
+            thread_id: Optional[ObjectId] = None,
+            agent_id: Optional[ObjectId] = None,
+            agent_class: Optional[str] = None,
+            event_name: Optional[str] = None,
     ) -> Tuple[List[EventBucket], datetime, datetime, Literal["1m", "1h", "1d", "1w"]]:
         """
         Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
@@ -408,7 +425,6 @@ class PersistedEventEntity(Document):
                 raise ValueError(f"Invalid time range: {time_range}")
 
         match_filter: Dict[str, Any] = {
-            "event_type": "display_event",
             "event_data.created_at": {
                 "$gte": int(start_time.timestamp() * 1e9),
                 "$lte": int(now.timestamp() * 1e9),
@@ -426,7 +442,7 @@ class PersistedEventEntity(Document):
             match_filter["event_parents"] = event_name
 
         pipeline: List[Dict[str, Any]] = [
-            # 1. Match events based on primary criteria and optionally event_name
+            # 1. Match events based on primary criteria
             {"$match": match_filter},
 
             # 2. Add a standardized BSON date field
@@ -444,23 +460,31 @@ class PersistedEventEntity(Document):
                 }
             },
 
-            # 4. Group events by time bucket and count them
+            # 4. Group by time_bucket and event_id to de-duplicate events
             {
                 "$group": {
-                    "_id": "$time_bucket", # Group by the millisecond timestamp of the bucket start
-                    "start_time": {"$first": {"$toDate": "$time_bucket"}}, # Convert bucket start ms to Date
-                    "total_events": {"$sum": 1} # Count documents in each bucket
+                    "_id": {"time_bucket": "$time_bucket", "event_id": "$event_id"},
+                    "time_bucket_val": {"$first": "$time_bucket"},
                 }
             },
 
-            # 5. Add end_time field (derived from bucket start + interval)
+            # 5. Group events by time bucket and count them
+            {
+                "$group": {
+                    "_id": "$time_bucket_val", #
+                    "start_time": {"$first": {"$toDate": "$time_bucket_val"}},
+                    "total_events": {"$sum": 1}
+                }
+            },
+
+            # 6. Add end_time field (derived from bucket start + interval)
             {
                 "$addFields": {
                     "end_time": {"$toDate": {"$add": ["$_id", interval_seconds * 1000]}} # $_id is time_bucket (ms)
                 }
             },
 
-            # 6. Project the final simplified fields
+            # 7. Project the final simplified fields
             {
                 "$project": {
                     "_id": 0,
@@ -470,7 +494,7 @@ class PersistedEventEntity(Document):
                 }
             },
 
-            # 7. Sort by start_time
+            # 8. Sort by start_time
             {"$sort": {"start_time": 1}},
         ]
 
@@ -485,10 +509,9 @@ class PersistedEventEntity(Document):
         filled_results: List[EventBucket] = []
         current_loop_time = start_time
 
-        # Align current_loop_time for consistent bucket iteration start
-        if interval_seconds >= 3600: # Hourly or more
+        if interval_seconds >= 3600:
             current_loop_time = current_loop_time.replace(minute=0, second=0, microsecond=0)
-        if interval_seconds >= 86400: # Daily or more
+        if interval_seconds >= 86400:
             current_loop_time = current_loop_time.replace(hour=0)
 
         idx = 0
@@ -512,7 +535,6 @@ class PersistedEventEntity(Document):
                 )
             else:
                 actual_end_time = min(current_bucket_end_time, now)
-                # Only add bucket if its start time is less than the overall 'now'
                 if current_loop_time < now:
                     filled_results.append(
                         EventBucket(

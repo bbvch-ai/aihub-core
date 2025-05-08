@@ -50,20 +50,17 @@
         </div>
       </div>
     </Panel>
-    <EventStatistics :charts="charts" />
+    <EventStatistics
+      v-model="timeRange"
+      :charts="charts"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 const { agent, agentIsLoading } = useAgent()
 const { t } = useI18n()
-
-const charts = computed(() => [
-  { title: 'Interactions', display: [
-    { eventName: 'StartEvent', name: 'Starts', color: '#ff0000' },
-    { eventName: 'StopEvent', name: 'Stops', color: '#00ff00' },
-  ] },
-])
+const { timeRange, charts } = useBasicEventStatistics()
 </script>
 
 <style scoped>
