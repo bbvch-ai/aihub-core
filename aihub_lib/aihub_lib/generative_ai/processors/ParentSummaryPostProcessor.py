@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Annotated
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
@@ -14,7 +14,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
     """
 
     vectorstore: BasePydanticVectorStore
-    max_levels: int = 3
+    max_levels: Annotated[int, "Maximum levels to traverse for parent summaries."] = 3
 
     @classmethod
     def class_name(cls) -> str:
@@ -35,7 +35,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
                 continue
 
             parent_summaries = retrieve_parent_summary_nodes(
-                node.node, self.vectorstore, self.max_levels, visited_ids.copy()
+                node, self.vectorstore, self.max_levels, visited_ids.copy()
             )
 
             for parent in parent_summaries:

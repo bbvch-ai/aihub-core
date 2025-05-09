@@ -48,17 +48,17 @@ class TokenBudget:
         """
         Add a node to the context if it fits in the budget.
         """
-        if node.node_id in self.selected_ids:
+        if node.node.node_id in self.selected_ids:
             return False
 
-        tokens = self.estimate_tokens(node.text)
+        tokens = self.estimate_tokens(node.node.text)
         budget = self.budgets[budget_type]
         used = self.tokens_used[budget_type]
 
         if used + tokens <= budget:
             self.tokens_used[budget_type] += tokens
             self.selected_nodes.append(node)
-            self.selected_ids.add(node.node_id)
+            self.selected_ids.add(node.node.node_id)
             return True
 
         return False
