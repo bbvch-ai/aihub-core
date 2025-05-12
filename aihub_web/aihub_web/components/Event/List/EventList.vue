@@ -74,13 +74,14 @@ import type {
 const props = defineProps<{
   events: WsServerEvent[]
   thread: ThreadDto
+  displayId?: string
 }>()
 
 const route = useRoute()
-const { pendingType } = useThreadUtils()
 
 const display = computed(() => {
-  return props.thread.displays?.find((display: DisplayStatistics) => display.display_id === route.params.display_id)
+  const displayId = props.displayId ?? route.params.display_id
+  return props.thread.displays?.find((display: DisplayStatistics) => display.display_id === displayId)
 })
 
 const activeRuns = computed(() => {
@@ -95,7 +96,6 @@ const eventsInRuns = computed<WsServerEvent[]>(() => {
 const { resolveComponentForEvent } = useEventComponent()
 
 const runNameFn = (run: RunStatistics) => run.agent.agent_config.name
-const formattedDate = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
 </script>
 
 <style scoped>
