@@ -1,63 +1,61 @@
 <template>
-  <ProgressBar
-    v-if="threadIsLoading || !thread"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
-    class="flex flex-col gap-16 p-3"
+  <StructuralColumn
+    title="Overview"
+    close-route="/admin/thread"
+    :loading="threadIsLoading"
   >
-    <Panel
-      class="panel pt-5"
-    >
-      <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.firstInteraction') }}
-          </span>
-          <Tag
-            :value="firstInteraction"
-            severity="secondary"
-          />
+    <div class="flex flex-col gap-12">
+      <Panel
+        class="panel pt-5"
+      >
+        <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ $t('eventList.firstInteraction') }}
+            </span>
+            <Tag
+              :value="firstInteraction"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ $t('eventList.lastInteraction') }}
+            </span>
+            <Tag
+              :value="lastInteraction"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ $t('eventList.duration') }}
+            </span>
+            <Tag
+              :value="duration"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ $t('eventList.costs') }}
+            </span>
+            <Tag
+              :value="thread.llm_cost.toFixed(6) + 'CHF'"
+              severity="secondary"
+            />
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.lastInteraction') }}
-          </span>
-          <Tag
-            :value="lastInteraction"
-            severity="secondary"
-          />
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.duration') }}
-          </span>
-          <Tag
-            :value="duration"
-            severity="secondary"
-          />
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.costs') }}
-          </span>
-          <Tag
-            :value="thread.llm_cost.toFixed(6) + 'CHF'"
-            severity="secondary"
-          />
-        </div>
-      </div>
-    </Panel>
-    <ThreadInfo
-      :thread="thread"
-    />
-    <EventStatistics
-      v-model="timeRange"
-      :charts="charts"
-    />
-  </div>
+      </Panel>
+      <ThreadInfo
+        :thread="thread"
+      />
+      <EventStatistics
+        v-model="timeRange"
+        :charts="charts"
+      />
+    </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">

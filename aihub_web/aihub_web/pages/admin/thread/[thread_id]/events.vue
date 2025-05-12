@@ -1,17 +1,14 @@
 <template>
-  <ProgressBar
-    v-if="threadIsLoading || threadEventsAreLoading || !thread || !threadEvents"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
+  <StructuralColumn
+    title="Events"
+    close-route="/admin/thread"
+    :loading="threadIsLoading || threadEventsAreLoading"
   >
     <EventList
       :events="threadEvents"
       :thread="thread"
     />
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">

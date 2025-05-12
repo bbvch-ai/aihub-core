@@ -93,7 +93,7 @@ const nonAdminApps = computed<MenuItem>(() => {
 })
 
 const appIsActive = (app: MenuItem) => {
-  return route.path === localeRoute(app.path)?.path
+  return route.path.startsWith(localeRoute(app.path)?.path)
 }
 
 const activeApp = computed(() => {
@@ -101,8 +101,8 @@ const activeApp = computed(() => {
 })
 
 const breadcrumbItems = computed(() => {
-  if (!activeApp.value || activeApp.value.path == '/') return []
-  return [activeApp.value]
+  const paths = route.path.split('/').filter(Boolean).slice(1)
+  return paths.map((label: string) => ({ label }))
 })
 
 getHealth({

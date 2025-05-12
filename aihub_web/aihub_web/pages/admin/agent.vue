@@ -1,22 +1,35 @@
 <template>
-  <div
-    class="flex h-full flex-row"
-  >
-    <NavigationLeft
-      :title="$t('agent.availableAgents')"
-      :nav-items-map="navItems"
+  <StructuralScreen>
+    <StructuralColumn
+      title="Test"
       :loading="agentsAreLoading"
-    />
+      :nav-items="navItems"
+    >
+      <AgentList
+        :agents="agents"
+        @selected="toAgent"
+      />
+    </StructuralColumn>
+
     <NuxtPage />
-  </div>
+  </StructuralScreen>
 </template>
 
 <script setup lang="ts">
 import type { AgentDto } from '@core/sdk/client'
 import type { NavItem } from '@core/types/NavItem'
 
+import { useLocalePath } from '#i18n'
+
 const route = useRoute()
+const router = useRouter()
+const localePath = useLocalePath()
+
 const { agents, agentsAreLoading } = useAgents()
+
+const toAgent = (agent: AgentDto) => {
+  router.push(localePath(`/admin/agent/agent-${agent.agent_id}-${agent.agent_class}/overview`))
+}
 
 const navItems = computed<Record<string, NavItem[]>>(() => {
   if (agentsAreLoading.value) {

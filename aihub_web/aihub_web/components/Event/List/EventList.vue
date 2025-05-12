@@ -30,7 +30,7 @@
           <div class="flex flex-col gap-12 pt-4">
             <Panel class="panel pt-5">
               <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
                     {{ $t('eventList.firstInteraction') }}
                   </span>
@@ -39,7 +39,7 @@
                     severity="secondary"
                   />
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
                     {{ $t('eventList.lastInteraction') }}
                   </span>
@@ -48,7 +48,7 @@
                     severity="secondary"
                   />
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
                     {{ $t('eventList.pending') }}
                   </span>
@@ -63,7 +63,7 @@
                     :value="$t('eventList.no')"
                   />
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
                     {{ $t('eventList.status') }}
                   </span>

@@ -1,55 +1,61 @@
 import { getUserThreads, type ThreadDto } from '@core/sdk/client'
-import { useInfiniteQuery } from '@pinia/colada'
 
 export const useThreads = defineQuery(() => {
-  const PAGE_SIZE = 10
+  const currentPage = ref(1)
+  const pageSize = ref(10)
 
-  const {
-    state,
-    loadMore: loadMoreThreads,
-    isLoading: threadsAreLoading,
-  } = useInfiniteQuery({
-    key: () => ['threads'],
-    query: async ({ nextPage }) => {
-      if (nextPage === null) return null
+  const threadsQuery = useQuery({
+    key: () => ['user-threads', currentPage.value, pageSize.value],
+    query: async () => {
+      const pageToFetch = Math.max(1, currentPage.value)
 
       return await getUserThreads({
         composable: '$fetch',
         query: {
-          page: nextPage,
-          page_size: PAGE_SIZE,
+          page: pageToFetch,
+          page_size: pageSize.value,
         },
       })
     },
-    initialPage: {
-      threads: [] as ThreadDto[],
-      nextPage: 1 as number | null,
-      totalThreads: 0,
-      totalPages: 0,
-    },
-    merge(accumulated, newData) {
-      // If no new data was returned, return the accumulated data
-      if (!newData) return accumulated
-
-      return {
-        threads: [...accumulated.threads, ...newData.threads],
-        nextPage: newData.page < newData.total_pages ? newData.page + 1 : null,
-        totalThreads: newData.total,
-        totalPages: newData.total_pages,
-      }
-    },
+    placeholderData: previousData => previousData,
   })
 
-  // Computed property for hasMore
-  const hasMoreThreads = computed(() => state.value?.data?.nextPage !== null)
+  const setPageSize = (newSize: number) => {
+    if (newSize > 0) {
+      pageSize.value = newSize
+      currentPage.value = 1
+    }
+  }
 
-  // Expose only the necessary data and functions
+  const setPage = (newPage: number) => {
+    if (newPage > 0) {
+      currentPage.value = newPage
+    }
+  }
+
+  const paginationMeta = computed(() => {
+    const data = threadsQuery.state.value?.data
+
+    return {
+      total: data?.total ?? 0,
+      currentPage: data?.page ?? currentPage.value,
+      pageSize: data?.page_size ?? pageSize.value,
+      totalPages: data?.total_pages ?? 0,
+    }
+  })
+
+  const threads = computed(() => (threadsQuery.state.value?.data)?.threads ?? [] as ThreadDto[])
+
+  const isLoading = computed(() => threadsQuery.asyncStatus.value === 'loading')
+
   return {
-    threads: computed(() => state.value?.data?.threads || []),
-    threadsAreLoading,
-    hasMoreThreads,
-    totalThreads: computed(() => state.value?.data?.totalThreads || 0),
-    totalPages: computed(() => state.value?.data?.totalPages || 0),
-    loadMoreThreads,
+    threads,
+    isLoading,
+    pagination: paginationMeta,
+    currentPage,
+    pageSize,
+    setPage,
+    setPageSize,
+    refetch: threadsQuery.refetch,
   }
 })

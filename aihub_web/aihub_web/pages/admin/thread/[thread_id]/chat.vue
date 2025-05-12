@@ -1,12 +1,8 @@
 <template>
-  <ProgressBar
-    v-if="threadIsLoading || threadEventsAreLoading || !threadEvents || !thread"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
-    class="relative w-full p-3"
+  <StructuralColumn
+    title="Chat"
+    close-route="/admin/thread"
+    :loading="threadEventsAreLoading"
   >
     <ChatThread
       :events="threadEvents"
@@ -26,7 +22,7 @@
         @click="submitMessage"
       />
     </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
