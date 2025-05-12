@@ -20,7 +20,6 @@ def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
     # Create a new model with the filtered fields
     return create_model(
         f"{event_class.event_name_from_class()}Input",
-        __base__=BaseModel,
         **fields,
         __config__=ConfigDict(
             arbitrary_types_allowed=False,
