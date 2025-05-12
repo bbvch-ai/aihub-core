@@ -30,7 +30,7 @@ const subPath = (path: string) => {
 const isActive = (path: string) => {
   return () => {
     const localizedPath = localePath(subPath(path))
-    return route.path === localizedPath
+    return route.path.startsWith(localizedPath)
   }
 }
 

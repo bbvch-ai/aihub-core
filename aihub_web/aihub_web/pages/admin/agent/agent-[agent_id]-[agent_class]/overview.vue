@@ -3,6 +3,7 @@
     title="Overview"
     close-route="/admin/agent"
     :loading="agentIsLoading"
+    size="large"
   >
     <div class="flex flex-col gap-12">
       <Panel
@@ -62,9 +63,7 @@ const { timeRange, charts } = useBasicEventStatistics()
 </script>
 
 <style scoped>
-::v-deep(.panel) {
-  .p-panel-header {
-    padding: 0 !important;
-  }
+.panel :deep(p-panel-header) {
+  padding: 0 !important;
 }
 </style>

@@ -3,10 +3,11 @@
     title="Overview"
     close-route="/admin/thread"
     :loading="threadIsLoading"
+    size="large"
   >
     <div class="flex flex-col gap-12">
       <Panel
-        class="panel pt-5"
+        class="pt-5"
       >
         <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
           <div class="flex flex-col items-start gap-2">
@@ -93,9 +94,7 @@ const duration = computed<string>(() => {
 </script>
 
 <style scoped>
-::v-deep(.panel) {
-  .p-panel-header {
-    padding: 0 !important;
-  }
+:deep(.p-panel-header) {
+  padding: 0 !important;
 }
 </style>

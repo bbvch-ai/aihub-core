@@ -5,8 +5,8 @@
     :loading="threadIsLoading || threadEventsAreLoading"
   >
     <EventList
-      :events="threadEvents"
       :thread="thread"
+      :events="threadEvents"
     />
   </StructuralColumn>
 </template>

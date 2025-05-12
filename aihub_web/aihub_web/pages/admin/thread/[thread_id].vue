@@ -9,7 +9,9 @@
       size="small"
       @update:model-value="toNavItem"
     />
-    <NuxtPage />
+    <div class="flex gap-8">
+      <NuxtPage />
+    </div>
   </div>
 </template>
 
@@ -29,7 +31,7 @@ const subPath = (path: string) => {
 const isActive = (path: string) => {
   return () => {
     const localizedPath = localePath(subPath(path))
-    return route.path === localizedPath
+    return route.path.startsWith(localizedPath)
   }
 }
 
@@ -38,7 +40,7 @@ const navItems = computed<NavItem[]>(() => {
     { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
     { name: 'Hierarchy', key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
     { name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
-    { name: 'Events', key: 'events', path: subPath('events'), isActive: isActive('events') },
+    { name: 'Displays', key: 'display', path: subPath('display'), isActive: isActive('display') },
   ]
 })
 
