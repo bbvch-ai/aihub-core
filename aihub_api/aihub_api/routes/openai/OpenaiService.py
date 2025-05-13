@@ -152,6 +152,7 @@ class OpenaiService:
         model_parameters = None
         if isinstance(embedding_model_config, AzureOpenAIEmbeddingConfig):
             model_parameters = AzureOpenAIEmbeddingParameter(
+                dimensions=dimensions or embedding_model_config.default_parameter.dimensions,
                 encoding_format=encoding_format or embedding_model_config.default_parameter.encoding_format,
             )
         embedding_model, _ = embedding_model_config.to_llama_index(model_parameter=model_parameters)
