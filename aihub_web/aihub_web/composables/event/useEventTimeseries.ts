@@ -3,13 +3,13 @@ import {
 } from '@core/sdk/client'
 import { useRoute } from 'vue-router'
 
-export const useEventTimeseries = ({ eventName, timeRange }: { eventName?: string, timeRange: Ref<string> }) => {
+export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }: { eventName?: string, timeRange: Ref<string>, agentClass?: string, agentId?: string }) => {
   const route = useRoute()
 
   const query = {
-    agent_class: route.params.agent_class as string,
-    agent_id: route.params.agent_id as string,
-    thread_id: route.params.thread_id as string,
+    agent_class: agentClass ?? route?.params?.agent_class,
+    agent_id: agentId ?? route?.params?.agent_id,
+    thread_id: route?.params?.thread_id,
     event_name: eventName,
   }
 

@@ -22,7 +22,7 @@
         </div>
       </div>
       <component
-        :is="resolveComponentForEvent(wrappedStartEvent)"
+        :is="vueComponent"
         :event="wrappedStartEvent"
         :thread="thread"
       />
@@ -39,6 +39,10 @@ const props = defineProps<{
 }>()
 
 const { resolveComponentForEvent } = useEventComponent()
+
+const vueComponent = computed(() => {
+  return resolveComponentForEvent(wrappedStartEvent)
+})
 
 const wrappedStartEvent = computed<WsServerEvent>(() => {
   return {

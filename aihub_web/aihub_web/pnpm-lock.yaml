@@ -74,6 +74,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      gridstack:
+        specifier: ^12.1.2
+        version: 12.1.2
       lucide-vue-next:
         specifier: ^0.482.0
         version: 0.482.0(vue@3.5.13(typescript@5.8.2))
@@ -3654,6 +3657,9 @@ packages:
 
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
+
+  gridstack@12.1.2:
+    resolution: {integrity: sha512-IC1mkm5xonhAnftwIxsG+B3bawxC61ciKWEvX15ExpVQPbNVN7O9aZZhM7Y/eE4JaIR8PXrdkjd12gMnwNYRLQ==}
 
   gzip-size@7.0.0:
     resolution: {integrity: sha512-O1Ld7Dr+nqPnmGpdhzLmMTQ4vAsD+rHwMm1NLUmoUFFymBOMKxCCrtDxqdBRYXdeEPEi3SyoR4TizJLQrnKBNA==}
@@ -10487,6 +10493,8 @@ snapshots:
   graceful-fs@4.2.11: {}
 
   graphemer@1.4.0: {}
+
+  gridstack@12.1.2: {}
 
   gzip-size@7.0.0:
     dependencies:
