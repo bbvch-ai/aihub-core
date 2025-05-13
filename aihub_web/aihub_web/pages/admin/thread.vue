@@ -28,7 +28,6 @@ import type { ThreadDto } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
-const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
 

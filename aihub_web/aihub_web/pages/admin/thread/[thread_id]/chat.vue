@@ -2,7 +2,7 @@
   <StructuralColumn
     title="Chat"
     close-route="/admin/thread"
-    :loading="threadEventsAreLoading"
+    :loading="threadIsLoading || threadEventsAreLoading"
   >
     <ChatThread
       :events="threadEvents"
@@ -29,10 +29,9 @@
 const route = useRoute()
 
 const { thread, threadIsLoading } = useThread()
+const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 
 const { sendMessages } = useChatCompletions()
-
-const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 
 const userInput = ref('')
 

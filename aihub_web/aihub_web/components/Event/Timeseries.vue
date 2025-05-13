@@ -1,6 +1,6 @@
 <template>
   <ClientOnly>
-    <apexchart
+    <VueApexChart
       class="w-full"
       type="bar"
       height="350"
@@ -13,6 +13,7 @@
 <script setup lang="ts">
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
+import VueApexChart from 'vue3-apexcharts'
 
 import type { EventBucket } from '@core/sdk/client'
 import type { TimeseriesInput } from '@core/types/TimeseriesInput'
