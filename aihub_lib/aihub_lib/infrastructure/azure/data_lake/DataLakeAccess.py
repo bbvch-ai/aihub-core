@@ -1,4 +1,7 @@
+from typing import cast
+
 from adlfs import AzureBlobFileSystem
+from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 
@@ -12,6 +15,7 @@ class DataLakeAccess:
     _app = None
     _storage_service_name = None
     _service_endpoint = None
+    _credential = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -27,18 +31,20 @@ class DataLakeAccess:
             DataLakeConfig().DATA_LAKE_ENDPOINT or f"https://{self._storage_service_name}.dfs.core.windows.net"
         )
 
-        credential = DefaultAzureCredential()
+        self._credential = cast(TokenCredential, DefaultAzureCredential())
         self.datalake_client = DataLakeServiceClient(
             account_url=self._service_endpoint,
-            credential=credential,
+            credential=self._credential,
         )
-        self.file_system = AzureBlobFileSystem(account_name=self._storage_service_name, credential=credential)
 
     def get_client(self) -> DataLakeServiceClient:
         return self.datalake_client
 
     def get_fs_client(self) -> AzureBlobFileSystem:
-        return self.file_system
+        return AzureBlobFileSystem(
+            account_name=self._storage_service_name,
+            token_credential=self._credential
+        )
 
     def get_storage_account_name(self) -> str:
         return self._storage_service_name
