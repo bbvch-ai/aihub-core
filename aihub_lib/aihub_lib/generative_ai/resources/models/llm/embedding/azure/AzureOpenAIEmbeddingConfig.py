@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
@@ -26,7 +26,7 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     """
 
     dimensions: Annotated[
-        int | NOT_GIVEN,
+        Union[int, NOT_GIVEN],
         Field(
             NOT_GIVEN,
             description="The number of dimensions in the embedding vector. Supported in text-embedding-3 and later models.",
