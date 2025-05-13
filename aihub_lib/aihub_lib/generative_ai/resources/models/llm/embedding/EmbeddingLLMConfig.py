@@ -17,13 +17,6 @@ class EmbeddingLLMParameter(LLMModelParameter):
     we maintain consistency and facilitate extension if embedding models require parameters in the future.
     """
 
-    dimensions: Annotated[
-        Optional[int],
-        Field(
-            None,
-            description="The number of dimensions in the embedding vector. Supported in text-embedding-3 and later models.",
-        ),
-    ]
     pass
 
 

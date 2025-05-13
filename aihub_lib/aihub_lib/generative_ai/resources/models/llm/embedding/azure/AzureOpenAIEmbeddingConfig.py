@@ -1,10 +1,11 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
-from pydantic import Field
+from openai import NOT_GIVEN, NotGiven
+from pydantic import Field, ConfigDict
 from typing_extensions import Annotated
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
@@ -24,7 +25,16 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     maintains consistency and allows easy extension if needed.
     """
 
+    dimensions: Annotated[
+        Union[int, NotGiven],
+        Field(
+            NOT_GIVEN,
+            description="The number of dimensions in the embedding vector. Supported in text-embedding-3 and later models.",
+        ),
+    ]
     encoding_format: Annotated[str, Field(description="The encoding format of the returned embeddings.")] = "float"
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
