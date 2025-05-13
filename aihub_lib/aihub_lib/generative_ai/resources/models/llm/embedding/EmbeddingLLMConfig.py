@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Annotated
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from pydantic import Field
@@ -17,7 +17,13 @@ class EmbeddingLLMParameter(LLMModelParameter):
     we maintain consistency and facilitate extension if embedding models require parameters in the future.
     """
 
-    # Currently no additional fields, but can be extended in the future.
+    dimensions: Annotated[
+        Optional[int],
+        Field(
+            None,
+            description="The number of dimensions in the embedding vector. Supported in text-embedding-3 and later models.",
+        ),
+    ]
     pass
 
 
