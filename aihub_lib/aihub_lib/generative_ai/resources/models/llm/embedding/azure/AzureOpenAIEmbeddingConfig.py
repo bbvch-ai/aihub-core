@@ -34,6 +34,8 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     ]
     encoding_format: Annotated[str, Field(description="The encoding format of the returned embeddings.")] = "float"
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
     """
