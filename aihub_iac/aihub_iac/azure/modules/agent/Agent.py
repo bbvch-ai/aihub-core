@@ -135,7 +135,7 @@ class Agent(pulumi.ComponentResource):
     def _get_environment_variables(self) -> List[containerinstance.EnvironmentVariableArgs]:
         """Define the environment variables for the container"""
         nats_ip = self._get_nats_container_group_private_ip()
-        return [
+        env_vars = [
             containerinstance.EnvironmentVariableArgs(
                 name="NATS_ENDPOINT",
                 value=f"nats://{nats_ip}:4222",
@@ -185,3 +185,13 @@ class Agent(pulumi.ComponentResource):
                 value=self.config.log_level,
             ),
         ]
+
+        for key, value in self.config.custom_env_vars.items():
+            env_vars.append(
+                containerinstance.EnvironmentVariableArgs(
+                    name=key,
+                    value=value,
+                )
+            )
+
+        return env_vars

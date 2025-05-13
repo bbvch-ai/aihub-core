@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import ClassVar, Dict, Optional
 
 from pydantic import Field
 
@@ -46,6 +46,10 @@ class AgentConfig(BaseConfig):
 
     # Other settings
     log_level: str = Field(default="WARNING", description="Logging level for the application")
+
+    custom_env_vars: Dict[str, str] = Field(
+        default_factory=dict, description="Custom environment variables to pass to the container"
+    )
 
     @property
     def phoenix_service_name(self) -> str:
