@@ -43,34 +43,34 @@ export const useBasicEventStatistics = () => {
 
   const charts = computed<EventChartInput[]>(() => [
     {
-      title: t('eventStatistics.charts.agentInvocations'),
+      title: t('event.statistics.charts.agentInvocations'),
       isLoading: startIsLoading.value,
       timeseriesInputs: [
-        { name: t('eventStatistics.charts.agentStart'), color: 'var(--p-surface-600)', timeseries: startSeries.value },
+        { name: t('event.statistics.charts.agentStart'), color: 'var(--p-surface-600)', timeseries: startSeries.value },
       ],
     },
     {
-      title: t('eventStatistics.charts.endEvents'),
+      title: t('event.statistics.charts.endEvents'),
       isLoading: stopIsLoading.value || exstepsionIsLoading.value || hitlIsLoading.value || bitlIsLoading.value,
       timeseriesInputs: [
-        { name: t('eventStatistics.charts.success'), color: 'var(--p-green-600)', timeseries: stopSeries.value },
-        { name: t('eventStatistics.charts.openHumanInTheLoop'), color: 'var(--p-yellow-500)', timeseries: hitlSeries.value },
-        { name: t('eventStatistics.charts.openBotInTheLoop'), color: 'var(--p-yellow-600)', timeseries: bitlSeries.value },
-        { name: t('eventStatistics.charts.error'), color: 'var(--p-red-600)', timeseries: exceptionSeries.value },
+        { name: t('event.statistics.charts.success'), color: 'var(--p-green-600)', timeseries: stopSeries.value },
+        { name: t('event.statistics.charts.openHumanInTheLoop'), color: 'var(--p-yellow-500)', timeseries: hitlSeries.value },
+        { name: t('event.statistics.charts.openBotInTheLoop'), color: 'var(--p-yellow-600)', timeseries: bitlSeries.value },
+        { name: t('event.statistics.charts.error'), color: 'var(--p-red-600)', timeseries: exceptionSeries.value },
       ],
     },
     {
-      title: t('eventStatistics.charts.delegations'),
+      title: t('event.statistics.charts.delegations'),
       isLoading: aitlIsLoading.value,
       timeseriesInputs: [
-        { name: t('eventStatistics.charts.delegatedTaskAgentInTheLoop'), color: 'var(--p-blue-600)', timeseries: aitlSeries.value },
+        { name: t('event.statistics.charts.delegatedTaskAgentInTheLoop'), color: 'var(--p-blue-600)', timeseries: aitlSeries.value },
       ],
     },
     {
-      title: t('eventStatistics.charts.allEvents'),
+      title: t('event.statistics.charts.allEvents'),
       isLoading: allIsLoading.value,
       timeseriesInputs: [
-        { name: t('eventStatistics.charts.allEvents'), color: 'var(--p-surface-600)', timeseries: allSeries.value },
+        { name: t('event.statistics.charts.allEvents'), color: 'var(--p-surface-600)', timeseries: allSeries.value },
       ],
     },
   ])

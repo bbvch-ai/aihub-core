@@ -5,7 +5,7 @@
       class="text-center"
     >
       <h1 class="mb-4 text-2xl">
-        {{ $t('auth.callback.loggingIn') }}
+        {{ t('auth.callback.loggingIn') }}
       </h1>
       <div class="mx-auto size-12 animate-spin rounded-full border-y-2 border-white" />
     </div>
@@ -15,24 +15,26 @@
       class="text-center"
     >
       <h1 class="mb-4 text-2xl text-red-500">
-        {{ $t('auth.callback.loginError') }}
+        {{ t('auth.callback.loginError') }}
       </h1>
       <p>{{ error }}</p>
       <p class="mt-4">
-        {{ $t('auth.callback.redirectingToLogin') }}
+        {{ t('auth.callback.redirectingToLogin') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const { $auth, $i18n } = useNuxtApp()
+const { $auth } = useNuxtApp()
 const error = ref(null)
 const loading = ref(true)
 
 definePageMeta({
   layout: 'anonymous',
 })
+
+const { t, locale } = useI18n()
 
 // Add proper error handling
 $auth.signinRedirectCallback()
@@ -42,10 +44,10 @@ $auth.signinRedirectCallback()
   })
   .catch((err) => {
     console.error('Error during authentication callback:', err)
-    error.value = err.message || $i18n.t('auth.callback.genericError')
+    error.value = err.message || t('auth.callback.genericError')
     // After 3 seconds, redirect to login page
     setTimeout(() => {
-      navigateTo(`/${$i18n.locale.value}/auth/login`)
+      navigateTo(`/${locale.value}/auth/login`)
     }, 3000)
   })
   .finally(() => {

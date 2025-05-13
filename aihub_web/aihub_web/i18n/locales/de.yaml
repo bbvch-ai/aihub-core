@@ -10,6 +10,36 @@ user:
     it: "Italienisch"
     fr: "Französisch"
 
+chat:
+  assistant: "Assistent"
+  document: "Dokument"
+
+event:
+  list:
+    firstInteraction: "Erste Interaktion:"
+    lastInteraction: "Letzte Interaktion:"
+    costs: "Kosten:"
+    duration: "Dauer:"
+    pending: "Ausstehend:"
+    no: "Nein"
+    status: "Status:"
+    error: "Fehler"
+    successful: "Erfolgreich"
+    chat: "Chat"
+    agents: "Agenten:"
+  statistics:
+    charts:
+      agentInvocations: "Agent-Aufrufe"
+      agentStart: "Agent-Start"
+      endEvents: "End-Ereignisse"
+      success: "Erfolg"
+      openHumanInTheLoop: "Offen (Mensch in der Schleife)"
+      openBotInTheLoop: "Offen (Bot in der Schleife)"
+      error: "Fehler"
+      delegations: "Delegierungen"
+      delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
+      allEvents: "Alle Ereignisse"
+
 thread:
   users: "Benutzer"
   assistants: "Assistenten"
@@ -22,30 +52,20 @@ thread:
     status: "Status"
     pending: "Ausstehend"
   title: "Threads"
-
-chat:
-  assistant: "Assistent"
-  document: "Dokument"
-
-eventList:
-  firstInteraction: "Erste Interaktion:"
-  lastInteraction: "Letzte Interaktion:"
-  costs: "Kosten:"
-  duration: "Dauer:"
-  pending: "Ausstehend:"
-  no: "Nein"
-  status: "Status:"
-  error: "Fehler"
-  successful: "Erfolgreich"
-  chat: "Chat"
-  agents: "Agenten:"
-
-threadUtils:
-  pendingTypes:
-    hitl: "Mensch in der Schleife"
-    aitl: "Agent in der Schleife"
-    bitl: "Bot in der Schleife"
-    unknown: "Grund unbekannt"
+  utils:
+    pendingTypes:
+      hitl: "Mensch in der Schleife"
+      aitl: "Agent in der Schleife"
+      bitl: "Bot in der Schleife"
+      unknown: "Grund unbekannt"
+  display:
+    list:
+      started: "Gestartet"
+      duration: "Dauer"
+      events: "Ereignisse"
+      status: "Status"
+      pending: "Ausstehend"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
 
 costs:
   table:
@@ -56,19 +76,6 @@ costs:
     embedding: "Embedding"
     total: "Total"
     currency: "CHF"
-
-eventStatistics:
-  charts:
-    agentInvocations: "Agent-Aufrufe"
-    agentStart: "Agent-Start"
-    endEvents: "End-Ereignisse"
-    success: "Erfolg"
-    openHumanInTheLoop: "Offen (Mensch in der Schleife)"
-    openBotInTheLoop: "Offen (Bot in der Schleife)"
-    error: "Fehler"
-    delegations: "Delegierungen"
-    delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
-    allEvents: "Alle Ereignisse"
 
 service:
   selection:
@@ -97,6 +104,16 @@ agent:
     threads: "Threads"
     chat: "Chat"
   availableAgents: "Verfügbare Agenten"
+  list:
+    name: "Name"
+    description: "Beschreibung"
+    agent: "Agent"
+    is_conversational: "Konversationsfähig"
+    true: "Ja"
+    false: "Nein"
+    status: "Status"
+    online: "Online"
+    offline: "Offline"
 
 auth:
   renew:

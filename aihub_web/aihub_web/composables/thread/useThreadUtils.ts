@@ -12,15 +12,15 @@ export const useThreadUtils = () => {
 
   const pendingType = (thread: ThreadDto) => {
     if (thread.open_hitl) {
-      return t('threadUtils.pendingTypes.hitl')
+      return t('thread.utils.pendingTypes.hitl')
     }
     if (thread.open_aitl) {
-      return t('threadUtils.pendingTypes.aitl')
+      return t('thread.utils.pendingTypes.aitl')
     }
     if (thread.open_bitl) {
-      return t('threadUtils.pendingTypes.bitl')
+      return t('thread.utils.pendingTypes.bitl')
     }
-    return t('threadUtils.pendingTypes.unknown')
+    return t('thread.utils.pendingTypes.unknown')
   }
 
   const runForEvent = (thread: ThreadDto, event: WsServerEvent) => {

@@ -1,95 +1,53 @@
 <template>
-  <div class="flex h-full flex-row">
-    <NavigationLeft
-      :title="$t('thread.title')"
-      :nav-items-map="navItems"
-      :has-more="hasMoreThreads"
-      :loading="threadsAreLoading"
-      @load-more="loadMore"
-    />
+  <StructuralScreen>
+    <StructuralColumn
+      title="Test"
+      :loading="isLoading"
+    >
+      <ThreadList
+        :threads="threads"
+        @selected="toThread"
+      />
+
+      <div class="mt-4">
+        <Paginator
+          :rows="pageSize"
+          :total-records="pagination.total"
+          :rows-per-page-options="[10, 20, 30, 50]"
+          :first="(currentPage - 1) * pageSize"
+          @page="onPageChange"
+        />
+      </div>
+    </StructuralColumn>
     <NuxtPage />
-  </div>
+  </StructuralScreen>
 </template>
 
 <script setup lang="ts">
 import type { ThreadDto } from '@core/sdk/client'
-import type { NavItem } from '@core/types/NavItem'
 
-const route = useRoute()
+import { useLocalePath } from '#i18n'
+
+const router = useRouter()
+const localePath = useLocalePath()
 
 const {
   threads,
-  threadsAreLoading,
-  hasMoreThreads,
-  loadMoreThreads,
+  isLoading,
+  pagination,
+  currentPage,
+  pageSize,
+  setPage,
+  setPageSize,
 } = useThreads()
 
-const loadMore = () => {
-  if (hasMoreThreads.value && !threadsAreLoading.value) {
-    loadMoreThreads()
-  }
+const toThread = (thread: ThreadDto) => {
+  router.push(localePath(`/admin/thread/${thread.id}/overview`))
 }
 
-const navItems = computed<Record<string, NavItem[]>>(() => {
-  const typeMap: Record<string, NavItem[]> = {}
-
-  // Group threads by day
-  threads.value?.forEach((thread: ThreadDto) => {
-    // Parse the ISO date string
-    const threadDate = new Date(thread.created_at)
-
-    // Format date as DD.MM.YYYY
-    const day = threadDate.toLocaleDateString('de-CH', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-
-    // Initialize the day group if it doesn't exist
-    if (!typeMap[day]) {
-      typeMap[day] = []
-    }
-
-    // Create NavItem for this thread
-    const navItem: NavItem = {
-      name: thread.name,
-      key: thread.id,
-      path: `/admin/thread/${thread.id}/overview`,
-      isActive: () => route.params.thread_id === thread.id,
-    }
-
-    // Add to the appropriate day group
-    typeMap[day].push(navItem)
-  })
-
-  // Sort day groups by date (newest first)
-  const sortedKeys = Object.keys(typeMap).sort((a, b) => {
-    const [dayA, monthA, yearA] = a.split('.')
-    const [dayB, monthB, yearB] = b.split('.')
-
-    const dateA = new Date(+yearA, +monthA - 1, +dayA)
-    const dateB = new Date(+yearB, +monthB - 1, +dayB)
-
-    return dateB.getTime() - dateA.getTime()
-  })
-
-  // Create a new sorted map
-  const sortedMap: Record<string, NavItem[]> = {}
-  sortedKeys.forEach((key) => {
-    sortedMap[key] = typeMap[key]
-
-    // Sort threads within each day group from newest to oldest
-    sortedMap[key].sort((a, b) => {
-      const threadA = threads.value?.find(t => t.id === a.key)
-      const threadB = threads.value?.find(t => t.id === b.key)
-
-      if (threadA && threadB) {
-        return new Date(threadB.created_at).getTime() - new Date(threadA.created_at).getTime()
-      }
-      return 0
-    })
-  })
-
-  return sortedMap
-})
+const onPageChange = (event) => {
+  setPageSize(event.rows)
+  const newPage = Math.floor(event.first / event.rows) + 1
+  setPage(newPage)
+}
 </script>

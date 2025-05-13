@@ -13,7 +13,7 @@
   </Button>
   <Popover
     ref="op"
-    class="bg-white dark:bg-surface-900"
+    class="bg-white text-black dark:bg-surface-900 dark:text-white"
   >
     <div
       v-focustrap
@@ -21,10 +21,10 @@
     >
       <div>
         <h2 class="text-xl">
-          {{ $t('service.selection.title') }}
+          {{ t('service.selection.title') }}
         </h2>
         <p class="text-sm">
-          {{ $t('service.selection.description') }}
+          {{ t('service.selection.description') }}
         </p>
       </div>
       <IconField>
@@ -36,14 +36,14 @@
           v-model="search"
           size="small"
           type="text"
-          :placeholder="$t('service.selection.search')"
+          :placeholder="t('service.selection.search')"
           autofocus
           fluid
           @keydown.enter="onEnter"
         />
       </IconField>
     </div>
-    <div class="relative flex max-w-[460px] flex-wrap gap-10 p-5">
+    <div class="relative flex max-w-[460px] flex-wrap gap-3 p-5">
       <template v-if="appsLoading">
         <skeleton
           v-for="i in 6"
@@ -55,24 +55,28 @@
       <template
         v-else
       >
-        <nuxt-link-locale
+        <div
           v-for="app in shownApps"
           :key="app.path"
-          :to="app.path"
-          class="flex h-[50px] items-center justify-center"
-          @click="toggle"
+          class="rounded-2xl border p-3 hover:bg-surface-500/5 dark:border-surface-700"
         >
-          <div class="flex h-[60px]  w-[80px] flex-col items-center justify-center gap-2 ">
-            <Icon
-              :name="app.icon"
-              style="color: #9c9c9c"
-              class="size-8"
-            />
-            <p>
-              {{ app.label }}
-            </p>
-          </div>
-        </nuxt-link-locale>
+          <nuxt-link-locale
+            :to="app.path"
+            class="flex h-[50px] items-center justify-center"
+            @click="toggle"
+          >
+            <div class="flex h-[60px]  w-[80px] flex-col items-center justify-center gap-2 ">
+              <Icon
+                :name="app.icon"
+                style="color: #9c9c9c"
+                class="size-6"
+              />
+              <p class="text-sm font-medium">
+                {{ app.label }}
+              </p>
+            </div>
+          </nuxt-link-locale>
+        </div>
       </template>
     </div>
   </Popover>
@@ -86,6 +90,7 @@ const localeRoute = useLocaleRoute()
 const route = useRoute()
 
 const { apps, appsLoading } = useApps()
+const { t } = useI18n()
 
 const shownApps = computed(() => {
   return search.value ? apps.value.filter((app: MenuItem) => app.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value

@@ -22,30 +22,50 @@ thread:
     status: "Status"
     pending: "Pending"
   title: "Threads"
+  utils:
+    pendingTypes:
+      hitl: "Human in the Loop"
+      aitl: "Agent in the Loop"
+      bitl: "Bot in the Loop"
+      unknown: "Reason unknown"
+  display:
+    list:
+      started: "Started"
+      duration: "Duration"
+      events: "Events"
+      status: "Status"
+      pending: "Pending"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
 
 chat:
   assistant: "Assistant"
   document: "Document"
 
-eventList:
-  firstInteraction: "First Interaction:"
-  lastInteraction: "Last Interaction:"
-  costs: "Costs:"
-  duration: "Duration:"
-  pending: "Pending:"
-  no: "No"
-  status: "Status:"
-  error: "Error"
-  successful: "Successful"
-  chat: "Chat"
-  agents: "Agents:"
-
-threadUtils:
-  pendingTypes:
-    hitl: "Human in the Loop"
-    aitl: "Agent in the Loop"
-    bitl: "Bot in the Loop"
-    unknown: "Reason unknown"
+event:
+  list:
+    firstInteraction: "First Interaction:"
+    lastInteraction: "Last Interaction:"
+    costs: "Costs:"
+    duration: "Duration:"
+    pending: "Pending:"
+    no: "No"
+    status: "Status:"
+    error: "Error"
+    successful: "Successful"
+    chat: "Chat"
+    agents: "Agents:"
+  statistics:
+    charts:
+      agentInvocations: "Agent Invocations"
+      agentStart: "Agent Start"
+      endEvents: "End Events"
+      success: "Success"
+      openHumanInTheLoop: "Open (Human in the loop)"
+      openBotInTheLoop: "Open (Bot in the Loop)"
+      error: "Error"
+      delegations: "Delegations"
+      delegatedTaskAgentInTheLoop: "Delegated Task (Agent in the Loop)"
+      allEvents: "All Events"
 
 costs:
   table:
@@ -56,19 +76,6 @@ costs:
     embedding: "Embedding"
     total: "Total"
     currency: "CHF"
-
-eventStatistics:
-  charts:
-    agentInvocations: "Agent Invocations"
-    agentStart: "Agent Start"
-    endEvents: "End Events"
-    success: "Success"
-    openHumanInTheLoop: "Open (Human in the loop)"
-    openBotInTheLoop: "Open (Bot in the Loop)"
-    error: "Error"
-    delegations: "Delegations"
-    delegatedTaskAgentInTheLoop: "Delegated Task (Agent in the Loop)"
-    allEvents: "All Events"
 
 service:
   selection:
@@ -97,6 +104,16 @@ agent:
     threads: "Threads"
     chat: "Chat"
   availableAgents: "Available Agents"
+  list:
+    name: "Name"
+    description: "Description"
+    agent: "Agent"
+    is_conversational: "Conversational"
+    true: "Yes"
+    false: "No"
+    status: "Status"
+    online: "Online"
+    offline: "Offline"
 
 auth:
   renew:

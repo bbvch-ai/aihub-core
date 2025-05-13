@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full"
+    class="flex w-full flex-col gap-8"
   >
     <div class="flex w-full justify-end">
       <SelectButton
