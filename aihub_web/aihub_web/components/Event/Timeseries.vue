@@ -176,6 +176,7 @@ const chartOptions = computed<ApexOptions>(() => {
     yaxis: {
       title: {
         text: `# ${props.title}`,
+        offsetX: 10,
       },
       min: 0,
       labels: {

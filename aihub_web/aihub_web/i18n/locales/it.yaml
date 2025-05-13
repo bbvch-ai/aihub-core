@@ -10,6 +10,36 @@ user:
     it: "Italiano"
     fr: "Francese"
 
+chat:
+  assistant: "Assistente"
+  document: "Documento"
+
+event:
+  list:
+    firstInteraction: "Prima Interazione:"
+    lastInteraction: "Ultima Interazione:"
+    costs: "Costi:"
+    duration: "Durata:"
+    pending: "In attesa:"
+    no: "No"
+    status: "Stato:"
+    error: "Errore"
+    successful: "Riuscito"
+    chat: "Chat"
+    agents: "Agenti:"
+  statistics:
+    charts:
+      agentInvocations: "Invocazioni Agente"
+      agentStart: "Avvio Agente"
+      endEvents: "Eventi di Fine"
+      success: "Successo"
+      openHumanInTheLoop: "Aperto (Umano nel Loop)"
+      openBotInTheLoop: "Aperto (Bot nel Loop)"
+      error: "Errore"
+      delegations: "Deleghe"
+      delegatedTaskAgentInTheLoop: "Attività Delegata (Agente nel Loop)"
+      allEvents: "Tutti gli Eventi"
+
 thread:
   users: "Utenti"
   assistants: "Assistenti"
@@ -22,30 +52,20 @@ thread:
     status: "Stato"
     pending: "In attesa"
   title: "Thread"
-
-chat:
-  assistant: "Assistente"
-  document: "Documento"
-
-eventList:
-  firstInteraction: "Prima Interazione:"
-  lastInteraction: "Ultima Interazione:"
-  costs: "Costi:"
-  duration: "Durata:"
-  pending: "In attesa:"
-  no: "No"
-  status: "Stato:"
-  error: "Errore"
-  successful: "Riuscito"
-  chat: "Chat"
-  agents: "Agenti:"
-
-threadUtils:
-  pendingTypes:
-    hitl: "Umano nel Loop"
-    aitl: "Agente nel Loop"
-    bitl: "Bot nel Loop"
-    unknown: "Motivo sconosciuto"
+  utils:
+    pendingTypes:
+      hitl: "Umano nel Loop"
+      aitl: "Agente nel Loop"
+      bitl: "Bot nel Loop"
+      unknown: "Motivo sconosciuto"
+  display:
+    list:
+      started: "Avviato"
+      duration: "Durata"
+      events: "Eventi"
+      status: "Stato"
+      pending: "In attesa"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
 
 costs:
   table:
@@ -56,19 +76,6 @@ costs:
     embedding: "Embedding"
     total: "Totale"
     currency: "CHF"
-
-eventStatistics:
-  charts:
-    agentInvocations: "Invocazioni Agente"
-    agentStart: "Avvio Agente"
-    endEvents: "Eventi di Fine"
-    success: "Successo"
-    openHumanInTheLoop: "Aperto (Umano nel Loop)"
-    openBotInTheLoop: "Aperto (Bot nel Loop)"
-    error: "Errore"
-    delegations: "Deleghe"
-    delegatedTaskAgentInTheLoop: "Attività Delegata (Agente nel Loop)"
-    allEvents: "Tutti gli Eventi"
 
 service:
   selection:
@@ -97,6 +104,16 @@ agent:
     threads: "Thread"
     chat: "Chat"
   availableAgents: "Agenti Disponibili"
+  list:
+    name: "Nome"
+    description: "Descrizione"
+    agent: "Agente"
+    is_conversational: "Conversazionale"
+    true: "Sì"
+    false: "No"
+    status: "Stato"
+    online: "Online"
+    offline: "Offline"
 
 auth:
   renew:

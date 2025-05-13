@@ -32,7 +32,7 @@
               <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
                 <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
-                    {{ $t('eventList.firstInteraction') }}
+                    {{ t('event.list.firstInteraction') }}
                   </span>
                   <Tag
                     :value="formattedDate(display.started_at)"
@@ -41,7 +41,7 @@
                 </div>
                 <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
-                    {{ $t('eventList.lastInteraction') }}
+                    {{ t('event.list.lastInteraction') }}
                   </span>
                   <Tag
                     :value="formattedDate(display.ended_at)"
@@ -50,7 +50,7 @@
                 </div>
                 <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
-                    {{ $t('eventList.pending') }}
+                    {{ t('event.list.pending') }}
                   </span>
                   <Tag
                     v-if="display.has_pending"
@@ -60,22 +60,22 @@
                   <Tag
                     v-else
                     severity="success"
-                    :value="$t('eventList.no')"
+                    :value="t('event.list.no')"
                   />
                 </div>
                 <div class="flex flex-col items-start gap-2">
                   <span class="font-semibold">
-                    {{ $t('eventList.status') }}
+                    {{ t('event.list.status') }}
                   </span>
                   <Tag
                     v-if="display.has_errors"
                     severity="danger"
-                    :value="$t('eventList.error')"
+                    :value="t('event.list.error')"
                   />
                   <Tag
                     v-else
                     severity="success"
-                    :value="$t('eventList.successful')"
+                    :value="t('event.list.successful')"
                   />
                 </div>
               </div>
@@ -107,6 +107,7 @@ const props = defineProps<{
 }>()
 
 const { pendingType } = useThreadUtils()
+const { t } = useI18n()
 
 const activeDisplayId = ref(props.thread.displays?.at(-1)?.display_id)
 

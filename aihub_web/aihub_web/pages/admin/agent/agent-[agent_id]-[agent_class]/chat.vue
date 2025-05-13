@@ -5,7 +5,7 @@
   >
     <div class="relative flex flex-col gap-2 p-3">
       <p class="text-xl font-bold">
-        {{ $t('agent.chat.title') }}
+        {{ t('agent.chat.title') }}
       </p>
       <div>
         <div />
@@ -18,7 +18,7 @@
             cols="30"
           />
           <Button
-            :label="$t('agent.chat.createThreadAndSend')"
+            :label="t('agent.chat.createThreadAndSend')"
             class="w-full"
             @click="submitMessage"
           />

@@ -7,7 +7,7 @@
   >
     <Column
       field="Started"
-      header="Started"
+      :header="t('therad.display.list.started')"
     >
       <template #body="{ data }">
         <p>{{ formatted(data.started_at) }}</p>
@@ -15,7 +15,7 @@
     </Column>
     <Column
       field="duration"
-      header="Duration"
+      :header="t('therad.display.list.duration')"
     >
       <template #body="{ data }">
         <Badge :value="data.duration" />
@@ -23,7 +23,7 @@
     </Column>
     <Column
       field="n_events"
-      header="Events"
+      :header="t('therad.display.list.events')"
     >
       <template #body="{ data }">
         <Badge :value="data.n_events" />
@@ -31,24 +31,24 @@
     </Column>
     <Column
       field="has_errors"
-      header="Status"
+      :header="t('therad.display.list.status')"
     >
       <template #body="{ data }">
         <Tag
           v-if="data.has_errors"
           severity="danger"
-          :value="t('eventList.error')"
+          :value="t('event.list.error')"
         />
         <Tag
           v-else
           severity="success"
-          :value="t('eventList.successful')"
+          :value="t('event.list.successful')"
         />
       </template>
     </Column>
     <Column
       field="has_pending"
-      header="Pending"
+      :header="t('therad.display.list.pending')"
     >
       <template #body="{ data }">
         <Tag
@@ -59,7 +59,7 @@
         <Tag
           v-else
           severity="success"
-          :value="t('eventList.no')"
+          :value="t('event.list.no')"
         />
       </template>
     </Column>
@@ -79,7 +79,7 @@ const emit = defineEmits<{
   selected: [display: DisplayStatistics]
 }>()
 
-const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
+const formatted = (datestr: string) => useDateFormat(new Date(datestr), t('therad.display.list.dateFormat'))
 const { pendingType } = useThreadUtils()
 </script>
 

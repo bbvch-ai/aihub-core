@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-12 pt-4">
     <Panel
-      :header="$t('eventList.chat')"
+      :header="t('event.list.chat')"
       toggleable
       collapsed
     >
@@ -15,7 +15,7 @@
     <div class="flex flex-col gap-8">
       <div class="flex w-full items-center justify-end gap-2 pr-4">
         <span class="font-semibold">
-          {{ $t('eventList.agents') }}
+          {{ t('event.list.agents') }}
         </span>
         <MultiSelect
           v-model="activeRuns"
@@ -78,6 +78,7 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
+const { t } = useI18n()
 
 const display = computed(() => {
   const displayId = props.displayId ?? route.params.display_id

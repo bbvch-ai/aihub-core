@@ -7,11 +7,11 @@
   >
     <Column
       field="agent_config.name"
-      header="Name"
+      :header="t('agent.list.name')"
     />
     <Column
       field="agent_config.description"
-      header="Description"
+      :header="t('agent.list.description')"
     >
       <template #body="{ data }">
         <span class="text-xs">
@@ -21,7 +21,7 @@
     </Column>
     <Column
       field="agent_id"
-      header="Agent"
+      :header="t('agent.list.agent')"
     >
       <template #body="{ data }">
         <AvatarGroup>
@@ -41,26 +41,28 @@
     </Column>
     <Column
       field="is_conversational"
-      header="Conversational"
+      :header="t('agent.list.is_conversational')"
     >
       <template #body="{ data }">
-        <Badge :value="data.is_conversational" />
+        <Badge
+          :value="data.is_conversational ? t('agent.list.true') : t('agent.list.false')"
+        />
       </template>
     </Column>
     <Column
       field="is_online"
-      header="Status"
+      :header="t('agent.list.status')"
     >
       <template #body="{ data }">
         <Tag
           v-if="data.is_online"
           severity="success"
-          value="Online"
+          :value="t('agent.list.online')"
         />
         <Tag
           v-else
           severity="danger"
-          value="Offline"
+          :value="t('agent.list.offline')"
         />
       </template>
     </Column>
@@ -70,11 +72,11 @@
 <script setup lang="ts">
 import type { AgentDto } from '@core/sdk/client'
 
-const { t } = useI18n()
-
 defineProps<{
   agents: AgentDto[]
 }>()
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   selected: [AGENT: AgentDto]

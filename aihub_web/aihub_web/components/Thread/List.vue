@@ -79,12 +79,12 @@
         <Tag
           v-if="data.has_errors"
           severity="danger"
-          :value="t('eventList.error')"
+          :value="t('event.list.error')"
         />
         <Tag
           v-else
           severity="success"
-          :value="t('eventList.successful')"
+          :value="t('event.list.successful')"
         />
       </template>
     </Column>
@@ -101,7 +101,7 @@
         <Tag
           v-else
           severity="success"
-          :value="t('eventList.no')"
+          :value="t('event.list.no')"
         />
       </template>
     </Column>

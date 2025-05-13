@@ -12,7 +12,7 @@
         <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ $t('eventList.firstInteraction') }}
+              {{ t('event.list.firstInteraction') }}
             </span>
             <Tag
               :value="firstInteraction"
@@ -21,7 +21,7 @@
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ $t('eventList.lastInteraction') }}
+              {{ t('event.list.lastInteraction') }}
             </span>
             <Tag
               :value="lastInteraction"
@@ -30,7 +30,7 @@
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ $t('eventList.duration') }}
+              {{ t('event.list.duration') }}
             </span>
             <Tag
               :value="duration"
@@ -39,7 +39,7 @@
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ $t('eventList.costs') }}
+              {{ t('event.list.costs') }}
             </span>
             <Tag
               :value="thread.llm_cost.toFixed(6) + 'CHF'"
@@ -68,7 +68,7 @@ import { itCH } from 'date-fns/locale/it-CH'
 
 const { thread, threadIsLoading } = useThread()
 const { timeRange, charts } = useBasicEventStatistics()
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 const firstInteraction = computed<string>(() => {
   return useDateFormat(new Date(thread.value?.first_interaction), 'DD.MM.YYYY HH:mm:ss')

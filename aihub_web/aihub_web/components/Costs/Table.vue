@@ -3,40 +3,40 @@
     <thead>
       <tr>
         <th />
-        <th>{{ $t('costs.table.count') }}</th>
-        <th>{{ $t('costs.table.cost') }}</th>
+        <th>{{ t('costs.table.count') }}</th>
+        <th>{{ t('costs.table.cost') }}</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td class="font-bold">
-          {{ $t('costs.table.input') }}
+          {{ t('costs.table.input') }}
         </td>
         <td>{{ promptTokenCount }} </td>
-        <td>{{ promptTokensCosts }} {{ $t('costs.table.currency') }}</td>
+        <td>{{ promptTokensCosts }} {{ t('costs.table.currency') }}</td>
       </tr>
       <tr>
         <td class="font-bold">
-          {{ $t('costs.table.output') }}
+          {{ t('costs.table.output') }}
         </td>
         <td>{{ completionTokenCount }}</td>
-        <td>{{ completionTokensCosts }} {{ $t('costs.table.currency') }}</td>
+        <td>{{ completionTokensCosts }} {{ t('costs.table.currency') }}</td>
       </tr>
       <tr v-if="embeddingTokenCount">
         <td class="font-bold">
-          {{ $t('costs.table.embedding') }}
+          {{ t('costs.table.embedding') }}
         </td>
         <td>{{ embeddingTokenCount }}</td>
-        <td>{{ embeddingTokensCosts }} {{ $t('costs.table.currency') }}</td>
+        <td>{{ embeddingTokensCosts }} {{ t('costs.table.currency') }}</td>
       </tr>
       <tr
         class="font-bold"
       >
         <td>
-          {{ $t('costs.table.total') }}
+          {{ t('costs.table.total') }}
         </td>
         <td>{{ promptTokenCount + completionTokenCount + embeddingTokenCount }}</td>
-        <td>{{ promptTokensCosts + completionTokensCosts + embeddingTokensCosts }} {{ $t('costs.table.currency') }}</td>
+        <td>{{ promptTokensCosts + completionTokensCosts + embeddingTokensCosts }} {{ t('costs.table.currency') }}</td>
       </tr>
     </tbody>
   </table>
@@ -51,6 +51,8 @@ defineProps<{
   embeddingTokenCount: number
   embeddingTokensCosts: number
 }>()
+
+const { t } = useI18n()
 </script>
 
 <style scoped>
