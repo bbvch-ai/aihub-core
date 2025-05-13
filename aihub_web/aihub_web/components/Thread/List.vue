@@ -1,113 +1,111 @@
 <template>
-  <div>
-    <DataTable
-      :value="threads"
-      table-style="min-width: 50rem"
-      selection-mode="single"
-      @update:selection="emit('selected', $event)"
+  <DataTable
+    :value="threads"
+    table-style="min-width: 50rem"
+    selection-mode="single"
+    @update:selection="emit('selected', $event)"
+  >
+    <Column
+      field="name"
+      :header="t('thread.list.name')"
+    />
+    <Column
+      field="agents"
+      :header="t('thread.list.agents')"
     >
-      <Column
-        field="name"
-        :header="t('thread.list.name')"
-      />
-      <Column
-        field="agents"
-        :header="t('thread.list.agents')"
-      >
-        <template #body="{ data }">
-          <AvatarGroup>
-            <Avatar
-              v-for="agent in data.agents"
-              :key="agent.agent_id + agent.agent_class"
-              v-tooltip="agent.agent_config.name"
-            >
-              <template #icon>
-                <Icon
-                  :name="agent.agent_config.icon"
-                  size="xl"
-                />
-              </template>
-            </Avatar>
-          </AvatarGroup>
-        </template>
-      </Column>
-      <Column
-        field="users"
-        :header="t('thread.users')"
-      >
-        <template #body="{ data }">
-          <AvatarGroup>
-            <Avatar
-              v-for="user in data.users"
-              :key="user.id"
-              v-tooltip="user.name"
-              :image="user?.profile_image ?? undefined"
-              :label="!user?.profile_image ? initials(user) : undefined"
-              shape="circle"
-            />
-          </AvatarGroup>
-        </template>
-      </Column>
-      <Column
-        field="Created"
-        :header="t('thread.list.created')"
-      >
-        <template #body="{ data }">
-          <p>{{ formatted(data.created_at) }}</p>
-        </template>
-      </Column>
-      <Column
-        field="num_turns"
-        :header="t('thread.list.numTurns')"
-      >
-        <template #body="{ data }">
-          <Badge :value="data.num_turns" />
-        </template>
-      </Column>
-      <Column
-        field="num_events"
-        :header="t('thread.list.numEvents')"
-      >
-        <template #body="{ data }">
-          <Badge :value="data.num_events" />
-        </template>
-      </Column>
-      <Column
-        field="has_errors"
-        :header="t('thread.list.status')"
-      >
-        <template #body="{ data }">
-          <Tag
-            v-if="data.has_errors"
-            severity="danger"
-            :value="t('eventList.error')"
+      <template #body="{ data }">
+        <AvatarGroup>
+          <Avatar
+            v-for="agent in data.agents"
+            :key="agent.agent_id + agent.agent_class"
+            v-tooltip="agent.agent_config.name"
+          >
+            <template #icon>
+              <Icon
+                :name="agent.agent_config.icon"
+                size="xl"
+              />
+            </template>
+          </Avatar>
+        </AvatarGroup>
+      </template>
+    </Column>
+    <Column
+      field="users"
+      :header="t('thread.users')"
+    >
+      <template #body="{ data }">
+        <AvatarGroup>
+          <Avatar
+            v-for="user in data.users"
+            :key="user.id"
+            v-tooltip="user.name"
+            :image="user?.profile_image ?? undefined"
+            :label="!user?.profile_image ? initials(user) : undefined"
+            shape="circle"
           />
-          <Tag
-            v-else
-            severity="success"
-            :value="t('eventList.successful')"
-          />
-        </template>
-      </Column>
-      <Column
-        field="has_errors"
-        :header="t('thread.list.pending')"
-      >
-        <template #body="{ data }">
-          <Tag
-            v-if="data.has_pending"
-            severity="warn"
-            :value="pendingType(data)"
-          />
-          <Tag
-            v-else
-            severity="success"
-            :value="t('eventList.no')"
-          />
-        </template>
-      </Column>
-    </DataTable>
-  </div>
+        </AvatarGroup>
+      </template>
+    </Column>
+    <Column
+      field="Created"
+      :header="t('thread.list.created')"
+    >
+      <template #body="{ data }">
+        <p>{{ formatted(data.created_at) }}</p>
+      </template>
+    </Column>
+    <Column
+      field="num_turns"
+      :header="t('thread.list.numTurns')"
+    >
+      <template #body="{ data }">
+        <Badge :value="data.num_turns" />
+      </template>
+    </Column>
+    <Column
+      field="num_events"
+      :header="t('thread.list.numEvents')"
+    >
+      <template #body="{ data }">
+        <Badge :value="data.num_events" />
+      </template>
+    </Column>
+    <Column
+      field="has_errors"
+      :header="t('thread.list.status')"
+    >
+      <template #body="{ data }">
+        <Tag
+          v-if="data.has_errors"
+          severity="danger"
+          :value="t('event.list.error')"
+        />
+        <Tag
+          v-else
+          severity="success"
+          :value="t('event.list.successful')"
+        />
+      </template>
+    </Column>
+    <Column
+      field="has_errors"
+      :header="t('thread.list.pending')"
+    >
+      <template #body="{ data }">
+        <Tag
+          v-if="data.has_pending"
+          severity="warn"
+          :value="pendingType(data)"
+        />
+        <Tag
+          v-else
+          severity="success"
+          :value="t('event.list.no')"
+        />
+      </template>
+    </Column>
+  </DataTable>
 </template>
 
 <script setup lang="ts">

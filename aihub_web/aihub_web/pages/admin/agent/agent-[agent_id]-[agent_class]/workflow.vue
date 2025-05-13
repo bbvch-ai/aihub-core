@@ -1,20 +1,16 @@
 <template>
-  <ProgressBar
-    v-if="agentIsLoading || !agent"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
-    class="relative flex flex-col gap-2"
+  <StructuralColumn
+    title="Workflow"
+    close-route="/admin/agent"
+    :loading="agentIsLoading"
   >
     <div class="h-[900px] w-full">
       <WorkflowVisualization
-        v-if="agent"
+        v-if="agent && agent.network_graph"
         :graph-data="agent.network_graph"
       />
     </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">

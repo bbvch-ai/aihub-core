@@ -1,10 +1,9 @@
 <template>
-  <div>
-    <ProgressBar
-      v-if="isLoading || !threads"
-      mode="indeterminate"
-      style="height: 2px"
-    />
+  <StructuralColumn
+    title="Threads"
+    close-route="/admin/agent"
+    :loading="isLoading"
+  >
     <div class="p-3">
       <ThreadList
         :threads="threads"
@@ -21,7 +20,7 @@
         />
       </div>
     </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">

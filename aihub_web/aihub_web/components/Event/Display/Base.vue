@@ -24,7 +24,7 @@
       <Panel
         :toggleable="!isEmpty"
         collapsed
-        class="panel border-none bg-transparent"
+        class="border-none bg-transparent"
       >
         <template #header>
           <div class="relative flex flex-row gap-4">
@@ -35,22 +35,23 @@
               />
             </div>
             <div>
-              <p class="text-xl font-bold">
+              <p class="text-lg font-bold">
                 {{ event.event_display_name }}
-              </p>
-              <p class="text-sm text-surface-800 dark:text-surface-200">
-                {{ event.event_display_description }}
               </p>
             </div>
           </div>
         </template>
         <div
           v-if="!isEmpty"
-          class="pt-4"
         >
+          <p class="text-sm text-surface-800 dark:text-surface-200">
+            {{ event.event_display_description }}
+          </p>
           <Divider />
           <br>
-          <slot />
+          <div class="pb-3 pr-3 ">
+            <slot />
+          </div>
         </div>
       </Panel>
     </template>
@@ -86,10 +87,14 @@ const isFromAgentInThread = computed<boolean>(() => {
 </script>
 
 <style scoped>
-::v-deep(.panel) {
-  .p-panel-header {
-    padding: 0 !important;
-  }
+:deep(.p-panel-header) {
+  padding: 0 !important;
+}
+:deep(.p-card-body) {
+  padding: 0 5px 0 15px !important;
+}
+:deep(.p-panel-content) {
+  padding: 0 !important;
 }
 .striped-bg {
   background: repeating-linear-gradient(

@@ -1,6 +1,6 @@
 <template>
   <div class="hidden">
-    {{ $t('auth.renew.processing') }}
+    {{ t('auth.renew.processing') }}
   </div>
 </template>
 
@@ -10,6 +10,8 @@ const { $auth } = useNuxtApp()
 definePageMeta({
   layout: 'anonymous',
 })
+
+const { t } = useI18n()
 
 // Add proper error handling for silent renewal
 $auth.signinSilentCallback()

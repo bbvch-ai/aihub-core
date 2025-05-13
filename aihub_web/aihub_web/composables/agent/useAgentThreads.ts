@@ -55,7 +55,7 @@ export const useAgentThreads = defineQuery(() => {
 
   return {
     threads: computed(() => (threadQuery.state.value?.data)?.threads ?? []),
-    isPending: computed(() => threadQuery.asyncStatus.value === 'loading'),
+    isLoading: computed(() => threadQuery.asyncStatus.value === 'loading'),
     pagination: paginationMeta,
     currentPage,
     pageSize,
