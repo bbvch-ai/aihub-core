@@ -4,6 +4,7 @@ import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+from openai import NOT_GIVEN
 from pydantic import Field
 from typing_extensions import Annotated
 
@@ -24,6 +25,13 @@ class AzureOpenAIEmbeddingParameter(EmbeddingLLMParameter):
     maintains consistency and allows easy extension if needed.
     """
 
+    dimensions: Annotated[
+        int | NOT_GIVEN,
+        Field(
+            NOT_GIVEN,
+            description="The number of dimensions in the embedding vector. Supported in text-embedding-3 and later models.",
+        ),
+    ]
     encoding_format: Annotated[str, Field(description="The encoding format of the returned embeddings.")] = "float"
 
 
