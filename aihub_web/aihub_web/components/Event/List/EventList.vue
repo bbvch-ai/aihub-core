@@ -80,14 +80,16 @@ const props = defineProps<{
 const route = useRoute()
 const { t } = useI18n()
 
+const activeRuns = ref<RunStatistics[]>([])
+
 const display = computed(() => {
   const displayId = props.displayId ?? route.params.display_id
   return props.thread.displays?.find((display: DisplayStatistics) => display.display_id === displayId)
 })
 
-const activeRuns = computed(() => {
-  return display.value?.runs ?? []
-})
+watch(display, () => {
+  activeRuns.value = display.value?.runs ?? []
+}, { immediate: true })
 
 const eventsInRuns = computed<WsServerEvent[]>(() => {
   const runIds = activeRuns.value.map((run: RunStatistics) => run.run_id)
