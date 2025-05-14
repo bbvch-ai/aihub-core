@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict, Optional
+from typing import ClassVar, Dict, Optional, Union
 
 from pydantic import Field
 
@@ -47,8 +47,9 @@ class AgentConfig(BaseConfig):
     # Other settings
     log_level: str = Field(default="WARNING", description="Logging level for the application")
 
-    custom_env_vars: Dict[str, str] = Field(
-        default_factory=dict, description="Custom environment variables to pass to the container"
+    additional_env_vars: Dict[str, Union[str, Dict[str, str]]] = Field(
+        default_factory=dict,
+        description="Additional environment variables to pass to the agent container, can be plain values or secret references",
     )
 
     @property
@@ -74,7 +75,7 @@ class AgentConfig(BaseConfig):
     @property
     def effective_ai_search_name(self) -> str:
         """Generate the AI search name, using the configured value or a default based on the project name, AI search service, and location"""
-        return self.ai_search_name or f"{self.resource_namer.ai_search_name}"
+        return self.ai_search_name or self.resource_namer.ai_search_name()
 
     @property
     def effective_ai_search_resource_group(self) -> str:
