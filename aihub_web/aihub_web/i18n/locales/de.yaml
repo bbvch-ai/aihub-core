@@ -133,3 +133,29 @@ auth:
     loginWithMicrosoft: "Mit Microsoft anmelden"
     customSolutions: "Individuelle KI-Lösungen für Ihr Unternehmen"
     logoAlt: "Logo des Unternehmens"
+
+timerange:
+  1h: "1 Stunde"
+  24h: "1 Tag"
+  30d: "1 Monat"
+  365d: "1 Jahr"
+
+dashboard:
+  all_agents: "Alle Agenten"
+  users: "AI-Hub Benutzer"
+  unknown_agent: "Unbekannter Agent"
+  events:
+    StartEvent:
+      label: 'Gestartete Agent-Ausführungen'
+    StopEvent:
+      label: 'Erfolgreiche Ausführungen'
+    UserMessageEvent:
+      label: 'Benutzer-Chatnachrichten'
+    ExceptionEvent:
+      label: 'Fehler'
+    HumanInTheLoopRequestEvent:
+      label: 'Mensch in der Schleife'
+    BotInTheLoopRequestEvent:
+      label: 'In Slack/Teams fragen'
+    AgentInTheLoopRequestEvent:
+      label: 'Delegierte Aufgaben'

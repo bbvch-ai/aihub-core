@@ -271,7 +271,7 @@ class AgentService:
         """
         Retrieves a paginated list of threads that a specific agent is part of.
         """
-        return ThreadService.get_paginated_threads_for_agent(agent_class, agent_id, t, page=page, page_size=page_size)
+        return await ThreadService.get_paginated_threads_for_agent(agent_class, agent_id, t, page=page, page_size=page_size)
 
     @staticmethod
     def clear_cache() -> None:

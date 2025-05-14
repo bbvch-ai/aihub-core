@@ -133,3 +133,29 @@ auth:
     loginWithMicrosoft: "Accedi con Microsoft"
     customSolutions: "Soluzioni AI personalizzate per la tua azienda"
     logoAlt: "Logo dell'azienda"
+
+timerange:
+  1h: "1 Ora"
+  24h: "1 Giorno"
+  30d: "1 Mese"
+  365d: "1 Anno"
+
+dashboard:
+  all_agents: "Tutti gli Agenti"
+  users: "Utenti AI-Hub"
+  unknown_agent: "Agente Sconosciuto"
+  events:
+    StartEvent:
+      label: 'Esecuzioni Agente Avviate'
+    StopEvent:
+      label: 'Esecuzioni Riuscite'
+    UserMessageEvent:
+      label: 'Messaggi Chat Utente'
+    ExceptionEvent:
+      label: 'Errori'
+    HumanInTheLoopRequestEvent:
+      label: 'Umano nel Loop'
+    BotInTheLoopRequestEvent:
+      label: 'Chiedi in Slack/Teams'
+    AgentInTheLoopRequestEvent:
+      label: 'Attività Delegate'

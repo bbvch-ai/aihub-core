@@ -253,7 +253,7 @@ class OpenaiService:
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = OpenaiService._reconstruct_history(chat_completion_request, thread_id)
+            chat_completion_request.messages = await OpenaiService._reconstruct_history(chat_completion_request, thread_id)
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -310,7 +310,7 @@ class OpenaiService:
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = OpenaiService._reconstruct_history(chat_completion_request, thread_id)
+            chat_completion_request.messages = await OpenaiService._reconstruct_history(chat_completion_request, thread_id)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
@@ -484,9 +484,9 @@ class OpenaiService:
         return thread_id, display_id
 
     @staticmethod
-    def _reconstruct_history(
+    async def _reconstruct_history(
         chat_completion_request: ChatCompletionRequest, thread_id: str
     ) -> List[ChatCompletionMessageParam]:
-        history = ThreadService.thread_as_message_history(thread_id)
+        history = await ThreadService.thread_as_message_history(thread_id)
         user_message = chat_completion_request.messages[-1]
         return history.messages + [user_message]

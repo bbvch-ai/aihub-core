@@ -13,6 +13,7 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
@@ -41,8 +42,8 @@ async def main():
         runner.mount_frontend(frontend_dir)
 
     auth = TokenAndOauth2Handler(
-        OpenWebuiAuthHandler(),
-        OAuth2AuthHandler(),
+        bearer_handlers=[OpenWebuiAuthHandler(), TokenAuthHandler()],
+        oauth2_handlers=[OAuth2AuthHandler()],
     )
     # auth = NoAuthHandler()
 

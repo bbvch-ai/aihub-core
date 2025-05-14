@@ -3,11 +3,11 @@ from datetime import datetime, timezone, timedelta
 
 from mongoengine import connect, disconnect
 
-from aihub_api.routes.token.TokenService import TokenService # Assuming this is your local module
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser # Assuming this is your local module
-from aihub_lib.infrastructure.ApiConfig import ApiConfig # Assuming this is your local module
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess # Assuming this is your local module
-from aihub_lib.persistence.user.UserEntity import UserEntity # Assuming this is your local module
+from aihub_api.routes.token.TokenService import TokenService
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 def get_azure_cli_user_info():
     """Fetches user information using Azure CLI."""
@@ -48,28 +48,25 @@ def get_azure_cli_user_info():
         return None, None, None
 
 
-# Attempt to get user info from Azure CLI
 cli_user_oid, cli_user_name, cli_user_preferred_username = get_azure_cli_user_info()
 
 if not all([cli_user_oid, cli_user_name, cli_user_preferred_username]):
     print("Exiting script due to missing Azure CLI user information.")
     exit()
 
-# --- Your existing script logic with modifications ---
 cosmos_conn_singleton = CosmosAccess()
 host = cosmos_conn_singleton.get_connection_string()
 connect(db=ApiConfig().DB_NAME, host=host)
 
-# Use details from Azure CLI
-user_name = cli_user_name # Or keep "AI-Hub Admin" if you prefer a static name here
-token_name = f"{cli_user_name} Token" # Or "AI-Hub Admin Token"
+user_name = cli_user_name
+token_name = f"{cli_user_name} Token"
 expiry = datetime.now(timezone.utc) + timedelta(days=365)
-roles = ["AllAgents"] # Or fetch/determine roles dynamically if needed
+roles = ["AllAgents"]
 
 user = AuthenticatedUser(
-    oid=cli_user_oid, # Use oid from Azure CLI
-    name=cli_user_name, # Use name from Azure CLI
-    preferred_username=cli_user_preferred_username, # Use preferred_username from Azure CLI
+    oid=cli_user_oid,
+    name=cli_user_name,
+    preferred_username=cli_user_preferred_username,
     roles=roles,
 )
 UserEntity.ensure_user_exists(

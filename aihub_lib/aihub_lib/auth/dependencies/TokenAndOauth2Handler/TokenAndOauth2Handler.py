@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -15,9 +16,9 @@ logger = logging.getLogger(__name__)
 class TokenAndOauth2Handler(AuthHandler):
     """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies."""
 
-    def __init__(self, bearer_handler: BearerAuthHandler, oauth2_handler: OAuth2AuthHandler):
-        self.bearer_handler = bearer_handler
-        self.oauth2_handler = oauth2_handler
+    def __init__(self, bearer_handlers: List[BearerAuthHandler], oauth2_handlers: List[OAuth2AuthHandler]):
+        self.bearer_handlers = bearer_handlers
+        self.oauth2_handlers = oauth2_handlers
 
     async def __call__(
         self,
@@ -27,17 +28,19 @@ class TokenAndOauth2Handler(AuthHandler):
     ) -> AuthenticatedUser:
         errors = []
 
-        try:
-            return await self.oauth2_handler(oauth_token)
-        except Exception as e:
-            logger.warning("OAuth2 authentication failed: %s", e)
-            errors.append(f"OAuth2 authentication failed: {str(e)}")
+        for oauth2_handler in self.oauth2_handlers:
+            try:
+                return await oauth2_handler(oauth_token)
+            except Exception as e:
+                logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
+                errors.append(f"OAuth2 authentication {{oauth2_handler.__class__.__name__}} failed: {str(e)}")
 
-        try:
-            return await self.bearer_handler(request, bearer_token)
-        except Exception as e:
-            logger.warning("Bearer authentication failed: %s", e)
-            errors.append(f"Bearer authentication failed: {str(e)}")
+        for bearer_handler in self.bearer_handlers:
+            try:
+                return await bearer_handler(request, bearer_token)
+            except Exception as e:
+                logger.warning(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {e}")
+                errors.append(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {str(e)}")
 
         # If no strategy succeeded, raise an error with all failure details.
         logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
@@ -49,20 +52,19 @@ class TokenAndOauth2Handler(AuthHandler):
         """
         errors = []
 
-        # Try OAuth2 first
-        try:
-            return await self.oauth2_handler.authenticate_token(token)
-        except Exception as e:
-            logger.warning("OAuth2 authentication failed: %s", e)
-            errors.append(f"OAuth2 authentication failed: {str(e)}")
+        for oauth2_handler in self.oauth2_handlers:
+            try:
+                return await oauth2_handler.authenticate_token(token)
+            except Exception as e:
+                logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
+                errors.append(f"OAuth2 authentication {{oauth2_handler.__class__.__name__}} failed: {str(e)}")
 
-        # Then try Bearer token
-        try:
-            # Create a mock request for the bearer handler
-            return await self.bearer_handler.authenticate_token(token)
-        except Exception as e:
-            logger.warning("Bearer authentication failed: %s", e)
-            errors.append(f"Bearer authentication failed: {str(e)}")
+        for bearer_handler in self.bearer_handlers:
+            try:
+                return await bearer_handler.authenticate_token(token)
+            except Exception as e:
+                logger.warning(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {e}")
+                errors.append(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {str(e)}")
 
         # If no strategy succeeded, raise an error with all failure details.
         logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
