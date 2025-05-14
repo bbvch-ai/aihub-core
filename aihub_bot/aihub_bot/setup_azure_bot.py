@@ -84,7 +84,7 @@ def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
     ]
     # fmt: on
     run_command(cmd)
-
+    print(f"Created service principal for Azure AD app with appId: {app_id}")
     return app_id
 
 
