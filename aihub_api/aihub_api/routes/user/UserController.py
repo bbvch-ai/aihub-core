@@ -52,7 +52,7 @@ class UserController(Controller):
             """
             Returns a `UserDTO` representing the currently logged-in user.
             """
-            return UserService.get_logged_in_user(user)
+            return await UserService.get_logged_in_user(user)
 
         return self
 
@@ -86,7 +86,7 @@ class UserController(Controller):
             Updates the user's dashboard settings.
             Accepts a `DashboardDTO` in the request body.
             """
-            UserService.update_user_dashboard_settings(user, dashboard_dto)
+            await UserService.update_user_dashboard_settings(user, dashboard_dto)
             return None
 
         return self

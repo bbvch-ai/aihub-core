@@ -16,7 +16,7 @@ class DevUserInformationProvider(BaseUserInformationProvider):
     def __init__(self):
         self.config = NoAuthConfig()
 
-    def get_user_info_by_oid(self, oid: str) -> UserIdentity:
+    async def get_user_info_by_oid(self, oid: str) -> UserIdentity:
         if oid == self.config.OID:
             return UserIdentity(
                 id=self.config.OID,

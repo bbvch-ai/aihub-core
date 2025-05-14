@@ -5,7 +5,7 @@ export const useThreads = defineQuery(() => {
   const pageSize = ref(10)
 
   const threadsQuery = useQuery({
-    key: () => ['user-threads', currentPage.value, pageSize.value],
+    key: () => ['threads', { page: currentPage.value, size: pageSize.value }],
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 

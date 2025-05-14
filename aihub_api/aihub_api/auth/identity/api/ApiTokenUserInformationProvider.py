@@ -16,7 +16,7 @@ class ApiTokenUserInformationProvider(BaseUserInformationProvider):
     Raises an exception if no matching user is found.
     """
 
-    def get_user_info_by_oid(self, oid: str) -> UserIdentity:
+    async def get_user_info_by_oid(self, oid: str) -> UserIdentity:
         """Fetch user information from your MongoDB database using an OID."""
         user = UserEntity.by_oid(oid)
         if user is None:

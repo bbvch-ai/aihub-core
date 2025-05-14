@@ -39,12 +39,12 @@ class UserService:
     )
 
     @staticmethod
-    def get_logged_in_user(user: AuthenticatedUser) -> MyUserDTO:
+    async def get_logged_in_user(user: AuthenticatedUser) -> MyUserDTO:
         """
         Convert the `AuthenticatedUser` (provided by the auth layer) into a MyUserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
-        UserService.get_user_by_oid(user.oid)
+        await UserService.get_user_by_oid(user.oid)
         user_entity = UserEntity.by_oid(user.oid)
 
         dashboard_data = user_entity.dashboard.to_mongo()
@@ -61,7 +61,7 @@ class UserService:
         )
 
     @staticmethod
-    def get_user_by_oid(user_oid: str) -> UserDTO:
+    async def get_user_by_oid(user_oid: str) -> UserDTO:
         """
         Retrieve user info by OID (id, name, email, profile_image) as a UserDTO.
         It first checks a db cache (UserEntity). If recent and essential data is present,
@@ -83,7 +83,7 @@ class UserService:
         except DoesNotExist:
             pass
 
-        user_identity = UserService.user_information_provider.get_user_info_by_oid(user_oid)
+        user_identity = await UserService.user_information_provider.get_user_info_by_oid(user_oid)
         UserEntity.ensure_user_exists(
             oid=user_oid,
             name=user_identity.name,
@@ -110,14 +110,14 @@ class UserService:
         return None
 
     @staticmethod
-    def update_user_dashboard_settings(user: AuthenticatedUser, dashboard_dto: DashboardDTO) -> None:
+    async def update_user_dashboard_settings(user: AuthenticatedUser, dashboard_dto: DashboardDTO) -> None:
         """
         Updates or creates the dashboard settings for the given authenticated user.
         """
         try:
             user_entity = UserEntity.by_oid(user.oid)
         except DoesNotExist:
-            user_identity = UserService.user_information_provider.get_user_info_by_oid(user.oid)
+            user_identity = await UserService.user_information_provider.get_user_info_by_oid(user.oid)
             user_entity = UserEntity.ensure_user_exists(
                 oid=user.oid,
                 name=user_identity.name,

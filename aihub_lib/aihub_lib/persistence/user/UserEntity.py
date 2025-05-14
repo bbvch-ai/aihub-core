@@ -49,13 +49,34 @@ class UserEntity(Document):
             children=[
                 DashboardItem(
                     id=str(uuid4()),
-                    component="DashboardComponentGrid",
+                    component="DashboardComponentNumber",
                     noResize=True,
                     timeRange="30d",
                     event="StartEvent",
                     x=0,
                     y=0,
-                )
+                    w=1
+                ),
+                DashboardItem(
+                    id=str(uuid4()),
+                    component="DashboardComponentLineChart",
+                    noResize=True,
+                    timeRange="30d",
+                    event="StartEvent",
+                    x=1,
+                    y=0,
+                    w=2
+                ),
+                DashboardItem(
+                    id=str(uuid4()),
+                    component="DashboardComponentNumber",
+                    noResize=True,
+                    timeRange="30d",
+                    event="ExceptionEvent",
+                    x=3,
+                    y=0,
+                    w=1
+                ),
             ],
         )
 
@@ -87,7 +108,7 @@ class UserEntity(Document):
             user.last_updated = datetime.now(timezone.utc)
             user.save()
             return user
-        except cls.DoesNotExist:
+        except DoesNotExist:
             return cls.create_user(oid=oid, name=name, email=email, roles=roles, profile_image=profile_image)
 
     @classmethod

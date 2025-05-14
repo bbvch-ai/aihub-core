@@ -141,6 +141,9 @@ timerange:
   365d: "1 Year"
 
 dashboard:
+  all_agents: "All Agents"
+  users: "AI-Hub Users"
+  unknown_agent: "Unknown Agent"
   events:
     StartEvent:
       label: 'Started Agent Runs'
