@@ -1,9 +1,9 @@
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 
 from aihub_pipeline.ops.data_lake.data_lake_file_to_ref_doc import data_lake_file_to_ref_doc
-from aihub_pipeline.ops.document.extract_images import extract_images
 from aihub_pipeline.ops.document.describe_images import describe_images
-from aihub_pipeline.ops.document.save_images import save_images
+from aihub_pipeline.ops.document.extract_images import extract_images
+from aihub_pipeline.ops.document.inject_figures import inject_figures
 from aihub_pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
@@ -31,7 +31,7 @@ def documents_factory(
         ref_doc = data_lake_file_to_ref_doc(data_lake_file)
         ref_doc_with_images = extract_images(ref_doc)
         images_with_descriptions = describe_images(ref_doc_with_images)
-        final_ref_doc = save_images(images_with_descriptions)
+        final_ref_doc = inject_figures(images_with_descriptions)
         return insert_ref_doc_into_docstore(final_ref_doc)
 
     return document
