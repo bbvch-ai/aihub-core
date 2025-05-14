@@ -1,12 +1,14 @@
 import {
   DashboardComponentNumber,
-  DashboardComponentChart,
+  DashboardComponentLineChart,
+  DashboardComponentBarChart,
 } from '#components'
 
 export const useDashboardComponent = () => {
   const mapping = {
     DashboardComponentNumber,
-    DashboardComponentChart,
+    DashboardComponentLineChart,
+    DashboardComponentBarChart,
   }
 
   const resolveComponent = (name: string) => {

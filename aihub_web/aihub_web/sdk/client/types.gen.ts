@@ -792,10 +792,6 @@ export type CreateTokenRequest = {
      * Expiry date in ISO format (must be in the future)
      */
     expiry_date: Date;
-    /**
-     * Non-empty list of roles associated with the token
-     */
-    roles: Array<string>;
 };
 
 export type CreateTokenResponse = {
@@ -809,13 +805,67 @@ export type CreateTokenResponse = {
      */
     expiry_date: Date;
     /**
-     * List of roles granted to the access token
-     */
-    roles: Array<string>;
-    /**
      * The generated API token, only returned at creation
      */
     token: string;
+};
+
+export type DashboardDto = {
+    /**
+     * Minimum number of rows in the grid, corresponds to MongoEngine's minRow field.
+     */
+    minRow?: number | null;
+    /**
+     * Gap between grid items in pixels, corresponds to MongoEngine's margin field.
+     */
+    margin?: number | null;
+    /**
+     * Number of columns in the grid, corresponds to MongoEngine's column field.
+     */
+    column?: number | null;
+    /**
+     * Height of one cell in pixels, corresponds to MongoEngine's cellHeight field.
+     */
+    cellHeight?: number | null;
+    /**
+     * List of widgets (dashboard items) within the grid, corresponds to MongoEngine's children field.
+     */
+    children?: Array<DashboardItemDto>;
+};
+
+export type DashboardItemDto = {
+    /**
+     * Unique identifier for the dashboard widget, corresponds to MongoEngine's id field.
+     */
+    id: string;
+    /**
+     * Specifies the component to render for this widget, corresponds to MongoEngine's component field.
+     */
+    component: string;
+    /**
+     * The x-coordinate of the widget in the grid, corresponds to MongoEngine's x field.
+     */
+    x: number;
+    /**
+     * The y-coordinate of the widget in the grid, corresponds to MongoEngine's y field.
+     */
+    y: number;
+    /**
+     * Width of the widget in grid column units, corresponds to MongoEngine's w field.
+     */
+    w?: number | null;
+    /**
+     * If true, the widget cannot be resized, corresponds to MongoEngine's noResize field.
+     */
+    noResize?: boolean | null;
+    /**
+     * Time range for the data displayed in the widget, corresponds to MongoEngine's timeRange field.
+     */
+    timeRange?: string | null;
+    /**
+     * The type of event data the widget displays, corresponds to MongoEngine's event field.
+     */
+    event?: string | null;
 };
 
 /**
@@ -2049,6 +2099,9 @@ export type MyUserDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
+    dashboard?: DashboardDto | null;
+    favorite_modules?: Array<string>;
+    roles?: Array<string>;
 };
 
 /**
@@ -3232,6 +3285,47 @@ export type GetMyUserResponses = {
 };
 
 export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
+
+export type GetMyDashboardSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/user/dashboard';
+};
+
+export type GetMyDashboardSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: DashboardDto | null;
+};
+
+export type GetMyDashboardSettingsResponse = GetMyDashboardSettingsResponses[keyof GetMyDashboardSettingsResponses];
+
+export type UpdateMyDashboardSettingsData = {
+    body: DashboardDto;
+    path?: never;
+    query?: never;
+    url: '/user/dashboard';
+};
+
+export type UpdateMyDashboardSettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMyDashboardSettingsError = UpdateMyDashboardSettingsErrors[keyof UpdateMyDashboardSettingsErrors];
+
+export type UpdateMyDashboardSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UpdateMyDashboardSettingsResponse = UpdateMyDashboardSettingsResponses[keyof UpdateMyDashboardSettingsResponses];
 
 export type GetLocaleData = {
     body?: never;

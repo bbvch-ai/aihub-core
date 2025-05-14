@@ -10,6 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -172,12 +173,14 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")
 
+        user = UserEntity.by_oid(access_token.user_oid)
+
         if not user_name or not user_email:
             return AuthenticatedUser(
-                name=access_token.user.name,
-                preferred_username=access_token.user.preferred_username,
-                oid=access_token.user.oid,
-                roles=access_token.roles,
+                name=user.name,
+                preferred_username=user.email,
+                oid=user.id,
+                roles=user.roles,
             )
 
         user_name_hash = request.headers.get("X-OpenWebUI-User-Name-Hash")

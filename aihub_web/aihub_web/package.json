@@ -80,6 +80,7 @@
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "tailwindcss-primeui": "^0.5.1",
+    "uuid": "^11.1.0",
     "vue3-apexcharts": "^1.8.0"
   }
 }

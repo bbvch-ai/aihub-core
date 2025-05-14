@@ -1,5 +1,12 @@
+from typing import List, Optional
+from pydantic import Field
+
 from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 
 
 class MyUserDTO(UserDTO):
-    pass
+    dashboard: Optional[DashboardDTO] = None
+    favorite_modules: List[str] = Field(default_factory=list)
+    roles: List[str] = Field(default_factory=list)
+

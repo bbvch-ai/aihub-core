@@ -1,79 +1,153 @@
 import base64
-import logging
-
 import httpx
 from azure.identity import DefaultAzureCredential
 from cachetools import TTLCache, cached
 
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
-from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 
-logger = logging.getLogger(__name__)
-
+MS_GRAPH_V1_BASE_URL = "https://graph.microsoft.com/v1.0"
 
 class AzureUserInformationProvider(BaseUserInformationProvider):
     """
-    A user information provider that uses Microsoft Graph and Azure credentials.
-
-    ### Why This Class?
-    In Azure-based environments, user information often comes from Microsoft Graph.
-    `AzureUserInformationProvider` leverages `DefaultAzureCredential` to:
-    - Automatically handle token acquisition (using Managed Identity in Azure or developer credentials locally).
-    - Query Microsoft Graph's `/users/{oid}` endpoint to fetch user profile details.
-
-    ### How It Works
-    1. Initialize `DefaultAzureCredential`, which attempts multiple credentials (Managed Identity, VS Code auth,
-       Azure CLI, etc.) to find a suitable token.
-    2. Request a token for the Microsoft Graph scope (`https://graph.microsoft.com/.default`).
-    3. Use this token to call Microsoft Graph and retrieve the user's displayName, email, etc.
-
-    This prints the user's display name and email fetched from Microsoft Graph.
+    Provides user information by querying Microsoft Graph using Azure credentials.
+    It fetches user profile details, profile picture, and application-specific roles.
+    This version has minimal error handling and comments.
     """
 
     def __init__(self):
         self.credential = DefaultAzureCredential()
         self.scope = "https://graph.microsoft.com/.default"
 
-    @staticmethod
-    @cached(TTLCache(maxsize=128, ttl=60))
-    def get_userdata_by_oid(oid: str, access_token: str) -> UserDTO:
-        headers = {"Authorization": f"Bearer {access_token}"}
-        # Get basic user details
-        user_url = f"https://graph.microsoft.com/v1.0/users/{oid}"
+        self.config = OAuth2Config()
+        self.client_id = self.config.CLIENT_ID
+
+        self.app_service_principal_id: str | None = None
+        self.app_role_definitions: dict[str, str] = {}
+
+        if self.client_id:
+            self._initialize_app_details()
+
+    def _make_graph_api_request(
+            self, method: str, url: str, client: httpx.Client, headers: dict, **kwargs
+    ) -> httpx.Response:
+        """Makes a Graph API request and raises an exception for HTTP errors."""
+        response = client.request(method, url, headers=headers, **kwargs)
+        response.raise_for_status()
+        return response
+
+    def _initialize_app_details(self):
+        """
+        Fetches the application's service principal ID and app role definitions.
+        Raises exceptions on failure (e.g., token error, SP not found).
+        """
+        token_val = self.credential.get_token(self.scope).token
+
+        headers = {"Authorization": f"Bearer {token_val}", "ConsistencyLevel": "eventual"}
+        sp_url = f"{MS_GRAPH_V1_BASE_URL}/servicePrincipals?$filter=appId eq '{self.client_id}'&$select=id,appRoles"
+
         with httpx.Client() as client:
-            response = client.get(user_url, headers=headers)
-        if response.status_code != 200:
-            raise ValueError(f"Failed to fetch user info. Status: {response.status_code}, Response: {response.text}")
-        user_data = response.json()
+            response = self._make_graph_api_request("GET", sp_url, client, headers)
+            data = response.json()
 
-        # Retrieve the profile image
-        try:
-            image_url = f"https://graph.microsoft.com/v1.0/users/{oid}/photo/$value"
-            with httpx.Client() as client:
-                image_response = client.get(image_url, headers=headers)
+        value = data.get("value")
+        if not value:
+            raise ValueError(f"Service Principal not found for appId '{self.client_id}'.")
 
-            if image_response.status_code == 200:
-                image_content = image_response.content
-                # Determine the MIME type from the response, defaulting to image/jpeg
-                content_type = image_response.headers.get("Content-Type", "image/jpeg")
-                # Encode image and prepend with the data URI scheme
-                base64_data = base64.b64encode(image_content).decode("utf-8")
-                data_url = f"data:{content_type};base64,{base64_data}"
-            else:
-                data_url = None
-        except Exception as e:
-            logger.warning(f"Failed to fetch profile image: {e}")
-            data_url = None
+        sp_data = value[0]
+        self.app_service_principal_id = sp_data.get("id")
 
-        # Return user information with the base64 encoded profile image as a data URI
-        return UserDTO(
-            id=user_data.get("id"),
-            name=user_data.get("displayName"),
-            email=user_data.get("mail") or user_data.get("userPrincipalName"),
-            profile_image=data_url,  # Ensure your UserDTO accepts this field.
+        if not self.app_service_principal_id:
+            raise ValueError(f"Service Principal ID is missing for appId '{self.client_id}'.")
+
+        for role in sp_data.get("appRoles", []):
+            if role.get("isEnabled"):
+                role_id = role.get("id")
+                role_identifier = role.get("value") or role.get("displayName")
+                if role_id and role_identifier:
+                    self.app_role_definitions[role_id] = role_identifier
+
+    def _fetch_user_profile(self, client: httpx.Client, oid: str, headers: dict) -> dict:
+        """Fetches basic user profile data. Raises exceptions on failure."""
+        user_url = f"{MS_GRAPH_V1_BASE_URL}/users/{oid}?$select=id,displayName,mail,userPrincipalName"
+        response = self._make_graph_api_request("GET", user_url, client, headers)
+        return response.json()
+
+    def _fetch_profile_image_data_url(self, client: httpx.Client, oid: str, headers: dict) -> str | None:
+        """
+        Fetches user profile image. Returns None if not found (404).
+        Other HTTP errors will cause exceptions.
+        """
+        image_url = f"{MS_GRAPH_V1_BASE_URL}/users/{oid}/photo/$value"
+        image_response = client.get(image_url, headers=headers)
+
+        if image_response.status_code == 404:
+            return None
+        image_response.raise_for_status()
+
+        image_content = image_response.content
+        content_type = image_response.headers.get("Content-Type", "image/jpeg")
+        base64_data = base64.b64encode(image_content).decode("utf-8")
+        return f"data:{content_type};base64,{base64_data}"
+
+    def _fetch_user_app_roles(self, client: httpx.Client, oid: str, headers: dict) -> list[str]:
+        """
+        Fetches user's app role assignments. Returns empty list if SP details are missing
+        or if no assignments are found (404). Raises exceptions for other errors (e.g., 403).
+        """
+        if not self.app_service_principal_id or not self.app_role_definitions:
+            return []
+
+        assigned_roles: list[str] = []
+        assignments_url = (
+            f"{MS_GRAPH_V1_BASE_URL}/users/{oid}/appRoleAssignments"
+            f"?$filter=resourceId eq {self.app_service_principal_id}"
+            f"&$select=appRoleId"
         )
 
-    def get_user_info_by_oid(self, oid: str) -> UserDTO:
-        # Acquire an access token from Azure Identity
+        response = client.get(assignments_url, headers=headers)
+
+        if response.status_code == 404:
+            return []
+        response.raise_for_status()
+
+        assignments = response.json().get("value", [])
+        for assignment in assignments:
+            app_role_id = assignment.get("appRoleId")
+            role_value = self.app_role_definitions.get(app_role_id)
+            if role_value:
+                assigned_roles.append(role_value)
+        return assigned_roles
+
+    @cached(TTLCache(maxsize=128, ttl=60))
+    def get_userdata_by_oid(self, oid: str, access_token: str) -> UserIdentity:
+        """
+        Retrieves user data, profile image, and roles based on OID and an access token.
+        Caches the results. Lets exceptions from underlying calls propagate.
+        """
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "ConsistencyLevel": "eventual"
+        }
+
+        with httpx.Client() as client:
+            user_data_json = self._fetch_user_profile(client, oid, headers)
+            profile_image_data_url = self._fetch_profile_image_data_url(client, oid, headers)
+            role_names = self._fetch_user_app_roles(client, oid, headers)
+
+        return UserIdentity(
+            id=user_data_json.get("id"),
+            name=user_data_json.get("displayName"),
+            email=user_data_json.get("mail") or user_data_json.get("userPrincipalName"),
+            profile_image=profile_image_data_url,
+            roles=sorted(list(set(role_names))),
+        )
+
+    def get_user_info_by_oid(self, oid: str) -> UserIdentity:
+        """
+        Acquires an access token and retrieves user data by OID.
+        Lets exceptions from token acquisition or data retrieval propagate.
+        """
         access_token = self.credential.get_token(self.scope).token
         return self.get_userdata_by_oid(oid, access_token)

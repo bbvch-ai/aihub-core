@@ -4,7 +4,6 @@ import type { GridStackWidget } from 'gridstack/dist/types'
 export interface DashboardWidget extends GridStackWidget {
   id: string
   component: string
-  title: string
   timeRange: TimeRange
   agent?: {
     agentId: string

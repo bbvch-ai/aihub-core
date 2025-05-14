@@ -133,3 +133,26 @@ auth:
     loginWithMicrosoft: "Login with Microsoft"
     customSolutions: "Custom AI solutions for your company"
     logoAlt: "Logo of company"
+
+timerange:
+  1h: "1 Hour"
+  24h: "1 Day"
+  30d: "1 Month"
+  365d: "1 Year"
+
+dashboard:
+  events:
+    StartEvent:
+      label: 'Started Agent Runs'
+    StopEvent:
+      label: 'Successful Runs'
+    UserMessageEvent:
+      label: 'User Chat Messages'
+    ExceptionEvent:
+      label: 'Errors'
+    HumanInTheLoopRequestEvent:
+      label: 'Human in the Loop'
+    BotInTheLoopRequestEvent:
+      label: 'Ask in Slack/Teams'
+    AgentInTheLoopRequestEvent:
+      label: 'Tasks Delegated'

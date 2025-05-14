@@ -11,9 +11,6 @@ class CreateTokenRequest(BaseModel):
     expiry_date: datetime = Field(
         ..., description="Expiry date in ISO format (must be in the future)", example="2025-12-31T23:59:59Z"
     )
-    roles: List[constr(min_length=1, strip_whitespace=True)] = Field(
-        ..., min_items=1, description="Non-empty list of roles associated with the token", example=["read", "write"]
-    )
 
     @field_validator("expiry_date")
     @classmethod
@@ -23,13 +20,6 @@ class CreateTokenRequest(BaseModel):
 
         if v <= datetime.now(timezone.utc):
             raise ValueError("Expiry date must be in the future")
-        return v
-
-    @field_validator("roles")
-    @classmethod
-    def roles_must_be_unique(cls, v: List[str]) -> List[str]:
-        if len(set(v)) != len(v):
-            raise ValueError("Roles must be unique")
         return v
 
     model_config = {

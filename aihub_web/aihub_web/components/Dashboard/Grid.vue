@@ -1,63 +1,66 @@
 <template>
-  <div class="flex flex-col gap-2 p-4">
-    <div class="flex justify-end">
-      <div>
-        <Button
-          type="button"
-          label="Add"
-          @click="($event) => newWidget.toggle($event)"
-        />
-        <Popover ref="newWidget">
-          <div class="flex flex-col gap-2">
-            <p class="font-bold">
-              Create new Widget
-            </p>
-            <SelectButton
-              v-model="component"
-              size="small"
-              option-label="label"
-              option-value="component"
-              :options="componentOptions"
-              :allow-empty="false"
-            />
-            <SelectButton
-              v-model="timeRange"
-              size="small"
-              :options="timeRanges"
-              :allow-empty="false"
-            />
-            <Select
-              v-model="event"
-              :options="eventOptions"
-              option-label="label"
-              option-value="event"
-              placeholder="Select Data type"
-            />
-            <Select
-              v-model="agent"
-              :options="agents"
-              option-label="agent_config.name"
-              placeholder="Select an Agent (Optional)"
-              :loading="agentsAreLoading"
-            />
-            <Button
-              label="Create"
-              :disabled="!(timeRange && event)"
-              @click="addWidget"
-            />
-          </div>
-        </Popover>
+  <div class="flex w-full justify-center">
+    <div class="flex w-full max-w-screen-2xl flex-col gap-2 p-4">
+      <div class="flex justify-end">
+        <div class="pr-4">
+          <Button
+            type="button"
+            label="Add Widget"
+            icon="pi pi-plus"
+            @click="($event) => newWidget.toggle($event)"
+          />
+          <Popover ref="newWidget">
+            <div class="flex flex-col gap-2">
+              <p class="font-bold">
+                Create new Widget
+              </p>
+              <SelectButton
+                v-model="component"
+                size="small"
+                option-label="label"
+                :options="componentOptions"
+                :allow-empty="false"
+              />
+              <SelectButton
+                v-model="timeRange"
+                size="small"
+                :options="timeRanges"
+                :allow-empty="false"
+              />
+              <Select
+                v-model="event"
+                :options="eventOptions"
+                option-label="label"
+                placeholder="Select Data type"
+              />
+              <Select
+                v-model="agent"
+                :options="agents"
+                option-label="agent_config.name"
+                placeholder="Select an Agent (Optional)"
+                :loading="agentsAreLoading"
+                show-clear
+              />
+              <Button
+                label="Create"
+                :disabled="!(timeRange && event)"
+                @click="addWidget"
+              />
+            </div>
+          </Popover>
+        </div>
       </div>
+      <div
+        ref="gridstack"
+        class="min-h-[400px]"
+      />
     </div>
-    <div
-      ref="gridstack"
-      class="min-h-[200px]"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { GridStack } from 'gridstack'
+import { v4 as uuid } from 'uuid'
 import { h, render } from 'vue'
 
 import 'gridstack/dist/gridstack.min.css'
@@ -68,20 +71,28 @@ import type { DashboardWidget } from '@core/types/DashboardWidget'
 import type { GridStackElement } from 'gridstack'
 
 const { agents, agentsAreLoading } = useAgents()
-const { componentNames } = useDashboardComponent()
+const { t } = useI18n()
+const { user, userIsLoading } = useUser()
+const { saveDashboard } = useSaveDashboard()
+
+watch(user, () => {
+  if (user.value?.dashboard?.children && grid) {
+    grid.load(user.value?.dashboard?.children ?? [])
+  }
+})
 
 const gridStackElement = templateRef('gridstack')
 let grid: GridStack | null = null
 const itemRenderContexts = new Map<string, HTMLElement>()
 
-const initialWidgets: DashboardWidget[] = []
+const nuxtApp = useNuxtApp()
 
 onMounted(() => {
   grid = GridStack.init({
-    float: true,
-    cellHeight: '80px',
+    cellHeight: '350px',
     minRow: 1,
-    margin: 10,
+    margin: '24px',
+    column: 4,
   }, gridStackElement.value)
 
   GridStack.addRemoveCB = (_: HTMLElement, w: DashboardWidget, add: boolean): GridStackElement | undefined => {
@@ -94,7 +105,6 @@ onMounted(() => {
         GridItemVue,
         {
           component: w.component,
-          title: w.title,
           data: w,
           onRemove: (domElementToRemove: HTMLElement) => {
             if (grid && domElementToRemove) {
@@ -103,6 +113,10 @@ onMounted(() => {
           },
         },
       )
+
+      if (nuxtApp && nuxtApp.vueApp) {
+        vueComponentVNode.appContext = nuxtApp.vueApp._context
+      }
 
       render(vueComponentVNode, tempRenderHost)
       itemRenderContexts.set(widgetId, tempRenderHost)
@@ -117,9 +131,19 @@ onMounted(() => {
     }
   }
 
-  grid.load(initialWidgets)
+  if (!userIsLoading.value) {
+    grid.load(user.value?.dashboard?.children ?? [])
+  }
 
   grid.on('change', () => {
+    saveLayout()
+  })
+
+  grid.on('added', () => {
+    saveLayout()
+  })
+
+  grid.on('removed', () => {
     saveLayout()
   })
 })
@@ -138,31 +162,52 @@ const saveLayout = () => {
   if (grid) {
     const serializedData = grid.save(true, true)
     console.log('Saved Layout:', JSON.stringify(serializedData, null, 2))
+    saveDashboard({ grid: serializedData })
   }
 }
 
 const newWidget = templateRef('newWidget')
-const component = ref<string>('DashboardComponentNumber')
-const componentOptions = ref<{ label: string, component: string }[]>([
-  { label: 'Number', component: 'DashboardComponentNumber' },
-  { label: 'Chart', component: 'DashboardComponentChart' },
+
+type componentSelection = { label: string, component: string, w: number, h: number }
+const componentOptions = ref<componentSelection[]>([
+  { label: 'Number', component: 'DashboardComponentNumber', w: 1, h: 1 },
+  { label: 'Line Chart', component: 'DashboardComponentLineChart', w: 2, h: 1 },
+  { label: 'Bar Chart', component: 'DashboardComponentBarChart', w: 2, h: 1 },
 ])
+const component = ref<componentSelection>(componentOptions.value[0])
+
 const timeRange = ref<TimeRange>('24h')
 const timeRanges = ref<string[]>(['1h', '24h', '30d', '365d'])
+
 const agent = ref<AgentDto | null>(null)
-const eventOptions = computed<{ label: string, event: string }[]>(() => [
-  { label: 'Starts', event: 'StartEvent' },
-])
-const event = ref<string>('')
+
+type eventType = { label: string, event: string }
+const eventOptions = computed<eventType[]>(() => {
+  return [
+    'StartEvent',
+    'UserMessageEvent',
+    'ExceptionEvent',
+    'HumanInTheLoopRequestEvent',
+    'BotInTheLoopRequestEvent',
+    'AgentInTheLoopRequestEvent',
+  ].map((event: string) => ({
+    event,
+    label: t(`dashboard.events.${event}.label`),
+  }))
+})
+const event = ref<eventType | null>(null)
+
 const addWidget = () => {
   if (!grid) return
   const newWidgetNodeToAdd: DashboardWidget = {
-    id: 'temporary',
-    title: 'Test',
-    component: component.value,
+    id: uuid(),
+    component: component.value.component,
+    w: component.value.w,
+    h: component.value.h,
+    noResize: true,
     timeRange: timeRange.value,
     agent: agent.value ? { agentId: agent.value.agent_id, agentClass: agent.value.agent_class } : undefined,
-    event: event.value,
+    event: event.value!.event,
   }
   grid.addWidget(newWidgetNodeToAdd)
 }

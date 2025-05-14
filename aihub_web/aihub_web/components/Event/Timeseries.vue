@@ -3,7 +3,7 @@
     <VueApexChart
       class="w-full"
       type="bar"
-      height="350"
+      :height="height"
       :options="chartOptions"
       :series="chartSeries"
     />
@@ -19,10 +19,13 @@ import type { EventBucket } from '@core/sdk/client'
 import type { TimeseriesInput } from '@core/types/TimeseriesInput'
 import type { ApexOptions } from 'apexcharts'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   seriesInputs: TimeseriesInput[]
-}>()
+  height?: number
+}>(), {
+  height: 350,
+})
 
 const isDark = useDark({ storageKey: 'dark' })
 
@@ -47,7 +50,7 @@ const chartOptions = computed<ApexOptions>(() => {
     return {
       chart: {
         type: 'bar',
-        height: 350,
+        height: props.height,
         foreColor: isDark.value ? 'var(--p-surface-200)' : 'var(--p-surface-800)',
       },
       theme: {
@@ -119,7 +122,7 @@ const chartOptions = computed<ApexOptions>(() => {
   return {
     chart: {
       type: 'bar',
-      height: 350,
+      height: props.height,
       stacked: true,
       toolbar: {
         show: false,
@@ -177,7 +180,7 @@ const chartOptions = computed<ApexOptions>(() => {
     yaxis: {
       title: {
         text: `# ${props.title}`,
-        offsetX: 10,
+        offsetX: 5,
       },
       min: 0,
       labels: {

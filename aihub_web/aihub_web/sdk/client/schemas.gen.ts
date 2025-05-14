@@ -2345,21 +2345,10 @@ export const CreateTokenRequestSchema = {
             title: 'Expiry Date',
             description: 'Expiry date in ISO format (must be in the future)',
             example: '2025-12-31T23:59:59Z'
-        },
-        roles: {
-            items: {
-                type: 'string',
-                minLength: 1
-            },
-            type: 'array',
-            minItems: 1,
-            title: 'Roles',
-            description: 'Non-empty list of roles associated with the token',
-            example: ['read', 'write']
         }
     },
     type: 'object',
-    required: ['name', 'expiry_date', 'roles'],
+    required: ['name', 'expiry_date'],
     title: 'CreateTokenRequest',
     example: {
         expiry_date: '2025-12-31T23:59:59Z',
@@ -2387,14 +2376,6 @@ export const CreateTokenResponseSchema = {
             title: 'Expiry Date',
             description: 'Expiry date'
         },
-        roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Roles',
-            description: 'List of roles granted to the access token'
-        },
         token: {
             type: 'string',
             title: 'Token',
@@ -2402,8 +2383,147 @@ export const CreateTokenResponseSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'expiry_date', 'roles', 'token'],
+    required: ['id', 'name', 'expiry_date', 'token'],
     title: 'CreateTokenResponse'
+} as const;
+
+export const DashboardDTOSchema = {
+    properties: {
+        minRow: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Minrow',
+            description: "Minimum number of rows in the grid, corresponds to MongoEngine's minRow field."
+        },
+        margin: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Margin',
+            description: "Gap between grid items in pixels, corresponds to MongoEngine's margin field."
+        },
+        column: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Column',
+            description: "Number of columns in the grid, corresponds to MongoEngine's column field."
+        },
+        cellHeight: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cellheight',
+            description: "Height of one cell in pixels, corresponds to MongoEngine's cellHeight field."
+        },
+        children: {
+            items: {
+                '$ref': '#/components/schemas/DashboardItemDTO'
+            },
+            type: 'array',
+            title: 'Children',
+            description: "List of widgets (dashboard items) within the grid, corresponds to MongoEngine's children field."
+        }
+    },
+    type: 'object',
+    title: 'DashboardDTO'
+} as const;
+
+export const DashboardItemDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: "Unique identifier for the dashboard widget, corresponds to MongoEngine's id field."
+        },
+        component: {
+            type: 'string',
+            title: 'Component',
+            description: "Specifies the component to render for this widget, corresponds to MongoEngine's component field."
+        },
+        x: {
+            type: 'integer',
+            title: 'X',
+            description: "The x-coordinate of the widget in the grid, corresponds to MongoEngine's x field."
+        },
+        y: {
+            type: 'integer',
+            title: 'Y',
+            description: "The y-coordinate of the widget in the grid, corresponds to MongoEngine's y field."
+        },
+        w: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'W',
+            description: "Width of the widget in grid column units, corresponds to MongoEngine's w field."
+        },
+        noResize: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Noresize',
+            description: "If true, the widget cannot be resized, corresponds to MongoEngine's noResize field."
+        },
+        timeRange: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timerange',
+            description: "Time range for the data displayed in the widget, corresponds to MongoEngine's timeRange field."
+        },
+        event: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event',
+            description: "The type of event data the widget displays, corresponds to MongoEngine's event field."
+        }
+    },
+    type: 'object',
+    required: ['id', 'component', 'x', 'y'],
+    title: 'DashboardItemDTO'
 } as const;
 
 export const DisplayEventSchema = {
@@ -5037,6 +5157,30 @@ export const MyUserDTOSchema = {
             ],
             title: 'Profile Image',
             description: "User's profile image in base64."
+        },
+        dashboard: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/DashboardDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        favorite_modules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Favorite Modules'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles'
         }
     },
     type: 'object',

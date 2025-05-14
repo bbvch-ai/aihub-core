@@ -1,8 +1,11 @@
+from typing import Optional, Annotated
+
+from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import Security
+from fastapi import Security, Body
 
 from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.UserService import UserService
@@ -50,5 +53,40 @@ class UserController(Controller):
             Returns a `UserDTO` representing the currently logged-in user.
             """
             return UserService.get_logged_in_user(user)
+
+        return self
+
+    def get_my_dashboard_settings(self, route: str = "/dashboard") -> "UserController":
+        """
+        Registers an endpoint to retrieve the currently logged-in user's dashboard settings.
+        Default route: GET /user/dashboard
+        """
+        @self.router.get(route, tags=self.tags)
+        async def get_my_dashboard_settings(
+                user: AuthenticatedUser = Security(self.auth),
+        ) -> Optional[DashboardDTO]:
+            """
+            Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
+            """
+            return UserService.get_user_dashboard_settings(user)
+
+        return self
+
+    def update_my_dashboard_settings(self, route: str = "/dashboard") -> "UserController":
+        """
+        Registers an endpoint to update the currently logged-in user's dashboard settings.
+        Default route: PUT /user/dashboard
+        """
+        @self.router.put(route, tags=self.tags, status_code=204)
+        async def update_my_dashboard_settings(
+                dashboard_dto: Annotated[DashboardDTO, Body],
+                user: AuthenticatedUser = Security(self.auth),
+        ) -> None:
+            """
+            Updates the user's dashboard settings.
+            Accepts a `DashboardDTO` in the request body.
+            """
+            UserService.update_user_dashboard_settings(user, dashboard_dto)
+            return None
 
         return self

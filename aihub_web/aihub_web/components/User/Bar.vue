@@ -8,7 +8,7 @@
       @click="toggleDarkMode()"
     />
     <div
-      v-if="loadingUser !== 'success'"
+      v-if="userIsLoading"
       class="flex flex-row gap-2"
     >
       <div class="flex flex-col gap-1">
@@ -53,7 +53,7 @@
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 
-const { user, loadingUser } = useUser()
+const { user, userIsLoading } = useUser()
 
 const userInitials = computed(() =>
   user.value?.name?.split(' ').map(n => n[0]).join(''),

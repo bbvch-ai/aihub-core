@@ -2,33 +2,24 @@ import re
 import secrets
 from datetime import datetime, timezone
 
+from bson import ObjectId
 from mongoengine import (
     DateTimeField,
     Document,
-    EmbeddedDocument,
-    EmbeddedDocumentField,
     IntField,
-    ListField,
     StringField,
 )
 from mongoengine.errors import DoesNotExist
 
 
-class ApiUser(EmbeddedDocument):
-    oid = StringField(required=True)
-    name = StringField(required=True)
-    preferred_username = StringField(required=True)  # E-Mail
-    roles = ListField(StringField(), required=True)
-
 
 class BearerToken(Document):
     meta = {"collection": "tokens", "strict": False, "indexes": [{"fields": ["token"], "unique": True}]}
     version = IntField(default=1, db_field="_version")
+    user_oid = StringField(required=True)
     name = StringField(required=True)
     token = StringField(required=False)  # Should be stored as "<object_id>.<random_part>"
     expiry_date = DateTimeField(required=True)
-    roles = ListField(StringField())
-    user = EmbeddedDocumentField(ApiUser)
 
     # Pre-compile a regex to parse tokens of the form "<mongo_id>.<random_string>"
     TOKEN_REGEX = re.compile(r"^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9\-_]{128})$")
@@ -41,9 +32,6 @@ class BearerToken(Document):
           - Exists in the DB (looked up by the object id).
           - The stored token exactly matches the provided token.
           - Has not expired.
-
-        Raises:
-            ValueError: with an appropriate message if the token is invalid.
         """
         match = cls.TOKEN_REGEX.match(token_str)
         if not match:
@@ -54,8 +42,10 @@ class BearerToken(Document):
 
         try:
             # Lookup the token document using the organization-specific DB
-            token_obj = cls.objects.get(id=oid)
+            print("Token with oid", oid)
+            token_obj = cls.objects.get(id=ObjectId(oid))
         except DoesNotExist:
+            print("Token with oid does not exist", oid)
             raise ValueError("Token not found")
 
         # Check that the token string exactly matches the stored token
@@ -73,7 +63,7 @@ class BearerToken(Document):
         return token_obj
 
     @classmethod
-    def create_new_token(cls, name: str, expiry_date: datetime, user: ApiUser, roles: list[str]) -> "BearerToken":
+    def create_new_token(cls, name: str, expiry_date: datetime, user_oid: str) -> "BearerToken":
         """
         Creates a new API token. The token is generated using the document's ID
         and a secure, random string.
@@ -83,12 +73,10 @@ class BearerToken(Document):
         token_obj = cls(
             name=name,
             expiry_date=expiry_date,
-            user=user,
-            roles=roles,
+            user_oid=user_oid,
         )
-        token_obj.save()  # Save to generate the document ID
-        # Construct token string in the format "<mongo_id>.<random_part>"
+        token_obj.save()
         token_value = f"{str(token_obj.id)}.{random_part}"
         token_obj.token = token_value
-        token_obj.save()  # Update the token field
+        token_obj.save()
         return token_obj

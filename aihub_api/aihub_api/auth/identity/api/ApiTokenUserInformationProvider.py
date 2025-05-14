@@ -1,7 +1,8 @@
+from aihub_api.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
-from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 
 class ApiTokenUserInformationProvider(BaseUserInformationProvider):
@@ -10,20 +11,21 @@ class ApiTokenUserInformationProvider(BaseUserInformationProvider):
 
     This provider:
     - Searches for a `BearerToken` document where the embedded `ApiUser` has a matching OID.
-    - Constructs a `UserDTO` from the `ApiUser` data.
+    - Constructs a `UserIdentity` from the `ApiUser` data.
 
     Raises an exception if no matching user is found.
     """
 
-    def get_user_info_by_oid(self, oid: str) -> UserDTO:
+    def get_user_info_by_oid(self, oid: str) -> UserIdentity:
         """Fetch user information from your MongoDB database using an OID."""
-        token_obj = BearerToken.objects(user__oid=oid).first()
-        if token_obj is None:
+        user = UserEntity.by_oid(oid)
+        if user is None:
             raise ValueError(f"User with oid '{oid}' not found in the database.")
 
-        api_user = token_obj.user
-        return UserDTO(
-            id=api_user.oid,
-            name=api_user.name,
-            email=api_user.preferred_username,  # assuming preferred_username holds the email address
+        return UserIdentity(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            profile_image=user.profile_image,
+            roles=user.roles,
         )
