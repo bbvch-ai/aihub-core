@@ -53,6 +53,7 @@
     "@hey-api/client-nuxt": "^0.3.0",
     "@intlify/message-compiler": "^11.1.2",
     "@nuxtjs/color-mode": "^3.5.2",
+    "@nuxtjs/mdc": "^0.17.0",
     "@pinia/colada": "^0.14.1",
     "@pinia/nuxt": "^0.10.1",
     "@primeuix/themes": "1.0.0",

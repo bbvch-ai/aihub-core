@@ -16,11 +16,11 @@
 import type { DisplayStatistics } from '@core/sdk/client'
 
 const router = useRouter()
-const localeRoute = useLocaleRoute()
+const localePath = useLocaleRoute()
 
 const { thread, threadIsLoading } = useThread()
 
 const toDisplay = (display: DisplayStatistics) => {
-  router.push(localeRoute(`/admin/thread/${thread.value.id}/display/${display.display_id}`))
+  router.push(localePath(`/admin/thread/${thread.value.id}/display/${display.display_id}`))
 }
 </script>

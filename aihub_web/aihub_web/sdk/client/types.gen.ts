@@ -992,6 +992,49 @@ export type Document = {
     } | null;
 };
 
+export type DocumentDto = {
+    /**
+     * The unique identifier of the document.
+     */
+    id: string;
+    /**
+     * The main type of the document entity.
+     */
+    document_type?: string | null;
+    /**
+     * The textual content of the document.
+     */
+    text: string;
+    /**
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Docuemnt title.
+     */
+    title: string;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages: number;
+    /**
+     * Content type (content or summary).
+     */
+    content_type: 'content' | 'summary';
+    /**
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+};
+
 /**
  * Data for an edge in the workflow graph.
  */
@@ -2113,6 +2156,17 @@ export type MyUserDto = {
     roles?: Array<string>;
 };
 
+export type Namespace = {
+    /**
+     * Name of namespace
+     */
+    name: string;
+    /**
+     * Number of documents in namespace
+     */
+    number_of_documents: number;
+};
+
 /**
  * Data for a node in the workflow graph.
  */
@@ -2159,6 +2213,29 @@ export type NodeData = {
      * Whether workflow should stop on error in this node
      */
     stop_on_error?: boolean | null;
+};
+
+export type PaginatedDocumentsResponse = {
+    /**
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * List of Document DTOs objects for the current page
+     */
+    documents: Array<DocumentDto>;
 };
 
 export type PaginatedThreadsResponse = {
@@ -3999,6 +4076,85 @@ export type CreateSpeechResponses = {
      */
     200: unknown;
 };
+
+export type GetDocumentsForNamespaceData = {
+    body?: never;
+    path: {
+        namespace: string;
+    };
+    query?: {
+        /**
+         * Page number to retrieve (starting from 1)
+         */
+        page?: number;
+        /**
+         * Number of items per page (maximum 100)
+         */
+        page_size?: number;
+    };
+    url: '/knowledge/{namespace}/document';
+};
+
+export type GetDocumentsForNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDocumentsForNamespaceError = GetDocumentsForNamespaceErrors[keyof GetDocumentsForNamespaceErrors];
+
+export type GetDocumentsForNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedDocumentsResponse;
+};
+
+export type GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponses[keyof GetDocumentsForNamespaceResponses];
+
+export type GetDocumentByIdData = {
+    body?: never;
+    path: {
+        document_id: string;
+    };
+    query?: never;
+    url: '/knowledge/document/{document_id}';
+};
+
+export type GetDocumentByIdErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDocumentByIdError = GetDocumentByIdErrors[keyof GetDocumentByIdErrors];
+
+export type GetDocumentByIdResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentDto;
+};
+
+export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
+
+export type GetNamespacesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/knowledge/namespace';
+};
+
+export type GetNamespacesResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<Namespace>;
+};
+
+export type GetNamespacesResponse = GetNamespacesResponses[keyof GetNamespacesResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

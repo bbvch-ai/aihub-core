@@ -2744,6 +2744,72 @@ export const DocumentSchema = {
     title: 'Document'
 } as const;
 
+export const DocumentDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the document.'
+        },
+        document_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Type',
+            description: 'The main type of the document entity.'
+        },
+        text: {
+            type: 'string',
+            title: 'Text',
+            description: 'The textual content of the document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        title: {
+            type: 'string',
+            title: 'Title',
+            description: 'Docuemnt title.'
+        },
+        number_of_pages: {
+            type: 'integer',
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        content_type: {
+            type: 'string',
+            enum: ['content', 'summary'],
+            title: 'Content Type',
+            description: 'Content type (content or summary).'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        }
+    },
+    type: 'object',
+    required: ['id', 'text', 'namespace', 'title', 'number_of_pages', 'content_type', 'created_at', 'updated_at', 'inserted_at'],
+    title: 'DocumentDTO'
+} as const;
+
 export const EdgeDataSchema = {
     properties: {
         source: {
@@ -5191,6 +5257,24 @@ export const MyUserDTOSchema = {
     title: 'MyUserDTO'
 } as const;
 
+export const NamespaceSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of namespace'
+        },
+        number_of_documents: {
+            type: 'integer',
+            title: 'Number Of Documents',
+            description: 'Number of documents in namespace'
+        }
+    },
+    type: 'object',
+    required: ['name', 'number_of_documents'],
+    title: 'Namespace'
+} as const;
+
 export const NodeDataSchema = {
     properties: {
         id: {
@@ -5296,6 +5380,42 @@ export const NodeDataSchema = {
     required: ['id', 'type', 'node_id', 'label'],
     title: 'NodeData',
     description: 'Data for a node in the workflow graph.'
+} as const;
+
+export const PaginatedDocumentsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        documents: {
+            items: {
+                '$ref': '#/components/schemas/DocumentDTO'
+            },
+            type: 'array',
+            title: 'Documents',
+            description: 'List of Document DTOs objects for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'documents'],
+    title: 'PaginatedDocumentsResponse'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
