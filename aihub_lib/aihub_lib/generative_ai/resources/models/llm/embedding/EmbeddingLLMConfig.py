@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Tuple, Annotated
+from typing import Optional, Tuple
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from pydantic import Field

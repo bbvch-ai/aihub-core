@@ -5,7 +5,7 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from openai import NOT_GIVEN, NotGiven
-from pydantic import Field, ConfigDict
+from pydantic import ConfigDict, Field
 from typing_extensions import Annotated
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
