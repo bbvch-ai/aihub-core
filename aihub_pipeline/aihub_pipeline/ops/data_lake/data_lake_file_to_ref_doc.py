@@ -1,13 +1,15 @@
 import base64
 import os
 import re
+from io import StringIO
 from typing import List, Optional
 
-import requests
+import pandas as pd
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
+from openai import AzureOpenAI
 
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
@@ -39,28 +41,58 @@ def data_lake_file_to_ref_doc(
     ref_doc.add_metadata_from_data_lake_file(data_lake_file)
 
     # Process and save figures if operation_id exists
-    if (
-        "operation_id" in document.extra_info
-        and "figure_count" in document.extra_info
-        and document.extra_info["figure_count"] > 0
-    ):
+    if "operation_id" in document.extra_info and len(document.extra_info["figure_ids"]) > 0:
         document_intelligence_client = DocumentIntelligenceAccess().get_client()
         operation_id = document.extra_info["operation_id"]
         figure_ids = document.extra_info["figure_ids"]
 
         # Extract and save raw figure data
-        saved_figures_paths = save_figures_to_data_lake(
+        saved_figures_paths, saved_figures_urls, container_name = save_figures_to_data_lake(
             context, figure_ids, operation_id, document_intelligence_client, data_lake_file
         )
 
-        ref_doc = inject_figures(context, ref_doc, saved_figures_paths)
+        ref_doc = inject_figures(context, ref_doc, container_name, saved_figures_paths, saved_figures_urls)
 
         # Remove the operation_id from metadata
         if "operation_id" in ref_doc.metadata:
             del ref_doc.metadata["operation_id"]
             del ref_doc.metadata["figure_ids"]
 
+    else:
+        context.log.info("No figures were detected.")
+
+    ref_doc = reformat_tables(context, ref_doc)
     return ref_doc
+
+
+def reformat_tables(context: OpExecutionContext, document: RefDocDocument) -> RefDocDocument:
+    """Convert HTML tables in the document to Markdown tables."""
+    updated_content = document.text_resource.text
+
+    table_pattern = r"<table.*?>.*?</table>"
+
+    # Find all HTML tables in the content
+    instances = re.finditer(table_pattern, updated_content, re.DOTALL)
+
+    # We need to process matches from end to beginning to avoid index shifting
+    matches = list(instances)
+    matches.reverse()
+
+    for match in matches:
+        start, end = match.span()
+        html_table = match.group(0)
+
+        try:
+            # Convert the HTML table to a pandas DataFrame and then to markdown
+            markdown_table = pd.read_html(StringIO(html_table))[0].to_markdown()
+
+            # Replace the HTML table with the markdown table
+            updated_content = updated_content[:start] + "\n" + markdown_table + "\n" + updated_content[end:]
+        except Exception as e:
+            context.log.error(f"Failed to convert table: {e}")
+
+    document.text_resource.text = updated_content
+    return document
 
 
 def save_figures_to_data_lake(
@@ -69,7 +101,7 @@ def save_figures_to_data_lake(
     operation_id: str,
     document_intelligence_client,
     data_lake_file: DataLakeFile,
-) -> List[str]:
+) -> tuple:
     """
     Extracts and saves raw figure data to Azure Data Lake using BlobServiceClient.
 
@@ -83,18 +115,18 @@ def save_figures_to_data_lake(
     Returns:
         List of paths to the saved figures
     """
-    figure_paths = []
+    figure_paths, figure_urls = [], []
     account_url = "https://aihubdevstchedatalake.blob.core.windows.net"
     default_credential = DefaultAzureCredential()
 
     # Create the BlobServiceClient object
     blob_service_client = BlobServiceClient(account_url, credential=default_credential)
 
-    # TODO check if base_path is what you expect it to be
     base_path = os.path.dirname(data_lake_file.uri)
-    doc_id = data_lake_file.id_
-    figures_dir = f"{base_path.strip('/')[1:]}/figures/{doc_id}"
-    container_name = base_path.strip("/")[0]
+    doc_name, doc_type = os.path.basename(data_lake_file.uri).split(".")
+    doc_name = f"{doc_name}_{doc_type}"
+    container_name, base_dir = base_path.split("/")
+    figures_dir = f"{base_dir}/figures/{doc_name}"
 
     context.log.info(f"Saving {len(figure_ids)} figures to {figures_dir}")
 
@@ -112,27 +144,27 @@ def save_figures_to_data_lake(
             for chunk in response:
                 response_bytes += chunk
 
-            # Default extension
-            extension = "png"
-
-            blob_path = f"{figures_dir}/figure_{idx + 1}.{extension}"
-            # blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
-            # blob_client.upload_blob(response_bytes)
+            blob_path = f"{figures_dir}/figure_{idx + 1}.png"
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
+            blob_client.upload_blob(response_bytes)
 
             figure_paths.append(blob_path)
+            figure_urls.append(blob_client.url)
 
         except Exception as e:
             context.log.error(f"Failed to save figure {idx + 1}: {str(e)}")
             # Log the full exception for debugging
             context.log.error(f"Exception details: {type(e).__name__}: {str(e)}")
 
-    return figure_paths
+    return figure_paths, figure_urls, container_name
 
 
 def inject_figures(
     context: OpExecutionContext,
     document: RefDocDocument,
+    container_name: str,
     figure_paths: List[str],
+    figure_urls: List[str],
 ) -> RefDocDocument:
     """Injects image Markdown tags into the document content by replacing HTML figure tags.
 
@@ -166,7 +198,7 @@ def inject_figures(
     figures_replaced = 0
 
     # Loop through each figure path
-    for i, image_path in enumerate(figure_paths):
+    for i, (image_path, image_url) in enumerate(zip(figure_paths, figure_urls)):
         # Search for the next figure tag
         match = re.search(figure_pattern, updated_content, re.DOTALL)
 
@@ -212,32 +244,27 @@ def inject_figures(
         description = "Image"
         if blob_service_client:
             try:
-                # Parse the container and blob path from the figure path
-                path_parts = image_path.strip("/").split("/")
-                container_name = path_parts[0]
-                blob_path = "/".join(path_parts[1:])
-
                 # Download the image
-                # blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
-                # image_data = blob_client.download_blob().readall()
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=image_path)
+                image_data = blob_client.download_blob().readall()
 
                 # Generate description with context
-                # description = generate_description(
-                #     context, image_data, figure_index=i, surrounding_text=surrounding_text
-                # )
+                description = generate_description(
+                    context, image_data, figure_index=i, surrounding_text=surrounding_text
+                )
             except Exception as e:
                 context.log.error(f"Error processing image {i+1} for description: {str(e)}")
                 description = f"Figure {i+1}"
 
         # Create markdown image tag with description
-        markdown_image = f"![{description}]({image_path})"
+        markdown_image = f"![{description}]({image_url})"
 
         # Replace the figure tag with the markdown image using the exact span positions
         updated_content = updated_content[:start] + markdown_image + updated_content[end:]
         figures_replaced += 1
 
     # Update the document content
-    document.set_content(updated_content)
+    document.text_resource.text = updated_content
     context.log.info(f"Updated document content with {figures_replaced} markdown image with contextual descriptions.")
 
     return document
@@ -263,12 +290,13 @@ def generate_description(
         A detailed description of the image
     """
     try:
-        api_key = os.environ.get("OPENAI_API_KEY")
+        api_key = os.environ.get("AZURE_OPENAI_API_KEY")
 
         # Convert image to base64
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
 
         # Create a robust system prompt
+        # TODO detect document language and localize prompt
         system_prompt = """You are an expert at creating high-quality image descriptions for document accessibility.
 Your task is to generate detailed alt text for figures in documents that:
 
@@ -293,13 +321,23 @@ Do **NOT** come up with information, only reference what you can see in the iamg
         if surrounding_text:
             user_text += f"\n\nContext from the document surrounding this image:\n\n{surrounding_text}"
 
-        # Prepare the API request
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+        endpoint = "https://aihub-dev-openai-che.openai.azure.com/"
+        deployment = "gpt-4o"
 
-        payload = {
-            "model": "gpt-4o",
-            "messages": [
-                {"role": "system", "content": system_prompt},
+        api_version = "2024-12-01-preview"
+
+        client = AzureOpenAI(
+            api_version=api_version,
+            azure_endpoint=endpoint,
+            api_key=api_key,
+        )
+
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
                 {
                     "role": "user",
                     "content": [
@@ -308,22 +346,13 @@ Do **NOT** come up with information, only reference what you can see in the iamg
                     ],
                 },
             ],
-            "max_tokens": 500,
-            "temperature": 0.2,  # Lower temperature for more deterministic, factual outputs
-        }
-
-        # Make the API request
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+            max_tokens=500,
+            temperature=0.0,
+            model=deployment,
+        )
 
         # Parse the response
-        if response.status_code == 200:
-            result = response.json()
-            description = result["choices"][0]["message"]["content"]
-
-            return description
-        else:
-            context.log.error(f"OpenAI API error: {response.status_code} - {response.text}")
-            return f"Figure {figure_index + 1}"
+        return response.choices[0].message.content
 
     except Exception as e:
         context.log.error(f"Failed to generate image description: {str(e)}")
