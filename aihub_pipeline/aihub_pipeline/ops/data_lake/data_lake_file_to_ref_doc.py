@@ -58,6 +58,7 @@ def data_lake_file_to_ref_doc(
         # Remove the operation_id from metadata
         if "operation_id" in ref_doc.metadata:
             del ref_doc.metadata["operation_id"]
+            del ref_doc.metadata["figure_ids"]
 
     return ref_doc
 
@@ -115,8 +116,8 @@ def save_figures_to_data_lake(
             extension = "png"
 
             blob_path = f"{figures_dir}/figure_{idx + 1}.{extension}"
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
-            blob_client.upload_blob(response_bytes)
+            # blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
+            # blob_client.upload_blob(response_bytes)
 
             figure_paths.append(blob_path)
 
@@ -161,7 +162,7 @@ def inject_figures(
         return document
 
     # Start with the original content
-    updated_content = document.content
+    updated_content = document.text_resource.text
     figures_replaced = 0
 
     # Loop through each figure path
@@ -217,14 +218,13 @@ def inject_figures(
                 blob_path = "/".join(path_parts[1:])
 
                 # Download the image
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
-                image_data = blob_client.download_blob().readall()
+                # blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
+                # image_data = blob_client.download_blob().readall()
 
                 # Generate description with context
-                description = generate_description(
-                    context, image_data, figure_index=i, surrounding_text=surrounding_text
-                )
-                context.log.info(f"Generated contextual description for figure {i+1}")
+                # description = generate_description(
+                #     context, image_data, figure_index=i, surrounding_text=surrounding_text
+                # )
             except Exception as e:
                 context.log.error(f"Error processing image {i+1} for description: {str(e)}")
                 description = f"Figure {i+1}"
@@ -237,10 +237,8 @@ def inject_figures(
         figures_replaced += 1
 
     # Update the document content
-    document.content = updated_content
-    context.log.info(
-        f"Updated document content with {figures_replaced} markdown image tags with contextual descriptions."
-    )
+    document.set_content(updated_content)
+    context.log.info(f"Updated document content with {figures_replaced} markdown image with contextual descriptions.")
 
     return document
 

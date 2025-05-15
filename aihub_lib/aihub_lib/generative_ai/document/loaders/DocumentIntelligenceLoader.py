@@ -39,7 +39,6 @@ class DocumentIntelligenceLoader(BaseReader):
 
         metadata = {
             "number_of_pages": len(result.pages),
-            "figure_count": len(result.figures),
             "operation_id": operation_id,
             "figure_ids": figure_ids,
         }
