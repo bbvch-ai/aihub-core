@@ -50,7 +50,7 @@ async def main():
     runner.mount(
         HealthController().get_health(),
         SuiteController(auth=auth).get_suite(),
-        UserController(auth=auth).get_my_user().get_my_dashboard_settings().update_my_dashboard_settings(),
+        UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
         EventController(auth=auth).ws().get_events().get_event_timeseries(),
         ThreadController(auth=auth)

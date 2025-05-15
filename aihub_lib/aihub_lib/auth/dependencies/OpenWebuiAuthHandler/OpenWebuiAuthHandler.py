@@ -29,11 +29,6 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         self.config = OAuth2Config()
         self.app_client_id_for_roles: Optional[str] = self.config.CLIENT_ID
 
-        if not self.app_client_id_for_roles:
-            raise ValueError(
-                "AzureUserInformationProvider: CRITICAL: CLIENT_ID is not configured. App-specific roles cannot be determined."
-            )
-
     async def __call__(
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> AuthenticatedUser:

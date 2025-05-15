@@ -63,8 +63,8 @@ class UserService:
     async def get_user_by_oid(user_oid: str) -> UserDTO:
         """
         Retrieve user info by OID (id, name, email, profile_image) as a UserDTO.
-        It first checks a db cache (UserEntity). If recent and essential data is present,
-        it's returned from the cache. Otherwise, it fetches from the identity provider,
+        It first checks a db (UserEntity). If recent and essential data is present,
+        it's returned from the db. Otherwise, it fetches from the identity provider,
         ensures the UserEntity is created/updated (including roles and defaults for new users),
         and then returns basic info as a UserDTO.
         """
@@ -94,7 +94,7 @@ class UserService:
         return UserDTO.from_user_identity(user_identity)
 
     @staticmethod
-    def get_user_dashboard_settings(user: AuthenticatedUser) -> Optional[DashboardDTO]:
+    def get_user_dashboard(user: AuthenticatedUser) -> Optional[DashboardDTO]:
         """
         Retrieves the dashboard settings for the given authenticated user.
         """
@@ -109,7 +109,7 @@ class UserService:
         return None
 
     @staticmethod
-    async def update_user_dashboard_settings(user: AuthenticatedUser, dashboard_dto: DashboardDTO) -> None:
+    async def update_user_dashboard(user: AuthenticatedUser, dashboard_dto: DashboardDTO) -> None:
         """
         Updates or creates the dashboard settings for the given authenticated user.
         """

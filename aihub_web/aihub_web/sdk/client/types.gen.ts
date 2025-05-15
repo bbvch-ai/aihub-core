@@ -812,58 +812,58 @@ export type CreateTokenResponse = {
 
 export type DashboardDto = {
     /**
-     * Minimum number of rows in the grid, corresponds to MongoEngine's minRow field.
+     * Minimum number of rows in the grid.
      */
     minRow?: number | null;
     /**
-     * Gap between grid items in pixels, corresponds to MongoEngine's margin field.
+     * Gap between grid items in pixels.
      */
     margin?: number | null;
     /**
-     * Number of columns in the grid, corresponds to MongoEngine's column field.
+     * Number of columns in the grid.
      */
     column?: number | null;
     /**
-     * Height of one cell in pixels, corresponds to MongoEngine's cellHeight field.
+     * Height of one cell in pixels.
      */
     cellHeight?: number | null;
     /**
-     * List of widgets (dashboard items) within the grid, corresponds to MongoEngine's children field.
+     * List of widgets (dashboard items) within the grid.
      */
     children?: Array<DashboardItemDto>;
 };
 
 export type DashboardItemDto = {
     /**
-     * Unique identifier for the dashboard widget, corresponds to MongoEngine's id field.
+     * Unique identifier for the dashboard widget.
      */
     id: string;
     /**
-     * Specifies the component to render for this widget, corresponds to MongoEngine's component field.
+     * Specifies the component to render for this widget.
      */
     component: string;
     /**
-     * The x-coordinate of the widget in the grid, corresponds to MongoEngine's x field.
+     * The x-coordinate of the widget in the grid.
      */
     x: number;
     /**
-     * The y-coordinate of the widget in the grid, corresponds to MongoEngine's y field.
+     * The y-coordinate of the widget in the grid.
      */
     y: number;
     /**
-     * Width of the widget in grid column units, corresponds to MongoEngine's w field.
+     * Width of the widget in grid column units.
      */
     w?: number | null;
     /**
-     * If true, the widget cannot be resized, corresponds to MongoEngine's noResize field.
+     * If true, the widget cannot be resized.
      */
     noResize?: boolean | null;
     /**
-     * Time range for the data displayed in the widget, corresponds to MongoEngine's timeRange field.
+     * Time range for the data displayed in the widget.
      */
     timeRange?: string | null;
     /**
-     * The type of event data the widget displays, corresponds to MongoEngine's event field.
+     * The type of event data the widget displays.
      */
     event?: string | null;
 };
@@ -3286,46 +3286,46 @@ export type GetMyUserResponses = {
 
 export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
 
-export type GetMyDashboardSettingsData = {
+export type GetMyDashboardData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/user/dashboard';
 };
 
-export type GetMyDashboardSettingsResponses = {
+export type GetMyDashboardResponses = {
     /**
      * Successful Response
      */
     200: DashboardDto | null;
 };
 
-export type GetMyDashboardSettingsResponse = GetMyDashboardSettingsResponses[keyof GetMyDashboardSettingsResponses];
+export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboardResponses];
 
-export type UpdateMyDashboardSettingsData = {
+export type UpdateMyDashboardData = {
     body: DashboardDto;
     path?: never;
     query?: never;
     url: '/user/dashboard';
 };
 
-export type UpdateMyDashboardSettingsErrors = {
+export type UpdateMyDashboardErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type UpdateMyDashboardSettingsError = UpdateMyDashboardSettingsErrors[keyof UpdateMyDashboardSettingsErrors];
+export type UpdateMyDashboardError = UpdateMyDashboardErrors[keyof UpdateMyDashboardErrors];
 
-export type UpdateMyDashboardSettingsResponses = {
+export type UpdateMyDashboardResponses = {
     /**
      * Successful Response
      */
     204: void;
 };
 
-export type UpdateMyDashboardSettingsResponse = UpdateMyDashboardSettingsResponses[keyof UpdateMyDashboardSettingsResponses];
+export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
 
 export type GetLocaleData = {
     body?: never;

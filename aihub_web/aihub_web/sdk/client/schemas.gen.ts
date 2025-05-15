@@ -2399,7 +2399,7 @@ export const DashboardDTOSchema = {
                 }
             ],
             title: 'Minrow',
-            description: "Minimum number of rows in the grid, corresponds to MongoEngine's minRow field."
+            description: 'Minimum number of rows in the grid.'
         },
         margin: {
             anyOf: [
@@ -2411,7 +2411,7 @@ export const DashboardDTOSchema = {
                 }
             ],
             title: 'Margin',
-            description: "Gap between grid items in pixels, corresponds to MongoEngine's margin field."
+            description: 'Gap between grid items in pixels.'
         },
         column: {
             anyOf: [
@@ -2423,7 +2423,7 @@ export const DashboardDTOSchema = {
                 }
             ],
             title: 'Column',
-            description: "Number of columns in the grid, corresponds to MongoEngine's column field."
+            description: 'Number of columns in the grid.'
         },
         cellHeight: {
             anyOf: [
@@ -2435,7 +2435,7 @@ export const DashboardDTOSchema = {
                 }
             ],
             title: 'Cellheight',
-            description: "Height of one cell in pixels, corresponds to MongoEngine's cellHeight field."
+            description: 'Height of one cell in pixels.'
         },
         children: {
             items: {
@@ -2443,7 +2443,7 @@ export const DashboardDTOSchema = {
             },
             type: 'array',
             title: 'Children',
-            description: "List of widgets (dashboard items) within the grid, corresponds to MongoEngine's children field."
+            description: 'List of widgets (dashboard items) within the grid.'
         }
     },
     type: 'object',
@@ -2455,22 +2455,22 @@ export const DashboardItemDTOSchema = {
         id: {
             type: 'string',
             title: 'Id',
-            description: "Unique identifier for the dashboard widget, corresponds to MongoEngine's id field."
+            description: 'Unique identifier for the dashboard widget.'
         },
         component: {
             type: 'string',
             title: 'Component',
-            description: "Specifies the component to render for this widget, corresponds to MongoEngine's component field."
+            description: 'Specifies the component to render for this widget.'
         },
         x: {
             type: 'integer',
             title: 'X',
-            description: "The x-coordinate of the widget in the grid, corresponds to MongoEngine's x field."
+            description: 'The x-coordinate of the widget in the grid.'
         },
         y: {
             type: 'integer',
             title: 'Y',
-            description: "The y-coordinate of the widget in the grid, corresponds to MongoEngine's y field."
+            description: 'The y-coordinate of the widget in the grid.'
         },
         w: {
             anyOf: [
@@ -2482,7 +2482,7 @@ export const DashboardItemDTOSchema = {
                 }
             ],
             title: 'W',
-            description: "Width of the widget in grid column units, corresponds to MongoEngine's w field."
+            description: 'Width of the widget in grid column units.'
         },
         noResize: {
             anyOf: [
@@ -2494,7 +2494,7 @@ export const DashboardItemDTOSchema = {
                 }
             ],
             title: 'Noresize',
-            description: "If true, the widget cannot be resized, corresponds to MongoEngine's noResize field."
+            description: 'If true, the widget cannot be resized.'
         },
         timeRange: {
             anyOf: [
@@ -2506,7 +2506,7 @@ export const DashboardItemDTOSchema = {
                 }
             ],
             title: 'Timerange',
-            description: "Time range for the data displayed in the widget, corresponds to MongoEngine's timeRange field."
+            description: 'Time range for the data displayed in the widget.'
         },
         event: {
             anyOf: [
@@ -2518,7 +2518,7 @@ export const DashboardItemDTOSchema = {
                 }
             ],
             title: 'Event',
-            description: "The type of event data the widget displays, corresponds to MongoEngine's event field."
+            description: 'The type of event data the widget displays.'
         }
     },
     type: 'object',

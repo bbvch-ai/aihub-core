@@ -36,10 +36,8 @@ class BearerToken(Document):
 
         try:
             # Lookup the token document using the organization-specific DB
-            print("Token with oid", oid)
             token_obj = cls.objects.get(id=ObjectId(oid))
         except DoesNotExist:
-            print("Token with oid does not exist", oid)
             raise ValueError("Token not found")
 
         # Check that the token string exactly matches the stored token

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional  # Removed Dict as it's not used directly now
+from typing import Optional
 
 from aihub_lib.auth.azure_graph.AzureGraphService import AzureGraphService
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
@@ -21,11 +21,6 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         self.config = OAuth2Config()
         self.app_client_id_for_roles: Optional[str] = self.config.CLIENT_ID
 
-        if not self.app_client_id_for_roles:
-            raise ValueError(
-                "AzureUserInformationProvider: CRITICAL: CLIENT_ID is not configured. App-specific roles cannot be determined."
-            )
-
     async def get_user_info_by_oid(self, oid: str) -> UserIdentity:
         """
         Acquires a token and retrieves user data (profile, image, app-specific roles) by OID.
@@ -41,9 +36,7 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         profile = user_app_details.get("profile")
 
         if not profile:
-            raise ValueError(
-                f"AzureUserInformationProvider: No profile found for OID: {oid}. Returning default identity."
-            )
+            raise ValueError(f"AzureUserInformationProvider: No profile found for OID: {oid}.")
 
         profile_id = profile.get("id")
         name = profile.get("displayName")
@@ -52,9 +45,7 @@ class AzureUserInformationProvider(BaseUserInformationProvider):
         roles = user_app_details.get("app_roles", [])
 
         if not all([profile_id, name, email]):
-            raise ValueError(
-                f"AzureUserInformationProvider: Missing profile data for OID: {oid}. Returning default identity."
-            )
+            raise ValueError(f"AzureUserInformationProvider: Missing profile data for OID: {oid}.")
 
         return UserIdentity(
             id=profile_id,
