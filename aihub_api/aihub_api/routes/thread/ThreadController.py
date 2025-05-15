@@ -83,7 +83,9 @@ class ThreadController(Controller):
             """
             Returns all threads that the authenticated user is a member of.
             """
-            total, threads = await ThreadService.get_paginated_threads_for_user(user.oid, t, page=page, page_size=page_size)
+            total, threads = await ThreadService.get_paginated_threads_for_user(
+                user.oid, t, page=page, page_size=page_size
+            )
 
             total_pages = (total + page_size - 1) // page_size
 

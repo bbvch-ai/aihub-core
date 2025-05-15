@@ -1,4 +1,3 @@
-import logging
 
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
 from aihub_api.auth.identity.UserIdentity import UserIdentity

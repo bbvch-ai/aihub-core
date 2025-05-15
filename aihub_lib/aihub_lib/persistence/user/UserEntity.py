@@ -1,8 +1,19 @@
-from typing import Optional, List
 from datetime import datetime, timezone
+from typing import List, Optional
 from uuid import uuid4
 
-from mongoengine import Document, ListField, StringField, EmbeddedDocument, IntField, BooleanField, EmbeddedDocumentField, DateTimeField, DoesNotExist
+from mongoengine import (
+    BooleanField,
+    DateTimeField,
+    Document,
+    DoesNotExist,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    IntField,
+    ListField,
+    StringField,
+)
+
 
 class DashboardItem(EmbeddedDocument):
     id = StringField(required=True)
@@ -15,6 +26,7 @@ class DashboardItem(EmbeddedDocument):
     y = IntField(required=True)
     meta = {"strict": False}
 
+
 class Dashboard(EmbeddedDocument):
     minRow = IntField()
     margin = IntField()
@@ -22,7 +34,6 @@ class Dashboard(EmbeddedDocument):
     cellHeight = IntField()
     children = ListField(EmbeddedDocumentField(DashboardItem))
     meta = {"strict": False}
-
 
 
 class UserEntity(Document):
@@ -55,7 +66,7 @@ class UserEntity(Document):
                     event="StartEvent",
                     x=0,
                     y=0,
-                    w=1
+                    w=1,
                 ),
                 DashboardItem(
                     id=str(uuid4()),
@@ -65,7 +76,7 @@ class UserEntity(Document):
                     event="StartEvent",
                     x=1,
                     y=0,
-                    w=2
+                    w=2,
                 ),
                 DashboardItem(
                     id=str(uuid4()),
@@ -75,13 +86,15 @@ class UserEntity(Document):
                     event="ExceptionEvent",
                     x=3,
                     y=0,
-                    w=1
+                    w=1,
                 ),
             ],
         )
 
     @classmethod
-    def create_user(cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None) -> "UserEntity":
+    def create_user(
+        cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None
+    ) -> "UserEntity":
         default_dashboard = cls._create_default_dashboard()
         user = cls(
             id=oid,
@@ -91,13 +104,15 @@ class UserEntity(Document):
             profile_image=profile_image,
             favorite_modules=[],
             dashboard=default_dashboard,
-            last_updated=datetime.now(timezone.utc)
+            last_updated=datetime.now(timezone.utc),
         )
         user.save()
         return user
 
     @classmethod
-    def ensure_user_exists(cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None) -> "UserEntity":
+    def ensure_user_exists(
+        cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None
+    ) -> "UserEntity":
         try:
             user = cls.objects.get(id=oid)
             user.name = name

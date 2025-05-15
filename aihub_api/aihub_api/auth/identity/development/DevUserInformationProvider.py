@@ -1,7 +1,7 @@
-from aihub_api.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthConfig import NoAuthConfig
 
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
+from aihub_api.auth.identity.UserIdentity import UserIdentity
 
 
 class DevUserInformationProvider(BaseUserInformationProvider):

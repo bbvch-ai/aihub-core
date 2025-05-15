@@ -1,5 +1,5 @@
 <template>
-  <div class="pointer-events-none relative w-full	">
+  <div class="pointer-events-none relative w-full">
     <p class="pointer-events-none -mt-8 w-full text-center text-[12rem] font-medium opacity-70">
       {{ sum }}
     </p>
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import type { EventTimeseries } from '@core/sdk/client'
+import type { AgentDto, EventTimeseries } from '@core/sdk/client'
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 
 const props = defineProps<{

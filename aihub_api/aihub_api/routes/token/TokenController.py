@@ -62,7 +62,9 @@ class TokenController(Controller):
             description="Revokes (deletes) an API token for the authenticated user.",
             tags=self.tags,
         )
-        async def revoke_token_endpoint(token_id: str, user: AuthenticatedUser = Security(self.auth)) -> RevokeTokenResponse:
+        async def revoke_token_endpoint(
+            token_id: str, user: AuthenticatedUser = Security(self.auth)
+        ) -> RevokeTokenResponse:
             try:
                 TokenService.revoke_token(token_id, user)
                 return RevokeTokenResponse(detail="Token revoked successfully.")

@@ -10,9 +10,7 @@ from aihub_api.routes.token.dto.TokenResponse import TokenResponse
 
 class TokenService:
     @staticmethod
-    def create_token(
-        name: str, expiry_date: datetime, user: AuthenticatedUser
-    ) -> CreateTokenResponse:
+    def create_token(name: str, expiry_date: datetime, user: AuthenticatedUser) -> CreateTokenResponse:
         """
         Creates a new API token for the authenticated user.
         Returns token information including the generated token string.

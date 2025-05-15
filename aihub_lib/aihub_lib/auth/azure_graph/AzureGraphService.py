@@ -1,11 +1,13 @@
+import base64
 import logging
+from typing import Any, Dict, List, Optional
+
 import httpx
-from typing import Dict, List, Optional, Any
 from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCredential
 from cachetools import TTLCache
-import base64
 
 logger = logging.getLogger(__name__)
+
 
 class AzureGraphService:
     MS_GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
@@ -18,7 +20,6 @@ class AzureGraphService:
         self.service_principal_cache = TTLCache(maxsize=50, ttl=3600)
         self.app_role_assignments_cache = TTLCache(maxsize=100, ttl=600)
         self.user_app_details_cache = TTLCache(maxsize=128, ttl=600)
-
 
     async def get_token(self) -> str:
         logger.debug("AzureGraphService: Attempting to get token.")
@@ -52,7 +53,9 @@ class AzureGraphService:
             logger.warning(f"AzureGraphService: User not found for OID {user_oid} (404).")
             return None
         else:
-            logger.exception(f"AzureGraphService: Failed to fetch user {user_oid}. Status: {response.status_code}, Response: {response.text}")
+            logger.exception(
+                f"AzureGraphService: Failed to fetch user {user_oid}. Status: {response.status_code}, Response: {response.text}"
+            )
             return None
 
     async def get_user_by_email(self, email: str, access_token: str) -> Optional[Dict[str, Any]]:
@@ -77,9 +80,10 @@ class AzureGraphService:
                 logger.warning(f"AzureGraphService: No user found for email {email} in response value.")
                 return None
         else:
-            logger.exception(f"AzureGraphService: Failed to query user by email {email}. Status: {response.status_code}, Response: {response.text}")
+            logger.exception(
+                f"AzureGraphService: Failed to query user by email {email}. Status: {response.status_code}, Response: {response.text}"
+            )
             return None
-
 
     async def get_profile_image_data_url(self, user_oid: str, access_token: str) -> Optional[str]:
         cache_key = f"profile_image_{user_oid}"
@@ -103,7 +107,9 @@ class AzureGraphService:
             elif image_response.status_code == 404:
                 logger.debug(f"AzureGraphService: No profile image found for user OID {user_oid} (404).")
             else:
-                logger.warning(f"AzureGraphService: Failed to fetch profile image for {user_oid}. Status: {image_response.status_code}, Response: {image_response.text}")
+                logger.warning(
+                    f"AzureGraphService: Failed to fetch profile image for {user_oid}. Status: {image_response.status_code}, Response: {image_response.text}"
+                )
         except Exception as e:
             logger.error(f"AzureGraphService: Error fetching profile image for {user_oid}: {e}", exc_info=True)
 
@@ -132,21 +138,29 @@ class AzureGraphService:
                 self.service_principal_cache[cache_key] = None
                 return None
             sp_data = value[0]
-            logger.debug(f"AzureGraphService: SP data for app_id {app_id}: ID={sp_data.get('id')}, AppRoles: {len(sp_data.get('appRoles',[])) > 0}")
+            logger.debug(
+                f"AzureGraphService: SP data for app_id {app_id}: ID={sp_data.get('id')}, AppRoles: {len(sp_data.get('appRoles',[])) > 0}"
+            )
             self.service_principal_cache[cache_key] = sp_data
             return sp_data
         else:
-            logger.exception(f"AzureGraphService: Failed to fetch SP for appID {app_id}. Status: {response.status_code}, Response: {response.text}")
+            logger.exception(
+                f"AzureGraphService: Failed to fetch SP for appID {app_id}. Status: {response.status_code}, Response: {response.text}"
+            )
             self.service_principal_cache[cache_key] = None
             return None
 
-    async def _get_user_app_role_assignment_ids_for_sp(self, user_oid: str, target_resource_sp_id: str, access_token: str) -> List[str]:
+    async def _get_user_app_role_assignment_ids_for_sp(
+        self, user_oid: str, target_resource_sp_id: str, access_token: str
+    ) -> List[str]:
         cache_key = f"assignments_{user_oid}_for_sp_{target_resource_sp_id}"
         if cache_key in self.app_role_assignments_cache:
             logger.debug(f"AzureGraphService: Cache hit for assignments: {cache_key}")
             return self.app_role_assignments_cache[cache_key]
 
-        logger.debug(f"AzureGraphService: Getting assigned role IDs for user {user_oid} on target SP {target_resource_sp_id}.")
+        logger.debug(
+            f"AzureGraphService: Getting assigned role IDs for user {user_oid} on target SP {target_resource_sp_id}."
+        )
         assigned_role_ids = []
         assignments_url = (
             f"{self.MS_GRAPH_BASE_URL}/users/{user_oid}/appRoleAssignments"
@@ -159,12 +173,16 @@ class AzureGraphService:
             response = await client.get(assignments_url, headers=headers)
         if response.status_code == 200:
             assignments = response.json().get("value", [])
-            logger.debug(f"AzureGraphService: Raw assignments for user {user_oid} on target SP {target_resource_sp_id}: {assignments}")
+            logger.debug(
+                f"AzureGraphService: Raw assignments for user {user_oid} on target SP {target_resource_sp_id}: {assignments}"
+            )
             for assignment in assignments:
                 app_role_id = assignment.get("appRoleId")
                 if app_role_id:
                     assigned_role_ids.append(app_role_id)
-            logger.debug(f"AzureGraphService: Parsed assigned_role_ids for user {user_oid} on target SP {target_resource_sp_id}: {assigned_role_ids}")
+            logger.debug(
+                f"AzureGraphService: Parsed assigned_role_ids for user {user_oid} on target SP {target_resource_sp_id}: {assigned_role_ids}"
+            )
             self.app_role_assignments_cache[cache_key] = assigned_role_ids
             return assigned_role_ids
         else:
@@ -176,16 +194,18 @@ class AzureGraphService:
             return []
 
     async def get_user_details_for_app_context(
-            self,
-            user_oid: str,
-            app_client_id_for_roles: str,
+        self,
+        user_oid: str,
+        app_client_id_for_roles: str,
     ) -> Dict[str, Any]:
         cache_key = f"user_details_app_context_{user_oid}_for_app_{app_client_id_for_roles}"
         if cache_key in self.user_app_details_cache:
             logger.debug(f"AzureGraphService: Cache hit for user_details_app_context: {cache_key}")
             return self.user_app_details_cache[cache_key]
 
-        logger.info(f"AzureGraphService: Getting user details for OID {user_oid} in context of app client_id {app_client_id_for_roles}.")
+        logger.info(
+            f"AzureGraphService: Getting user details for OID {user_oid} in context of app client_id {app_client_id_for_roles}."
+        )
 
         access_token = await self.get_token()
 
@@ -200,12 +220,16 @@ class AzureGraphService:
             self.user_app_details_cache[cache_key] = details
             return details
 
-        logger.debug(f"AzureGraphService: Fetching SP for app client_id {app_client_id_for_roles} to get its role definitions.")
+        logger.debug(
+            f"AzureGraphService: Fetching SP for app client_id {app_client_id_for_roles} to get its role definitions."
+        )
         app_sp_data = await self._get_service_principal_by_app_id(app_client_id_for_roles, access_token)
 
         if app_sp_data and app_sp_data.get("id"):
             target_app_sp_id = app_sp_data["id"]
-            logger.debug(f"AzureGraphService: Target app SP ID is {target_app_sp_id}. App roles defined on SP: {app_sp_data.get('appRoles')}")
+            logger.debug(
+                f"AzureGraphService: Target app SP ID is {target_app_sp_id}. App roles defined on SP: {app_sp_data.get('appRoles')}"
+            )
 
             app_role_definitions: Dict[str, str] = {}
             for role_def in app_sp_data.get("appRoles", []):
@@ -215,28 +239,38 @@ class AzureGraphService:
                     if role_id and identifier:
                         app_role_definitions[role_id] = identifier
 
-            logger.debug(f"AzureGraphService: Enabled role definitions for app {app_client_id_for_roles} (SP {target_app_sp_id}): {app_role_definitions}")
+            logger.debug(
+                f"AzureGraphService: Enabled role definitions for app {app_client_id_for_roles} (SP {target_app_sp_id}): {app_role_definitions}"
+            )
 
             if not app_role_definitions:
-                logger.info(f"AzureGraphService: No enabled app roles defined for app {app_client_id_for_roles} (SP ID {target_app_sp_id}).")
+                logger.info(
+                    f"AzureGraphService: No enabled app roles defined for app {app_client_id_for_roles} (SP ID {target_app_sp_id})."
+                )
             else:
                 assigned_role_ids = await self._get_user_app_role_assignment_ids_for_sp(
-                    user_oid=user_oid,
-                    target_resource_sp_id=target_app_sp_id,
-                    access_token=access_token
+                    user_oid=user_oid, target_resource_sp_id=target_app_sp_id, access_token=access_token
                 )
-                logger.debug(f"AzureGraphService: Role IDs assigned to user {user_oid} for app SP {target_app_sp_id}: {assigned_role_ids}")
+                logger.debug(
+                    f"AzureGraphService: Role IDs assigned to user {user_oid} for app SP {target_app_sp_id}: {assigned_role_ids}"
+                )
 
                 for role_id in assigned_role_ids:
                     role_name = app_role_definitions.get(role_id)
                     if role_name:
                         app_roles_for_user.append(role_name)
                     else:
-                        logger.warning(f"AzureGraphService: Assigned role_id {role_id} for user {user_oid} on app SP {target_app_sp_id} not found in app's role definitions or was disabled.")
+                        logger.warning(
+                            f"AzureGraphService: Assigned role_id {role_id} for user {user_oid} on app SP {target_app_sp_id} not found in app's role definitions or was disabled."
+                        )
         else:
-            logger.warning(f"AzureGraphService: Could not find Service Principal for app client_id {app_client_id_for_roles}. Cannot determine app-specific roles.")
+            logger.warning(
+                f"AzureGraphService: Could not find Service Principal for app client_id {app_client_id_for_roles}. Cannot determine app-specific roles."
+            )
 
-        logger.info(f"AzureGraphService: Final app_roles for user {user_oid} in context of app {app_client_id_for_roles}: {app_roles_for_user}")
+        logger.info(
+            f"AzureGraphService: Final app_roles for user {user_oid} in context of app {app_client_id_for_roles}: {app_roles_for_user}"
+        )
 
         details = {
             "profile": user_profile,

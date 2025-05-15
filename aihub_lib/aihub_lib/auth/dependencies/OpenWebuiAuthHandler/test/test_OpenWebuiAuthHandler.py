@@ -12,7 +12,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.BearerToken import ApiUser, BearerToken
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- MongoDB Connection Fixture ---
@@ -51,7 +51,7 @@ class MockCredential:
 def mock_azure_credential(monkeypatch):
     """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
     monkeypatch.setattr(
-        "aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler.DefaultAzureCredential",
+        "aihub_lib.auth.azure_graph.AzureGraphService.AsyncDefaultAzureCredential",
         lambda: MockCredential(),
     )
 
@@ -130,18 +130,24 @@ def insert_token_document(
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
-    api_user = ApiUser(
-        oid=user_oid,
-        name=name,
-        preferred_username=email,
+
+    user = AuthenticatedUser(
+        oid=str(ObjectId()),
+        name="User Name",
+        preferred_username="user@example.ch",
         roles=roles_list,
+    )
+    UserEntity.ensure_user_exists(
+        oid=user.oid,
+        name=user.name,
+        email=user.preferred_username,
+        roles=user.roles,
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
         name="token-name",
         expiry_date=expiry,
-        user=api_user,
-        roles=roles_list,
+        user_oid=user_oid,
     )
     token_context["token_str"] = token_doc.token
     token_context["expected_user_oid"] = user_oid

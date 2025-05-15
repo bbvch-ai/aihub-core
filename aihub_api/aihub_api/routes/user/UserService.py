@@ -1,18 +1,17 @@
-from typing import Optional
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
-from mongoengine import DoesNotExist
-
-from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
+from mongoengine import DoesNotExist
 
 from aihub_api.auth.identity.api.ApiTokenUserInformationProvider import ApiTokenUserInformationProvider
 from aihub_api.auth.identity.azure.AzureUserInformationProvider import AzureUserInformationProvider
 from aihub_api.auth.identity.development.DevUserInformationProvider import DevUserInformationProvider
 from aihub_api.auth.identity.MultiStrategyUserInformationProvider import MultiStrategyUserInformationProvider
+from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
-from aihub_lib.persistence.user.UserEntity import UserEntity, Dashboard, DashboardItem
 
 
 class UserService:
@@ -57,7 +56,7 @@ class UserService:
             profile_image=user_entity.profile_image,
             dashboard=dashboard_dto,
             favorite_modules=user_entity.favorite_modules,
-            roles=user_entity.roles
+            roles=user_entity.roles,
         )
 
     @staticmethod
@@ -89,7 +88,7 @@ class UserService:
             name=user_identity.name,
             email=user_identity.email,
             roles=user_identity.roles,
-            profile_image=user_identity.profile_image
+            profile_image=user_identity.profile_image,
         )
 
         return UserDTO.from_user_identity(user_identity)
@@ -123,12 +122,12 @@ class UserService:
                 name=user_identity.name,
                 email=user_identity.email,
                 roles=user_identity.roles,
-                profile_image=user_identity.profile_image
+                profile_image=user_identity.profile_image,
             )
 
         dashboard_data_dict = dashboard_dto.model_dump()
 
-        children_data = dashboard_data_dict.pop('children', [])
+        children_data = dashboard_data_dict.pop("children", [])
         dashboard_items = []
         if children_data:
             for item_data in children_data:
@@ -136,4 +135,3 @@ class UserService:
 
         user_entity.dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
         user_entity.save()
-

@@ -89,7 +89,9 @@ class ThreadService:
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_user(user_id)
         threads = ThreadEntity.get_paginated_threads_by_user(user_id, skip=skip, limit=page_size)
-        thread_dtos = await asyncio.gather(*(ThreadService.thread_response_from_entity(thread, t) for thread in threads))
+        thread_dtos = await asyncio.gather(
+            *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
+        )
         return total, thread_dtos
 
     @staticmethod
@@ -102,7 +104,9 @@ class ThreadService:
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
         threads = ThreadEntity.get_paginated_threads_by_agent(agent_class, agent_id, skip=skip, limit=page_size)
-        thread_dtos = await asyncio.gather(*(ThreadService.thread_response_from_entity(thread, t) for thread in threads))
+        thread_dtos = await asyncio.gather(
+            *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
+        )
         return total, thread_dtos
 
     @staticmethod

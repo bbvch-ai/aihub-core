@@ -32,7 +32,7 @@ import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 import VueApexChart from 'vue3-apexcharts'
 
-import type { EventTimeseries, EventBucket, AgentDto } from '@core/sdk/client'
+import type { EventTimeseries, EventBucket } from '@core/sdk/client'
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 import type { ApexOptions } from 'apexcharts'
 

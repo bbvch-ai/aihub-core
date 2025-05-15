@@ -253,7 +253,9 @@ class OpenaiService:
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = await OpenaiService._reconstruct_history(chat_completion_request, thread_id)
+            chat_completion_request.messages = await OpenaiService._reconstruct_history(
+                chat_completion_request, thread_id
+            )
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -310,7 +312,9 @@ class OpenaiService:
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = await OpenaiService._reconstruct_history(chat_completion_request, thread_id)
+            chat_completion_request.messages = await OpenaiService._reconstruct_history(
+                chat_completion_request, thread_id
+            )
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,

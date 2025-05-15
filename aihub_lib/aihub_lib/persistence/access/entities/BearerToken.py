@@ -3,14 +3,8 @@ import secrets
 from datetime import datetime, timezone
 
 from bson import ObjectId
-from mongoengine import (
-    DateTimeField,
-    Document,
-    IntField,
-    StringField,
-)
+from mongoengine import DateTimeField, Document, IntField, StringField
 from mongoengine.errors import DoesNotExist
-
 
 
 class BearerToken(Document):

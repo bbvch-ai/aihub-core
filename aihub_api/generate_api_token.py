@@ -9,24 +9,31 @@ from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
+
 def get_azure_cli_user_info():
     """Fetches user information using Azure CLI."""
     try:
         oid_process = subprocess.run(
             ["az", "ad", "signed-in-user", "show", "--query", "id", "-o", "tsv"],
-            capture_output=True, text=True, check=True
+            capture_output=True,
+            text=True,
+            check=True,
         )
         user_oid = oid_process.stdout.strip()
 
         name_process = subprocess.run(
             ["az", "ad", "signed-in-user", "show", "--query", "displayName", "-o", "tsv"],
-            capture_output=True, text=True, check=True
+            capture_output=True,
+            text=True,
+            check=True,
         )
         user_name_cli = name_process.stdout.strip()
 
         preferred_username_process = subprocess.run(
             ["az", "ad", "signed-in-user", "show", "--query", "userPrincipalName", "-o", "tsv"],
-            capture_output=True, text=True, check=True
+            capture_output=True,
+            text=True,
+            check=True,
         )
         user_preferred_username = preferred_username_process.stdout.strip()
 
