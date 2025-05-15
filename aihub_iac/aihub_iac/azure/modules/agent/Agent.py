@@ -188,8 +188,8 @@ class Agent(pulumi.ComponentResource):
 
         for key, value in self.config.additional_env_vars.items():
             if isinstance(value, dict) and "secret_ref" in value:
-                env_vars.append(containerinstance.EnvironmentVarArgs(name=key, secret_ref=value["secret_ref"]))
+                env_vars.append(containerinstance.EnvironmentVariableArgs(name=key, secret_ref=value["secret_ref"]))
             else:
-                env_vars.append(containerinstance.EnvironmentVarArgs(name=key, value=value))
+                env_vars.append(containerinstance.EnvironmentVariableArgs(name=key, value=value))
 
         return env_vars
