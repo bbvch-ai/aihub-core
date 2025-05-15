@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class DocumentIntelligenceConfig(BaseSettings):
     DOCUMENTINTELLIGENCE_ENDPOINT: Optional[str] = Field(None, pattern=r"^https://.*\.cognitiveservices\.azure\.com/$")
     DOCUMENTINTELLIGENCE_API_KEY: Optional[str] = Field(None, description="API key for Document Intelligence")
-    DOCUMENTINTELLIGENCE_API_VERSION: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}(-preview)?$")
+    DOCUMENTINTELLIGENCE_API_VERSION: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}(-preview)?$")
     DOCUMENTINTELLIGENCE_RESOURCE_GROUP_NAME: Optional[str] = Field(
         None, description="Resource Group Name of the Document Intelligence"
     )

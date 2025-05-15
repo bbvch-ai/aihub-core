@@ -1,5 +1,3 @@
-from typing import Optional
-
 from adlfs import AzureBlobFileSystem
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient
@@ -14,8 +12,6 @@ class DataLakeAccess:
     _app = None
     _storage_service_name = None
     _service_endpoint = None
-    _credential = None
-    _cached_fs_client: Optional[AzureBlobFileSystem] = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -31,20 +27,27 @@ class DataLakeAccess:
             DataLakeConfig().DATA_LAKE_ENDPOINT or f"https://{self._storage_service_name}.dfs.core.windows.net"
         )
 
-        self._credential = DefaultAzureCredential()
-        self.datalake_client = DataLakeServiceClient(
-            account_url=self._service_endpoint,
-            credential=self._credential,
-        )
-        self._cached_fs_client = None
+        # Try to use the storage account key if available, otherwise fall back to DefaultAzureCredential
+        account_key = DataLakeConfig().DATA_LAKE_ACCOUNT_KEY
+        if account_key:
+            self.datalake_client = DataLakeServiceClient(
+                account_url=self._service_endpoint,
+                credential=account_key,
+            )
+            self.file_system = AzureBlobFileSystem(account_name=self._storage_service_name, account_key=account_key)
+        else:
+            credential = DefaultAzureCredential()
+            self.datalake_client = DataLakeServiceClient(
+                account_url=self._service_endpoint,
+                credential=credential,
+            )
+            self.file_system = AzureBlobFileSystem(account_name=self._storage_service_name, credential=credential)
 
     def get_client(self) -> DataLakeServiceClient:
         return self.datalake_client
 
     def get_fs_client(self) -> AzureBlobFileSystem:
-        if self._cached_fs_client is None:
-            self._cached_fs_client = AzureBlobFileSystem(account_name=self._storage_service_name)
-        return self._cached_fs_client
+        return self.file_system
 
     def get_storage_account_name(self) -> str:
         return self._storage_service_name
