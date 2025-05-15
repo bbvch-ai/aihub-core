@@ -75,6 +75,16 @@ def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
         print("Failed to retrieve appId from app registration creation output.")
         sys.exit(1)
     print(f"Created Azure AD app with appId: {app_id}")
+
+    # Create a service principal for the app
+    # fmt: off
+    cmd = [
+        "az", "ad", "sp", "create",
+        "--id", app_id,
+    ]
+    # fmt: on
+    run_command(cmd)
+    print(f"Created service principal for Azure AD app with appId: {app_id}")
     return app_id
 
 

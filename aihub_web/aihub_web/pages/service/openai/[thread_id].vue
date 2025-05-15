@@ -13,7 +13,7 @@
       :thread="thread"
     />
     <Divider />
-    <EventList
+    <ThreadDetails
       :events="threadEvents"
       :thread="thread"
     />
