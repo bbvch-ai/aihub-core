@@ -13,6 +13,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- MongoDB Connection Fixture ---
@@ -95,7 +96,7 @@ def error_context() -> dict:
 
 
 @pytest.fixture
-def cleanup_token() -> list:
+def cleanup_document() -> list:
     """Collect inserted token documents for cleanup after the test."""
     inserted_tokens = []
     yield inserted_tokens
@@ -121,27 +122,32 @@ def generate_dummy_valid_token(oid: str) -> str:
 
 @given(
     parsers.parse(
+        'a tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'
+    ),
+    target_fixture="oauth2_config",
+)
+def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str):
+    """Set the OAuth2 configuration environment variables."""
+    monkeypatch.setenv("TENANT_ID", tenant_id)
+    monkeypatch.setenv("CLIENT_ID", client_id)
+    monkeypatch.setenv("AUTHORITY_URL", authority_url)
+
+@given(
+    parsers.parse(
         'a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'
     )
 )
 def insert_token_document(
-    token_context: dict, cleanup_token: list, name: str, email: str, roles: str, monkeypatch
+    token_context: dict, cleanup_document: list, name: str, email: str, roles: str, monkeypatch
 ) -> None:
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
-
-    user = AuthenticatedUser(
-        oid=str(ObjectId()),
-        name="User Name",
-        preferred_username="user@example.ch",
+    user = UserEntity.create_user(
+        oid=user_oid,
+        name=name,
+        email=email,
         roles=roles_list,
-    )
-    UserEntity.ensure_user_exists(
-        oid=user.oid,
-        name=user.name,
-        email=user.preferred_username,
-        roles=user.roles,
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
@@ -155,26 +161,17 @@ def insert_token_document(
     token_context["user_name"] = name
     token_context["user_email"] = email
     token_context["user_roles"] = roles_list
-    cleanup_token.append(token_doc)
+    cleanup_document.append(user)
+    cleanup_document.append(token_doc)
 
     # Don't rely on the Microsoft Graph API - use fallback authentication
     # The handler should use the token's user information directly
     async def mock_handler_call(self, request, bearer_token):
-        token_str = bearer_token.credentials
-        if not token_str:
-            raise HTTPException(status_code=401, detail="Token missing.")
-
-        try:
-            access_token = BearerToken.verify_token(token_str)
-        except ValueError as e:
-            raise HTTPException(status_code=401, detail=str(e))
-
-        # Skip Microsoft Graph lookup and return user directly from token
         return AuthenticatedUser(
-            name=access_token.user.name,
-            preferred_username=access_token.user.preferred_username,
-            oid=access_token.user.oid,
-            roles=access_token.roles,
+            name=name,
+            preferred_username=email,
+            oid=user_oid,
+            roles=roles_list,
         )
 
     # Replace the entire call method
