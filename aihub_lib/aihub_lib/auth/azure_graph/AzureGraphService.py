@@ -77,7 +77,7 @@ class AzureGraphService:
                         self.user_profile_cache[oid_cache_key] = user
                 return user
             else:
-                logger.warning(f"AzureGraphService: No user found for email {email} in response value.")
+                logger.warning(f"AzureGraphService: No user found for email.")
                 return None
         else:
             logger.exception(
