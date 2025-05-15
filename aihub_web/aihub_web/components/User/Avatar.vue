@@ -25,7 +25,3 @@ defineProps<{
   user: UserDto
 }>()
 </script>
-
-<style scoped>
-
-</style>

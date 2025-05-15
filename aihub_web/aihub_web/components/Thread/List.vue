@@ -125,7 +125,3 @@ const initials = (user: UserDto) => user.name?.split(' ').map(n => n[0]).join(''
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
 const { pendingType } = useThreadUtils()
 </script>
-
-<style scoped>
-
-</style>

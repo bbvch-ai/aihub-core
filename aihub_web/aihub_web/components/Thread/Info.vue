@@ -39,7 +39,3 @@ const props = defineProps<{
 const users = computed<UserDto[]>(() => props.thread.users ?? [])
 const agents = computed<AgentDto[]>(() => props.thread.agents ?? [])
 </script>
-
-<style scoped>
-
-</style>

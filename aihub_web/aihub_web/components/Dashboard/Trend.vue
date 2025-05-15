@@ -25,7 +25,3 @@ const props = defineProps<{
 
 const { isTrendingUp } = useEventTimeseriesStats(props.timeseries)
 </script>
-
-<style scoped>
-
-</style>

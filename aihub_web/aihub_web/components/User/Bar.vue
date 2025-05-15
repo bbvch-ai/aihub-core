@@ -66,7 +66,3 @@ function toggleDarkMode() {
   isDark.value = !isDark.value
 }
 </script>
-
-<style scoped>
-
-</style>

@@ -31,7 +31,3 @@ const toNavItem = (navItem: NavItem) => {
   router.push(localePath(navItem.path))
 }
 </script>
-
-<style scoped>
-
-</style>

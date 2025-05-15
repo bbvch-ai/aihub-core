@@ -55,7 +55,3 @@ const activeNavItem = computed<NavItem | undefined>(() => {
   return navItems.value?.filter(navItem => navItem.isActive())[0]
 })
 </script>
-
-<style scoped>
-
-</style>

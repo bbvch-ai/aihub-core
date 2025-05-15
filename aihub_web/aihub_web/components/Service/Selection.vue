@@ -111,7 +111,3 @@ const onEnter = (event: Event) => {
   }
 }
 </script>
-
-<style scoped>
-
-</style>

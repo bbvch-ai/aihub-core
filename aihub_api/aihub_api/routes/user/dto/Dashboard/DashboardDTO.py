@@ -11,15 +11,9 @@ class DashboardDTO(BaseModel):
         Optional[int],
         Field(description="Minimum number of rows in the grid."),
     ] = None
-    margin: Annotated[
-        Optional[int], Field(description="Gap between grid items in pixels.")
-    ] = None
-    column: Annotated[
-        Optional[int], Field(description="Number of columns in the grid.")
-    ] = None
-    cellHeight: Annotated[
-        Optional[int], Field(description="Height of one cell in pixels.")
-    ] = None
+    margin: Annotated[Optional[int], Field(description="Gap between grid items in pixels.")] = None
+    column: Annotated[Optional[int], Field(description="Number of columns in the grid.")] = None
+    cellHeight: Annotated[Optional[int], Field(description="Height of one cell in pixels.")] = None
     children: Annotated[
         List[DashboardItemDTO],
         Field(

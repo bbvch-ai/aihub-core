@@ -50,7 +50,3 @@ const navItems = computed<Record<string, NavItem[]>>(() => {
   return typeMap
 })
 </script>
-
-<style scoped>
-
-</style>

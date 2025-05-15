@@ -24,7 +24,3 @@ const toDisplay = (display: DisplayStatistics) => {
   router.push(localeRoute(`/admin/thread/${thread.value.id}/display/${display.display_id}`))
 }
 </script>
-
-<style scoped>
-
-</style>

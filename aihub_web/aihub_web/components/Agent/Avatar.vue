@@ -38,7 +38,3 @@ withDefaults(defineProps<{
   size: 'large',
 })
 </script>
-
-<style scoped>
-
-</style>

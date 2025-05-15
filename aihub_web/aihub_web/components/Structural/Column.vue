@@ -59,7 +59,3 @@ const close = () => {
   router.push(localePath(props.closeRoute))
 }
 </script>
-
-<style scoped>
-
-</style>

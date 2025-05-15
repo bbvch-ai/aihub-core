@@ -46,7 +46,3 @@ const agentName = computed<string>(() => {
   return agent.agent_config.name
 })
 </script>
-
-<style scoped>
-
-</style>

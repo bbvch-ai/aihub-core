@@ -54,7 +54,3 @@ const wrappedStartEvent = computed<WsServerEvent>(() => {
   }
 })
 </script>
-
-<style scoped>
-
-</style>
