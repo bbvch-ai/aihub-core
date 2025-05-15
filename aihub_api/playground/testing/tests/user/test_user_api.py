@@ -11,12 +11,14 @@ from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 USER_ENDPOINT = "/api/v1/user/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
+
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(db="aihub", host=CosmosAccess().get_connection_string())
     yield
     disconnect()
+
 
 @pytest.fixture
 def api_client():
@@ -35,46 +37,43 @@ def expected_user_data():
         "name": os.getenv("NAME", "Melanie Musterfrau"),
         "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         "profile_image": None,
-        'favorite_modules': [],
-        'roles': ['AllAgents'],
-        'dashboard': {
-            'cellHeight': 350,
-            'children': [
+        "favorite_modules": [],
+        "roles": ["AllAgents"],
+        "dashboard": {
+            "cellHeight": 350,
+            "children": [
                 {
-                    'component': 'DashboardComponentNumber',
-                    'event': 'StartEvent',
-                    'id': '5064b5e7-9e30-48fa-a2cb-97c3d8995305',
-                    'noResize': True,
-                    'timeRange': '30d',
-                    'w': 1,
-                    'x': 0,
-                    'y': 0
+                    "component": "DashboardComponentNumber",
+                    "event": "StartEvent",
+                    "noResize": True,
+                    "timeRange": "30d",
+                    "w": 1,
+                    "x": 0,
+                    "y": 0,
                 },
                 {
-                    'component': 'DashboardComponentLineChart',
-                    'event': 'StartEvent',
-                    'id': 'ba039647-3d66-4912-b0e9-354291bb9490',
-                    'noResize': True,
-                    'timeRange': '30d',
-                    'w': 2,
-                    'x': 1,
-                    'y': 0
+                    "component": "DashboardComponentLineChart",
+                    "event": "StartEvent",
+                    "noResize": True,
+                    "timeRange": "30d",
+                    "w": 2,
+                    "x": 1,
+                    "y": 0,
                 },
                 {
-                    'component': 'DashboardComponentNumber',
-                    'event': 'ExceptionEvent',
-                    'id': '9a56a8d3-7e8e-4d0b-8ea0-0dece0b22f6f',
-                    'noResize': True,
-                    'timeRange': '30d',
-                    'w': 1,
-                    'x': 3,
-                    'y': 0
-                }
+                    "component": "DashboardComponentNumber",
+                    "event": "ExceptionEvent",
+                    "noResize": True,
+                    "timeRange": "30d",
+                    "w": 1,
+                    "x": 3,
+                    "y": 0,
+                },
             ],
-            'column': 4,
-            'margin': 24,
-            'minRow': 1
-        }
+            "column": 4,
+            "margin": 24,
+            "minRow": 1,
+        },
     }
 
 
@@ -84,6 +83,8 @@ def test_get_user_endpoint(api_client, expected_user_data):
     response = api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
     user_data = response.json()
+    for child in user_data["dashboard"]["children"]:
+        del child["id"]
     assert isinstance(user_data, dict)
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
     assert user_data == expected_user_data

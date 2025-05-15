@@ -121,9 +121,7 @@ def generate_dummy_valid_token(oid: str) -> str:
 
 
 @given(
-    parsers.parse(
-        'a tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'
-    ),
+    parsers.parse('a tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'),
     target_fixture="oauth2_config",
 )
 def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str):
@@ -131,6 +129,7 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
     monkeypatch.setenv("TENANT_ID", tenant_id)
     monkeypatch.setenv("CLIENT_ID", client_id)
     monkeypatch.setenv("AUTHORITY_URL", authority_url)
+
 
 @given(
     parsers.parse(

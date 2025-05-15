@@ -22,12 +22,14 @@ USER_ENDPOINT = "/api/v1/user/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
 
+
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(db="aihub", host=CosmosAccess().get_connection_string())
     yield
     disconnect()
+
 
 @pytest.fixture(autouse=True)
 def oauth2_config(monkeypatch):
@@ -87,8 +89,8 @@ def expected_user_data():
         "name": "Melanie Musterfrau",
         "email": "melanie.musterfrau@bbv.ch",
         "profile_image": None,
-        'roles': ['AllAgents'],
-        'favorite_modules': [],
+        "roles": ["AllAgents"],
+        "favorite_modules": [],
     }
 
 
@@ -110,7 +112,7 @@ def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_token,
     response = oauth2_api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected 200 but got {response.status_code}: {response.text}"
     user_data = response.json()
-    del user_data['dashboard']
+    del user_data["dashboard"]
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
     assert user_data == expected_user_data
 

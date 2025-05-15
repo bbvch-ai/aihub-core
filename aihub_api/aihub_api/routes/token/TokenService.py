@@ -29,15 +29,11 @@ class TokenService:
         Lists all API tokens for the authenticated user.
         The token string is not included in the response.
         """
-        tokens = BearerToken.objects.filter(user__oid=user.oid)
+        tokens = BearerToken.objects.filter(user_oid=user.oid)
         token_list = []
         for token in tokens:
             token_list.append(
-                TokenResponse(
-                    id=str(token.id),
-                    name=token.name,
-                    expiry_date=token.expiry_date,
-                )
+                TokenResponse(id=str(token.id), name=token.name, expiry_date=token.expiry_date, roles=user.roles)
             )
         return token_list
 
@@ -46,5 +42,5 @@ class TokenService:
         """
         Revokes (deletes) an API token if it belongs to the authenticated user.
         """
-        token = BearerToken.objects.get(id=token_id, user__oid=user.oid)
+        token = BearerToken.objects.get(id=token_id, user_oid=user.oid)
         token.delete()

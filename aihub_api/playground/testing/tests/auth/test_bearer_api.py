@@ -34,11 +34,7 @@ def valid_token(mongo_db):
         roles=["AllAgents"],
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
-    token_obj = BearerToken.create_new_token(
-        name="token-name",
-        expiry_date=expiry,
-        user_oid=user.id
-    )
+    token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
     yield token_obj.token
     user.delete()
     token_obj.delete()
@@ -52,8 +48,8 @@ def expected_user_data():
         "name": os.getenv("NAME", "Melanie Musterfrau"),
         "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         "profile_image": None,
-        'roles': ['AllAgents'],
-        'favorite_modules': [],
+        "roles": ["AllAgents"],
+        "favorite_modules": [],
     }
 
 
@@ -75,7 +71,7 @@ def test_get_user_with_valid_token(token_api_client, valid_token, expected_user_
     response = token_api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected 200 but got {response.status_code}: {response.text}"
     user_data = response.json()
-    del user_data['dashboard'] # Dashbaord has seperate tests
+    del user_data["dashboard"]  # Dashbaord has seperate tests
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
     assert user_data == expected_user_data
 
