@@ -2526,6 +2526,27 @@ export const DashboardItemDTOSchema = {
     title: 'DashboardItemDTO'
 } as const;
 
+export const DatabaseDTOSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of database'
+        },
+        namespaces: {
+            items: {
+                '$ref': '#/components/schemas/Namespace'
+            },
+            type: 'array',
+            title: 'Namespaces',
+            description: 'List of namespaces'
+        }
+    },
+    type: 'object',
+    required: ['name', 'namespaces'],
+    title: 'DatabaseDTO'
+} as const;
+
 export const DisplayEventSchema = {
     properties: {
         event_id: {
@@ -2776,7 +2797,7 @@ export const DocumentDTOSchema = {
         title: {
             type: 'string',
             title: 'Title',
-            description: 'Docuemnt title.'
+            description: 'Document title.'
         },
         number_of_pages: {
             type: 'integer',
@@ -5259,6 +5280,11 @@ export const MyUserDTOSchema = {
 
 export const NamespaceSchema = {
     properties: {
+        database: {
+            type: 'string',
+            title: 'Database',
+            description: 'Name of database that the namespace belongs to'
+        },
         name: {
             type: 'string',
             title: 'Name',
@@ -5268,11 +5294,223 @@ export const NamespaceSchema = {
             type: 'integer',
             title: 'Number Of Documents',
             description: 'Number of documents in namespace'
+        },
+        last_updated_at: {
+            type: 'integer',
+            title: 'Last Updated At',
+            description: 'Latest timestamp when any document in the namespace was updated'
+        },
+        last_inserted_at: {
+            type: 'integer',
+            title: 'Last Inserted At',
+            description: 'Latest timestamp when any document in the namespace was inserted'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Oldest timestamp when any document in the namespace was created'
+        },
+        document_types: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Document Types',
+            description: 'Set of all document types in the namespace'
         }
     },
     type: 'object',
-    required: ['name', 'number_of_documents'],
+    required: ['database', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at', 'document_types'],
     title: 'Namespace'
+} as const;
+
+export const NodeDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the Node.'
+        },
+        text: {
+            type: 'string',
+            title: 'Text',
+            description: 'The textual content of the Node.'
+        },
+        start_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Char Idx',
+            description: 'The start character index of the Node.'
+        },
+        end_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Char Idx',
+            description: 'The end character index of the Node.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        content_type: {
+            type: 'string',
+            enum: ['content', 'summary'],
+            title: 'Content Type',
+            description: 'Content type (content or summary).'
+        },
+        title: {
+            type: 'string',
+            title: 'Title',
+            description: 'Document title.'
+        },
+        language: {
+            type: 'string',
+            enum: ['de', 'en', 'fr', 'it'],
+            title: 'Language',
+            description: 'Node language.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Node version.'
+        },
+        index: {
+            type: 'integer',
+            title: 'Index',
+            description: 'Index counting position of node in document'
+        },
+        section_start_line: {
+            type: 'integer',
+            title: 'Section Start Line',
+            description: 'Start line of the node in document'
+        },
+        section_end_line: {
+            type: 'integer',
+            title: 'Section End Line',
+            description: 'End line of the node in document'
+        },
+        h1: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H1',
+            description: 'H1 of the node in document'
+        },
+        h2: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H2',
+            description: 'H2 of the node in document'
+        },
+        h3: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H3',
+            description: 'H3 of the node in document'
+        },
+        h4: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H4',
+            description: 'H4 of the node in document'
+        },
+        h5: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H5',
+            description: 'H5 of the node in document'
+        },
+        h6: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H6',
+            description: 'H6 of the node in document'
+        },
+        heading_level: {
+            type: 'integer',
+            enum: [0, 1, 2, 3, 4, 5, 6],
+            title: 'Heading Level',
+            description: 'Heading level of the node in document'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        }
+    },
+    type: 'object',
+    required: ['id', 'text', 'start_char_idx', 'end_char_idx', 'number_of_pages', 'namespace', 'content_type', 'title', 'language', 'version', 'index', 'section_start_line', 'section_end_line', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'heading_level', 'created_at', 'updated_at', 'inserted_at'],
+    title: 'NodeDTO'
 } as const;
 
 export const NodeDataSchema = {
@@ -5380,6 +5618,27 @@ export const NodeDataSchema = {
     required: ['id', 'type', 'node_id', 'label'],
     title: 'NodeData',
     description: 'Data for a node in the workflow graph.'
+} as const;
+
+export const NodeSummaryDTOSchema = {
+    properties: {
+        level: {
+            type: 'integer',
+            title: 'Level',
+            description: 'Level of the summary'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/NodeDTO'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'List of nodes in the summary'
+        }
+    },
+    type: 'object',
+    required: ['level', 'nodes'],
+    title: 'NodeSummaryDTO'
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {

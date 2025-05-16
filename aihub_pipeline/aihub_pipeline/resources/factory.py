@@ -45,7 +45,7 @@ def mongo_document_store_resource(
     document_store_name: str,
     namespace_name: str,
 ) -> Dict[str, ConfigurableResourceFactory]:
-    doc_store = MongoDocumentStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
+    doc_store = MongoDocumentStoreResource(document_store_name=document_store_name)
     doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
     doc_store_resource = DocStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
     return {

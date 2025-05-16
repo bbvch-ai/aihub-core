@@ -868,6 +868,17 @@ export type DashboardItemDto = {
     event?: string | null;
 };
 
+export type DatabaseDto = {
+    /**
+     * Name of database
+     */
+    name: string;
+    /**
+     * List of namespaces
+     */
+    namespaces: Array<Namespace>;
+};
+
 /**
  * Represents a user-facing event that can be shown to end-users, UIs, or monitoring dashboards.
  * Display events are purely informational and never affect the control flow or execution order
@@ -1010,7 +1021,7 @@ export type DocumentDto = {
      */
     namespace: string;
     /**
-     * Docuemnt title.
+     * Document title.
      */
     title: string;
     /**
@@ -2158,6 +2169,10 @@ export type MyUserDto = {
 
 export type Namespace = {
     /**
+     * Name of database that the namespace belongs to
+     */
+    database: string;
+    /**
      * Name of namespace
      */
     name: string;
@@ -2165,6 +2180,117 @@ export type Namespace = {
      * Number of documents in namespace
      */
     number_of_documents: number;
+    /**
+     * Latest timestamp when any document in the namespace was updated
+     */
+    last_updated_at: number;
+    /**
+     * Latest timestamp when any document in the namespace was inserted
+     */
+    last_inserted_at: number;
+    /**
+     * Oldest timestamp when any document in the namespace was created
+     */
+    created_at: number;
+    /**
+     * Set of all document types in the namespace
+     */
+    document_types: Array<string>;
+};
+
+export type NodeDto = {
+    /**
+     * The unique identifier of the Node.
+     */
+    id: string;
+    /**
+     * The textual content of the Node.
+     */
+    text: string;
+    /**
+     * The start character index of the Node.
+     */
+    start_char_idx: number | null;
+    /**
+     * The end character index of the Node.
+     */
+    end_char_idx: number | null;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages: number | null;
+    /**
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Content type (content or summary).
+     */
+    content_type: 'content' | 'summary';
+    /**
+     * Document title.
+     */
+    title: string;
+    /**
+     * Node language.
+     */
+    language: 'de' | 'en' | 'fr' | 'it';
+    /**
+     * Node version.
+     */
+    version: number;
+    /**
+     * Index counting position of node in document
+     */
+    index: number;
+    /**
+     * Start line of the node in document
+     */
+    section_start_line: number;
+    /**
+     * End line of the node in document
+     */
+    section_end_line: number;
+    /**
+     * H1 of the node in document
+     */
+    h1: string | null;
+    /**
+     * H2 of the node in document
+     */
+    h2: string | null;
+    /**
+     * H3 of the node in document
+     */
+    h3: string | null;
+    /**
+     * H4 of the node in document
+     */
+    h4: string | null;
+    /**
+     * H5 of the node in document
+     */
+    h5: string | null;
+    /**
+     * H6 of the node in document
+     */
+    h6: string | null;
+    /**
+     * Heading level of the node in document
+     */
+    heading_level: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    /**
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
 };
 
 /**
@@ -2213,6 +2339,17 @@ export type NodeData = {
      * Whether workflow should stop on error in this node
      */
     stop_on_error?: boolean | null;
+};
+
+export type NodeSummaryDto = {
+    /**
+     * Level of the summary
+     */
+    level: number;
+    /**
+     * List of nodes in the summary
+     */
+    nodes: Array<NodeDto>;
 };
 
 export type PaginatedDocumentsResponse = {
@@ -4077,9 +4214,26 @@ export type CreateSpeechResponses = {
     200: unknown;
 };
 
+export type GetDatabasesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/knowledge/db';
+};
+
+export type GetDatabasesResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<DatabaseDto>;
+};
+
+export type GetDatabasesResponse = GetDatabasesResponses[keyof GetDatabasesResponses];
+
 export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
+        db: string;
         namespace: string;
     };
     query?: {
@@ -4092,7 +4246,7 @@ export type GetDocumentsForNamespaceData = {
          */
         page_size?: number;
     };
-    url: '/knowledge/{namespace}/document';
+    url: '/knowledge/db/{db}/namespace/{namespace}/document';
 };
 
 export type GetDocumentsForNamespaceErrors = {
@@ -4116,10 +4270,12 @@ export type GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponses
 export type GetDocumentByIdData = {
     body?: never;
     path: {
+        db: string;
+        namespace: string;
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/document/{document_id}';
+    url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}';
 };
 
 export type GetDocumentByIdErrors = {
@@ -4140,21 +4296,63 @@ export type GetDocumentByIdResponses = {
 
 export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
 
-export type GetNamespacesData = {
+export type GetNodesForDocumentData = {
     body?: never;
-    path?: never;
+    path: {
+        db: string;
+        namespace: string;
+        document_id: string;
+    };
     query?: never;
-    url: '/knowledge/namespace';
+    url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}/nodes';
 };
 
-export type GetNamespacesResponses = {
+export type GetNodesForDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetNodesForDocumentError = GetNodesForDocumentErrors[keyof GetNodesForDocumentErrors];
+
+export type GetNodesForDocumentResponses = {
     /**
      * Successful Response
      */
-    200: Array<Namespace>;
+    200: Array<NodeDto>;
 };
 
-export type GetNamespacesResponse = GetNamespacesResponses[keyof GetNamespacesResponses];
+export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof GetNodesForDocumentResponses];
+
+export type GetSummaryNodesForDocumentData = {
+    body?: never;
+    path: {
+        db: string;
+        namespace: string;
+        document_id: string;
+    };
+    query?: never;
+    url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}/summaries';
+};
+
+export type GetSummaryNodesForDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSummaryNodesForDocumentError = GetSummaryNodesForDocumentErrors[keyof GetSummaryNodesForDocumentErrors];
+
+export type GetSummaryNodesForDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<NodeSummaryDto>;
+};
+
+export type GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponses[keyof GetSummaryNodesForDocumentResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

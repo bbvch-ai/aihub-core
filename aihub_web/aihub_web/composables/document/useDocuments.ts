@@ -6,7 +6,7 @@ export const useDocuments = defineQuery(() => {
   const pageSize = ref(10)
 
   const documentsQuery = useQuery({
-    key: () => ['namespace', route.params.namespace, 'documents', { page: currentPage.value, size: pageSize.value }],
+    key: () => ['knowledge', 'db', route.params.db as string, 'namespace', route.params.namespace as string, 'document', { page: currentPage.value, size: pageSize.value }],
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
@@ -17,6 +17,7 @@ export const useDocuments = defineQuery(() => {
           page_size: pageSize.value,
         },
         path: {
+          db: route.params.db,
           namespace: route.params.namespace,
         },
       })

@@ -1,20 +1,16 @@
 <template>
-  <StructuralColumn
-    :title="document?.title ?? ''"
-    close-route="/admin/knowledge"
-    :loading="documentIsLoading"
-  >
-    <div class="content mt-16 rounded-3xl border border-surface-100 p-9 shadow-lg dark:border-surface-800">
-      <MDC
-        :value="document.text"
-        tag="article"
-      />
-    </div>
-  </StructuralColumn>
+  <div class="content">
+    <MDC
+      :value="md"
+      tag="article"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-const { document, documentIsLoading } = useDocument()
+defineProps<{
+  md: string
+}>()
 </script>
 
 <style scoped>

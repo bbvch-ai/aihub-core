@@ -9,6 +9,7 @@ from mongoengine import (
     ListField,
     StringField,
 )
+from mongoengine.context_managers import switch_db
 
 
 class Metadata(DynamicEmbeddedDocument):
@@ -41,56 +42,68 @@ class DocumentData(DynamicEmbeddedDocument):
 class RefDoc(Document):
     meta = {"collection": "documents-data", "strict": False, "indexes": [{"fields": ["data.metadata.namespace"]}]}
     id = StringField(primary_key=True)
-    data = EmbeddedDocumentField(DocumentData, db_field="__data__")  # Renamed for querying convenience
-    type_ = StringField(db_field="__type__")  # Renamed for consistency
+    data = EmbeddedDocumentField(DocumentData, db_field="__data__")
+    type_ = StringField(db_field="__type__")
 
-    # Static methods for querying
     @classmethod
-    def by_id(cls, doc_id: str) -> "RefDoc":
-        return cls.objects.get(id=doc_id)
+    def by_id(cls, db_alias: str, doc_id: str) -> "RefDoc":
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.get(id=doc_id)
 
     @classmethod
     def by_namespace(
-        cls,
-        namespace: str,
-        exclude_ids: Optional[List[str]] = None,
+            cls,
+            db_alias: str,
+            namespace: str,
+            exclude_ids: Optional[List[str]] = None,
     ) -> List["RefDoc"]:
-        return list(cls.objects.filter(data__metadata__namespace=namespace, id__nin=(exclude_ids or [])))
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(SwitchedRefDoc.objects.filter(
+                data__metadata__namespace=namespace,
+                id__nin=(exclude_ids or [])
+            ))
 
     @classmethod
     def count_by_namespace(
             cls,
+            db_alias: str,
             namespace: str,
     ) -> int:
         """Counts the total number of documents in a given namespace."""
         query_filter = {"data__metadata__namespace": namespace}
-        return cls.objects.filter(**query_filter).count()
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.filter(**query_filter).count()
 
     @classmethod
     def get_paginated_by_namespace(
-        cls,
-        namespace: str,
-        skip: int,
-        limit: int,
+            cls,
+            db_alias: str,
+            namespace: str,
+            skip: int,
+            limit: int,
     ) -> List["RefDoc"]:
         """
         Retrieves a paginated list of documents from a given namespace.
         Documents are ordered by their internal ID by default MongoEngine behavior without explicit order_by.
         """
         query_filter = {"data__metadata__namespace": namespace}
-        return list(cls.objects.filter(**query_filter).skip(skip).limit(limit).order_by('id'))
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(SwitchedRefDoc.objects.filter(**query_filter).skip(skip).limit(limit).order_by('id'))
 
     @classmethod
-    def get_all_namespaces(cls) -> List[str]:
+    def get_all_namespaces(cls, db_alias: str) -> List[str]:
         """
         Returns a list of all unique namespace values.
         """
-        return cls.objects.distinct("data.metadata.namespace")
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.distinct("data.metadata.namespace")
 
     @classmethod
-    def get_namespaces_with_counts(cls) -> List[Dict[str, Any]]:
+    def get_namespaces(cls, db_alias: str) -> List[Dict[str, Any]]:
         """
         Returns a list of dictionaries containing namespace names and document counts.
+        Also includes the latest updated_at, latest inserted_at, oldest created_at timestamps,
+        and a set of all document types in each namespace.
         Uses MongoDB aggregation pipeline to get this information in a single query.
         """
         pipeline = [
@@ -98,7 +111,11 @@ class RefDoc(Document):
             {
                 "$group": {
                     "_id": "$__data__.metadata.namespace",
-                    "count": {"$sum": 1}
+                    "count": {"$sum": 1},
+                    "last_updated_at": {"$max": "$__data__.metadata.updated_at"},
+                    "last_inserted_at": {"$max": "$__data__.metadata.inserted_at"},
+                    "created_at": {"$min": "$__data__.metadata.created_at"},
+                    "document_types": {"$addToSet": "$__data__.metadata.type"}
                 }
             },
             # Format the output
@@ -106,9 +123,14 @@ class RefDoc(Document):
                 "$project": {
                     "name": "$_id",
                     "number_of_documents": "$count",
+                    "last_updated_at": 1,
+                    "last_inserted_at": 1,
+                    "created_at": 1,
+                    "document_types": 1,
                     "_id": 0
                 }
             }
         ]
 
-        return list(cls.objects.aggregate(pipeline))
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(SwitchedRefDoc.objects.aggregate(pipeline))

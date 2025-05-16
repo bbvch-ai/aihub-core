@@ -3,6 +3,7 @@ from typing import Optional, Annotated, Literal
 from pydantic import BaseModel, Field
 
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
+from aihub_lib.persistence.rag.vectors.node_metadata import NodeTypeValue
 
 
 class DocumentDTO(BaseModel):
@@ -11,9 +12,9 @@ class DocumentDTO(BaseModel):
     text: Annotated[str, Field(description="The textual content of the document.")]
     namespace: Annotated[str, Field(description="The namespace of the document within its metadata.")]
 
-    title: Annotated[str, Field(description="Docuemnt title.")]
+    title: Annotated[str, Field(description="Document title.")]
     number_of_pages: Annotated[int, Field(description="Number of Pages in the Document.")]
-    content_type: Annotated[Literal["content", "summary"], Field(description="Content type (content or summary).")]
+    content_type: Annotated[NodeTypeValue, Field(description="Content type (content or summary).")]
 
     created_at: Annotated[str, Field(description="Date source document was created (ISO format string)")]
     updated_at: Annotated[str, Field(description="Date source document was last updated (ISO format string)")]

@@ -16,7 +16,7 @@ from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.resources.factory import (
     azure_data_lake_resources,
     default_io_manager_azure_datalake_resources,
-    mongo_aisearch_storage_context_resources, local_mongo_milvus_storage_context_resource,
+    local_mongo_milvus_storage_context_resource,
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource

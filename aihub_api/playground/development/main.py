@@ -27,6 +27,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -145,7 +146,10 @@ async def main():
         .generate_image()
         .stt()
         .tts(),
-        KnowledgeController(auth=auth).get_documents_for_namespace().get_document_by_id().get_namespaces()
+        KnowledgeController(
+            auth=auth,
+            vector_store_factory=lambda collection: create_milvus_vector_store("http://localhost:19530", collection, 3072),
+        ).get_databases().get_documents_for_namespace().get_document_by_id().get_nodes_for_document().get_summary_nodes_for_document()
     )
 
     await runner.run()

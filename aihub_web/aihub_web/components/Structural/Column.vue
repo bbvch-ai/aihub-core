@@ -1,8 +1,8 @@
 <template>
-  <div class="relative flex grow flex-col gap-3">
+  <div class="relative flex flex-col gap-3">
     <div
       class="overflow-hidden rounded-3xl bg-white dark:bg-surface-900"
-      :style="{ minWidth }"
+      :style="{ width }"
     >
       <ProgressBar
         v-if="loading"
@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<{
   loading: false,
 })
 
-const minWidth = computed<string>(() => {
+const width = computed<string>(() => {
   return {
     small: 680,
     normal: 920,

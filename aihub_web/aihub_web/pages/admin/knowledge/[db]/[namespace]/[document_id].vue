@@ -22,7 +22,7 @@ const localePath = useLocalePath()
 const { t } = useI18n()
 
 const subPath = (path: string) => {
-  return `/admin/knowledge/${route.params.namespace}/${route.params.document_id}/${path}`
+  return `/admin/knowledge/${route.params.db}/${route.params.namespace}/${route.params.document_id}/${path}`
 }
 
 const isActive = (path: string) => {
@@ -35,6 +35,8 @@ const isActive = (path: string) => {
 const navItems = computed<NavItem[]>(() => [
   { name: t('knowledge.navigation.document.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
   { name: t('knowledge.navigation.document.content'), key: 'content', path: subPath('content'), isActive: isActive('content') },
+  { name: t('knowledge.navigation.document.nodes'), key: 'nodes', path: subPath('nodes'), isActive: isActive('nodes') },
+  { name: t('knowledge.navigation.document.summary'), key: 'summary', path: subPath('summary'), isActive: isActive('summary') },
 ])
 
 const toNavItem = (navItem: NavItem) => {

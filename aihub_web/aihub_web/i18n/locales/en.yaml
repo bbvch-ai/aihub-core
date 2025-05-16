@@ -84,6 +84,7 @@ service:
     search: "Search"
 
 agent:
+  can_chat: "Can Chat"
   overview:
     startEvents: "Start Events"
     stopEvents: "Stop Events"

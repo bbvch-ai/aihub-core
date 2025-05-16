@@ -23,8 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDocuments } from '@core/composables/document/useDocuments'
-
 import type { DocumentDto } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
@@ -44,7 +42,7 @@ const {
 } = useDocuments()
 
 const toDocument = (document: DocumentDto) => {
-  router.push(localePath(`/admin/knowledge/${route.params.namespace}/${document.id}/overview`))
+  router.push(localePath(`/admin/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
 }
 
 const onPageChange = (event) => {
