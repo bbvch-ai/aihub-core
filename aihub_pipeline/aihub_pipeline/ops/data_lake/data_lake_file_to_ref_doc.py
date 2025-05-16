@@ -87,7 +87,9 @@ def reformat_tables(context: OpExecutionContext, document: RefDocDocument) -> Re
             markdown_table = pd.read_html(StringIO(html_table))[0].to_markdown()
 
             # Replace the HTML table with the markdown table
-            updated_content = updated_content[:start] + "\n" + markdown_table + "\n" + updated_content[end:]
+            updated_content = (
+                updated_content[:start] + "\n<table>" + markdown_table + "<\\table>\n" + updated_content[end:]
+            )
         except Exception as e:
             context.log.error(f"Failed to convert table: {e}")
 
