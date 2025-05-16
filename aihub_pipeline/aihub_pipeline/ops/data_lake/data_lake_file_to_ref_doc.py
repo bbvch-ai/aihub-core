@@ -122,11 +122,8 @@ def save_figures_to_data_lake(
     # Create the BlobServiceClient object
     blob_service_client = BlobServiceClient(account_url, credential=default_credential)
 
-    base_path = os.path.dirname(data_lake_file.uri)
-    doc_name, doc_type = os.path.basename(data_lake_file.uri).split(".")
-    doc_name = f"{doc_name}_{doc_type}"
-    container_name, base_dir = base_path.split("/")
-    figures_dir = f"{base_dir}/figures/{doc_name}"
+    container_name = get_container_name(data_lake_file.uri)
+    figures_dir = get_document_figures_folder_name(data_lake_file.uri)
 
     context.log.info(f"Saving {len(figure_ids)} figures to {figures_dir}")
 
@@ -357,3 +354,16 @@ Do **NOT** come up with information, only reference what you can see in the iamg
     except Exception as e:
         context.log.error(f"Failed to generate image description: {str(e)}")
         return f"Figure {figure_index + 1}"
+
+
+def get_container_name(uri: str):
+    base_path = os.path.dirname(uri)
+    return base_path.split("/")[0]
+
+
+def get_document_figures_folder_name(uri: str):
+    base_path = os.path.dirname(uri)
+    doc_name, doc_type = os.path.basename(uri).split(".")
+    doc_name = f"{doc_name}_{doc_type}"
+    base_dir = base_path.split("/")[1]
+    return f"{base_dir}/figures/{doc_name}"
