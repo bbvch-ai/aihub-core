@@ -4,7 +4,6 @@ from azure.ai.documentintelligence.models import (
     AnalyzeOutputOption,
     AnalyzeResult,
     DocumentContentFormat,
-    DocumentAnalysisFeature,
 )
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
@@ -36,21 +35,28 @@ class DocumentIntelligenceLoader(BaseReader):
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
                 output=[AnalyzeOutputOption.FIGURES],
-                features=[DocumentAnalysisFeature.LANGUAGES],
+                # features=[DocumentAnalysisFeature.LANGUAGES],
                 # potenially higher resolution images, but at great cost
                 # features=[DocumentAnalysisFeature.OCR_HIGH_RESOLUTION],
             )
 
         result: AnalyzeResult = poller.result()
         operation_id = poller.details["operation_id"]
-        figure_ids = [figure.id for figure in result.figures]
 
-        # TODO add handle result.languages
-        metadata = {
-            "number_of_pages": len(result.pages),
-            "operation_id": operation_id,
-            "figure_ids": figure_ids,
-        }
+        figure_ids = None
+        if result.figures:
+            figure_ids = [figure.id for figure in result.figures]
+
+            # TODO add handle result.languages
+            metadata = {
+                "number_of_pages": len(result.pages),
+                "operation_id": operation_id,
+                "figure_ids": figure_ids,
+            }
+        else:
+            metadata = {
+                "number_of_pages": len(result.pages),
+            }
 
         return [
             Document(

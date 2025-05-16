@@ -4,8 +4,8 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from dagster import OpExecutionContext, op
 
-from aihub_pipeline.ops.data_lake.data_lake_file_to_ref_doc import get_document_figures_folder_name, get_container_name
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.util.path_utils import get_container_name, get_document_figures_folder_name
 
 
 @op(code_version="v1")
