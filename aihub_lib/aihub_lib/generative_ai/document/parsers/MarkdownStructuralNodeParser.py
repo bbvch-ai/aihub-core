@@ -199,8 +199,6 @@ class NodeCreatorFromSplits:
 
                 # Add the current match (table or image)
                 split_texts.append(match.group(0))
-                with open("nodes.txt", "a") as f:
-                    f.write(match.group(0) + "\n\n")
                 last_end = end
 
             # Add any remaining normal text after the last match
