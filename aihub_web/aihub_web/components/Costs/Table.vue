@@ -54,7 +54,3 @@ defineProps<{
 
 const { t } = useI18n()
 </script>
-
-<style scoped>
-
-</style>

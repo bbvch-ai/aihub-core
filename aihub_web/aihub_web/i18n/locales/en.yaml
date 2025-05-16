@@ -133,3 +133,39 @@ auth:
     loginWithMicrosoft: "Login with Microsoft"
     customSolutions: "Custom AI solutions for your company"
     logoAlt: "Logo of company"
+
+timerange:
+  1h: "1 Hour"
+  24h: "1 Day"
+  30d: "1 Month"
+  365d: "1 Year"
+
+chart:
+  no_data: "No data available for this period."
+  trending_up: "Trending Up"
+  trending_down: "Trending Down"
+
+dashboard:
+  all_agents: "All Agents"
+  users: "AI-Hub Users"
+  unknown_agent: "Unknown Agent"
+  add_widget: "Add Widget"
+  select_data_type: "Select Data type"
+  select_agent: "Select an Agent (Optional)"
+  create: "Create"
+  create_widget: "Create new Widget"
+  events:
+    StartEvent:
+      label: 'Started Agent Runs'
+    StopEvent:
+      label: 'Successful Runs'
+    UserMessageEvent:
+      label: 'User Chat Messages'
+    ExceptionEvent:
+      label: 'Errors'
+    HumanInTheLoopRequestEvent:
+      label: 'Human in the Loop'
+    BotInTheLoopRequestEvent:
+      label: 'Ask in Slack/Teams'
+    AgentInTheLoopRequestEvent:
+      label: 'Tasks Delegated'

@@ -2345,21 +2345,10 @@ export const CreateTokenRequestSchema = {
             title: 'Expiry Date',
             description: 'Expiry date in ISO format (must be in the future)',
             example: '2025-12-31T23:59:59Z'
-        },
-        roles: {
-            items: {
-                type: 'string',
-                minLength: 1
-            },
-            type: 'array',
-            minItems: 1,
-            title: 'Roles',
-            description: 'Non-empty list of roles associated with the token',
-            example: ['read', 'write']
         }
     },
     type: 'object',
-    required: ['name', 'expiry_date', 'roles'],
+    required: ['name', 'expiry_date'],
     title: 'CreateTokenRequest',
     example: {
         expiry_date: '2025-12-31T23:59:59Z',
@@ -2387,14 +2376,6 @@ export const CreateTokenResponseSchema = {
             title: 'Expiry Date',
             description: 'Expiry date'
         },
-        roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Roles',
-            description: 'List of roles granted to the access token'
-        },
         token: {
             type: 'string',
             title: 'Token',
@@ -2402,8 +2383,147 @@ export const CreateTokenResponseSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'expiry_date', 'roles', 'token'],
+    required: ['id', 'name', 'expiry_date', 'token'],
     title: 'CreateTokenResponse'
+} as const;
+
+export const DashboardDTOSchema = {
+    properties: {
+        minRow: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Minrow',
+            description: 'Minimum number of rows in the grid.'
+        },
+        margin: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Margin',
+            description: 'Gap between grid items in pixels.'
+        },
+        column: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Column',
+            description: 'Number of columns in the grid.'
+        },
+        cellHeight: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cellheight',
+            description: 'Height of one cell in pixels.'
+        },
+        children: {
+            items: {
+                '$ref': '#/components/schemas/DashboardItemDTO'
+            },
+            type: 'array',
+            title: 'Children',
+            description: 'List of widgets (dashboard items) within the grid.'
+        }
+    },
+    type: 'object',
+    title: 'DashboardDTO'
+} as const;
+
+export const DashboardItemDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the dashboard widget.'
+        },
+        component: {
+            type: 'string',
+            title: 'Component',
+            description: 'Specifies the component to render for this widget.'
+        },
+        x: {
+            type: 'integer',
+            title: 'X',
+            description: 'The x-coordinate of the widget in the grid.'
+        },
+        y: {
+            type: 'integer',
+            title: 'Y',
+            description: 'The y-coordinate of the widget in the grid.'
+        },
+        w: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'W',
+            description: 'Width of the widget in grid column units.'
+        },
+        noResize: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Noresize',
+            description: 'If true, the widget cannot be resized.'
+        },
+        timeRange: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timerange',
+            description: 'Time range for the data displayed in the widget.'
+        },
+        event: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event',
+            description: 'The type of event data the widget displays.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'component', 'x', 'y'],
+    title: 'DashboardItemDTO'
 } as const;
 
 export const DisplayEventSchema = {
@@ -5037,6 +5157,33 @@ export const MyUserDTOSchema = {
             ],
             title: 'Profile Image',
             description: "User's profile image in base64."
+        },
+        dashboard: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/DashboardDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'User dashboard configuration for index page'
+        },
+        favorite_modules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Favorite Modules',
+            description: 'List of favorite modules from aihub suite'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'List of roles assigned to the user'
         }
     },
     type: 'object',

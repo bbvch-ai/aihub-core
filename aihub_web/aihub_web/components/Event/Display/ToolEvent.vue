@@ -36,7 +36,3 @@ defineProps<{
   thread: ThreadDto
 }>()
 </script>
-
-<style scoped>
-
-</style>

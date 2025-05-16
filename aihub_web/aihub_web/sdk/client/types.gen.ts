@@ -792,10 +792,6 @@ export type CreateTokenRequest = {
      * Expiry date in ISO format (must be in the future)
      */
     expiry_date: Date;
-    /**
-     * Non-empty list of roles associated with the token
-     */
-    roles: Array<string>;
 };
 
 export type CreateTokenResponse = {
@@ -809,13 +805,67 @@ export type CreateTokenResponse = {
      */
     expiry_date: Date;
     /**
-     * List of roles granted to the access token
-     */
-    roles: Array<string>;
-    /**
      * The generated API token, only returned at creation
      */
     token: string;
+};
+
+export type DashboardDto = {
+    /**
+     * Minimum number of rows in the grid.
+     */
+    minRow?: number | null;
+    /**
+     * Gap between grid items in pixels.
+     */
+    margin?: number | null;
+    /**
+     * Number of columns in the grid.
+     */
+    column?: number | null;
+    /**
+     * Height of one cell in pixels.
+     */
+    cellHeight?: number | null;
+    /**
+     * List of widgets (dashboard items) within the grid.
+     */
+    children?: Array<DashboardItemDto>;
+};
+
+export type DashboardItemDto = {
+    /**
+     * Unique identifier for the dashboard widget.
+     */
+    id: string;
+    /**
+     * Specifies the component to render for this widget.
+     */
+    component: string;
+    /**
+     * The x-coordinate of the widget in the grid.
+     */
+    x: number;
+    /**
+     * The y-coordinate of the widget in the grid.
+     */
+    y: number;
+    /**
+     * Width of the widget in grid column units.
+     */
+    w?: number | null;
+    /**
+     * If true, the widget cannot be resized.
+     */
+    noResize?: boolean | null;
+    /**
+     * Time range for the data displayed in the widget.
+     */
+    timeRange?: string | null;
+    /**
+     * The type of event data the widget displays.
+     */
+    event?: string | null;
 };
 
 /**
@@ -2049,6 +2099,18 @@ export type MyUserDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
+    /**
+     * User dashboard configuration for index page
+     */
+    dashboard?: DashboardDto | null;
+    /**
+     * List of favorite modules from aihub suite
+     */
+    favorite_modules?: Array<string>;
+    /**
+     * List of roles assigned to the user
+     */
+    roles?: Array<string>;
 };
 
 /**
@@ -3232,6 +3294,47 @@ export type GetMyUserResponses = {
 };
 
 export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
+
+export type GetMyDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/user/dashboard';
+};
+
+export type GetMyDashboardResponses = {
+    /**
+     * Successful Response
+     */
+    200: DashboardDto | null;
+};
+
+export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboardResponses];
+
+export type UpdateMyDashboardData = {
+    body: DashboardDto;
+    path?: never;
+    query?: never;
+    url: '/user/dashboard';
+};
+
+export type UpdateMyDashboardErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMyDashboardError = UpdateMyDashboardErrors[keyof UpdateMyDashboardErrors];
+
+export type UpdateMyDashboardResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
 
 export type GetLocaleData = {
     body?: never;

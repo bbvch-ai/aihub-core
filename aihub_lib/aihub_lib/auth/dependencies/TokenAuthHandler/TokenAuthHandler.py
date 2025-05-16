@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +43,13 @@ class TokenAuthHandler(BearerAuthHandler):
         try:
             access_token = BearerToken.verify_token(token_str)
         except ValueError as e:
-            logger.warning("Token authentication failed: %s", e)
+            logger.warning(f"Token authentication failed: {e}")
             raise HTTPException(status_code=401, detail=str(e))
 
-        api_user = access_token.user
+        user = UserEntity.by_oid(access_token.user_oid)
         return AuthenticatedUser(
-            name=api_user.name,
-            preferred_username=api_user.preferred_username,
-            oid=api_user.oid,
-            roles=access_token.roles,
+            name=user.name,
+            preferred_username=user.email,
+            oid=user.id,
+            roles=user.roles,
         )

@@ -11,7 +11,3 @@
 <script setup lang="ts">
 const { thread, threadIsLoading } = useThread()
 </script>
-
-<style scoped>
-
-</style>

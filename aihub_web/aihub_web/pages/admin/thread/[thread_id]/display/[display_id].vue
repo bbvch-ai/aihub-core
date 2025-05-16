@@ -15,7 +15,3 @@
 const { thread, threadIsLoading } = useThread()
 const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 </script>
-
-<style scoped>
-
-</style>

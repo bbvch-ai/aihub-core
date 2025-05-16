@@ -51,7 +51,3 @@ const message = computed<AssistantChatMessageOutput>(() => {
   }
 })
 </script>
-
-<style scoped>
-
-</style>

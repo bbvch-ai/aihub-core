@@ -52,7 +52,3 @@ const isSelectedRoute = (route: RouteOptions) => {
   return route.event_id == props.event.event.selected_option.event_id
 }
 </script>
-
-<style scoped>
-
-</style>

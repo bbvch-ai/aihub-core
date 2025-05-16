@@ -132,7 +132,3 @@ const messages = computed<ExtendedChatMessage[]>(() => {
   return msgs
 })
 </script>
-
-<style scoped>
-
-</style>

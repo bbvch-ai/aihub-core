@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -60,39 +61,41 @@ class ThreadService:
     """
 
     @staticmethod
-    def create_thread(
+    async def create_thread(
         name: str, user_ids: List[str], t: LocaleHandler, agent_dtos: Optional[List[ThreadAgentDTO]] = None
     ) -> ThreadDTO:
         users = [User(user_id=uid) for uid in user_ids]
         agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
         created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
-        return ThreadService.thread_response_from_entity(created_thread, t)
+        return await ThreadService.thread_response_from_entity(created_thread, t)
 
     @staticmethod
-    def get_thread_by_id(thread_id: str, t: LocaleHandler) -> ThreadDTO:
+    async def get_thread_by_id(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         if not ObjectId.is_valid(thread_id):
             raise ValueError("Invalid thread_id provided.")
         thread = ThreadEntity.get_thread_by_id(thread_id)
-        return ThreadService.thread_response_from_entity(thread, t)
+        return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def user_in_thread(thread_id: str, user: AuthenticatedUser) -> bool:
+    async def user_in_thread(thread_id: str, user: AuthenticatedUser) -> bool:
         thread = ThreadEntity.get_thread_by_id(thread_id)
         return user.oid in [u.user_id for u in thread.users]
 
     @staticmethod
-    def get_paginated_threads_for_user(
+    async def get_paginated_threads_for_user(
         user_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
     ) -> tuple[int, List[ThreadDTO]]:
         """Returns a paginated list of threads that the user is a member of."""
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_user(user_id)
         threads = ThreadEntity.get_paginated_threads_by_user(user_id, skip=skip, limit=page_size)
-        thread_dtos = [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
+        thread_dtos = await asyncio.gather(
+            *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
+        )
         return total, thread_dtos
 
     @staticmethod
-    def get_paginated_threads_for_agent(
+    async def get_paginated_threads_for_agent(
         agent_class: str, agent_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
     ) -> tuple[int, List[ThreadDTO]]:
         """
@@ -101,17 +104,19 @@ class ThreadService:
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
         threads = ThreadEntity.get_paginated_threads_by_agent(agent_class, agent_id, skip=skip, limit=page_size)
-        thread_dtos = [ThreadService.thread_response_from_entity(thread, t) for thread in threads]
+        thread_dtos = await asyncio.gather(
+            *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
+        )
         return total, thread_dtos
 
     @staticmethod
-    def add_agent_to_thread(thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadDTO:
+    async def add_agent_to_thread(thread_id: str, agent_id: str, agent_class: str, t: LocaleHandler) -> ThreadDTO:
         agent = Agent(agent_id=agent_id, agent_class=agent_class)
         thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
-        return ThreadService.thread_response_from_entity(thread, t)
+        return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def thread_as_message_history(thread_id) -> HistoryResponse:
+    async def thread_as_message_history(thread_id) -> HistoryResponse:
         persisted_events = EventService.get_all_thread_display_events(thread_id)
         ws_events = [WSServerEvent.from_persisted_event(event) for event in persisted_events]
 
@@ -182,25 +187,25 @@ class ThreadService:
         return HistoryResponse(messages=messages)
 
     @staticmethod
-    def remove_agent_from_thread(thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadDTO:
+    async def remove_agent_from_thread(thread_id: str, agent_class: str, agent_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.remove_agent_from_thread(thread_id, agent_class, agent_id)
-        return ThreadService.thread_response_from_entity(thread, t)
+        return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def add_user_to_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
+    async def add_user_to_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
         user = User(user_id=user_id)
         thread = ThreadEntity.add_user_to_thread(thread_id, user)
-        return ThreadService.thread_response_from_entity(thread, t)
+        return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
+    async def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.remove_user_from_thread(thread_id, user_id)
-        return ThreadService.thread_response_from_entity(thread, t)
+        return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadDTO:
+    async def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.delete_thread(thread_id)
-        return ThreadService.thread_response_from_entity(thread, t)
+        return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
     @cached(TTLCache(maxsize=128, ttl=60))
@@ -313,7 +318,7 @@ class ThreadService:
         return stats
 
     @staticmethod
-    def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
+    async def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
         """
         Constructs the comprehensive ThreadDTO from a ThreadEntity, including
         aggregated event statistics and participating agent/user information.
@@ -329,7 +334,7 @@ class ThreadService:
         user_dtos: List[UserDTO] = []
         for user_ref in entity.users:
             try:
-                user_dto = UserService.get_user_by_oid(user_ref.user_id)
+                user_dto = await UserService.get_user_by_oid(user_ref.user_id)
                 if user_dto:
                     user_dtos.append(user_dto)
             except Exception as e:

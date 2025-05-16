@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.auth.identity.UserIdentity import UserIdentity
 
 
 class BaseUserInformationProvider(ABC):
@@ -13,10 +13,10 @@ class BaseUserInformationProvider(ABC):
     the rest of the codebase. This ensures flexibility in choosing or changing identity services.
 
     ### Method
-    - `get_user_info_by_oid(oid: str) -> UserDTO`:
-      Given a user OID, return a `UserDTO` with user details like name and email.
+    - `get_user_info_by_oid(oid: str) -> UserIdentity`:
+      Given a user OID, return a `UserIdentity` with user details like name and email.
     """
 
     @abstractmethod
-    def get_user_info_by_oid(self, oid: str) -> UserDTO:
+    async def get_user_info_by_oid(self, oid: str) -> UserIdentity:
         pass

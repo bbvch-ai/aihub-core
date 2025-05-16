@@ -16,7 +16,3 @@
 <script setup lang="ts">
 const { agent, agentIsLoading } = useAgent()
 </script>
-
-<style scoped>
-
-</style>
