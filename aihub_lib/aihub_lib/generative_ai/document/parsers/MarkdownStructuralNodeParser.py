@@ -174,7 +174,7 @@ class NodeCreatorFromSplits:
                 page += 1
 
             # Regular expressions to identify tables and images
-            table_pattern = r"<table>.*?</table>"
+            table_pattern = r"<table>(.*?)</table>"
             image_pattern = r"!\[.*?\]\(.*?\)"
 
             # Initialize split_texts to store all segments
