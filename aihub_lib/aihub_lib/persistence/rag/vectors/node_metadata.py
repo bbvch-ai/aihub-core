@@ -22,6 +22,7 @@ DATA_LAKE_URI = "data_lake_uri"
 
 # Node level - Metadata
 INDEX = "index"
+PAGE = "page"
 SECTION_START_LINE = "section_start_line"
 SECTION_END_LINE = "section_end_line"
 H1 = "h1"
@@ -55,6 +56,7 @@ DEFAULT_METADATA = {
     UPDATED_AT: None,
     INSERTED_AT: None,
     INDEX: 0,
+    PAGE: 0,
     SECTION_START_LINE: 0,
     SECTION_END_LINE: 0,
     H1: None,
@@ -79,6 +81,7 @@ DEFAULT_METADATA_FIELDS = {
     UPDATED_AT: (UPDATED_AT, MetadataIndexFieldType.INT32),
     INSERTED_AT: (INSERTED_AT, MetadataIndexFieldType.INT32),
     INDEX: (INDEX, MetadataIndexFieldType.INT32),
+    PAGE: (PAGE, MetadataIndexFieldType.INT32),
     SECTION_START_LINE: (SECTION_START_LINE, MetadataIndexFieldType.INT32),
     SECTION_END_LINE: (SECTION_END_LINE, MetadataIndexFieldType.INT32),
     H1: (H1, MetadataIndexFieldType.STRING),

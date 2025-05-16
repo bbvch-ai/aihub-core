@@ -16,6 +16,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
     INDEX,
+    PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
 )
@@ -162,7 +163,13 @@ class NodeCreatorFromSplits:
         nodes = []
         last_nodes_stack = []
 
+        page = 1
         for split in splits:
+            # add page number to metadata
+            if "<!-- PageBreak -->" in split.content:
+                page += 1
+            split.metadata.update({PAGE: page})
+
             split_texts = self.sentence_splitter.split_text(split.content)
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
             self._set_relationships_within_split(split_nodes)
