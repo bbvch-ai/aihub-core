@@ -2,12 +2,16 @@ import re
 from io import StringIO
 
 import pandas as pd
-from dagster import OpExecutionContext
+from dagster import OpExecutionContext, op
 
-from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 
 
-def reformat_tables(context: OpExecutionContext, document: RefDocDocument) -> RefDocDocument:
+@op(code_version="v1")
+def reformat_tables(
+    context: OpExecutionContext,
+    document: DocumentWithFigureInfo,
+) -> DocumentWithFigureInfo:
     """Convert HTML tables in the document to Markdown tables."""
     updated_content = document.text_resource.text
 

@@ -1,33 +1,33 @@
-from typing import List
-
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from dagster import OpExecutionContext
+from dagster import OpExecutionContext, op
 
+from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
+    DocumentIntelligenceAccess,
+)
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
+from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
+from aihub_pipeline.types.FigureMetadata import FigureMetadata
 from aihub_pipeline.util.path_utils import get_container_name, get_document_figures_folder_name
 
 
+@op(code_version="v1")
 def save_figures_to_data_lake(
     context: OpExecutionContext,
-    figure_ids: List[str],
-    operation_id: str,
-    document_intelligence_client,
+    doc_with_figures: DocumentWithFigureInfo,
     data_lake_file: DataLakeFile,
-) -> tuple:
+) -> FigureMetadata:
     """
     Extracts and saves raw figure data to Azure Data Lake using BlobServiceClient.
 
     Args:
         context: The operation execution context
-        figure_ids: List of figure_ids from the document intelligence result
-        operation_id: The operation ID for retrieving figure data
-        document_intelligence_client: The document intelligence client
         data_lake_file: The source data lake file
 
     Returns:
         List of paths to the saved figures
     """
+    document_intelligence_client = DocumentIntelligenceAccess().get_client()
     figure_paths, figure_urls = [], []
     account_url = "https://aihubdevstchedatalake.blob.core.windows.net"
     default_credential = DefaultAzureCredential()
@@ -38,14 +38,14 @@ def save_figures_to_data_lake(
     container_name = get_container_name(data_lake_file.uri)
     figures_dir = get_document_figures_folder_name(data_lake_file.uri)
 
-    context.log.info(f"Saving {len(figure_ids)} figures to {figures_dir}")
+    context.log.info(f"Saving {len(doc_with_figures.figure_ids)} figures to {figures_dir}")
 
-    for idx, figure_id in enumerate(figure_ids):
+    for idx, figure_id in enumerate(doc_with_figures.figure_ids):
         try:
             # Get the raw figure data using the specified approach
             response = document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",
-                result_id=operation_id,
+                result_id=doc_with_figures.operation_id,
                 figure_id=figure_id,
             )
 
@@ -66,4 +66,5 @@ def save_figures_to_data_lake(
             # Log the full exception for debugging
             context.log.error(f"Exception details: {type(e).__name__}: {str(e)}")
 
-    return figure_paths, figure_urls, container_name
+    metadata = FigureMetadata(figure_paths=figure_paths, figure_urls=figure_urls, container_name=container_name)
+    return metadata

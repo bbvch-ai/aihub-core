@@ -1,23 +1,24 @@
 import base64
 import os
 import re
-from typing import List, Optional
+from typing import Optional
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from dagster import OpExecutionContext
+from dagster import OpExecutionContext, op
 from openai import AzureOpenAI
 
-from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.ops.data_lake.process_document_without_figures import process_document_without_figures
+from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
+from aihub_pipeline.types.FigureMetadata import FigureMetadata
 
 
+@op(code_version="v1")
 def inject_figures(
     context: OpExecutionContext,
-    document: RefDocDocument,
-    container_name: str,
-    figure_paths: List[str],
-    figure_urls: List[str],
-) -> RefDocDocument:
+    doc_with_figures: DocumentWithFigureInfo,
+    figure_metadata: FigureMetadata,
+) -> DocumentWithFigureInfo:
     """Injects image Markdown tags into the document content by replacing HTML figure tags.
 
     This operation:
@@ -29,9 +30,10 @@ def inject_figures(
 
     Returns the document with updated content containing markdown image tags.
     """
-    if not figure_paths:
+    if not figure_metadata.figure_paths:
         context.log.info("No figures found, skipping injection")
-        return document
+        doc_with_figures = process_document_without_figures(doc_with_figures)
+        return doc_with_figures
 
     # Pattern to match HTML figure tags
     figure_pattern = r"<figure>.*?</figure>"
@@ -43,14 +45,14 @@ def inject_figures(
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
     except Exception as e:
         context.log.error(f"Failed to create BlobServiceClient: {str(e)}")
-        return document
+        return doc_with_figures
 
     # Start with the original content
-    updated_content = document.text_resource.text
+    updated_content = doc_with_figures.text_resource.text
     figures_replaced = 0
 
     # Loop through each figure path
-    for i, (image_path, image_url) in enumerate(zip(figure_paths, figure_urls)):
+    for i, (image_path, image_url) in enumerate(zip(figure_metadata.figure_paths, figure_metadata.figure_urls)):
         # Search for the next figure tag
         match = re.search(figure_pattern, updated_content, re.DOTALL)
 
@@ -97,7 +99,9 @@ def inject_figures(
         if blob_service_client:
             try:
                 # Download the image
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=image_path)
+                blob_client = blob_service_client.get_blob_client(
+                    container=figure_metadata.container_name, blob=image_path
+                )
                 image_data = blob_client.download_blob().readall()
 
                 # Generate description with context
@@ -116,10 +120,10 @@ def inject_figures(
         figures_replaced += 1
 
     # Update the document content
-    document.text_resource.text = updated_content
+    doc_with_figures.text_resource.text = updated_content
     context.log.info(f"Updated document content with {figures_replaced} markdown image with contextual descriptions.")
 
-    return document
+    return doc_with_figures
 
 
 def generate_description(

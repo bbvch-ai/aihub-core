@@ -1,6 +1,17 @@
-from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
+from dagster import (
+    AssetIn,
+    AssetKey,
+    AutomationCondition,
+    DynamicPartitionsDefinition,
+    Output,
+    graph_asset,
+)
 
-from aihub_pipeline.ops.data_lake.data_lake_file_to_ref_doc import data_lake_file_to_ref_doc
+from aihub_pipeline.ops.data_lake.doc_with_figures_to_ref_doc import doc_with_figures_to_ref_doc
+from aihub_pipeline.ops.data_lake.inject_figures import inject_figures
+from aihub_pipeline.ops.data_lake.parse_document_from_data_lake import parse_document_from_data_lake
+from aihub_pipeline.ops.data_lake.reformat_tables import reformat_tables
+from aihub_pipeline.ops.data_lake.save_figures_to_data_lake import save_figures_to_data_lake
 from aihub_pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
@@ -24,7 +35,14 @@ def documents_factory(
         automation_condition=AutomationCondition.eager(),
         description="Create RefDocs from data lake files and insert them into the docstore",
     )
-    def document(data_lake_file: DataLakeFile) -> Output[RefDocDocument]:
-        return insert_ref_doc_into_docstore(data_lake_file_to_ref_doc(data_lake_file))
+    def document(
+        data_lake_file: DataLakeFile,
+    ) -> Output[RefDocDocument]:
+        doc_with_figures = parse_document_from_data_lake(data_lake_file)
+        figure_metadata = save_figures_to_data_lake(doc_with_figures, data_lake_file)
+        doc_with_figures = inject_figures(doc_with_figures, figure_metadata)
+        doc_with_figures = reformat_tables(doc_with_figures)
+
+        return insert_ref_doc_into_docstore(doc_with_figures_to_ref_doc(data_lake_file, doc_with_figures))
 
     return document
