@@ -1,4 +1,5 @@
 import html
+import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
@@ -166,15 +167,53 @@ class NodeCreatorFromSplits:
         page = 1
         for split in splits:
             # add page number to metadata
-            if "<!-- PageBreak -->" in split.content:
-                page += 1
             split.metadata.update({PAGE: page})
 
-            split_texts = self.sentence_splitter.split_text(split.content)
+            # update page count
+            if "<!-- PageBreak -->" in split.content:
+                page += 1
+
+            # Regular expressions to identify tables and images
+            table_pattern = r"<table>.*?</table>"
+            image_pattern = r"!\[.*?\]\(.*?\)"
+
+            # Initialize split_texts to store all segments
+            split_texts = []
+
+            # Find all tables and images
+            table_matches = list(re.finditer(table_pattern, split.content, re.DOTALL))
+            image_matches = list(re.finditer(image_pattern, split.content))
+
+            # Combine matches and sort by their start position
+            all_matches = sorted(table_matches + image_matches, key=lambda m: m.start())
+
+            last_end = 0
+            for match in all_matches:
+                start, end = match.span()
+
+                # Add normal text before the current match
+                if last_end < start:
+                    normal_text = split.content[last_end:start]
+                    if normal_text:
+                        split_texts.extend(self.sentence_splitter.split_text(normal_text))
+
+                # Add the current match (table or image)
+                split_texts.append(match.group(0))
+                with open("nodes.txt", "a") as f:
+                    f.write(match.group(0) + "\n\n")
+                last_end = end
+
+            # Add any remaining normal text after the last match
+            if last_end < len(split.content):
+                normal_text = split.content[last_end:]
+                if normal_text:
+                    split_texts.extend(self.sentence_splitter.split_text(normal_text))
+
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
+
         return nodes
 
     def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
