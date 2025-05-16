@@ -24,7 +24,7 @@ def fetch_all_files_in_data_lake_no_op(
         path_parts = path.name.split("/")
         document_namespace = path_parts[0]
 
-        if len(path_parts) == 1 or document_namespace != data_lake_directory_name:
+        if len(path_parts) == 1 or document_namespace != data_lake_directory_name or "figures" in path_parts:
             continue
 
         document_uri = f"{data_lake_container_name}/{path.name.lstrip('/')}"
