@@ -115,6 +115,22 @@ agent:
     online: "En ligne"
     offline: "Hors ligne"
 
+document:
+  list:
+    title: "Titre du Document"
+    created: "Créé"
+    updated_at: "Dernière mise à jour"
+    document_type: "Type de Document"
+    number_of_pages: "Nombre de Pages"
+
+knowledge:
+  navigation:
+    document:
+      basic: "Aperçu"
+      content: "Contenu"
+      nodes: "Fragments"
+      summary: "Résumés"
+
 auth:
   renew:
     processing: "Traitement du renouvellement silencieux du jeton..."

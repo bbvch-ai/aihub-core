@@ -115,6 +115,22 @@ agent:
     online: "Online"
     offline: "Offline"
 
+document:
+  list:
+    title: "Titolo del Documento"
+    created: "Creato"
+    updated_at: "Ultimo aggiornamento"
+    document_type: "Tipo di Documento"
+    number_of_pages: "Numero di Pagine"
+
+knowledge:
+  navigation:
+    document:
+      basic: "Panoramica"
+      content: "Contenuto"
+      nodes: "Frammenti"
+      summary: "Riassunti"
+
 auth:
   renew:
     processing: "Elaborazione del rinnovo silenzioso del token..."

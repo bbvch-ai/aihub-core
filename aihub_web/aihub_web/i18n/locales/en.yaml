@@ -116,6 +116,22 @@ agent:
     online: "Online"
     offline: "Offline"
 
+document:
+  list:
+    title: "Document Titel"
+    created: "Created"
+    updated_at: "Last updated"
+    document_type: "Document Type"
+    number_of_pages: "Number of Pages"
+
+knowledge:
+  navigation:
+    document:
+      basic: "Overview"
+      content: "Content"
+      nodes: "Chunks"
+      summary: "Summaries"
+
 auth:
   renew:
     processing: "Processing silent token renewal..."

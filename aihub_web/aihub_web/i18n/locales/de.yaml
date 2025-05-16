@@ -115,6 +115,22 @@ agent:
     online: "Online"
     offline: "Offline"
 
+document:
+  list:
+    title: "Dokumenttitel"
+    created: "Erstellt"
+    updated_at: "Zuletzt aktualisiert"
+    document_type: "Dokumenttyp"
+    number_of_pages: "Seitenanzahl"
+
+knowledge:
+  navigation:
+    document:
+      basic: "Übersicht"
+      content: "Inhalt"
+      nodes: "Fragmente"
+      summary: "Zusammenfassungen"
+
 auth:
   renew:
     processing: "Stille Token-Erneuerung wird verarbeitet..."

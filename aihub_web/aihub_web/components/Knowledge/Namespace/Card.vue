@@ -11,7 +11,7 @@
           />
         </div>
         <h3 class="font-semibold opacity-80">
-          {{ name }} with code
+          {{ name }}
         </h3>
       </div>
       <Badge
