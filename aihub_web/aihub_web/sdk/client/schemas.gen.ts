@@ -5166,21 +5166,24 @@ export const MyUserDTOSchema = {
                 {
                     type: 'null'
                 }
-            ]
+            ],
+            description: 'User dashboard configuration for index page'
         },
         favorite_modules: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Favorite Modules'
+            title: 'Favorite Modules',
+            description: 'List of favorite modules from aihub suite'
         },
         roles: {
             items: {
                 type: 'string'
             },
             type: 'array',
-            title: 'Roles'
+            title: 'Roles',
+            description: 'List of roles assigned to the user'
         }
     },
     type: 'object',

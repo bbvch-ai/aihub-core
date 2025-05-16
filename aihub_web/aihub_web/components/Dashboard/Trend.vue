@@ -2,7 +2,7 @@
   <Tag
     v-if="isTrendingUp"
     severity="success"
-    value="Trending Up"
+    :value="t('chart.trending_up')"
     size="small"
     icon="pi pi-arrow-up-right"
     rounded
@@ -10,7 +10,7 @@
   <Tag
     v-else
     severity="danger"
-    value="Trending Down"
+    :value="t('chart.trending_down')"
     icon="pi pi-arrow-down-right"
     rounded
   />
@@ -23,5 +23,6 @@ const props = defineProps<{
   timeseries: EventTimeseries
 }>()
 
+const { t } = useI18n()
 const { isTrendingUp } = useEventTimeseriesStats(props.timeseries)
 </script>

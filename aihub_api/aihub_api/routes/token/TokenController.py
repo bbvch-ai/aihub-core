@@ -63,7 +63,8 @@ class TokenController(Controller):
             tags=self.tags,
         )
         async def revoke_token_endpoint(
-            token_id: str, user: AuthenticatedUser = Security(self.auth)
+            token_id: str,
+            user: AuthenticatedUser = Security(self.auth),
         ) -> RevokeTokenResponse:
             try:
                 TokenService.revoke_token(token_id, user)

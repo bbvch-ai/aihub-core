@@ -1,4 +1,4 @@
-import { updateMyDashboardSettings } from '@core/sdk/client'
+import { updateMyDashboard } from '@core/sdk/client'
 
 import type { GridStackOptions } from 'gridstack/dist/types'
 
@@ -7,7 +7,7 @@ export const useSaveDashboard = () => {
 
   const { mutate: saveDashboard } = useMutation({
     mutation: async ({ grid }: { grid: GridStackOptions }) => {
-      await updateMyDashboardSettings({
+      await updateMyDashboard({
         composable: '$fetch',
         body: grid,
       })

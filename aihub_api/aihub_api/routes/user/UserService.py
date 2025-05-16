@@ -43,7 +43,7 @@ class UserService:
         Convert the `AuthenticatedUser` (provided by the auth layer) into a MyUserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
-        await UserService.get_user_by_oid(user.oid)
+        await UserService.get_user_by_oid(user.oid)  # Ensures that the UserEntity exists and is up to date.
         user_entity = UserEntity.by_oid(user.oid)
 
         dashboard_data = user_entity.dashboard.to_mongo()

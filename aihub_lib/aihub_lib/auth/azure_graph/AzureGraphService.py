@@ -17,8 +17,8 @@ class AzureGraphService:
         self.graph_scope = "https://graph.microsoft.com/.default"
         self.user_profile_cache = TTLCache(maxsize=128, ttl=3600)
         self.profile_image_cache = TTLCache(maxsize=128, ttl=18000)
-        self.service_principal_cache = TTLCache(maxsize=50, ttl=3600)
-        self.app_role_assignments_cache = TTLCache(maxsize=100, ttl=600)
+        self.service_principal_cache = TTLCache(maxsize=64, ttl=3600)
+        self.app_role_assignments_cache = TTLCache(maxsize=128, ttl=600)
         self.user_app_details_cache = TTLCache(maxsize=128, ttl=600)
 
     async def get_token(self) -> str:
@@ -77,7 +77,7 @@ class AzureGraphService:
                         self.user_profile_cache[oid_cache_key] = user
                 return user
             else:
-                logger.warning(f"AzureGraphService: No user found for email.")
+                logger.warning("AzureGraphService: No user found for email.")
                 return None
         else:
             logger.exception(

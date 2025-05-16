@@ -35,8 +35,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDashboardComponent } from '@core/composables/dashboard/useDashboardComponent'
-
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 
 const props = defineProps<{

@@ -12,8 +12,6 @@ export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }
     thread_id: route?.params?.thread_id,
     event_name: eventName,
   }
-  console.log(query, timeRange.value)
-
   const { data: timeseries, isPending: timeseriesIsLoading } = useQuery<EventTimeseries>({
     key: () => ['events', 'timeseries', timeRange.value, query],
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -28,7 +26,6 @@ export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }
       })
     },
   })
-  console.log(timeseries.value, timeseriesIsLoading.value)
 
   return {
     timeseries,

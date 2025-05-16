@@ -140,10 +140,20 @@ timerange:
   30d: "1 Month"
   365d: "1 Year"
 
+chart:
+  no_data: "No data available for this period."
+  trending_up: "Trending Up"
+  trending_down: "Trending Down"
+
 dashboard:
   all_agents: "All Agents"
   users: "AI-Hub Users"
   unknown_agent: "Unknown Agent"
+  add_widget: "Add Widget"
+  select_data_type: "Select Data type"
+  select_agent: "Select an Agent (Optional)"
+  create: "Create"
+  create_widget: "Create new Widget"
   events:
     StartEvent:
       label: 'Started Agent Runs'

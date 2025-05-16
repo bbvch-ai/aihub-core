@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, EventTimeseries } from '@core/sdk/client'
+import type { EventTimeseries } from '@core/sdk/client'
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 
 const props = defineProps<{
@@ -27,22 +27,5 @@ const props = defineProps<{
 
 const { sum } = useEventTimeseriesStats(props.timeseries)
 
-const { agents } = useAgents()
-const agentName = computed<string>(() => {
-  const agentId = props.widgetData.agent?.agentId
-  const agentClass = props.widgetData.agent?.agentClass
-  if (!(agentId && agentClass)) {
-    return 'All Agents'
-  }
-  if (agentClass === 'UserAgent') {
-    return 'AI-Hub Users'
-  }
-  const agent = agents.value?.find((agent: AgentDto) => {
-    return agent.agent_id === agentId && agent.agent_class === agentClass
-  })
-  if (!agent) {
-    return 'Unknown Agent'
-  }
-  return agent.agent_config.name
-})
+const { agentName } = useAgentNameFromDashboardWidget(props.widgetData)
 </script>

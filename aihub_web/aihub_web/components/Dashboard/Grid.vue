@@ -5,14 +5,14 @@
         <div class="pr-4">
           <Button
             type="button"
-            label="Add Widget"
+            :label="t('dashboard.add_widget')"
             icon="pi pi-plus"
             @click="($event) => newWidget.toggle($event)"
           />
           <Popover ref="newWidget">
             <div class="flex flex-col gap-2">
               <p class="font-bold">
-                Create new Widget
+                {{ t("dashboard.create_widget") }}
               </p>
               <SelectButton
                 v-model="component"
@@ -31,18 +31,18 @@
                 v-model="event"
                 :options="eventOptions"
                 option-label="label"
-                placeholder="Select Data type"
+                :placeholder="t('dashboard.select_data_type')"
               />
               <Select
                 v-model="agent"
                 :options="agents"
                 option-label="agent_config.name"
-                placeholder="Select an Agent (Optional)"
+                :placeholder="t('dashboard.select_agent')"
                 :loading="agentsAreLoading"
                 show-clear
               />
               <Button
-                label="Create"
+                :label="t('dashboard.create')"
                 :disabled="!(timeRange && event)"
                 @click="addWidget"
               />

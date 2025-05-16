@@ -43,6 +43,7 @@ const props = defineProps<{
 }>()
 
 const isDark = useDark({ storageKey: 'dark' })
+const { t } = useI18n()
 
 const { agentName } = useAgentNameFromDashboardWidget(props.widgetData)
 
@@ -124,7 +125,7 @@ const chartOptions = computed<ApexOptions>(() => {
       },
     },
     noData: {
-      text: 'No data',
+      text: t('chart.no_data'),
       align: 'center',
       verticalAlign: 'middle',
       offsetX: 0,

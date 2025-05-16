@@ -27,6 +27,7 @@ const props = withDefaults(defineProps<{
   height: 350,
 })
 
+const { t } = useI18n()
 const isDark = useDark({ storageKey: 'dark' })
 
 const chartSeries = computed(() => {
@@ -57,7 +58,7 @@ const chartOptions = computed<ApexOptions>(() => {
         mode: isDark.value ? 'dark' : 'light',
       },
       noData: {
-        text: 'No data available for this period.',
+        text: t('chart.no_data'),
         align: 'center',
         verticalAlign: 'middle',
         style: {
@@ -212,7 +213,7 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     colors: activeSeriesColors.length > 0 ? activeSeriesColors : undefined,
     noData: {
-      text: 'No data available for this period.',
+      text: t('chart.no_data'),
       align: 'center',
       verticalAlign: 'middle',
       style: {

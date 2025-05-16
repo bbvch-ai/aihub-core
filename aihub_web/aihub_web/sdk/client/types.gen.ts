@@ -2099,8 +2099,17 @@ export type MyUserDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
+    /**
+     * User dashboard configuration for index page
+     */
     dashboard?: DashboardDto | null;
+    /**
+     * List of favorite modules from aihub suite
+     */
     favorite_modules?: Array<string>;
+    /**
+     * List of roles assigned to the user
+     */
     roles?: Array<string>;
 };
 

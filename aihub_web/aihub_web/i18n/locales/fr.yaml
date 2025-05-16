@@ -140,10 +140,20 @@ timerange:
   30d: "1 Mois"
   365d: "1 An"
 
+chart:
+  no_data: "Aucune donnée disponible pour cette période."
+  trending_up: "Tendance à la hausse"
+  trending_down: "Tendance à la baisse"
+
 dashboard:
   all_agents: "Tous les Agents"
   users: "Utilisateurs AI-Hub"
   unknown_agent: "Agent Inconnu"
+  add_widget: "Ajouter un Widget"
+  select_data_type: "Sélectionner le type de données"
+  select_agent: "Sélectionner un Agent (Optionnel)"
+  create: "Créer"
+  create_widget: "Créer un nouveau Widget"
   events:
     StartEvent:
       label: 'Exécutions d''Agent Démarrées'
