@@ -1,3 +1,4 @@
+import time
 from typing import List, Sequence, Union
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
@@ -104,6 +105,8 @@ class VectorStoreIOManager(ConfigurableIOManager):
         context.log.info("Successfully added nodes to vector store")
 
     def load_input(self, context: InputContext) -> Union[List[TextNode], List[List[TextNode]]]:
+        context.log.info("Sleeping for 30 seconds to allow the vector store to catch up")
+        time.sleep(30)
         # Check if a partition key is available
         if context.has_partition_key:
             # Single partition key; load nodes for a single document

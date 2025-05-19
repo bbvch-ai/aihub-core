@@ -1,7 +1,7 @@
 from functools import cache
 from typing import List
 
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement, MetadataIndexFieldType
 
 from aihub_lib.infrastructure.azure.ai_search.AISearchAccess import AISearchAccess
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -30,6 +30,11 @@ def create_azure_ai_search_vector_store(
         filterable_metadata_field_keys = [field.name for field in index.fields if field.filterable]
     except Exception:
         filterable_metadata_field_keys = metadata_fields or DEFAULT_METADATA_FIELDS
+        if DOCUMENT_ID not in filterable_metadata_field_keys:
+            if isinstance(filterable_metadata_field_keys, dict):
+                filterable_metadata_field_keys[DOCUMENT_ID] = (DOCUMENT_ID, MetadataIndexFieldType.STRING)
+            else:
+                filterable_metadata_field_keys.append(DOCUMENT_ID)
 
     return AzureAISearchVectorStore(
         search_or_index_client=index_client,
