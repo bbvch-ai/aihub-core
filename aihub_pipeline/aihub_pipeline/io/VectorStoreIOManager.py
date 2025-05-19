@@ -1,12 +1,13 @@
-import time
+from datetime import datetime, timedelta
 from typing import List, Sequence, Union
 
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
+import time
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from aihub_pipeline.util.id_utils import uri_to_id
 
 
@@ -105,8 +106,6 @@ class VectorStoreIOManager(ConfigurableIOManager):
         context.log.info("Successfully added nodes to vector store")
 
     def load_input(self, context: InputContext) -> Union[List[TextNode], List[List[TextNode]]]:
-        context.log.info("Sleeping for 30 seconds to allow the vector store to catch up")
-        time.sleep(30)
         # Check if a partition key is available
         if context.has_partition_key:
             # Single partition key; load nodes for a single document
@@ -148,14 +147,30 @@ class VectorStoreIOManager(ConfigurableIOManager):
 
         context.log.info(f"Querying vector store for document ID: {doc_id}")
 
-        nodes = self.vector_store.get_nodes(filters=filters)
+        max_retry_time = 30  # seconds
+        retry_interval = 1  # seconds between retries
+        start_time = datetime.now()
+        end_time = start_time + timedelta(seconds=max_retry_time)
 
-        context.log.info(f"Found {len(nodes)} nodes for document {doc_id}")
+        while datetime.now() < end_time:
+            nodes = self.vector_store.get_nodes(filters=filters)
 
-        if not nodes:
-            context.log.warning(f"No nodes found for document {doc_id}")
+            if nodes:
+                context.log.info(f"Found {len(nodes)} nodes for document {doc_id}")
+                return nodes
 
-        return nodes
+            retry_time_elapsed = (datetime.now() - start_time).total_seconds()
+            context.log.info(
+                f"No nodes found for document {doc_id}. "
+                f"Retrying in {retry_interval}s... "
+                f"({retry_time_elapsed:.1f}s elapsed of {max_retry_time}s max retry time)"
+            )
+            time.sleep(retry_interval)
+
+        context.log.warning(
+            f"No nodes found for document {doc_id} after retrying for {max_retry_time} seconds"
+        )
+        return []
 
     def _query_vector_store_for_multiple_docs(self, doc_ids: List[str], context: InputContext) -> List[List[TextNode]]:
         nodes_per_doc = []
