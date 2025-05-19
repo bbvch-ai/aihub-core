@@ -46,7 +46,6 @@ class DocumentIntelligenceLoader(BaseReader):
         if result.figures:
             figure_ids = [figure.id for figure in result.figures]
 
-            # TODO add handle result.languages
             metadata = {
                 "number_of_pages": len(result.pages),
                 "operation_id": operation_id,
