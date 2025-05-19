@@ -55,8 +55,6 @@ class DocumentIntelligenceLoader(BaseReader):
         else:
             metadata = {
                 "number_of_pages": len(result.pages),
-                "operation_id": None,
-                "figure_ids": [],
             }
 
         return [

@@ -145,6 +145,7 @@ summarizer:
   summarize: |
     Si prega di fornire un riassunto conciso del seguente testo.
     Raccogli le idee principali e i punti chiave, assicurandoti che il riassunto sia coerente e mantenga il contesto originale e le relazioni tra le idee.
+    Assicuratevi di scrivere il riassunto nella STESSA lingua del <Testo>.
     Testo per il sommario:
 
     <Testo>

@@ -152,7 +152,6 @@ def generate_description(
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
 
         # Create a robust system prompt
-        # TODO detect document language and localize prompt
         system_prompt = """You are an expert at creating high-quality image descriptions for document accessibility.
 Your task is to generate detailed alt text for figures in documents that:
 
@@ -167,7 +166,8 @@ Your task is to generate detailed alt text for figures in documents that:
 
 Format your descriptions as concise, factual paragraphs that could be used directly as alt text.
 Focus on being informative and helping the reader understand what they can't see.
-Do **NOT** come up with information, only reference what you can see in the iamge."""
+Do **NOT** come up with information, only reference what you can see in the iamge.
+Write your reply in the SAME language as the context text and image text."""
 
         # Prepare user prompt with surrounding text context if available
         user_text = (

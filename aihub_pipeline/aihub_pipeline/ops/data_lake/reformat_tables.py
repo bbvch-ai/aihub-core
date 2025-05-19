@@ -29,9 +29,8 @@ def reformat_tables(
         html_table = match.group(0)
 
         try:
-            # TODO change nan to empty string for pandas
             # Convert the HTML table to a pandas DataFrame and then to markdown
-            markdown_table = pd.read_html(StringIO(html_table))[0].to_markdown()
+            markdown_table = pd.read_html(StringIO(html_table))[0].fillna("").to_markdown()
 
             # Replace the HTML table with the markdown table
             updated_content = updated_content[:start] + "\n" + markdown_table + "\n" + updated_content[end:]
@@ -39,4 +38,5 @@ def reformat_tables(
             context.log.error(f"Failed to convert table: {e}")
 
     document.text_resource.text = updated_content
+
     return document

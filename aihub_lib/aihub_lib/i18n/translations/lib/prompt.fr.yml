@@ -145,6 +145,7 @@ summarizer:
   summarize: |
     Veuillez fournir un résumé concis du texte suivant.
     Capturez les idées principales et les points clés, en veillant à ce que le résumé soit cohérent et maintienne le contexte original ainsi que les relations entre les idées.
+    Veillez à rédiger votre résumé dans la MÊME langue que le <Texte>.
     Texte pour le résumé:
 
     <Texte>

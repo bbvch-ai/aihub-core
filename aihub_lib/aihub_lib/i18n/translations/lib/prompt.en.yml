@@ -145,6 +145,7 @@ summarizer:
   summarize: |
     Please provide a concise summary of the following text.
     Capture the main ideas and key points, ensuring the summary is coherent and maintains the original context and relationships between ideas.
+    Make sure to write your summary in the SAME language as the <Text>.
     Text for Summary:
 
     <Text>

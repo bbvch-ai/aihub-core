@@ -147,6 +147,7 @@ summarizer:
   summarize: |
     Erstelle eine kurze und prägnante Zusammenfassung des folgenden Textes.
     Fasse die Hauptideen und Schlüsselpunkte zusammen, stelle sicher, dass die Zusammenfassung kohärent ist und den ursprünglichen Kontext und die Beziehungen zwischen den Ideen beibehält.
+    Achten Sie darauf, dass Sie Ihre Zusammenfassung in der GLEICHEN Sprache wie den <Text> schreiben.
     Text zur Zusammenfassung:
 
     <Text>
