@@ -28,7 +28,7 @@ def summary_nodes_factory(
         ins={"nodes": AssetIn(key=nodes_key), "document": AssetIn(key=document_key)},
         partitions_def=partitions,
         automation_condition=AutomationCondition.eager(),
-        description="",
+        description="Generates summary nodes for a reference document by extending input nodes with summary nodes, embedding them, and inserting them into a vector store.",
     )
     def summary_nodes(nodes: List[TextNode], document: RefDocDocument) -> Output[List[TextNode]]:
         return insert_nodes_into_vector_store(
