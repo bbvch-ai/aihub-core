@@ -2,7 +2,7 @@ import {
   type DocumentDto,
   getNodesForDocument,
   getSummaryNodesForDocument,
-  type NodeDto,
+  type Node,
   type NodeSummaryDto,
 } from '@core/sdk/client'
 import { useRoute } from 'vue-router'

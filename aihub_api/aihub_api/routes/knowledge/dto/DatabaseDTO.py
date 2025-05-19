@@ -1,8 +1,7 @@
 from typing import Annotated, List
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.persistence.rag.documents.entities.types.Namespace import Namespace
+from pydantic import BaseModel, Field
 
 
 class DatabaseDTO(BaseModel):

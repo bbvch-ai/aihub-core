@@ -1,5 +1,5 @@
 <template>
-  <div class="content">
+  <div class="content overflow-x-auto">
     <MDC
       :value="md"
       tag="article"

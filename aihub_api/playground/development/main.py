@@ -148,8 +148,15 @@ async def main():
         .tts(),
         KnowledgeController(
             auth=auth,
-            vector_store_factory=lambda collection: create_milvus_vector_store("http://localhost:19530", collection, 3072),
-        ).get_databases().get_documents_for_namespace().get_document_by_id().get_nodes_for_document().get_summary_nodes_for_document()
+            vector_store_factory=lambda collection: create_milvus_vector_store(
+                "http://localhost:19530", collection, 3072
+            ),
+        )
+        .get_databases()
+        .get_documents_for_namespace()
+        .get_document_by_id()
+        .get_nodes_for_document()
+        .get_summary_nodes_for_document(),
     )
 
     await runner.run()

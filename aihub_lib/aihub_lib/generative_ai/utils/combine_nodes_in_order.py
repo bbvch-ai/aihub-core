@@ -8,6 +8,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import Document
+from aihub_lib.nats.events.semantic.retriever.Node import Node
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -19,7 +20,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
-    SECTION_START_LINE,
     SOURCE,
     TYPE,
     UPDATED_AT,
@@ -55,25 +55,23 @@ def combine_nodes_in_order(
     nodes_per_document = defaultdict(list)
 
     for context_node in context_nodes:
-        if not context_node.metadata or SOURCE not in context_node.metadata:
-            raise ValueError(f"Context node must contain metadata {SOURCE}")
-        key = context_node.metadata.get(SOURCE)
+        key = context_node.metadata.source_uri
         nodes_per_document[key].append(context_node)
 
     documents = []
 
     for key, nodes in nodes_per_document.items():
-        metadata = nodes[0].metadata
+        metadata: Node = nodes[0].metadata
 
         metadata_fields = {
-            "source": key,
-            "namespace": metadata.get(NAMESPACE),
-            "type": metadata.get(TYPE),
-            "language": metadata.get(LANGUAGE),
-            "version": metadata.get(VERSION),
-            "created_at": format_unix_timestamp(metadata.get(CREATED_AT)),
-            "updated_at": format_unix_timestamp(metadata.get(UPDATED_AT)),
-            "inserted_at": format_unix_timestamp(metadata.get(INSERTED_AT)),
+            SOURCE: key,
+            NAMESPACE: metadata.namespace,
+            TYPE: metadata.content_type,
+            LANGUAGE: metadata.language,
+            VERSION: metadata.version,
+            CREATED_AT: metadata.created_at,
+            UPDATED_AT: metadata.updated_at,
+            INSERTED_AT: metadata.inserted_at,
         }
 
         metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
@@ -83,7 +81,7 @@ def combine_nodes_in_order(
         doc_header = f"<DOCUMENT {metadata_string}>\n\n"
 
         text_parts = [doc_header]
-        sorted_nodes = sorted(nodes, key=lambda x: x.metadata.get(SECTION_START_LINE, 0))
+        sorted_nodes = sorted(nodes, key=lambda x: x.metadata.section_start_line)
 
         for n in sorted_nodes:
             text_parts.append(f"{n.content}\n\n")

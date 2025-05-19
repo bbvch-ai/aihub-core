@@ -2747,21 +2747,12 @@ export const DocumentSchema = {
             description: 'Content of the document.'
         },
         metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
+            '$ref': '#/components/schemas/Node',
             description: 'Optional metadata associated with the document as a dictionary.'
         }
     },
     type: 'object',
-    required: ['id'],
+    required: ['id', 'metadata'],
     title: 'Document'
 } as const;
 
@@ -5324,7 +5315,7 @@ export const NamespaceSchema = {
     title: 'Namespace'
 } as const;
 
-export const NodeDTOSchema = {
+export const NodeSchema = {
     properties: {
         id: {
             type: 'string',
@@ -5360,6 +5351,21 @@ export const NodeDTOSchema = {
             title: 'End Char Idx',
             description: 'The end character index of the Node.'
         },
+        document_id: {
+            type: 'string',
+            title: 'Document Id',
+            description: 'ID of original ref_doc.'
+        },
+        source_uri: {
+            type: 'string',
+            title: 'Source Uri',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
         number_of_pages: {
             anyOf: [
                 {
@@ -5371,11 +5377,6 @@ export const NodeDTOSchema = {
             ],
             title: 'Number Of Pages',
             description: 'Number of Pages in the Document.'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'The namespace of the document within its metadata.'
         },
         content_type: {
             type: 'string',
@@ -5506,11 +5507,23 @@ export const NodeDTOSchema = {
             type: 'string',
             title: 'Inserted At',
             description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score representing the relevance of the document.'
         }
     },
     type: 'object',
-    required: ['id', 'text', 'start_char_idx', 'end_char_idx', 'number_of_pages', 'namespace', 'content_type', 'title', 'language', 'version', 'index', 'section_start_line', 'section_end_line', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'heading_level', 'created_at', 'updated_at', 'inserted_at'],
-    title: 'NodeDTO'
+    required: ['id', 'text', 'start_char_idx', 'end_char_idx', 'document_id', 'source_uri', 'namespace', 'number_of_pages', 'content_type', 'title', 'language', 'version', 'index', 'section_start_line', 'section_end_line', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'heading_level', 'created_at', 'updated_at', 'inserted_at'],
+    title: 'Node'
 } as const;
 
 export const NodeDataSchema = {
@@ -5629,7 +5642,7 @@ export const NodeSummaryDTOSchema = {
         },
         nodes: {
             items: {
-                '$ref': '#/components/schemas/NodeDTO'
+                '$ref': '#/components/schemas/Node'
             },
             type: 'array',
             title: 'Nodes',

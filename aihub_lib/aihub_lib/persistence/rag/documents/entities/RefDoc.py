@@ -52,22 +52,19 @@ class RefDoc(Document):
 
     @classmethod
     def by_namespace(
-            cls,
-            db_alias: str,
-            namespace: str,
-            exclude_ids: Optional[List[str]] = None,
+        cls,
+        db_alias: str,
+        namespace: str,
+        exclude_ids: Optional[List[str]] = None,
     ) -> List["RefDoc"]:
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            return list(SwitchedRefDoc.objects.filter(
-                data__metadata__namespace=namespace,
-                id__nin=(exclude_ids or [])
-            ))
+            return list(SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace, id__nin=(exclude_ids or [])))
 
     @classmethod
     def count_by_namespace(
-            cls,
-            db_alias: str,
-            namespace: str,
+        cls,
+        db_alias: str,
+        namespace: str,
     ) -> int:
         """Counts the total number of documents in a given namespace."""
         query_filter = {"data__metadata__namespace": namespace}
@@ -76,11 +73,11 @@ class RefDoc(Document):
 
     @classmethod
     def get_paginated_by_namespace(
-            cls,
-            db_alias: str,
-            namespace: str,
-            skip: int,
-            limit: int,
+        cls,
+        db_alias: str,
+        namespace: str,
+        skip: int,
+        limit: int,
     ) -> List["RefDoc"]:
         """
         Retrieves a paginated list of documents from a given namespace.
@@ -88,7 +85,7 @@ class RefDoc(Document):
         """
         query_filter = {"data__metadata__namespace": namespace}
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            return list(SwitchedRefDoc.objects.filter(**query_filter).skip(skip).limit(limit).order_by('id'))
+            return list(SwitchedRefDoc.objects.filter(**query_filter).skip(skip).limit(limit).order_by("id"))
 
     @classmethod
     def get_all_namespaces(cls, db_alias: str) -> List[str]:
@@ -115,7 +112,7 @@ class RefDoc(Document):
                     "last_updated_at": {"$max": "$__data__.metadata.updated_at"},
                     "last_inserted_at": {"$max": "$__data__.metadata.inserted_at"},
                     "created_at": {"$min": "$__data__.metadata.created_at"},
-                    "document_types": {"$addToSet": "$__data__.metadata.type"}
+                    "document_types": {"$addToSet": "$__data__.metadata.type"},
                 }
             },
             # Format the output
@@ -127,9 +124,9 @@ class RefDoc(Document):
                     "last_inserted_at": 1,
                     "created_at": 1,
                     "document_types": 1,
-                    "_id": 0
+                    "_id": 0,
                 }
-            }
+            },
         ]
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:

@@ -5,10 +5,8 @@
     icon="line-md:document-twotone"
   >
     <div class="flex flex-col gap-4">
-      <ChatSourceDocument
-        v-for="document in event.event.documents"
-        :key="document.id"
-        :document="document"
+      <ChatSourceDocuments
+        :documents="event.event.documents ?? []"
       />
     </div>
   </EventDisplayBase>

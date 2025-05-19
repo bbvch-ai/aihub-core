@@ -41,6 +41,7 @@ def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[
         "data_lake_resource": data_lake_resource,
     }
 
+
 def mongo_document_store_resource(
     document_store_name: str,
     namespace_name: str,
@@ -54,6 +55,7 @@ def mongo_document_store_resource(
         "doc_store_resource": doc_store_resource,
     }
 
+
 def aisearch_vector_store_resource(
     vector_store_name: str,
     dimensions: int = 3072,
@@ -65,17 +67,21 @@ def aisearch_vector_store_resource(
         "vector_store_io_manager": vector_store_io_manager,
     }
 
+
 def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
     dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
-    vector_store = MilvusVectorStoreResource(uri=vector_store_uri, collection_name=vector_store_name, embedding_vector_dimension=dimensions)
+    vector_store = MilvusVectorStoreResource(
+        uri=vector_store_uri, collection_name=vector_store_name, embedding_vector_dimension=dimensions
+    )
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     return {
         "vector_store": vector_store,
         "vector_store_io_manager": vector_store_io_manager,
     }
+
 
 def mongo_aisearch_storage_context_resources(
     vector_store_name: str,
@@ -88,6 +94,7 @@ def mongo_aisearch_storage_context_resources(
         **aisearch_vector_store_resource(vector_store_name=vector_store_name, dimensions=dimensions),
     }
 
+
 def local_mongo_milvus_storage_context_resource(
     vector_store_uri: str,
     vector_store_name: str,
@@ -97,8 +104,11 @@ def local_mongo_milvus_storage_context_resource(
 ) -> Dict[str, ConfigurableResourceFactory]:
     return {
         **mongo_document_store_resource(document_store_name=document_store_name, namespace_name=namespace_name),
-        **milvus_vector_store_resource(vector_store_uri=vector_store_uri, vector_store_name=vector_store_name, dimensions=dimensions),
+        **milvus_vector_store_resource(
+            vector_store_uri=vector_store_uri, vector_store_name=vector_store_name, dimensions=dimensions
+        ),
     }
+
 
 def default_io_manager_azure_datalake_resources(
     container_name: str, directory_name: str

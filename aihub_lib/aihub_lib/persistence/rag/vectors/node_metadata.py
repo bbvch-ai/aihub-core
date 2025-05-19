@@ -1,4 +1,5 @@
-from typing import Literal, Dict, Any, Optional, TypedDict, Union
+from typing import Any, Dict, Literal, Optional, TypedDict
+
 from llama_index.vector_stores.azureaisearch import MetadataIndexFieldType
 
 # Define literal types for various constants
@@ -50,6 +51,7 @@ NODE_LANGUAGE_ENGLISH: LanguageValue = "en"
 NODE_LANGUAGE_FRENCH: LanguageValue = "fr"
 NODE_LANGUAGE_ITALIAN: LanguageValue = "it"
 
+
 class NodeMetadata(TypedDict, total=False):
     namespace: str
     source: str
@@ -72,6 +74,7 @@ class NodeMetadata(TypedDict, total=False):
     heading_level: HeadingLevelValue
     reference_name: Optional[str]
     reference_url: Optional[str]
+
 
 DEFAULT_METADATA: Dict[str, Any] = {
     NAMESPACE: "",

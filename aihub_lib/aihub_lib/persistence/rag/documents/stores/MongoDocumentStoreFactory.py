@@ -15,6 +15,5 @@ def create_mongo_document_store(document_store_name: str) -> MongoDocumentStore:
         node_collection_suffix="-data",
         ref_doc_collection_suffix="-ref-doc-info",
         metadata_collection_suffix="-metadata",
-
     )
     return docstore

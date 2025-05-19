@@ -1,15 +1,17 @@
 <template>
-  <StructuralColumn
-    title="Displays"
-    close-route="/admin/thread"
-    :loading="threadIsLoading"
-  >
-    <DisplayList
-      :displays="thread.displays"
-      @selected="toDisplay"
-    />
-  </StructuralColumn>
-  <NuxtPage />
+  <StructuralSubstructure>
+    <StructuralColumn
+      title="Displays"
+      close-route="/admin/thread"
+      :loading="threadIsLoading"
+    >
+      <DisplayList
+        :displays="thread.displays"
+        @selected="toDisplay"
+      />
+    </StructuralColumn>
+    <NuxtPage />
+  </StructuralSubstructure>
 </template>
 
 <script setup lang="ts">

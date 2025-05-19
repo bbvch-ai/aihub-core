@@ -6,13 +6,11 @@ from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
-    OpenaiLikeLLMConfig,
-    OpenaiLikeLLMParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-    SelfHostedEmbeddingParameter,
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
+from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
+    AzureOpenAIEmbeddingConfig,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
@@ -31,42 +29,35 @@ async def main():
             system_prompt=LocaleString(
                 en="You're an agent answering user requests. Only use the context information provided."
             ),
-            llm=OpenaiLikeLLMConfig(
-                name="unsloth/Llama-3.2-1B-Instruct",
-                base_url="http://localhost:8182/v1",
-                api_key=None,
-                context_size=512,
-                is_chat_model=True,
-                is_function_calling_model=False,
-                default_parameter=OpenaiLikeLLMParameter(
-                    logit_bias=None,
-                    logprobs=None,
-                ),
+            llm=AzureOpenAILLMConfig(
+                name="gpt-4o",
+                base_url="https://bbvaihub-openai-sui.openai.azure.com",
+                api_version="2025-01-01-preview",
+                prompt_tokens_costs_per_thousand=0.0045,
+                completion_tokens_costs_per_thousand=0.0133,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=SelfHostedEmbeddingConfig(
-                    name="Alibaba-NLP/gte-base-en-v1.5",
-                    base_url="http://localhost:8183",
-                    api_key=None,
-                    timeout=60,
-                    embed_batch_size=32,
-                    default_parameter=SelfHostedEmbeddingParameter(
-                        text_instruction=None,
-                        query_instruction=None,
-                        truncate_text=False,
-                    ),
+                embed_model=AzureOpenAIEmbeddingConfig(
+                    name="text-embedding-3-large",
+                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    api_version="2024-12-01-preview",
+                    embedding_tokens_costs_per_thousand=0.0,
                 ),
-                index_namespaces=["ai_knowledge"],
+                index_namespaces=["papers"],
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content"],
                 vector_store=create_milvus_vector_store(
-                    uri="http://localhost",
-                    collection_name="development",
-                    embedding_vector_dimension=768,
+                    uri="http://localhost:19530",
+                    collection_name="papers",
+                    embedding_vector_dimension=3072,
                 ),
+                retrieve_prev_next=RetrievePrevNextConfig(
+                    num_nodes=10,
+                    mode=ModeOptions.BOTH
+                )
             ),
-            number_of_input_tokens=100000,
+            number_of_input_tokens=100_000,
             condense_question_prompt=LocaleString(
                 en="Given the following conversation between a user and an AI assistant and a follow-up question from the user,"
                 "rephrase the follow-up question to be a standalone question."

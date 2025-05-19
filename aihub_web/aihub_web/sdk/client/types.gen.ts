@@ -998,9 +998,7 @@ export type Document = {
     /**
      * Optional metadata associated with the document as a dictionary.
      */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
+    metadata: Node;
 };
 
 export type DocumentDto = {
@@ -2198,7 +2196,7 @@ export type Namespace = {
     document_types: Array<string>;
 };
 
-export type NodeDto = {
+export type Node = {
     /**
      * The unique identifier of the Node.
      */
@@ -2216,13 +2214,21 @@ export type NodeDto = {
      */
     end_char_idx: number | null;
     /**
-     * Number of Pages in the Document.
+     * ID of original ref_doc.
      */
-    number_of_pages: number | null;
+    document_id: string;
+    /**
+     * Source URI of original document.
+     */
+    source_uri: string;
     /**
      * The namespace of the document within its metadata.
      */
     namespace: string;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages: number | null;
     /**
      * Content type (content or summary).
      */
@@ -2291,6 +2297,10 @@ export type NodeDto = {
      * Date source document was inserted into document store (ISO format string)
      */
     inserted_at: string;
+    /**
+     * Score representing the relevance of the document.
+     */
+    score?: number | null;
 };
 
 /**
@@ -2349,7 +2359,7 @@ export type NodeSummaryDto = {
     /**
      * List of nodes in the summary
      */
-    nodes: Array<NodeDto>;
+    nodes: Array<Node>;
 };
 
 export type PaginatedDocumentsResponse = {
@@ -4320,7 +4330,7 @@ export type GetNodesForDocumentResponses = {
     /**
      * Successful Response
      */
-    200: Array<NodeDto>;
+    200: Array<Node>;
 };
 
 export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof GetNodesForDocumentResponses];
