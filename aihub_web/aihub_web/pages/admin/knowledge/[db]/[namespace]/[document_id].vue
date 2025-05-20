@@ -34,7 +34,6 @@ const isActive = (path: string) => {
 
 const navItems = computed<NavItem[]>(() => [
   { name: t('knowledge.navigation.document.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
-  { name: t('knowledge.navigation.document.content'), key: 'content', path: subPath('content'), isActive: isActive('content') },
   { name: t('knowledge.navigation.document.nodes'), key: 'nodes', path: subPath('nodes'), isActive: isActive('nodes') },
   { name: t('knowledge.navigation.document.summary'), key: 'summary', path: subPath('summary'), isActive: isActive('summary') },
 ])

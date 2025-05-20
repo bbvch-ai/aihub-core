@@ -171,7 +171,7 @@ class ThreadService:
                 current_message = messages[-1]
                 if event.is_chunk_event:
                     if continue_chunk:
-                        current_message["content"][-1]["text"] += event.response
+                        current_message["content"][-1]["text"] += event.content
                     else:
                         current_message["content"].append(
                             ChatCompletionContentPartTextParam(text=event.content, type="text")

@@ -1,6 +1,6 @@
 <template>
   <Card
-    class="!rounded-2xl"
+    class="!rounded-2xl card"
     :class="{
       'striped-bg': isExternal || !isFromAgentInThread,
       'border-2 border-red-500 dark:!border-red-900': isError,
@@ -87,13 +87,13 @@ const isFromAgentInThread = computed<boolean>(() => {
 </script>
 
 <style scoped>
-:deep(.p-panel-header) {
+.card :deep(.p-panel-header) {
   padding: 0 !important;
 }
-:deep(.p-card-body) {
+.card :deep(.p-card-body) {
   padding: 0 5px 0 15px !important;
 }
-:deep(.p-panel-content) {
+.card :deep(.p-panel-content) {
   padding: 0 !important;
 }
 .striped-bg {

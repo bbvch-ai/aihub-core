@@ -10,6 +10,14 @@
     class="relative h-[calc(100vh-50px)] w-1/2 min-w-[800px] overflow-y-auto border-l border-surface-200 p-3 dark:border-surface-700"
   >
     <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2 p-3">
+        <ToggleSwitch
+          v-model="showInactive"
+        />
+        <p class="text-sm opacity-60">
+          Show Unused Nodes
+        </p>
+      </div>
       <div
         v-for="(docInfo, docId) in documentMap"
         :key="docId"
@@ -19,6 +27,7 @@
           :namespace="docInfo.namespace"
           :document-id="docInfo.id"
           :input-nodes="docInfo.nodes"
+          :show-inactive="showInactive"
         />
       </div>
     </div>
@@ -40,6 +49,7 @@ import type { Document, Node, WsServerEvent, RetrieverEvent } from '@core/sdk/cl
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 
+const showInactive = ref<boolean>(false)
 const threadPanelRef = ref(null)
 const panelBounding = useElementBounding(threadPanelRef)
 const panelLeftPosition = computed(() => panelBounding.left.value)

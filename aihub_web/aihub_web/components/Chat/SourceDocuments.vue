@@ -5,10 +5,6 @@
       :key="doc"
       class="relative rounded-3xl border border-surface-100 bg-white p-9 dark:border-surface-600 dark:bg-surface-800"
     >
-      <Icon
-        class="absolute right-3 top-2 cursor-pointer text-xl opacity-80"
-        name="line-md:question"
-      />
       <KnowledgeNodeContent
         v-for="node in nodes"
         :key="node.id"

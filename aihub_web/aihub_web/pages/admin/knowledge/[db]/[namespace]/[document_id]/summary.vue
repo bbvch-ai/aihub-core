@@ -4,16 +4,22 @@
     close-route="/admin/knowledge"
     :loading="nodesummaryNodesAreLoading"
   >
-    <div
-      v-for="summary in summaryNodes"
-      :key="summary.level"
-    >
-      {{ summary.level }}
-      <KnowledgeNodeContent
-        v-for="node in summary.nodes"
-        :key="node.id"
-        :node="node"
-      />
+    <div class="flex flex-col gap-16">
+      <div
+        v-for="summary in summaryNodes"
+        :key="summary.level"
+      >
+        <template v-if="summary.nodes.length > 0">
+          <div class="pl-2 font-bold">
+            Level {{ summary.level }}
+          </div>
+          <KnowledgeNodeContent
+            v-for="node in summary.nodes"
+            :key="node.id"
+            :node="node"
+          />
+        </template>
+      </div>
     </div>
   </StructuralColumn>
 </template>

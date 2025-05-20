@@ -1,37 +1,46 @@
 <template>
   <div
-    v-if="!documentNodesAreLoading"
+    v-if="!(documentNodesAreLoading || documentIsLoading)"
     class="relative rounded-3xl border border-surface-100 bg-white p-9 dark:border-surface-600 dark:bg-surface-800"
   >
-    <div class="absolute right-2 top-2 flex items-center gap-2">
-      <p class="text-sm opacity-60">
-        Show Unused Nodes
-      </p>
-      <ToggleSwitch
-        v-model="showInactive"
+    <KnowledgeDocumentOverview :document="document">
+      <KnowledgeNodeContent
+        v-for="node in combinedNodes"
+        :key="node.node.id"
+        always-show-score
+        :node="node.node"
+        :active="node.isActive"
       />
-    </div>
-    <KnowledgeNodeContent
-      v-for="node in combinedNodes"
-      :key="node.node.id"
-      always-show-score
-      :node="node.node"
-      :active="node.isActive"
-    />
+    </KnowledgeDocumentOverview>
   </div>
 </template>
 
 <script setup lang="ts">
-import { getNodesForDocument, type Node } from '@core/sdk/client'
+import { type DocumentDto, getDocumentById, getNodesForDocument, type Node } from '@core/sdk/client'
 
 const props = defineProps<{
   db: string
   namespace: string
   documentId: string
   inputNodes: Node[]
+  showInactive: boolean
 }>()
 
-const showInactive = ref<boolean>(false)
+const { data: document, isPending: documentIsLoading } = useQuery<DocumentDto>({
+  key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId as string],
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  enabled: true,
+  query: async () => {
+    return await getDocumentById({
+      composable: '$fetch',
+      path: {
+        db: props.db,
+        namespace: props.namespace,
+        document_id: props.documentId as string,
+      },
+    })
+  },
+})
 
 const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Node[]>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId, 'nodes'],
@@ -56,7 +65,7 @@ const combinedNodes = computed<{ node: Node, isActive: boolean }[]>(() => {
     if (activeNode) {
       combNodes.push({ node: activeNode, isActive: true })
     }
-    else if (showInactive.value) {
+    else if (props.showInactive) {
       combNodes.push({ node, isActive: false })
     }
   })

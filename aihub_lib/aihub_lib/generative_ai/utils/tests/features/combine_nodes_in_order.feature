@@ -12,7 +12,7 @@ Feature: Combine nodes in order
     Then it should return:
       """
       You are provided with additional context information in the form of structured documents. Each document follows a
-      consistent format, beginning with `<DOCUMENT [metadata]>` and ending with `</DOCUMENT>`. These documents contain
+      consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
 
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
@@ -21,20 +21,20 @@ Feature: Combine nodes in order
       Below are the relevant documents:
 
       <context_documents>
-      <DOCUMENT source='doc1'>
+      <REFERENCE_DOCUMENT source='doc1'>
 
       Doc1 line10 content
 
       Doc1 line20 content
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
-      <DOCUMENT source='doc2'>
+      <REFERENCE_DOCUMENT source='doc2'>
 
       Doc2 line15 content
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
 
@@ -54,13 +54,13 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <DOCUMENT source='docA'>
+      Custom prompt: <REFERENCE_DOCUMENT source='docA'>
 
       Node docA line=5
 
       Node docA line=10
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
       """
@@ -82,7 +82,7 @@ Feature: Combine nodes in order
     Then it should return:
       """
        You are provided with additional context information in the form of structured documents. Each document follows a
-      consistent format, beginning with `<DOCUMENT [metadata]>` and ending with `</DOCUMENT>`. These documents contain
+      consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
 
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
@@ -110,7 +110,7 @@ Feature: Combine nodes in order
     Then it should return:
       """
       You are provided with additional context information in the form of structured documents. Each document follows a
-      consistent format, beginning with `<DOCUMENT [metadata]>` and ending with `</DOCUMENT>`. These documents contain
+      consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
 
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
@@ -119,20 +119,20 @@ Feature: Combine nodes in order
       Below are the relevant documents:
 
       <context_documents>
-      <DOCUMENT source='docX'>
+      <REFERENCE_DOCUMENT source='docX'>
 
       docX line=1
 
       docX line=2
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
-      <DOCUMENT source='docY'>
+      <REFERENCE_DOCUMENT source='docY'>
 
       docY line=5
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
 
@@ -153,20 +153,20 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <DOCUMENT source='doc1' namespace='research_paper' type='report' language='en' version='1.2' created_at='14.11.2023' updated_at='14.11.2023' inserted_at='15.11.2023'>
+      Custom prompt: <REFERENCE_DOCUMENT source='doc1' namespace='research_paper' type='report' language='en' version='1.2' created_at='14.11.2023' updated_at='14.11.2023' inserted_at='15.11.2023'>
 
       Doc1 line10 content
 
       Doc1 line20 content
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
-      <DOCUMENT source='doc2' namespace='legal_document' type='contract' language='fr' version='2.0' created_at='22.07.2023' updated_at='22.07.2023' inserted_at='22.07.2023'>
+      <REFERENCE_DOCUMENT source='doc2' namespace='legal_document' type='contract' language='fr' version='2.0' created_at='22.07.2023' updated_at='22.07.2023' inserted_at='22.07.2023'>
 
       Doc2 line15 content
 
-      </DOCUMENT>
+      </REFERENCE_DOCUMENT>
 
       ---
       """

@@ -69,8 +69,8 @@ async def main():
             ),
             context_prompt=LocaleString(
                 en="You are provided with some additional context information in form of structured documents with its general"
-                "structure and relevant information in more detail. Each document starts with an indicator <DOC_START [documentname]>"
-                "and ends with <DOC_END [documentname]>."
+                "structure and relevant information in more detail. Each document starts with an indicator <REFERENCE_DOCUMENT [metadata]>"
+                "and ends with </REFERENCE_DOCUMENT>."
                 "Here are the relevant documents for the context:"
                 "\n"
                 "{context_str}"

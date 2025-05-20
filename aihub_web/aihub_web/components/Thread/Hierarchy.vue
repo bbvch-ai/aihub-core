@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full overflow-x-auto">
+  <div class="hierarchy w-full overflow-x-auto">
     <OrganizationChart
       :value="chartData"
       collapsible
@@ -119,18 +119,18 @@ const chartData = computed<OrganizationChartNode>(() => {
 
 <style scoped>
 /* Add some basic styling for better readability */
-:deep(.p-organizationchart-node-content) {
+.hierarchy :deep(.p-organizationchart-node-content) {
   padding: 0;
   border: none;
 }
 
-:deep(.p-organizationchart-line-down) {
+.hierarchy :deep(.p-organizationchart-line-down) {
   background-color: #adb5bd; /* primevue gray-400 */
 }
-:deep(.p-organizationchart-line-left) {
+.hierarchy :deep(.p-organizationchart-line-left) {
   border-right: 1px solid #adb5bd;
 }
-:deep(.p-organizationchart-line-top) {
+.hierarchy :deep(.p-organizationchart-line-top) {
   border-top: 1px solid #adb5bd;
 }
 </style>

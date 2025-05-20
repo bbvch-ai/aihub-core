@@ -78,7 +78,7 @@ def combine_nodes_in_order(
 
         metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
 
-        doc_header = f"<DOCUMENT {metadata_string}>\n\n"
+        doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
 
         text_parts = [doc_header]
         sorted_nodes = sorted(nodes, key=lambda x: x.metadata.section_start_line)
@@ -86,7 +86,7 @@ def combine_nodes_in_order(
         for n in sorted_nodes:
             text_parts.append(f"{n.content}\n\n")
 
-        text_parts.append("</DOCUMENT>\n")
+        text_parts.append("</REFERENCE_DOCUMENT>\n")
         text_parts.append("\n---\n")
 
         documents.append("".join(text_parts))
