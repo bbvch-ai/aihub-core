@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import MagicMock
+
 from llama_index.core.schema import NodeWithScore, TextNode
 
-from aihub_lib.generative_ai.utils.TokenBudget import TokenBudget, BudgetType
+from aihub_lib.generative_ai.utils.TokenBudget import BudgetType, TokenBudget
 
 
 class TestTokenBudget(unittest.TestCase):
@@ -16,10 +17,10 @@ class TestTokenBudget(unittest.TestCase):
         # Create a budget with standard allocations
         self.budget = TokenBudget(
             max_tokens=1000,
-            summary_allocation=0.25,   # 250 tokens
-            content_allocation=0.65,   # 650 tokens
-            parent_allocation=0.10,    # 100 tokens
-            token_counter=self.token_counter
+            summary_allocation=0.25,  # 250 tokens
+            content_allocation=0.65,  # 650 tokens
+            parent_allocation=0.10,  # 100 tokens
+            token_counter=self.token_counter,
         )
 
         # Configure the token counter mock to return fixed values
@@ -51,51 +52,42 @@ class TestTokenBudget(unittest.TestCase):
         """Create various test nodes with known token counts."""
         # Summary nodes
         self.summary_node1 = NodeWithScore(
-            node=TextNode(text="This is a summary node with 30 tokens", id_="summary1"),
-            score=1.0
+            node=TextNode(text="This is a summary node with 30 tokens", id_="summary1"), score=1.0
         )
 
         self.summary_node2 = NodeWithScore(
-            node=TextNode(text="This is another summary node with 40 tokens", id_="summary2"),
-            score=1.0
+            node=TextNode(text="This is another summary node with 40 tokens", id_="summary2"), score=1.0
         )
 
         # Content nodes
         self.content_node1 = NodeWithScore(
-            node=TextNode(text="This is a content node with 50 tokens", id_="content1"),
-            score=1.0
+            node=TextNode(text="This is a content node with 50 tokens", id_="content1"), score=1.0
         )
 
         self.content_node2 = NodeWithScore(
-            node=TextNode(text="This is a larger content node with 200 tokens", id_="content2"),
-            score=1.0
+            node=TextNode(text="This is a larger content node with 200 tokens", id_="content2"), score=1.0
         )
 
         # Parent nodes
         self.parent_node1 = NodeWithScore(
-            node=TextNode(text="This is a parent node with 25 tokens", id_="parent1"),
-            score=1.0
+            node=TextNode(text="This is a parent node with 25 tokens", id_="parent1"), score=1.0
         )
 
         self.parent_node2 = NodeWithScore(
-            node=TextNode(text="This is another parent node with 25 tokens", id_="parent2"),
-            score=1.0
+            node=TextNode(text="This is another parent node with 25 tokens", id_="parent2"), score=1.0
         )
 
         # Large nodes that should exceed the budgets
         self.large_summary_node = NodeWithScore(
-            node=TextNode(text="This is a large summary node with 300 tokens", id_="large_summary"),
-            score=1.0
+            node=TextNode(text="This is a large summary node with 300 tokens", id_="large_summary"), score=1.0
         )
 
         self.large_content_node = NodeWithScore(
-            node=TextNode(text="This is a large content node", id_="large_content"),
-            score=1.0
+            node=TextNode(text="This is a large content node", id_="large_content"), score=1.0
         )
 
         self.large_parent_node = NodeWithScore(
-            node=TextNode(text="This is a large parent node", id_="large_parent"),
-            score=1.0
+            node=TextNode(text="This is a large parent node", id_="large_parent"), score=1.0
         )
 
     def test_budget_initialization(self):
@@ -211,7 +203,7 @@ class TestTokenBudget(unittest.TestCase):
         # Add nodes of each type
         self.budget.add_summary_node(self.summary_node1)  # 30 tokens
         self.budget.add_content_node(self.content_node1)  # 50 tokens
-        self.budget.add_parent_node(self.parent_node1)   # 25 tokens
+        self.budget.add_parent_node(self.parent_node1)  # 25 tokens
 
         # Get usage stats
         stats = self.budget.get_usage_stats()
@@ -231,7 +223,7 @@ class TestTokenBudget(unittest.TestCase):
         # Add nodes of each type
         self.budget.add_summary_node(self.summary_node1)  # 30/250 = 0.12
         self.budget.add_content_node(self.content_node1)  # 50/650 = ~0.077
-        self.budget.add_parent_node(self.parent_node1)    # 25/100 = 0.25
+        self.budget.add_parent_node(self.parent_node1)  # 25/100 = 0.25
 
         # Get utilization
         utilization = self.budget.get_budget_utilization()
@@ -245,10 +237,10 @@ class TestTokenBudget(unittest.TestCase):
         """Test creating a budget with custom allocations."""
         custom_budget = TokenBudget(
             max_tokens=2000,
-            summary_allocation=0.5,   # 1000 tokens
-            content_allocation=0.3,   # 600 tokens
-            parent_allocation=0.2,    # 400 tokens
-            token_counter=self.token_counter
+            summary_allocation=0.5,  # 1000 tokens
+            content_allocation=0.3,  # 600 tokens
+            parent_allocation=0.2,  # 400 tokens
+            token_counter=self.token_counter,
         )
 
         # Check the budgets

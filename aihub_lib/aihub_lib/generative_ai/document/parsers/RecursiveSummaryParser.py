@@ -7,6 +7,7 @@ from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
+    INDEX,
     LANGUAGE,
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
@@ -33,6 +34,7 @@ class RecursiveNodeSummarizer:
         self._llm = llm
         self.min_summarization_length = min_summarization_length
         self.node_id_to_node = {}
+        self.level_counters = {}
 
     def summarize_nodes(self, nodes: List[TextNode]) -> List[TextNode]:
         if not nodes:
@@ -41,6 +43,7 @@ class RecursiveNodeSummarizer:
         locale_handler = LocaleHandler(locale=locale)
         llm_summarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
         self.node_id_to_node = {node.node_id: node for node in nodes}
+        self.level_counters = {}
         grouped_nodes = self._group_nodes_by_level(nodes)
         max_level = max(grouped_nodes.keys()) if grouped_nodes else 0
         summary_nodes = []
@@ -124,14 +127,18 @@ class RecursiveNodeSummarizer:
             current_node = next_node
         return next_nodes
 
-    @staticmethod
-    def _create_summary_node(original_node: TextNode, summary: str, level: int = 0) -> TextNode:
+    def _create_summary_node(self, original_node: TextNode, summary: str, level: int = 0) -> TextNode:
+        if level not in self.level_counters:
+            self.level_counters[level] = 0
+        index = self.level_counters[level]
+        self.level_counters[level] += 1
         summary_node = TextNode(
             text=summary,
             metadata={
                 **original_node.metadata,
                 TYPE: NODE_TYPE_SUMMARY,
                 HEADING_LEVEL: level,
+                INDEX: index,
             },
             relationships={},
         )

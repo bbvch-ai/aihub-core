@@ -1,3 +1,20 @@
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
+from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
+from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
+from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.process_retrieved_nodes import process_retrieved_nodes
+from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
+from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.semantic.llm import LLMStopEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -12,27 +29,6 @@ from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectE
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
-from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
-from aihub_lib.generative_ai.utils.TokenBudget import TokenBudget
-from aihub_lib.generative_ai.utils.build_hierarchical_budget_aware_context import (
-    build_hierarchical_budget_aware_context,
-)
-from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
-from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
-from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
-from aihub_lib.nats.events.semantic.llm import LLMStopEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
 
 
 class RAGAgent(Agent):
@@ -72,9 +68,7 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Condense Standalone Question"),
-        description=LocaleString(
-            en="Condenses the chat history and user query into a standalone question."
-        ),
+        description=LocaleString(en="Condenses the chat history and user query into a standalone question."),
     )
     async def condense_standalone_question_step(
         self,
@@ -101,9 +95,7 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Few Shot Guard"),
-        description=LocaleString(
-            en="Guards the question to ensure it is appropriate for the agent to answer."
-        ),
+        description=LocaleString(en="Guards the question to ensure it is appropriate for the agent to answer."),
     )
     async def few_shot_guard_step(
         self,
@@ -130,9 +122,7 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(
-            en="Retrieves relevant nodes from the knowledge base."
-        ),
+        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
     )
     async def retrieve_step(
         self,
@@ -169,36 +159,21 @@ class RAGAgent(Agent):
                 num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
             )
-        content_nodes = []
-        summary_nodes = []
-
-        for node in nodes:
-            if node.metadata.get(TYPE) == NODE_TYPE_SUMMARY:
-                summary_nodes.append(node)
-            else:
-                content_nodes.append(node)
-
-        token_budget = TokenBudget(
-            max_tokens=100000,
-            summary_allocation=0.0,
-            content_allocation=0.5,
-            parent_allocation=0.5,
-        )
-
-        enhanced_nodes = build_hierarchical_budget_aware_context(
-            content_nodes=content_nodes,
-            summary_nodes=summary_nodes,
-            vector_store=retrieve_step_config.vector_store,
-            token_budget=token_budget,
-            max_parent_levels=2,
-        )
-        return RetrieverEvent.from_nodes(enhanced_nodes)
+        if retrieve_step_config.retrieve_summaries:
+            nodes = process_retrieved_nodes(
+                nodes=nodes,
+                vector_store=retrieve_step_config.vector_store,
+                max_tokens=retrieve_step_config.retrieve_summaries.max_tokens,
+                summary_allocation=retrieve_step_config.retrieve_summaries.summary_allocation,
+                content_allocation=retrieve_step_config.retrieve_summaries.content_allocation,
+                parent_allocation=retrieve_step_config.retrieve_summaries.parent_allocation,
+                max_parent_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
+            )
+        return RetrieverEvent.from_nodes(nodes)
 
     @step(
         name=LocaleString(en="Order Nodes by Documents"),
-        description=LocaleString(
-            en="Orders the retrieved nodes by their source documents."
-        ),
+        description=LocaleString(en="Orders the retrieved nodes by their source documents."),
     )
     async def order_nodes_by_documents_step(
         self,
@@ -221,9 +196,7 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Context Sufficient Guard"),
-        description=LocaleString(
-            en="Guards the context to ensure it is sufficient for generating a response."
-        )
+        description=LocaleString(en="Guards the context to ensure it is sufficient for generating a response."),
     )
     async def context_sufficient_guard_step(
         self,
@@ -272,9 +245,7 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Limit Chat History with Context"),
-        description=LocaleString(
-            en="Includes the combined context and truncates chat history again."
-        )
+        description=LocaleString(en="Includes the combined context and truncates chat history again."),
     )
     async def limit_chat_history_with_context_step(
         self,
@@ -301,9 +272,7 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Respond with LLM"),
-        description=LocaleString(
-            en="Generates a response using the configured LLM."
-        )
+        description=LocaleString(en="Generates a response using the configured LLM."),
     )
     async def respond_with_llm_step(
         self,

@@ -37,7 +37,7 @@ def _(datatable):
     return nodes
 
 
-@given(parsers.parse('the following parent relationships:'), target_fixture="nodes_with_relationships")
+@given(parsers.parse("the following parent relationships:"), target_fixture="nodes_with_relationships")
 def _(nodes, datatable):
     for row in datatable:
         node_id = row[0]
@@ -88,7 +88,7 @@ def _(milvus_vector_store):
     return milvus_vector_store
 
 
-@given(parsers.parse('starting nodes are:'), target_fixture="starting_nodes")
+@given(parsers.parse("starting nodes are:"), target_fixture="starting_nodes")
 def _(datatable, nodes_with_relationships):
     result = []
     for row in datatable[1:]:  # Skip header row
@@ -104,11 +104,7 @@ def context():
     return {}
 
 
-@when(
-    parsers.parse(
-        'I postprocess nodes using the ParentSummaryPostProcessor with max_levels set to {max_levels:d}'
-    )
-)
+@when(parsers.parse("I postprocess nodes using the ParentSummaryPostProcessor with max_levels set to {max_levels:d}"))
 def postprocess_nodes(starting_nodes, vector_store, context, max_levels):
     processor = ParentSummaryPostProcessor(vectorstore=vector_store, max_levels=max_levels)
     result = processor._postprocess_nodes(starting_nodes)

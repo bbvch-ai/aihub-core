@@ -11,7 +11,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingParameter,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
-from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 
 
 # Set up an event loop for the test session

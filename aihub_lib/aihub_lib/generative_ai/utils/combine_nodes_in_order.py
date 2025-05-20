@@ -84,7 +84,7 @@ def combine_nodes_in_order(
 
         text_parts = [doc_header]
         sorted_nodes = sorted(nodes, key=lambda x: x.metadata.get(SECTION_START_LINE, 0))
-        
+
         for n in sorted_nodes:
             text_parts.append(f"{n.content}\n\n")
 

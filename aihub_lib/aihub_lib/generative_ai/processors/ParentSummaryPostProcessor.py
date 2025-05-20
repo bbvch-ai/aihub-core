@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Annotated
+from typing import Annotated, Dict, List, Optional
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle

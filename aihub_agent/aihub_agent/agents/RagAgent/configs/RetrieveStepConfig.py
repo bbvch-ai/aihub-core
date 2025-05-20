@@ -6,6 +6,8 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig i
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryMode
 from pydantic import Field
 
+from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
+
 
 class RetrieveStepConfig(StepConfig):
     """
@@ -25,4 +27,8 @@ class RetrieveStepConfig(StepConfig):
     retrieve_prev_next: Optional[RetrievePrevNextConfig] = Field(
         default=None,
         description="Whether to retrieve previous and next nodes based on the retrieved nodes from the vector store.",
+    )
+    retrieve_summaries: Optional[RetrieveSummariesConfig] = Field(
+        default=None,
+        description="Whether to retrieve summaries based on the retrieved nodes from the vector store.",
     )

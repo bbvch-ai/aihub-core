@@ -49,7 +49,6 @@ def fill_collection(
 
     embeddings, _ = embed_model.to_llama_index(model_parameter=None)
 
-
     pipeline: IngestionPipeline = IngestionPipeline(
         transformations=[embeddings],
         vector_store=vector_store,

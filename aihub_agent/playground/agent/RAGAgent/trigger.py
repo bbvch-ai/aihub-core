@@ -14,12 +14,25 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import \
-    SelfHostedEmbeddingConfig, SelfHostedEmbeddingParameter
+from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
+    SelfHostedEmbeddingConfig,
+    SelfHostedEmbeddingParameter,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, NAMESPACE, NODE_TYPE_CONTENT, SOURCE, TYPE, \
-    HEADING_LEVEL, SECTION_START_LINE, INDEX, NODE_TYPE_SUMMARY, H1, H2
+from aihub_lib.persistence.rag.vectors.node_metadata import (
+    DOCUMENT_TITLE,
+    NAMESPACE,
+    NODE_TYPE_CONTENT,
+    SOURCE,
+    TYPE,
+    HEADING_LEVEL,
+    SECTION_START_LINE,
+    INDEX,
+    NODE_TYPE_SUMMARY,
+    H1,
+    H2,
+)
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
@@ -68,10 +81,7 @@ async def main():
                     collection_name="test_rag_relations_123456",
                     embedding_vector_dimension=768,
                 ),
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=1,
-                    mode=ModeOptions.BOTH
-                )
+                retrieve_prev_next=RetrievePrevNextConfig(num_nodes=1, mode=ModeOptions.BOTH),
             ),
             number_of_input_tokens=100000,
             condense_question_prompt=LocaleString(
@@ -195,8 +205,11 @@ async def main():
             NodeRelationship.PREVIOUS: RelatedNodeInfo(node_id=node1.node_id),
         }
         summary_h1.relationships = {
-            NodeRelationship.CHILD: [RelatedNodeInfo(node_id=node1.node_id), RelatedNodeInfo(node_id=summary_h2.node_id),
-                                     RelatedNodeInfo(node_id=summary_h3.node_id)],
+            NodeRelationship.CHILD: [
+                RelatedNodeInfo(node_id=node1.node_id),
+                RelatedNodeInfo(node_id=summary_h2.node_id),
+                RelatedNodeInfo(node_id=summary_h3.node_id),
+            ],
         }
         summary_h2.relationships = {
             NodeRelationship.CHILD: [RelatedNodeInfo(node_id="node2")],
@@ -214,7 +227,7 @@ async def main():
     fill_collection(
         runner.agent_config.retrieve_step_config.embed_model,
         runner.agent_config.retrieve_step_config.vector_store,
-        nodes=TEST_NODES
+        nodes=TEST_NODES,
     )
 
     async with runner.test_run(delay_before_stop=60) as topic:
@@ -234,7 +247,6 @@ async def main():
         )
 
     drop_collection(collection_name="test_rag_relations_123456")
-
 
 
 if __name__ == "__main__":

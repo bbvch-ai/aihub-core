@@ -17,7 +17,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     SOURCE,
     TYPE,
     UPDATED_AT,
-    VERSION, )
+    VERSION,
+)
 
 
 def sanitize_metadata_value(value: str) -> str:
@@ -39,9 +40,9 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
 
 
 def combine_nodes_in_hierarchical_order(
-        context_nodes: List[Document],
-        locale_handler: LocaleHandler,
-        context_prompt: LocaleString = None,
+    context_nodes: List[Document],
+    locale_handler: LocaleHandler,
+    context_prompt: LocaleString = None,
 ) -> ChatMessage:
     """
     Combine nodes in hierarchical order, preserving document structure with summaries.
@@ -103,8 +104,7 @@ def organize_document_nodes(nodes: List[Document]) -> str:
 
     # Sort summaries by level first, then by position within each level
     sorted_summaries = sorted(
-        summary_nodes,
-        key=lambda x: (x.metadata.get(HEADING_LEVEL, 0), x.metadata.get(SECTION_START_LINE, 0))
+        summary_nodes, key=lambda x: (x.metadata.get(HEADING_LEVEL, 0), x.metadata.get(SECTION_START_LINE, 0))
     )
 
     # Group content by its section position

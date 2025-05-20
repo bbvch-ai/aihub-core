@@ -8,7 +8,9 @@ from aihub_lib.generative_ai.utils.combine_nodes_in_hierarchical_order import co
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import (
-    H1, H2, H3,
+    H1,
+    H2,
+    H3,
     HEADING_LEVEL,
     NAMESPACE,
     NODE_TYPE_CONTENT,
@@ -20,7 +22,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 
 
 class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
-
     def setUp(self):
         self.locale_handler = MagicMock(spec=LocaleHandler)
         self.locale_handler.return_value = "This is the context: {context_str}"
@@ -35,7 +36,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
             id=text_node.node_id,  # Use the node_id as the Document's id
             content=text_node.text,
             metadata=text_node.metadata,
-            score=0.9  # Add a default score
+            score=0.9,  # Add a default score
         )
 
     def test_empty_nodes(self):
@@ -56,7 +57,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     TYPE: NODE_TYPE_CONTENT,
                     SECTION_START_LINE: 10,
                 },
-                id_="content1"
+                id_="content1",
             ),
             TextNode(
                 text="This is content 2",
@@ -66,8 +67,8 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     TYPE: NODE_TYPE_CONTENT,
                     SECTION_START_LINE: 20,
                 },
-                id_="content2"
-            )
+                id_="content2",
+            ),
         ]
 
         documents = [self.convert_to_document(node) for node in nodes]
@@ -97,7 +98,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Introduction",
                     SECTION_START_LINE: 0,
                 },
-                id_="intro_summary"
+                id_="intro_summary",
             ),
             # Content under Introduction
             TextNode(
@@ -109,7 +110,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Introduction",
                     SECTION_START_LINE: 0,
                 },
-                id_="intro_content"
+                id_="intro_content",
             ),
             # H1 Summary
             TextNode(
@@ -122,7 +123,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Conclusion",
                     SECTION_START_LINE: 100,
                 },
-                id_="conclusion_summary"
+                id_="conclusion_summary",
             ),
             # Content under Conclusion
             TextNode(
@@ -134,7 +135,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Conclusion",
                     SECTION_START_LINE: 100,
                 },
-                id_="conclusion_content"
+                id_="conclusion_content",
             ),
         ]
 
@@ -166,7 +167,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Chapter 1",
                     SECTION_START_LINE: 0,
                 },
-                id_="chapter1_summary"
+                id_="chapter1_summary",
             ),
             TextNode(
                 text="Section 1.1 Summary",
@@ -179,7 +180,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H2: "Section 1.1",
                     SECTION_START_LINE: 10,
                 },
-                id_="section1.1_summary"
+                id_="section1.1_summary",
             ),
             TextNode(
                 text="This is section 1.1 content.",
@@ -191,7 +192,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H2: "Section 1.1",
                     SECTION_START_LINE: 10,
                 },
-                id_="section1.1_content"
+                id_="section1.1_content",
             ),
             TextNode(
                 text="Subsection 1.1.1 Summary",
@@ -205,7 +206,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H3: "Subsection 1.1.1",
                     SECTION_START_LINE: 15,
                 },
-                id_="subsection1.1.1_summary"
+                id_="subsection1.1.1_summary",
             ),
             TextNode(
                 text="This is subsection 1.1.1 content.",
@@ -218,7 +219,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H3: "Subsection 1.1.1",
                     SECTION_START_LINE: 15,
                 },
-                id_="section1.1.1_content"
+                id_="section1.1.1_content",
             ),
             TextNode(
                 text="Section 1.2 Summary",
@@ -231,7 +232,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H2: "Section 1.2",
                     SECTION_START_LINE: 50,
                 },
-                id_="section1.2_summary"
+                id_="section1.2_summary",
             ),
             TextNode(
                 text="This is section 1.2 content.",
@@ -243,7 +244,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H2: "Section 1.2",
                     SECTION_START_LINE: 50,
                 },
-                id_="section1.2_content"
+                id_="section1.2_content",
             ),
         ]
 
@@ -262,7 +263,6 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
 
         chapter_pos = result.content.find("Chapter 1 Summary")
         section1_pos = result.content.find("Section 1.1 Summary")
-        subsection_pos = result.content.find("Subsection 1.1.1 Summary")
         section2_pos = result.content.find("Section 1.2 Summary")
 
         self.assertLess(chapter_pos, section1_pos, "Chapter 1 summary should appear before Section 1.1 summary")
@@ -281,7 +281,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Document 1",
                     SECTION_START_LINE: 0,
                 },
-                id_="doc1_summary"
+                id_="doc1_summary",
             ),
             TextNode(
                 text="This is document 1 content.",
@@ -292,7 +292,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Document 1",
                     SECTION_START_LINE: 0,
                 },
-                id_="doc1_content"
+                id_="doc1_content",
             ),
         ]
 
@@ -307,7 +307,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Document 2",
                     SECTION_START_LINE: 0,
                 },
-                id_="doc2_summary"
+                id_="doc2_summary",
             ),
             TextNode(
                 text="This is document 2 content.",
@@ -318,7 +318,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Document 2",
                     SECTION_START_LINE: 0,
                 },
-                id_="doc2_content"
+                id_="doc2_content",
             ),
         ]
 
@@ -348,7 +348,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     HEADING_LEVEL: 0,
                     SECTION_START_LINE: 0,
                 },
-                id_="doc_summary"
+                id_="doc_summary",
             ),
             TextNode(
                 text="Chapter 1 Summary",
@@ -360,7 +360,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Chapter 1",
                     SECTION_START_LINE: 10,
                 },
-                id_="chapter1_summary"
+                id_="chapter1_summary",
             ),
             TextNode(
                 text="This is chapter 1 content.",
@@ -371,7 +371,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Chapter 1",
                     SECTION_START_LINE: 10,
                 },
-                id_="chapter1_content"
+                id_="chapter1_content",
             ),
         ]
 
@@ -398,7 +398,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Introduction",
                     SECTION_START_LINE: 0,
                 },
-                id_="intro_summary"
+                id_="intro_summary",
             ),
             TextNode(
                 text="This is introduction content.",
@@ -409,7 +409,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Introduction",
                     SECTION_START_LINE: 0,
                 },
-                id_="intro_content"
+                id_="intro_content",
             ),
             TextNode(
                 text="This is orphaned content without a summary.",
@@ -419,7 +419,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     TYPE: NODE_TYPE_CONTENT,
                     SECTION_START_LINE: 50,
                 },
-                id_="orphaned_content"
+                id_="orphaned_content",
             ),
         ]
 
@@ -444,7 +444,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Introduction",
                     SECTION_START_LINE: 0,
                 },
-                id_="intro_summary"
+                id_="intro_summary",
             ),
             TextNode(
                 text="This is introduction content.",
@@ -455,7 +455,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Introduction",
                     SECTION_START_LINE: 0,
                 },
-                id_="intro_content"
+                id_="intro_content",
             ),
             TextNode(
                 text="Conclusion Summary",
@@ -467,7 +467,7 @@ class TestCombineNodesInHierarchicalOrder(unittest.TestCase):
                     H1: "Conclusion",
                     SECTION_START_LINE: 100,
                 },
-                id_="conclusion_summary"
+                id_="conclusion_summary",
             ),
         ]
 
