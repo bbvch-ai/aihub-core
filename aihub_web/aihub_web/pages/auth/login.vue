@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen flex-col md:flex-row">
     <div class="order-2 flex h-3/5 w-full items-center justify-center bg-neutral-950 p-10 text-4xl text-surface-300 md:order-1 md:h-auto md:w-3/5">
-      <span>{{ $t('auth.login.tagline') }}</span>
+      <span>{{ t('auth.login.tagline') }}</span>
     </div>
 
     <!-- Right Panel: Login -->
@@ -15,20 +15,20 @@
         >
           <img
             :src="logo"
-            :alt="$t('auth.login.logoAlt')"
+            :alt="t('auth.login.logoAlt')"
             class="w-32 rounded lg:w-32"
           >
         </a>
         <div class="flex flex-col gap-2 text-center">
           <h2 class="text-xl text-white">
-            {{ $t('auth.login.welcome', { companyName }) }}
+            {{ t('auth.login.welcome', { companyName }) }}
           </h2>
           <p class="text-surface-400">
-            {{ $t('auth.login.pleaseLogin') }}
+            {{ t('auth.login.pleaseLogin') }}
           </p>
         </div>
         <Button
-          :label="$t('auth.login.loginWithMicrosoft')"
+          :label="t('auth.login.loginWithMicrosoft')"
           icon="pi pi-microsoft"
           icon-pos="right"
           class="!bg-white !text-black"
@@ -41,7 +41,7 @@
         rel="noopener noreferrer"
         class="hidden text-surface-400 sm:block"
       >
-        {{ $t('auth.login.customSolutions') }}
+        {{ t('auth.login.customSolutions') }}
       </a>
     </div>
   </div>
@@ -53,6 +53,8 @@ import logo from '@core/assets/images/logo.png'
 definePageMeta({
   layout: 'anonymous',
 })
+
+const { t } = useI18n()
 
 // In a real-world scenario, you might retrieve organization info.
 // For now, we use a static default.

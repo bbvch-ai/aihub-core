@@ -16,7 +16,7 @@
             :value="formattedDate(node.data.started_at)"
             severity="secondary"
           />
-          <Badge :value="node.data.latency + 's'" />
+          <Badge :value="node.data.duration + 's'" />
         </div>
       </template>
 
@@ -77,10 +77,10 @@ const toNode = (node: OrganizationChartNode) => {
     displayId = display?.display_id
   }
   if (displayId) {
-    router.push(localeRoute(`/admin/thread/${props.thread.id}/events?display=${displayId}`))
+    router.push(localeRoute(`/admin/thread/${props.thread.id}/display/${displayId}`))
   }
   else {
-    router.push(localeRoute(`/admin/thread/${props.thread.id}/events`))
+    router.push(localeRoute(`/admin/thread/${props.thread.id}/display`))
   }
 }
 
@@ -132,10 +132,5 @@ const chartData = computed<OrganizationChartNode>(() => {
 }
 :deep(.p-organizationchart-line-top) {
   border-top: 1px solid #adb5bd;
-}
-
-/* Ensure container allows horizontal scrolling if chart is wide */
-.card {
-  padding: 1rem; /* Add some padding around the chart */
 }
 </style>

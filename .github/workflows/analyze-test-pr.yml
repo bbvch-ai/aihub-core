@@ -58,6 +58,7 @@ jobs:
           working_directory: ${{ matrix.module }}
           docker_compose_paths: ${{ matrix.docker_compose_files }}
           use_local_core: "true"
+          install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
 
   pytest-coverage-comment:
     name: Pytest Coverage Comment

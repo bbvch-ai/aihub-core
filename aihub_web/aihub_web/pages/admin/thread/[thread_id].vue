@@ -1,9 +1,17 @@
 <template>
-  <div class="w-full overflow-x-hidden">
-    <NavigationTop
-      :nav-items="navItems"
+  <div class="flex flex-col gap-2">
+    <SelectButton
+      v-if="navItems"
+      :model-value="activeNavItem"
+      :options="navItems"
+      data-key="key"
+      option-label="name"
+      size="small"
+      @update:model-value="toNavItem"
     />
-    <NuxtPage />
+    <div class="flex gap-8">
+      <NuxtPage />
+    </div>
   </div>
 </template>
 
@@ -12,6 +20,7 @@ import type { NavItem } from '@core/types/NavItem'
 
 import { useLocalePath } from '#i18n'
 
+const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
 
@@ -22,7 +31,7 @@ const subPath = (path: string) => {
 const isActive = (path: string) => {
   return () => {
     const localizedPath = localePath(subPath(path))
-    return route.path === localizedPath
+    return route.path.startsWith(localizedPath)
   }
 }
 
@@ -31,11 +40,15 @@ const navItems = computed<NavItem[]>(() => {
     { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
     { name: 'Hierarchy', key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
     { name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
-    { name: 'Events', key: 'events', path: subPath('events'), isActive: isActive('events') },
+    { name: 'Displays', key: 'display', path: subPath('display'), isActive: isActive('display') },
   ]
 })
+
+const toNavItem = (navItem: NavItem) => {
+  router.push(localePath(navItem.path))
+}
+
+const activeNavItem = computed<NavItem | undefined>(() => {
+  return navItems.value?.filter(navItem => navItem.isActive())[0]
+})
 </script>
-
-<style scoped>
-
-</style>

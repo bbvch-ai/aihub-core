@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.151.0"
+version = "v0.166.0"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -27,6 +27,7 @@ pyjwt = "^2.10.1"
 llama-index-embeddings-text-embeddings-inference = "^0.3.2"
 python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
+pydub = "^0.25.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
@@ -35,14 +36,15 @@ ruff = "^0.8.1"
 isort = "^5.13.2"
 mypy = "^1.13.0"
 toml-sort = "^0.24.2"
-black = { extras = ["jupyter"], version = "^24.10.0" }
+black = { extras = ["jupyter"], version = "^25.1.0" }
 pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.166.0"
+subdirectory = "aihub_lib"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

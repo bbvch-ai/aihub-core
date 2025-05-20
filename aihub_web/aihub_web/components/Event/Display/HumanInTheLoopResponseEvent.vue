@@ -38,7 +38,3 @@ const message = computed<UserChatMessageInput>(() => {
   }
 })
 </script>
-
-<style scoped>
-
-</style>

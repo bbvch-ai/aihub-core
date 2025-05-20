@@ -1,68 +1,69 @@
 <template>
-  <ProgressBar
-    v-if="agentIsLoading || !agent"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
-    class="flex flex-col gap-8 p-3"
+  <StructuralColumn
+    title="Overview"
+    close-route="/admin/agent"
+    :loading="agentIsLoading"
+    size="large"
   >
-    <div>
-      <p class="text-xl font-bold">
-        {{ agent?.agent_config.name }}
-      </p>
-      <p class="text-sm">
-        {{ agent?.agent_config.description }}
-      </p>
-    </div>
-    <div class="flex flex-col gap-2">
-      <p class="text-lg font-bold">
-        {{ $t('agent.overview.startEvents') }}
-      </p>
+    <div class="flex flex-col gap-12">
       <Panel
-        v-for="event in agent?.start_events"
-        :key="event.event_name"
-        :header="event.event_name"
-        toggleable
-        collapsed
+        class="panel pt-5"
       >
-        <div class="text-sm text-surface-700 dark:text-surface-200">
-          {{ event.event_schema.description }}
+        <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('agent.overview.name') }}
+            </span>
+            <Tag
+              :value="agent.agent_config.name"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('agent.overview.class') }}
+            </span>
+            <Tag
+              :value="agent.agent_class"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('agent.overview.agentId') }}
+            </span>
+            <Tag
+              :value="agent.agent_id"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('agent.overview.status') }}
+            </span>
+            <Tag
+              :value="agent.is_online ? t('agent.overview.online') : t('agent.overview.offline')"
+              :severity="agent.is_online ? 'success' : 'error' "
+            />
+          </div>
         </div>
       </Panel>
+      <EventStatistics
+        v-model="timeRange"
+        :charts="charts"
+      />
     </div>
-    <div class="flex flex-col gap-2">
-      <p class="text-lg font-bold">
-        {{ $t('agent.overview.stopEvents') }}
-      </p>
-      <Panel
-        v-for="event in (agent?.stop_events ?? [])"
-        :key="event.event_name"
-        :header="event.event_name"
-        toggleable
-        collapsed
-      >
-        <div class="text-sm text-surface-700 dark:text-surface-200">
-          {{ event.event_schema.description }}
-        </div>
-      </Panel>
-    </div>
-    <div>
-      <p class="text-xl font-bold">
-        {{ $t('agent.overview.config') }}
-      </p>
-      <div class="rounded-lg border border-surface-300 p-3 dark:border-surface-700">
-        <pre class="text-sm">{{ agent?.agent_config }}</pre>
-      </div>
-    </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
 const { agent, agentIsLoading } = useAgent()
+const { t } = useI18n()
+const { timeRange, charts } = useBasicEventStatistics()
 </script>
 
 <style scoped>
-
+.panel :deep(p-panel-header) {
+  padding: 0 !important;
+}
 </style>

@@ -1,7 +1,10 @@
 from typing import Annotated, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from pydantic import BaseModel, Field
+
+from aihub_api.auth.identity.UserIdentity import UserIdentity
 
 
 class UserDTO(BaseModel):
@@ -16,4 +19,19 @@ class UserDTO(BaseModel):
             id=user.oid,
             name=user.name,
             email=user.preferred_username,
+        )
+
+    @classmethod
+    def from_user_entity(cls, user_entity: UserEntity):
+        return cls(
+            id=user_entity.id, name=user_entity.name, email=user_entity.email, profile_image=user_entity.profile_image
+        )
+
+    @classmethod
+    def from_user_identity(cls, user_identity: UserIdentity):
+        return cls(
+            id=user_identity.id,
+            name=user_identity.name,
+            email=user_identity.email,
+            profile_image=user_identity.profile_image,
         )

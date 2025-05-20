@@ -1,26 +1,31 @@
 <template>
-  <div class="relative flex flex-col gap-2 p-3">
-    <p class="text-xl font-bold">
-      {{ $t('agent.chat.title') }}
-    </p>
-    <div>
-      <div />
+  <StructuralColumn
+    title="Chat"
+    close-route="/admin/agent"
+  >
+    <div class="relative flex flex-col gap-2 p-3">
+      <p class="text-xl font-bold">
+        {{ t('agent.chat.title') }}
+      </p>
       <div>
-        <Textarea
-          v-model="userInput"
-          class="w-full"
-          auto-resize
-          rows="5"
-          cols="30"
-        />
-        <Button
-          :label="$t('agent.chat.createThreadAndSend')"
-          class="w-full"
-          @click="submitMessage"
-        />
+        <div />
+        <div>
+          <Textarea
+            v-model="userInput"
+            class="w-full"
+            auto-resize
+            rows="5"
+            cols="30"
+          />
+          <Button
+            :label="t('agent.chat.createThreadAndSend')"
+            class="w-full"
+            @click="submitMessage"
+          />
+        </div>
       </div>
     </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
@@ -57,7 +62,3 @@ const submitMessage = async () => {
   router.push(localeRoute(`/admin/thread/${thread.id}/chat`))
 }
 </script>
-
-<style scoped>
-
-</style>

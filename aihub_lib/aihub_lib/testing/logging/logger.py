@@ -23,6 +23,7 @@ def enable_logging(level: str | int = logging.DEBUG, lib_level: str | int = logg
         "urllib3",
         "pymongo",
         "httpx",
+        "httpcore",
     ]
 
     for logger_name in lib_loggers:

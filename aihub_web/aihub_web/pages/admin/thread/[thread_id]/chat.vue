@@ -1,12 +1,8 @@
 <template>
-  <ProgressBar
-    v-if="threadIsLoading || threadEventsAreLoading || !threadEvents || !thread"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
-    class="relative w-full p-3"
+  <StructuralColumn
+    title="Chat"
+    close-route="/admin/thread"
+    :loading="threadIsLoading || threadEventsAreLoading"
   >
     <ChatThread
       :events="threadEvents"
@@ -26,17 +22,16 @@
         @click="submitMessage"
       />
     </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
 
 const { thread, threadIsLoading } = useThread()
+const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 
 const { sendMessages } = useChatCompletions()
-
-const { threadEvents, threadEventsAreLoading } = useThreadEvents()
 
 const userInput = ref('')
 
@@ -51,7 +46,3 @@ const submitMessage = async () => {
   userInput.value = ''
 }
 </script>
-
-<style scoped>
-
-</style>

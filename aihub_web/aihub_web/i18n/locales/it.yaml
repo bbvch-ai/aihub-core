@@ -10,6 +10,36 @@ user:
     it: "Italiano"
     fr: "Francese"
 
+chat:
+  assistant: "Assistente"
+  document: "Documento"
+
+event:
+  list:
+    firstInteraction: "Prima Interazione:"
+    lastInteraction: "Ultima Interazione:"
+    costs: "Costi:"
+    duration: "Durata:"
+    pending: "In attesa:"
+    no: "No"
+    status: "Stato:"
+    error: "Errore"
+    successful: "Riuscito"
+    chat: "Chat"
+    agents: "Agenti:"
+  statistics:
+    charts:
+      agentInvocations: "Invocazioni Agente"
+      agentStart: "Avvio Agente"
+      endEvents: "Eventi di Fine"
+      success: "Successo"
+      openHumanInTheLoop: "Aperto (Umano nel Loop)"
+      openBotInTheLoop: "Aperto (Bot nel Loop)"
+      error: "Errore"
+      delegations: "Deleghe"
+      delegatedTaskAgentInTheLoop: "Attività Delegata (Agente nel Loop)"
+      allEvents: "Tutti gli Eventi"
+
 thread:
   users: "Utenti"
   assistants: "Assistenti"
@@ -22,28 +52,20 @@ thread:
     status: "Stato"
     pending: "In attesa"
   title: "Thread"
-
-chat:
-  assistant: "Assistente"
-  document: "Documento"
-
-eventList:
-  firstInteraction: "Prima Interazione:"
-  lastInteraction: "Ultima Interazione:"
-  pending: "In attesa:"
-  no: "No"
-  status: "Stato:"
-  error: "Errore"
-  successful: "Riuscito"
-  chat: "Chat"
-  agents: "Agenti:"
-
-threadUtils:
-  pendingTypes:
-    hitl: "Umano nel Loop"
-    aitl: "Agente nel Loop"
-    bitl: "Bot nel Loop"
-    unknown: "Motivo sconosciuto"
+  utils:
+    pendingTypes:
+      hitl: "Umano nel Loop"
+      aitl: "Agente nel Loop"
+      bitl: "Bot nel Loop"
+      unknown: "Motivo sconosciuto"
+  display:
+    list:
+      started: "Avviato"
+      duration: "Durata"
+      events: "Eventi"
+      status: "Stato"
+      pending: "In attesa"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
 
 costs:
   table:
@@ -66,18 +88,32 @@ agent:
     startEvents: "Eventi di Avvio"
     stopEvents: "Eventi di Arresto"
     config: "Configurazione"
+    name: "Nome:"
+    class: "Classe:"
+    agentId: "ID Agente:"
+    status: "Stato:"
+    online: "Online"
+    offline: "Offline"
   chat:
     title: "Chat"
     createThreadAndSend: "Crea Thread e Invia"
     manuallyCreatedThread: "Thread creato manualmente"
-  threads:
-    title: "Thread dell'Agente"
   navigation:
     basic: "Base"
     workflow: "Flusso di lavoro"
     threads: "Thread"
     chat: "Chat"
   availableAgents: "Agenti Disponibili"
+  list:
+    name: "Nome"
+    description: "Descrizione"
+    agent: "Agente"
+    is_conversational: "Conversazionale"
+    true: "Sì"
+    false: "No"
+    status: "Stato"
+    online: "Online"
+    offline: "Offline"
 
 auth:
   renew:
@@ -97,3 +133,39 @@ auth:
     loginWithMicrosoft: "Accedi con Microsoft"
     customSolutions: "Soluzioni AI personalizzate per la tua azienda"
     logoAlt: "Logo dell'azienda"
+
+timerange:
+  1h: "1 Ora"
+  24h: "1 Giorno"
+  30d: "1 Mese"
+  365d: "1 Anno"
+
+chart:
+  no_data: "Nessun dato disponibile per questo periodo."
+  trending_up: "Tendenza in aumento"
+  trending_down: "Tendenza in diminuzione"
+
+dashboard:
+  all_agents: "Tutti gli Agenti"
+  users: "Utenti AI-Hub"
+  unknown_agent: "Agente Sconosciuto"
+  add_widget: "Aggiungi Widget"
+  select_data_type: "Seleziona tipo di dati"
+  select_agent: "Seleziona un Agente (Opzionale)"
+  create: "Crea"
+  create_widget: "Crea nuovo Widget"
+  events:
+    StartEvent:
+      label: 'Esecuzioni Agente Avviate'
+    StopEvent:
+      label: 'Esecuzioni Riuscite'
+    UserMessageEvent:
+      label: 'Messaggi Chat Utente'
+    ExceptionEvent:
+      label: 'Errori'
+    HumanInTheLoopRequestEvent:
+      label: 'Umano nel Loop'
+    BotInTheLoopRequestEvent:
+      label: 'Chiedi in Slack/Teams'
+    AgentInTheLoopRequestEvent:
+      label: 'Attività Delegate'

@@ -664,6 +664,7 @@ export const AudioContentSchema = {
             type: 'string',
             const: 'audio',
             title: 'Type',
+            description: "Block type, must be 'audio' for AudioContent",
             default: 'audio'
         },
         url: {
@@ -675,7 +676,8 @@ export const AudioContentSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Url'
+            title: 'Url',
+            description: 'Base64 encoded audio or url pointing to externally stored audio'
         },
         mime_type: {
             anyOf: [
@@ -2343,21 +2345,10 @@ export const CreateTokenRequestSchema = {
             title: 'Expiry Date',
             description: 'Expiry date in ISO format (must be in the future)',
             example: '2025-12-31T23:59:59Z'
-        },
-        roles: {
-            items: {
-                type: 'string',
-                minLength: 1
-            },
-            type: 'array',
-            minItems: 1,
-            title: 'Roles',
-            description: 'Non-empty list of roles associated with the token',
-            example: ['read', 'write']
         }
     },
     type: 'object',
-    required: ['name', 'expiry_date', 'roles'],
+    required: ['name', 'expiry_date'],
     title: 'CreateTokenRequest',
     example: {
         expiry_date: '2025-12-31T23:59:59Z',
@@ -2385,14 +2376,6 @@ export const CreateTokenResponseSchema = {
             title: 'Expiry Date',
             description: 'Expiry date'
         },
-        roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Roles',
-            description: 'List of roles granted to the access token'
-        },
         token: {
             type: 'string',
             title: 'Token',
@@ -2400,8 +2383,147 @@ export const CreateTokenResponseSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'expiry_date', 'roles', 'token'],
+    required: ['id', 'name', 'expiry_date', 'token'],
     title: 'CreateTokenResponse'
+} as const;
+
+export const DashboardDTOSchema = {
+    properties: {
+        minRow: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Minrow',
+            description: 'Minimum number of rows in the grid.'
+        },
+        margin: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Margin',
+            description: 'Gap between grid items in pixels.'
+        },
+        column: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Column',
+            description: 'Number of columns in the grid.'
+        },
+        cellHeight: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cellheight',
+            description: 'Height of one cell in pixels.'
+        },
+        children: {
+            items: {
+                '$ref': '#/components/schemas/DashboardItemDTO'
+            },
+            type: 'array',
+            title: 'Children',
+            description: 'List of widgets (dashboard items) within the grid.'
+        }
+    },
+    type: 'object',
+    title: 'DashboardDTO'
+} as const;
+
+export const DashboardItemDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the dashboard widget.'
+        },
+        component: {
+            type: 'string',
+            title: 'Component',
+            description: 'Specifies the component to render for this widget.'
+        },
+        x: {
+            type: 'integer',
+            title: 'X',
+            description: 'The x-coordinate of the widget in the grid.'
+        },
+        y: {
+            type: 'integer',
+            title: 'Y',
+            description: 'The y-coordinate of the widget in the grid.'
+        },
+        w: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'W',
+            description: 'Width of the widget in grid column units.'
+        },
+        noResize: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Noresize',
+            description: 'If true, the widget cannot be resized.'
+        },
+        timeRange: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timerange',
+            description: 'Time range for the data displayed in the widget.'
+        },
+        event: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event',
+            description: 'The type of event data the widget displays.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'component', 'x', 'y'],
+    title: 'DashboardItemDTO'
 } as const;
 
 export const DisplayEventSchema = {
@@ -2539,7 +2661,7 @@ export const DisplayStatisticsSchema = {
             title: 'Ended At',
             description: 'End time (ISO format string)'
         },
-        latency: {
+        duration: {
             anyOf: [
                 {
                     type: 'number'
@@ -2548,8 +2670,8 @@ export const DisplayStatisticsSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Latency',
-            description: 'Latency in seconds'
+            title: 'Duration',
+            description: 'Duration in seconds'
         },
         display_id: {
             type: 'string',
@@ -2924,6 +3046,33 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
+export const EventBucketSchema = {
+    properties: {
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the bucket'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the bucket'
+        },
+        total_events: {
+            type: 'integer',
+            title: 'Total Events',
+            description: 'Total number of events in this bucket',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['start_time', 'end_time'],
+    title: 'EventBucket',
+    description: 'Represents a time bucket with event counts by type.'
+} as const;
+
 export const EventInfoSchema = {
     properties: {
         name: {
@@ -3005,6 +3154,91 @@ export const EventSpecsSchema = {
     required: ['event_name', 'event_schema'],
     title: 'EventSpecs',
     description: 'Defines a specification for a start event that an agent can handle.'
+} as const;
+
+export const EventTimeseriesSchema = {
+    properties: {
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'The thread ID to filter for'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'The Agent ID to filter for'
+        },
+        agent_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Class',
+            description: 'The Agent Class to filter for'
+        },
+        event_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Name',
+            description: 'Event Name to filter for'
+        },
+        time_range: {
+            '$ref': '#/components/schemas/TimeRange',
+            description: 'Time range for the statistics'
+        },
+        resolution: {
+            '$ref': '#/components/schemas/Resolution',
+            description: 'Resolution of the buckets'
+        },
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the entire range'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the entire range'
+        },
+        buckets: {
+            items: {
+                '$ref': '#/components/schemas/EventBucket'
+            },
+            type: 'array',
+            title: 'Buckets',
+            description: 'List of time buckets with event counts'
+        }
+    },
+    type: 'object',
+    required: ['thread_id', 'agent_id', 'agent_class', 'event_name', 'time_range', 'resolution', 'start_time', 'end_time', 'buckets'],
+    title: 'EventTimeseries',
+    description: 'Timeseries of events for a given time-range.'
 } as const;
 
 export const ExceptionEventSchema = {
@@ -3561,6 +3795,7 @@ export const ImageContentSchema = {
             type: 'string',
             const: 'image',
             title: 'Type',
+            description: "Block type, must be 'image' for ImageContent",
             default: 'image'
         },
         url: {
@@ -3572,7 +3807,8 @@ export const ImageContentSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Url'
+            title: 'Url',
+            description: 'Base64 encoded image or url pointing to externally stored image'
         }
     },
     type: 'object',
@@ -4661,18 +4897,6 @@ export const MessageSchema = {
             title: 'Role',
             description: "The role of the message, such as 'user', 'assistant', or 'system'."
         },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'The content of the message.'
-        },
         name: {
             anyOf: [
                 {
@@ -4762,10 +4986,15 @@ export const MessageSchema = {
             ],
             title: 'Contents',
             description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
         }
     },
     type: 'object',
-    required: ['role'],
+    required: ['role', 'content'],
     title: 'Message'
 } as const;
 
@@ -4788,7 +5017,7 @@ export const MetadataSchema = {
                 }
             ],
             title: 'Thread Id',
-            description: 'The thread ID to which conversation shall e sent.'
+            description: 'Provide thread ID to continue conversation in an existing thread.'
         },
         display_id: {
             anyOf: [
@@ -4800,7 +5029,7 @@ export const MetadataSchema = {
                 }
             ],
             title: 'Display Id',
-            description: 'The display ID set for this run.'
+            description: 'Gives control over display ID used for this run.'
         },
         reconstruct_history: {
             anyOf: [
@@ -4928,6 +5157,33 @@ export const MyUserDTOSchema = {
             ],
             title: 'Profile Image',
             description: "User's profile image in base64."
+        },
+        dashboard: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/DashboardDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'User dashboard configuration for index page'
+        },
+        favorite_modules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Favorite Modules',
+            description: 'List of favorite modules from aihub suite'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'List of roles assigned to the user'
         }
     },
     type: 'object',
@@ -5335,6 +5591,12 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'RerankerEvent'
 } as const;
 
+export const ResolutionSchema = {
+    type: 'string',
+    enum: ['1m', '1h', '1d', '1w'],
+    title: 'Resolution'
+} as const;
+
 export const ResponseFormatJSONObjectSchema = {
     properties: {
         type: {
@@ -5648,7 +5910,7 @@ export const RunStatisticsSchema = {
             title: 'Ended At',
             description: 'End time (ISO format string)'
         },
-        latency: {
+        duration: {
             anyOf: [
                 {
                     type: 'number'
@@ -5657,8 +5919,8 @@ export const RunStatisticsSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Latency',
-            description: 'Latency in seconds'
+            title: 'Duration',
+            description: 'Duration in seconds'
         },
         run_id: {
             type: 'string',
@@ -5984,11 +6246,13 @@ export const TextContentSchema = {
             type: 'string',
             const: 'text',
             title: 'Type',
+            description: "Block type, must be 'text' for TextContent",
             default: 'text'
         },
         text: {
             type: 'string',
-            title: 'Text'
+            title: 'Text',
+            description: 'Text content of the message'
         }
     },
     type: 'object',
@@ -6260,7 +6524,7 @@ export const ThreadDTOSchema = {
             title: 'Latest Interaction',
             description: 'Date of newest event in thread (ISO format string)'
         },
-        latency: {
+        duration: {
             anyOf: [
                 {
                     type: 'number'
@@ -6269,7 +6533,7 @@ export const ThreadDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Latency',
+            title: 'Duration',
             description: 'Overall duration of interactions in seconds'
         },
         displays: {
@@ -6301,6 +6565,12 @@ export const ThreadDTOSchema = {
     required: ['id', 'name', 'users', 'agents', 'created_at'],
     title: 'ThreadDTO',
     description: 'Thread information and statistics for API response.'
+} as const;
+
+export const TimeRangeSchema = {
+    type: 'string',
+    enum: ['1h', '24h', '30d', '365d'],
+    title: 'TimeRange'
 } as const;
 
 export const TokenResponseSchema = {
@@ -6868,14 +7138,6 @@ are triggered, depending on the source of the event.`
 
 export const UserMessageEventInputSchema = {
     properties: {
-        display_name: {
-            '$ref': '#/components/schemas/LocaleString',
-            description: 'Display name for the event'
-        },
-        display_description: {
-            '$ref': '#/components/schemas/LocaleString',
-            description: 'Display description for the event'
-        },
         messages: {
             items: {
                 anyOf: [

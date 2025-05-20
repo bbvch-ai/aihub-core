@@ -22,28 +22,50 @@ thread:
     status: "Status"
     pending: "Pending"
   title: "Threads"
+  utils:
+    pendingTypes:
+      hitl: "Human in the Loop"
+      aitl: "Agent in the Loop"
+      bitl: "Bot in the Loop"
+      unknown: "Reason unknown"
+  display:
+    list:
+      started: "Started"
+      duration: "Duration"
+      events: "Events"
+      status: "Status"
+      pending: "Pending"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
 
 chat:
   assistant: "Assistant"
   document: "Document"
 
-eventList:
-  firstInteraction: "First Interaction:"
-  lastInteraction: "Last Interaction:"
-  pending: "Pending:"
-  no: "No"
-  status: "Status:"
-  error: "Error"
-  successful: "Successful"
-  chat: "Chat"
-  agents: "Agents:"
-
-threadUtils:
-  pendingTypes:
-    hitl: "Human in the Loop"
-    aitl: "Agent in the Loop"
-    bitl: "Bot in the Loop"
-    unknown: "Reason unknown"
+event:
+  list:
+    firstInteraction: "First Interaction:"
+    lastInteraction: "Last Interaction:"
+    costs: "Costs:"
+    duration: "Duration:"
+    pending: "Pending:"
+    no: "No"
+    status: "Status:"
+    error: "Error"
+    successful: "Successful"
+    chat: "Chat"
+    agents: "Agents:"
+  statistics:
+    charts:
+      agentInvocations: "Agent Invocations"
+      agentStart: "Agent Start"
+      endEvents: "End Events"
+      success: "Success"
+      openHumanInTheLoop: "Open (Human in the loop)"
+      openBotInTheLoop: "Open (Bot in the Loop)"
+      error: "Error"
+      delegations: "Delegations"
+      delegatedTaskAgentInTheLoop: "Delegated Task (Agent in the Loop)"
+      allEvents: "All Events"
 
 costs:
   table:
@@ -66,18 +88,32 @@ agent:
     startEvents: "Start Events"
     stopEvents: "Stop Events"
     config: "Config"
+    name: "Name:"
+    class: "Class:"
+    agentId: "Agent ID:"
+    status: "Status:"
+    online: "Online"
+    offline: "Offline"
   chat:
     title: "Chat"
     createThreadAndSend: "Create Thread and Send"
     manuallyCreatedThread: "Manually created thread"
-  threads:
-    title: "Agent Threads"
   navigation:
     basic: "Basic"
     workflow: "Workflow"
     threads: "Threads"
     chat: "Chat"
   availableAgents: "Available Agents"
+  list:
+    name: "Name"
+    description: "Description"
+    agent: "Agent"
+    is_conversational: "Conversational"
+    true: "Yes"
+    false: "No"
+    status: "Status"
+    online: "Online"
+    offline: "Offline"
 
 auth:
   renew:
@@ -97,3 +133,39 @@ auth:
     loginWithMicrosoft: "Login with Microsoft"
     customSolutions: "Custom AI solutions for your company"
     logoAlt: "Logo of company"
+
+timerange:
+  1h: "1 Hour"
+  24h: "1 Day"
+  30d: "1 Month"
+  365d: "1 Year"
+
+chart:
+  no_data: "No data available for this period."
+  trending_up: "Trending Up"
+  trending_down: "Trending Down"
+
+dashboard:
+  all_agents: "All Agents"
+  users: "AI-Hub Users"
+  unknown_agent: "Unknown Agent"
+  add_widget: "Add Widget"
+  select_data_type: "Select Data type"
+  select_agent: "Select an Agent (Optional)"
+  create: "Create"
+  create_widget: "Create new Widget"
+  events:
+    StartEvent:
+      label: 'Started Agent Runs'
+    StopEvent:
+      label: 'Successful Runs'
+    UserMessageEvent:
+      label: 'User Chat Messages'
+    ExceptionEvent:
+      label: 'Errors'
+    HumanInTheLoopRequestEvent:
+      label: 'Human in the Loop'
+    BotInTheLoopRequestEvent:
+      label: 'Ask in Slack/Teams'
+    AgentInTheLoopRequestEvent:
+      label: 'Tasks Delegated'

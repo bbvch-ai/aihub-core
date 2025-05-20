@@ -3,9 +3,7 @@ import { getMyUser, type MyUserDto } from '@core/sdk/client'
 export default defineQuery(() => {
   const {
     data: user,
-    status: loadingUser,
-    refresh: refreshUser,
-    refetch: refetchUser,
+    isPending: userIsLoading,
   } = useQuery<MyUserDto>({
     key: () => ['my_user'],
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -19,8 +17,6 @@ export default defineQuery(() => {
 
   return {
     user,
-    loadingUser,
-    refreshUser,
-    refetchUser,
+    userIsLoading,
   }
 })

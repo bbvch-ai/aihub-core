@@ -1,9 +1,9 @@
 import base64
+import logging
 from enum import Enum
 from typing import Dict, List, Optional
 
 import httpx
-from aihub_lib.testing.logging.logger import enable_logging
 from botbuilder.schema import Activity, Attachment
 from botframework.connector import Channels
 from pydantic import BaseModel, Field
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from aihub_bot.persistence.entities.ConversationEntity import Content
 from aihub_bot.persistence.entities.PathEntity import PathEntity
 
-logger = enable_logging()
+logger = logging.getLogger(__name__)
 
 
 class FileSource(Enum):

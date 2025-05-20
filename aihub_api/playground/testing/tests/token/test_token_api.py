@@ -6,7 +6,6 @@ from mongoengine import connect, disconnect
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
@@ -18,7 +17,7 @@ DEFAULT_USER_ID = "1234567890"
 def mongodb():
     """Setup a test MongoDB connection and clear data after each test."""
     yield
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string(), alias="default")
+    connect(db="aihub", host=CosmosAccess().get_connection_string())
     BearerToken.objects.delete()
     disconnect()
 
@@ -37,7 +36,7 @@ def api_client(mongodb):
 def valid_token_request():
     """Return a valid token request payload."""
     expiry_date = datetime.now(timezone.utc) + timedelta(days=365)
-    return {"name": "Test Token", "expiry_date": expiry_date.isoformat(), "roles": ["read", "write"]}
+    return {"name": "Test Token", "expiry_date": expiry_date.isoformat()}
 
 
 def test_create_token(api_client, valid_token_request):
@@ -50,7 +49,6 @@ def test_create_token(api_client, valid_token_request):
     assert "id" in data, f"Response missing 'id'. Got: {data}"
     assert "token" in data, f"Response missing 'token'. Got: {data}"
     assert data["name"] == valid_token_request["name"]
-    assert all(role in data["roles"] for role in valid_token_request["roles"])
 
 
 def test_create_token_with_past_date(api_client, valid_token_request):
@@ -101,7 +99,6 @@ def test_revoke_nonexistent_token(api_client):
             {
                 "name": "",
                 "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-                "roles": ["read"],
             },
             "String should have at least 1 character",
             422,
@@ -110,7 +107,6 @@ def test_revoke_nonexistent_token(api_client):
             {
                 "name": "   ",
                 "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-                "roles": ["read"],
             },
             "String should have at least 1 character",
             422,
@@ -119,7 +115,6 @@ def test_revoke_nonexistent_token(api_client):
             {
                 "name": "x" * 101,
                 "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-                "roles": ["read"],
             },
             "String should have at most 100 characters",
             422,
@@ -128,40 +123,12 @@ def test_revoke_nonexistent_token(api_client):
             {
                 "name": "Test Token",
                 "expiry_date": (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat(),
-                "roles": ["read"],
             },
             "Expiry date must be in the future",
             422,
         ),
         (
-            {
-                "name": "Test Token",
-                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-                "roles": [],
-            },
-            "List should have at least 1 item",
-            422,
-        ),
-        (
-            {
-                "name": "Test Token",
-                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-                "roles": ["read", "read"],
-            },
-            "Roles must be unique",
-            422,
-        ),
-        (
-            {
-                "name": "Test Token",
-                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-                "roles": [""],
-            },
-            "String should have at least 1 character",
-            422,
-        ),
-        (
-            {"name": "Test Token", "expiry_date": "invalid-date", "roles": ["read"]},
+            {"name": "Test Token", "expiry_date": "invalid-date"},
             "Input should be a valid datetime",
             422,
         ),

@@ -1,7 +1,13 @@
 <template>
-  <div class="w-full">
-    <NavigationTop
-      :nav-items="navItems"
+  <div class="flex flex-col gap-2">
+    <SelectButton
+      v-if="navItems"
+      :model-value="activeNavItem"
+      :options="navItems"
+      data-key="key"
+      option-label="name"
+      size="small"
+      @update:model-value="toNavItem"
     />
     <NuxtPage />
   </div>
@@ -10,8 +16,7 @@
 <script setup lang="ts">
 import type { NavItem } from '@core/types/NavItem'
 
-import { useLocalePath } from '#i18n'
-
+const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -25,7 +30,7 @@ const subPath = (path: string) => {
 const isActive = (path: string) => {
   return () => {
     const localizedPath = localePath(subPath(path))
-    return route.path === localizedPath
+    return route.path.startsWith(localizedPath)
   }
 }
 
@@ -41,8 +46,12 @@ const navItems = computed<NavItem[]>(() => {
   }
   return items
 })
+
+const toNavItem = (navItem: NavItem) => {
+  router.push(localePath(navItem.path))
+}
+
+const activeNavItem = computed<NavItem | undefined>(() => {
+  return navItems.value?.filter(navItem => navItem.isActive())[0]
+})
 </script>
-
-<style scoped>
-
-</style>

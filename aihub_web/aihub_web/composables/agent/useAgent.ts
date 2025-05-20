@@ -3,7 +3,7 @@ import { useRoute } from 'vue-router'
 
 export const useAgent = defineQuery(() => {
   const route = useRoute()
-  const { data: agent, isLoading: agentIsLoading } = useQuery<AgentDto>({
+  const { data: agent, isPending: agentIsLoading } = useQuery<AgentDto>({
     key: () => ['agent', route.params.agent_class as string, route.params.agent_id as string],
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,

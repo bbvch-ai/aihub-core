@@ -1,84 +1,100 @@
 <template>
-  <ProgressBar
-    v-if="threadIsLoading || !thread"
-    mode="indeterminate"
-    style="height: 2px"
-  />
-  <div
-    v-else
-    class="flex flex-col gap-12 p-3"
+  <StructuralColumn
+    title="Overview"
+    close-route="/admin/thread"
+    :loading="threadIsLoading"
+    size="large"
   >
-    <Panel
-      class="panel pt-5"
-    >
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.firstInteraction') }}
-          </span>
-          <Tag
-            :value="formattedDate(thread.first_interaction)"
-            severity="secondary"
-          />
+    <div class="flex flex-col gap-12">
+      <Panel
+        class="pt-5"
+      >
+        <div class="grid grid-cols-2 gap-4 2xl:grid-cols-4">
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('event.list.firstInteraction') }}
+            </span>
+            <Tag
+              :value="firstInteraction"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('event.list.lastInteraction') }}
+            </span>
+            <Tag
+              :value="lastInteraction"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('event.list.duration') }}
+            </span>
+            <Tag
+              :value="duration"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('event.list.costs') }}
+            </span>
+            <Tag
+              :value="thread.llm_cost.toFixed(6) + 'CHF'"
+              severity="secondary"
+            />
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.lastInteraction') }}
-          </span>
-          <Tag
-            :value="formattedDate(thread.latest_interaction)"
-            severity="secondary"
-          />
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.pending') }}
-          </span>
-          <Tag
-            v-if="thread.has_pending"
-            severity="warn"
-            :value="pendingType(thread)"
-          />
-          <Tag
-            v-else
-            severity="success"
-            :value="$t('eventList.no')"
-          />
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">
-            {{ $t('eventList.status') }}
-          </span>
-          <Tag
-            v-if="thread.has_errors"
-            severity="danger"
-            :value="$t('eventList.error')"
-          />
-          <Tag
-            v-else
-            severity="success"
-            :value="$t('eventList.successful')"
-          />
-        </div>
-      </div>
-    </Panel>
-    <ThreadInfo
-      :thread="thread"
-    />
-  </div>
+      </Panel>
+      <ThreadInfo
+        :thread="thread"
+      />
+      <EventStatistics
+        v-model="timeRange"
+        :charts="charts"
+      />
+    </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
-const { thread, threadIsLoading } = useThread()
-const { pendingType } = useThreadUtils()
+import { formatDuration, intervalToDuration } from 'date-fns'
+import { de } from 'date-fns/locale/de'
+import { enUS } from 'date-fns/locale/en-US'
+import { frCH } from 'date-fns/locale/fr-CH'
+import { itCH } from 'date-fns/locale/it-CH'
 
-const formattedDate = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
+const { thread, threadIsLoading } = useThread()
+const { timeRange, charts } = useBasicEventStatistics()
+const { locale, t } = useI18n()
+
+const firstInteraction = computed<string>(() => {
+  return useDateFormat(new Date(thread.value?.first_interaction), 'DD.MM.YYYY HH:mm:ss')
+})
+
+const lastInteraction = computed<string>(() => {
+  return useDateFormat(new Date(thread.value?.latest_interaction), 'DD.MM.YYYY HH:mm:ss')
+})
+
+const duration = computed<string>(() => {
+  const duration = intervalToDuration({
+    start: new Date(thread.value?.first_interaction),
+    end: new Date(thread.value?.latest_interaction),
+  })
+  if (duration.minutes || duration.hours || duration.days) {
+    duration.seconds = 0
+  }
+  if (duration.days || duration.weeks) {
+    duration.minutes = 0
+  }
+  return formatDuration(duration, { locale: { de, en: enUS, fr: frCH, it: itCH }[locale.value as 'de' | 'en' | 'fr' | 'it'] })
+})
 </script>
 
 <style scoped>
-::v-deep(.panel) {
-  .p-panel-header {
-    padding: 0 !important;
-  }
+:deep(.p-panel-header) {
+  padding: 0 !important;
 }
 </style>

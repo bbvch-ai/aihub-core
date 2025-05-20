@@ -17,7 +17,6 @@ class EmbeddingLLMParameter(LLMModelParameter):
     we maintain consistency and facilitate extension if embedding models require parameters in the future.
     """
 
-    # Currently no additional fields, but can be extended in the future.
     pass
 
 

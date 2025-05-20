@@ -87,7 +87,3 @@ const scoreToRank = (score: number) => {
   return 'A++'
 }
 </script>
-
-<style scoped>
-
-</style>

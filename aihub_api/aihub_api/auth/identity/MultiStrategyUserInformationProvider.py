@@ -1,5 +1,5 @@
 from aihub_api.auth.identity.BaseUserInformationProvider import BaseUserInformationProvider
-from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.auth.identity.UserIdentity import UserIdentity
 
 
 class MultiStrategyUserInformationProvider(BaseUserInformationProvider):
@@ -17,12 +17,12 @@ class MultiStrategyUserInformationProvider(BaseUserInformationProvider):
             raise ValueError("At least one user information provider must be provided.")
         self.providers = providers
 
-    def get_user_info_by_oid(self, oid: str) -> UserDTO:
+    async def get_user_info_by_oid(self, oid: str) -> UserIdentity:
         """Attempts to fetch user information using the provided base providers in order."""
         errors = []
         for provider in self.providers:
             try:
-                return provider.get_user_info_by_oid(oid)
+                return await provider.get_user_info_by_oid(oid)
             except Exception as e:
                 errors.append(f"{provider.__class__.__name__}: {str(e)}")
 

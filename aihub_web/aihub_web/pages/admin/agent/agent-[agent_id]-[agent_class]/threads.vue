@@ -1,17 +1,10 @@
 <template>
-  <div>
-    <ProgressBar
-      v-if="isLoading || !threads"
-      mode="indeterminate"
-      style="height: 2px"
-    />
+  <StructuralColumn
+    title="Threads"
+    close-route="/admin/agent"
+    :loading="isLoading"
+  >
     <div class="p-3">
-      <div class="mb-4">
-        <h2 class="text-xl font-bold">
-          {{ $t('agent.threads.title') }}
-        </h2>
-      </div>
-
       <ThreadList
         :threads="threads"
         @selected="toThread"
@@ -27,7 +20,7 @@
         />
       </div>
     </div>
-  </div>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
