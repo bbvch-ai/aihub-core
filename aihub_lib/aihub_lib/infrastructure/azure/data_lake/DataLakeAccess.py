@@ -43,7 +43,9 @@ class DataLakeAccess:
 
     def get_fs_client(self) -> AzureBlobFileSystem:
         if self._cached_fs_client is None:
-            self._cached_fs_client = AzureBlobFileSystem(account_name=self._storage_service_name)
+            self._cached_fs_client = AzureBlobFileSystem(
+                account_name=self._storage_service_name, credential=self._credential
+            )
         return self._cached_fs_client
 
     def get_storage_account_name(self) -> str:
