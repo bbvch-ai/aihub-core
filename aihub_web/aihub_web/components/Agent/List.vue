@@ -82,7 +82,3 @@ const emit = defineEmits<{
   selected: [AGENT: AgentDto]
 }>()
 </script>
-
-<style scoped>
-
-</style>

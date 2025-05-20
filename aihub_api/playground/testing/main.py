@@ -40,7 +40,7 @@ async def main():
 
     runner.mount(
         HealthController(auth=auth).get_health(),
-        UserController(auth=auth).get_my_user(),
+        UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
         EventController(auth=auth).ws().get_events(),
         ThreadController(auth=auth)

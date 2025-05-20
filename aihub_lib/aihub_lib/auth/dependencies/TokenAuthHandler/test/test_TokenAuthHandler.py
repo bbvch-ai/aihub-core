@@ -11,7 +11,8 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.BearerToken import ApiUser, BearerToken
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- MongoDB Connection Fixture ---
@@ -57,12 +58,12 @@ def error_context() -> dict:
 
 
 @pytest.fixture
-def cleanup_token() -> list:
+def cleanup_document() -> list:
     """Collect inserted token documents for cleanup after the test."""
-    inserted_tokens = []
-    yield inserted_tokens
-    for token_doc in inserted_tokens:
-        token_doc.delete()
+    inserted_documents = []
+    yield inserted_documents
+    for doc in inserted_documents:
+        doc.delete()
 
 
 def create_dummy_request(headers: dict) -> Request:
@@ -86,27 +87,27 @@ def generate_dummy_valid_token(oid: str) -> str:
         'a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'
     )
 )
-def insert_token_document(token_context: dict, cleanup_token: list, name: str, email: str, roles: str) -> None:
+def insert_token_document(token_context: dict, cleanup_document: list, name: str, email: str, roles: str) -> None:
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
-    api_user = ApiUser(
+    user = UserEntity.create_user(
         oid=user_oid,
         name=name,
-        preferred_username=email,
+        email=email,
         roles=roles_list,
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
         name="token-name",
         expiry_date=expiry,
-        user=api_user,
-        roles=roles_list,
+        user_oid=user_oid,
     )
     token_context["token_str"] = token_doc.token
     token_context["expected_user_oid"] = user_oid
     token_context["token_doc"] = token_doc
-    cleanup_token.append(token_doc)
+    cleanup_document.append(user)
+    cleanup_document.append(token_doc)
 
 
 @given(parsers.parse('an invalid token format "{token}"'))

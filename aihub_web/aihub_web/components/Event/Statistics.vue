@@ -47,7 +47,3 @@ const emit = defineEmits<{
 
 const options = ref<string[]>(['1h', '24h', '30d', '365d'])
 </script>
-
-<style scoped>
-
-</style>

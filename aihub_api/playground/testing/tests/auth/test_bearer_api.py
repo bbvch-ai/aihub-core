@@ -9,7 +9,8 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.BearerToken import BearerToken, ApiUser
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 USER_ENDPOINT = "/api/v1/user/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
@@ -26,20 +27,16 @@ def mongo_db():
 @pytest.fixture
 def valid_token(mongo_db):
     """Insert a valid token document and return its token string."""
-    api_user = ApiUser(
+    user = UserEntity.create_user(
         oid=os.getenv("OID", "1234567890"),
         name=os.getenv("NAME", "Melanie Musterfrau"),
-        preferred_username=os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
+        email=os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         roles=["AllAgents"],
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
-    token_obj = BearerToken.create_new_token(
-        name="token-name",
-        expiry_date=expiry,
-        user=api_user,
-        roles=["AllAgents"],
-    )
+    token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
     yield token_obj.token
+    user.delete()
     token_obj.delete()
 
 
@@ -51,6 +48,8 @@ def expected_user_data():
         "name": os.getenv("NAME", "Melanie Musterfrau"),
         "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         "profile_image": None,
+        "roles": ["AllAgents"],
+        "favorite_modules": [],
     }
 
 
@@ -72,6 +71,7 @@ def test_get_user_with_valid_token(token_api_client, valid_token, expected_user_
     response = token_api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected 200 but got {response.status_code}: {response.text}"
     user_data = response.json()
+    del user_data["dashboard"]  # Dashbaord has seperate tests
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
     assert user_data == expected_user_data
 

@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import 'primeicons/primeicons.css'
+import 'gridstack/dist/gridstack.min.css'
 import { client } from './sdk/client/client.gen'
 
 const { getToken } = useAuth()

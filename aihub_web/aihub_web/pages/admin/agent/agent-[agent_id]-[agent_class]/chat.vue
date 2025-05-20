@@ -62,7 +62,3 @@ const submitMessage = async () => {
   router.push(localeRoute(`/admin/thread/${thread.id}/chat`))
 }
 </script>
-
-<style scoped>
-
-</style>

@@ -82,7 +82,3 @@ const emit = defineEmits<{
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), t('thread.display.list.dateFormat'))
 const { pendingType } = useThreadUtils()
 </script>
-
-<style scoped>
-
-</style>

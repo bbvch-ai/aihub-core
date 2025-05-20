@@ -115,7 +115,7 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
             handlers.append(DummyFailureAuth(detail=detail, status_code=401))
         elif behavior == "failure_non_401":
             handlers.append(DummyFailureNon401(detail=detail))
-    return TokenAndOauth2Handler(*handlers)
+    return TokenAndOauth2Handler(bearer_handlers=handlers, oauth2_handlers=[])
 
 
 # --- When steps ---

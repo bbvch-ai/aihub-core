@@ -36,14 +36,14 @@ def user_header(__user__: dict):
     username = __user__.get("name")
     email = __user__.get("email")
 
-    username_hash = hashlib.sha1(username.encode("utf-8")).hexdigest()
-    email_hash = hashlib.sha1(email.encode("utf-8")).hexdigest()
+    username_hash = hash_string_sha1(username)
+    email_hash = hash_string_sha1(email)
 
     return {
         "X-OpenWebUI-User-Name": username,
         "X-OpenWebUI-User-Email": email,
-        "X-OpenWebUI-User-Name-Hash": username_hash,
-        "X-OpenWebUI-User-Email-Hash": email_hash,
+        "X-OpenWebUI-User-Name-Hashed": username_hash,
+        "X-OpenWebUI-User-Email-Hashed": email_hash,
     }
 
 def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:

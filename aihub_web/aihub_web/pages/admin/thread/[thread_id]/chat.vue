@@ -46,7 +46,3 @@ const submitMessage = async () => {
   userInput.value = ''
 }
 </script>
-
-<style scoped>
-
-</style>

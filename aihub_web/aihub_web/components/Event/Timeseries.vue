@@ -3,7 +3,7 @@
     <VueApexChart
       class="w-full"
       type="bar"
-      height="350"
+      :height="height"
       :options="chartOptions"
       :series="chartSeries"
     />
@@ -19,11 +19,15 @@ import type { EventBucket } from '@core/sdk/client'
 import type { TimeseriesInput } from '@core/types/TimeseriesInput'
 import type { ApexOptions } from 'apexcharts'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   seriesInputs: TimeseriesInput[]
-}>()
+  height?: number
+}>(), {
+  height: 350,
+})
 
+const { t } = useI18n()
 const isDark = useDark({ storageKey: 'dark' })
 
 const chartSeries = computed(() => {
@@ -47,14 +51,14 @@ const chartOptions = computed<ApexOptions>(() => {
     return {
       chart: {
         type: 'bar',
-        height: 350,
+        height: props.height,
         foreColor: isDark.value ? 'var(--p-surface-200)' : 'var(--p-surface-800)',
       },
       theme: {
         mode: isDark.value ? 'dark' : 'light',
       },
       noData: {
-        text: 'No data available for this period.',
+        text: t('chart.no_data'),
         align: 'center',
         verticalAlign: 'middle',
         style: {
@@ -119,7 +123,7 @@ const chartOptions = computed<ApexOptions>(() => {
   return {
     chart: {
       type: 'bar',
-      height: 350,
+      height: props.height,
       stacked: true,
       toolbar: {
         show: false,
@@ -177,7 +181,7 @@ const chartOptions = computed<ApexOptions>(() => {
     yaxis: {
       title: {
         text: `# ${props.title}`,
-        offsetX: 10,
+        offsetX: 5,
       },
       min: 0,
       labels: {
@@ -209,7 +213,7 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     colors: activeSeriesColors.length > 0 ? activeSeriesColors : undefined,
     noData: {
-      text: 'No data available for this period.',
+      text: t('chart.no_data'),
       align: 'center',
       verticalAlign: 'middle',
       style: {
