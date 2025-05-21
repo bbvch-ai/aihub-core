@@ -1,7 +1,7 @@
 <template>
   <StructuralSubstructure>
     <StructuralColumn
-      title="Displays"
+      :title="t('thread.display.title')"
       close-route="/admin/thread"
       :loading="threadIsLoading"
     >
@@ -19,6 +19,7 @@ import type { DisplayStatistics } from '@core/sdk/client'
 
 const router = useRouter()
 const localePath = useLocaleRoute()
+const { t } = useI18n()
 
 const { thread, threadIsLoading } = useThread()
 

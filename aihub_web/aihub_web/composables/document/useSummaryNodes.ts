@@ -1,15 +1,12 @@
 import {
-  type DocumentDto,
-  getNodesForDocument,
   getSummaryNodesForDocument,
-  type Node,
   type NodeSummaryDto,
 } from '@core/sdk/client'
 import { useRoute } from 'vue-router'
 
 export const useSummaryNodes = defineQuery(() => {
   const route = useRoute()
-  const { data: summaryNodes, isPending: nodesummaryNodesAreLoading } = useQuery<NodeSummaryDto[]>({
+  const { data: summaryNodes, isPending: summaryNodesAreLoading } = useQuery<NodeSummaryDto[]>({
     key: () => ['knowledge', 'db', route.params.db as string, 'namespace', route.params.namespace as string, 'document', route.params.document_id as string, 'summaries'],
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
@@ -26,6 +23,6 @@ export const useSummaryNodes = defineQuery(() => {
   })
   return {
     summaryNodes,
-    nodesummaryNodesAreLoading,
+    summaryNodesAreLoading,
   }
 })

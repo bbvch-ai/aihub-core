@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    title="Documents"
+    :title="t('knowledge.documents.title')"
     close-route="/admin/knowledge"
     :loading="isLoading"
   >
@@ -30,6 +30,7 @@ import { useLocalePath } from '#i18n'
 const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const {
   documents,

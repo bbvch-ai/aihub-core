@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    title="Overview"
+    :title="thread?.name"
     close-route="/admin/thread"
     :loading="threadIsLoading"
     size="large"

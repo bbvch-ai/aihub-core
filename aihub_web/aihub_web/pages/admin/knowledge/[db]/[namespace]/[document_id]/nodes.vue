@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
-    title="Nodes"
-    close-route="/admin/knowledge"
+    :title="t('knowledge.nodes.title')"
+    :close-route="`/admin/knowledge/${route.params.db}/${route.params.namespace}`"
     :loading="nodesAreLoading"
   >
     <KnowledgeNodeContent
@@ -14,6 +14,9 @@
 
 <script setup lang="ts">
 const { nodes, nodesAreLoading } = useNodes()
+
+const { t } = useI18n()
+const route = useRoute()
 </script>
 
 <style scoped>

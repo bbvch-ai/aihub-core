@@ -33,6 +33,14 @@ defineProps<{
   @apply mt-4 font-bold before:content-['####'] before:pr-1 before:text-gray-400;;
 }
 
+.content :deep(h5) {
+  @apply mt-2 font-bold before:content-['#####'] before:pr-1 before:text-gray-400;;
+}
+
+.content :deep(h6) {
+  @apply mt-2 font-bold before:content-['######'] before:pr-1 before:text-gray-400;;
+}
+
 .content :deep(p) {
   @apply mt-2 ;
 }

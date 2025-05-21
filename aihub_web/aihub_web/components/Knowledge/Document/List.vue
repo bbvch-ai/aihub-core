@@ -3,6 +3,7 @@
     :value="documents"
     table-style="min-width: 50rem"
     selection-mode="single"
+    :selection="selectedDocument"
     @update:selection="emit('selected', $event)"
   >
     <Column
@@ -59,9 +60,10 @@
 <script setup lang="ts">
 import type { DocumentDto } from '@core/sdk/client'
 
+const route = useRoute()
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
   documents: DocumentDto[]
 }>()
 
@@ -70,4 +72,10 @@ const emit = defineEmits<{
 }>()
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
+
+const selectedDocument = computed(() => {
+  return props.documents.filter((document: DocumentDto) => {
+    return document.id === route.params.document_id
+  })
+})
 </script>

@@ -1,7 +1,7 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
-      title="Test"
+      :title="t('agent.title')"
       :loading="agentsAreLoading"
       :nav-items="navItems"
     >
@@ -30,6 +30,7 @@ import { useLocalePath } from '#i18n'
 const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const { agents, agentsAreLoading } = useAgents()
 

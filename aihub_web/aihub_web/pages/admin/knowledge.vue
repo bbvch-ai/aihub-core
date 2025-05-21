@@ -1,7 +1,7 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
-      title="Test"
+      :title="t('knowledge.title')"
       :loading="databasesAreLoading"
     >
       <div class="flex flex-col gap-12">
@@ -40,6 +40,7 @@ import { useLocalePath } from '#i18n'
 
 const router = useRouter()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const { databases, databasesAreLoading } = useDatabases()
 

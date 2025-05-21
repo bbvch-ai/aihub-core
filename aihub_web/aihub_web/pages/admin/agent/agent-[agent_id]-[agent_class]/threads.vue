@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    title="Threads"
+    :title="t('agent.threads.title')"
     close-route="/admin/agent"
     :loading="isLoading"
   >
@@ -30,6 +30,7 @@ import { useLocalePath } from '#i18n'
 
 const router = useRouter()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const {
   threads,
