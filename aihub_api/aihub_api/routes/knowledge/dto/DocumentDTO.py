@@ -25,7 +25,8 @@ class DocumentDTO(BaseModel):
     @staticmethod
     def from_entity(entity: RefDoc) -> "DocumentDTO":
         def to_iso(timestamp: int):
-            return datetime.fromtimestamp(timestamp).isoformat().replace("+00:00", "Z")
+            dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            return dt_utc.isoformat().replace("+00:00", "Z")
 
         return DocumentDTO(
             id=str(entity.id),

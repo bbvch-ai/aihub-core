@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from llama_index.core.schema import NodeWithScore, TextNode
@@ -75,7 +75,8 @@ class Node(BaseModel):
     @classmethod
     def from_llama_index_node(cls, node: TextNode):
         def to_iso(timestamp: int):
-            return datetime.fromtimestamp(timestamp).isoformat().replace("+00:00", "Z")
+            dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            return dt_utc.isoformat().replace("+00:00", "Z")
 
         document_id = node.ref_doc_id or node.metadata.get(
             DOCUMENT_ID, node.metadata.get("doc_id", node.metadata.get("ref_doc_id"))
