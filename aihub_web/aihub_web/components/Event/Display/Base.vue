@@ -1,6 +1,6 @@
 <template>
   <Card
-    class="!rounded-2xl card"
+    class="card !rounded-2xl"
     :class="{
       'striped-bg': isExternal || !isFromAgentInThread,
       'border-2 border-red-500 dark:!border-red-900': isError,

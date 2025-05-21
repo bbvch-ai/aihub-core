@@ -21,8 +21,6 @@ const props = defineProps<{
   document: DocumentDto
 }>()
 
-const { t } = useI18n()
-
 const createdAt = computed(() => {
   return useDateFormat(new Date(props.document.created_at), 'DD.MM.YYYY HH:mm:ss')
 })

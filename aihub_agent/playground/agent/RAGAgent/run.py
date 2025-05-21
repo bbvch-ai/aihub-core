@@ -52,10 +52,7 @@ async def main():
                     collection_name="papers",
                     embedding_vector_dimension=3072,
                 ),
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=10,
-                    mode=ModeOptions.BOTH
-                )
+                retrieve_prev_next=RetrievePrevNextConfig(num_nodes=10, mode=ModeOptions.BOTH),
             ),
             number_of_input_tokens=100_000,
             condense_question_prompt=LocaleString(

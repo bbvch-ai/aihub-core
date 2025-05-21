@@ -10,55 +10,31 @@ user:
     it: "Italien"
     fr: "Français"
 
-chat:
-  assistant: "Assistant"
-  document: "Document"
-
-event:
-  list:
-    firstInteraction: "Première Interaction:"
-    lastInteraction: "Dernière Interaction:"
-    costs: "Coûts:"
-    duration: "Durée:"
-    pending: "En attente:"
-    no: "Non"
-    status: "Statut:"
-    error: "Erreur"
-    successful: "Réussi"
-    chat: "Chat"
-    agents: "Agents:"
-  statistics:
-    charts:
-      agentInvocations: "Invocations d'Agent"
-      agentStart: "Démarrage d'Agent"
-      endEvents: "Événements de Fin"
-      success: "Succès"
-      openHumanInTheLoop: "Ouvert (Humain dans la Boucle)"
-      openBotInTheLoop: "Ouvert (Bot dans la Boucle)"
-      error: "Erreur"
-      delegations: "Délégations"
-      delegatedTaskAgentInTheLoop: "Tâche Déléguée (Agent dans la Boucle)"
-      allEvents: "Tous les Événements"
-
 thread:
+  title: "Interactions"
   users: "Utilisateurs"
   assistants: "Assistants"
+  navigation:
+    basic: "De base"
+    hierarchy: "Hiérarchie"
+    chat: "Chat"
+    display: "Tours"
   list:
     name: "Nom"
     agents: "Agents"
-    created: "Créé"
-    numTurns: "Nombre de Tours"
-    numEvents: "Nombre d'Événements"
+    created: "Créé le"
+    numTurns: "Nombre de tours"
+    numEvents: "Nombre d'événements"
     status: "Statut"
     pending: "En attente"
-  title: "Fils de discussion"
   utils:
     pendingTypes:
-      hitl: "Humain dans la Boucle"
-      aitl: "Agent dans la Boucle"
-      bitl: "Bot dans la Boucle"
+      hitl: "Humain dans la boucle"
+      aitl: "Agent dans la boucle"
+      bitl: "Bot dans la boucle"
       unknown: "Raison inconnue"
   display:
+    title: "Tours d'interaction"
     list:
       started: "Démarré"
       duration: "Durée"
@@ -66,10 +42,46 @@ thread:
       status: "Statut"
       pending: "En attente"
       dateFormat: "DD.MM.YYYY HH:mm:ss"
+  events:
+    title: "Vue de traçage des tours"
+  hierarchy:
+    title: "Vue hiérarchique des tours"
+  chat:
+    title: "Vue Chat"
+
+chat:
+  assistant: "Assistant"
+  document: "Document"
+
+event:
+  list:
+    firstInteraction: "Première interaction :"
+    lastInteraction: "Dernière interaction :"
+    costs: "Coûts :"
+    duration: "Durée :"
+    pending: "En attente :"
+    no: "Non"
+    status: "Statut :"
+    error: "Erreur"
+    successful: "Réussi"
+    chat: "Chat"
+    agents: "Agents :"
+  statistics:
+    charts:
+      agentInvocations: "Invocations d'agents"
+      agentStart: "Démarrage de l'agent"
+      endEvents: "Événements de fin"
+      success: "Succès"
+      openHumanInTheLoop: "Ouvert (Humain dans la boucle)"
+      openBotInTheLoop: "Ouvert (Bot dans la boucle)"
+      error: "Erreur"
+      delegations: "Délégations"
+      delegatedTaskAgentInTheLoop: "Tâche déléguée (Agent dans la boucle)"
+      allEvents: "Tous les événements"
 
 costs:
   table:
-    count: "Comptage"
+    count: "Nombre"
     cost: "Coût"
     input: "Entrée"
     output: "Sortie"
@@ -80,30 +92,33 @@ costs:
 service:
   selection:
     title: "Services"
-    description: "Voici tous les services listés que vous avez activés"
+    description: "Voici tous les services que vous avez activés"
     search: "Rechercher"
 
 agent:
+  title: "Agents"
+  can_chat: "Peut chatter"
   overview:
-    startEvents: "Événements de Démarrage"
-    stopEvents: "Événements d'Arrêt"
+    startEvents: "Événements de démarrage"
+    stopEvents: "Événements d'arrêt"
     config: "Configuration"
-    name: "Nom:"
-    class: "Classe:"
-    agentId: "ID d'Agent:"
-    status: "Statut:"
+    name: "Nom :"
+    class: "Classe :"
+    agentId: "ID de l'agent :"
+    status: "Statut :"
     online: "En ligne"
     offline: "Hors ligne"
   chat:
-    title: "Chat"
-    createThreadAndSend: "Créer un Fil et Envoyer"
-    manuallyCreatedThread: "Fil créé manuellement"
+    title: "Démarrer un nouveau chat"
+    placeholder: "Saisissez le message que vous souhaitez envoyer à l'agent"
+    createThreadAndSend: "Créer un fil de discussion et envoyer"
+    manuallyCreatedThread: "Fil de discussion créé manuellement"
   navigation:
-    basic: "Base"
+    basic: "De base"
     workflow: "Flux de travail"
-    threads: "Fils"
+    threads: "Fils de discussion"
     chat: "Chat"
-  availableAgents: "Agents Disponibles"
+  availableAgents: "Agents disponibles"
   list:
     name: "Nom"
     description: "Description"
@@ -114,22 +129,37 @@ agent:
     status: "Statut"
     online: "En ligne"
     offline: "Hors ligne"
+  workflow:
+    title: "Flux de travail agentique"
+  threads:
+    title: "Fils de discussion de l'agent"
 
 document:
   list:
-    title: "Titre du Document"
-    created: "Créé"
+    title: "Titre du document"
+    created: "Créé le"
     updated_at: "Dernière mise à jour"
-    document_type: "Type de Document"
-    number_of_pages: "Nombre de Pages"
+    document_type: "Type de document"
+    number_of_pages: "Nombre de pages"
 
 knowledge:
+  title: "Bases de connaissances"
+  created_at: "Créé le :"
+  updated_at: "Dernière mise à jour :"
   navigation:
     document:
       basic: "Aperçu"
       content: "Contenu"
-      nodes: "Fragments"
+      nodes: "Blocs"
       summary: "Résumés"
+  documents:
+    title: "Documents"
+  nodes:
+    title: "Blocs de documents"
+  summary:
+    title: "Résumés de documents"
+    level: "Niveau"
+    no_summaries_at_level: "Aucun résumé à ce niveau"
 
 auth:
   renew:
@@ -137,24 +167,24 @@ auth:
   callback:
     processing: "Traitement du rappel d'authentification..."
     loggingIn: "Connexion en cours..."
-    loginError: "Erreur de Connexion"
+    loginError: "Erreur de connexion"
     redirectingToLogin: "Redirection vers la page de connexion..."
     genericError: "Une erreur s'est produite lors de la connexion. Veuillez réessayer."
   login:
     title: "Connexion"
     description: "Veuillez vous connecter pour accéder à l'application"
-    tagline: "Découvrez le futur de l'intelligence artificielle"
-    welcome: "Bienvenue sur l'AI Hub de {companyName}"
+    tagline: "Découvrez l'avenir de l'intelligence artificielle"
+    welcome: "Bienvenue sur le AI Hub de {companyName}"
     pleaseLogin: "Veuillez vous connecter"
-    loginWithMicrosoft: "Connexion avec Microsoft"
-    customSolutions: "Solutions IA personnalisées pour votre entreprise"
+    loginWithMicrosoft: "Se connecter avec Microsoft"
+    customSolutions: "Solutions d'IA personnalisées pour votre entreprise"
     logoAlt: "Logo de l'entreprise"
 
 timerange:
-  1h: "1 Heure"
-  24h: "1 Jour"
-  30d: "1 Mois"
-  365d: "1 An"
+  1h: "1 heure"
+  24h: "1 jour"
+  30d: "1 mois"
+  365d: "1 an"
 
 chart:
   no_data: "Aucune donnée disponible pour cette période."
@@ -162,26 +192,26 @@ chart:
   trending_down: "Tendance à la baisse"
 
 dashboard:
-  all_agents: "Tous les Agents"
+  all_agents: "Tous les agents"
   users: "Utilisateurs AI-Hub"
-  unknown_agent: "Agent Inconnu"
-  add_widget: "Ajouter un Widget"
+  unknown_agent: "Agent inconnu"
+  add_widget: "Ajouter un widget"
   select_data_type: "Sélectionner le type de données"
-  select_agent: "Sélectionner un Agent (Optionnel)"
+  select_agent: "Sélectionner un agent (Facultatif)"
   create: "Créer"
-  create_widget: "Créer un nouveau Widget"
+  create_widget: "Créer un nouveau widget"
   events:
     StartEvent:
-      label: 'Exécutions d''Agent Démarrées'
+      label: 'Exécutions d''agents démarrées'
     StopEvent:
-      label: 'Exécutions Réussies'
+      label: 'Exécutions réussies'
     UserMessageEvent:
-      label: 'Messages de Chat Utilisateur'
+      label: 'Messages de chat utilisateur'
     ExceptionEvent:
       label: 'Erreurs'
     HumanInTheLoopRequestEvent:
-      label: 'Humain dans la Boucle'
+      label: 'Humain dans la boucle'
     BotInTheLoopRequestEvent:
       label: 'Demander dans Slack/Teams'
     AgentInTheLoopRequestEvent:
-      label: 'Tâches Déléguées'
+      label: 'Tâches déléguées'

@@ -1,8 +1,8 @@
 test: "Questo è un test"
-welcome: "Benvenuto in bbv ai-hub"
+welcome: "Benvenuti in bbv ai-hub"
 
 user:
-  logout: "Disconnetti"
+  logout: "Logout"
   language: "Lingua"
   languages:
     en: "Inglese"
@@ -10,17 +10,56 @@ user:
     it: "Italiano"
     fr: "Francese"
 
+thread:
+  title: "Interazioni"
+  users: "Utenti"
+  assistants: "Assistenti"
+  navigation:
+    basic: "Di base"
+    hierarchy: "Gerarchia"
+    chat: "Chat"
+    display: "Turni"
+  list:
+    name: "Nome"
+    agents: "Agenti"
+    created: "Creato"
+    numTurns: "Numero di turni"
+    numEvents: "Numero di eventi"
+    status: "Stato"
+    pending: "In sospeso"
+  utils:
+    pendingTypes:
+      hitl: "Umano nel loop"
+      aitl: "Agente nel loop"
+      bitl: "Bot nel loop"
+      unknown: "Motivo sconosciuto"
+  display:
+    title: "Turni di interazione"
+    list:
+      started: "Iniziato"
+      duration: "Durata"
+      events: "Eventi"
+      status: "Stato"
+      pending: "In sospeso"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
+  events:
+    title: "Vista tracciamento turni"
+  hierarchy:
+    title: "Vista gerarchica sui turni"
+  chat:
+    title: "Vista chat"
+
 chat:
   assistant: "Assistente"
   document: "Documento"
 
 event:
   list:
-    firstInteraction: "Prima Interazione:"
-    lastInteraction: "Ultima Interazione:"
+    firstInteraction: "Prima interazione:"
+    lastInteraction: "Ultima interazione:"
     costs: "Costi:"
     duration: "Durata:"
-    pending: "In attesa:"
+    pending: "In sospeso:"
     no: "No"
     status: "Stato:"
     error: "Errore"
@@ -29,43 +68,16 @@ event:
     agents: "Agenti:"
   statistics:
     charts:
-      agentInvocations: "Invocazioni Agente"
-      agentStart: "Avvio Agente"
-      endEvents: "Eventi di Fine"
+      agentInvocations: "Invocazioni agente"
+      agentStart: "Avvio agente"
+      endEvents: "Eventi finali"
       success: "Successo"
-      openHumanInTheLoop: "Aperto (Umano nel Loop)"
-      openBotInTheLoop: "Aperto (Bot nel Loop)"
+      openHumanInTheLoop: "Aperto (Umano nel loop)"
+      openBotInTheLoop: "Aperto (Bot nel loop)"
       error: "Errore"
       delegations: "Deleghe"
-      delegatedTaskAgentInTheLoop: "Attività Delegata (Agente nel Loop)"
-      allEvents: "Tutti gli Eventi"
-
-thread:
-  users: "Utenti"
-  assistants: "Assistenti"
-  list:
-    name: "Nome"
-    agents: "Agenti"
-    created: "Creato"
-    numTurns: "Numero di Turni"
-    numEvents: "Numero di Eventi"
-    status: "Stato"
-    pending: "In attesa"
-  title: "Thread"
-  utils:
-    pendingTypes:
-      hitl: "Umano nel Loop"
-      aitl: "Agente nel Loop"
-      bitl: "Bot nel Loop"
-      unknown: "Motivo sconosciuto"
-  display:
-    list:
-      started: "Avviato"
-      duration: "Durata"
-      events: "Eventi"
-      status: "Stato"
-      pending: "In attesa"
-      dateFormat: "DD.MM.YYYY HH:mm:ss"
+      delegatedTaskAgentInTheLoop: "Compito delegato (Agente nel loop)"
+      allEvents: "Tutti gli eventi"
 
 costs:
   table:
@@ -73,37 +85,40 @@ costs:
     cost: "Costo"
     input: "Input"
     output: "Output"
-    embedding: "Embedding"
+    embedding: "Incorporamento"
     total: "Totale"
     currency: "CHF"
 
 service:
   selection:
     title: "Servizi"
-    description: "Ecco tutti i servizi elencati che hai attivato"
+    description: "Qui sono elencati tutti i servizi che hai attivato"
     search: "Cerca"
 
 agent:
+  title: "Agenti"
+  can_chat: "Può chattare"
   overview:
-    startEvents: "Eventi di Avvio"
-    stopEvents: "Eventi di Arresto"
+    startEvents: "Eventi di avvio"
+    stopEvents: "Eventi di arresto"
     config: "Configurazione"
     name: "Nome:"
     class: "Classe:"
-    agentId: "ID Agente:"
+    agentId: "ID agente:"
     status: "Stato:"
     online: "Online"
     offline: "Offline"
   chat:
-    title: "Chat"
-    createThreadAndSend: "Crea Thread e Invia"
+    title: "Inizia nuova chat"
+    placeholder: "Digita il messaggio che vuoi inviare all'agente"
+    createThreadAndSend: "Crea thread e invia"
     manuallyCreatedThread: "Thread creato manualmente"
   navigation:
-    basic: "Base"
+    basic: "Di base"
     workflow: "Flusso di lavoro"
     threads: "Thread"
     chat: "Chat"
-  availableAgents: "Agenti Disponibili"
+  availableAgents: "Agenti disponibili"
   list:
     name: "Nome"
     description: "Descrizione"
@@ -114,22 +129,37 @@ agent:
     status: "Stato"
     online: "Online"
     offline: "Offline"
+  workflow:
+    title: "Flusso di lavoro agentico"
+  threads:
+    title: "Thread agente"
 
 document:
   list:
-    title: "Titolo del Documento"
+    title: "Titolo del documento"
     created: "Creato"
     updated_at: "Ultimo aggiornamento"
-    document_type: "Tipo di Documento"
-    number_of_pages: "Numero di Pagine"
+    document_type: "Tipo di documento"
+    number_of_pages: "Numero di pagine"
 
 knowledge:
+  title: "Basi di conoscenza"
+  created_at: "Creato:"
+  updated_at: "Ultimo aggiornamento:"
   navigation:
     document:
       basic: "Panoramica"
       content: "Contenuto"
       nodes: "Frammenti"
       summary: "Riassunti"
+  documents:
+    title: "Documenti"
+  nodes:
+    title: "Frammenti di documento"
+  summary:
+    title: "Riassunti del documento"
+    level: "Livello"
+    no_summaries_at_level: "Nessun riassunto a questo livello"
 
 auth:
   renew:
@@ -137,51 +167,51 @@ auth:
   callback:
     processing: "Elaborazione del callback di autenticazione..."
     loggingIn: "Accesso in corso..."
-    loginError: "Errore di Accesso"
+    loginError: "Errore di accesso"
     redirectingToLogin: "Reindirizzamento alla pagina di accesso..."
     genericError: "Si è verificato un errore durante l'accesso. Riprova."
   login:
-    title: "Accedi"
-    description: "Accedi per utilizzare l'applicazione"
+    title: "Accesso"
+    description: "Effettua l'accesso per accedere all'applicazione"
     tagline: "Sperimenta il futuro dell'intelligenza artificiale"
-    welcome: "Benvenuto nell'AI Hub di {companyName}"
-    pleaseLogin: "Per favore, accedi"
+    welcome: "Benvenuti nell'AI Hub di {companyName}"
+    pleaseLogin: "Effettua l'accesso"
     loginWithMicrosoft: "Accedi con Microsoft"
     customSolutions: "Soluzioni AI personalizzate per la tua azienda"
     logoAlt: "Logo dell'azienda"
 
 timerange:
-  1h: "1 Ora"
-  24h: "1 Giorno"
-  30d: "1 Mese"
-  365d: "1 Anno"
+  1h: "1 ora"
+  24h: "1 giorno"
+  30d: "1 mese"
+  365d: "1 anno"
 
 chart:
   no_data: "Nessun dato disponibile per questo periodo."
-  trending_up: "Tendenza in aumento"
-  trending_down: "Tendenza in diminuzione"
+  trending_up: "In crescita"
+  trending_down: "In calo"
 
 dashboard:
-  all_agents: "Tutti gli Agenti"
+  all_agents: "Tutti gli agenti"
   users: "Utenti AI-Hub"
-  unknown_agent: "Agente Sconosciuto"
-  add_widget: "Aggiungi Widget"
+  unknown_agent: "Agente sconosciuto"
+  add_widget: "Aggiungi widget"
   select_data_type: "Seleziona tipo di dati"
-  select_agent: "Seleziona un Agente (Opzionale)"
+  select_agent: "Seleziona un agente (opzionale)"
   create: "Crea"
-  create_widget: "Crea nuovo Widget"
+  create_widget: "Crea nuovo widget"
   events:
     StartEvent:
-      label: 'Esecuzioni Agente Avviate'
+      label: 'Esecuzioni agente avviate'
     StopEvent:
-      label: 'Esecuzioni Riuscite'
+      label: 'Esecuzioni riuscite'
     UserMessageEvent:
-      label: 'Messaggi Chat Utente'
+      label: 'Messaggi chat utente'
     ExceptionEvent:
       label: 'Errori'
     HumanInTheLoopRequestEvent:
-      label: 'Umano nel Loop'
+      label: 'Umano nel loop'
     BotInTheLoopRequestEvent:
       label: 'Chiedi in Slack/Teams'
     AgentInTheLoopRequestEvent:
-      label: 'Attività Delegate'
+      label: 'Compiti delegati'

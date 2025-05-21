@@ -30,8 +30,6 @@ const props = withDefaults(defineProps<{
   active: true,
 })
 
-const { t } = useI18n()
-
 const scoreColor = computed<string>(() => {
   const score = props.node.score
   if (!score) return ''
