@@ -21,7 +21,7 @@ Feature: Combine nodes in order
       Below are the relevant documents:
 
       <context_documents>
-      <REFERENCE_DOCUMENT source='doc1' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T23:13:20' updated_at='2023-11-15T00:36:40' inserted_at='2023-11-15T02:00:00'>
+      <REFERENCE_DOCUMENT source='doc1' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       Doc1 line10 content
 
@@ -30,7 +30,7 @@ Feature: Combine nodes in order
       </REFERENCE_DOCUMENT>
 
       ---
-      <REFERENCE_DOCUMENT source='doc2' namespace='legal_document' type='content' language='fr' version='2' created_at='2023-07-22T06:26:40' updated_at='2023-07-22T07:50:00' inserted_at='2023-07-22T09:13:20'>
+      <REFERENCE_DOCUMENT source='doc2' namespace='legal_document' type='content' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
       Doc2 line15 content
 
@@ -54,7 +54,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <REFERENCE_DOCUMENT source='docA' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T23:13:20' updated_at='2023-11-15T00:36:40' inserted_at='2023-11-15T02:00:00'>
+      Custom prompt: <REFERENCE_DOCUMENT source='docA' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       Node docA line=5
 
@@ -111,7 +111,7 @@ Feature: Combine nodes in order
       Below are the relevant documents:
 
       <context_documents>
-      <REFERENCE_DOCUMENT source='docX' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T23:13:20' updated_at='2023-11-15T00:36:40' inserted_at='2023-11-15T02:00:00'>
+      <REFERENCE_DOCUMENT source='docX' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       docX line=1
 
@@ -120,7 +120,7 @@ Feature: Combine nodes in order
       </REFERENCE_DOCUMENT>
 
       ---
-      <REFERENCE_DOCUMENT source='docY' namespace='legal_document' type='content' language='fr' version='2' created_at='2023-07-22T06:26:40' updated_at='2023-07-22T07:50:00' inserted_at='2023-07-22T09:13:20'>
+      <REFERENCE_DOCUMENT source='docY' namespace='legal_document' type='content' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
       docY line=5
 
@@ -145,7 +145,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <REFERENCE_DOCUMENT source='doc1' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T23:13:20' updated_at='2023-11-15T00:36:40' inserted_at='2023-11-15T02:00:00'>
+      Custom prompt: <REFERENCE_DOCUMENT source='doc1' namespace='research_paper' type='content' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       Doc1 line10 content
 
@@ -154,7 +154,7 @@ Feature: Combine nodes in order
       </REFERENCE_DOCUMENT>
 
       ---
-      <REFERENCE_DOCUMENT source='doc2' namespace='legal_document' type='content' language='fr' version='2' created_at='2023-07-22T06:26:40' updated_at='2023-07-22T07:50:00' inserted_at='2023-07-22T09:13:20'>
+      <REFERENCE_DOCUMENT source='doc2' namespace='legal_document' type='content' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
       Doc2 line15 content
 
