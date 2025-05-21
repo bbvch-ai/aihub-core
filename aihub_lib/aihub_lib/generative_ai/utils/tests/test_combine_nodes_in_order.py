@@ -1,15 +1,20 @@
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.schema import NodeWithScore, TextNode
 from pytest_bdd import given, scenarios, then, when
 
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.semantic.retriever import Document
+from aihub_lib.nats.events.semantic.retriever.Node import Node
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
+    DOCUMENT_ID,
+    HEADING_LEVEL,
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    SECTION_END_LINE,
     SECTION_START_LINE,
     SOURCE,
     TYPE,
@@ -61,8 +66,9 @@ def _(datatable):
     context_nodes = []
     headers = datatable[0]
     metadata_fields = [
-        NAMESPACE,
+        DOCUMENT_ID,
         SOURCE,
+        NAMESPACE,
         TYPE,
         LANGUAGE,
         VERSION,
@@ -70,26 +76,37 @@ def _(datatable):
         UPDATED_AT,
         INSERTED_AT,
         SECTION_START_LINE,
+        SECTION_END_LINE,
+        HEADING_LEVEL,
     ]
 
     for row in datatable[1:]:
         metadata = {
             column: (
-                int(row[index]) if column in {SECTION_START_LINE, INSERTED_AT, UPDATED_AT, CREATED_AT} else row[index]
+                int(row[index])
+                if column
+                in {VERSION, SECTION_START_LINE, SECTION_END_LINE, INSERTED_AT, UPDATED_AT, CREATED_AT, HEADING_LEVEL}
+                else row[index]
             )
             for index, column in enumerate(headers)
             if row[index] and column in metadata_fields
         }
+        print(metadata)
 
         text = row[headers.index("text")]
         score = float(row[headers.index("score")])
-
+        id_ = f"{metadata.get(SOURCE, 'missing')}-{metadata.get(SECTION_START_LINE, 0)}"
         context_nodes.append(
             Document(
-                id=f"{metadata.get(SOURCE, 'missing')}-{metadata.get(SECTION_START_LINE, 0)}",
+                id=id_,
                 score=score,
                 content=text,
-                metadata=metadata,
+                metadata=Node.from_llama_index_node_with_score(
+                    NodeWithScore(
+                        node=TextNode(text=text, metadata=metadata, id_=id_),
+                        score=score,
+                    ),
+                ),
             )
         )
 
@@ -118,11 +135,3 @@ def _(the_result, docstring):
     actual = "\n".join(line.rstrip() for line in the_result.content.strip().splitlines())
 
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"
-
-
-@then("a ValueError is raised")
-def _(the_context_nodes, the_locale_handler, the_context_prompt):
-    with pytest.raises(ValueError, match=r".*metadata.*source"):
-        combine_nodes_in_order(
-            context_nodes=the_context_nodes, locale_handler=the_locale_handler, context_prompt=the_context_prompt
-        )

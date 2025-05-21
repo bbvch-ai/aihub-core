@@ -28,7 +28,7 @@ const handleMessage = (event: MessageEvent) => {
       router.push(localeRoute(`/service/openai/${data.thread_id as string}/tracing`))
     }
     if (data.type === 'show-sources') {
-      router.push(localeRoute(`/service/openai/${data.thread_id as string}/sources`))
+      router.push(localeRoute(`/service/openai/${data.thread_id as string}/${data.display_id as string}/sources`))
     }
   }
 }

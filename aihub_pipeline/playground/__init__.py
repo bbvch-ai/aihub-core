@@ -32,11 +32,11 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
-CONTAINER_NAME = "uitest"
-DIRECTORY_NAME = "papers"
+DATALAKE_CONTAINER_NAME = "uitest"
+DATALAKE_DIRECTORY_NAME = "papers"
+
 NAMESPACE_NAME = "papers"
-VECTOR_STORE_NAME = "papers"
-DOCUMENT_STORE_NAME = "papers"
+STORE_NAME = "papers"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -55,17 +55,18 @@ assets = [
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_azure_datalake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
+        **default_io_manager_azure_datalake_resources(
+            container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
+        ),
         "document_parser": DocumentParserResource(),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
-            vector_store_name=VECTOR_STORE_NAME,
-            document_store_name=DOCUMENT_STORE_NAME,
+            store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
+        **azure_data_lake_resources(container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME),
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",

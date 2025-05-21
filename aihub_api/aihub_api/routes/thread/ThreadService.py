@@ -261,7 +261,6 @@ class ThreadService:
                     # Log validation or other errors during DTO creation
                     logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
             else:
-                print(run_data)
                 logger.warning(
                     f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent {start_agent_class}/{start_agent_id} could not be fetched."
                 )

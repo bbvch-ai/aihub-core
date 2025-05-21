@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import type { Document, Node, WsServerEvent, RetrieverEvent } from '@core/sdk/client'
 
+const route = useRoute()
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 
@@ -63,7 +64,7 @@ const closeSources = () => {
 
 const retrieveEvents = computed<WsServerEvent[]>(() => {
   return threadEvents.value?.filter((event: WsServerEvent) => {
-    return event.event.documents ?? false
+    return event.display_id === route.params.display_id && event.event.documents
   })
 })
 
@@ -80,7 +81,7 @@ const documentMap = computed<Record<string, DocumentInfo>>(() => {
     (event.event.documents ?? []).forEach((doc: Document) => {
       if (!(doc.metadata.document_id in docs)) {
         docs[doc.metadata.document_id] = {
-          db: 'papers',
+          db: 'papers', // TODO: @mfundn this should be stored on the document metadata
           namespace: doc.metadata.namespace,
           id: doc.metadata.document_id,
           nodes: [],

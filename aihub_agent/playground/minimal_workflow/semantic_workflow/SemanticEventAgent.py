@@ -3,6 +3,8 @@ from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, RerankerEvent, RetrieverEvent, LLMStopEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.events.semantic.retriever import Document
+from aihub_lib.nats.events.semantic.retriever.Node import Node
+from aihub_lib.testing.milvus_vector_store_content import DEFAULT_DOCUMENTS
 
 
 class SemanticEventAgent(Agent):
@@ -12,16 +14,11 @@ class SemanticEventAgent(Agent):
             documents=[
                 Document(
                     id="1",
-                    content="This is the Content of some important Document!",
+                    content=node.text,
                     score=0.9,
-                    metadata={"title": "Must Read"},
-                ),
-                Document(
-                    id="2",
-                    content="This is even more important content!",
-                    score=0.85,
-                    metadata={"title": "Must-must Read"},
-                ),
+                    metadata=Node.from_llama_index_node(node),
+                )
+                for node in DEFAULT_DOCUMENTS
             ],
         )
 

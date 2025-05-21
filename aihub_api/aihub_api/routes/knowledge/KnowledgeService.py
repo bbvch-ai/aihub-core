@@ -94,7 +94,7 @@ class KnowledgeService:
         vector_store = vector_store_factory(db)
         raw_nodes = vector_store.get_nodes(filters=filters)
         nodes = [Node.from_llama_index_node(node) for node in raw_nodes]
-        nodes.sort(key=lambda node: node.index)
+        nodes.sort(key=lambda node: node.index or 1)
         return nodes
 
     @staticmethod

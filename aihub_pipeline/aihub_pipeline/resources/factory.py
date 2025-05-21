@@ -84,28 +84,26 @@ def milvus_vector_store_resource(
 
 
 def mongo_aisearch_storage_context_resources(
-    vector_store_name: str,
-    document_store_name: str,
+    store_name: str,
     namespace_name: str,
     dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
     return {
-        **mongo_document_store_resource(document_store_name=document_store_name, namespace_name=namespace_name),
-        **aisearch_vector_store_resource(vector_store_name=vector_store_name, dimensions=dimensions),
+        **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
+        **aisearch_vector_store_resource(vector_store_name=store_name, dimensions=dimensions),
     }
 
 
 def local_mongo_milvus_storage_context_resource(
     vector_store_uri: str,
-    vector_store_name: str,
-    document_store_name: str,
+    store_name: str,
     namespace_name: str,
     dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
     return {
-        **mongo_document_store_resource(document_store_name=document_store_name, namespace_name=namespace_name),
+        **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
         **milvus_vector_store_resource(
-            vector_store_uri=vector_store_uri, vector_store_name=vector_store_name, dimensions=dimensions
+            vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
         ),
     }
 

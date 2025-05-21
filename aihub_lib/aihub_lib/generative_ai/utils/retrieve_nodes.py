@@ -41,6 +41,8 @@ def retrieve_nodes(
         ],
         condition=FilterCondition.OR,
     )
+    print("filters", filters)
+    print(message, retrieve_k, index_namespaces, query_mode, node_types)
 
     embedding = embed_model.get_text_embedding(message)
 
