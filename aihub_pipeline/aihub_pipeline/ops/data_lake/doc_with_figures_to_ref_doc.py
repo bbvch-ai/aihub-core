@@ -10,9 +10,8 @@ def doc_with_figures_to_ref_doc(
     data_lake_file: DataLakeFile,
     doc_with_figures: DocumentWithFigureInfo,
 ) -> RefDocDocument:
-    """Loads the data lake file using the data lake file system, parses the file using the parser, returns the
-    parsed document as a RefDocDocument with adding all metadata from the data lake to the RefDocDocument.
-    Also extracts and saves any figures to the data lake.
+    """
+    Turns a DocumentWithFigureInfo into a RefDocDocument
     """
 
     ref_doc = RefDocDocument(**doc_with_figures.dict())

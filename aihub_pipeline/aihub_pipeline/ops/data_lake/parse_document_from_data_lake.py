@@ -13,7 +13,9 @@ def parse_document_from_data_lake(
     data_lake_file_system: ResourceParam[AbstractFileSystem],
     document_parser: DocumentParserResource,
 ) -> DocumentWithFigureInfo:
-    """Loads and parses the document from data lake storage"""
+    """
+    Loads and parses the document from data lake storage
+    """
     reader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
 
     context.log.info(f"Using reader {reader.__class__.__name__} for document of type {data_lake_file.filetype}")

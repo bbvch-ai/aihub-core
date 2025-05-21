@@ -12,7 +12,9 @@ def reformat_tables(
     context: OpExecutionContext,
     document: DocumentWithFigureInfo,
 ) -> DocumentWithFigureInfo:
-    """Convert HTML tables in the document to Markdown tables."""
+    """
+    Convert HTML tables in the document to Markdown tables.
+    """
     updated_content = document.text_resource.text
 
     table_pattern = r"<table.*?>.*?</table>"
@@ -39,4 +41,8 @@ def reformat_tables(
 
     document.text_resource.text = updated_content
 
+    # clean up metadata for RefDocDocument
+    if document.metadata["operation_id"]:
+        del document.metadata["operation_id"]
+        del document.metadata["figure_ids"]
     return document

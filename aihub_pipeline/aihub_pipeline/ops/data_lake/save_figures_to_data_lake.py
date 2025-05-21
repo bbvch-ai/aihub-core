@@ -19,13 +19,6 @@ def save_figures_to_data_lake(
 ) -> FigureMetadata:
     """
     Extracts and saves raw figure data to Azure Data Lake using BlobServiceClient.
-
-    Args:
-        context: The operation execution context
-        data_lake_file: The source data lake file
-
-    Returns:
-        List of paths to the saved figures
     """
     if doc_with_figures.operation_id is None and len(doc_with_figures.figure_ids) < 1:
         context.log.info("No figures found, skip saving to data lake.")

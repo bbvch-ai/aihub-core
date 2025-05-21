@@ -35,9 +35,6 @@ class DocumentIntelligenceLoader(BaseReader):
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
                 output=[AnalyzeOutputOption.FIGURES],
-                # features=[DocumentAnalysisFeature.LANGUAGES],
-                # potenially higher resolution images, but at great cost
-                # features=[DocumentAnalysisFeature.OCR_HIGH_RESOLUTION],
             )
 
         result: AnalyzeResult = poller.result()

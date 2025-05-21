@@ -1,34 +1,44 @@
 import base64
-import os
 import re
 from typing import Optional
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from dagster import OpExecutionContext, op
-from openai import AzureOpenAI
+from dagster import OpExecutionContext, op, ResourceParam, RetryPolicy, Backoff
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ImageBlock
+from llama_index.core.llms import LLM
 
 from aihub_pipeline.ops.data_lake.process_document_without_figures import process_document_without_figures
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
 
+system_prompt = """You are an expert at creating high-quality image descriptions for document accessibility.
+Your task is to generate detailed alt text for figures in documents that:
 
-@op(code_version="v1")
+1. Concisely describes the visual content (images, charts, diagrams, etc.)
+2. Captures the key information being conveyed by the figure
+3. For charts and diagrams: describes the structure, identifies axes, data points, and trends
+4. For tables: describes the structure and summarizes key data points
+5. Extracts any visible text in the image when relevant
+6. Uses appropriate technical language while remaining accessible
+7. Connects the image description to the surrounding document context
+8. Avoids unnecessary verbosity or speculation
+
+Format your descriptions as concise, factual paragraphs that could be used directly as alt text.
+Focus on being informative and helping the reader understand what they can't see.
+Do **NOT** come up with information, only reference what you can see in the iamge.
+Write your reply in the SAME language as the context text and image text."""
+
+
+@op(code_version="v2", retry_policy=RetryPolicy(max_retries=6, delay=1, backoff=Backoff.EXPONENTIAL))
 def inject_figures(
     context: OpExecutionContext,
     doc_with_figures: DocumentWithFigureInfo,
     figure_metadata: FigureMetadata,
+    language_model: ResourceParam[LLM],
 ) -> DocumentWithFigureInfo:
-    """Injects image Markdown tags into the document content by replacing HTML figure tags.
-
-    This operation:
-    1. Looks for HTML figure tags in the document content using re.search
-    2. Extracts surrounding text to provide context for image description
-    3. Generates detailed descriptions using GPT-4o with document context
-    4. Replaces each figure tag with a markdown image tag using the saved image URLs
-    5. Uses match.span() to ensure the exact tag is replaced
-
-    Returns the document with updated content containing markdown image tags.
+    """
+    Injects image Markdown tags into the document content by replacing HTML figure tags.
     """
     if not figure_metadata.figure_paths:
         context.log.info("No figures found, skipping injection")
@@ -106,7 +116,11 @@ def inject_figures(
 
                 # Generate description with context
                 description = generate_description(
-                    context, image_data, figure_index=i, surrounding_text=surrounding_text
+                    context=context,
+                    language_model=language_model,
+                    image_bytes=image_data,
+                    figure_index=i,
+                    surrounding_text=surrounding_text,
                 )
             except Exception as e:
                 context.log.error(f"Error processing image {i+1} for description: {str(e)}")
@@ -128,6 +142,7 @@ def inject_figures(
 
 def generate_description(
     context: OpExecutionContext,
+    language_model: LLM,
     image_bytes: bytes,
     figure_index: int,
     surrounding_text: Optional[str] = None,
@@ -135,39 +150,10 @@ def generate_description(
     """
     Generate a detailed description of an image using the GPT-4o vision model,
     taking into account the surrounding text context from the document.
-
-    Args:
-        context: The operation execution context for logging
-        image_bytes: The raw image data as bytes
-        figure_index: The index of the figure within the document
-        surrounding_text: Text surrounding the image in the document, providing context
-
-    Returns:
-        A detailed description of the image
     """
     try:
-        api_key = os.environ.get("AZURE_OPENAI_API_KEY")
-
         # Convert image to base64
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
-
-        # Create a robust system prompt
-        system_prompt = """You are an expert at creating high-quality image descriptions for document accessibility.
-Your task is to generate detailed alt text for figures in documents that:
-
-1. Concisely describes the visual content (images, charts, diagrams, etc.)
-2. Captures the key information being conveyed by the figure
-3. For charts and diagrams: describes the structure, identifies axes, data points, and trends
-4. For tables: describes the structure and summarizes key data points
-5. Extracts any visible text in the image when relevant
-6. Uses appropriate technical language while remaining accessible
-7. Connects the image description to the surrounding document context
-8. Avoids unnecessary verbosity or speculation
-
-Format your descriptions as concise, factual paragraphs that could be used directly as alt text.
-Focus on being informative and helping the reader understand what they can't see.
-Do **NOT** come up with information, only reference what you can see in the iamge.
-Write your reply in the SAME language as the context text and image text."""
 
         # Prepare user prompt with surrounding text context if available
         user_text = (
@@ -177,38 +163,27 @@ Write your reply in the SAME language as the context text and image text."""
         if surrounding_text:
             user_text += f"\n\nContext from the document surrounding this image:\n\n{surrounding_text}"
 
-        endpoint = "https://aihub-dev-openai-che.openai.azure.com/"
-        deployment = "gpt-4o"
+        messages = [
+            ChatMessage(
+                role=MessageRole.SYSTEM,
+                blocks=[
+                    TextBlock(text=user_text),
+                    ImageBlock(image=base64_image),
+                ],
+            ),
+            ChatMessage(
+                role=MessageRole.USER,
+                blocks=[
+                    TextBlock(text=user_text),
+                    ImageBlock(image=base64_image),
+                ],
+            ),
+        ]
 
-        api_version = "2024-12-01-preview"
-
-        client = AzureOpenAI(
-            api_version=api_version,
-            azure_endpoint=endpoint,
-            api_key=api_key,
-        )
-
-        response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": user_text},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}"}},
-                    ],
-                },
-            ],
-            max_tokens=500,
-            temperature=0.0,
-            model=deployment,
-        )
+        response = language_model.chat(messages=messages)
 
         # Parse the response
-        return response.choices[0].message.content
+        return response.message.content
 
     except Exception as e:
         context.log.error(f"Failed to generate image description: {str(e)}")
