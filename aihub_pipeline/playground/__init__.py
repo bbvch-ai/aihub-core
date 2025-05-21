@@ -12,6 +12,7 @@ from aihub_pipeline.assets.factories.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.observable_data_lake_factory import observable_data_lake_factory
 from aihub_pipeline.assets.factories.removed_documents_factory import removed_documents_factory
+from aihub_pipeline.assets.factories.summary_nodes_factory import summary_nodes_factory
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.resources.factory import (
     azure_data_lake_resources,
@@ -29,6 +30,7 @@ DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
+SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 CONTAINER_NAME = "uitest"
 DIRECTORY_NAME = "papers"
@@ -44,6 +46,9 @@ assets = [
     removed_documents_factory(REMOVED_DOCUMENTS_KEY, data_lake_key=DATA_LAKE_KEY),
     documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
     nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
+    summary_nodes_factory(
+        SUMMARY_NODES_KEY, document_key=DOCUMENT_KEY, nodes_key=NODES_KEY, partitions=document_partitions
+    ),
 ]
 
 
