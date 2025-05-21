@@ -64,7 +64,7 @@ class KnowledgeController(Controller):
             page_size: PageSize = 20,
         ) -> PaginatedDocumentsResponse:
             """
-            Returns all threads that the authenticated user is a member of.
+            Returns paginated documents for a specific namespace within a database.
             """
             if db in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail="Not authorized to view this database")
