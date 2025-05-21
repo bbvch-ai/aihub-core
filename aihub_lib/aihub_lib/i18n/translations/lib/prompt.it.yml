@@ -143,12 +143,17 @@ router:
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
 summarizer:
   summarize: |
-    Si prega di fornire un riassunto conciso del seguente testo.
-    Raccogli le idee principali e i punti chiave, assicurandoti che il riassunto sia coerente e mantenga il contesto originale e le relazioni tra le idee.
-    Testo per il sommario:
-
-    <Testo>
-    {text}
-    </Testo>
-
-    Sommario:
+    Compito: Riassumi il testo seguente come TL;DR:  
+    
+    Linee guida:  
+      - Inizia direttamente con i punti o le idee più importanti, senza frasi introduttive come "Il testo spiega...".  
+      - Usa frasi brevi, chiare e dirette.  
+      - Concentrati solo sulle informazioni essenziali, evitando dettagli inutili o commenti.  
+      - Presenta le idee principali in modo diretto, senza descrivere il testo.  
+    
+    Testo di input: 
+    <Text> 
+      {text} 
+    </Text>  
+    
+    Riassunto TL;DR:

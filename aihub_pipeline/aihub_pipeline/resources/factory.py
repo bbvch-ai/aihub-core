@@ -42,16 +42,15 @@ def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[
 
 
 def mongo_aisearch_storage_context_resources(
-    vector_store_name: str,
-    document_store_name: str,
+    store_name: str,
     namespace_name: str,
     dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
-    vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name, dimensions=dimensions)
-    doc_store = MongoDocumentStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
+    vector_store = AzureAISearchVectorStoreResource(vector_store_name=store_name, dimensions=dimensions)
+    doc_store = MongoDocumentStoreResource(document_store_name=store_name)
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
-    doc_store_resource = DocStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
+    doc_store_resource = DocStoreResource(document_store_name=store_name, namespace_name=namespace_name)
     return {
         "doc_store": doc_store,
         "vector_store": vector_store,

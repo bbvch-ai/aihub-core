@@ -35,8 +35,7 @@ SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 CONTAINER_NAME = "playground"
 DIRECTORY_NAME = "summary"
 NAMESPACE_NAME = "summary"
-VECTOR_STORE_NAME = "playground"
-DOCUMENT_STORE_NAME = "playground"
+STORE_NAME = "playground"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -60,8 +59,7 @@ defs = Definitions(
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **mongo_aisearch_storage_context_resources(
-            vector_store_name=VECTOR_STORE_NAME,
-            document_store_name=DOCUMENT_STORE_NAME,
+            store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
         **azure_data_lake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),

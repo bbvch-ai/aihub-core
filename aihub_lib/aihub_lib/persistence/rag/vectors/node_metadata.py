@@ -33,6 +33,7 @@ H6 = "h6"
 HEADING_LEVEL = "heading_level"
 REFERENCE_NAME = "reference_name"
 REFERENCE_URL = "reference_url"
+DOCUMENT_STORE_NAME = "document_store_name"
 
 # Allowed node types
 NODE_TYPE_CONTENT = "content"
@@ -66,6 +67,7 @@ DEFAULT_METADATA = {
     HEADING_LEVEL: 0,
     REFERENCE_NAME: None,
     REFERENCE_URL: None,
+    DOCUMENT_STORE_NAME: None,
 }
 
 DEFAULT_METADATA_FIELDS = {
@@ -90,4 +92,5 @@ DEFAULT_METADATA_FIELDS = {
     HEADING_LEVEL: (HEADING_LEVEL, MetadataIndexFieldType.INT32),
     REFERENCE_NAME: (REFERENCE_NAME, MetadataIndexFieldType.STRING),
     REFERENCE_URL: (REFERENCE_URL, MetadataIndexFieldType.STRING),
+    DOCUMENT_STORE_NAME: (DOCUMENT_STORE_NAME, MetadataIndexFieldType.STRING),
 }

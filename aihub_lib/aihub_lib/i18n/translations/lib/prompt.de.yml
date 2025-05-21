@@ -143,14 +143,20 @@ router:
       </answered_criteria>
 
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
+
 summarizer:
   summarize: |
-    Erstelle eine kurze und prägnante Zusammenfassung des folgenden Textes.
-    Fasse die Hauptideen und Schlüsselpunkte zusammen, stelle sicher, dass die Zusammenfassung kohärent ist und den ursprünglichen Kontext und die Beziehungen zwischen den Ideen beibehält.
-    Text zur Zusammenfassung:
-
-    <Text>
-    {text}
+    Aufgabe: Fasse den folgenden Text als TL;DR zusammen:
+    
+    Richtlinien:
+      - Starte direkt mit den entscheidenden Punkten oder Ideen, ohne einleitende Floskeln wie „Der Text erklärt …“.
+      - Verwende kurze, prägnante und einfache Sätze.
+      - Beschränke dich auf die essenziellen Informationen und lasse unwichtige Details oder Kommentare weg.
+      - Formuliere die zentralen Aussagen direkt, ohne den Text zu beschreiben.
+    
+    Eingabetext: 
+    <Text> 
+      {text}
     </Text>
-
-    Zusammenfassung:
+    
+    TL;DR-Zusammenfassung:
