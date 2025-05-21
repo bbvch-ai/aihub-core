@@ -42,7 +42,7 @@ def reformat_tables(
     document.text_resource.text = updated_content
 
     # clean up metadata for RefDocDocument
-    if document.metadata["operation_id"]:
+    if document.operation_id:
         del document.metadata["operation_id"]
         del document.metadata["figure_ids"]
     return document
