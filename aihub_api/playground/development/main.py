@@ -2,6 +2,7 @@ import asyncio
 from os.path import join, dirname, abspath, isdir
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
@@ -144,6 +145,11 @@ async def main():
         .generate_image()
         .stt()
         .tts(),
+        EvaluationController(auth=auth)
+        .create_evaluation_dataset()
+        .get_evaluation_dataset()
+        .update_evaluation_dataset()
+        .list_evaluation_datasets()
     )
 
     await runner.run()

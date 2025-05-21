@@ -3046,6 +3046,202 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
+export const EvaluationDatasetCreateDTOSchema = {
+    properties: {
+        dataset_name: {
+            type: 'string',
+            title: 'Dataset Name',
+            description: 'Name of the dataset in Arize Phoenix. This will be used as the identifier.'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/EvaluationDatasetItemDTO'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'List of question-answer pairs with optional metadata.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Optional description for the dataset.'
+        }
+    },
+    type: 'object',
+    required: ['dataset_name', 'items'],
+    title: 'EvaluationDatasetCreateDTO',
+    description: 'DTO for creating or updating an evaluation dataset.'
+} as const;
+
+export const EvaluationDatasetItemDTOSchema = {
+    properties: {
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for the dataset item (managed by Phoenix).'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The input question for the agent evaluation.'
+        },
+        answer: {
+            type: 'string',
+            title: 'Answer',
+            description: 'The reference (expected) answer for the question.'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Optional metadata for the dataset item.'
+        }
+    },
+    type: 'object',
+    required: ['question', 'answer'],
+    title: 'EvaluationDatasetItemDTO',
+    description: 'Represents a single item (e.g., a question-answer pair) within an evaluation dataset.'
+} as const;
+
+export const EvaluationDatasetResponseDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Phoenix dataset ID.'
+        },
+        dataset_name: {
+            type: 'string',
+            title: 'Dataset Name',
+            description: 'Name of the dataset in Arize Phoenix.'
+        },
+        version: {
+            type: 'string',
+            title: 'Version',
+            description: 'Dataset version ID in Phoenix.'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/EvaluationDatasetItemDTO'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'List of question-answer pairs.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Description of the dataset.'
+        },
+        input_keys: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Keys',
+            description: 'Input keys defined for the dataset in Phoenix.'
+        },
+        output_keys: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Keys',
+            description: 'Output keys defined for the dataset in Phoenix.'
+        },
+        metadata_keys: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata Keys',
+            description: 'Metadata keys defined for the dataset in Phoenix.'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'Timestamp related to dataset version (availability depends on source).'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At',
+            description: 'Timestamp related to dataset examples (availability depends on source).'
+        }
+    },
+    type: 'object',
+    required: ['id', 'dataset_name', 'version', 'items'],
+    title: 'EvaluationDatasetResponseDTO',
+    description: `DTO for responding with dataset details from Arize Phoenix.
+Fields like description, input_keys, etc., are more reliably populated for create/update
+responses where this information is taken from the input. For 'get' responses,
+these might be None if not directly available on the Phoenix Dataset object.`
+} as const;
+
 export const EventBucketSchema = {
     properties: {
         start_time: {
