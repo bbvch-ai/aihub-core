@@ -169,3 +169,21 @@ dashboard:
       label: 'Ask in Slack/Teams'
     AgentInTheLoopRequestEvent:
       label: 'Tasks Delegated'
+
+evaluation:
+  dataset:
+    title: "Datasets"
+    created_at: "Created:"
+    updated_at: "Updated at:"
+  experiment:
+    title: "Experiments"
+    created_at: "Run at:"
+    dataset: "Dataset"
+    result:
+      question: "Question"
+      reference_answer: "Reference Answer"
+      assistant_answer: "Assistant Answer"
+      latency_ms: "Latency"
+      conciseness: "Conciseness"
+      correctness: "Correctness"
+      completeness: "Completeness"

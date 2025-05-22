@@ -1,6 +1,6 @@
 services:
   phoenix:
-    image: arizephoenix/phoenix:version-7.0.1
+    image: arizephoenix/phoenix:latest
     ports:
       - "6006:6006"  # Phoenix UI and OTLP HTTP collector
       - "4317:4317"  # Phoenix OTLP gRPC collector

@@ -7,11 +7,10 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, UTC
 
 from nats.aio.client import Client as NATS
-from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 from phoenix.experiments import run_experiment
-from phoenix.experiments.types import Example as PhoenixExample, Dataset as PhoenixDataset, RanExperiment
+from phoenix.experiments.types import Example as PhoenixExample, Dataset as PhoenixDataset, RanExperiment, EvaluationResult as PhoenixEvaluationResult
 from phoenix.experiments.evaluators import create_evaluator
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
@@ -58,7 +57,6 @@ class PhoenixExperimentEvaluator:
             example_input: Dict[str, Any],
             agent_class: str,
             agent_id: str,
-            agent_system_prompt: str,
     ) -> Dict[str, Any]:
         """
         Task function for Phoenix experiment: sends a question to the agent and returns its response.
@@ -69,7 +67,6 @@ class PhoenixExperimentEvaluator:
             return {"agent_response": "", "error": "Missing 'question' in input"}
 
         messages = [
-            ChatMessage(role=MessageRole.SYSTEM, content=agent_system_prompt),
             ChatMessage(role=MessageRole.USER, content=question),
         ]
 
@@ -96,7 +93,7 @@ class PhoenixExperimentEvaluator:
             logger.exception(f"Task exception for question '{question}': {e}")
             return {"agent_response": "", "error": str(e)}
 
-    def _create_judge_prompt_template(self, system_message: str, few_shot_examples: List[Dict[str, str]], user_input_structure: str) -> RichPromptTemplate:
+    def _create_judge_prompt_template(self, system_message: str, few_shot_examples: List[Dict[str, str]], user_inputstructure: str) -> RichPromptTemplate:
         """
         Helper to create a RichPromptTemplate for the LLM judge with few-shot examples.
         """
@@ -116,7 +113,7 @@ You MUST output your evaluation as a JSON object matching the specified Pydantic
 
         template_str += f"""
 {{% chat role="user" %}}
-{user_input_structure}
+{user_inputstructure}
 {{% endchat %}}"""
         return RichPromptTemplate(template_str)
 
@@ -125,133 +122,116 @@ You MUST output your evaluation as a JSON object matching the specified Pydantic
             self,
             prompt_template: RichPromptTemplate,
             prompt_vars: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    ) -> JudgeOutput:
         """
         Helper method to call the judge LLM with a RichPromptTemplate and structured output.
         """
         llm, _ = self.judge.to_llama_index()
-        try:
-            # The schema of JudgeOutput is automatically passed to the prompt as {{output_schema}} by astructured_predict
-            structured_response: JudgeOutput = await llm.astructured_predict(
-                output_cls=JudgeOutput,
-                prompt=prompt_template,
-                llm_kwargs=self.llm_judge_kwargs,
-                **prompt_vars
-            )
-            return structured_response.model_dump()
-        except Exception as e:
-            logger.exception(f"LLM judge evaluation failed: {e}")
-            return JudgeOutput(score=0.0, reasoning=f"Judge LLM failed: {str(e)}", error=True).model_dump()
+        return await llm.astructured_predict(
+            output_cls=JudgeOutput,
+            prompt=prompt_template,
+            llm_kwargs=self.llm_judge_kwargs,
+            **prompt_vars
+        )
 
 
     async def _correctness_evaluator_func(
-            self, task_output: Dict[str, Any], reference: Dict[str, Any], input_: Dict[str, Any]
-    ) -> Dict[str, Any]:
+            self, task_output: Dict[str, Any], reference: Dict[str, Any], inputdata: Dict[str, Any]
+    ) -> PhoenixEvaluationResult: # Return type changed
         """
-        Evaluates correctness using an LLM judge with few-shot prompting and structured output.
+        Evaluates correctness and returns a PhoenixEvaluationResult.
         """
         agent_response = task_output.get("agent_response", "")
         reference_answer = reference.get("answer")
-        question = input_.get("question")
+        question = inputdata.get("question")
 
         if reference_answer is None:
-            return JudgeOutput(score=0.0, reasoning="Reference answer missing in dataset.", error=True).model_dump()
+            return PhoenixEvaluationResult(label="error", explanation="Reference answer missing in dataset.", metadata={"error_flag": True})
         if not agent_response and task_output.get("error"):
-            return JudgeOutput(score=0.0, reasoning=f"Agent failed to respond: {task_output.get('error')}", error=True).model_dump()
+            return PhoenixEvaluationResult(label="error", explanation=f"Agent failed to respond: {task_output.get('error')}", metadata={"error_flag": True})
 
         system_message = "You are an impartial judge. Evaluate the AGENT_RESPONSE for its correctness based on the REFERENCE_ANSWER to the given QUESTION. A correct response accurately addresses the question and aligns with the reference answer."
-
         few_shot_examples = [
-            {
-                "user": "<INPUT_DATA>\n<QUESTION>What is the capital of France?</QUESTION>\n<REFERENCE_ANSWER>Paris</REFERENCE_ANSWER>\n<AGENT_RESPONSE>The capital of France is Paris.</AGENT_RESPONSE>\n</INPUT_DATA>",
-                "assistant": '{"score": 1.0, "reasoning": "The agent correctly identified Paris as the capital of France, matching the reference answer.", "error": false}'
-            },
-            {
-                "user": "<INPUT_DATA>\n<QUESTION>What is 2+2?</QUESTION>\n<REFERENCE_ANSWER>4</REFERENCE_ANSWER>\n<AGENT_RESPONSE>It is five.</AGENT_RESPONSE>\n</INPUT_DATA>",
-                "assistant": '{"score": 0.0, "reasoning": "The agent provided an incorrect answer. The reference answer is 4, but the agent said 5.", "error": false}'
-            }
+            {"user": "<inputDATA>\n<QUESTION>What is the capital of France?</QUESTION>\n<REFERENCE_ANSWER>Paris</REFERENCE_ANSWER>\n<AGENT_RESPONSE>The capital of France is Paris.</AGENT_RESPONSE>\n</inputDATA>",
+             "assistant": '{"score": 1.0, "reasoning": "The agent correctly identified Paris as the capital of France, matching the reference answer.", "error": false}'},
+            {"user": "<inputDATA>\n<QUESTION>What is 2+2?</QUESTION>\n<REFERENCE_ANSWER>4</REFERENCE_ANSWER>\n<AGENT_RESPONSE>It is five.</AGENT_RESPONSE>\n</inputDATA>",
+             "assistant": '{"score": 0.0, "reasoning": "The agent provided an incorrect answer. The reference answer is 4, but the agent said 5.", "error": false}'}
         ]
+        user_inputstructure = f"<inputDATA>\n<QUESTION>{question}</QUESTION>\n<REFERENCE_ANSWER>{reference_answer}</REFERENCE_ANSWER>\n<AGENT_RESPONSE>{agent_response}</AGENT_RESPONSE>\n</inputDATA>"
+        prompt_template = self._create_judge_prompt_template(system_message, few_shot_examples, user_inputstructure)
+        prompt_vars = {"question": question, "reference_answer": reference_answer, "agent_response": agent_response}
 
-        user_input_structure = f"<INPUT_DATA>\n<QUESTION>{question}</QUESTION>\n<REFERENCE_ANSWER>{reference_answer}</REFERENCE_ANSWER>\n<AGENT_RESPONSE>{agent_response}</AGENT_RESPONSE>\n</INPUT_DATA>"
+        judge_output_model = await self._evaluate_with_judge(prompt_template, prompt_vars)
 
-        prompt_template = self._create_judge_prompt_template(system_message, few_shot_examples, user_input_structure)
-
-        prompt_vars = {
-            "question": question,
-            "reference_answer": reference_answer,
-            "agent_response": agent_response
-        }
-        return await self._evaluate_with_judge(prompt_template, prompt_vars)
+        return PhoenixEvaluationResult(
+            score=judge_output_model.score,
+            explanation=judge_output_model.reasoning,
+            # Optionally derive a label or include full judge output in metadata
+            # label="pass" if judge_output_model.score >= 0.7 else "fail", # Example label
+            metadata={"judge_had_error": judge_output_model.error}
+        )
 
     async def _completeness_evaluator_func(
-            self, task_output: Dict[str, Any], input_: Dict[str, Any]
-    ) -> Dict[str, Any]:
+            self, task_output: Dict[str, Any], inputdata: Dict[str, Any]
+    ) -> PhoenixEvaluationResult: # Return type changed
         """
-        Evaluates completeness using an LLM judge with few-shot prompting and structured output.
+        Evaluates completeness and returns a PhoenixEvaluationResult.
         """
         agent_response = task_output.get("agent_response", "")
-        question = input_.get("question")
+        question = inputdata.get("question")
 
         if not agent_response and task_output.get("error"):
-            return JudgeOutput(score=0.0, reasoning=f"Agent failed to respond: {task_output.get('error')}", error=True).model_dump()
+            return PhoenixEvaluationResult(label="error", explanation=f"Agent failed to respond: {task_output.get('error')}", metadata={"error_flag": True})
 
         system_message = "You are an impartial judge. Evaluate if the AGENT_RESPONSE fully addresses all aspects of the QUESTION, both explicit and implicit parts."
-
         few_shot_examples = [
-            {
-                "user": "<INPUT_DATA>\n<QUESTION>Tell me about the benefits and drawbacks of solar power.</QUESTION>\n<AGENT_RESPONSE>Solar power is great because it's renewable and reduces carbon emissions.</AGENT_RESPONSE>\n</INPUT_DATA>",
-                "assistant": '{"score": 0.5, "reasoning": "The agent mentioned benefits but did not cover any drawbacks, so the answer is incomplete.", "error": false}'
-            },
-            {
-                "user": "<INPUT_DATA>\n<QUESTION>What is photosynthesis?</QUESTION>\n<AGENT_RESPONSE>Photosynthesis is the process used by plants, algae and certain bacteria to harness energy from sunlight and turn it into chemical energy.</AGENT_RESPONSE>\n</INPUT_DATA>",
-                "assistant": '{"score": 1.0, "reasoning": "The agent provided a concise and accurate definition covering the main aspects of photosynthesis.", "error": false}'
-            }
+            {"user": "<inputDATA>\n<QUESTION>Tell me about the benefits and drawbacks of solar power.</QUESTION>\n<AGENT_RESPONSE>Solar power is great because it's renewable and reduces carbon emissions.</AGENT_RESPONSE>\n</inputDATA>",
+             "assistant": '{"score": 0.5, "reasoning": "The agent mentioned benefits but did not cover any drawbacks, so the answer is incomplete.", "error": false}'},
+            {"user": "<inputDATA>\n<QUESTION>What is photosynthesis?</QUESTION>\n<AGENT_RESPONSE>Photosynthesis is the process used by plants, algae and certain bacteria to harness energy from sunlight and turn it into chemical energy.</AGENT_RESPONSE>\n</inputDATA>",
+             "assistant": '{"score": 1.0, "reasoning": "The agent provided a concise and accurate definition covering the main aspects of photosynthesis.", "error": false}'}
         ]
+        user_inputstructure = f"<inputDATA>\n<QUESTION>{question}</QUESTION>\n<AGENT_RESPONSE>{agent_response}</AGENT_RESPONSE>\n</inputDATA>"
+        prompt_template = self._create_judge_prompt_template(system_message, few_shot_examples, user_inputstructure)
+        prompt_vars = {"question": question, "agent_response": agent_response}
 
-        user_input_structure = f"<INPUT_DATA>\n<QUESTION>{question}</QUESTION>\n<AGENT_RESPONSE>{agent_response}</AGENT_RESPONSE>\n</INPUT_DATA>"
+        judge_output_model = await self._evaluate_with_judge(prompt_template, prompt_vars)
 
-        prompt_template = self._create_judge_prompt_template(system_message, few_shot_examples, user_input_structure)
-
-        prompt_vars = {
-            "question": question,
-            "agent_response": agent_response
-        }
-        return await self._evaluate_with_judge(prompt_template, prompt_vars)
+        return PhoenixEvaluationResult(
+            score=judge_output_model.score,
+            explanation=judge_output_model.reasoning,
+            metadata={"judge_had_error": judge_output_model.error}
+        )
 
     async def _conciseness_evaluator_func(
-            self, task_output: Dict[str, Any], input_: Dict[str, Any]
-    ) -> Dict[str, Any]:
+            self, task_output: Dict[str, Any], inputdata: Dict[str, Any]
+    ) -> PhoenixEvaluationResult: # Return type changed
         """
-        Evaluates conciseness using an LLM judge with few-shot prompting and structured output.
+        Evaluates conciseness and returns a PhoenixEvaluationResult.
         """
         agent_response = task_output.get("agent_response", "")
-        question = input_.get("question")
+        question = inputdata.get("question")
 
         if not agent_response and task_output.get("error"):
-            return JudgeOutput(score=0.0, reasoning=f"Agent failed to respond: {task_output.get('error')}", error=True).model_dump()
+            return PhoenixEvaluationResult(label="error", explanation=f"Agent failed to respond: {task_output.get('error')}", metadata={"error_flag": True})
 
         system_message = "You are an impartial judge. Evaluate if the AGENT_RESPONSE is concise and to the point, avoiding unnecessary verbosity or irrelevant details for the given QUESTION."
-
         few_shot_examples = [
-            {
-                "user": "<INPUT_DATA>\n<QUESTION>What time is it?</QUESTION>\n<AGENT_RESPONSE>It is currently 3:00 PM. By the way, the weather today is sunny and I also had a great lunch. Did you know that time is a fascinating concept studied in physics?</AGENT_RESPONSE>\n</INPUT_DATA>",
-                "assistant": '{"score": 0.2, "reasoning": "The agent answered the question but included a lot of irrelevant information, making it not concise.", "error": false}'
-            },
-            {
-                "user": "<INPUT_DATA>\n<QUESTION>Is Paris the capital of France?</QUESTION>\n<AGENT_RESPONSE>Yes.</AGENT_RESPONSE>\n</INPUT_DATA>",
-                "assistant": '{"score": 1.0, "reasoning": "The agent provided a direct and concise answer.", "error": false}'
-            }
+            {"user": "<inputDATA>\n<QUESTION>What time is it?</QUESTION>\n<AGENT_RESPONSE>It is currently 3:00 PM. By the way, the weather today is sunny and I also had a great lunch. Did you know that time is a fascinating concept studied in physics?</AGENT_RESPONSE>\n</inputDATA>",
+             "assistant": '{"score": 0.2, "reasoning": "The agent answered the question but included a lot of irrelevant information, making it not concise.", "error": false}'},
+            {"user": "<inputDATA>\n<QUESTION>Is Paris the capital of France?</QUESTION>\n<AGENT_RESPONSE>Yes.</AGENT_RESPONSE>\n</inputDATA>",
+             "assistant": '{"score": 1.0, "reasoning": "The agent provided a direct and concise answer.", "error": false}'}
         ]
+        user_inputstructure = f"<inputDATA>\n<QUESTION>{question}</QUESTION>\n<AGENT_RESPONSE>{agent_response}</AGENT_RESPONSE>\n</inputDATA>"
+        prompt_template = self._create_judge_prompt_template(system_message, few_shot_examples, user_inputstructure)
+        prompt_vars = {"question": question, "agent_response": agent_response}
 
-        user_input_structure = f"<INPUT_DATA>\n<QUESTION>{question}</QUESTION>\n<AGENT_RESPONSE>{agent_response}</AGENT_RESPONSE>\n</INPUT_DATA>"
+        judge_output_model = await self._evaluate_with_judge(prompt_template, prompt_vars)
 
-        prompt_template = self._create_judge_prompt_template(system_message, few_shot_examples, user_input_structure)
-
-        prompt_vars = {
-            "question": question,
-            "agent_response": agent_response
-        }
-        return await self._evaluate_with_judge(prompt_template, prompt_vars)
+        return PhoenixEvaluationResult(
+            score=judge_output_model.score,
+            explanation=judge_output_model.reasoning,
+            metadata={"judge_had_error": judge_output_model.error}
+        )
 
 
     async def run_evaluation_experiment(
@@ -259,7 +239,6 @@ You MUST output your evaluation as a JSON object matching the specified Pydantic
             agent_class: str,
             agent_id: str,
             dataset_id: str,
-            agent_system_prompt: str,
             experiment_name: Optional[str] = None,
             experiment_description: Optional[str] = None,
             experiment_metadata: Optional[Dict[str, Any]] = None,
@@ -283,20 +262,19 @@ You MUST output your evaluation as a JSON object matching the specified Pydantic
                 example_input=example.input,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                agent_system_prompt=agent_system_prompt
             )
 
         @create_evaluator(name="Correctness", kind="LLM")
-        async def correctness_phoenix_eval(output: Dict[str, Any], reference: Dict[str, Any], input_: Dict[str, Any]) -> Dict[str, Any]:
-            return await self._correctness_evaluator_func(task_output=output, reference=reference, input_=input_)
+        async def correctness_phoenix_eval(output: Dict[str, Any], reference: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+            return await self._correctness_evaluator_func(task_output=output, reference=reference, inputdata=input)
 
         @create_evaluator(name="Completeness", kind="LLM")
-        async def completeness_phoenix_eval(output: Dict[str, Any], input_: Dict[str, Any]) -> Dict[str, Any]:
-            return await self._completeness_evaluator_func(task_output=output, input_=input_)
+        async def completeness_phoenix_eval(output: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+            return await self._completeness_evaluator_func(task_output=output, inputdata=input)
 
         @create_evaluator(name="Conciseness", kind="LLM")
-        async def conciseness_phoenix_eval(output: Dict[str, Any], input_: Dict[str, Any]) -> Dict[str, Any]:
-            return await self._conciseness_evaluator_func(task_output=output, input_=input_)
+        async def conciseness_phoenix_eval(output: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+            return await self._conciseness_evaluator_func(task_output=output, inputdata=input)
 
         evaluators_list = [
             correctness_phoenix_eval,
@@ -316,7 +294,13 @@ You MUST output your evaluation as a JSON object matching the specified Pydantic
             evaluators=evaluators_list,
             experiment_name=final_experiment_name,
             experiment_description=experiment_description,
-            experiment_metadata=experiment_metadata
+            experiment_metadata={
+                "agent_class": agent_class,
+                "agent_id": agent_id,
+                "experiment_name": experiment_name,
+                "experiment_description": experiment_description,
+                **(experiment_metadata or {}),
+            }
         )
         logger.info(f"Phoenix experiment '{final_experiment_name}' completed. View at: {experiment_result.url if hasattr(experiment_result, 'url') else 'URL not available'}")
 

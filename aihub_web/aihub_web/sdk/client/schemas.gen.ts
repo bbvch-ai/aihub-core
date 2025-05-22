@@ -3220,6 +3220,54 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
+export const EvaluationDataSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of the evaluator.'
+        },
+        annotator_kind: {
+            type: 'string',
+            enum: ['LLM', 'Code'],
+            title: 'Annotator Kind',
+            description: 'Kind of evaluator, either LLM or Code.'
+        },
+        score: {
+            type: 'number',
+            title: 'Score',
+            description: 'Score between 0 and 1.'
+        },
+        explanation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Explanation',
+            description: 'Explenation given by Judge LLM.'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error',
+            description: 'Error message if the task run failed.'
+        }
+    },
+    type: 'object',
+    required: ['name', 'annotator_kind', 'score'],
+    title: 'EvaluationData'
+} as const;
+
 export const EvaluationSummaryDataSchema = {
     properties: {
         evaluator: {
@@ -3232,42 +3280,6 @@ export const EvaluationSummaryDataSchema = {
             title: 'N',
             description: 'Number of items evaluated.'
         },
-        n_errors: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'N Errors',
-            description: 'Number of errors during evaluation for this evaluator.'
-        },
-        top_error: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Top Error',
-            description: 'Most frequent error for this evaluator.'
-        },
-        n_scores: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'N Scores',
-            description: 'Number of scores recorded.'
-        },
         avg_score: {
             anyOf: [
                 {
@@ -3279,33 +3291,6 @@ export const EvaluationSummaryDataSchema = {
             ],
             title: 'Avg Score',
             description: 'Average score from this evaluator.'
-        },
-        n_labels: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'N Labels',
-            description: 'Number of labels recorded.'
-        },
-        top_2_labels: {
-            anyOf: [
-                {
-                    additionalProperties: {
-                        type: 'integer'
-                    },
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Top 2 Labels',
-            description: 'Top 2 labels and their counts.'
         }
     },
     type: 'object',
@@ -3580,37 +3565,10 @@ export const ExperimentSchema = {
             title: 'Id',
             description: 'The unique identifier of the experiment in Phoenix.'
         },
-        dataset_id: {
-            type: 'string',
-            title: 'Dataset Id',
-            description: 'The ID of the dataset associated with this experiment.'
-        },
-        dataset_version_id: {
-            type: 'string',
-            title: 'Dataset Version Id',
-            description: 'The version ID of the dataset used.'
-        },
-        repetitions: {
-            type: 'integer',
-            title: 'Repetitions',
-            description: 'Number of repetitions defined for the experiment.'
-        },
-        project_name: {
-            type: 'string',
-            title: 'Project Name',
-            description: 'The Phoenix project name this experiment belongs to.'
-        },
         name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Name',
-            description: 'The display name of the experiment.'
+            description: 'The name of the experiment.'
         },
         description: {
             anyOf: [
@@ -3623,10 +3581,72 @@ export const ExperimentSchema = {
             ],
             title: 'Description',
             description: 'The description of the experiment.'
+        },
+        agent: {
+            '$ref': '#/components/schemas/MinimalAgentDTO',
+            description: 'Agent that was evaluated'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'Timestamp of when the experiment data was recorded or fetched.'
+        },
+        dataset: {
+            '$ref': '#/components/schemas/MinimalDataset',
+            description: 'The dataset associated with this experiment.'
+        },
+        conciseness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How concise is the answer'
+        },
+        correctness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How correct is the answer'
+        },
+        completeness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How complete is the answer'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ExperimentRunRecord'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'Detailed records of each run within the experiment, including inputs, outputs, and evaluations.'
         }
     },
     type: 'object',
-    required: ['id', 'dataset_id', 'dataset_version_id', 'repetitions', 'project_name'],
+    required: ['id', 'name', 'agent', 'dataset'],
     title: 'Experiment'
 } as const;
 
@@ -3646,11 +3666,6 @@ export const ExperimentCreateSchema = {
             type: 'string',
             title: 'Dataset Id',
             description: 'The ID of the Phoenix dataset to use for evaluation.'
-        },
-        agent_system_prompt: {
-            type: 'string',
-            title: 'Agent System Prompt',
-            description: 'The system prompt to use for the agent during evaluation.'
         },
         experiment_name: {
             anyOf: [
@@ -3691,21 +3706,31 @@ export const ExperimentCreateSchema = {
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'dataset_id', 'agent_system_prompt'],
+    required: ['agent_class', 'agent_id', 'dataset_id'],
     title: 'ExperimentCreate'
 } as const;
 
-export const ExperimentRunEvaluationDetailSchema = {
+export const ExperimentRunRecordSchema = {
     properties: {
-        run_id: {
+        example_id: {
             type: 'string',
-            title: 'Run Id',
-            description: 'ID of the specific task run this evaluation pertains to.'
+            title: 'Example Id',
+            description: 'ID of the dataset example for this run.'
         },
-        name: {
+        question: {
             type: 'string',
-            title: 'Name',
-            description: 'Name of the evaluator.'
+            title: 'Question',
+            description: 'Input question.'
+        },
+        reference_answer: {
+            type: 'string',
+            title: 'Reference Answer',
+            description: 'Expected answer for this example.'
+        },
+        assistant_answer: {
+            type: 'string',
+            title: 'Assistant Answer',
+            description: 'Response given by assistant.'
         },
         error: {
             anyOf: [
@@ -3717,9 +3742,9 @@ export const ExperimentRunEvaluationDetailSchema = {
                 }
             ],
             title: 'Error',
-            description: 'Error message if evaluation failed.'
+            description: 'Error message if the task run failed.'
         },
-        score: {
+        latency_ms: {
             anyOf: [
                 {
                     type: 'number'
@@ -3728,182 +3753,58 @@ export const ExperimentRunEvaluationDetailSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Score',
-            description: 'Score from the evaluation.'
+            title: 'Latency Ms',
+            description: 'Latency of the task run in milliseconds.'
         },
-        label: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Label',
-            description: 'Label from the evaluation.'
-        },
-        explanation: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Explanation',
-            description: 'Explanation from the evaluation.'
-        },
-        input: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input',
-            description: 'Input to the task for this run.'
-        },
-        output: {
-            anyOf: [
-                {},
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output',
-            description: 'Output from the task for this run.'
-        },
-        expected: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Expected',
-            description: 'Expected output (reference data).'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Metadata of the example.'
-        },
-        example_id: {
+        start_time: {
             type: 'string',
-            title: 'Example Id',
-            description: 'ID of the dataset example for this run.'
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the task run.'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the task run.'
+        },
+        conciseness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How concise is the answer'
+        },
+        correctness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How correct is the answer'
+        },
+        completeness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How complete is the answer'
         }
     },
     type: 'object',
-    required: ['run_id', 'name', 'example_id'],
-    title: 'ExperimentRunEvaluationDetail'
-} as const;
-
-export const ExperimentRunResultSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment run in Phoenix.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        url: {
-            type: 'string',
-            title: 'Url',
-            description: 'URL to view the full experiment run in the Phoenix UI.'
-        },
-        dataset_id: {
-            type: 'string',
-            title: 'Dataset Id',
-            description: 'ID of the dataset used.'
-        },
-        dataset_version_id: {
-            type: 'string',
-            title: 'Dataset Version Id',
-            description: 'Version ID of the dataset used.'
-        },
-        project_name: {
-            type: 'string',
-            title: 'Project Name',
-            description: 'Phoenix project name.'
-        },
-        task_summary: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/TaskSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Summary statistics of the task executions.'
-        },
-        evaluation_summaries: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/EvaluationSummaryData'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Evaluation Summaries',
-            description: 'List of summary statistics for each evaluator.'
-        },
-        detailed_evaluations: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/ExperimentRunEvaluationDetail'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detailed Evaluations',
-            description: 'Detailed evaluation results for each run and evaluator.'
-        }
-    },
-    type: 'object',
-    required: ['id', 'name', 'url', 'dataset_id', 'dataset_version_id', 'project_name'],
-    title: 'ExperimentRunResult'
+    required: ['example_id', 'question', 'reference_answer', 'assistant_answer', 'start_time', 'end_time'],
+    title: 'ExperimentRunRecord'
 } as const;
 
 export const FileSchema = {
@@ -5769,17 +5670,9 @@ export const MinimalExperimentSchema = {
             title: 'Description',
             description: 'The description of the experiment.'
         },
-        url: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url',
-            description: 'URL to view the experiment in the Phoenix UI.'
+        agent: {
+            '$ref': '#/components/schemas/MinimalAgentDTO',
+            description: 'Agent that was evaluated'
         },
         created_at: {
             anyOf: [
@@ -5793,10 +5686,14 @@ export const MinimalExperimentSchema = {
             ],
             title: 'Created At',
             description: 'Timestamp of when the experiment data was recorded or fetched.'
+        },
+        dataset: {
+            '$ref': '#/components/schemas/MinimalDataset',
+            description: 'The dataset associated with this experiment.'
         }
     },
     type: 'object',
-    required: ['id', 'name'],
+    required: ['id', 'name', 'agent', 'dataset'],
     title: 'MinimalExperiment'
 } as const;
 
@@ -6943,41 +6840,6 @@ export const SuiteDTOSchema = {
     type: 'object',
     required: ['services'],
     title: 'SuiteDTO'
-} as const;
-
-export const TaskSummaryDataSchema = {
-    properties: {
-        n_examples: {
-            type: 'integer',
-            title: 'N Examples',
-            description: 'Number of examples in the experiment.'
-        },
-        n_runs: {
-            type: 'integer',
-            title: 'N Runs',
-            description: 'Number of task runs executed.'
-        },
-        n_errors: {
-            type: 'integer',
-            title: 'N Errors',
-            description: 'Number of errors during task execution.'
-        },
-        top_error: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Top Error',
-            description: 'Most frequent error message, if any.'
-        }
-    },
-    type: 'object',
-    required: ['n_examples', 'n_runs', 'n_errors'],
-    title: 'TaskSummaryData'
 } as const;
 
 export const TextBlockSchema = {

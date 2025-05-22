@@ -9,35 +9,36 @@
           class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
         >
           <Icon
-            name="famicons:library-outline"
+            :name="experiment.agent.agent_config.icon"
             size="1.5em"
           />
         </div>
-        <h3 class="font-semibold opacity-80">
-          {{ dataset.dataset_name }}
-        </h3>
+        <div>
+          <h3 class="font-semibold opacity-80">
+            {{ experiment.name }}
+          </h3>
+          <p class="text-xs font-light opacity-70">
+            {{ experiment.agent?.agent_config.name }}
+          </p>
+        </div>
       </div>
-      <Badge
-        :value="dataset.version"
-        size="large"
-      />
+      <div>
+        <Tag
+          severity="secondary"
+          :value="experiment.dataset.dataset_name"
+        />
+      </div>
     </div>
     <div>
       <span class="text-xs">
-        {{ dataset.description }}
+        {{ experiment.description }}
       </span>
     </div>
     <div>
       <div class="text-sm">
-        {{ t('evaluation.dataset.created_at') }}
+        {{ t('evaluation.experiment.created_at') }}
         <span class="font-light">
-          {{ useDateFormat(dataset.created_at, 'DD.MM.YYYY') }}
-        </span>
-      </div>
-      <div class="text-sm">
-        {{ t('evaluation.dataset.updated_at') }}
-        <span class="font-light">
-          {{ useDateFormat(dataset.updated_at, 'DD.MM.YYYY') }}
+          {{ useDateFormat(experiment.created_at, 'DD.MM.YYYY') }}
         </span>
       </div>
     </div>
@@ -45,16 +46,16 @@
 </template>
 
 <script setup lang="ts">
-import type { MinimalDataset } from '@core/sdk/client'
+import type { MinimalExperiment } from '@core/sdk/client'
 
 const props = defineProps<{
-  dataset: MinimalDataset
+  experiment: MinimalExperiment
 }>()
 
 const route = useRoute()
 const { t } = useI18n()
 
 const isActive = computed(() => {
-  return route.params.dataset_id === props.dataset.id
+  return route.params.experiment_id === props.experiment.id
 })
 </script>

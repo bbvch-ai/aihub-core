@@ -5,6 +5,7 @@ from nats.aio.client import Client as NATS
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
@@ -16,10 +17,10 @@ from aihub_api.routes.evaluation.dto.dataset.DatasetCreate import DatasetCreate
 from aihub_api.routes.evaluation.dto.dataset.DatasetUpdate import DatasetUpdate
 from aihub_api.routes.evaluation.dto.dataset.MinimalDataset import MinimalDataset
 from aihub_api.routes.evaluation.dto.dataset.Dataset import Dataset
-from .dto.experiment.ExperimentCreate import ExperimentCreate
 from .dto.experiment.Experiment import Experiment
-from .dto.experiment.ExperimentRunResult import ExperimentRunResult
+from .dto.experiment.ExperimentCreate import ExperimentCreate
 from .dto.experiment.MinimalExperiment import MinimalExperiment
+from ...i18n.dependencies.use_locale import use_locale
 
 
 class EvaluationController(Controller):
@@ -75,32 +76,35 @@ class EvaluationController(Controller):
         return self
 
     def get_experiments(self, route: str = "/experiments") -> "EvaluationController":
-        @self.router.get(route, tags=["Evaluation Experiments"])
+        @self.router.get(route, tags=self.tags)
         async def get_experiments(
-                user: AuthenticatedUser = Security(self.auth),
+            user: AuthenticatedUser = Security(self.auth),
+            t: LocaleHandler = Depends(use_locale),
         ) -> List[MinimalExperiment]:
             """Retrieves a list of all evaluation experiments from Arize Phoenix."""
-            return await EvaluationService.get_experiments()
+            return await EvaluationService.get_experiments(t)
         return self
 
     def get_experiment(self, route: str = "/experiments/{experiment_id}") -> "EvaluationController":
-        @self.router.get(route, tags=["Evaluation Experiments"])
+        @self.router.get(route, tags=self.tags)
         async def get_experiment(
                 experiment_id: Annotated[str, Path(description="The unique identifier of the experiment to retrieve.")],
                 user: AuthenticatedUser = Security(self.auth),
-        ) -> Experiment: # Returns the experiment definition
+                t: LocaleHandler = Depends(use_locale),
+        ) -> Experiment:
             """Retrieves the definition of a specific evaluation experiment by its ID."""
-            return await EvaluationService.get_experiment_definition(experiment_id)
+            return await EvaluationService.get_experiment(experiment_id, t)
         return self
 
     def run_experiment(self, route: str = "/experiments") -> "EvaluationController":
-        @self.router.post(route, tags=["Evaluation Experiments"], status_code=201)
+        @self.router.post(route, tags=self.tags)
         async def run_experiment(
-                create_dto: Annotated[ExperimentCreate, Body()],
-                user: AuthenticatedUser = Security(self.auth),
-                nats_client: NATS = Depends(use_nats),
-                external_event_distributor: ExternalEventDistributor = Depends(use_external_event_distributor),
-        ) -> ExperimentRunResult: # Returns detailed run results
+            create_dto: Annotated[ExperimentCreate, Body()],
+            user: AuthenticatedUser = Security(self.auth),
+            nats_client: NATS = Depends(use_nats),
+            external_event_distributor: ExternalEventDistributor = Depends(use_external_event_distributor),
+            t: LocaleHandler = Depends(use_locale),
+        ) -> Experiment:
             """
             Creates and runs a new evaluation experiment using the PhoenixExperimentEvaluator.
             The experiment results are logged to Arize Phoenix and detailed results are returned.
@@ -110,6 +114,7 @@ class EvaluationController(Controller):
                 nats_client=nats_client,
                 external_event_distributor=external_event_distributor,
                 judge=self.judge,
-                authenticated_user=user
+                authenticated_user=user,
+                t=t
             )
         return self

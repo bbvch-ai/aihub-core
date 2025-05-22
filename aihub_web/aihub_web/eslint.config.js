@@ -42,6 +42,8 @@ export default withNuxt(
           'pi-exclamation-triangle',
           'customized-timeline',
           'pi-spin',
+          'pi-question',
+          'pi-check',
           'pi-spinner',
           'pi-times',
           'grid-stack-item',

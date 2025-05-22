@@ -3,7 +3,7 @@
 import { type Options as ClientOptions, type Composable, type TDataShape, type Client, formDataBodySerializer } from '@hey-api/client-nuxt';
 import type { GetHealthData, GetHealthResponse, GetSuiteData, GetSuiteResponse, GetMyUserData, GetMyUserResponse, GetMyDashboardData, GetMyDashboardResponse, UpdateMyDashboardData, UpdateMyDashboardResponse, UpdateMyDashboardError, GetLocaleData, GetLocaleResponse, GetEventsData, GetEventsResponse, GetEventsError, GetEventTimeseriesData, GetEventTimeseriesResponse, GetEventTimeseriesError, GetUserThreadsData, GetUserThreadsResponse, GetUserThreadsError, CreateThreadData, CreateThreadResponse, CreateThreadError, GetThreadData, GetThreadResponse, GetThreadError, AddAgentToThreadData, AddAgentToThreadResponse, AddAgentToThreadError, RemoveAgentFromThreadData, RemoveAgentFromThreadResponse, RemoveAgentFromThreadError, AddUserToThreadData, AddUserToThreadResponse, AddUserToThreadError, RemoveUserFromThreadData, RemoveUserFromThreadResponse, RemoveUserFromThreadError, GetAgentData, GetAgentResponse, GetAgentError, GetAgentThreadsData, GetAgentThreadsResponse, GetAgentThreadsError, GetAgentsData, GetAgentsResponse, DiscoverAgentsData, DiscoverAgentsResponse, SendEventToLlmWrappingAgentDevAgentSendEventData, SendEventToLlmWrappingAgentDevAgentSendEventResponse, SendEventToLlmWrappingAgentDevAgentSendEventError, SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventData, SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventResponse, SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventError, ListTokensEndpointData, ListTokensEndpointResponse, CreateTokenEndpointData, CreateTokenEndpointResponse, CreateTokenEndpointError, RevokeTokenEndpointData, RevokeTokenEndpointResponse, RevokeTokenEndpointError, GetModelsWithAssistantsData, GetModelsWithAssistantsResponse, GetModelWithAssistantsData, GetModelWithAssistantsResponse, GetModelWithAssistantsError, GetEmbeddingsData, GetEmbeddingsResponse, GetEmbeddingsError, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsResponse, ChatCompletionWithAssistantsError, GenerateImageData, GenerateImageResponse, GenerateImageError, CreateTranscriptionData, CreateTranscriptionResponse, CreateTranscriptionError, CreateSpeechData, CreateSpeechError, GetDatasetsData, GetDatasetsResponse, CreateDatasetData, CreateDatasetResponse, CreateDatasetError, GetDatasetData, GetDatasetResponse, GetDatasetError, UpdateDatasetData, UpdateDatasetResponse, UpdateDatasetError, GetExperimentData, GetExperimentResponse, GetExperimentError, GetExperimentsData, GetExperimentsResponse, RunExperimentData, RunExperimentResponse, RunExperimentError } from './types.gen';
 import { client as _heyApiClient } from './client.gen';
-import { getEventTimeseriesResponseTransformer, listTokensEndpointResponseTransformer, createTokenEndpointResponseTransformer, getDatasetsResponseTransformer, createDatasetResponseTransformer, getDatasetResponseTransformer, updateDatasetResponseTransformer, getExperimentsResponseTransformer } from './transformers.gen';
+import { getEventTimeseriesResponseTransformer, listTokensEndpointResponseTransformer, createTokenEndpointResponseTransformer, getDatasetsResponseTransformer, createDatasetResponseTransformer, getDatasetResponseTransformer, updateDatasetResponseTransformer, getExperimentResponseTransformer, getExperimentsResponseTransformer, runExperimentResponseTransformer } from './transformers.gen';
 
 export type Options<TComposable extends Composable, TData extends TDataShape = TDataShape, ResT = unknown, DefaultT = undefined> = ClientOptions<TComposable, TData, ResT, DefaultT> & {
     /**
@@ -834,6 +834,7 @@ export const getExperiment = <TComposable extends Composable, DefaultT extends G
                 type: 'http'
             }
         ],
+        responseTransformer: getExperimentResponseTransformer,
         url: '/evaluation/experiments/{experiment_id}',
         ...options
     });
@@ -878,6 +879,7 @@ export const runExperiment = <TComposable extends Composable, DefaultT extends R
                 type: 'http'
             }
         ],
+        responseTransformer: runExperimentResponseTransformer,
         url: '/evaluation/experiments',
         ...options,
         headers: {

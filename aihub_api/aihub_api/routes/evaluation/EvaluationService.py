@@ -3,20 +3,22 @@ from dataclasses import dataclass
 import httpx
 import pandas as pd
 import phoenix as px
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime, UTC
 
-from phoenix.experiments.types import Dataset as PhoenixInternalDataset, Experiment as PhoenixExperiment, RanExperiment
+from phoenix.experiments.types import Dataset as PhoenixInternalDataset, RanExperiment
 from nats.aio.client import Client as NATS
 
+from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.evaluation.dto.experiment.Experiment import Experiment, EvaluationData
+from aihub_api.routes.evaluation.dto.experiment.Experiment import ExperimentRunRecord, \
+    EvaluationSummaryData
 from aihub_api.routes.evaluation.dto.experiment.ExperimentCreate import ExperimentCreate
-from aihub_api.routes.evaluation.dto.experiment.Experiment import Experiment
-from aihub_api.routes.evaluation.dto.experiment.ExperimentRunResult import ExperimentRunResult, \
-    ExperimentRunEvaluationDetail, EvaluationSummaryData, TaskSummaryData
 from aihub_api.routes.evaluation.dto.experiment.MinimalExperiment import MinimalExperiment
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.evaluation.Evaluator import PhoenixExperimentEvaluator
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_api.routes.evaluation.dto.dataset.DatasetItem import DatasetItem
 from aihub_api.routes.evaluation.dto.dataset.DatasetItemCreate import DatasetItemCreate
@@ -244,48 +246,118 @@ class EvaluationService:
         return summaries
 
     @staticmethod
-    async def get_experiments() -> List[MinimalExperiment]:
+    async def get_experiments(t: LocaleHandler) -> List[MinimalExperiment]:
         """Retrieves a list of summary information for all experiments from Arize Phoenix."""
         base_url, headers = EvaluationService._get_phoenix_request_config()
-        url = f"{base_url}/v1/experiments" # Verify this endpoint path
-
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-
-        response_data = response.json()
-        experiment_records = response_data.get("data", []) # Assuming similar structure to datasets
 
         experiments = []
-        for record in experiment_records:
-            # The fields available from /v1/experiments listing need to be confirmed.
-            # This mapping is speculative.
-            experiments.append(MinimalExperiment(
-                id=record.get("id") or record.get("experiment_id"),
-                name=record.get("name", "Unnamed Experiment"),
-                description=record.get("description"),
-                url=record.get("url"),
-                created_at=datetime.fromisoformat(record["created_at"]) if record.get("created_at") else None,
-            ))
+        datasets = await EvaluationService.get_datasets()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            for dataset in datasets:
+                url = f"{base_url}/v1/datasets/{dataset.id}/experiments"
+                response = await client.get(url, headers=headers)
+                response.raise_for_status()
+                response_data = response.json()
+                print("response data", response_data)
+                experiment_records = response_data.get("data", [])
+
+
+                for record in experiment_records:
+                    agent_class = record.get("metadata", {}).get("agent_class")
+                    agent_id = record.get("metadata", {}).get("agent_id")
+                    agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
+                    experiments.append(MinimalExperiment(
+                        id=record.get("id"),
+                        name=record.get("metadata", {}).get("experiment_name"),
+                        description=record.get("metadata", {}).get("description"),
+                        agent=agent_dto,
+                        created_at=datetime.fromisoformat(record["created_at"]) if record.get("created_at") else None,
+                        dataset=dataset,
+                    ))
         return experiments
 
     @staticmethod
-    async def get_experiment_definition(experiment_id: str) -> Experiment:
+    async def get_experiment(experiment_id: str, t: LocaleHandler) -> Experiment: # Changed return type
         """
-        Retrieves the definition of a specific experiment by its ID from Arize Phoenix.
-        This typically does not include detailed run results.
+        Retrieves detailed run results and evaluations for a specific experiment by its ID.
+        It fetches data from the /v1/experiments/{id}/json endpoint.
         """
-        client = EvaluationService._get_phoenix_client()
-        phoenix_exp_def: PhoenixExperiment = client.get_experiment(experiment_id=experiment_id)
+        base_url, headers = EvaluationService._get_phoenix_request_config()
+
+        async with httpx.AsyncClient(timeout=30.0) as http_client: # Longer timeout for potentially large JSON
+            response = await http_client.get(f"{base_url}/v1/experiments/{experiment_id}", headers=headers)
+            response.raise_for_status()
+            experiment_data = response.json().get("data")
+
+            dataset = await EvaluationService.get_dataset(experiment_data.get("dataset_id"))
+
+        all_run_records: List[ExperimentRunRecord] = []
+        task_runs_for_summary: List[Dict[str, Any]] = []
+        eval_runs_for_summary: List[Dict[str, Any]] = []
+
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.get(f"{base_url}/v1/experiments/{experiment_id}/json", headers=headers)
+            response.raise_for_status()
+            raw_run_records = response.json()
+
+            for record in raw_run_records:
+                annotations = record.get("annotations", [])
+                conciseness = [a for a in annotations if a.get("name") == "Conciseness"]
+                correctness = [a for a in annotations if a.get("name") == "Correctness"]
+                completeness = [a for a in annotations if a.get("name") == "Completeness"]
+                all_run_records.append(ExperimentRunRecord(
+                    example_id=record.get("example_id"),
+                    question=record.get("input").get("question"),
+                    reference_answer=record.get("reference_output").get("answer"),
+                    assistant_answer=record.get("output").get("agent_response"),
+                    error=record.get("error"),
+                    latency_ms=record.get("latency_ms"),
+                    start_time=datetime.fromisoformat(record["start_time"]) if record.get("start_time") else datetime.now(UTC),
+                    end_time=datetime.fromisoformat(record["end_time"]) if record.get("end_time") else datetime.now(UTC),
+                    conciseness=EvaluationData(**conciseness[0]) if conciseness else None,
+                    correctness=EvaluationData(**correctness[0]) if correctness else None,
+                    completeness=EvaluationData(**completeness[0]) if completeness else None,
+                ))
+                task_runs_for_summary.append({"error": record.get("error")})
+                for annotation in record.get("annotations", []):
+                    eval_runs_for_summary.append({
+                        "evaluator": annotation.get("name"),
+                        "error": annotation.get("error"),
+                        "score": annotation.get("score"),
+                        "label": annotation.get("label")
+                    })
+
+        eval_summary: Dict[str, EvaluationSummaryData] = {}
+        evaluator_names = set(e.get("evaluator") for e in eval_runs_for_summary if e.get("evaluator"))
+
+        for name in evaluator_names:
+            specific_evals = [e for e in eval_runs_for_summary if e.get("evaluator") == name]
+            scores = [e.get("score") for e in specific_evals if e.get("score") is not None and not e.get("error")]
+
+            eval_summary[name.lower()] = EvaluationSummaryData(
+                evaluator=name,
+                n=len(specific_evals),
+                avg_score=sum(scores) / len(scores) if scores else None,
+            )
+
+        agent_class = experiment_data.get("metadata", {}).get("agent_class")
+        agent_id = experiment_data.get("metadata", {}).get("agent_id")
+        agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
 
         return Experiment(
-            id=str(phoenix_exp_def.id),
-            dataset_id=str(phoenix_exp_def.dataset_id),
-            dataset_version_id=str(phoenix_exp_def.dataset_version_id),
-            repetitions=phoenix_exp_def.repetitions,
-            project_name=phoenix_exp_def.project_name,
-            name=phoenix_exp_def.project_name,
+            id=experiment_id,
+            name=experiment_data.get("metadata", {}).get("experiment_name"),
+            description=experiment_data.get("metadata", {}).get("experiment_description"),
+            created_at=experiment_data.get("created_at"),
+            agent=agent_dto,
+            dataset=dataset,
+            items=all_run_records,
+            conciseness=eval_summary.get("correctness"),
+            correctness=eval_summary.get("correctness"),
+            completeness=eval_summary.get("completeness"),
         )
+
+
 
     @staticmethod
     async def run_experiment_evaluation(
@@ -294,7 +366,8 @@ class EvaluationService:
         external_event_distributor: ExternalEventDistributor,
         judge: ChatLLMConfig, # This must be passed in
         authenticated_user: AuthenticatedUser,
-    ) -> ExperimentRunResult:
+        t: LocaleHandler,
+    ) -> Experiment:
         """
         Runs a new evaluation experiment using the PhoenixExperimentEvaluator and returns detailed results.
         """
@@ -309,58 +382,9 @@ class EvaluationService:
             agent_class=create_dto.agent_class,
             agent_id=create_dto.agent_id,
             dataset_id=create_dto.dataset_id,
-            agent_system_prompt=create_dto.agent_system_prompt,
             experiment_name=create_dto.experiment_name,
             experiment_description=create_dto.experiment_description,
             experiment_metadata=create_dto.experiment_metadata
         )
 
-        task_summary_data = None
-        if ran_experiment.task_summary and not ran_experiment.task_summary.stats.empty:
-            # Assuming TaskSummary.stats is a DataFrame with one row
-            summary_dict = ran_experiment.task_summary.stats.iloc[0].to_dict()
-            task_summary_data = TaskSummaryData(
-                n_examples=summary_dict.get('n_examples', 0),
-                n_runs=summary_dict.get('n_runs', 0),
-                n_errors=summary_dict.get('n_errors', 0),
-                top_error=summary_dict.get('top_error')
-            )
-
-        eval_summaries_data = []
-        if ran_experiment.eval_summaries:
-            for summary in ran_experiment.eval_summaries:
-                if not summary.stats.empty:
-                    # EvaluationSummary.stats has 'evaluator' as index or column
-                    # Assuming 'evaluator' is a column after reset_index() if needed
-                    df_stats = summary.stats.copy()
-                    if 'evaluator' not in df_stats.columns and df_stats.index.name == 'evaluator':
-                        df_stats = df_stats.reset_index()
-
-                    for _, row in df_stats.iterrows():
-                        eval_summaries_data.append(EvaluationSummaryData(
-                            evaluator=row.get('evaluator', 'N/A'),
-                            n=row.get('n', 0),
-                            n_errors=row.get('n_errors'),
-                            top_error=row.get('top_error'),
-                            n_scores=row.get('n_scores'),
-                            avg_score=row.get('avg_score'),
-                            n_labels=row.get('n_labels'),
-                            top_2_labels=row.get('top_2_labels')
-                        ))
-
-        detailed_evals_df = ran_experiment.get_evaluations() # This is a DataFrame
-        detailed_evals_list = [ExperimentRunEvaluationDetail(**row) for row in detailed_evals_df.to_dict(orient='records')]
-
-
-        return ExperimentRunResult(
-            id=str(ran_experiment.id),
-            name=ran_experiment.project_name or create_dto.experiment_name or "Unnamed Experiment", # RanExperiment has project_name
-            description=create_dto.experiment_description, # Not directly on RanExperiment, take from input
-            url=ran_experiment.url,
-            dataset_id=str(ran_experiment.dataset_id),
-            dataset_version_id=str(ran_experiment.dataset_version_id),
-            project_name=ran_experiment.project_name,
-            task_summary=task_summary_data,
-            evaluation_summaries=eval_summaries_data if eval_summaries_data else None,
-            detailed_evaluations=detailed_evals_list if not detailed_evals_df.empty else None
-        )
+        return await EvaluationService.get_experiment(ran_experiment.id, t)

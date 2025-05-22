@@ -2,9 +2,14 @@ from typing import Optional, Annotated
 from pydantic import BaseModel, Field
 from datetime import datetime
 
+from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
+from aihub_api.routes.evaluation.dto.dataset.MinimalDataset import MinimalDataset
+
+
 class MinimalExperiment(BaseModel):
     id: Annotated[str, Field(description="The unique identifier of the experiment in Phoenix.")]
     name: Annotated[str, Field(description="The name of the experiment.")]
     description: Annotated[Optional[str], Field(description="The description of the experiment.")] = None
-    url: Annotated[Optional[str], Field(description="URL to view the experiment in the Phoenix UI.")] = None
+    agent: Annotated[MinimalAgentDTO, Field(description="Agent that was evaluated")]
     created_at: Annotated[Optional[datetime], Field(description="Timestamp of when the experiment data was recorded or fetched.")] = None
+    dataset: Annotated[MinimalDataset, Field(description="The dataset associated with this experiment.")]

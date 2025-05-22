@@ -1,5 +1,6 @@
 import asyncio
 from os.path import join, dirname, abspath, isdir
+import nest_asyncio
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
@@ -31,6 +32,7 @@ from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
+nest_asyncio.apply()
 
 
 async def main():

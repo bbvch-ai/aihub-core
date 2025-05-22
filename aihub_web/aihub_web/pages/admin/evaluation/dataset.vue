@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    :title="t('agent.title')"
+    :title="t('evaluation.dataset.title')"
     :loading="datasetsAreLoading"
   >
     <div class="flex flex-col gap-2">
@@ -21,7 +21,7 @@
         </Dialog>
       </div>
       <div
-        class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
+        class="grid grid-cols-2 gap-4 xl:grid-cols-2"
       >
         <EvaluationDatasetCard
           v-for="dataset in datasets"

@@ -1213,6 +1213,29 @@ export type EmbeddingsResponse = {
     data: Array<Embeddings>;
 };
 
+export type EvaluationData = {
+    /**
+     * Name of the evaluator.
+     */
+    name: string;
+    /**
+     * Kind of evaluator, either LLM or Code.
+     */
+    annotator_kind: 'LLM' | 'Code';
+    /**
+     * Score between 0 and 1.
+     */
+    score: number;
+    /**
+     * Explenation given by Judge LLM.
+     */
+    explanation?: string | null;
+    /**
+     * Error message if the task run failed.
+     */
+    error?: string | null;
+};
+
 export type EvaluationSummaryData = {
     /**
      * Name of the evaluator.
@@ -1223,31 +1246,9 @@ export type EvaluationSummaryData = {
      */
     n: number;
     /**
-     * Number of errors during evaluation for this evaluator.
-     */
-    n_errors?: number | null;
-    /**
-     * Most frequent error for this evaluator.
-     */
-    top_error?: string | null;
-    /**
-     * Number of scores recorded.
-     */
-    n_scores?: number | null;
-    /**
      * Average score from this evaluator.
      */
     avg_score?: number | null;
-    /**
-     * Number of labels recorded.
-     */
-    n_labels?: number | null;
-    /**
-     * Top 2 labels and their counts.
-     */
-    top_2_labels?: {
-        [key: string]: number;
-    } | null;
 };
 
 /**
@@ -1422,29 +1423,41 @@ export type Experiment = {
      */
     id: string;
     /**
-     * The ID of the dataset associated with this experiment.
+     * The name of the experiment.
      */
-    dataset_id: string;
-    /**
-     * The version ID of the dataset used.
-     */
-    dataset_version_id: string;
-    /**
-     * Number of repetitions defined for the experiment.
-     */
-    repetitions: number;
-    /**
-     * The Phoenix project name this experiment belongs to.
-     */
-    project_name: string;
-    /**
-     * The display name of the experiment.
-     */
-    name?: string | null;
+    name: string;
     /**
      * The description of the experiment.
      */
     description?: string | null;
+    /**
+     * Agent that was evaluated
+     */
+    agent: MinimalAgentDto;
+    /**
+     * Timestamp of when the experiment data was recorded or fetched.
+     */
+    created_at?: Date | null;
+    /**
+     * The dataset associated with this experiment.
+     */
+    dataset: MinimalDataset;
+    /**
+     * How concise is the answer
+     */
+    conciseness?: EvaluationSummaryData | null;
+    /**
+     * How correct is the answer
+     */
+    correctness?: EvaluationSummaryData | null;
+    /**
+     * How complete is the answer
+     */
+    completeness?: EvaluationSummaryData | null;
+    /**
+     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
+     */
+    items?: Array<ExperimentRunRecord>;
 };
 
 export type ExperimentCreate = {
@@ -1461,10 +1474,6 @@ export type ExperimentCreate = {
      */
     dataset_id: string;
     /**
-     * The system prompt to use for the agent during evaluation.
-     */
-    agent_system_prompt: string;
-    /**
      * An optional custom name for the Phoenix experiment. If not provided, a name will be generated.
      */
     experiment_name?: string | null;
@@ -1480,100 +1489,51 @@ export type ExperimentCreate = {
     } | null;
 };
 
-export type ExperimentRunEvaluationDetail = {
-    /**
-     * ID of the specific task run this evaluation pertains to.
-     */
-    run_id: string;
-    /**
-     * Name of the evaluator.
-     */
-    name: string;
-    /**
-     * Error message if evaluation failed.
-     */
-    error?: string | null;
-    /**
-     * Score from the evaluation.
-     */
-    score?: number | null;
-    /**
-     * Label from the evaluation.
-     */
-    label?: string | null;
-    /**
-     * Explanation from the evaluation.
-     */
-    explanation?: string | null;
-    /**
-     * Input to the task for this run.
-     */
-    input?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Output from the task for this run.
-     */
-    output?: unknown | null;
-    /**
-     * Expected output (reference data).
-     */
-    expected?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Metadata of the example.
-     */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
+export type ExperimentRunRecord = {
     /**
      * ID of the dataset example for this run.
      */
     example_id: string;
-};
-
-export type ExperimentRunResult = {
     /**
-     * The unique identifier of the experiment run in Phoenix.
+     * Input question.
      */
-    id: string;
+    question: string;
     /**
-     * The name of the experiment.
+     * Expected answer for this example.
      */
-    name: string;
+    reference_answer: string;
     /**
-     * The description of the experiment.
+     * Response given by assistant.
      */
-    description?: string | null;
+    assistant_answer: string;
     /**
-     * URL to view the full experiment run in the Phoenix UI.
+     * Error message if the task run failed.
      */
-    url: string;
+    error?: string | null;
     /**
-     * ID of the dataset used.
+     * Latency of the task run in milliseconds.
      */
-    dataset_id: string;
+    latency_ms?: number | null;
     /**
-     * Version ID of the dataset used.
+     * Start time of the task run.
      */
-    dataset_version_id: string;
+    start_time: Date;
     /**
-     * Phoenix project name.
+     * End time of the task run.
      */
-    project_name: string;
+    end_time: Date;
     /**
-     * Summary statistics of the task executions.
+     * How concise is the answer
      */
-    task_summary?: TaskSummaryData | null;
+    conciseness?: EvaluationData | null;
     /**
-     * List of summary statistics for each evaluator.
+     * How correct is the answer
      */
-    evaluation_summaries?: Array<EvaluationSummaryData> | null;
+    correctness?: EvaluationData | null;
     /**
-     * Detailed evaluation results for each run and evaluator.
+     * How complete is the answer
      */
-    detailed_evaluations?: Array<ExperimentRunEvaluationDetail> | null;
+    completeness?: EvaluationData | null;
 };
 
 export type File = {
@@ -2369,13 +2329,17 @@ export type MinimalExperiment = {
      */
     description?: string | null;
     /**
-     * URL to view the experiment in the Phoenix UI.
+     * Agent that was evaluated
      */
-    url?: string | null;
+    agent: MinimalAgentDto;
     /**
      * Timestamp of when the experiment data was recorded or fetched.
      */
     created_at?: Date | null;
+    /**
+     * The dataset associated with this experiment.
+     */
+    dataset: MinimalDataset;
 };
 
 export type ModelDetails = {
@@ -3020,25 +2984,6 @@ export type SuiteDto = {
      * The services in the suite.
      */
     services: Array<ServiceDto>;
-};
-
-export type TaskSummaryData = {
-    /**
-     * Number of examples in the experiment.
-     */
-    n_examples: number;
-    /**
-     * Number of task runs executed.
-     */
-    n_runs: number;
-    /**
-     * Number of errors during task execution.
-     */
-    n_errors: number;
-    /**
-     * Most frequent error message, if any.
-     */
-    top_error?: string | null;
 };
 
 export type TextBlock = {
@@ -4512,7 +4457,7 @@ export type RunExperimentResponses = {
     /**
      * Successful Response
      */
-    201: ExperimentRunResult;
+    200: Experiment;
 };
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
