@@ -2686,12 +2686,6 @@ export const DatasetItemCreateSchema = {
 
 export const DatasetUpdateSchema = {
     properties: {
-        dataset_name: {
-            type: 'string',
-            minLength: 1,
-            title: 'Dataset Name',
-            description: "The target name for the dataset. If this name is new or different from an existing dataset's name associated with the provided ID, Phoenix will create/version based on this new name."
-        },
         items: {
             items: {
                 '$ref': '#/components/schemas/DatasetItemCreate'
@@ -2699,22 +2693,10 @@ export const DatasetUpdateSchema = {
             type: 'array',
             title: 'Items',
             description: 'The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The new optional description for the dataset.'
         }
     },
     type: 'object',
-    required: ['dataset_name', 'items'],
+    required: ['items'],
     title: 'DatasetUpdate'
 } as const;
 
@@ -3238,6 +3220,99 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
+export const EvaluationSummaryDataSchema = {
+    properties: {
+        evaluator: {
+            type: 'string',
+            title: 'Evaluator',
+            description: 'Name of the evaluator.'
+        },
+        n: {
+            type: 'integer',
+            title: 'N',
+            description: 'Number of items evaluated.'
+        },
+        n_errors: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'N Errors',
+            description: 'Number of errors during evaluation for this evaluator.'
+        },
+        top_error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Top Error',
+            description: 'Most frequent error for this evaluator.'
+        },
+        n_scores: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'N Scores',
+            description: 'Number of scores recorded.'
+        },
+        avg_score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Avg Score',
+            description: 'Average score from this evaluator.'
+        },
+        n_labels: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'N Labels',
+            description: 'Number of labels recorded.'
+        },
+        top_2_labels: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        type: 'integer'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Top 2 Labels',
+            description: 'Top 2 labels and their counts.'
+        }
+    },
+    type: 'object',
+    required: ['evaluator', 'n'],
+    title: 'EvaluationSummaryData'
+} as const;
+
 export const EventBucketSchema = {
     properties: {
         start_time: {
@@ -3496,6 +3571,339 @@ provides a unified way to:
 By appearing as both a control and display event, \`ExceptionEvent\` ensures that the workflow
 can stop further processing while also making the error visible in UI dashboards, logs, or
 monitoring tools—giving operators and developers immediate insight into what went wrong.`
+} as const;
+
+export const ExperimentSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the experiment in Phoenix.'
+        },
+        dataset_id: {
+            type: 'string',
+            title: 'Dataset Id',
+            description: 'The ID of the dataset associated with this experiment.'
+        },
+        dataset_version_id: {
+            type: 'string',
+            title: 'Dataset Version Id',
+            description: 'The version ID of the dataset used.'
+        },
+        repetitions: {
+            type: 'integer',
+            title: 'Repetitions',
+            description: 'Number of repetitions defined for the experiment.'
+        },
+        project_name: {
+            type: 'string',
+            title: 'Project Name',
+            description: 'The Phoenix project name this experiment belongs to.'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The display name of the experiment.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the experiment.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'dataset_id', 'dataset_version_id', 'repetitions', 'project_name'],
+    title: 'Experiment'
+} as const;
+
+export const ExperimentCreateSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class name of the agent to be evaluated.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'The specific ID of the agent instance to be evaluated.'
+        },
+        dataset_id: {
+            type: 'string',
+            title: 'Dataset Id',
+            description: 'The ID of the Phoenix dataset to use for evaluation.'
+        },
+        agent_system_prompt: {
+            type: 'string',
+            title: 'Agent System Prompt',
+            description: 'The system prompt to use for the agent during evaluation.'
+        },
+        experiment_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Experiment Name',
+            description: 'An optional custom name for the Phoenix experiment. If not provided, a name will be generated.'
+        },
+        experiment_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Experiment Description',
+            description: 'An optional description for the Phoenix experiment.'
+        },
+        experiment_metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Experiment Metadata',
+            description: 'Optional metadata to associate with the Phoenix experiment.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'dataset_id', 'agent_system_prompt'],
+    title: 'ExperimentCreate'
+} as const;
+
+export const ExperimentRunEvaluationDetailSchema = {
+    properties: {
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'ID of the specific task run this evaluation pertains to.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of the evaluator.'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error',
+            description: 'Error message if evaluation failed.'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score from the evaluation.'
+        },
+        label: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Label',
+            description: 'Label from the evaluation.'
+        },
+        explanation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Explanation',
+            description: 'Explanation from the evaluation.'
+        },
+        input: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input',
+            description: 'Input to the task for this run.'
+        },
+        output: {
+            anyOf: [
+                {},
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output',
+            description: 'Output from the task for this run.'
+        },
+        expected: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected',
+            description: 'Expected output (reference data).'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Metadata of the example.'
+        },
+        example_id: {
+            type: 'string',
+            title: 'Example Id',
+            description: 'ID of the dataset example for this run.'
+        }
+    },
+    type: 'object',
+    required: ['run_id', 'name', 'example_id'],
+    title: 'ExperimentRunEvaluationDetail'
+} as const;
+
+export const ExperimentRunResultSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the experiment run in Phoenix.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the experiment.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the experiment.'
+        },
+        url: {
+            type: 'string',
+            title: 'Url',
+            description: 'URL to view the full experiment run in the Phoenix UI.'
+        },
+        dataset_id: {
+            type: 'string',
+            title: 'Dataset Id',
+            description: 'ID of the dataset used.'
+        },
+        dataset_version_id: {
+            type: 'string',
+            title: 'Dataset Version Id',
+            description: 'Version ID of the dataset used.'
+        },
+        project_name: {
+            type: 'string',
+            title: 'Project Name',
+            description: 'Phoenix project name.'
+        },
+        task_summary: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/TaskSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Summary statistics of the task executions.'
+        },
+        evaluation_summaries: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/EvaluationSummaryData'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Evaluation Summaries',
+            description: 'List of summary statistics for each evaluator.'
+        },
+        detailed_evaluations: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/ExperimentRunEvaluationDetail'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detailed Evaluations',
+            description: 'Detailed evaluation results for each run and evaluator.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'url', 'dataset_id', 'dataset_version_id', 'project_name'],
+    title: 'ExperimentRunResult'
 } as const;
 
 export const FileSchema = {
@@ -5337,6 +5745,61 @@ export const MinimalDatasetSchema = {
     title: 'MinimalDataset'
 } as const;
 
+export const MinimalExperimentSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the experiment in Phoenix.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the experiment.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the experiment.'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url',
+            description: 'URL to view the experiment in the Phoenix UI.'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'Timestamp of when the experiment data was recorded or fetched.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name'],
+    title: 'MinimalExperiment'
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -6480,6 +6943,41 @@ export const SuiteDTOSchema = {
     type: 'object',
     required: ['services'],
     title: 'SuiteDTO'
+} as const;
+
+export const TaskSummaryDataSchema = {
+    properties: {
+        n_examples: {
+            type: 'integer',
+            title: 'N Examples',
+            description: 'Number of examples in the experiment.'
+        },
+        n_runs: {
+            type: 'integer',
+            title: 'N Runs',
+            description: 'Number of task runs executed.'
+        },
+        n_errors: {
+            type: 'integer',
+            title: 'N Errors',
+            description: 'Number of errors during task execution.'
+        },
+        top_error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Top Error',
+            description: 'Most frequent error message, if any.'
+        }
+    },
+    type: 'object',
+    required: ['n_examples', 'n_runs', 'n_errors'],
+    title: 'TaskSummaryData'
 } as const;
 
 export const TextBlockSchema = {

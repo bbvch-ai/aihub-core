@@ -942,17 +942,9 @@ export type DatasetItemCreate = {
 
 export type DatasetUpdate = {
     /**
-     * The target name for the dataset. If this name is new or different from an existing dataset's name associated with the provided ID, Phoenix will create/version based on this new name.
-     */
-    dataset_name: string;
-    /**
      * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
      */
     items: Array<DatasetItemCreate>;
-    /**
-     * The new optional description for the dataset.
-     */
-    description?: string | null;
 };
 
 /**
@@ -1221,6 +1213,43 @@ export type EmbeddingsResponse = {
     data: Array<Embeddings>;
 };
 
+export type EvaluationSummaryData = {
+    /**
+     * Name of the evaluator.
+     */
+    evaluator: string;
+    /**
+     * Number of items evaluated.
+     */
+    n: number;
+    /**
+     * Number of errors during evaluation for this evaluator.
+     */
+    n_errors?: number | null;
+    /**
+     * Most frequent error for this evaluator.
+     */
+    top_error?: string | null;
+    /**
+     * Number of scores recorded.
+     */
+    n_scores?: number | null;
+    /**
+     * Average score from this evaluator.
+     */
+    avg_score?: number | null;
+    /**
+     * Number of labels recorded.
+     */
+    n_labels?: number | null;
+    /**
+     * Top 2 labels and their counts.
+     */
+    top_2_labels?: {
+        [key: string]: number;
+    } | null;
+};
+
 /**
  * Represents a time bucket with event counts by type.
  */
@@ -1385,6 +1414,166 @@ export type ExceptionEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
+};
+
+export type Experiment = {
+    /**
+     * The unique identifier of the experiment in Phoenix.
+     */
+    id: string;
+    /**
+     * The ID of the dataset associated with this experiment.
+     */
+    dataset_id: string;
+    /**
+     * The version ID of the dataset used.
+     */
+    dataset_version_id: string;
+    /**
+     * Number of repetitions defined for the experiment.
+     */
+    repetitions: number;
+    /**
+     * The Phoenix project name this experiment belongs to.
+     */
+    project_name: string;
+    /**
+     * The display name of the experiment.
+     */
+    name?: string | null;
+    /**
+     * The description of the experiment.
+     */
+    description?: string | null;
+};
+
+export type ExperimentCreate = {
+    /**
+     * The class name of the agent to be evaluated.
+     */
+    agent_class: string;
+    /**
+     * The specific ID of the agent instance to be evaluated.
+     */
+    agent_id: string;
+    /**
+     * The ID of the Phoenix dataset to use for evaluation.
+     */
+    dataset_id: string;
+    /**
+     * The system prompt to use for the agent during evaluation.
+     */
+    agent_system_prompt: string;
+    /**
+     * An optional custom name for the Phoenix experiment. If not provided, a name will be generated.
+     */
+    experiment_name?: string | null;
+    /**
+     * An optional description for the Phoenix experiment.
+     */
+    experiment_description?: string | null;
+    /**
+     * Optional metadata to associate with the Phoenix experiment.
+     */
+    experiment_metadata?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+export type ExperimentRunEvaluationDetail = {
+    /**
+     * ID of the specific task run this evaluation pertains to.
+     */
+    run_id: string;
+    /**
+     * Name of the evaluator.
+     */
+    name: string;
+    /**
+     * Error message if evaluation failed.
+     */
+    error?: string | null;
+    /**
+     * Score from the evaluation.
+     */
+    score?: number | null;
+    /**
+     * Label from the evaluation.
+     */
+    label?: string | null;
+    /**
+     * Explanation from the evaluation.
+     */
+    explanation?: string | null;
+    /**
+     * Input to the task for this run.
+     */
+    input?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Output from the task for this run.
+     */
+    output?: unknown | null;
+    /**
+     * Expected output (reference data).
+     */
+    expected?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Metadata of the example.
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * ID of the dataset example for this run.
+     */
+    example_id: string;
+};
+
+export type ExperimentRunResult = {
+    /**
+     * The unique identifier of the experiment run in Phoenix.
+     */
+    id: string;
+    /**
+     * The name of the experiment.
+     */
+    name: string;
+    /**
+     * The description of the experiment.
+     */
+    description?: string | null;
+    /**
+     * URL to view the full experiment run in the Phoenix UI.
+     */
+    url: string;
+    /**
+     * ID of the dataset used.
+     */
+    dataset_id: string;
+    /**
+     * Version ID of the dataset used.
+     */
+    dataset_version_id: string;
+    /**
+     * Phoenix project name.
+     */
+    project_name: string;
+    /**
+     * Summary statistics of the task executions.
+     */
+    task_summary?: TaskSummaryData | null;
+    /**
+     * List of summary statistics for each evaluator.
+     */
+    evaluation_summaries?: Array<EvaluationSummaryData> | null;
+    /**
+     * Detailed evaluation results for each run and evaluator.
+     */
+    detailed_evaluations?: Array<ExperimentRunEvaluationDetail> | null;
 };
 
 export type File = {
@@ -2166,6 +2355,29 @@ export type MinimalDataset = {
     updated_at?: Date | null;
 };
 
+export type MinimalExperiment = {
+    /**
+     * The unique identifier of the experiment in Phoenix.
+     */
+    id: string;
+    /**
+     * The name of the experiment.
+     */
+    name: string;
+    /**
+     * The description of the experiment.
+     */
+    description?: string | null;
+    /**
+     * URL to view the experiment in the Phoenix UI.
+     */
+    url?: string | null;
+    /**
+     * Timestamp of when the experiment data was recorded or fetched.
+     */
+    created_at?: Date | null;
+};
+
 export type ModelDetails = {
     /**
      * The ID of the model.
@@ -2808,6 +3020,25 @@ export type SuiteDto = {
      * The services in the suite.
      */
     services: Array<ServiceDto>;
+};
+
+export type TaskSummaryData = {
+    /**
+     * Number of examples in the experiment.
+     */
+    n_examples: number;
+    /**
+     * Number of task runs executed.
+     */
+    n_runs: number;
+    /**
+     * Number of errors during task execution.
+     */
+    n_errors: number;
+    /**
+     * Most frequent error message, if any.
+     */
+    top_error?: string | null;
 };
 
 export type TextBlock = {
@@ -4214,6 +4445,77 @@ export type UpdateDatasetResponses = {
 };
 
 export type UpdateDatasetResponse = UpdateDatasetResponses[keyof UpdateDatasetResponses];
+
+export type GetExperimentData = {
+    body?: never;
+    path: {
+        /**
+         * The unique identifier of the experiment to retrieve.
+         */
+        experiment_id: string;
+    };
+    query?: never;
+    url: '/evaluation/experiments/{experiment_id}';
+};
+
+export type GetExperimentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetExperimentError = GetExperimentErrors[keyof GetExperimentErrors];
+
+export type GetExperimentResponses = {
+    /**
+     * Successful Response
+     */
+    200: Experiment;
+};
+
+export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentResponses];
+
+export type GetExperimentsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/evaluation/experiments';
+};
+
+export type GetExperimentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<MinimalExperiment>;
+};
+
+export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperimentsResponses];
+
+export type RunExperimentData = {
+    body: ExperimentCreate;
+    path?: never;
+    query?: never;
+    url: '/evaluation/experiments';
+};
+
+export type RunExperimentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunExperimentError = RunExperimentErrors[keyof RunExperimentErrors];
+
+export type RunExperimentResponses = {
+    /**
+     * Successful Response
+     */
+    201: ExperimentRunResult;
+};
+
+export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

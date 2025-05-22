@@ -1,53 +1,62 @@
 <template>
   <StructuralScreen>
-    <StructuralColumn
-      :title="t('agent.title')"
-      :loading="datasetsAreLoading"
-    >
-      <Button
-        label="Show"
-        @click="createModalOpen = true"
+    <template #top>
+      <SelectButton
+        v-if="navItems"
+        :model-value="activeNavItem"
+        :options="navItems"
+        data-key="key"
+        option-label="name"
+        size="small"
+        @update:model-value="toNavItem"
       />
-      <Dialog
-        v-model:visible="createModalOpen"
-        modal
-        header="Edit Profile"
-        :style="{ width: '25rem' }"
-      >
-        <EvaluationDatasetCreate
-          @close="createModalOpen = false"
-        />
-      </Dialog>
-      <div
-        class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
-      >
-        <EvaluationDatasetCard
-          v-for="dataset in datasets"
-          :key="dataset.id"
-          :dataset="dataset"
-          @click="() => toDataset(dataset)"
-        />
-      </div>
-    </StructuralColumn>
+    </template>
     <NuxtPage />
   </StructuralScreen>
 </template>
 
 <script setup lang="ts">
-import { useDatasets } from '@core/composables/evaluation/useDatasets'
-
-import type { MinimalDataset } from '@core/sdk/client'
+import type { NavItem } from '@core/types/NavItem'
 
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()
+const route = useRoute()
 const localePath = useLocalePath()
-const { t } = useI18n()
 
-const { datasets, datasetsAreLoading } = useDatasets()
-const createModalOpen = ref(false)
-
-const toDataset = (dataset: MinimalDataset) => {
-  router.push(localePath(`/admin/evaluation/${dataset.id}`))
+const subPath = (path: string) => {
+  return `/admin/evaluation/${path}`
 }
+
+onMounted(() => {
+  if (route.path === localePath('/admin/evaluation')) {
+    router.push(localePath(subPath('experiment')))
+  }
+})
+
+const isActive = (path: string) => {
+  return () => {
+    const localizedPath = localePath(subPath(path))
+    return route.path.startsWith(localizedPath)
+  }
+}
+
+const navItems = computed<NavItem[]>(() => {
+  return [
+    { name: 'Dataset', key: 'dataset', path: subPath('dataset'), isActive: isActive('dataset') },
+    { name: 'Experiments', key: 'experiment', path: subPath('experiment'), isActive: isActive('experiment') },
+  ]
+})
+
+const toNavItem = (navItem: NavItem) => {
+  router.push(localePath(navItem.path))
+}
+
+const activeNavItem = computed<NavItem | undefined>(() => {
+  return navItems.value?.filter(navItem => navItem.isActive())[0]
+})
 </script>
+
+<style scoped>
+
+</style>

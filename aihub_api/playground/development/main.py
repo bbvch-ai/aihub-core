@@ -145,11 +145,20 @@ async def main():
         .generate_image()
         .stt()
         .tts(),
-        EvaluationController(auth=auth)
+        EvaluationController(auth=auth, judge=AzureOpenAILLMConfig(
+            name="gpt-4o",
+            base_url="https://bbvaihub-openai-sui.openai.azure.com",
+            api_version="2025-01-01-preview",
+            prompt_tokens_costs_per_thousand=0.0045,
+            completion_tokens_costs_per_thousand=0.0133,
+        ))
         .create_dataset()
         .get_datasets()
         .get_dataset()
         .update_dataset()
+        .get_experiment()
+        .get_experiments()
+        .run_experiment()
     )
 
     await runner.run()

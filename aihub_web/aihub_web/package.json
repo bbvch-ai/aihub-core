@@ -71,6 +71,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "gridstack": "^12.1.2",
+    "lodash.clonedeep": "^4.5.0",
     "lucide-vue-next": "^0.482.0",
     "primeicons": "^7.0.0",
     "primevue": "^4.3.2",
