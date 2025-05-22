@@ -40,9 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import type { EvaluationDatasetCreateDto } from '@core/sdk/client'
+import type { DatasetCreate } from '@core/sdk/client'
 
-const dataset = reactive<EvaluationDatasetCreateDto>({
+const dataset = reactive<DatasetCreate>({
   dataset_name: '',
   description: '',
   items: [{

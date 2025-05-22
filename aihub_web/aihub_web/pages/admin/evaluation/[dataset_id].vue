@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     title="Dataset"
-    close-route="/admin/evaluations"
+    close-route="/admin/evaluation"
     :loading="datasetIsLoading"
   >
     <ConfirmPopup />
@@ -52,12 +52,16 @@
 <script setup lang="ts">
 import { useConfirm } from 'primevue/useconfirm'
 
+import type { DatasetItemCreate } from '@core/sdk/client'
+
 const { dataset, datasetIsLoading } = useDataset()
+
+const addedItems = ref<DatasetItemCreate[]>([])
 
 const question = ref('')
 const answer = ref('')
 const add = () => {
-  dataset.value.items.push({
+  addedItems.value.push({
     question: question.value,
     answer: answer.value,
   })
@@ -67,6 +71,8 @@ const add = () => {
 
 const confirm = useConfirm()
 const toast = useToast()
+
+const { updateDataset } = useUpdateDataset()
 
 const safeDataset = (event) => {
   confirm.require({
@@ -82,7 +88,8 @@ const safeDataset = (event) => {
       label: 'Save',
     },
     accept: () => {
-      toast.add({ severity: 'info', summary: 'Confirmed', detail: 'You have accepted', life: 3000 })
+      updateDataset({ dataset: { items: addedItems.value } })
+      addedItems.value = []
     },
     reject: () => {
       toast.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected', life: 3000 })

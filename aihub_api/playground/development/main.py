@@ -146,10 +146,10 @@ async def main():
         .stt()
         .tts(),
         EvaluationController(auth=auth)
-        .create_evaluation_dataset()
-        .get_evaluation_dataset()
-        .update_evaluation_dataset()
-        .list_evaluation_datasets()
+        .create_dataset()
+        .get_datasets()
+        .get_dataset()
+        .update_dataset()
     )
 
     await runner.run()

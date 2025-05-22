@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { useDatasets } from '@core/composables/evaluation/useDatasets'
 
-import type { EvaluationDatasetResponseDto } from '@core/sdk/client'
+import type { MinimalDataset } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -47,7 +47,7 @@ const { t } = useI18n()
 const { datasets, datasetsAreLoading } = useDatasets()
 const createModalOpen = ref(false)
 
-const toDataset = (dataset: EvaluationDatasetResponseDto) => {
-  router.push(localePath(`/admin/evaluations/${dataset.id}`))
+const toDataset = (dataset: MinimalDataset) => {
+  router.push(localePath(`/admin/evaluation/${dataset.id}`))
 }
 </script>

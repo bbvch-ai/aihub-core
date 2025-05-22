@@ -23,7 +23,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_agent.tracing.phoenix.PhoenixConfig import PhoenixConfig
+from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
 logger = logging.getLogger(__name__)

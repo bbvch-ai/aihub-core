@@ -1,11 +1,11 @@
-import { type EvaluationDatasetCreateDto, createDatasetEndpoint } from '@core/sdk/client'
+import { createDataset as createDatasetCall, type DatasetCreate } from '@core/sdk/client'
 
 export const useCreateDataset = () => {
   const queryCache = useQueryCache()
 
   const { mutate: createDataset } = useMutation({
-    mutation: async ({ dataset }: { dataset: EvaluationDatasetCreateDto }) => {
-      await createDatasetEndpoint({
+    mutation: async ({ dataset }: { dataset: DatasetCreate }) => {
+      await createDatasetCall({
         composable: '$fetch',
         body: dataset,
       })

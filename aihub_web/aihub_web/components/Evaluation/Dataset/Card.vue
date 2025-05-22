@@ -39,10 +39,10 @@
 </template>
 
 <script setup lang="ts">
-import type { EvaluationDatasetResponseDto } from '@core/sdk/client'
+import type { MinimalDataset } from '@core/sdk/client'
 
 const props = defineProps<{
-  dataset: EvaluationDatasetResponseDto
+  dataset: MinimalDataset
 }>()
 
 const route = useRoute()

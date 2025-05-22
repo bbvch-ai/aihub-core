@@ -868,6 +868,93 @@ export type DashboardItemDto = {
     event?: string | null;
 };
 
+export type Dataset = {
+    /**
+     * The unique identifier of the dataset in Phoenix.
+     */
+    id: string;
+    /**
+     * The name of the dataset.
+     */
+    dataset_name: string;
+    /**
+     * An optional description for the dataset.
+     */
+    description?: string | null;
+    /**
+     * The version identifier of the dataset in Phoenix.
+     */
+    version?: string | null;
+    /**
+     * The timestamp when the dataset was created.
+     */
+    created_at?: Date | null;
+    /**
+     * The timestamp when the dataset was last updated.
+     */
+    updated_at?: Date | null;
+    /**
+     * The list of question-answer items in the dataset.
+     */
+    items: Array<DatasetItem>;
+};
+
+export type DatasetCreate = {
+    /**
+     * The name for the new dataset.
+     */
+    dataset_name: string;
+    /**
+     * A list of question-answer items to include in the dataset.
+     */
+    items: Array<DatasetItemCreate>;
+    /**
+     * An optional description for the dataset.
+     */
+    description?: string | null;
+};
+
+export type DatasetItem = {
+    /**
+     * The unique identifier for the dataset item, managed by Phoenix.
+     */
+    id?: string | null;
+    /**
+     * The input question for the agent evaluation.
+     */
+    question: string;
+    /**
+     * The reference (expected) answer for the question.
+     */
+    answer: string;
+};
+
+export type DatasetItemCreate = {
+    /**
+     * The input question for the agent evaluation.
+     */
+    question: string;
+    /**
+     * The reference (expected) answer for the question.
+     */
+    answer: string;
+};
+
+export type DatasetUpdate = {
+    /**
+     * The target name for the dataset. If this name is new or different from an existing dataset's name associated with the provided ID, Phoenix will create/version based on this new name.
+     */
+    dataset_name: string;
+    /**
+     * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
+     */
+    items: Array<DatasetItemCreate>;
+    /**
+     * The new optional description for the dataset.
+     */
+    description?: string | null;
+};
+
 /**
  * Represents a user-facing event that can be shown to end-users, UIs, or monitoring dashboards.
  * Display events are purely informational and never affect the control flow or execution order
@@ -1132,97 +1219,6 @@ export type EmbeddingsResponse = {
      * The list of embeddings.
      */
     data: Array<Embeddings>;
-};
-
-/**
- * DTO for creating or updating an evaluation dataset.
- */
-export type EvaluationDatasetCreateDto = {
-    /**
-     * Name of the dataset in Arize Phoenix. This will be used as the identifier.
-     */
-    dataset_name: string;
-    /**
-     * List of question-answer pairs with optional metadata.
-     */
-    items: Array<EvaluationDatasetItemDto>;
-    /**
-     * Optional description for the dataset.
-     */
-    description?: string | null;
-};
-
-/**
- * Represents a single item (e.g., a question-answer pair) within an evaluation dataset.
- */
-export type EvaluationDatasetItemDto = {
-    /**
-     * Unique identifier for the dataset item (managed by Phoenix).
-     */
-    id?: string | null;
-    /**
-     * The input question for the agent evaluation.
-     */
-    question: string;
-    /**
-     * The reference (expected) answer for the question.
-     */
-    answer: string;
-    /**
-     * Optional metadata for the dataset item.
-     */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
-};
-
-/**
- * DTO for responding with dataset details from Arize Phoenix.
- * Fields like description, input_keys, etc., are more reliably populated for create/update
- * responses where this information is taken from the input. For 'get' responses,
- * these might be None if not directly available on the Phoenix Dataset object.
- */
-export type EvaluationDatasetResponseDto = {
-    /**
-     * Phoenix dataset ID.
-     */
-    id: string;
-    /**
-     * Name of the dataset in Arize Phoenix.
-     */
-    dataset_name: string;
-    /**
-     * Dataset version ID in Phoenix.
-     */
-    version: string;
-    /**
-     * List of question-answer pairs.
-     */
-    items: Array<EvaluationDatasetItemDto>;
-    /**
-     * Description of the dataset.
-     */
-    description?: string | null;
-    /**
-     * Input keys defined for the dataset in Phoenix.
-     */
-    input_keys?: Array<string> | null;
-    /**
-     * Output keys defined for the dataset in Phoenix.
-     */
-    output_keys?: Array<string> | null;
-    /**
-     * Metadata keys defined for the dataset in Phoenix.
-     */
-    metadata_keys?: Array<string> | null;
-    /**
-     * Timestamp related to dataset version (availability depends on source).
-     */
-    created_at?: Date | null;
-    /**
-     * Timestamp related to dataset examples (availability depends on source).
-     */
-    updated_at?: Date | null;
 };
 
 /**
@@ -2141,6 +2137,33 @@ export type MinimalAgentDto = {
      * Whether the agent can participate in a chat-based conversation
      */
     is_conversational: boolean;
+};
+
+export type MinimalDataset = {
+    /**
+     * The unique identifier of the dataset in Phoenix.
+     */
+    id: string;
+    /**
+     * The name of the dataset.
+     */
+    dataset_name: string;
+    /**
+     * An optional description for the dataset.
+     */
+    description?: string | null;
+    /**
+     * The version identifier of the dataset in Phoenix.
+     */
+    version?: string | null;
+    /**
+     * The timestamp when the dataset was created.
+     */
+    created_at?: Date | null;
+    /**
+     * The timestamp when the dataset was last updated.
+     */
+    updated_at?: Date | null;
 };
 
 export type ModelDetails = {
@@ -4091,106 +4114,106 @@ export type CreateSpeechResponses = {
     200: unknown;
 };
 
-export type ListDatasetsEndpointData = {
+export type GetDatasetsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/evaluations/datasets';
+    url: '/evaluation/dataset';
 };
 
-export type ListDatasetsEndpointResponses = {
+export type GetDatasetsResponses = {
     /**
      * Successful Response
      */
-    200: Array<EvaluationDatasetResponseDto>;
+    200: Array<MinimalDataset>;
 };
 
-export type ListDatasetsEndpointResponse = ListDatasetsEndpointResponses[keyof ListDatasetsEndpointResponses];
+export type GetDatasetsResponse = GetDatasetsResponses[keyof GetDatasetsResponses];
 
-export type CreateDatasetEndpointData = {
-    body: EvaluationDatasetCreateDto;
+export type CreateDatasetData = {
+    body: DatasetCreate;
     path?: never;
     query?: never;
-    url: '/evaluations/datasets';
+    url: '/evaluation/dataset';
 };
 
-export type CreateDatasetEndpointErrors = {
+export type CreateDatasetErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type CreateDatasetEndpointError = CreateDatasetEndpointErrors[keyof CreateDatasetEndpointErrors];
+export type CreateDatasetError = CreateDatasetErrors[keyof CreateDatasetErrors];
 
-export type CreateDatasetEndpointResponses = {
+export type CreateDatasetResponses = {
     /**
      * Successful Response
      */
-    201: EvaluationDatasetResponseDto;
+    200: Dataset;
 };
 
-export type CreateDatasetEndpointResponse = CreateDatasetEndpointResponses[keyof CreateDatasetEndpointResponses];
+export type CreateDatasetResponse = CreateDatasetResponses[keyof CreateDatasetResponses];
 
-export type GetDatasetEndpointData = {
+export type GetDatasetData = {
     body?: never;
     path: {
         /**
-         * The ID of the dataset to retrieve from Phoenix.
+         * The unique identifier of the dataset to retrieve.
          */
         dataset_id: string;
     };
     query?: never;
-    url: '/evaluations/datasets/{dataset_id}';
+    url: '/evaluation/dataset/{dataset_id}';
 };
 
-export type GetDatasetEndpointErrors = {
+export type GetDatasetErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetDatasetEndpointError = GetDatasetEndpointErrors[keyof GetDatasetEndpointErrors];
+export type GetDatasetError = GetDatasetErrors[keyof GetDatasetErrors];
 
-export type GetDatasetEndpointResponses = {
+export type GetDatasetResponses = {
     /**
      * Successful Response
      */
-    200: EvaluationDatasetResponseDto;
+    200: Dataset;
 };
 
-export type GetDatasetEndpointResponse = GetDatasetEndpointResponses[keyof GetDatasetEndpointResponses];
+export type GetDatasetResponse = GetDatasetResponses[keyof GetDatasetResponses];
 
-export type UpdateDatasetEndpointData = {
-    body: EvaluationDatasetCreateDto;
+export type UpdateDatasetData = {
+    body: DatasetUpdate;
     path: {
         /**
-         * The name of the dataset to update in Phoenix.
+         * The unique identifier of the dataset to update.
          */
-        dataset_name: string;
+        dataset_id: string;
     };
     query?: never;
-    url: '/evaluations/datasets/{dataset_name}';
+    url: '/evaluation/dataset/{dataset_id}';
 };
 
-export type UpdateDatasetEndpointErrors = {
+export type UpdateDatasetErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type UpdateDatasetEndpointError = UpdateDatasetEndpointErrors[keyof UpdateDatasetEndpointErrors];
+export type UpdateDatasetError = UpdateDatasetErrors[keyof UpdateDatasetErrors];
 
-export type UpdateDatasetEndpointResponses = {
+export type UpdateDatasetResponses = {
     /**
      * Successful Response
      */
-    200: EvaluationDatasetResponseDto;
+    200: Dataset;
 };
 
-export type UpdateDatasetEndpointResponse = UpdateDatasetEndpointResponses[keyof UpdateDatasetEndpointResponses];
+export type UpdateDatasetResponse = UpdateDatasetResponses[keyof UpdateDatasetResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

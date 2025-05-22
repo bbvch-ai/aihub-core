@@ -1,18 +1,22 @@
-import { type EvaluationDatasetCreateDto, updateDatasetEndpoint } from '@core/sdk/client'
+import { type DatasetUpdate, updateDataset as updateDatasetCall } from '@core/sdk/client'
 
 export const useUpdateDataset = () => {
   const queryCache = useQueryCache()
+  const route = useRoute()
 
-  const { mutate: createDataset } = useMutation({
-    mutation: async ({ dataset }: { dataset: EvaluationDatasetCreateDto }) => {
-      await updateDatasetEndpoint({
+  const { mutate: updateDataset } = useMutation({
+    mutation: async ({ dataset }: { dataset: DatasetUpdate }) => {
+      await updateDatasetCall({
         composable: '$fetch',
         body: dataset,
+        path: {
+          dataset_id: route.params.dataset_id as string,
+        },
       })
       queryCache.invalidateQueries({ key: ['datasets'] })
     },
   })
   return {
-    createDataset,
+    updateDataset,
   }
 }
