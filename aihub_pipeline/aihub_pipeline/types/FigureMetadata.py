@@ -8,4 +8,3 @@ class FigureMetadata(BaseModel):
 
     figure_paths: Optional[List[str]] = Field(default_factory=list, description="Paths to the saved figures")
     figure_urls: Optional[List[str]] = Field(default_factory=list, description="URLs of the saved figures")
-    container_name: Optional[str] = Field(description="Azure Blob Storage container name")

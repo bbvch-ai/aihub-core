@@ -2,8 +2,7 @@ import base64
 import re
 from typing import Optional
 
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, op, ResourceParam, RetryPolicy, Backoff
 from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ImageBlock
 from llama_index.core.llms import LLM
@@ -36,6 +35,7 @@ def inject_figures(
     doc_with_figures: DocumentWithFigureInfo,
     figure_metadata: FigureMetadata,
     language_model: ResourceParam[LLM],
+    data_lake_client: ResourceParam[FileSystemClient],
 ) -> DocumentWithFigureInfo:
     """
     Injects image Markdown tags into the document content by replacing HTML figure tags.
@@ -48,16 +48,6 @@ def inject_figures(
     # Pattern to match HTML figure tags
     figure_pattern = r"<figure>.*?</figure>"
 
-    # Get blob service client to download images for description generation
-    try:
-        account_url = "https://aihubdevstchedatalake.blob.core.windows.net"
-        default_credential = DefaultAzureCredential()
-        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-    except Exception as e:
-        context.log.error(f"Failed to create BlobServiceClient: {str(e)}")
-        return doc_with_figures
-
-    # Start with the original content
     updated_content = doc_with_figures.text_resource.text
     figures_replaced = 0
 
@@ -106,25 +96,22 @@ def inject_figures(
 
         # Try to generate a description if we have blob service client
         description = "Image"
-        if blob_service_client:
-            try:
-                # Download the image
-                blob_client = blob_service_client.get_blob_client(
-                    container=figure_metadata.container_name, blob=image_path
-                )
-                image_data = blob_client.download_blob().readall()
+        try:
+            # Download the image
+            blob_client = data_lake_client.get_file_client(image_path)
+            image_bytes = blob_client.download_file().readall()
 
-                # Generate description with context
-                description = generate_description(
-                    context=context,
-                    language_model=language_model,
-                    image_bytes=image_data,
-                    figure_index=i,
-                    surrounding_text=surrounding_text,
-                )
-            except Exception as e:
-                context.log.error(f"Error processing image {i+1} for description: {str(e)}")
-                description = f"Figure {i+1}"
+            # Generate description with context
+            description = generate_description(
+                context=context,
+                language_model=language_model,
+                image_bytes=image_bytes,
+                figure_index=i,
+                surrounding_text=surrounding_text,
+            )
+        except Exception as e:
+            context.log.error(f"Error processing image {i+1} for description: {str(e)}")
+            description = f"Figure {i+1}"
 
         # Create markdown image tag with description
         markdown_image = f"![{description}]({image_url})"

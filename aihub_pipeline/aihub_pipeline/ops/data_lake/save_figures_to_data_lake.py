@@ -1,6 +1,6 @@
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
-from dagster import OpExecutionContext, op
+from azure.storage.filedatalake import FileSystemClient
+from dagster import OpExecutionContext, op, ResourceParam
+from fsspec import AbstractFileSystem
 
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
@@ -8,7 +8,7 @@ from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.Doc
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
-from aihub_pipeline.util.path_utils import get_container_name, get_document_figures_folder_name
+from aihub_pipeline.util.path_utils import get_document_figures_folder_name
 
 
 @op(code_version="v1")
@@ -16,6 +16,8 @@ def save_figures_to_data_lake(
     context: OpExecutionContext,
     doc_with_figures: DocumentWithFigureInfo,
     data_lake_file: DataLakeFile,
+    data_lake_client: ResourceParam[FileSystemClient],
+    data_lake_file_system: ResourceParam[AbstractFileSystem],
 ) -> FigureMetadata:
     """
     Extracts and saves raw figure data to Azure Data Lake using BlobServiceClient.
@@ -26,13 +28,6 @@ def save_figures_to_data_lake(
 
     document_intelligence_client = DocumentIntelligenceAccess().get_client()
     figure_paths, figure_urls = [], []
-    account_url = "https://aihubdevstchedatalake.blob.core.windows.net"
-    default_credential = DefaultAzureCredential()
-
-    # Create the BlobServiceClient object
-    blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-
-    container_name = get_container_name(data_lake_file.uri)
     figures_dir = get_document_figures_folder_name(data_lake_file.uri)
 
     context.log.info(f"Saving {len(doc_with_figures.figure_ids)} figures to {figures_dir}")
@@ -52,16 +47,18 @@ def save_figures_to_data_lake(
                 response_bytes += chunk
 
             blob_path = f"{figures_dir}/figure_{idx + 1}.png"
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
-            blob_client.upload_blob(response_bytes)
+            with data_lake_file_system.open(blob_path, mode="wb") as f:
+                f.write(response_bytes)
+
+            file_client = data_lake_client.get_file_client(blob_path)
 
             figure_paths.append(blob_path)
-            figure_urls.append(blob_client.url)
+            figure_urls.append(file_client.url)
 
         except Exception as e:
-            context.log.error(f"Failed to save figure {idx + 1}: {str(e)}")
+            context.log.error(f"Failed to save figure {idx + 1}: {str(e)}\n\n with path {blob_path}")
             # Log the full exception for debugging
             context.log.error(f"Exception details: {type(e).__name__}: {str(e)}")
 
-    metadata = FigureMetadata(figure_paths=figure_paths, figure_urls=figure_urls, container_name=container_name)
+    metadata = FigureMetadata(figure_paths=figure_paths, figure_urls=figure_urls)
     return metadata
