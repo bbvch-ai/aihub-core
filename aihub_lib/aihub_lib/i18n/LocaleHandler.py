@@ -103,7 +103,7 @@ class LocaleHandler:
                     data = data[key]
                 return data
 
-        raise ValueError(f"Unable to extract t_object {filename}.{locale}.yml")
+        raise FileNotFoundError(f"Unable to extract t_object {filename}.{locale}.yml")
 
     def in_locale(self, locale: str):
         return self.__class__(

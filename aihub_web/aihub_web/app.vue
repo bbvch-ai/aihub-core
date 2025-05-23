@@ -18,7 +18,6 @@ client.setConfig({
     return await getToken()
   },
   onRequest: ({ options }) => {
-    console.log('Request with lang', locale.value)
     options.headers.set('lang', locale.value)
   },
 })
