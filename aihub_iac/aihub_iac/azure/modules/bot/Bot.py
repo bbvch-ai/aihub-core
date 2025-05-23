@@ -24,7 +24,7 @@ class Bot(pulumi.ComponentResource):
 
         # Initialize providers
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         self.identity_provider = IdentityProvider(

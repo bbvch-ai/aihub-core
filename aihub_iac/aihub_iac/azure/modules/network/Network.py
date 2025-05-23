@@ -33,7 +33,7 @@ class Network(pulumi.ComponentResource):
         self.stack = stack
         self.config = config
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         self.vnet = None
@@ -90,7 +90,13 @@ class Network(pulumi.ComponentResource):
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self.network_provider.create_subnet_nsg(self.network_provider.app_subnet_name, subnet, [Nats.NATS_SUBNET_CIDR])
+        self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.app_subnet_name,
+            subnet=subnet,
+            source_prefixes=[Nats.NATS_SUBNET_CIDR],
+        )
         return subnet
 
     def _create_pg_subnet(self) -> network.Subnet:
@@ -109,9 +115,11 @@ class Network(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.pg_subnet_name,
-            subnet,
-            [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WebUI.WEBUI_SUBNET_CIDR],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.pg_subnet_name,
+            subnet=subnet,
+            source_prefixes=[DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WebUI.WEBUI_SUBNET_CIDR],
         )
         return subnet
 
@@ -141,9 +149,11 @@ class Network(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.agents_subnet_name,
-            subnet,
-            [SEARCH_SUBNET_PREFIX, COSMOS_SUBNET_PREFIX, Nats.NATS_SUBNET_CIDR],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.agents_subnet_name,
+            subnet=subnet,
+            source_prefixes=[SEARCH_SUBNET_PREFIX, COSMOS_SUBNET_PREFIX, Nats.NATS_SUBNET_CIDR],
         )
         return subnet
 
@@ -157,7 +167,11 @@ class Network(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.cosmos_subnet_name, subnet, [AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.cosmos_subnet_name,
+            subnet=subnet,
+            source_prefixes=[AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
         )
         return subnet
 
@@ -171,7 +185,11 @@ class Network(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.search_subnet_name, subnet, [AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.search_subnet_name,
+            subnet=subnet,
+            source_prefixes=[AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
         )
         return subnet
 
@@ -200,9 +218,11 @@ class Network(pulumi.ComponentResource):
         ]
 
         self.network_provider.create_subnet_nsg(
-            self.network_provider.dagster_storage_subnet_name,
-            subnet,
-            [DAGSTER_SUBNET_PREFIX],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.dagster_storage_subnet_name,
+            subnet=subnet,
+            source_prefixes=[DAGSTER_SUBNET_PREFIX],
             additional_rules=public_access_rules,
         )
         return subnet
@@ -234,9 +254,11 @@ class Network(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.dagster_subnet_name,
-            subnet,
-            [],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.dagster_subnet_name,
+            subnet=subnet,
+            source_prefixes=[],
         )
         return subnet
 
@@ -263,9 +285,11 @@ class Network(pulumi.ComponentResource):
             )
         ]
         self.network_provider.create_subnet_nsg(
-            self.network_provider.api_cosmos_subnet_name,
-            subnet,
-            [APP_SUBNET_PREFIX],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.api_cosmos_subnet_name,
+            subnet=subnet,
+            source_prefixes=[APP_SUBNET_PREFIX],
             additional_rules=public_access_rules,
         )
         return subnet

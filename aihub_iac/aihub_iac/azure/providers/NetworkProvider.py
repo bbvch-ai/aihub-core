@@ -15,13 +15,16 @@ from aihub_iac.azure.constants.resources import (
 
 
 class NetworkProvider:
-    def __init__(self, resource_group, project_name, location_short_name):
+    def __init__(self, resource_group, project_name, location, location_short_name):
         self.resource_group = resource_group
         self.project_name = project_name
+        self.location = location
         self.location_short_name = location_short_name
 
     def create_subnet_nsg(
         self,
+        parent: pulumi.Resource,
+        stack: str,
         subnet_name: str,
         subnet: network.Subnet,
         source_prefixes: list[str],
@@ -78,16 +81,16 @@ class NetworkProvider:
         nsg = network.NetworkSecurityGroup(
             resource_name=f"{subnet_name}-nsg",
             network_security_group_name=f"{subnet_name}-nsg",
-            resource_group_name=self.config.resource_group,
-            location=self.config.location,
+            resource_group_name=self.resource_group,
+            location=self.location,
             security_rules=security_rules,
             id=subnet.id,
             opts=pulumi.ResourceOptions(
-                parent=self,
+                parent=parent,
                 replace_on_changes=["security_rules"],
             ),
             tags={
-                "Stack": self.stack,
+                "Stack": stack,
             },
         )
 

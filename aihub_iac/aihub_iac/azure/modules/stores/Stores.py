@@ -32,7 +32,7 @@ class Stores(pulumi.ComponentResource):
         self.config = config
 
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         # Initialize private endpoint manager

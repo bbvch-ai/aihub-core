@@ -39,7 +39,7 @@ class WebUI(pulumi.ComponentResource):
 
         self.storage_factory = StorageResourceFactory(self.config, self.stack)
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         # Initialize resources
@@ -76,9 +76,11 @@ class WebUI(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.webui_subnet_name,
-            subnet,
-            [self.WEBUI_SUBNET_CIDR],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.webui_subnet_name,
+            subnet=subnet,
+            source_prefixes=[self.WEBUI_SUBNET_CIDR],
         )
         return subnet
 
@@ -92,9 +94,11 @@ class WebUI(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.network_provider.webui_storage_subnet_name,
-            subnet,
-            [Nats.NATS_SUBNET_CIDR, self.WEBUI_STORAGE_SUBNET_CIDR],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.webui_storage_subnet_name,
+            subnet=subnet,
+            source_prefixes=[Nats.NATS_SUBNET_CIDR, self.WEBUI_STORAGE_SUBNET_CIDR],
         )
         return subnet
 

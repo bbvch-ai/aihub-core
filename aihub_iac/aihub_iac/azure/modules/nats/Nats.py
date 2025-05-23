@@ -29,7 +29,7 @@ class Nats(pulumi.ComponentResource):
         self.config = config
         self.storage_factory = StorageResourceFactory(self.config, self.stack)
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
         self._create_resources()
 
@@ -91,9 +91,11 @@ class Nats(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
-            self.nats_subnet_name,
-            subnet,
-            [APP_SUBNET_PREFIX, AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.nats_subnet_name,
+            subnet=subnet,
+            source_prefixes=[APP_SUBNET_PREFIX, AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX],
         )
         return subnet
 
@@ -108,9 +110,11 @@ class Nats(pulumi.ComponentResource):
         )
 
         self.network_provider.create_subnet_nsg(
-            self.nats_storage_subnet_name,
-            subnet,
-            [self.NATS_SUBNET_CIDR, self.NATS_STORAGE_SUBNET_CIDR],
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.nats_storage_subnet_name,
+            subnet=subnet,
+            source_prefixes=[self.NATS_SUBNET_CIDR, self.NATS_STORAGE_SUBNET_CIDR],
         )
         return subnet
 

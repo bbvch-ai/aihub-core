@@ -27,7 +27,7 @@ class Dagster(pulumi.ComponentResource):
 
         # Initialize providers
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         self.identity_provider = IdentityProvider(
@@ -66,7 +66,9 @@ class Dagster(pulumi.ComponentResource):
 
         self.identity = self._create_identity()
         # Assign Storage Blob Contributor Role
-        self.identity.assign_role_to_identity(ROLES.STORAGE_BLOB_DATA_CONTRIBUTOR, self.datalake.id, self.config.storage_service_name)
+        self.identity.assign_role_to_identity(
+            ROLES.STORAGE_BLOB_DATA_CONTRIBUTOR, self.datalake.id, self.config.storage_service_name
+        )
 
         managed_env_config = ManagedEnvironmentConfig(
             resource_group=self.config.resource_group,
