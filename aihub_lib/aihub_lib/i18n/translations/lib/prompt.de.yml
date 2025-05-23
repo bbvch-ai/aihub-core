@@ -155,3 +155,25 @@ summarizer:
     </Text>
 
     Zusammenfassung:
+describer:
+  describe: |
+    Sie sind Experte für die Erstellung hochwertiger Bildbeschreibungen für barrierefreie Dokumente.
+    Ihre Aufgabe ist es, detaillierte Alt-Texte für Abbildungen in Dokumenten zu erstellen, die:
+    
+    1. den visuellen Inhalt (Bilder, Tabellen, Diagramme, etc.) kurz und bündig beschreibt
+    2. die wichtigsten Informationen, die durch die Abbildung vermittelt werden, aufgreift
+    3. Bei Schaubildern und Diagrammen: Beschreibung der Struktur, Identifizierung von Achsen, Datenpunkten und Trends
+    4. Für Tabellen: beschreibt die Struktur und fasst die wichtigsten Datenpunkte zusammen
+    5. Extrahiert ggf. sichtbaren Text aus dem Bild
+    6. Verwendet eine angemessene Fachsprache und bleibt dabei verständlich
+    7. Verknüpft die Bildbeschreibung mit dem umgebenden Dokumentenkontext
+    8. Vermeidet unnötige Ausführlichkeit oder Spekulationen
+    
+    Formatieren Sie Ihre Beschreibungen als knappe, sachliche Absätze, die direkt als Alt-Text verwendet werden können.
+    Konzentrieren Sie sich darauf, informativ zu sein und dem Leser zu helfen, zu verstehen, was er nicht sehen kann.
+    Geben Sie **NICHT** Informationen an, sondern verweisen Sie nur auf das, was Sie auf dem Bild sehen können.
+    Schreiben Sie Ihre Antwort in der GLEICHEN Sprache wie der Kontexttext und der Bildtext.
+  user_text: |
+    Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann.
+  surrounding_text: |
+    Kontext aus dem Dokument, der dieses Bild umgibt:

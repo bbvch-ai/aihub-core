@@ -10,9 +10,7 @@ def doc_with_figures_to_ref_doc(
     data_lake_file: DataLakeFile,
     doc_with_figures: DocumentWithFigureInfo,
 ) -> RefDocDocument:
-    """
-    Turns a DocumentWithFigureInfo into a RefDocDocument
-    """
+    """Turns a DocumentWithFigureInfo into a RefDocDocument."""
 
     ref_doc = RefDocDocument(**doc_with_figures.dict())
     ref_doc.add_metadata_from_data_lake_file(data_lake_file)

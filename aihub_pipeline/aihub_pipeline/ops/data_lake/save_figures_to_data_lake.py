@@ -19,12 +19,10 @@ def save_figures_to_data_lake(
     data_lake_client: ResourceParam[FileSystemClient],
     data_lake_file_system: ResourceParam[AbstractFileSystem],
 ) -> FigureMetadata:
-    """
-    Extracts and saves raw figure data to Azure Data Lake using BlobServiceClient.
-    """
+    """Extracts and saves raw figure data to Azure Data Lake using BlobServiceClient."""
     if doc_with_figures.operation_id is None and len(doc_with_figures.figure_ids) < 1:
         context.log.info("No figures found, skip saving to data lake.")
-        return FigureMetadata(figure_paths=None, figure_urls=None, container_name=None)
+        return FigureMetadata(figure_paths=None, figure_urls=None)
 
     document_intelligence_client = DocumentIntelligenceAccess().get_client()
     figure_paths, figure_urls = [], []
@@ -34,14 +32,13 @@ def save_figures_to_data_lake(
 
     for idx, figure_id in enumerate(doc_with_figures.figure_ids):
         try:
-            # Get the raw figure data using the specified approach
+
             response = document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",
                 result_id=doc_with_figures.operation_id,
                 figure_id=figure_id,
             )
 
-            # Combine all chunks of the response
             response_bytes = bytes()
             for chunk in response:
                 response_bytes += chunk
@@ -57,7 +54,7 @@ def save_figures_to_data_lake(
 
         except Exception as e:
             context.log.error(f"Failed to save figure {idx + 1}: {str(e)}\n\n with path {blob_path}")
-            # Log the full exception for debugging
+
             context.log.error(f"Exception details: {type(e).__name__}: {str(e)}")
 
     metadata = FigureMetadata(figure_paths=figure_paths, figure_urls=figure_urls)
