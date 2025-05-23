@@ -1213,7 +1213,7 @@ export type EvaluationData = {
      */
     score: number;
     /**
-     * Explenation given by Judge LLM.
+     * Explanation given by Judge LLM.
      */
     explanation?: string | null;
     /**

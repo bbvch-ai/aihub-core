@@ -24,7 +24,7 @@ class EvaluationData(BaseModel):
     name: Annotated[str, Field(description="Name of the evaluator.")]
     annotator_kind: Annotated[Literal["LLM", "Code"], Field(description="Kind of evaluator, either LLM or Code.")]
     score: Annotated[float, Field(description="Score between 0 and 1.")]
-    explanation: Annotated[Optional[str], Field(description="Explenation given by Judge LLM.")] = None
+    explanation: Annotated[Optional[str], Field(description="Explanation given by Judge LLM.")] = None
     error: Annotated[Optional[str], Field(description="Error message if the task run failed.")] = None
 
 

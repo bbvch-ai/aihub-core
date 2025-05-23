@@ -3207,7 +3207,7 @@ export const EvaluationDataSchema = {
                 }
             ],
             title: 'Explanation',
-            description: 'Explenation given by Judge LLM.'
+            description: 'Explanation given by Judge LLM.'
         },
         error: {
             anyOf: [
