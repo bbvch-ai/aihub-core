@@ -11,16 +11,6 @@ from pydantic import BaseModel, Field, computed_field
 from aihub_pipeline.util.id_utils import uri_to_id
 
 
-def _get_current_user():
-    user = os.getenv('USER') or os.getenv('USERNAME')
-    if user:
-        return user
-    try:
-        return os.getlogin()
-    except OSError:
-        return 'pipeline-user'
-
-
 class DataLakeFile(BaseModel):
     """
     A Pydantic model representing a file in Azure Data Lake, including its metadata and optional content.
@@ -121,7 +111,7 @@ class DataLakeFile(BaseModel):
             uri=uri,
             size=size,
             content_type=mimetypes.guess_type(filename)[0] or "application/octet-stream",
-            owner=_get_current_user(),
+            owner=os.getenv('USER') or os.getenv('USERNAME') or 'pipeline-user',
             hash=md5_hash_str,
             created=current_timestamp,
             updated=current_timestamp,
