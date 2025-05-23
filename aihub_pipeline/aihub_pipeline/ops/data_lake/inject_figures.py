@@ -182,8 +182,10 @@ def generate_description(
 
         response = language_model.chat(messages=messages)
 
-        # Parse the response
-        return response.message.content
+        # make it a single paragraph
+        description = response.message.content.replace("\n", " ")
+
+        return description
 
     except Exception as e:
         context.log.error(f"Failed to generate image description: {str(e)}")
