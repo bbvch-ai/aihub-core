@@ -2526,166 +2526,25 @@ export const DashboardItemDTOSchema = {
     title: 'DashboardItemDTO'
 } as const;
 
-export const DatasetSchema = {
+export const DatabaseDTOSchema = {
     properties: {
-        id: {
+        name: {
             type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the dataset in Phoenix.'
+            title: 'Name',
+            description: 'Name of database'
         },
-        dataset_name: {
-            type: 'string',
-            title: 'Dataset Name',
-            description: 'The name of the dataset.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'An optional description for the dataset.'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'The timestamp when the dataset was created.'
-        },
-        updated_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Updated At',
-            description: 'The timestamp when the dataset was last updated.'
-        },
-        items: {
+        namespaces: {
             items: {
-                '$ref': '#/components/schemas/DatasetItem'
+                '$ref': '#/components/schemas/Namespace'
             },
             type: 'array',
-            title: 'Items',
-            description: 'The list of question-answer items in the dataset.'
+            title: 'Namespaces',
+            description: 'List of namespaces'
         }
     },
     type: 'object',
-    required: ['id', 'dataset_name', 'items'],
-    title: 'Dataset'
-} as const;
-
-export const DatasetCreateSchema = {
-    properties: {
-        dataset_name: {
-            type: 'string',
-            minLength: 1,
-            title: 'Dataset Name',
-            description: 'The name for the new dataset.'
-        },
-        items: {
-            items: {
-                '$ref': '#/components/schemas/DatasetItemCreate'
-            },
-            type: 'array',
-            title: 'Items',
-            description: 'A list of question-answer items to include in the dataset.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'An optional description for the dataset.'
-        }
-    },
-    type: 'object',
-    required: ['dataset_name', 'items'],
-    title: 'DatasetCreate'
-} as const;
-
-export const DatasetItemSchema = {
-    properties: {
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'The unique identifier for the dataset item, managed by Phoenix.'
-        },
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'The input question for the agent evaluation.'
-        },
-        answer: {
-            type: 'string',
-            title: 'Answer',
-            description: 'The reference (expected) answer for the question.'
-        }
-    },
-    type: 'object',
-    required: ['question', 'answer'],
-    title: 'DatasetItem'
-} as const;
-
-export const DatasetItemCreateSchema = {
-    properties: {
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'The input question for the agent evaluation.'
-        },
-        answer: {
-            type: 'string',
-            title: 'Answer',
-            description: 'The reference (expected) answer for the question.'
-        }
-    },
-    type: 'object',
-    required: ['question', 'answer'],
-    title: 'DatasetItemCreate'
-} as const;
-
-export const DatasetUpdateSchema = {
-    properties: {
-        items: {
-            items: {
-                '$ref': '#/components/schemas/DatasetItemCreate'
-            },
-            type: 'array',
-            title: 'Items',
-            description: 'The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.'
-        }
-    },
-    type: 'object',
-    required: ['items'],
-    title: 'DatasetUpdate'
+    required: ['name', 'namespaces'],
+    title: 'DatabaseDTO'
 } as const;
 
 export const DisplayEventSchema = {
@@ -2854,56 +2713,6 @@ export const DisplayStatisticsSchema = {
     required: ['display_id'],
     title: 'DisplayStatistics',
     description: 'Statistics for a display, including its runs, intended for API response.'
-} as const;
-
-export const DocumentSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique identifier for the document.'
-        },
-        score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Score',
-            description: 'Score representing the relevance of the document.'
-        },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'Content of the document.'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Optional metadata associated with the document as a dictionary.'
-        }
-    },
-    type: 'object',
-    required: ['id'],
-    title: 'Document'
 } as const;
 
 export const EdgeDataSchema = {
@@ -3208,84 +3017,6 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
-export const EvaluationDataSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'Name of the evaluator.'
-        },
-        annotator_kind: {
-            type: 'string',
-            enum: ['LLM', 'Code'],
-            title: 'Annotator Kind',
-            description: 'Kind of evaluator, either LLM or Code.'
-        },
-        score: {
-            type: 'number',
-            title: 'Score',
-            description: 'Score between 0 and 1.'
-        },
-        explanation: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Explanation',
-            description: 'Explenation given by Judge LLM.'
-        },
-        error: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Error',
-            description: 'Error message if the task run failed.'
-        }
-    },
-    type: 'object',
-    required: ['name', 'annotator_kind', 'score'],
-    title: 'EvaluationData'
-} as const;
-
-export const EvaluationSummaryDataSchema = {
-    properties: {
-        evaluator: {
-            type: 'string',
-            title: 'Evaluator',
-            description: 'Name of the evaluator.'
-        },
-        n: {
-            type: 'integer',
-            title: 'N',
-            description: 'Number of items evaluated.'
-        },
-        avg_score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Avg Score',
-            description: 'Average score from this evaluator.'
-        }
-    },
-    type: 'object',
-    required: ['evaluator', 'n'],
-    title: 'EvaluationSummaryData'
-} as const;
-
 export const EventBucketSchema = {
     properties: {
         start_time: {
@@ -3544,268 +3275,6 @@ provides a unified way to:
 By appearing as both a control and display event, \`ExceptionEvent\` ensures that the workflow
 can stop further processing while also making the error visible in UI dashboards, logs, or
 monitoring tools—giving operators and developers immediate insight into what went wrong.`
-} as const;
-
-export const ExperimentSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment in Phoenix.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        agent: {
-            '$ref': '#/components/schemas/MinimalAgentDTO',
-            description: 'Agent that was evaluated'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'Timestamp of when the experiment data was recorded or fetched.'
-        },
-        dataset: {
-            '$ref': '#/components/schemas/MinimalDataset',
-            description: 'The dataset associated with this experiment.'
-        },
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale of the experiment.'
-        },
-        conciseness: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How concise is the answer'
-        },
-        correctness: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How correct is the answer'
-        },
-        completeness: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How complete is the answer'
-        },
-        items: {
-            items: {
-                '$ref': '#/components/schemas/ExperimentRunRecord'
-            },
-            type: 'array',
-            title: 'Items',
-            description: 'Detailed records of each run within the experiment, including inputs, outputs, and evaluations.'
-        }
-    },
-    type: 'object',
-    required: ['id', 'name', 'agent', 'dataset', 'locale'],
-    title: 'Experiment'
-} as const;
-
-export const ExperimentCreateSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The class name of the agent to be evaluated.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The specific ID of the agent instance to be evaluated.'
-        },
-        dataset_id: {
-            type: 'string',
-            title: 'Dataset Id',
-            description: 'The ID of the Phoenix dataset to use for evaluation.'
-        },
-        experiment_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Experiment Name',
-            description: 'An optional custom name for the Phoenix experiment. If not provided, a name will be generated.'
-        },
-        experiment_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Experiment Description',
-            description: 'An optional description for the Phoenix experiment.'
-        },
-        experiment_metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Experiment Metadata',
-            description: 'Optional metadata to associate with the Phoenix experiment.'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'dataset_id'],
-    title: 'ExperimentCreate'
-} as const;
-
-export const ExperimentRunRecordSchema = {
-    properties: {
-        example_id: {
-            type: 'string',
-            title: 'Example Id',
-            description: 'ID of the dataset example for this run.'
-        },
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'Input question.'
-        },
-        reference_answer: {
-            type: 'string',
-            title: 'Reference Answer',
-            description: 'Expected answer for this example.'
-        },
-        assistant_answer: {
-            type: 'string',
-            title: 'Assistant Answer',
-            description: 'Response given by assistant.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id'
-        },
-        error: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Error',
-            description: 'Error message if the task run failed.'
-        },
-        latency_ms: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Latency Ms',
-            description: 'Latency of the task run in milliseconds.'
-        },
-        start_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Start Time',
-            description: 'Start time of the task run.'
-        },
-        end_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'End Time',
-            description: 'End time of the task run.'
-        },
-        conciseness: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/EvaluationData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How concise is the answer'
-        },
-        correctness: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/EvaluationData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How correct is the answer'
-        },
-        completeness: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/EvaluationData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How complete is the answer'
-        }
-    },
-    type: 'object',
-    required: ['example_id', 'question', 'reference_answer', 'assistant_answer', 'thread_id', 'display_id', 'start_time', 'end_time'],
-    title: 'ExperimentRunRecord'
 } as const;
 
 export const FileSchema = {
@@ -4458,6 +3927,380 @@ export const ImagesResponseSchema = {
     type: 'object',
     required: ['created'],
     title: 'ImagesResponse'
+} as const;
+
+export const IngestedDocumentSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['de', 'en', 'fr', 'it']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language',
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the document.'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'Content of the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
+    title: 'IngestedDocument',
+    description: `Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
+representation of a document that was ingested through a pipeline. Hence, compared to the default data,
+we also have an ID and content that was parsed from the original file.`
+} as const;
+
+export const IngestedNodeSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['de', 'en', 'fr', 'it']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language',
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the Node.'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The textual content of the Node.'
+        },
+        content_type: {
+            type: 'string',
+            enum: ['content', 'summary'],
+            title: 'Content Type',
+            description: 'Content type (content or summary).',
+            default: 'content'
+        },
+        document_id: {
+            type: 'string',
+            title: 'Document Id',
+            description: 'ID of original ref_doc.'
+        },
+        start_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Char Idx',
+            description: 'The start character index of the Node.'
+        },
+        end_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Char Idx',
+            description: 'The end character index of the Node.'
+        },
+        index: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Index',
+            description: 'Index counting position of node in document'
+        },
+        section_start_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section Start Line',
+            description: 'Start line of the node in document'
+        },
+        section_end_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section End Line',
+            description: 'End line of the node in document'
+        },
+        h1: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H1',
+            description: 'H1 of the node in document'
+        },
+        h2: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H2',
+            description: 'H2 of the node in document'
+        },
+        h3: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H3',
+            description: 'H3 of the node in document'
+        },
+        h4: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H4',
+            description: 'H4 of the node in document'
+        },
+        h5: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H5',
+            description: 'H5 of the node in document'
+        },
+        h6: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H6',
+            description: 'H6 of the node in document'
+        },
+        heading_level: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    enum: [0, 1, 2, 3, 4, 5, 6]
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Heading Level',
+            description: 'Heading level of the node in document'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score representing the relevance of the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
+    title: 'IngestedNode',
+    description: `A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+The attributes defined here are the minimal number of attributes that a node must have to ensure the
+UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+are strictly necessary.`
 } as const;
 
 export const InputAudioSchema = {
@@ -5579,118 +5422,6 @@ export const MinimalAgentDTOSchema = {
 Only contains minimal information about the agent.`
 } as const;
 
-export const MinimalDatasetSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the dataset in Phoenix.'
-        },
-        dataset_name: {
-            type: 'string',
-            title: 'Dataset Name',
-            description: 'The name of the dataset.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'An optional description for the dataset.'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'The timestamp when the dataset was created.'
-        },
-        updated_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Updated At',
-            description: 'The timestamp when the dataset was last updated.'
-        }
-    },
-    type: 'object',
-    required: ['id', 'dataset_name'],
-    title: 'MinimalDataset'
-} as const;
-
-export const MinimalExperimentSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment in Phoenix.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        agent: {
-            '$ref': '#/components/schemas/MinimalAgentDTO',
-            description: 'Agent that was evaluated'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'Timestamp of when the experiment data was recorded or fetched.'
-        },
-        dataset: {
-            '$ref': '#/components/schemas/MinimalDataset',
-            description: 'The dataset associated with this experiment.'
-        },
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale of the experiment.'
-        }
-    },
-    type: 'object',
-    required: ['id', 'name', 'agent', 'dataset', 'locale'],
-    title: 'MinimalExperiment'
-} as const;
-
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -5805,6 +5536,44 @@ export const MyUserDTOSchema = {
     title: 'MyUserDTO'
 } as const;
 
+export const NamespaceSchema = {
+    properties: {
+        database: {
+            type: 'string',
+            title: 'Database',
+            description: 'Name of database that the namespace belongs to'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of namespace'
+        },
+        number_of_documents: {
+            type: 'integer',
+            title: 'Number Of Documents',
+            description: 'Number of documents in namespace'
+        },
+        last_updated_at: {
+            type: 'integer',
+            title: 'Last Updated At',
+            description: 'Latest timestamp when any document in the namespace was updated'
+        },
+        last_inserted_at: {
+            type: 'integer',
+            title: 'Last Inserted At',
+            description: 'Latest timestamp when any document in the namespace was inserted'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Oldest timestamp when any document in the namespace was created'
+        }
+    },
+    type: 'object',
+    required: ['database', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
+    title: 'Namespace'
+} as const;
+
 export const NodeDataSchema = {
     properties: {
         id: {
@@ -5910,6 +5679,63 @@ export const NodeDataSchema = {
     required: ['id', 'type', 'node_id', 'label'],
     title: 'NodeData',
     description: 'Data for a node in the workflow graph.'
+} as const;
+
+export const NodeSummaryDTOSchema = {
+    properties: {
+        level: {
+            type: 'integer',
+            title: 'Level',
+            description: 'Level of the summary'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/IngestedNode'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'List of nodes in the summary'
+        }
+    },
+    type: 'object',
+    required: ['level', 'nodes'],
+    title: 'NodeSummaryDTO'
+} as const;
+
+export const PaginatedDocumentsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        documents: {
+            items: {
+                '$ref': '#/components/schemas/IngestedDocument'
+            },
+            type: 'array',
+            title: 'Documents',
+            description: 'List of Document DTOs objects for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'documents'],
+    title: 'PaginatedDocumentsResponse'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -6116,11 +5942,11 @@ export const RerankerEventSchema = {
             '$ref': '#/components/schemas/LocaleString',
             description: 'Display description for the event'
         },
-        input_documents: {
+        input_nodes: {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Document'
+                        '$ref': '#/components/schemas/IngestedNode'
                     },
                     type: 'array'
                 },
@@ -6128,14 +5954,14 @@ export const RerankerEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Documents',
+            title: 'Input Nodes',
             description: 'List of input documents provided to the reranker.'
         },
-        output_documents: {
+        output_nodes: {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Document'
+                        '$ref': '#/components/schemas/IngestedNode'
                     },
                     type: 'array'
                 },
@@ -6143,7 +5969,7 @@ export const RerankerEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Documents',
+            title: 'Output Nodes',
             description: 'List of documents outputted by the reranker.'
         },
         query: {
@@ -6272,11 +6098,11 @@ export const RetrieverEventSchema = {
             '$ref': '#/components/schemas/LocaleString',
             description: 'Display description for the event'
         },
-        documents: {
+        nodes: {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Document'
+                        '$ref': '#/components/schemas/IngestedNode'
                     },
                     type: 'array'
                 },
@@ -6284,8 +6110,8 @@ export const RetrieverEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Documents',
-            description: 'List of documents retrieved by the retriever, including document IDs, scores, and content.'
+            title: 'Nodes',
+            description: 'List of nodes retrieved by the retriever, including document IDs, scores, and content.'
         },
         _event_name: {
             type: 'string',

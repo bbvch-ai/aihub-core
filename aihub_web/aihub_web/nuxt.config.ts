@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     '@pinia/colada-nuxt',
     '@primevue/nuxt-module',
     '@nuxt/eslint',
+    '@nuxtjs/mdc',
   ],
 
   ssr: false,

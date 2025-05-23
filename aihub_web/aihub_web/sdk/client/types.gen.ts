@@ -868,79 +868,15 @@ export type DashboardItemDto = {
     event?: string | null;
 };
 
-export type Dataset = {
+export type DatabaseDto = {
     /**
-     * The unique identifier of the dataset in Phoenix.
+     * Name of database
      */
-    id: string;
+    name: string;
     /**
-     * The name of the dataset.
+     * List of namespaces
      */
-    dataset_name: string;
-    /**
-     * An optional description for the dataset.
-     */
-    description?: string | null;
-    /**
-     * The timestamp when the dataset was created.
-     */
-    created_at?: Date | null;
-    /**
-     * The timestamp when the dataset was last updated.
-     */
-    updated_at?: Date | null;
-    /**
-     * The list of question-answer items in the dataset.
-     */
-    items: Array<DatasetItem>;
-};
-
-export type DatasetCreate = {
-    /**
-     * The name for the new dataset.
-     */
-    dataset_name: string;
-    /**
-     * A list of question-answer items to include in the dataset.
-     */
-    items: Array<DatasetItemCreate>;
-    /**
-     * An optional description for the dataset.
-     */
-    description?: string | null;
-};
-
-export type DatasetItem = {
-    /**
-     * The unique identifier for the dataset item, managed by Phoenix.
-     */
-    id?: string | null;
-    /**
-     * The input question for the agent evaluation.
-     */
-    question: string;
-    /**
-     * The reference (expected) answer for the question.
-     */
-    answer: string;
-};
-
-export type DatasetItemCreate = {
-    /**
-     * The input question for the agent evaluation.
-     */
-    question: string;
-    /**
-     * The reference (expected) answer for the question.
-     */
-    answer: string;
-};
-
-export type DatasetUpdate = {
-    /**
-     * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
-     */
-    items: Array<DatasetItemCreate>;
+    namespaces: Array<Namespace>;
 };
 
 /**
@@ -1044,27 +980,6 @@ export type DisplayStatistics = {
      * Runs in this display, sorted by start time
      */
     runs?: Array<RunStatistics>;
-};
-
-export type Document = {
-    /**
-     * Unique identifier for the document.
-     */
-    id: string;
-    /**
-     * Score representing the relevance of the document.
-     */
-    score?: number | null;
-    /**
-     * Content of the document.
-     */
-    content?: string | null;
-    /**
-     * Optional metadata associated with the document as a dictionary.
-     */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
 };
 
 /**
@@ -1207,44 +1122,6 @@ export type EmbeddingsResponse = {
      * The list of embeddings.
      */
     data: Array<Embeddings>;
-};
-
-export type EvaluationData = {
-    /**
-     * Name of the evaluator.
-     */
-    name: string;
-    /**
-     * Kind of evaluator, either LLM or Code.
-     */
-    annotator_kind: 'LLM' | 'Code';
-    /**
-     * Score between 0 and 1.
-     */
-    score: number;
-    /**
-     * Explenation given by Judge LLM.
-     */
-    explanation?: string | null;
-    /**
-     * Error message if the task run failed.
-     */
-    error?: string | null;
-};
-
-export type EvaluationSummaryData = {
-    /**
-     * Name of the evaluator.
-     */
-    evaluator: string;
-    /**
-     * Number of items evaluated.
-     */
-    n: number;
-    /**
-     * Average score from this evaluator.
-     */
-    avg_score?: number | null;
 };
 
 /**
@@ -1411,131 +1288,6 @@ export type ExceptionEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
-};
-
-export type Experiment = {
-    /**
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentDto;
-    /**
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * The locale of the experiment.
-     */
-    locale: string;
-    /**
-     * How concise is the answer
-     */
-    conciseness?: EvaluationSummaryData | null;
-    /**
-     * How correct is the answer
-     */
-    correctness?: EvaluationSummaryData | null;
-    /**
-     * How complete is the answer
-     */
-    completeness?: EvaluationSummaryData | null;
-    /**
-     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
-     */
-    items?: Array<ExperimentRunRecord>;
-};
-
-export type ExperimentCreate = {
-    /**
-     * The class name of the agent to be evaluated.
-     */
-    agent_class: string;
-    /**
-     * The specific ID of the agent instance to be evaluated.
-     */
-    agent_id: string;
-    /**
-     * The ID of the Phoenix dataset to use for evaluation.
-     */
-    dataset_id: string;
-    /**
-     * An optional custom name for the Phoenix experiment. If not provided, a name will be generated.
-     */
-    experiment_name?: string | null;
-    /**
-     * An optional description for the Phoenix experiment.
-     */
-    experiment_description?: string | null;
-    /**
-     * Optional metadata to associate with the Phoenix experiment.
-     */
-    experiment_metadata?: {
-        [key: string]: unknown;
-    } | null;
-};
-
-export type ExperimentRunRecord = {
-    /**
-     * ID of the dataset example for this run.
-     */
-    example_id: string;
-    /**
-     * Input question.
-     */
-    question: string;
-    /**
-     * Expected answer for this example.
-     */
-    reference_answer: string;
-    /**
-     * Response given by assistant.
-     */
-    assistant_answer: string;
-    thread_id: string;
-    display_id: string;
-    /**
-     * Error message if the task run failed.
-     */
-    error?: string | null;
-    /**
-     * Latency of the task run in milliseconds.
-     */
-    latency_ms?: number | null;
-    /**
-     * Start time of the task run.
-     */
-    start_time: Date;
-    /**
-     * End time of the task run.
-     */
-    end_time: Date;
-    /**
-     * How concise is the answer
-     */
-    conciseness?: EvaluationData | null;
-    /**
-     * How correct is the answer
-     */
-    correctness?: EvaluationData | null;
-    /**
-     * How complete is the answer
-     */
-    completeness?: EvaluationData | null;
 };
 
 export type File = {
@@ -1793,6 +1545,181 @@ export type ImagesResponse = {
     data?: Array<Image> | null;
     usage?: Usage | null;
     [key: string]: unknown | number | (Array<Image> | null) | (Usage | null) | undefined;
+};
+
+/**
+ * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
+ * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
+ * we also have an ID and content that was parsed from the original file.
+ */
+export type IngestedDocument = {
+    /**
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * Unique identifier for the document.
+     */
+    id: string;
+    /**
+     * Content of the document.
+     */
+    content?: string;
+};
+
+/**
+ * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+ * The attributes defined here are the minimal number of attributes that a node must have to ensure the
+ * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+ * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+ * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+ * are strictly necessary.
+ */
+export type IngestedNode = {
+    /**
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * The unique identifier of the Node.
+     */
+    id: string;
+    /**
+     * The textual content of the Node.
+     */
+    content: string;
+    /**
+     * Content type (content or summary).
+     */
+    content_type?: 'content' | 'summary';
+    /**
+     * ID of original ref_doc.
+     */
+    document_id: string;
+    /**
+     * The start character index of the Node.
+     */
+    start_char_idx?: number | null;
+    /**
+     * The end character index of the Node.
+     */
+    end_char_idx?: number | null;
+    /**
+     * Index counting position of node in document
+     */
+    index?: number | null;
+    /**
+     * Start line of the node in document
+     */
+    section_start_line?: number | null;
+    /**
+     * End line of the node in document
+     */
+    section_end_line?: number | null;
+    /**
+     * H1 of the node in document
+     */
+    h1?: string | null;
+    /**
+     * H2 of the node in document
+     */
+    h2?: string | null;
+    /**
+     * H3 of the node in document
+     */
+    h3?: string | null;
+    /**
+     * H4 of the node in document
+     */
+    h4?: string | null;
+    /**
+     * H5 of the node in document
+     */
+    h5?: string | null;
+    /**
+     * H6 of the node in document
+     */
+    h6?: string | null;
+    /**
+     * Heading level of the node in document
+     */
+    heading_level?: (0 | 1 | 2 | 3 | 4 | 5 | 6) | null;
+    /**
+     * Score representing the relevance of the document.
+     */
+    score?: number | null;
 };
 
 export type InputAudio = {
@@ -2290,60 +2217,6 @@ export type MinimalAgentDto = {
     is_conversational: boolean;
 };
 
-export type MinimalDataset = {
-    /**
-     * The unique identifier of the dataset in Phoenix.
-     */
-    id: string;
-    /**
-     * The name of the dataset.
-     */
-    dataset_name: string;
-    /**
-     * An optional description for the dataset.
-     */
-    description?: string | null;
-    /**
-     * The timestamp when the dataset was created.
-     */
-    created_at?: Date | null;
-    /**
-     * The timestamp when the dataset was last updated.
-     */
-    updated_at?: Date | null;
-};
-
-export type MinimalExperiment = {
-    /**
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentDto;
-    /**
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * The locale of the experiment.
-     */
-    locale: string;
-};
-
 export type ModelDetails = {
     /**
      * The ID of the model.
@@ -2405,6 +2278,33 @@ export type MyUserDto = {
     roles?: Array<string>;
 };
 
+export type Namespace = {
+    /**
+     * Name of database that the namespace belongs to
+     */
+    database: string;
+    /**
+     * Name of namespace
+     */
+    name: string;
+    /**
+     * Number of documents in namespace
+     */
+    number_of_documents: number;
+    /**
+     * Latest timestamp when any document in the namespace was updated
+     */
+    last_updated_at: number;
+    /**
+     * Latest timestamp when any document in the namespace was inserted
+     */
+    last_inserted_at: number;
+    /**
+     * Oldest timestamp when any document in the namespace was created
+     */
+    created_at: number;
+};
+
 /**
  * Data for a node in the workflow graph.
  */
@@ -2451,6 +2351,40 @@ export type NodeData = {
      * Whether workflow should stop on error in this node
      */
     stop_on_error?: boolean | null;
+};
+
+export type NodeSummaryDto = {
+    /**
+     * Level of the summary
+     */
+    level: number;
+    /**
+     * List of nodes in the summary
+     */
+    nodes: Array<IngestedNode>;
+};
+
+export type PaginatedDocumentsResponse = {
+    /**
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * List of Document DTOs objects for the current page
+     */
+    documents: Array<IngestedDocument>;
 };
 
 export type PaginatedThreadsResponse = {
@@ -2552,11 +2486,11 @@ export type RerankerEvent = {
     /**
      * List of input documents provided to the reranker.
      */
-    input_documents?: Array<Document> | null;
+    input_nodes?: Array<IngestedNode> | null;
     /**
      * List of documents outputted by the reranker.
      */
-    output_documents?: Array<Document> | null;
+    output_nodes?: Array<IngestedNode> | null;
     /**
      * The query string used by the reranker.
      */
@@ -2578,7 +2512,7 @@ export type RerankerEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
 export type Resolution = '1m' | '1h' | '1d' | '1w';
@@ -2618,9 +2552,9 @@ export type RetrieverEvent = {
      */
     display_description?: LocaleString;
     /**
-     * List of documents retrieved by the retriever, including document IDs, scores, and content.
+     * List of nodes retrieved by the retriever, including document IDs, scores, and content.
      */
-    documents?: Array<Document> | null;
+    nodes?: Array<IngestedNode> | null;
     /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -2630,7 +2564,7 @@ export type RetrieverEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | Array<string> | undefined;
 };
 
 export type RevokeTokenResponse = {
@@ -4292,177 +4226,145 @@ export type CreateSpeechResponses = {
     200: unknown;
 };
 
-export type GetDatasetsData = {
+export type GetDatabasesData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/evaluation/dataset';
+    url: '/knowledge/databases';
 };
 
-export type GetDatasetsResponses = {
+export type GetDatabasesResponses = {
     /**
      * Successful Response
      */
-    200: Array<MinimalDataset>;
+    200: Array<DatabaseDto>;
 };
 
-export type GetDatasetsResponse = GetDatasetsResponses[keyof GetDatasetsResponses];
+export type GetDatabasesResponse = GetDatabasesResponses[keyof GetDatabasesResponses];
 
-export type CreateDatasetData = {
-    body: DatasetCreate;
-    path?: never;
-    query?: never;
-    url: '/evaluation/dataset';
-};
-
-export type CreateDatasetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateDatasetError = CreateDatasetErrors[keyof CreateDatasetErrors];
-
-export type CreateDatasetResponses = {
-    /**
-     * Successful Response
-     */
-    200: Dataset;
-};
-
-export type CreateDatasetResponse = CreateDatasetResponses[keyof CreateDatasetResponses];
-
-export type GetDatasetData = {
+export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
-        /**
-         * The unique identifier of the dataset to retrieve.
-         */
-        dataset_id: string;
+        database: string;
+        namespace: string;
     };
-    query?: never;
-    url: '/evaluation/dataset/{dataset_id}';
+    query?: {
+        /**
+         * Page number to retrieve (starting from 1)
+         */
+        page?: number;
+        /**
+         * Number of items per page (maximum 100)
+         */
+        page_size?: number;
+    };
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
 
-export type GetDatasetErrors = {
+export type GetDocumentsForNamespaceErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetDatasetError = GetDatasetErrors[keyof GetDatasetErrors];
+export type GetDocumentsForNamespaceError = GetDocumentsForNamespaceErrors[keyof GetDocumentsForNamespaceErrors];
 
-export type GetDatasetResponses = {
+export type GetDocumentsForNamespaceResponses = {
     /**
      * Successful Response
      */
-    200: Dataset;
+    200: PaginatedDocumentsResponse;
 };
 
-export type GetDatasetResponse = GetDatasetResponses[keyof GetDatasetResponses];
+export type GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponses[keyof GetDocumentsForNamespaceResponses];
 
-export type UpdateDatasetData = {
-    body: DatasetUpdate;
-    path: {
-        /**
-         * The unique identifier of the dataset to update.
-         */
-        dataset_id: string;
-    };
-    query?: never;
-    url: '/evaluation/dataset/{dataset_id}';
-};
-
-export type UpdateDatasetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateDatasetError = UpdateDatasetErrors[keyof UpdateDatasetErrors];
-
-export type UpdateDatasetResponses = {
-    /**
-     * Successful Response
-     */
-    200: Dataset;
-};
-
-export type UpdateDatasetResponse = UpdateDatasetResponses[keyof UpdateDatasetResponses];
-
-export type GetExperimentData = {
+export type GetDocumentByIdData = {
     body?: never;
     path: {
-        /**
-         * The unique identifier of the experiment to retrieve.
-         */
-        experiment_id: string;
+        database: string;
+        namespace: string;
+        document_id: string;
     };
     query?: never;
-    url: '/evaluation/experiments/{experiment_id}';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
 };
 
-export type GetExperimentErrors = {
+export type GetDocumentByIdErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetExperimentError = GetExperimentErrors[keyof GetExperimentErrors];
+export type GetDocumentByIdError = GetDocumentByIdErrors[keyof GetDocumentByIdErrors];
 
-export type GetExperimentResponses = {
+export type GetDocumentByIdResponses = {
     /**
      * Successful Response
      */
-    200: Experiment;
+    200: IngestedDocument;
 };
 
-export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentResponses];
+export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
 
-export type GetExperimentsData = {
+export type GetNodesForDocumentData = {
     body?: never;
-    path?: never;
+    path: {
+        database: string;
+        namespace: string;
+        document_id: string;
+    };
     query?: never;
-    url: '/evaluation/experiments';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes';
 };
 
-export type GetExperimentsResponses = {
-    /**
-     * Successful Response
-     */
-    200: Array<MinimalExperiment>;
-};
-
-export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperimentsResponses];
-
-export type RunExperimentData = {
-    body: ExperimentCreate;
-    path?: never;
-    query?: never;
-    url: '/evaluation/experiments';
-};
-
-export type RunExperimentErrors = {
+export type GetNodesForDocumentErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type RunExperimentError = RunExperimentErrors[keyof RunExperimentErrors];
+export type GetNodesForDocumentError = GetNodesForDocumentErrors[keyof GetNodesForDocumentErrors];
 
-export type RunExperimentResponses = {
+export type GetNodesForDocumentResponses = {
     /**
      * Successful Response
      */
-    200: Experiment;
+    200: Array<IngestedNode>;
 };
 
-export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
+export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof GetNodesForDocumentResponses];
+
+export type GetSummaryNodesForDocumentData = {
+    body?: never;
+    path: {
+        database: string;
+        namespace: string;
+        document_id: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries';
+};
+
+export type GetSummaryNodesForDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSummaryNodesForDocumentError = GetSummaryNodesForDocumentErrors[keyof GetSummaryNodesForDocumentErrors];
+
+export type GetSummaryNodesForDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<NodeSummaryDto>;
+};
+
+export type GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponses[keyof GetSummaryNodesForDocumentResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

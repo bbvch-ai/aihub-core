@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    title="Workflow"
+    :title="t('agent.workflow.title')"
     close-route="/admin/agent"
     :loading="agentIsLoading"
   >
@@ -15,4 +15,5 @@
 
 <script setup lang="ts">
 const { agent, agentIsLoading } = useAgent()
+const { t } = useI18n()
 </script>

@@ -9,6 +9,7 @@ from llama_index.core.schema import Document
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
+from aihub_lib.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
 
 
 class DocumentIntelligenceLoader(BaseReader):
@@ -32,7 +33,7 @@ class DocumentIntelligenceLoader(BaseReader):
                 output_content_format=DocumentContentFormat.MARKDOWN,
             )
         result: AnalyzeResult = poller.result()
-        metadata = {"number_of_pages": len(result.pages)}
+        metadata = {NUMBER_OF_PAGES: len(result.pages)}
         return [
             Document(
                 text=result.content,

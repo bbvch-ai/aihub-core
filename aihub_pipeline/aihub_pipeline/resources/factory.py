@@ -23,6 +23,7 @@ from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import MongoD
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
 from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import AzureAISearchVectorStoreResource
+from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import MilvusVectorStoreResource
 
 
 def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[str, ConfigurableResourceFactory]:
@@ -41,23 +42,69 @@ def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[
     }
 
 
-def mongo_aisearch_storage_context_resources(
-    vector_store_name: str,
+def mongo_document_store_resource(
     document_store_name: str,
     namespace_name: str,
-    dimensions: int = 3072,
 ) -> Dict[str, ConfigurableResourceFactory]:
-    vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name, dimensions=dimensions)
-    doc_store = MongoDocumentStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
-    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
+    doc_store = MongoDocumentStoreResource(document_store_name=document_store_name)
     doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
     doc_store_resource = DocStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
     return {
         "doc_store": doc_store,
-        "vector_store": vector_store,
         "doc_store_io_manager": doc_store_io_manager,
-        "vector_store_io_manager": vector_store_io_manager,
         "doc_store_resource": doc_store_resource,
+    }
+
+
+def aisearch_vector_store_resource(
+    vector_store_name: str,
+    dimensions: int = 3072,
+) -> Dict[str, ConfigurableResourceFactory]:
+    vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name, dimensions=dimensions)
+    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
+    return {
+        "vector_store": vector_store,
+        "vector_store_io_manager": vector_store_io_manager,
+    }
+
+
+def milvus_vector_store_resource(
+    vector_store_uri: str,
+    vector_store_name: str,
+    dimensions: int = 3072,
+) -> Dict[str, ConfigurableResourceFactory]:
+    vector_store = MilvusVectorStoreResource(
+        uri=vector_store_uri, collection_name=vector_store_name, embedding_vector_dimension=dimensions
+    )
+    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
+    return {
+        "vector_store": vector_store,
+        "vector_store_io_manager": vector_store_io_manager,
+    }
+
+
+def mongo_aisearch_storage_context_resources(
+    store_name: str,
+    namespace_name: str,
+    dimensions: int = 3072,
+) -> Dict[str, ConfigurableResourceFactory]:
+    return {
+        **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
+        **aisearch_vector_store_resource(vector_store_name=store_name, dimensions=dimensions),
+    }
+
+
+def local_mongo_milvus_storage_context_resource(
+    vector_store_uri: str,
+    store_name: str,
+    namespace_name: str,
+    dimensions: int = 3072,
+) -> Dict[str, ConfigurableResourceFactory]:
+    return {
+        **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
+        **milvus_vector_store_resource(
+            vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
+        ),
     }
 
 

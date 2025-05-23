@@ -10,6 +10,7 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     generate_rsa_keypair,
@@ -26,7 +27,7 @@ TOKEN_EXPIRY_MINUTES = 10
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db="aihub", host=CosmosAccess().get_connection_string())
+    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
     yield
     disconnect()
 

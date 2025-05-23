@@ -35,11 +35,11 @@ def start_present(agent_runner: AgentTestRunner):
     assert agent_runner.has_start_event, "Agent did not receive start event"
 
 
-@then(parsers.parse('a RetrieverEvent is present that retrieved "{count:d}" documents'))
+@then(parsers.parse('a RetrieverEvent is present that retrieved "{count:d}" nodes'))
 def retrieve_present(agent_runner: AgentTestRunner, count: int):
     assert agent_runner.has_event_of_class(RetrieverEvent), "Agent did not receive retriever event"
-    num_documents = len(agent_runner.get_event_of_class(RetrieverEvent).documents)
-    assert num_documents == count, f"Expected {count} documents, got {num_documents}"
+    num_nodes = len(agent_runner.get_event_of_class(RetrieverEvent).nodes)
+    assert num_nodes == count, f"Expected {count} documents, got {num_nodes}"
 
 
 @then("a RerankerEvent is present")

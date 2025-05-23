@@ -75,6 +75,46 @@ const AIHubPreset = definePreset(Aura, {
       },
     },
   },
+  components: {
+    datatable: {
+      colorScheme: {
+        light: {
+          body: {
+            cell: {
+              selected: {
+                border: {
+                  color: '#ececec',
+                },
+              },
+            },
+          },
+          row: {
+            selected: {
+              background: '#ececec',
+              color: '#0d0d0d',
+            },
+          },
+        },
+        dark: {
+          body: {
+            cell: {
+              selected: {
+                border: {
+                  color: '#262626',
+                },
+              },
+            },
+          },
+          row: {
+            selected: {
+              background: '#262626',
+              color: '#f9f9f9',
+            },
+          },
+        },
+      },
+    },
+  },
 })
 
 export default {
