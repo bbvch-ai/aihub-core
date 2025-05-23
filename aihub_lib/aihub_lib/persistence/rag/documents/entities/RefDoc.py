@@ -47,7 +47,7 @@ class DocumentData(DynamicEmbeddedDocument):
 
 class RefDoc(Document):
     """
-    This RefDoc document is closels modelled after the RefDOc by llama-index. Hence, we can NOT freely change how
+    This RefDoc document is closely modelled after the RefDoc by llama-index. Hence, we can NOT freely change how
     this document is stored in the database. We have some creative freedom over the Metadata, but not at all over the
     DocumentData.
     """
