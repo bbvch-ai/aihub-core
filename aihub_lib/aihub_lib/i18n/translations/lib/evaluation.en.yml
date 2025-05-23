@@ -1,12 +1,10 @@
 judge:
-  # --- Base instructions for the LLM Judge ---
   system_base: |
     You are an impartial and meticulous AI Judge. Your task is to evaluate an AI Assistant's response based on specific criteria.
     You MUST output your evaluation *only* as a JSON object matching the specified Pydantic model: {output_schema}.
     Do not add any text before or after the JSON.
   error_response: '{"score": 0.0, "reasoning": "Evaluation failed due to an error in the judge or input.", "error": true}'
 
-  # --- Correctness Evaluator ---
   correctness:
     system_addon: "Evaluate the AGENT_RESPONSE for its factual correctness based on the REFERENCE_ANSWER to the given QUESTION. A correct response accurately addresses the question and aligns with the reference answer. Penalize hallucinations or inaccuracies. Score 1.0 for perfect, 0.0 for completely wrong."
     user_structure: |
@@ -55,7 +53,6 @@ judge:
           </Response_To_Evaluate>
         assistant: '{"score": 0.0, "reasoning": "The agent provided a completely incorrect author."}'
 
-  # --- Completeness Evaluator ---
   completeness:
     system_addon: "Evaluate if the AGENT_RESPONSE fully addresses all aspects of the QUESTION, both explicit and implicit. Consider if all parts of the question have been answered. Score 1.0 for fully complete, 0.0 for not addressing at all."
     user_structure: |
@@ -99,7 +96,6 @@ judge:
           </Response_To_Evaluate>
         assistant: '{"score": 0.6, "reasoning": "The agent mentioned tomatoes and cheese but missed basil, a key ingredient."}'
 
-  # --- Conciseness Evaluator ---
   conciseness:
     system_addon: "Evaluate if the AGENT_RESPONSE is concise and to the point, avoiding unnecessary verbosity or irrelevant details for the given QUESTION. Focus *only* on conciseness, not correctness or completeness. Score 1.0 for perfectly concise, 0.0 for extremely verbose."
     user_structure: |

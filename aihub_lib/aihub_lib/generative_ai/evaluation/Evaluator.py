@@ -3,11 +3,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, Dict, Optional
 
 import phoenix as px
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
+from bson import ObjectId
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate, RichPromptTemplate
 from nats.aio.client import Client as NATS
@@ -18,6 +14,12 @@ from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResul
 from phoenix.experiments.types import Example as PhoenixExample
 from phoenix.experiments.types import RanExperiment
 from pydantic import BaseModel, Field
+
+from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +90,9 @@ class PhoenixExperimentEvaluator:
 
         messages = [ChatMessage(role=MessageRole.USER, content=question)]
 
+        thread_id = ObjectId()
+        display_id = ObjectId()
+
         json_resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=self.user,
             agent_class=agent_class,
@@ -95,25 +100,35 @@ class PhoenixExperimentEvaluator:
             messages=messages,
             nc=self.nats_client,
             external_event_distributor=self.external_event_distributor,
+            thread_id=thread_id,
+            display_id=display_id,
+            locale=self.t.locale,
         )
         await json_resources.stop_signal.wait()
 
         if json_resources.stop_event and json_resources.stop_event.is_exception_event:
             logger.error(f"Agent interaction error for question '{question}': {json_resources.stop_event.message}")
-            return {"agent_response": "", "error": json_resources.stop_event.message}
+            return {
+                "agent_response": "",
+                "error": json_resources.stop_event.message,
+                "thread_id": str(thread_id),
+                "display_id": str(display_id),
+            }
 
         chat_content: ChatContent = ChatService.build_json_response_content(
             json_resources.chunk_events, json_resources.stop_event
         )
-        return {"agent_response": chat_content.content}
+        return {
+            "agent_response": chat_content.content,
+            "thread_id": str(thread_id),
+            "display_id": str(display_id),
+        }
 
-    def _build_judge_prompt_template(
-        self, evaluator_type: str, user_input_structure: str
-    ) -> RichPromptTemplate:
+    def _build_judge_prompt_template(self, evaluator_type: str, user_input_structure: str) -> RichPromptTemplate:
         """
         Constructs the RichPromptTemplate for the LLM judge using i18n strings.
         """
-        system_base = self.t(f"lib.evaluation.judge.system_base")
+        system_base = self.t("lib.evaluation.judge.system_base")
         system_addon = self.t(f"lib.evaluation.judge.{evaluator_type}.system_addon")
         examples = self.t.t_object(f"lib.evaluation.judge.{evaluator_type}.examples")
 
@@ -162,7 +177,6 @@ class PhoenixExperimentEvaluator:
             explanation=judge_output.reasoning,
             metadata={"judge_had_error": judge_output.error},
         )
-
 
     async def run_evaluation_experiment(
         self,

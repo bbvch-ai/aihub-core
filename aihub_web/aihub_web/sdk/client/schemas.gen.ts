@@ -3725,6 +3725,14 @@ export const ExperimentRunRecordSchema = {
             title: 'Assistant Answer',
             description: 'Response given by assistant.'
         },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id'
+        },
         error: {
             anyOf: [
                 {
@@ -3796,7 +3804,7 @@ export const ExperimentRunRecordSchema = {
         }
     },
     type: 'object',
-    required: ['example_id', 'question', 'reference_answer', 'assistant_answer', 'start_time', 'end_time'],
+    required: ['example_id', 'question', 'reference_answer', 'assistant_answer', 'thread_id', 'display_id', 'start_time', 'end_time'],
     title: 'ExperimentRunRecord'
 } as const;
 

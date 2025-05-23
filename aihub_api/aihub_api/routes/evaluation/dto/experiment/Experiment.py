@@ -33,6 +33,8 @@ class ExperimentRunRecord(BaseModel):
     question: Annotated[str, Field(description="Input question.")]
     reference_answer: Annotated[str, Field(description="Expected answer for this example.")]
     assistant_answer: Annotated[str, Field(description="Response given by assistant.")]
+    thread_id: Annotated[str, "Unique conversation/workflow identifier within the agent instance"]
+    display_id: Annotated[str, "UI-facing grouping ID for events within a thread and run"]
     error: Annotated[Optional[str], Field(description="Error message if the task run failed.")] = None
     latency_ms: Annotated[Optional[float], Field(description="Latency of the task run in milliseconds.")] = None
     start_time: Annotated[datetime, Field(description="Start time of the task run.")]

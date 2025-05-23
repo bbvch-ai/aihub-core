@@ -1,14 +1,15 @@
 test: "Das ist ein Test"
 welcome: "Willkommen im bbv ai-hub"
 
+languages:
+  en: "Englisch"
+  de: "Deutsch"
+  it: "Italienisch"
+  fr: "Französisch"
+
 user:
   logout: "Abmelden"
   language: "Sprache"
-  languages:
-    en: "Englisch"
-    de: "Deutsch"
-    it: "Italienisch"
-    fr: "Französisch"
 
 chat:
   assistant: "Assistent"
@@ -169,3 +170,23 @@ dashboard:
       label: 'In Slack/Teams fragen'
     AgentInTheLoopRequestEvent:
       label: 'Delegierte Aufgaben'
+
+evaluation:
+  dataset:
+    title: "Datensätze"
+    created_at: "Erstellt:"
+    updated_at: "Aktualisiert am:"
+  experiment:
+    title: "Experimente"
+    created_at: "Ausgeführt am:"
+    dataset: "Datensatz"
+    language_and_dataset: "Sprache & Datensatz"
+    language: "Experimentsprache:"
+    result:
+      question: "Frage"
+      reference_answer: "Referenzantwort"
+      assistant_answer: "Assistentenantwort"
+      latency_ms: "Latenz"
+      conciseness: "Prägnanz"
+      correctness: "Korrektheit"
+      completeness: "Vollständigkeit"

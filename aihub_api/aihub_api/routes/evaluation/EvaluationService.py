@@ -134,7 +134,6 @@ class EvaluationService:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
-            print("response", url, response.content)
             return response.json()
 
     # --------------------------------------------------------------------------
@@ -331,6 +330,8 @@ class EvaluationService:
                     question=record.get("input", {}).get(INPUT_KEY_QUESTION),
                     reference_answer=record.get("reference_output", {}).get(OUTPUT_KEY_ANSWER),
                     assistant_answer=record.get("output", {}).get("agent_response"),
+                    thread_id=record.get("output", {}).get("thread_id"),
+                    display_id=record.get("output", {}).get("display_id"),
                     error=record.get("error"),
                     latency_ms=record.get("latency_ms"),
                     start_time=datetime.fromisoformat(st) if (st := record.get("start_time")) else None,
@@ -389,7 +390,7 @@ class EvaluationService:
             external_event_distributor=external_event_distributor,
             judge=judge,
             authenticated_user=authenticated_user,
-            t=t
+            t=t,
         )
 
         ran_experiment: RanExperiment = await evaluator.run_evaluation_experiment(

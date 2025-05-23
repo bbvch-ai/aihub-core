@@ -1506,6 +1506,8 @@ export type ExperimentRunRecord = {
      * Response given by assistant.
      */
     assistant_answer: string;
+    thread_id: string;
+    display_id: string;
     /**
      * Error message if the task run failed.
      */

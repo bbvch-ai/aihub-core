@@ -1,14 +1,15 @@
 test: "Ceci est un test"
 welcome: "Bienvenue sur bbv ai-hub"
 
+languages:
+  en: "Anglais"
+  de: "Allemand"
+  it: "Italien"
+  fr: "Français"
+
 user:
   logout: "Déconnexion"
   language: "Langue"
-  languages:
-    en: "Anglais"
-    de: "Allemand"
-    it: "Italien"
-    fr: "Français"
 
 chat:
   assistant: "Assistant"
@@ -169,3 +170,23 @@ dashboard:
       label: 'Demander dans Slack/Teams'
     AgentInTheLoopRequestEvent:
       label: 'Tâches Déléguées'
+
+evaluation:
+  dataset:
+    title: "Ensembles de Données"
+    created_at: "Créé:"
+    updated_at: "Mis à jour:"
+  experiment:
+    title: "Expériences"
+    created_at: "Exécuté à:"
+    dataset: "Ensemble de Données"
+    language_and_dataset: "Langue & Ensemble de Données"
+    language: "Langue de l'expérience:"
+    result:
+      question: "Question"
+      reference_answer: "Réponse de Référence"
+      assistant_answer: "Réponse de l'Assistant"
+      latency_ms: "Latence"
+      conciseness: "Concision"
+      correctness: "Exactitude"
+      completeness: "Exhaustivité"

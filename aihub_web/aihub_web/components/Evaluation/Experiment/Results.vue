@@ -109,6 +109,21 @@
           />
         </template>
       </Column>
+      <Column
+        class="max-w-24"
+        field="thread_id"
+        header=""
+      >
+        <template #body="{ data }">
+          <Button
+            size="small"
+            rounded
+            icon="pi pi-search"
+            severity="secondary"
+            @click="() => toTrace(data)"
+          />
+        </template>
+      </Column>
       <template #expansion="{ data }">
         <div class="flex flex-col gap-3 pl-10">
           <p>
@@ -136,13 +151,15 @@
 </template>
 
 <script setup lang="ts">
-import type { Experiment } from '@core/sdk/client'
+import type { Experiment, ExperimentRunRecord } from '@core/sdk/client'
 
 defineProps<{
   experiment: Experiment
 }>()
 
 const { t } = useI18n()
+const router = useRouter()
+const localeRoute = useLocaleRoute()
 
 const expandedRows = ref({})
 
@@ -154,6 +171,10 @@ const latencySeverity = (latency_ms: number) => {
     return 'warning'
   }
   return 'success'
+}
+
+const toTrace = (data: ExperimentRunRecord) => {
+  router.push(localeRoute(`/admin/thread/${data.thread_id}/display/${data.display_id}`))
 }
 </script>
 

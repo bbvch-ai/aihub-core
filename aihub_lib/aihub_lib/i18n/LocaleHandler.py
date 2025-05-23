@@ -1,6 +1,5 @@
 import logging
 import os
-from pathlib import Path
 from typing import Any, Dict, List
 
 import i18n
@@ -93,17 +92,18 @@ class LocaleHandler:
     def t_object(self, key: str, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         folder, filename, *path = key.split(".")
-        current_file_directory = Path(__file__).resolve().parent
-        app_directory = current_file_directory.parent
-        src_directory = app_directory.parent
-        lang_directory = os.path.join(src_directory, "lang", folder)
-        file_path = os.path.join(lang_directory, f"{filename}.{locale}.yml")
+        folder_paths = i18n.config.get("load_path")
+        for folder_path in folder_paths:
+            potential_file_path = os.path.join(folder_path, folder, f"{filename}.{locale}.yml")
+            if not os.path.isfile(potential_file_path):
+                continue
+            with open(potential_file_path, "r") as file:
+                data = yaml.safe_load(file)
+                for key in path:
+                    data = data[key]
+                return data
 
-        with open(file_path, "r") as file:
-            data = yaml.safe_load(file)
-            for key in path:
-                data = data[key]
-            return data
+        raise ValueError(f"Unable to extract t_object {filename}.{locale}.yml")
 
     def in_locale(self, locale: str):
         return self.__class__(
