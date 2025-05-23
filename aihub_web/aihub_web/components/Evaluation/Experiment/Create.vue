@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, Experiment, ExperimentCreate } from '@core/sdk/client'
+import type { AgentDto, ExperimentCreate } from '@core/sdk/client'
 
 const experiment = ref<ExperimentCreate>({
   agent_class: '',

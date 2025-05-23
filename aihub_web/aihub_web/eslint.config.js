@@ -38,6 +38,7 @@ export default withNuxt(
           'pi-chevron-right',
           'panel',
           'loader',
+          'spinner',
           'striped-bg',
           'pi-exclamation-triangle',
           'customized-timeline',

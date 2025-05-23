@@ -10,7 +10,7 @@
       >
         <div class="flex items-center gap-4">
           <ProgressSpinner
-            class="spinner color-white size-4"
+            class="spinner size-4"
             stroke-width="4"
             fill="transparent"
           />
