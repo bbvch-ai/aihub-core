@@ -3,6 +3,7 @@ from typing import List, Optional
 import pulumi
 from pulumi_azure_native import app, dbforpostgresql, network
 
+from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
@@ -64,6 +65,8 @@ class Dagster(pulumi.ComponentResource):
         )
 
         self.identity = self._create_identity()
+        # Assign Storage Blob Contributor Role
+        self.identity.assign_role_to_identity(ROLES.STORAGE_BLOB_DATA_CONTRIBUTOR, self.datalake.id, self.config.storage_service_name)
 
         managed_env_config = ManagedEnvironmentConfig(
             resource_group=self.config.resource_group,

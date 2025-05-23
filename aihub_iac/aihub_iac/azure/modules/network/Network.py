@@ -5,6 +5,7 @@ from pulumi_azure_native import network
 
 from aihub_iac.azure.modules.nats.Nats import Nats
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
+from aihub_iac.azure.modules.webui.WebUI import WebUI
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 
 # Address prefix constants
@@ -20,8 +21,6 @@ DAGSTER_STORAGE_SUBNET_PREFIX = "10.0.35.0/24"  # 10.0.35.0 - 10.0.35.255
 PHOENIX_SUBNET_PREFIX = "10.0.36.0/24"  # 10.0.36.0 - 10.0.36.255
 API_COSMOS_SUBNET_PREFIX = "10.0.37.0/24"  # 10.0.37.0 - 10.0.37.255
 DAGSTER_SUBNET_PREFIX = "10.0.38.0/23"  # 10.0.38.0 - 10.0.39.255
-WEBUI_SUBNET_PREFIX = "10.0.40.0/23"  # 10.0.40.0 - 10.0.41.255
-WEBUI_STORAGE_SUBNET_PREFIX = "10.0.42.0/24"  # 10.0.40.0 - 10.0.40.255
 
 
 class Network(pulumi.ComponentResource):
@@ -59,8 +58,6 @@ class Network(pulumi.ComponentResource):
         self.subnets["dagster_storage"] = self._create_dagster_storage_subnet()
         self.subnets["phoenix"] = self._create_phoenix_subnet()
         self.subnets["api_cosmos"] = self._create_api_cosmos_subnet()
-        self.subnets["webui"] = self._create_webui_subnet()
-        self.subnets["webui_storage"] = self._create_webui_storage_subnet()
 
         # Export outputs
         self._register_outputs()
@@ -114,7 +111,7 @@ class Network(pulumi.ComponentResource):
         self.network_provider.create_subnet_nsg(
             self.network_provider.pg_subnet_name,
             subnet,
-            [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WEBUI_SUBNET_PREFIX],
+            [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WebUI.WEBUI_SUBNET_CIDR],
         )
         return subnet
 
@@ -147,23 +144,6 @@ class Network(pulumi.ComponentResource):
             self.network_provider.agents_subnet_name,
             subnet,
             [SEARCH_SUBNET_PREFIX, COSMOS_SUBNET_PREFIX, Nats.NATS_SUBNET_CIDR],
-        )
-        return subnet
-
-    def _create_nats_storage_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.nats_storage_subnet_name,
-            resource_name=self.network_provider.nats_storage_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=Nats.NATS_STORAGE_SUBNET_CIDR,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-
-        self.network_provider.create_subnet_nsg(
-            self.network_provider.nats_storage_subnet_name,
-            subnet,
-            [Nats.NATS_SUBNET_CIDR],
         )
         return subnet
 
@@ -287,38 +267,6 @@ class Network(pulumi.ComponentResource):
             subnet,
             [APP_SUBNET_PREFIX],
             additional_rules=public_access_rules,
-        )
-        return subnet
-
-    def _create_webui_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.webui_subnet_name,
-            resource_name=self.network_provider.webui_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=WEBUI_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self.network_provider.create_subnet_nsg(
-            self.network_provider.webui_subnet_name,
-            subnet,
-            [WEBUI_SUBNET_PREFIX],
-        )
-        return subnet
-
-    def _create_webui_storage_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.webui_storage_subnet_name,
-            resource_name=self.network_provider.webui_storage_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=WEBUI_STORAGE_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self.network_provider.create_subnet_nsg(
-            self.network_provider.webui_storage_subnet_name,
-            subnet,
-            [Nats.NATS_SUBNET_CIDR, WEBUI_STORAGE_SUBNET_PREFIX],
         )
         return subnet
 

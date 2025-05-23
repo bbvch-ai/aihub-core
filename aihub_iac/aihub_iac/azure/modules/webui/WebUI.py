@@ -3,7 +3,15 @@ from typing import List, Optional
 import pulumi
 from pulumi_azure_native import app, containerinstance, dbforpostgresql, network
 
-from aihub_iac.azure.constants.resources import CONTAINER_APP_ENVIRONMENT, CONTAINER_INSTANCE, POSTGRES
+from aihub_iac.azure.constants.resources import (
+    CONTAINER_APP_ENVIRONMENT,
+    CONTAINER_INSTANCE,
+    POSTGRES,
+    SUB_NET,
+    CONTAINER_APP,
+    STORAGE_ACCOUNT,
+)
+from aihub_iac.azure.modules.nats.Nats import Nats
 from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.managed_environment.ManagedEnvironment import ManagedEnvironment
@@ -12,6 +20,10 @@ from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageReso
 
 
 class WebUI(pulumi.ComponentResource):
+
+    WEBUI_SUBNET_CIDR = "10.0.40.0/23"
+    WEBUI_STORAGE_SUBNET_CIDR = "10.0.42.0/24"
+
     def __init__(
         self,
         stack: str,
@@ -46,12 +58,52 @@ class WebUI(pulumi.ComponentResource):
         # Create resources
         self._create_resources()
 
+    @property
+    def webui_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{CONTAINER_APP}-webui"
+
+    @property
+    def webui_storage_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{STORAGE_ACCOUNT}-webui"
+
+    def _create_webui_subnet(self) -> network.Subnet:
+        subnet = network.Subnet(
+            name=self.webui_subnet_name,
+            resource_name=self.webui_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.WEBUI_SUBNET_CIDR,
+            opts=pulumi.ResourceOptions(parent=self.vnet),
+        )
+        self.network_provider.create_subnet_nsg(
+            self.network_provider.webui_subnet_name,
+            subnet,
+            [self.WEBUI_SUBNET_CIDR],
+        )
+        return subnet
+
+    def _create_webui_storage_subnet(self) -> network.Subnet:
+        subnet = network.Subnet(
+            name=self.network_provider.webui_storage_subnet_name,
+            resource_name=self.network_provider.webui_storage_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.WEBUI_STORAGE_SUBNET_CIDR,
+            opts=pulumi.ResourceOptions(parent=self.vnet),
+        )
+        self.network_provider.create_subnet_nsg(
+            self.network_provider.webui_storage_subnet_name,
+            subnet,
+            [Nats.NATS_SUBNET_CIDR, self.WEBUI_STORAGE_SUBNET_CIDR],
+        )
+        return subnet
+
     def _create_resources(self):
         """Create all container app resources in the correct order"""
         # Step 1: Get network resources
         self.vnet = self.network_provider.get_vnet()
-        self.webui_subnet = self.network_provider.get_webui_subnet()
-        self.webui_storage_subnet = self.network_provider.get_webui_storage_subnet()
+        self.webui_subnet = self._create_webui_subnet()
+        self.webui_storage_subnet = self._create_webui_storage_subnet()
 
         self.blob_dns_zone = network.get_private_zone(
             private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
@@ -60,13 +112,16 @@ class WebUI(pulumi.ComponentResource):
             private_zone_name="privatelink.file.core.windows.net", resource_group_name=self.config.resource_group
         )
 
-        self.storage_account = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name,
-            subnet_id=self.webui_storage_subnet.id,
-            vnet_id=self.vnet.id,
-            existing_blob_dns_zone=self.blob_dns_zone,
-            existing_file_dns_zone=self.file_dns_zone,
+        self.storage_account = pulumi.Output.all(subnet_id=self.nats_storage_subnet.id).apply(
+            lambda args: self.storage_factory.create_storage_account(
+                service_name=self.config.storage_service_name,
+                subnet_id=args["subnet_id"],
+                vnet_id=self.vnet.id,
+                existing_blob_dns_zone=self.blob_dns_zone,
+                existing_file_dns_zone=self.file_dns_zone,
+            )
         )
+
         self.storage_account_key = self.storage_factory.get_storage_account_key(self.storage_account)
 
         self.webui_file_share = self.storage_factory.create_file_share("webui", self.storage_account)

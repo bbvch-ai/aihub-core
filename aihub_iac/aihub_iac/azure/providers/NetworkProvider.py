@@ -198,7 +198,6 @@ class NetworkProvider:
     def priv_endpoint_subnet_name(self):
         return f"{self.sub_net_name}-priv-endpoint"
 
-
     @property
     def dagster_storage_subnet_name(self):
         return f"{self.sub_net_name}-{STORAGE_ACCOUNT}-dagster"
