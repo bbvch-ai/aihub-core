@@ -1,13 +1,13 @@
+import time
 from datetime import datetime, timedelta
 from typing import List, Sequence, Union
 
-import time
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from aihub_pipeline.util.id_utils import uri_to_id
 
 
@@ -167,9 +167,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
             )
             time.sleep(retry_interval)
 
-        context.log.warning(
-            f"No nodes found for document {doc_id} after retrying for {max_retry_time} seconds"
-        )
+        context.log.warning(f"No nodes found for document {doc_id} after retrying for {max_retry_time} seconds")
         return []
 
     def _query_vector_store_for_multiple_docs(self, doc_ids: List[str], context: InputContext) -> List[List[TextNode]]:

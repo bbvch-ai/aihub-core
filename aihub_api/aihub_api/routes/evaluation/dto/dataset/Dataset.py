@@ -1,7 +1,10 @@
-from typing import List, Annotated
+from typing import Annotated, List
+
 from pydantic import Field
-from .MinimalDataset import MinimalDataset
+
 from .DatasetItem import DatasetItem
+from .MinimalDataset import MinimalDataset
+
 
 class Dataset(MinimalDataset):
     items: Annotated[List[DatasetItem], Field(description="The list of question-answer items in the dataset.")]

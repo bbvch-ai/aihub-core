@@ -8,9 +8,25 @@
         v-if="runStarted"
         severity="success"
       >
+        <div class="flex items-center gap-4">
+          <ProgressSpinner
+            class="spinner color-white size-4"
+            stroke-width="4"
+            fill="transparent"
+          />
+          <div class="flex flex-row gap-2 font-normal">
+            <span class="font-bold">Experiment is running!</span>
+            <span>This might take several minutes. You can also leave this page and come back later.</span>
+          </div>
+        </div>
+      </Message>
+      <Message
+        v-if="runHasErrors"
+        severity="error"
+      >
         <div class="flex flex-row gap-2 font-normal">
-          <span class="font-bold">Evaluation is running!</span>
-          <span>This might take several minutes. Check back in a few minutes</span>
+          <span class="font-bold">Experiment Failed!</span>
+          <span>Please contact AI-Hub dev team to find out what went wrong.</span>
         </div>
       </Message>
       <div class="flex justify-between">
@@ -81,6 +97,7 @@ const { t } = useI18n()
 const { experiments, experimentsAreLoading } = useExperiments()
 const createModalOpen = ref(false)
 const runStarted = ref(false)
+const runHasErrors = ref(false)
 const selectedAgents = useRouteQuery<string[]>('assistants', [])
 const selectedDatasets = useRouteQuery<string[]>('datasets', [])
 
@@ -123,12 +140,16 @@ const shownExperiments = computed<MinimalExperiment[]>(() => {
   })
 })
 
-const onRunExperiment = () => {
+const onRunExperiment = (promise: Promise<void>) => {
   runStarted.value = true
   createModalOpen.value = false
+  promise
+    .then(() => {
+      runStarted.value = false
+    })
+    .catch(() => {
+      runStarted.value = false
+      runHasErrors.value = true
+    })
 }
 </script>
-
-<style scoped>
-
-</style>

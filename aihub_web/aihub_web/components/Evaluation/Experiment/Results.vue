@@ -9,12 +9,18 @@
       <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <div class="flex flex-col items-start gap-2">
           <span class="font-semibold">
-            {{ t('evaluation.experiment.dataset') }}
+            {{ t('evaluation.experiment.language_and_dataset') }}
           </span>
-          <Tag
-            :value="experiment.dataset.dataset_name"
-            severity="secondary"
-          />
+          <div class="flex gap-2">
+            <Tag
+              severity="secondary"
+              :value="t(`languages.${experiment.locale}`)"
+            />
+            <Tag
+              severity="contrast"
+              :value="experiment.dataset.dataset_name"
+            />
+          </div>
         </div>
         <div class="flex flex-col items-start gap-2">
           <span class="font-semibold">
@@ -130,9 +136,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Experiment, ExperimentRunRecord } from '@core/sdk/client'
+import type { Experiment } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   experiment: Experiment
 }>()
 

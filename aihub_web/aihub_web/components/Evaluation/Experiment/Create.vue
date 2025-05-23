@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ExperimentCreate } from '@core/sdk/client'
+import type { AgentDto, Experiment, ExperimentCreate } from '@core/sdk/client'
 
 const experiment = ref<ExperimentCreate>({
   agent_class: '',
@@ -109,7 +109,7 @@ const readyToSave = computed(() => {
 
 const emit = defineEmits<{
   close: []
-  success: []
+  success: [Promise<void>]
 }>()
 
 const close = () => {
@@ -121,8 +121,8 @@ const save = () => {
   }
   experiment.value.agent_class = agent.value.agent_class
   experiment.value.agent_id = agent.value.agent_id
-  createExperiment({ experiment: experiment.value })
-  emit('success')
+  const promise = createExperiment({ experiment: experiment.value })
+  emit('success', promise)
 }
 </script>
 

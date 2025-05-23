@@ -882,10 +882,6 @@ export type Dataset = {
      */
     description?: string | null;
     /**
-     * The version identifier of the dataset in Phoenix.
-     */
-    version?: string | null;
-    /**
      * The timestamp when the dataset was created.
      */
     created_at?: Date | null;
@@ -1442,6 +1438,10 @@ export type Experiment = {
      * The dataset associated with this experiment.
      */
     dataset: MinimalDataset;
+    /**
+     * The locale of the experiment.
+     */
+    locale: string;
     /**
      * How concise is the answer
      */
@@ -2302,10 +2302,6 @@ export type MinimalDataset = {
      */
     description?: string | null;
     /**
-     * The version identifier of the dataset in Phoenix.
-     */
-    version?: string | null;
-    /**
      * The timestamp when the dataset was created.
      */
     created_at?: Date | null;
@@ -2340,6 +2336,10 @@ export type MinimalExperiment = {
      * The dataset associated with this experiment.
      */
     dataset: MinimalDataset;
+    /**
+     * The locale of the experiment.
+     */
+    locale: string;
 };
 
 export type ModelDetails = {

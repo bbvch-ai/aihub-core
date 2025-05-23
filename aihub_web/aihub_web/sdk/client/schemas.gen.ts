@@ -2550,18 +2550,6 @@ export const DatasetSchema = {
             title: 'Description',
             description: 'An optional description for the dataset.'
         },
-        version: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Version',
-            description: 'The version identifier of the dataset in Phoenix.'
-        },
         created_at: {
             anyOf: [
                 {
@@ -3603,6 +3591,11 @@ export const ExperimentSchema = {
             '$ref': '#/components/schemas/MinimalDataset',
             description: 'The dataset associated with this experiment.'
         },
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale of the experiment.'
+        },
         conciseness: {
             anyOf: [
                 {
@@ -3646,7 +3639,7 @@ export const ExperimentSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'agent', 'dataset'],
+    required: ['id', 'name', 'agent', 'dataset', 'locale'],
     title: 'Experiment'
 } as const;
 
@@ -5602,18 +5595,6 @@ export const MinimalDatasetSchema = {
             title: 'Description',
             description: 'An optional description for the dataset.'
         },
-        version: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Version',
-            description: 'The version identifier of the dataset in Phoenix.'
-        },
         created_at: {
             anyOf: [
                 {
@@ -5690,10 +5671,15 @@ export const MinimalExperimentSchema = {
         dataset: {
             '$ref': '#/components/schemas/MinimalDataset',
             description: 'The dataset associated with this experiment.'
+        },
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale of the experiment.'
         }
     },
     type: 'object',
-    required: ['id', 'name', 'agent', 'dataset'],
+    required: ['id', 'name', 'agent', 'dataset', 'locale'],
     title: 'MinimalExperiment'
 } as const;
 

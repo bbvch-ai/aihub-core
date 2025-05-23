@@ -1,6 +1,8 @@
-from typing import Optional, Annotated, Dict, Any, List, Literal
-from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Annotated, List, Literal, Optional
+
+from pydantic import BaseModel, Field
+
 from aihub_api.routes.evaluation.dto.experiment.MinimalExperiment import MinimalExperiment
 
 
@@ -11,10 +13,12 @@ class TaskSummaryData(BaseModel):
     n_errors: Annotated[int, Field(description="Number of errors during task execution.")]
     top_error: Annotated[Optional[str], Field(description="Most frequent error message, if any.")] = None
 
+
 class EvaluationSummaryData(BaseModel):
     evaluator: Annotated[str, Field(description="Name of the evaluator.")]
     n: Annotated[int, Field(description="Number of items evaluated.")]
     avg_score: Annotated[Optional[float], Field(description="Average score from this evaluator.")] = None
+
 
 class EvaluationData(BaseModel):
     name: Annotated[str, Field(description="Name of the evaluator.")]
@@ -22,6 +26,7 @@ class EvaluationData(BaseModel):
     score: Annotated[float, Field(description="Score between 0 and 1.")]
     explanation: Annotated[Optional[str], Field(description="Explenation given by Judge LLM.")] = None
     error: Annotated[Optional[str], Field(description="Error message if the task run failed.")] = None
+
 
 class ExperimentRunRecord(BaseModel):
     example_id: Annotated[str, Field(description="ID of the dataset example for this run.")]
@@ -36,8 +41,14 @@ class ExperimentRunRecord(BaseModel):
     correctness: Annotated[Optional[EvaluationData], Field(description="How correct is the answer")] = None
     completeness: Annotated[Optional[EvaluationData], Field(description="How complete is the answer")] = None
 
+
 class Experiment(MinimalExperiment):
     conciseness: Annotated[Optional[EvaluationSummaryData], Field(description="How concise is the answer")] = None
     correctness: Annotated[Optional[EvaluationSummaryData], Field(description="How correct is the answer")] = None
     completeness: Annotated[Optional[EvaluationSummaryData], Field(description="How complete is the answer")] = None
-    items: Annotated[List[ExperimentRunRecord], Field(description="Detailed records of each run within the experiment, including inputs, outputs, and evaluations.")] = None
+    items: Annotated[
+        List[ExperimentRunRecord],
+        Field(
+            description="Detailed records of each run within the experiment, including inputs, outputs, and evaluations."
+        ),
+    ] = None

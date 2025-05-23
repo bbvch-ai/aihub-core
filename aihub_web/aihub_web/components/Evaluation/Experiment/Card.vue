@@ -22,9 +22,13 @@
           </p>
         </div>
       </div>
-      <div>
+      <div class="flex gap-2">
         <Tag
           severity="secondary"
+          :value="t(`languages.${experiment.locale}`)"
+        />
+        <Tag
+          severity="contrast"
           :value="experiment.dataset.dataset_name"
         />
       </div>

@@ -722,7 +722,7 @@ export const createSpeech = <TComposable extends Composable, DefaultT = undefine
 };
 
 /**
- * Get Datasets
+ * List Evaluation Datasets
  * Retrieves a list of all evaluation datasets from Arize Phoenix.
  */
 export const getDatasets = <TComposable extends Composable, DefaultT extends GetDatasetsResponse = GetDatasetsResponse>(options: Options<TComposable, GetDatasetsData, GetDatasetsResponse, DefaultT>) => {
@@ -744,7 +744,7 @@ export const getDatasets = <TComposable extends Composable, DefaultT extends Get
 };
 
 /**
- * Create Dataset
+ * Create Evaluation Dataset
  * Creates a new evaluation dataset in Arize Phoenix.
  */
 export const createDataset = <TComposable extends Composable, DefaultT extends CreateDatasetResponse = CreateDatasetResponse>(options: Options<TComposable, CreateDatasetData, CreateDatasetResponse, DefaultT>) => {
@@ -770,7 +770,7 @@ export const createDataset = <TComposable extends Composable, DefaultT extends C
 };
 
 /**
- * Get Dataset
+ * Get Specific Dataset
  * Retrieves a specific evaluation dataset by its ID, including its items.
  */
 export const getDataset = <TComposable extends Composable, DefaultT extends GetDatasetResponse = GetDatasetResponse>(options: Options<TComposable, GetDatasetData, GetDatasetResponse, DefaultT>) => {
@@ -792,9 +792,8 @@ export const getDataset = <TComposable extends Composable, DefaultT extends GetD
 };
 
 /**
- * Update Dataset
- * Appends new question-answer items to an existing evaluation dataset in Arize Phoenix.
- * The dataset is identified by its ID.
+ * Update Evaluation Dataset
+ * Appends new question-answer items to an existing evaluation dataset.
  */
 export const updateDataset = <TComposable extends Composable, DefaultT extends UpdateDatasetResponse = UpdateDatasetResponse>(options: Options<TComposable, UpdateDatasetData, UpdateDatasetResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).put<TComposable, UpdateDatasetResponse | DefaultT, UpdateDatasetError, DefaultT>({
@@ -819,7 +818,7 @@ export const updateDataset = <TComposable extends Composable, DefaultT extends U
 };
 
 /**
- * Get Experiment
+ * Get Specific Experiment
  * Retrieves the definition of a specific evaluation experiment by its ID.
  */
 export const getExperiment = <TComposable extends Composable, DefaultT extends GetExperimentResponse = GetExperimentResponse>(options: Options<TComposable, GetExperimentData, GetExperimentResponse, DefaultT>) => {
@@ -841,7 +840,7 @@ export const getExperiment = <TComposable extends Composable, DefaultT extends G
 };
 
 /**
- * Get Experiments
+ * List Evaluation Experiments
  * Retrieves a list of all evaluation experiments from Arize Phoenix.
  */
 export const getExperiments = <TComposable extends Composable, DefaultT extends GetExperimentsResponse = GetExperimentsResponse>(options: Options<TComposable, GetExperimentsData, GetExperimentsResponse, DefaultT>) => {
@@ -863,9 +862,8 @@ export const getExperiments = <TComposable extends Composable, DefaultT extends 
 };
 
 /**
- * Run Experiment
- * Creates and runs a new evaluation experiment using the PhoenixExperimentEvaluator.
- * The experiment results are logged to Arize Phoenix and detailed results are returned.
+ * Run Evaluation Experiment
+ * Creates and runs a new evaluation experiment.
  */
 export const runExperiment = <TComposable extends Composable, DefaultT extends RunExperimentResponse = RunExperimentResponse>(options: Options<TComposable, RunExperimentData, RunExperimentResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, RunExperimentResponse | DefaultT, RunExperimentError, DefaultT>({

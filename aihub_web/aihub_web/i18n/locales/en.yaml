@@ -1,14 +1,16 @@
 test: "This is test"
 welcome: "Welcome to bbv ai-hub"
 
+languages:
+  en: "English"
+  de: "German"
+  it: "Italian"
+  fr: "French"
+
 user:
   logout: "Logout"
   language: "Language"
-  languages:
-    en: "English"
-    de: "German"
-    it: "Italian"
-    fr: "French"
+
 
 thread:
   users: "Users"
@@ -179,6 +181,8 @@ evaluation:
     title: "Experiments"
     created_at: "Run at:"
     dataset: "Dataset"
+    language_and_dataset: "Language & Dataset"
+    language: "Experiment language:"
     result:
       question: "Question"
       reference_answer: "Reference Answer"

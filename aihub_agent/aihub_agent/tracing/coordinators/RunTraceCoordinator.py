@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_lib.nats.context.BaseContext import BaseContext
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -23,7 +24,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
 logger = logging.getLogger(__name__)

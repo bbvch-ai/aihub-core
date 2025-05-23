@@ -158,7 +158,7 @@ def self_hosted_agent_config(event_loop):
         embed_batch_size=32,
         default_parameter=SelfHostedEmbeddingParameter(
             text_instruction=None,
-            query_instruction=None,input
+            query_instruction=None,
             truncate_text=False,
         ),
     )
