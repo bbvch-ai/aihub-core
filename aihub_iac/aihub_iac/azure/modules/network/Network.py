@@ -327,7 +327,7 @@ class Network(pulumi.ComponentResource):
         self._create_subnet_nsg(
             self.network_provider.webui_subnet_name,
             subnet,
-            [],
+            [WEBUI_SUBNET_PREFIX],
         )
         return subnet
 
@@ -340,7 +340,9 @@ class Network(pulumi.ComponentResource):
             address_prefix=WEBUI_STORAGE_SUBNET_PREFIX,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(self.network_provider.webui_storage_subnet_name, subnet, [NATS_SUBNET_PREFIX])
+        self._create_subnet_nsg(
+            self.network_provider.webui_storage_subnet_name, subnet, [NATS_SUBNET_PREFIX, WEBUI_STORAGE_SUBNET_PREFIX]
+        )
         return subnet
 
     def _create_subnet_nsg(
