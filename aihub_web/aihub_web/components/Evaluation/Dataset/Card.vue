@@ -17,10 +17,6 @@
           {{ dataset.dataset_name }}
         </h3>
       </div>
-      <Badge
-        :value="dataset.version"
-        size="large"
-      />
     </div>
     <div>
       <span class="text-xs">

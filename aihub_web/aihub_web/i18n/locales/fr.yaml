@@ -1,14 +1,15 @@
 test: "Ceci est un test"
 welcome: "Bienvenue sur bbv ai-hub"
 
+languages:
+  en: "Anglais"
+  de: "Allemand"
+  it: "Italien"
+  fr: "Français"
+
 user:
   logout: "Déconnexion"
   language: "Langue"
-  languages:
-    en: "Anglais"
-    de: "Allemand"
-    it: "Italien"
-    fr: "Français"
 
 thread:
   title: "Interactions"
@@ -22,7 +23,7 @@ thread:
   list:
     name: "Nom"
     agents: "Agents"
-    created: "Créé le"
+    created: "Créé"
     numTurns: "Nombre de tours"
     numEvents: "Nombre d'événements"
     status: "Statut"
@@ -55,17 +56,17 @@ chat:
 
 event:
   list:
-    firstInteraction: "Première interaction :"
-    lastInteraction: "Dernière interaction :"
-    costs: "Coûts :"
-    duration: "Durée :"
-    pending: "En attente :"
+    firstInteraction: "Première interaction:"
+    lastInteraction: "Dernière interaction:"
+    costs: "Coûts:"
+    duration: "Durée:"
+    pending: "En attente:"
     no: "Non"
-    status: "Statut :"
+    status: "Statut:"
     error: "Erreur"
     successful: "Réussi"
     chat: "Chat"
-    agents: "Agents :"
+    agents: "Agents:"
   statistics:
     charts:
       agentInvocations: "Invocations d'agents"
@@ -102,15 +103,15 @@ agent:
     startEvents: "Événements de démarrage"
     stopEvents: "Événements d'arrêt"
     config: "Configuration"
-    name: "Nom :"
-    class: "Classe :"
-    agentId: "ID de l'agent :"
-    status: "Statut :"
+    name: "Nom:"
+    class: "Classe:"
+    agentId: "ID de l'agent:"
+    status: "Statut:"
     online: "En ligne"
     offline: "Hors ligne"
   chat:
     title: "Démarrer un nouveau chat"
-    placeholder: "Saisissez le message que vous souhaitez envoyer à l'agent"
+    placeholder: "Tapez le message que vous souhaitez envoyer à l'agent"
     createThreadAndSend: "Créer un fil de discussion et envoyer"
     manuallyCreatedThread: "Fil de discussion créé manuellement"
   navigation:
@@ -137,27 +138,27 @@ agent:
 document:
   list:
     title: "Titre du document"
-    created: "Créé le"
+    created: "Créé"
     updated_at: "Dernière mise à jour"
     document_type: "Type de document"
     number_of_pages: "Nombre de pages"
 
 knowledge:
   title: "Bases de connaissances"
-  created_at: "Créé le :"
-  updated_at: "Dernière mise à jour :"
+  created_at: "Créé le:"
+  updated_at: "Dernière mise à jour:"
   navigation:
     document:
       basic: "Aperçu"
       content: "Contenu"
-      nodes: "Blocs"
+      nodes: "Morceaux"
       summary: "Résumés"
   documents:
     title: "Documents"
   nodes:
-    title: "Blocs de documents"
+    title: "Morceaux de document"
   summary:
-    title: "Résumés de documents"
+    title: "Résumés de document"
     level: "Niveau"
     no_summaries_at_level: "Aucun résumé à ce niveau"
 
@@ -181,10 +182,10 @@ auth:
     logoAlt: "Logo de l'entreprise"
 
 timerange:
-  1h: "1 heure"
-  24h: "1 jour"
-  30d: "1 mois"
-  365d: "1 an"
+  1h: "1 Heure"
+  24h: "1 Jour"
+  30d: "1 Mois"
+  365d: "1 An"
 
 chart:
   no_data: "Aucune donnée disponible pour cette période."
@@ -215,3 +216,23 @@ dashboard:
       label: 'Demander dans Slack/Teams'
     AgentInTheLoopRequestEvent:
       label: 'Tâches déléguées'
+
+evaluation:
+  dataset:
+    title: "Jeux de données"
+    created_at: "Créé le:"
+    updated_at: "Mis à jour le:"
+  experiment:
+    title: "Expériences"
+    created_at: "Exécuté le:"
+    dataset: "Jeu de données"
+    language_and_dataset: "Langue & Jeu de données"
+    language: "Langue de l'expérience:"
+    result:
+      question: "Question"
+      reference_answer: "Réponse de référence"
+      assistant_answer: "Réponse de l'assistant"
+      latency_ms: "Latence"
+      conciseness: "Concision"
+      correctness: "Exactitude"
+      completeness: "Complétude"

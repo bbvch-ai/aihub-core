@@ -1,4 +1,4 @@
-test: "Das ist ein Test"
+test: "Dies ist ein Test"
 welcome: "Willkommen im bbv ai-hub"
 
 languages:
@@ -11,20 +11,21 @@ user:
   logout: "Abmelden"
   language: "Sprache"
 
+
 thread:
   title: "Interaktionen"
   users: "Benutzer"
   assistants: "Assistenten"
   navigation:
-    basic: "Basis"
+    basic: "Grundlegend"
     hierarchy: "Hierarchie"
     chat: "Chat"
-    display: "Runden"
+    display: "Turns"
   list:
     name: "Name"
     agents: "Agenten"
     created: "Erstellt"
-    numTurns: "Anzahl der Runden"
+    numTurns: "Anzahl der Turns"
     numEvents: "Anzahl der Ereignisse"
     status: "Status"
     pending: "Ausstehend"
@@ -35,7 +36,7 @@ thread:
       bitl: "Bot in der Schleife"
       unknown: "Grund unbekannt"
   display:
-    title: "Interaktionsrunden"
+    title: "Interaktions-Turns"
     list:
       started: "Gestartet"
       duration: "Dauer"
@@ -44,9 +45,9 @@ thread:
       pending: "Ausstehend"
       dateFormat: "DD.MM.YYYY HH:mm:ss"
   events:
-    title: "Runden-Nachverfolgungsansicht"
+    title: "Turn Tracing Ansicht"
   hierarchy:
-    title: "Hierarchische Ansicht der Runden"
+    title: "Hierarchische Ansicht der Turns"
   chat:
     title: "Chat-Ansicht"
 
@@ -76,7 +77,7 @@ event:
       openHumanInTheLoop: "Offen (Mensch in der Schleife)"
       openBotInTheLoop: "Offen (Bot in der Schleife)"
       error: "Fehler"
-      delegations: "Delegierungen"
+      delegations: "Delegationen"
       delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
       allEvents: "Alle Ereignisse"
 
@@ -86,7 +87,7 @@ costs:
     cost: "Kosten"
     input: "Eingabe"
     output: "Ausgabe"
-    embedding: "Embedding"
+    embedding: "Einbettung"
     total: "Gesamt"
     currency: "CHF"
 
@@ -94,7 +95,7 @@ service:
   selection:
     title: "Dienste"
     description: "Hier sind alle Dienste aufgelistet, die Sie aktiviert haben"
-    search: "Suchen"
+    search: "Suche"
 
 agent:
   title: "Agenten"
@@ -115,7 +116,7 @@ agent:
     createThreadAndSend: "Thread erstellen und senden"
     manuallyCreatedThread: "Manuell erstellter Thread"
   navigation:
-    basic: "Basis"
+    basic: "Grundlegend"
     workflow: "Workflow"
     threads: "Threads"
     chat: "Chat"
@@ -124,14 +125,14 @@ agent:
     name: "Name"
     description: "Beschreibung"
     agent: "Agent"
-    is_conversational: "Gesprächsorientiert"
+    is_conversational: "Konversationell"
     true: "Ja"
     false: "Nein"
     status: "Status"
     online: "Online"
     offline: "Offline"
   workflow:
-    title: "Agentischer Workflow"
+    title: "Agenten-Workflow"
   threads:
     title: "Agenten-Threads"
 
@@ -151,12 +152,12 @@ knowledge:
     document:
       basic: "Übersicht"
       content: "Inhalt"
-      nodes: "Abschnitte"
+      nodes: "Chunks"
       summary: "Zusammenfassungen"
   documents:
     title: "Dokumente"
   nodes:
-    title: "Dokumentabschnitte"
+    title: "Dokument-Chunks"
   summary:
     title: "Dokumentzusammenfassungen"
     level: "Ebene"
@@ -176,10 +177,10 @@ auth:
     description: "Bitte melden Sie sich an, um auf die Anwendung zuzugreifen"
     tagline: "Erleben Sie die Zukunft der künstlichen Intelligenz"
     welcome: "Willkommen im AI Hub von {companyName}"
-    pleaseLogin: "Bitte anmelden"
+    pleaseLogin: "Bitte melden Sie sich an"
     loginWithMicrosoft: "Mit Microsoft anmelden"
     customSolutions: "Massgeschneiderte KI-Lösungen für Ihr Unternehmen"
-    logoAlt: "Firmenlogo"
+    logoAlt: "Logo des Unternehmens"
 
 timerange:
   1h: "1 Stunde"

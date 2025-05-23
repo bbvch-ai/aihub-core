@@ -2547,6 +2547,168 @@ export const DatabaseDTOSchema = {
     title: 'DatabaseDTO'
 } as const;
 
+export const DatasetSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the dataset in Phoenix.'
+        },
+        dataset_name: {
+            type: 'string',
+            title: 'Dataset Name',
+            description: 'The name of the dataset.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'An optional description for the dataset.'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'The timestamp when the dataset was created.'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At',
+            description: 'The timestamp when the dataset was last updated.'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/DatasetItem'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'The list of question-answer items in the dataset.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'dataset_name', 'items'],
+    title: 'Dataset'
+} as const;
+
+export const DatasetCreateSchema = {
+    properties: {
+        dataset_name: {
+            type: 'string',
+            minLength: 1,
+            title: 'Dataset Name',
+            description: 'The name for the new dataset.'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/DatasetItemCreate'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'A list of question-answer items to include in the dataset.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'An optional description for the dataset.'
+        }
+    },
+    type: 'object',
+    required: ['dataset_name', 'items'],
+    title: 'DatasetCreate'
+} as const;
+
+export const DatasetItemSchema = {
+    properties: {
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'The unique identifier for the dataset item, managed by Phoenix.'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The input question for the agent evaluation.'
+        },
+        answer: {
+            type: 'string',
+            title: 'Answer',
+            description: 'The reference (expected) answer for the question.'
+        }
+    },
+    type: 'object',
+    required: ['question', 'answer'],
+    title: 'DatasetItem'
+} as const;
+
+export const DatasetItemCreateSchema = {
+    properties: {
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The input question for the agent evaluation.'
+        },
+        answer: {
+            type: 'string',
+            title: 'Answer',
+            description: 'The reference (expected) answer for the question.'
+        }
+    },
+    type: 'object',
+    required: ['question', 'answer'],
+    title: 'DatasetItemCreate'
+} as const;
+
+export const DatasetUpdateSchema = {
+    properties: {
+        items: {
+            items: {
+                '$ref': '#/components/schemas/DatasetItemCreate'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.'
+        }
+    },
+    type: 'object',
+    required: ['items'],
+    title: 'DatasetUpdate'
+} as const;
+
 export const DisplayEventSchema = {
     properties: {
         event_id: {
@@ -3017,6 +3179,84 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
+export const EvaluationDataSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of the evaluator.'
+        },
+        annotator_kind: {
+            type: 'string',
+            enum: ['LLM', 'Code'],
+            title: 'Annotator Kind',
+            description: 'Kind of evaluator, either LLM or Code.'
+        },
+        score: {
+            type: 'number',
+            title: 'Score',
+            description: 'Score between 0 and 1.'
+        },
+        explanation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Explanation',
+            description: 'Explenation given by Judge LLM.'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error',
+            description: 'Error message if the task run failed.'
+        }
+    },
+    type: 'object',
+    required: ['name', 'annotator_kind', 'score'],
+    title: 'EvaluationData'
+} as const;
+
+export const EvaluationSummaryDataSchema = {
+    properties: {
+        evaluator: {
+            type: 'string',
+            title: 'Evaluator',
+            description: 'Name of the evaluator.'
+        },
+        n: {
+            type: 'integer',
+            title: 'N',
+            description: 'Number of items evaluated.'
+        },
+        avg_score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Avg Score',
+            description: 'Average score from this evaluator.'
+        }
+    },
+    type: 'object',
+    required: ['evaluator', 'n'],
+    title: 'EvaluationSummaryData'
+} as const;
+
 export const EventBucketSchema = {
     properties: {
         start_time: {
@@ -3275,6 +3515,268 @@ provides a unified way to:
 By appearing as both a control and display event, \`ExceptionEvent\` ensures that the workflow
 can stop further processing while also making the error visible in UI dashboards, logs, or
 monitoring tools—giving operators and developers immediate insight into what went wrong.`
+} as const;
+
+export const ExperimentSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the experiment in Phoenix.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the experiment.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the experiment.'
+        },
+        agent: {
+            '$ref': '#/components/schemas/MinimalAgentDTO',
+            description: 'Agent that was evaluated'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'Timestamp of when the experiment data was recorded or fetched.'
+        },
+        dataset: {
+            '$ref': '#/components/schemas/MinimalDataset',
+            description: 'The dataset associated with this experiment.'
+        },
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale of the experiment.'
+        },
+        conciseness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How concise is the answer'
+        },
+        correctness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How correct is the answer'
+        },
+        completeness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationSummaryData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How complete is the answer'
+        },
+        items: {
+            items: {
+                '$ref': '#/components/schemas/ExperimentRunRecord'
+            },
+            type: 'array',
+            title: 'Items',
+            description: 'Detailed records of each run within the experiment, including inputs, outputs, and evaluations.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'agent', 'dataset', 'locale'],
+    title: 'Experiment'
+} as const;
+
+export const ExperimentCreateSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class name of the agent to be evaluated.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'The specific ID of the agent instance to be evaluated.'
+        },
+        dataset_id: {
+            type: 'string',
+            title: 'Dataset Id',
+            description: 'The ID of the Phoenix dataset to use for evaluation.'
+        },
+        experiment_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Experiment Name',
+            description: 'An optional custom name for the Phoenix experiment. If not provided, a name will be generated.'
+        },
+        experiment_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Experiment Description',
+            description: 'An optional description for the Phoenix experiment.'
+        },
+        experiment_metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Experiment Metadata',
+            description: 'Optional metadata to associate with the Phoenix experiment.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'dataset_id'],
+    title: 'ExperimentCreate'
+} as const;
+
+export const ExperimentRunRecordSchema = {
+    properties: {
+        example_id: {
+            type: 'string',
+            title: 'Example Id',
+            description: 'ID of the dataset example for this run.'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'Input question.'
+        },
+        reference_answer: {
+            type: 'string',
+            title: 'Reference Answer',
+            description: 'Expected answer for this example.'
+        },
+        assistant_answer: {
+            type: 'string',
+            title: 'Assistant Answer',
+            description: 'Response given by assistant.'
+        },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error',
+            description: 'Error message if the task run failed.'
+        },
+        latency_ms: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Latency Ms',
+            description: 'Latency of the task run in milliseconds.'
+        },
+        start_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Time',
+            description: 'Start time of the task run.'
+        },
+        end_time: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Time',
+            description: 'End time of the task run.'
+        },
+        conciseness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How concise is the answer'
+        },
+        correctness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How correct is the answer'
+        },
+        completeness: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/EvaluationData'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'How complete is the answer'
+        }
+    },
+    type: 'object',
+    required: ['example_id', 'question', 'reference_answer', 'assistant_answer', 'thread_id', 'display_id', 'start_time', 'end_time'],
+    title: 'ExperimentRunRecord'
 } as const;
 
 export const FileSchema = {
@@ -5420,6 +5922,118 @@ export const MinimalAgentDTOSchema = {
     title: 'MinimalAgentDTO',
     description: `Encapsulates the data transfer object (DTO) for a minimal agent.
 Only contains minimal information about the agent.`
+} as const;
+
+export const MinimalDatasetSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the dataset in Phoenix.'
+        },
+        dataset_name: {
+            type: 'string',
+            title: 'Dataset Name',
+            description: 'The name of the dataset.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'An optional description for the dataset.'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'The timestamp when the dataset was created.'
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At',
+            description: 'The timestamp when the dataset was last updated.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'dataset_name'],
+    title: 'MinimalDataset'
+} as const;
+
+export const MinimalExperimentSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the experiment in Phoenix.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the experiment.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the experiment.'
+        },
+        agent: {
+            '$ref': '#/components/schemas/MinimalAgentDTO',
+            description: 'Agent that was evaluated'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At',
+            description: 'Timestamp of when the experiment data was recorded or fetched.'
+        },
+        dataset: {
+            '$ref': '#/components/schemas/MinimalDataset',
+            description: 'The dataset associated with this experiment.'
+        },
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale of the experiment.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'agent', 'dataset', 'locale'],
+    title: 'MinimalExperiment'
 } as const;
 
 export const ModelDetailsSchema = {
