@@ -3,18 +3,17 @@ from typing import Optional
 import pulumi
 from pulumi_azure_native import network
 
+from aihub_iac.azure.modules.nats.Nats import Nats
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 
 # Address prefix constants
 VNET_ADDRESS_SPACE = "10.0.0.0/16"  # 10.0.0.0 - 10.0.255.255
-NATS_SUBNET_PREFIX = "10.0.1.0/29"  # 10.0.1.0 - 10.0.1.7
 APP_SUBNET_PREFIX = "10.0.2.0/23"  # 10.0.2.0 - 10.0.3.255
 PG_SUBNET_PREFIX = "10.0.4.0/24"  # 10.0.4.0 - 10.0.4.255
 PRIVATE_ENDPOINT_SUBNET_PREFIX = "10.0.6.0/24"  # 10.0.6.0 - 10.0.6.255
 CAPP_SUBNET_PREFIX = "10.0.8.0/23"  # 10.0.8.0 - 10.0.10.255
 AGENTS_SUBNET_PREFIX = "10.0.16.0/20"  # 10.0.16.0 - 10.0.31.255
-NATS_STORAGE_SUBNET_PREFIX = "10.0.32.0/24"  # 10.0.32.0 - 10.0.32.255
 COSMOS_SUBNET_PREFIX = "10.0.33.0/24"  # 10.0.33.0 - 10.0.33.255
 SEARCH_SUBNET_PREFIX = "10.0.34.0/24"  # 10.0.34.0 - 10.0.34.255
 DAGSTER_STORAGE_SUBNET_PREFIX = "10.0.35.0/24"  # 10.0.35.0 - 10.0.35.255
@@ -50,8 +49,6 @@ class Network(pulumi.ComponentResource):
         self.vnet = self._create_virtual_network()
 
         # Create subnets
-        self.subnets["nats"] = self._create_nats_subnet()
-        self.subnets["nats_storage"] = self._create_nats_storage_subnet()
         self.subnets["app"] = self._create_app_subnet()
         self.subnets["pg"] = self._create_pg_subnet()
         self.subnets["capp"] = self._create_capp_subnet()
@@ -81,28 +78,6 @@ class Network(pulumi.ComponentResource):
             },
         )
 
-    def _create_nats_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.nats_subnet_name,
-            resource_name=self.network_provider.nats_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=NATS_SUBNET_PREFIX,
-            delegations=[
-                network.DelegationArgs(
-                    name="aci-delegation",
-                    service_name="Microsoft.ContainerInstance/containerGroups",
-                )
-            ],
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self._create_subnet_nsg(
-            self.network_provider.nats_subnet_name,
-            subnet,
-            [APP_SUBNET_PREFIX, AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX],
-        )
-        return subnet
-
     def _create_app_subnet(self) -> network.Subnet:
         subnet = network.Subnet(
             name=self.network_provider.app_subnet_name,
@@ -118,7 +93,7 @@ class Network(pulumi.ComponentResource):
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(self.network_provider.app_subnet_name, subnet, [NATS_SUBNET_PREFIX])
+        self.network_provider.create_subnet_nsg(self.network_provider.app_subnet_name, subnet, [Nats.NATS_SUBNET_CIDR])
         return subnet
 
     def _create_pg_subnet(self) -> network.Subnet:
@@ -136,7 +111,7 @@ class Network(pulumi.ComponentResource):
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.pg_subnet_name,
             subnet,
             [DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WEBUI_SUBNET_PREFIX],
@@ -168,10 +143,10 @@ class Network(pulumi.ComponentResource):
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.agents_subnet_name,
             subnet,
-            [SEARCH_SUBNET_PREFIX, COSMOS_SUBNET_PREFIX, NATS_SUBNET_PREFIX],
+            [SEARCH_SUBNET_PREFIX, COSMOS_SUBNET_PREFIX, Nats.NATS_SUBNET_CIDR],
         )
         return subnet
 
@@ -181,14 +156,14 @@ class Network(pulumi.ComponentResource):
             resource_name=self.network_provider.nats_storage_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=NATS_STORAGE_SUBNET_PREFIX,
+            address_prefix=Nats.NATS_STORAGE_SUBNET_CIDR,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
 
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.nats_storage_subnet_name,
             subnet,
-            [NATS_SUBNET_PREFIX],
+            [Nats.NATS_SUBNET_CIDR],
         )
         return subnet
 
@@ -201,7 +176,7 @@ class Network(pulumi.ComponentResource):
             address_prefix=COSMOS_SUBNET_PREFIX,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.cosmos_subnet_name, subnet, [AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
         )
         return subnet
@@ -215,7 +190,7 @@ class Network(pulumi.ComponentResource):
             address_prefix=SEARCH_SUBNET_PREFIX,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.search_subnet_name, subnet, [AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
         )
         return subnet
@@ -244,7 +219,7 @@ class Network(pulumi.ComponentResource):
             )
         ]
 
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.dagster_storage_subnet_name,
             subnet,
             [DAGSTER_SUBNET_PREFIX],
@@ -278,7 +253,7 @@ class Network(pulumi.ComponentResource):
             address_prefix=DAGSTER_SUBNET_PREFIX,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.dagster_subnet_name,
             subnet,
             [],
@@ -307,7 +282,7 @@ class Network(pulumi.ComponentResource):
                 destination_port_range="*",
             )
         ]
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.api_cosmos_subnet_name,
             subnet,
             [APP_SUBNET_PREFIX],
@@ -324,7 +299,7 @@ class Network(pulumi.ComponentResource):
             address_prefix=WEBUI_SUBNET_PREFIX,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
+        self.network_provider.create_subnet_nsg(
             self.network_provider.webui_subnet_name,
             subnet,
             [WEBUI_SUBNET_PREFIX],
@@ -340,83 +315,12 @@ class Network(pulumi.ComponentResource):
             address_prefix=WEBUI_STORAGE_SUBNET_PREFIX,
             opts=pulumi.ResourceOptions(parent=self.vnet),
         )
-        self._create_subnet_nsg(
-            self.network_provider.webui_storage_subnet_name, subnet, [NATS_SUBNET_PREFIX, WEBUI_STORAGE_SUBNET_PREFIX]
+        self.network_provider.create_subnet_nsg(
+            self.network_provider.webui_storage_subnet_name,
+            subnet,
+            [Nats.NATS_SUBNET_CIDR, WEBUI_STORAGE_SUBNET_PREFIX],
         )
         return subnet
-
-    def _create_subnet_nsg(
-        self,
-        subnet_name: str,
-        subnet: network.Subnet,
-        source_prefixes: list[str],
-        additional_rules: list[network.SecurityRuleArgs] = None,
-    ) -> network.NetworkSecurityGroup:
-        """Create NSG for a subnet that only allows traffic from specific source subnets
-
-        Args:
-            subnet: The subnet to create NSG for
-            source_prefixes: List of source address prefixes to allow traffic from
-        """
-        # Create security rules for each source prefix
-        security_rules = []
-        for idx, prefix in enumerate(source_prefixes):
-            security_rules.append(
-                network.SecurityRuleArgs(
-                    name=f"AllowFromSourceSubnet{idx+1}",
-                    priority=100 + idx,  # Increment priority for each rule
-                    direction="Inbound",
-                    access="Allow",
-                    protocol="*",
-                    source_address_prefix=prefix,
-                    source_port_range="*",
-                    destination_address_prefix="*",
-                    destination_port_range="*",
-                )
-            )
-
-        # Add any additional rules provided
-        if additional_rules:
-            # Start priorities after the source subnet rules
-            start_priority = 100 + len(source_prefixes)
-            for idx, rule in enumerate(additional_rules):
-                # If the rule doesn't have a priority set, assign one
-                if not hasattr(rule, "priority") or rule.priority is None:
-                    rule.priority = start_priority + idx
-                security_rules.append(rule)
-
-        # Add the deny rule at the end
-        security_rules.append(
-            network.SecurityRuleArgs(
-                name="DenyAllInbound",
-                priority=4096,
-                direction="Inbound",
-                access="Deny",
-                protocol="*",
-                source_address_prefix="*",
-                source_port_range="*",
-                destination_address_prefix="*",
-                destination_port_range="*",
-            )
-        )
-
-        nsg = network.NetworkSecurityGroup(
-            resource_name=f"{subnet_name}-nsg",
-            network_security_group_name=f"{subnet_name}-nsg",
-            resource_group_name=self.config.resource_group,
-            location=self.config.location,
-            security_rules=security_rules,
-            id=subnet.id,
-            opts=pulumi.ResourceOptions(
-                parent=self,
-                replace_on_changes=["security_rules"],
-            ),
-            tags={
-                "Stack": self.stack,
-            },
-        )
-
-        return nsg
 
     def _register_outputs(self):
         """Register outputs for this component"""
