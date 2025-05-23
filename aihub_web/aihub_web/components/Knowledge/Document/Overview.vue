@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex justify-between text-xs opacity-60">
-      <div>{{ document.title }}</div>
+      <div>{{ document.document_title }}</div>
       <div>{{ createdAt }}</div>
     </div>
     <Divider />
@@ -15,10 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import type { DocumentDto } from '@core/sdk/client'
+import type { IngestedDocument } from '@core/sdk/client'
 
 const props = defineProps<{
-  document: DocumentDto
+  document: IngestedDocument
 }>()
 
 const createdAt = computed(() => {

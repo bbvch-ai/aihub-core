@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import type { DocumentDto } from '@core/sdk/client'
+import type { IngestedDocument } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -42,7 +42,7 @@ const {
   setPageSize,
 } = useDocuments()
 
-const toDocument = (document: DocumentDto) => {
+const toDocument = (document: IngestedDocument) => {
   router.push(localePath(`/admin/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
 }
 

@@ -13,14 +13,20 @@ from mongoengine.context_managers import switch_db
 
 
 class Metadata(DynamicEmbeddedDocument):
-    namespace = StringField(required=True)
     source = StringField(required=True)
-    content_hash = StringField(required=True)
-    type = StringField(required=True)
+    namespace = StringField(required=True)
     version = StringField(required=True)
+
+    number_of_pages = IntField(required=False)
+    document_title = StringField(required=False)
+    language = StringField(required=False)
+
     created_at = IntField(required=True)
     updated_at = IntField(required=True)
     inserted_at = IntField(required=True)
+
+    content_hash = StringField(required=True)
+    type = StringField(required=True)
 
 
 class DocumentData(DynamicEmbeddedDocument):
@@ -40,6 +46,12 @@ class DocumentData(DynamicEmbeddedDocument):
 
 
 class RefDoc(Document):
+    """
+    This RefDoc document is closels modelled after the RefDOc by llama-index. Hence, we can NOT freely change how
+    this document is stored in the database. We have some creative freedom over the Metadata, but not at all over the
+    DocumentData.
+    """
+
     meta = {"collection": "documents-data", "strict": False, "indexes": [{"fields": ["data.metadata.namespace"]}]}
     id = StringField(primary_key=True)
     data = EmbeddedDocumentField(DocumentData, db_field="__data__")
@@ -112,7 +124,6 @@ class RefDoc(Document):
                     "last_updated_at": {"$max": "$__data__.metadata.updated_at"},
                     "last_inserted_at": {"$max": "$__data__.metadata.inserted_at"},
                     "created_at": {"$min": "$__data__.metadata.created_at"},
-                    "document_types": {"$addToSet": "$__data__.metadata.type"},
                 }
             },
             # Format the output
@@ -123,7 +134,6 @@ class RefDoc(Document):
                     "last_updated_at": 1,
                     "last_inserted_at": 1,
                     "created_at": 1,
-                    "document_types": 1,
                     "_id": 0,
                 }
             },

@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -16,4 +16,3 @@ class Namespace(BaseModel):
     created_at: Annotated[
         int, Field(..., description="Oldest timestamp when any document in the namespace was created")
     ]
-    document_types: Annotated[List[str], Field(..., description="Set of all document types in the namespace")]

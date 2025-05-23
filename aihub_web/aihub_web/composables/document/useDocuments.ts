@@ -1,4 +1,4 @@
-import { type DocumentDto, getDocumentsForNamespace } from '@core/sdk/client'
+import { type IngestedDocument, getDocumentsForNamespace } from '@core/sdk/client'
 
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
@@ -6,7 +6,7 @@ export const useDocuments = defineQuery(() => {
   const pageSize = ref(10)
 
   const documentsQuery = useQuery({
-    key: () => ['knowledge', 'db', route.params.db as string, 'namespace', route.params.namespace as string, 'document', { page: currentPage.value, size: pageSize.value }],
+    key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', { page: currentPage.value, size: pageSize.value }],
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
@@ -17,7 +17,7 @@ export const useDocuments = defineQuery(() => {
           page_size: pageSize.value,
         },
         path: {
-          db: route.params.db,
+          database: route.params.db,
           namespace: route.params.namespace,
         },
       })
@@ -49,7 +49,7 @@ export const useDocuments = defineQuery(() => {
     }
   })
 
-  const documents = computed(() => (documentsQuery.state.value?.data)?.documents ?? [] as DocumentDto[])
+  const documents = computed(() => (documentsQuery.state.value?.data)?.documents ?? [] as IngestedDocument[])
 
   const isLoading = computed(() => documentsQuery.asyncStatus.value === 'loading')
 

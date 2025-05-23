@@ -1,8 +1,10 @@
+import logging
 from typing import Dict, List, Tuple
 
 import mongoengine
+from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
-from aihub_lib.nats.events.semantic.retriever.Node import Node
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.documents.entities.types.Namespace import Namespace
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
@@ -19,8 +21,9 @@ from mongoengine import register_connection
 from pymongo import MongoClient
 
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
-from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeService:
@@ -32,34 +35,34 @@ class KnowledgeService:
     @staticmethod
     def get_paginated_documents(
         db: str, namespace: str, page: int = 1, page_size: int = 20
-    ) -> Tuple[int, List[DocumentDTO]]:
+    ) -> Tuple[int, List[IngestedDocument]]:
         """
         Retrieves paginated documents for a given namespace.
         """
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
-        total = RefDoc.count_by_namespace(db, namespace=namespace)
+        total = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
 
-        ref_docs_page = RefDoc.get_paginated_by_namespace(db, namespace=namespace, skip=skip, limit=page_size)
+        ref_docs_page = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=skip, limit=page_size)
 
-        document_dtos = [DocumentDTO.from_entity(doc) for doc in ref_docs_page]
+        document_dtos = [IngestedDocument.from_entity(doc) for doc in ref_docs_page]
 
         return total, document_dtos
 
     @staticmethod
-    def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
+    def get_document_by_id(db: str, document_id: str) -> IngestedDocument:
         """
         Retrieves a single document by its ID.
         """
         KnowledgeService._ensure_db_exists(db)
-        ref_doc = RefDoc.by_id(db, doc_id=document_id)
-        return DocumentDTO.from_entity(ref_doc)
+        ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
+        return IngestedDocument.from_entity(ref_doc)
 
     @staticmethod
     def get_databases(mongo_client: MongoClient) -> List[DatabaseDTO]:
         """
-        Retrieves all available namespaces with the number of documents in each.
+        Retrieves all databases with their available namespaces with the number of documents in each.
         Uses a MongoDB aggregation pipeline to get this information in a single query.
         """
         database_names = mongo_client.list_database_names()
@@ -69,7 +72,11 @@ class KnowledgeService:
         for db_name in user_dbs:
             KnowledgeService._ensure_db_exists(db_name)
             namespace_data = RefDoc.get_namespaces(db_alias=db_name)
-            namespaces = [Namespace(database=db_name, **ns_data) for ns_data in namespace_data]
+            try:
+                namespaces = [Namespace(database=db_name, **ns_data) for ns_data in namespace_data]
+            except Exception:
+                logger.warning(f"Unable to load documents from database {db_name}, skipping")
+                continue
 
             if len(namespaces) > 0:
                 database_dtos.append(DatabaseDTO(name=db_name, namespaces=namespaces))
@@ -83,7 +90,7 @@ class KnowledgeService:
         document_id: str,
         vector_store_factory: VectorStoreFactory,
         node_type: NodeTypeValue = NODE_TYPE_CONTENT,
-    ) -> List[Node]:
+    ) -> List[IngestedNode]:
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key=DOCUMENT_ID, value=document_id),
@@ -93,7 +100,7 @@ class KnowledgeService:
         )
         vector_store = vector_store_factory(db)
         raw_nodes = vector_store.get_nodes(filters=filters)
-        nodes = [Node.from_llama_index_node(node) for node in raw_nodes]
+        nodes = [IngestedNode.from_llama_index_node(node) for node in raw_nodes]
         nodes.sort(key=lambda node: node.index or 1)
         return nodes
 

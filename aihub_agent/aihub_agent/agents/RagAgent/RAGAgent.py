@@ -166,7 +166,7 @@ class RAGAgent(Agent):
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         ordered_nodes = combine_nodes_in_order(
-            context_nodes=event.documents,
+            context_nodes=event.nodes,
             locale_handler=t,
             context_prompt=agent_config.context_prompt,
         )

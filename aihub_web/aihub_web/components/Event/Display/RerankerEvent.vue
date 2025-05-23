@@ -16,8 +16,8 @@
       <p class="pt-5 font-bold">
         Top: {{ event.event.top_k }} relevanteste Dokumente:
       </p>
-      <ChatSourceDocuments
-        :documents="event.event.output_documents ?? []"
+      <ChatSourceNodes
+        :nodes="event.event.output_nodes ?? []"
       />
     </div>
   </EventDisplayBase>

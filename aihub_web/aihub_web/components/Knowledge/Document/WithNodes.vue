@@ -16,17 +16,17 @@
 </template>
 
 <script setup lang="ts">
-import { type DocumentDto, getDocumentById, getNodesForDocument, type Node } from '@core/sdk/client'
+import { type IngestedDocument, getDocumentById, getNodesForDocument, type IngestedNode } from '@core/sdk/client'
 
 const props = defineProps<{
   db: string
   namespace: string
   documentId: string
-  inputNodes: Node[]
+  inputNodes: IngestedNode[]
   showInactive: boolean
 }>()
 
-const { data: document, isPending: documentIsLoading } = useQuery<DocumentDto>({
+const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocument>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId as string],
   staleTime: 1000 * 60 * 5, // 5 minutes
   enabled: true,
@@ -34,7 +34,7 @@ const { data: document, isPending: documentIsLoading } = useQuery<DocumentDto>({
     return await getDocumentById({
       composable: '$fetch',
       path: {
-        db: props.db,
+        database: props.db,
         namespace: props.namespace,
         document_id: props.documentId as string,
       },
@@ -50,7 +50,7 @@ const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Nod
     return await getNodesForDocument({
       composable: '$fetch',
       path: {
-        db: props.db,
+        database: props.db,
         namespace: props.namespace,
         document_id: props.documentId as string,
       },
@@ -58,10 +58,10 @@ const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Nod
   },
 })
 
-const combinedNodes = computed<{ node: Node, isActive: boolean }[]>(() => {
-  const combNodes: { node: Node, isActive: boolean }[] = [];
-  (documentNodes.value ?? []).forEach((node: Node) => {
-    const activeNode = props.inputNodes.find((n: Node) => n.id === node.id)
+const combinedNodes = computed<{ node: IngestedNode, isActive: boolean }[]>(() => {
+  const combNodes: { node: IngestedNode, isActive: boolean }[] = [];
+  (documentNodes.value ?? []).forEach((node: IngestedNode) => {
+    const activeNode = props.inputNodes.find((n: IngestedNode) => n.id === node.id)
     if (activeNode) {
       combNodes.push({ node: activeNode, isActive: true })
     }

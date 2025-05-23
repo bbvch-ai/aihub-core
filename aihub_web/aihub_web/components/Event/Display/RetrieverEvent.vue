@@ -5,8 +5,8 @@
     icon="line-md:document-twotone"
   >
     <div class="flex flex-col gap-4">
-      <ChatSourceDocuments
-        :documents="event.event.documents ?? []"
+      <ChatSourceNodes
+        :nodes="event.event.nodes ?? []"
       />
     </div>
   </EventDisplayBase>

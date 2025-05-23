@@ -13,16 +13,16 @@
       :severity="scoreColor"
     />
     <MarkdownRenderer
-      :md="node.text"
+      :md="node.content"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Node } from '@core/sdk/client'
+import type { IngestedNode } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  node: Node
+  node: IngestedNode
   alwaysShowScore?: boolean
   active?: boolean
 }>(), {

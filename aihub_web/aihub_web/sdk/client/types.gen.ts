@@ -982,68 +982,6 @@ export type DisplayStatistics = {
     runs?: Array<RunStatistics>;
 };
 
-export type Document = {
-    /**
-     * Unique identifier for the document.
-     */
-    id: string;
-    /**
-     * Score representing the relevance of the document.
-     */
-    score?: number | null;
-    /**
-     * Content of the document.
-     */
-    content?: string | null;
-    /**
-     * Optional metadata associated with the document as a dictionary.
-     */
-    metadata: Node;
-};
-
-export type DocumentDto = {
-    /**
-     * The unique identifier of the document.
-     */
-    id: string;
-    /**
-     * The main type of the document entity.
-     */
-    document_type?: string | null;
-    /**
-     * The textual content of the document.
-     */
-    text: string;
-    /**
-     * The namespace of the document within its metadata.
-     */
-    namespace: string;
-    /**
-     * Document title.
-     */
-    title: string;
-    /**
-     * Number of Pages in the Document.
-     */
-    number_of_pages: number;
-    /**
-     * Content type (content or summary).
-     */
-    content_type: 'content' | 'summary';
-    /**
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string;
-};
-
 /**
  * Data for an edge in the workflow graph.
  */
@@ -1607,6 +1545,181 @@ export type ImagesResponse = {
     data?: Array<Image> | null;
     usage?: Usage | null;
     [key: string]: unknown | number | (Array<Image> | null) | (Usage | null) | undefined;
+};
+
+/**
+ * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
+ * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
+ * we also have an ID and content that was parsed from the original file.
+ */
+export type IngestedDocument = {
+    /**
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * Unique identifier for the document.
+     */
+    id: string;
+    /**
+     * Content of the document.
+     */
+    content?: string;
+};
+
+/**
+ * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+ * The attributes defined here are the minimal number of attributes that a node must have to ensure the
+ * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+ * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+ * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+ * are strictly necessary.
+ */
+export type IngestedNode = {
+    /**
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * The unique identifier of the Node.
+     */
+    id: string;
+    /**
+     * The textual content of the Node.
+     */
+    content: string;
+    /**
+     * Content type (content or summary).
+     */
+    content_type?: 'content' | 'summary';
+    /**
+     * ID of original ref_doc.
+     */
+    document_id: string;
+    /**
+     * The start character index of the Node.
+     */
+    start_char_idx?: number | null;
+    /**
+     * The end character index of the Node.
+     */
+    end_char_idx?: number | null;
+    /**
+     * Index counting position of node in document
+     */
+    index?: number | null;
+    /**
+     * Start line of the node in document
+     */
+    section_start_line?: number | null;
+    /**
+     * End line of the node in document
+     */
+    section_end_line?: number | null;
+    /**
+     * H1 of the node in document
+     */
+    h1?: string | null;
+    /**
+     * H2 of the node in document
+     */
+    h2?: string | null;
+    /**
+     * H3 of the node in document
+     */
+    h3?: string | null;
+    /**
+     * H4 of the node in document
+     */
+    h4?: string | null;
+    /**
+     * H5 of the node in document
+     */
+    h5?: string | null;
+    /**
+     * H6 of the node in document
+     */
+    h6?: string | null;
+    /**
+     * Heading level of the node in document
+     */
+    heading_level?: (0 | 1 | 2 | 3 | 4 | 5 | 6) | null;
+    /**
+     * Score representing the relevance of the document.
+     */
+    score?: number | null;
 };
 
 export type InputAudio = {
@@ -2190,117 +2303,6 @@ export type Namespace = {
      * Oldest timestamp when any document in the namespace was created
      */
     created_at: number;
-    /**
-     * Set of all document types in the namespace
-     */
-    document_types: Array<string>;
-};
-
-export type Node = {
-    /**
-     * The unique identifier of the Node.
-     */
-    id: string;
-    /**
-     * The textual content of the Node.
-     */
-    text: string;
-    /**
-     * The start character index of the Node.
-     */
-    start_char_idx: number | null;
-    /**
-     * The end character index of the Node.
-     */
-    end_char_idx: number | null;
-    /**
-     * ID of original ref_doc.
-     */
-    document_id: string;
-    /**
-     * Source URI of original document.
-     */
-    source_uri: string;
-    /**
-     * The namespace of the document within its metadata.
-     */
-    namespace: string;
-    /**
-     * Number of Pages in the Document.
-     */
-    number_of_pages: number | null;
-    /**
-     * Content type (content or summary).
-     */
-    content_type: 'content' | 'summary';
-    /**
-     * Document title.
-     */
-    title: string;
-    /**
-     * Node language.
-     */
-    language: 'de' | 'en' | 'fr' | 'it';
-    /**
-     * Node version.
-     */
-    version: number;
-    /**
-     * Index counting position of node in document
-     */
-    index: number;
-    /**
-     * Start line of the node in document
-     */
-    section_start_line: number;
-    /**
-     * End line of the node in document
-     */
-    section_end_line: number;
-    /**
-     * H1 of the node in document
-     */
-    h1: string | null;
-    /**
-     * H2 of the node in document
-     */
-    h2: string | null;
-    /**
-     * H3 of the node in document
-     */
-    h3: string | null;
-    /**
-     * H4 of the node in document
-     */
-    h4: string | null;
-    /**
-     * H5 of the node in document
-     */
-    h5: string | null;
-    /**
-     * H6 of the node in document
-     */
-    h6: string | null;
-    /**
-     * Heading level of the node in document
-     */
-    heading_level: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-    /**
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string;
-    /**
-     * Score representing the relevance of the document.
-     */
-    score?: number | null;
 };
 
 /**
@@ -2359,7 +2361,7 @@ export type NodeSummaryDto = {
     /**
      * List of nodes in the summary
      */
-    nodes: Array<Node>;
+    nodes: Array<IngestedNode>;
 };
 
 export type PaginatedDocumentsResponse = {
@@ -2382,7 +2384,7 @@ export type PaginatedDocumentsResponse = {
     /**
      * List of Document DTOs objects for the current page
      */
-    documents: Array<DocumentDto>;
+    documents: Array<IngestedDocument>;
 };
 
 export type PaginatedThreadsResponse = {
@@ -2484,11 +2486,11 @@ export type RerankerEvent = {
     /**
      * List of input documents provided to the reranker.
      */
-    input_documents?: Array<Document> | null;
+    input_nodes?: Array<IngestedNode> | null;
     /**
      * List of documents outputted by the reranker.
      */
-    output_documents?: Array<Document> | null;
+    output_nodes?: Array<IngestedNode> | null;
     /**
      * The query string used by the reranker.
      */
@@ -2510,7 +2512,7 @@ export type RerankerEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | (Array<Document> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
 export type Resolution = '1m' | '1h' | '1d' | '1w';
@@ -2550,9 +2552,9 @@ export type RetrieverEvent = {
      */
     display_description?: LocaleString;
     /**
-     * List of documents retrieved by the retriever, including document IDs, scores, and content.
+     * List of nodes retrieved by the retriever, including document IDs, scores, and content.
      */
-    documents?: Array<Document> | null;
+    nodes?: Array<IngestedNode> | null;
     /**
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -2562,7 +2564,7 @@ export type RetrieverEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | (Array<Document> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | Array<string> | undefined;
 };
 
 export type RevokeTokenResponse = {
@@ -4228,7 +4230,7 @@ export type GetDatabasesData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/knowledge/db';
+    url: '/knowledge/databases';
 };
 
 export type GetDatabasesResponses = {
@@ -4243,7 +4245,7 @@ export type GetDatabasesResponse = GetDatabasesResponses[keyof GetDatabasesRespo
 export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
-        db: string;
+        database: string;
         namespace: string;
     };
     query?: {
@@ -4256,7 +4258,7 @@ export type GetDocumentsForNamespaceData = {
          */
         page_size?: number;
     };
-    url: '/knowledge/db/{db}/namespace/{namespace}/document';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
 
 export type GetDocumentsForNamespaceErrors = {
@@ -4280,12 +4282,12 @@ export type GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponses
 export type GetDocumentByIdData = {
     body?: never;
     path: {
-        db: string;
+        database: string;
         namespace: string;
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
 };
 
 export type GetDocumentByIdErrors = {
@@ -4301,7 +4303,7 @@ export type GetDocumentByIdResponses = {
     /**
      * Successful Response
      */
-    200: DocumentDto;
+    200: IngestedDocument;
 };
 
 export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
@@ -4309,12 +4311,12 @@ export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocument
 export type GetNodesForDocumentData = {
     body?: never;
     path: {
-        db: string;
+        database: string;
         namespace: string;
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}/nodes';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes';
 };
 
 export type GetNodesForDocumentErrors = {
@@ -4330,7 +4332,7 @@ export type GetNodesForDocumentResponses = {
     /**
      * Successful Response
      */
-    200: Array<Node>;
+    200: Array<IngestedNode>;
 };
 
 export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof GetNodesForDocumentResponses];
@@ -4338,12 +4340,12 @@ export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof Get
 export type GetSummaryNodesForDocumentData = {
     body?: never;
     path: {
-        db: string;
+        database: string;
         namespace: string;
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}/summaries';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries';
 };
 
 export type GetSummaryNodesForDocumentErrors = {

@@ -75,7 +75,7 @@ event:
       openHumanInTheLoop: "Offen (Mensch in der Schleife)"
       openBotInTheLoop: "Offen (Bot in der Schleife)"
       error: "Fehler"
-      delegations: "Delegationen"
+      delegations: "Delegierungen"
       delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
       allEvents: "Alle Ereignisse"
 

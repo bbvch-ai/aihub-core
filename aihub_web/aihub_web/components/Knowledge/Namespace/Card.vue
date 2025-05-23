@@ -29,14 +29,6 @@
       <div class="text-sm">
         {{ t('knowledge.updated_at') }} <span class="font-light">{{ updatedAt }}</span>
       </div>
-      <div class="pt-2">
-        <Tag
-          v-for="document_type in namespace.document_types"
-          :key="document_type"
-          severity="secondary"
-          :value="document_type"
-        />
-      </div>
     </div>
   </div>
 </template>

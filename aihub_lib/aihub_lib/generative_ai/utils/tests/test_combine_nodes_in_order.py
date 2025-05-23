@@ -3,10 +3,9 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.schema import NodeWithScore, TextNode
 from pytest_bdd import given, scenarios, then, when
 
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events.semantic.retriever import Document
-from aihub_lib.nats.events.semantic.retriever.Node import Node
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
@@ -97,15 +96,10 @@ def _(datatable):
         score = float(row[headers.index("score")])
         id_ = f"{metadata.get(SOURCE, 'missing')}-{metadata.get(SECTION_START_LINE, 0)}"
         context_nodes.append(
-            Document(
-                id=id_,
-                score=score,
-                content=text,
-                metadata=Node.from_llama_index_node_with_score(
-                    NodeWithScore(
-                        node=TextNode(text=text, metadata=metadata, id_=id_),
-                        score=score,
-                    ),
+            IngestedNode.from_llama_index_node_with_score(
+                NodeWithScore(
+                    node=TextNode(text=text, metadata=metadata, id_=id_),
+                    score=score,
                 ),
             )
         )

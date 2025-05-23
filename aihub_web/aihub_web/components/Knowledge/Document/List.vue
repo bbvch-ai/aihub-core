@@ -12,7 +12,7 @@
     >
       <template #body="{ data }">
         <p class="font-bold">
-          {{ data.title }}
+          {{ data.document_title }}
         </p>
       </template>
     </Column>
@@ -58,23 +58,23 @@
 </template>
 
 <script setup lang="ts">
-import type { DocumentDto } from '@core/sdk/client'
+import type { IngestedDocument } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
 
 const props = defineProps<{
-  documents: DocumentDto[]
+  documents: IngestedDocument[]
 }>()
 
 const emit = defineEmits<{
-  selected: [document: DocumentDto]
+  selected: [document: IngestedDocument]
 }>()
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 
 const selectedDocument = computed(() => {
-  return props.documents.filter((document: DocumentDto) => {
+  return props.documents.filter((document: IngestedDocument) => {
     return document.id === route.params.document_id
   })
 })

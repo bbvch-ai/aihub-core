@@ -737,14 +737,14 @@ export const getDatabases = <TComposable extends Composable, DefaultT extends Ge
                 type: 'http'
             }
         ],
-        url: '/knowledge/db',
+        url: '/knowledge/databases',
         ...options
     });
 };
 
 /**
  * Get Documents For Namespace
- * Returns all threads that the authenticated user is a member of.
+ * Returns paginated documents for a specific namespace within a database.
  */
 export const getDocumentsForNamespace = <TComposable extends Composable, DefaultT extends GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponse>(options: Options<TComposable, GetDocumentsForNamespaceData, GetDocumentsForNamespaceResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDocumentsForNamespaceResponse | DefaultT, GetDocumentsForNamespaceError, DefaultT>({
@@ -758,7 +758,7 @@ export const getDocumentsForNamespace = <TComposable extends Composable, Default
                 type: 'http'
             }
         ],
-        url: '/knowledge/db/{db}/namespace/{namespace}/document',
+        url: '/knowledge/databases/{database}/namespaces/{namespace}/documents',
         ...options
     });
 };
@@ -779,7 +779,7 @@ export const getDocumentById = <TComposable extends Composable, DefaultT extends
                 type: 'http'
             }
         ],
-        url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}',
+        url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}',
         ...options
     });
 };
@@ -800,7 +800,7 @@ export const getNodesForDocument = <TComposable extends Composable, DefaultT ext
                 type: 'http'
             }
         ],
-        url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}/nodes',
+        url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes',
         ...options
     });
 };
@@ -821,7 +821,7 @@ export const getSummaryNodesForDocument = <TComposable extends Composable, Defau
                 type: 'http'
             }
         ],
-        url: '/knowledge/db/{db}/namespace/{namespace}/document/{document_id}/summaries',
+        url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries',
         ...options
     });
 };

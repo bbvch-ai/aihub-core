@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Document, Node, WsServerEvent, RetrieverEvent } from '@core/sdk/client'
+import type { WsServerEvent, RetrieverEvent, IngestedNode } from '@core/sdk/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,7 +64,7 @@ const closeSources = () => {
 
 const retrieveEvents = computed<WsServerEvent[]>(() => {
   return threadEvents.value?.filter((event: WsServerEvent) => {
-    return event.display_id === route.params.display_id && event.event.documents
+    return event.display_id === route.params.display_id && event.event.nodes
   })
 })
 
@@ -72,22 +72,22 @@ type DocumentInfo = {
   db: string
   namespace: string
   id: string
-  nodes: Node[]
+  nodes: IngestedNode[]
 }
 
 const documentMap = computed<Record<string, DocumentInfo>>(() => {
   const docs: Record<string, DocumentInfo> = {}
   retrieveEvents.value?.forEach((event: WsServerEvent & { event: RetrieverEvent }) => {
-    (event.event.documents ?? []).forEach((doc: Document) => {
-      if (!(doc.metadata.document_id in docs)) {
-        docs[doc.metadata.document_id] = {
-          db: 'papers', // TODO: @mfundn this should be stored on the document metadata
-          namespace: doc.metadata.namespace,
-          id: doc.metadata.document_id,
+    (event.event.nodes ?? []).forEach((node: IngestedNode) => {
+      if (!(node.document_id in docs)) {
+        docs[node.document_id] = {
+          db: 'papers',
+          namespace: node.namespace,
+          id: node.document_id,
           nodes: [],
         }
       }
-      docs[doc.metadata.document_id].nodes.push(doc.metadata)
+      docs[node.document_id].nodes.push(node)
     })
   })
   return docs

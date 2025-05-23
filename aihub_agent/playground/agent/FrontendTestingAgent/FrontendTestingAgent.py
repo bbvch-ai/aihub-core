@@ -1,6 +1,9 @@
 import random
 
+from llama_index.core.schema import TextNode, NodeWithScore
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     UserMessageEvent,
@@ -23,8 +26,13 @@ from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding
 from aihub_lib.nats.events.semantic.guard import GuardEvent
-from aihub_lib.nats.events.semantic.retriever import Document
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_TITLE, SOURCE, CREATED_AT, REFERENCE_URL
+from aihub_lib.persistence.rag.vectors.node_metadata import (
+    DOCUMENT_TITLE,
+    SOURCE,
+    CREATED_AT,
+    REFERENCE_URL,
+    DOCUMENT_ID,
+)
 from playground.agent.FrontendTestingAgent.events.FrontendTestingEventA import FrontendTestingEventA
 from playground.agent.FrontendTestingAgent.events.FrontendTestingEventB import FrontendTestingEventB
 
@@ -93,28 +101,36 @@ class FrontendTestingAgent(Agent):
     @step()
     async def retriever_step(self, _: EmbeddingEvent) -> RetrieverEvent:
         return RetrieverEvent(
-            documents=[
-                Document(
-                    id="1",
-                    content="Der Zug hat Verspätung!",
-                    score=0.9,
-                    metadata={
-                        DOCUMENT_TITLE: "SBB",
-                        SOURCE: "sbb.docx",
-                        CREATED_AT: 1743681278,
-                        REFERENCE_URL: "https://www.sbb.ch",
-                    },
+            nodes=[
+                IngestedNode.from_llama_index_node_with_score(
+                    NodeWithScore(
+                        score=0.9,
+                        node=TextNode(
+                            text="Der Zug hat Verspätung!",
+                            metadata={
+                                DOCUMENT_ID: "1",
+                                DOCUMENT_TITLE: "SBB",
+                                SOURCE: "sbb.docx",
+                                CREATED_AT: 1743681278,
+                                REFERENCE_URL: "https://www.sbb.ch",
+                            },
+                        ),
+                    )
                 ),
-                Document(
-                    id="2",
-                    content="Corona is not real!",
-                    score=0.85,
-                    metadata={
-                        DOCUMENT_TITLE: "WHO Bericht",
-                        SOURCE: "who.pdf",
-                        CREATED_AT: 1743481278,
-                        REFERENCE_URL: "https://www.who.int",
-                    },
+                IngestedNode.from_llama_index_node_with_score(
+                    NodeWithScore(
+                        score=0.9,
+                        node=TextNode(
+                            text="Corona is not real!",
+                            metadata={
+                                DOCUMENT_ID: "2",
+                                DOCUMENT_TITLE: "WHO Bericht",
+                                SOURCE: "who.pdf",
+                                CREATED_AT: 1743481278,
+                                REFERENCE_URL: "https://www.who.int",
+                            },
+                        ),
+                    )
                 ),
             ],
         )
@@ -122,8 +138,8 @@ class FrontendTestingAgent(Agent):
     @step()
     async def rerank_step(self, event: RetrieverEvent) -> RerankerEvent:
         return RerankerEvent(
-            input_documents=event.documents,
-            output_documents=event.documents[::-1],
+            input_nodes=event.documents,
+            output_nodes=event.documents[::-1],
             query="Which document is more important",
             rerank_model_name="Azure AI Search Reranker",
             top_k=5,
