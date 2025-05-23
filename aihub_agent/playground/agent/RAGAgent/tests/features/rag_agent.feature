@@ -8,7 +8,7 @@ Feature: RAG Agent
     Then a StartEvent is present with payload "What is AI?"
     And a LimitChatHistoryEvent is present
     And a StandaloneQuestionCondenserEvent is present with condensed question
-    And a RetrieverEvent is present with retrieved documents
+    And a RetrieverEvent is present with retrieved nodes
     And an InOrderNodeCombinerEvent is present with ordered context message
     And a LimitChatHistoryWithContextEvent is present with limited history and context
     And an LLMEvent is present with a generated response
@@ -21,7 +21,7 @@ Feature: RAG Agent
     Then a StartEvent is present with payload "What is AI?"
     And a LimitChatHistoryEvent is present
     And a StandaloneQuestionCondenserEvent is present with condensed question
-    And a RetrieverEvent is present with retrieved documents
+    And a RetrieverEvent is present with retrieved nodes
     And an InOrderNodeCombinerEvent is present with ordered context message
     And a LimitChatHistoryWithContextEvent is present with limited history and context
     And an LLMEvent is present with a generated response

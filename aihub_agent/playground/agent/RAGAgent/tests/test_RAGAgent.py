@@ -247,10 +247,10 @@ def _(agent_runner: AgentTestRunner):
     assert condenser_event.condensed_chat_message.content, "No condensed question found"
 
 
-@then("a RetrieverEvent is present with retrieved documents")
+@then("a RetrieverEvent is present with retrieved nodes")
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
-    assert retriever_event.documents, "RetrieverEvent did not produce documents"
+    assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
 
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))

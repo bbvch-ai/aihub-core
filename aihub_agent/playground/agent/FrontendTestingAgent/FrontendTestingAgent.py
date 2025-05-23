@@ -138,8 +138,8 @@ class FrontendTestingAgent(Agent):
     @step()
     async def rerank_step(self, event: RetrieverEvent) -> RerankerEvent:
         return RerankerEvent(
-            input_nodes=event.documents,
-            output_nodes=event.documents[::-1],
+            input_nodes=event.nodes,
+            output_nodes=event.nodes[::-1],
             query="Which document is more important",
             rerank_model_name="Azure AI Search Reranker",
             top_k=5,
