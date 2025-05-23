@@ -10,6 +10,7 @@ from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -23,7 +24,7 @@ def mongo_connection(monkeypatch) -> Generator[None, None, None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     monkeypatch.setenv("COSMOS_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/")
     connect(
-        db="aihub",
+        db=ApiConfig().DB_NAME,
         host=CosmosAccess().get_connection_string(),
     )
     yield

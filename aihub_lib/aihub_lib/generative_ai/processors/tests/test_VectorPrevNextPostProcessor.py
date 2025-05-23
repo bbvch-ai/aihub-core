@@ -10,6 +10,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )
+from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.milvus_vector_store_content import fill_collection
 
@@ -75,11 +76,13 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
         collection_name="prev_next_test",
         embedding_vector_dimension=768,
     )
+    doc_store = create_mongo_document_store(document_store_name="development")
 
     fill_collection(
         embedding_config,
         vector_store,
-        documents=nodes_with_relationships,
+        doc_store,
+        nodes=nodes_with_relationships,
     )
     sleep(1)
     yield vector_store

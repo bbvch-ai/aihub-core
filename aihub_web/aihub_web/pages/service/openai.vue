@@ -24,8 +24,11 @@ const handleMessage = (event: MessageEvent) => {
     const data = event.data
 
     // Check if it's the overlay command
+    if (data.type === 'show-traces') {
+      router.push(localeRoute(`/service/openai/${data.thread_id as string}/tracing`))
+    }
     if (data.type === 'show-sources') {
-      router.push(localeRoute(`/service/openai/${data.thread_id as string}`))
+      router.push(localeRoute(`/service/openai/${data.thread_id as string}/${data.display_id as string}/sources`))
     }
   }
 }

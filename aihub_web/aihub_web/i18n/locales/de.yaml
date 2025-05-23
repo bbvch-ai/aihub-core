@@ -10,6 +10,45 @@ user:
     it: "Italienisch"
     fr: "Französisch"
 
+thread:
+  title: "Interaktionen"
+  users: "Benutzer"
+  assistants: "Assistenten"
+  navigation:
+    basic: "Basis"
+    hierarchy: "Hierarchie"
+    chat: "Chat"
+    display: "Runden"
+  list:
+    name: "Name"
+    agents: "Agenten"
+    created: "Erstellt"
+    numTurns: "Anzahl der Runden"
+    numEvents: "Anzahl der Ereignisse"
+    status: "Status"
+    pending: "Ausstehend"
+  utils:
+    pendingTypes:
+      hitl: "Mensch in der Schleife"
+      aitl: "Agent in der Schleife"
+      bitl: "Bot in der Schleife"
+      unknown: "Grund unbekannt"
+  display:
+    title: "Interaktionsrunden"
+    list:
+      started: "Gestartet"
+      duration: "Dauer"
+      events: "Ereignisse"
+      status: "Status"
+      pending: "Ausstehend"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
+  events:
+    title: "Runden-Nachverfolgungsansicht"
+  hierarchy:
+    title: "Hierarchische Ansicht der Runden"
+  chat:
+    title: "Chat-Ansicht"
+
 chat:
   assistant: "Assistent"
   document: "Dokument"
@@ -29,9 +68,9 @@ event:
     agents: "Agenten:"
   statistics:
     charts:
-      agentInvocations: "Agent-Aufrufe"
-      agentStart: "Agent-Start"
-      endEvents: "End-Ereignisse"
+      agentInvocations: "Agentenaufrufe"
+      agentStart: "Agentenstart"
+      endEvents: "Endereignisse"
       success: "Erfolg"
       openHumanInTheLoop: "Offen (Mensch in der Schleife)"
       openBotInTheLoop: "Offen (Bot in der Schleife)"
@@ -40,41 +79,14 @@ event:
       delegatedTaskAgentInTheLoop: "Delegierte Aufgabe (Agent in der Schleife)"
       allEvents: "Alle Ereignisse"
 
-thread:
-  users: "Benutzer"
-  assistants: "Assistenten"
-  list:
-    name: "Name"
-    agents: "Agenten"
-    created: "Erstellt"
-    numTurns: "Anzahl der Durchgänge"
-    numEvents: "Anzahl der Ereignisse"
-    status: "Status"
-    pending: "Ausstehend"
-  title: "Threads"
-  utils:
-    pendingTypes:
-      hitl: "Mensch in der Schleife"
-      aitl: "Agent in der Schleife"
-      bitl: "Bot in der Schleife"
-      unknown: "Grund unbekannt"
-  display:
-    list:
-      started: "Gestartet"
-      duration: "Dauer"
-      events: "Ereignisse"
-      status: "Status"
-      pending: "Ausstehend"
-      dateFormat: "DD.MM.YYYY HH:mm:ss"
-
 costs:
   table:
     count: "Anzahl"
     cost: "Kosten"
-    input: "Input"
-    output: "Output"
+    input: "Eingabe"
+    output: "Ausgabe"
     embedding: "Embedding"
-    total: "Total"
+    total: "Gesamt"
     currency: "CHF"
 
 service:
@@ -84,23 +96,26 @@ service:
     search: "Suchen"
 
 agent:
+  title: "Agenten"
+  can_chat: "Kann chatten"
   overview:
-    startEvents: "Start-Ereignisse"
-    stopEvents: "Stop-Ereignisse"
+    startEvents: "Startereignisse"
+    stopEvents: "Stoppereignisse"
     config: "Konfiguration"
     name: "Name:"
     class: "Klasse:"
-    agentId: "Agent-ID:"
+    agentId: "Agenten-ID:"
     status: "Status:"
     online: "Online"
     offline: "Offline"
   chat:
-    title: "Chat"
+    title: "Neuen Chat starten"
+    placeholder: "Geben Sie die Nachricht ein, die Sie an den Agenten senden möchten"
     createThreadAndSend: "Thread erstellen und senden"
     manuallyCreatedThread: "Manuell erstellter Thread"
   navigation:
     basic: "Basis"
-    workflow: "Arbeitsablauf"
+    workflow: "Workflow"
     threads: "Threads"
     chat: "Chat"
   availableAgents: "Verfügbare Agenten"
@@ -108,12 +123,43 @@ agent:
     name: "Name"
     description: "Beschreibung"
     agent: "Agent"
-    is_conversational: "Konversationsfähig"
+    is_conversational: "Gesprächsorientiert"
     true: "Ja"
     false: "Nein"
     status: "Status"
     online: "Online"
     offline: "Offline"
+  workflow:
+    title: "Agentischer Workflow"
+  threads:
+    title: "Agenten-Threads"
+
+document:
+  list:
+    title: "Dokumenttitel"
+    created: "Erstellt"
+    updated_at: "Zuletzt aktualisiert"
+    document_type: "Dokumenttyp"
+    number_of_pages: "Anzahl der Seiten"
+
+knowledge:
+  title: "Wissensdatenbanken"
+  created_at: "Erstellt:"
+  updated_at: "Zuletzt aktualisiert:"
+  navigation:
+    document:
+      basic: "Übersicht"
+      content: "Inhalt"
+      nodes: "Abschnitte"
+      summary: "Zusammenfassungen"
+  documents:
+    title: "Dokumente"
+  nodes:
+    title: "Dokumentabschnitte"
+  summary:
+    title: "Dokumentzusammenfassungen"
+    level: "Ebene"
+    no_summaries_at_level: "Keine Zusammenfassungen auf dieser Ebene"
 
 auth:
   renew:
@@ -123,16 +169,16 @@ auth:
     loggingIn: "Sie werden angemeldet..."
     loginError: "Anmeldefehler"
     redirectingToLogin: "Weiterleitung zur Anmeldeseite..."
-    genericError: "Bei der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+    genericError: "Während der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
   login:
     title: "Anmelden"
     description: "Bitte melden Sie sich an, um auf die Anwendung zuzugreifen"
     tagline: "Erleben Sie die Zukunft der künstlichen Intelligenz"
     welcome: "Willkommen im AI Hub von {companyName}"
-    pleaseLogin: "Bitte loggen Sie sich ein"
+    pleaseLogin: "Bitte anmelden"
     loginWithMicrosoft: "Mit Microsoft anmelden"
-    customSolutions: "Individuelle KI-Lösungen für Ihr Unternehmen"
-    logoAlt: "Logo des Unternehmens"
+    customSolutions: "Massgeschneiderte KI-Lösungen für Ihr Unternehmen"
+    logoAlt: "Firmenlogo"
 
 timerange:
   1h: "1 Stunde"
@@ -141,7 +187,7 @@ timerange:
   365d: "1 Jahr"
 
 chart:
-  no_data: "Keine Daten für diesen Zeitraum verfügbar."
+  no_data: "Für diesen Zeitraum sind keine Daten verfügbar."
   trending_up: "Aufwärtstrend"
   trending_down: "Abwärtstrend"
 
@@ -151,16 +197,16 @@ dashboard:
   unknown_agent: "Unbekannter Agent"
   add_widget: "Widget hinzufügen"
   select_data_type: "Datentyp auswählen"
-  select_agent: "Agent auswählen (Optional)"
+  select_agent: "Einen Agenten auswählen (Optional)"
   create: "Erstellen"
   create_widget: "Neues Widget erstellen"
   events:
     StartEvent:
-      label: 'Gestartete Agent-Ausführungen'
+      label: 'Gestartete Agentenläufe'
     StopEvent:
-      label: 'Erfolgreiche Ausführungen'
+      label: 'Erfolgreiche Läufe'
     UserMessageEvent:
-      label: 'Benutzer-Chatnachrichten'
+      label: 'Benutzer-Chat-Nachrichten'
     ExceptionEvent:
       label: 'Fehler'
     HumanInTheLoopRequestEvent:

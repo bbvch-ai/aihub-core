@@ -11,8 +11,14 @@ user:
     fr: "French"
 
 thread:
+  title: "Interactions"
   users: "Users"
   assistants: "Assistants"
+  navigation:
+    basic: "Basic"
+    hierarchy: "Hierarchy"
+    chat: "Chat"
+    display: "Turns"
   list:
     name: "Name"
     agents: "Agents"
@@ -21,7 +27,6 @@ thread:
     numEvents: "Number of Events"
     status: "Status"
     pending: "Pending"
-  title: "Threads"
   utils:
     pendingTypes:
       hitl: "Human in the Loop"
@@ -29,6 +34,7 @@ thread:
       bitl: "Bot in the Loop"
       unknown: "Reason unknown"
   display:
+    title: "Interaction Turns"
     list:
       started: "Started"
       duration: "Duration"
@@ -36,6 +42,12 @@ thread:
       status: "Status"
       pending: "Pending"
       dateFormat: "DD.MM.YYYY HH:mm:ss"
+  events:
+    title: "Turn Tracing View"
+  hierarchy:
+    title: "Hierarchical View on Turns"
+  chat:
+    title: "Chat view"
 
 chat:
   assistant: "Assistant"
@@ -84,6 +96,8 @@ service:
     search: "Search"
 
 agent:
+  title: "Agents"
+  can_chat: "Can Chat"
   overview:
     startEvents: "Start Events"
     stopEvents: "Stop Events"
@@ -95,7 +109,8 @@ agent:
     online: "Online"
     offline: "Offline"
   chat:
-    title: "Chat"
+    title: "Start new Chat"
+    placeholder: "Type the message you want to send to the Agent"
     createThreadAndSend: "Create Thread and Send"
     manuallyCreatedThread: "Manually created thread"
   navigation:
@@ -114,6 +129,37 @@ agent:
     status: "Status"
     online: "Online"
     offline: "Offline"
+  workflow:
+    title: "Agentic Workflow"
+  threads:
+    title: "Agent Threads"
+
+document:
+  list:
+    title: "Document Titel"
+    created: "Created"
+    updated_at: "Last updated"
+    document_type: "Document Type"
+    number_of_pages: "Number of Pages"
+
+knowledge:
+  title: "Knowledge Databases"
+  created_at: "Created:"
+  updated_at: "Last updated:"
+  navigation:
+    document:
+      basic: "Overview"
+      content: "Content"
+      nodes: "Chunks"
+      summary: "Summaries"
+  documents:
+    title: "Documents"
+  nodes:
+    title: "Document Chunks"
+  summary:
+    title: "Document Summaries"
+    level: "Level"
+    no_summaries_at_level: "No summaries on this Level"
 
 auth:
   renew:

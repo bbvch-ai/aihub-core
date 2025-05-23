@@ -2526,6 +2526,27 @@ export const DashboardItemDTOSchema = {
     title: 'DashboardItemDTO'
 } as const;
 
+export const DatabaseDTOSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of database'
+        },
+        namespaces: {
+            items: {
+                '$ref': '#/components/schemas/Namespace'
+            },
+            type: 'array',
+            title: 'Namespaces',
+            description: 'List of namespaces'
+        }
+    },
+    type: 'object',
+    required: ['name', 'namespaces'],
+    title: 'DatabaseDTO'
+} as const;
+
 export const DisplayEventSchema = {
     properties: {
         event_id: {
@@ -2692,56 +2713,6 @@ export const DisplayStatisticsSchema = {
     required: ['display_id'],
     title: 'DisplayStatistics',
     description: 'Statistics for a display, including its runs, intended for API response.'
-} as const;
-
-export const DocumentSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique identifier for the document.'
-        },
-        score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Score',
-            description: 'Score representing the relevance of the document.'
-        },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'Content of the document.'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Optional metadata associated with the document as a dictionary.'
-        }
-    },
-    type: 'object',
-    required: ['id'],
-    title: 'Document'
 } as const;
 
 export const EdgeDataSchema = {
@@ -3956,6 +3927,380 @@ export const ImagesResponseSchema = {
     type: 'object',
     required: ['created'],
     title: 'ImagesResponse'
+} as const;
+
+export const IngestedDocumentSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['de', 'en', 'fr', 'it']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language',
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the document.'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'Content of the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
+    title: 'IngestedDocument',
+    description: `Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
+representation of a document that was ingested through a pipeline. Hence, compared to the default data,
+we also have an ID and content that was parsed from the original file.`
+} as const;
+
+export const IngestedNodeSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['de', 'en', 'fr', 'it']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language',
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the Node.'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The textual content of the Node.'
+        },
+        content_type: {
+            type: 'string',
+            enum: ['content', 'summary'],
+            title: 'Content Type',
+            description: 'Content type (content or summary).',
+            default: 'content'
+        },
+        document_id: {
+            type: 'string',
+            title: 'Document Id',
+            description: 'ID of original ref_doc.'
+        },
+        start_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Char Idx',
+            description: 'The start character index of the Node.'
+        },
+        end_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Char Idx',
+            description: 'The end character index of the Node.'
+        },
+        index: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Index',
+            description: 'Index counting position of node in document'
+        },
+        section_start_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section Start Line',
+            description: 'Start line of the node in document'
+        },
+        section_end_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section End Line',
+            description: 'End line of the node in document'
+        },
+        h1: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H1',
+            description: 'H1 of the node in document'
+        },
+        h2: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H2',
+            description: 'H2 of the node in document'
+        },
+        h3: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H3',
+            description: 'H3 of the node in document'
+        },
+        h4: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H4',
+            description: 'H4 of the node in document'
+        },
+        h5: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H5',
+            description: 'H5 of the node in document'
+        },
+        h6: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H6',
+            description: 'H6 of the node in document'
+        },
+        heading_level: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    enum: [0, 1, 2, 3, 4, 5, 6]
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Heading Level',
+            description: 'Heading level of the node in document'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score representing the relevance of the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
+    title: 'IngestedNode',
+    description: `A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+The attributes defined here are the minimal number of attributes that a node must have to ensure the
+UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+are strictly necessary.`
 } as const;
 
 export const InputAudioSchema = {
@@ -5191,6 +5536,44 @@ export const MyUserDTOSchema = {
     title: 'MyUserDTO'
 } as const;
 
+export const NamespaceSchema = {
+    properties: {
+        database: {
+            type: 'string',
+            title: 'Database',
+            description: 'Name of database that the namespace belongs to'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Name of namespace'
+        },
+        number_of_documents: {
+            type: 'integer',
+            title: 'Number Of Documents',
+            description: 'Number of documents in namespace'
+        },
+        last_updated_at: {
+            type: 'integer',
+            title: 'Last Updated At',
+            description: 'Latest timestamp when any document in the namespace was updated'
+        },
+        last_inserted_at: {
+            type: 'integer',
+            title: 'Last Inserted At',
+            description: 'Latest timestamp when any document in the namespace was inserted'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Oldest timestamp when any document in the namespace was created'
+        }
+    },
+    type: 'object',
+    required: ['database', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
+    title: 'Namespace'
+} as const;
+
 export const NodeDataSchema = {
     properties: {
         id: {
@@ -5296,6 +5679,63 @@ export const NodeDataSchema = {
     required: ['id', 'type', 'node_id', 'label'],
     title: 'NodeData',
     description: 'Data for a node in the workflow graph.'
+} as const;
+
+export const NodeSummaryDTOSchema = {
+    properties: {
+        level: {
+            type: 'integer',
+            title: 'Level',
+            description: 'Level of the summary'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/IngestedNode'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'List of nodes in the summary'
+        }
+    },
+    type: 'object',
+    required: ['level', 'nodes'],
+    title: 'NodeSummaryDTO'
+} as const;
+
+export const PaginatedDocumentsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        documents: {
+            items: {
+                '$ref': '#/components/schemas/IngestedDocument'
+            },
+            type: 'array',
+            title: 'Documents',
+            description: 'List of Document DTOs objects for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'documents'],
+    title: 'PaginatedDocumentsResponse'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -5502,11 +5942,11 @@ export const RerankerEventSchema = {
             '$ref': '#/components/schemas/LocaleString',
             description: 'Display description for the event'
         },
-        input_documents: {
+        input_nodes: {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Document'
+                        '$ref': '#/components/schemas/IngestedNode'
                     },
                     type: 'array'
                 },
@@ -5514,14 +5954,14 @@ export const RerankerEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Documents',
+            title: 'Input Nodes',
             description: 'List of input documents provided to the reranker.'
         },
-        output_documents: {
+        output_nodes: {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Document'
+                        '$ref': '#/components/schemas/IngestedNode'
                     },
                     type: 'array'
                 },
@@ -5529,7 +5969,7 @@ export const RerankerEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Documents',
+            title: 'Output Nodes',
             description: 'List of documents outputted by the reranker.'
         },
         query: {
@@ -5658,11 +6098,11 @@ export const RetrieverEventSchema = {
             '$ref': '#/components/schemas/LocaleString',
             description: 'Display description for the event'
         },
-        documents: {
+        nodes: {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Document'
+                        '$ref': '#/components/schemas/IngestedNode'
                     },
                     type: 'array'
                 },
@@ -5670,8 +6110,8 @@ export const RetrieverEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Documents',
-            description: 'List of documents retrieved by the retriever, including document IDs, scores, and content.'
+            title: 'Nodes',
+            description: 'List of nodes retrieved by the retriever, including document IDs, scores, and content.'
         },
         _event_name: {
             type: 'string',

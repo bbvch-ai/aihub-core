@@ -3,8 +3,8 @@ from typing import ClassVar, Dict, List, Optional
 from openinference.semconv.trace import OpenInferenceSpanKindValues, RerankerAttributes, SpanAttributes
 from pydantic import Field
 
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.semantic.retriever.RetrieverEvent import Document
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
@@ -14,10 +14,10 @@ class RerankerEvent(SemanticEvent):
         "lib.events.semantic_reranker_event.description"
     )
 
-    input_documents: Optional[List[Document]] = Field(
+    input_nodes: Optional[List[IngestedNode]] = Field(
         None, description="List of input documents provided to the reranker."
     )
-    output_documents: Optional[List[Document]] = Field(None, description="List of documents outputted by the reranker.")
+    output_nodes: Optional[List[IngestedNode]] = Field(None, description="List of documents outputted by the reranker.")
     query: Optional[str] = Field(None, description="The query string used by the reranker.")
     rerank_model_name: Optional[str] = Field(None, description="Name of the reranker model being used.")
     top_k: Optional[int] = Field(
@@ -34,19 +34,19 @@ class RerankerEvent(SemanticEvent):
         }
 
         # Flatten input documents
-        if self.input_documents:
-            for i, doc in enumerate(self.input_documents):
+        if self.input_nodes:
+            for i, node in enumerate(self.input_nodes):
                 attributes = {
                     **attributes,
-                    **doc.to_semantic_convention(RerankerAttributes.RERANKER_INPUT_DOCUMENTS, i),
+                    **node.to_semantic_convention(RerankerAttributes.RERANKER_INPUT_DOCUMENTS, i),
                 }
 
         # Flatten output documents
-        if self.output_documents:
-            for i, doc in enumerate(self.output_documents):
+        if self.output_nodes:
+            for i, node in enumerate(self.output_nodes):
                 attributes = {
                     **attributes,
-                    **doc.to_semantic_convention(RerankerAttributes.RERANKER_OUTPUT_DOCUMENTS, i),
+                    **node.to_semantic_convention(RerankerAttributes.RERANKER_OUTPUT_DOCUMENTS, i),
                 }
 
         return {k: v for k, v in attributes.items() if v is not None}

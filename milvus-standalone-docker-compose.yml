@@ -57,6 +57,19 @@ services:
     depends_on:
       - "etcd"
       - "minio"
+  attu:
+    image: zilliz/attu:latest
+    restart: always
+    ports:
+      - "3003:3000"
+    depends_on:
+      - "standalone"
+    environment:
+      - MILVUS_URL=standalone:19530
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
 
 networks:
   default:
