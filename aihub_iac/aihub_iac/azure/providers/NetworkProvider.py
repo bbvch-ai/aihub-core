@@ -118,13 +118,5 @@ class NetworkProvider:
         return f"{self.sub_net_name}-{APP_SERVICE}"
 
     @property
-    def cap_subnet_name(self):
-        return f"{self.sub_net_name}-{CONTAINER_APP}"
-
-    @property
     def agents_subnet_name(self):
         return f"{self.sub_net_name}-{CONTAINER_INSTANCE}-agents"
-
-    @property
-    def priv_endpoint_subnet_name(self):
-        return f"{self.sub_net_name}-priv-endpoint"
