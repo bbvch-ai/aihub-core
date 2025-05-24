@@ -53,31 +53,26 @@ class Dagster(pulumi.ComponentResource):
         return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{STORAGE_ACCOUNT}-dagster"
 
     def _create_dagster_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.dagster_subnet_name,
+            source_prefixes=[self.config.DAGSTER_SUBNET_CIDR],
+        )
         subnet = network.Subnet(
             name=self.dagster_subnet_name,
             resource_name=self.dagster_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.DAGSTER_SUBNET_CIDR,
+            network_security_group={
+                "id": nsg.id
+            },
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.dagster_subnet_name,
-            subnet=subnet,
-            source_prefixes=[self.config.DAGSTER_SUBNET_CIDR],
-        )
+
         return subnet
 
     def _create_dagster_storage_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.dagster_storage_subnet_name,
-            resource_name=self.dagster_storage_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=self.config.DAGSTER_STORAGE_SUBNET_CIDR,
-        )
-
         public_access_rules = [
             network.SecurityRuleArgs(
                 name="AllowInternetToProxy",
@@ -92,14 +87,23 @@ class Dagster(pulumi.ComponentResource):
             )
         ]
 
-        self.network_provider.create_subnet_nsg(
+        nsg = self.network_provider.create_subnet_nsg(
             parent=self,
             stack=self.stack,
-            subnet_name=self.network_provider.dagster_storage_subnet_name,
-            subnet=subnet,
+            subnet_name=self.dagster_storage_subnet_name,
             source_prefixes=[self.config.DAGSTER_SUBNET_CIDR, self.config.DAGSTER_STORAGE_SUBNET_CIDR],
             additional_rules=public_access_rules,
         )
+
+        subnet = network.Subnet(
+            name=self.dagster_storage_subnet_name,
+            resource_name=self.dagster_storage_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.DAGSTER_STORAGE_SUBNET_CIDR,
+            network_security_group={"id": nsg.id},
+        )
+
         return subnet
 
     def _create_resources(self):

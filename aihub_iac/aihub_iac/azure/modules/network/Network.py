@@ -54,6 +54,13 @@ class Network(pulumi.ComponentResource):
         )
 
     def _create_app_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.app_subnet_name,
+            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR],
+        )
+
         subnet = network.Subnet(
             name=self.network_provider.app_subnet_name,
             resource_name=self.network_provider.app_subnet_name,
@@ -67,17 +74,23 @@ class Network(pulumi.ComponentResource):
                 )
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
+            network_security_group={"id": nsg.id},
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.app_subnet_name,
-            subnet=subnet,
-            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR],
-        )
+
         return subnet
 
     def _create_agents_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.agents_subnet_name,
+            source_prefixes=[
+                StoresConfig.SEARCH_SUBNET_CIDR,
+                StoresConfig.COSMOS_SUBNET_CIDR,
+                NatsConfig.NATS_SUBNET_CIDR,
+            ],
+        )
+
         subnet = network.Subnet(
             name=self.network_provider.agents_subnet_name,
             resource_name=self.network_provider.agents_subnet_name,
@@ -91,18 +104,9 @@ class Network(pulumi.ComponentResource):
                 )
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
+            network_security_group={"id": nsg.id},
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.agents_subnet_name,
-            subnet=subnet,
-            source_prefixes=[
-                StoresConfig.SEARCH_SUBNET_CIDR,
-                StoresConfig.COSMOS_SUBNET_CIDR,
-                NatsConfig.NATS_SUBNET_CIDR,
-            ],
-        )
+
         return subnet
 
     def _register_outputs(self):

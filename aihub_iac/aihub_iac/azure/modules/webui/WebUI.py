@@ -63,37 +63,39 @@ class WebUI(pulumi.ComponentResource):
         return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{STORAGE_ACCOUNT}-webui"
 
     def _create_webui_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.webui_subnet_name,
+            source_prefixes=[self.config.WEBUI_SUBNET_CIDR],
+        )
         subnet = network.Subnet(
             name=self.webui_subnet_name,
             resource_name=self.webui_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.WEBUI_SUBNET_CIDR,
+            network_security_group={"id": nsg.id},
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.webui_subnet_name,
-            subnet=subnet,
-            source_prefixes=[self.config.WEBUI_SUBNET_CIDR],
-        )
+
         return subnet
 
     def _create_webui_storage_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.webui_storage_subnet_name,
+            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR, self.config.WEBUI_STORAGE_SUBNET_CIDR],
+        )
         subnet = network.Subnet(
             name=self.webui_storage_subnet_name,
             resource_name=self.webui_storage_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.WEBUI_STORAGE_SUBNET_CIDR,
+            network_security_group={"id": nsg.id},
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.webui_storage_subnet_name,
-            subnet=subnet,
-            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR, self.config.WEBUI_STORAGE_SUBNET_CIDR],
-        )
+
         return subnet
 
     def _create_resources(self):

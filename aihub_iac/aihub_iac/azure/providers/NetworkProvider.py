@@ -16,7 +16,6 @@ class NetworkProvider:
         parent: pulumi.Resource,
         stack: str,
         subnet_name: str,
-        subnet: network.Subnet,
         source_prefixes: list[str],
         additional_rules: list[network.SecurityRuleArgs] = None,
     ) -> network.NetworkSecurityGroup:
@@ -74,7 +73,6 @@ class NetworkProvider:
             resource_group_name=self.resource_group,
             location=self.location,
             security_rules=security_rules,
-            id=subnet.id,
             opts=pulumi.ResourceOptions(
                 parent=parent,
                 replace_on_changes=["security_rules"],

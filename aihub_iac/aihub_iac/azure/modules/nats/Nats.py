@@ -76,6 +76,17 @@ class Nats(pulumi.ComponentResource):
         )
 
     def _create_nats_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.nats_subnet_name,
+            source_prefixes=[
+                NetworkConfig.APP_SUBNET_CIDR,
+                NetworkConfig.AGENTS_SUBNET_CIDR,
+                DagsterConfig.DAGSTER_SUBNET_CIDR,
+            ],
+        )
+
         subnet = network.Subnet(
             name=self.nats_subnet_name,
             resource_name=self.nats_subnet_name,
@@ -88,36 +99,28 @@ class Nats(pulumi.ComponentResource):
                     service_name="Microsoft.ContainerInstance/containerGroups",
                 )
             ],
+            network_security_group={"id": nsg.id},
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.nats_subnet_name,
-            subnet=subnet,
-            source_prefixes=[
-                NetworkConfig.APP_SUBNET_CIDR,
-                NetworkConfig.AGENTS_SUBNET_CIDR,
-                DagsterConfig.DAGSTER_SUBNET_CIDR,
-            ],
-        )
+
         return subnet
 
     def _create_nats_storage_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.nats_storage_subnet_name,
+            source_prefixes=[self.config.NATS_SUBNET_CIDR, self.config.NATS_STORAGE_SUBNET_CIDR],
+        )
+
         subnet = network.Subnet(
             name=self.nats_storage_subnet_name,
             resource_name=self.nats_storage_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.NATS_STORAGE_SUBNET_CIDR,
+            network_security_group={"id": nsg.id},
         )
 
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.nats_storage_subnet_name,
-            subnet=subnet,
-            source_prefixes=[self.config.NATS_SUBNET_CIDR, self.config.NATS_STORAGE_SUBNET_CIDR],
-        )
         return subnet
 
     def _create_resources(self):

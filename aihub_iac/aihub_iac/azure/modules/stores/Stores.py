@@ -71,13 +71,6 @@ class Stores(pulumi.ComponentResource):
         return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{POSTGRES}"
 
     def _create_api_cosmos_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.api_cosmos_subnet_name,
-            resource_name=self.api_cosmos_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=self.config.API_COSMOS_SUBNET_CIDR,
-        )
         public_access_rules = [
             network.SecurityRuleArgs(
                 name="AllowVPN1ToProxy",
@@ -91,34 +84,51 @@ class Stores(pulumi.ComponentResource):
                 destination_port_range="*",
             )
         ]
-        self.network_provider.create_subnet_nsg(
+        nsg = self.network_provider.create_subnet_nsg(
             parent=self,
             stack=self.stack,
             subnet_name=self.api_cosmos_subnet_name,
-            subnet=subnet,
             source_prefixes=[NetworkConfig.APP_SUBNET_CIDR],
             additional_rules=public_access_rules,
+        )
+        subnet = network.Subnet(
+            name=self.api_cosmos_subnet_name,
+            resource_name=self.api_cosmos_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.API_COSMOS_SUBNET_CIDR,
+            network_security_group={"id": nsg.id},
         )
         return subnet
 
     def _create_search_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.search_subnet_name,
+            source_prefixes=[NetworkConfig.AGENTS_SUBNET_CIDR, DagsterConfig.DAGSTER_SUBNET_CIDR],
+        )
         subnet = network.Subnet(
             name=self.search_subnet_name,
             resource_name=self.search_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.SEARCH_SUBNET_CIDR,
-        )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.search_subnet_name,
-            subnet=subnet,
-            source_prefixes=[NetworkConfig.AGENTS_SUBNET_CIDR, DagsterConfig.DAGSTER_SUBNET_CIDR],
+            network_security_group={"id": nsg.id},
         )
         return subnet
 
     def _create_pg_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.pg_subnet_name,
+            source_prefixes=[
+                DagsterConfig.DAGSTER_SUBNET_CIDR,
+                PhoenixConfig.PHOENIX_SUBNET_CIDR,
+                WebUIConfig.WEBUI_SUBNET_CIDR,
+            ],
+        )
         subnet = network.Subnet(
             name=self.pg_subnet_name,
             resource_name=self.pg_subnet_name,
@@ -131,34 +141,25 @@ class Stores(pulumi.ComponentResource):
                     service_name="Microsoft.DBforPostgreSQL/flexibleServers",
                 )
             ],
+            network_security_group={"id": nsg.id},
         )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.pg_subnet_name,
-            subnet=subnet,
-            source_prefixes=[
-                DagsterConfig.DAGSTER_SUBNET_CIDR,
-                PhoenixConfig.PHOENIX_SUBNET_CIDR,
-                WebUIConfig.WEBUI_SUBNET_CIDR,
-            ],
-        )
+
         return subnet
 
     def _create_stores_cosmos_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.cosmos_subnet_name,
+            source_prefixes=[NetworkConfig.AGENTS_SUBNET_CIDR, DagsterConfig.DAGSTER_SUBNET_CIDR],
+        )
         subnet = network.Subnet(
             name=self.cosmos_subnet_name,
             resource_name=self.cosmos_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.COSMOS_SUBNET_CIDR,
-        )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.cosmos_subnet_name,
-            subnet=subnet,
-            source_prefixes=[NetworkConfig.AGENTS_SUBNET_CIDR, DagsterConfig.DAGSTER_SUBNET_CIDR],
+            network_security_group={"id": nsg.id},
         )
         return subnet
 
