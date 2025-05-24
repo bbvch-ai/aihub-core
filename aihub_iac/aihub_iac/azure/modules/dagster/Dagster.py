@@ -3,6 +3,7 @@ from typing import List, Optional
 import pulumi
 from pulumi_azure_native import app, dbforpostgresql, network
 
+from aihub_iac.azure.constants.resources import SUB_NET, CONTAINER_APP, STORAGE_ACCOUNT
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
@@ -43,12 +44,70 @@ class Dagster(pulumi.ComponentResource):
         # Create resources
         self._create_resources()
 
+    @property
+    def dagster_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{CONTAINER_APP}-dagster"
+
+    @property
+    def dagster_storage_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{STORAGE_ACCOUNT}-dagster"
+
+    def _create_dagster_subnet(self) -> network.Subnet:
+        subnet = network.Subnet(
+            name=self.dagster_subnet_name,
+            resource_name=self.dagster_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.DAGSTER_SUBNET_CIDR,
+        )
+        self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.dagster_subnet_name,
+            subnet=subnet,
+            source_prefixes=[self.config.DAGSTER_SUBNET_CIDR],
+        )
+        return subnet
+
+    def _create_dagster_storage_subnet(self) -> network.Subnet:
+        subnet = network.Subnet(
+            name=self.dagster_storage_subnet_name,
+            resource_name=self.dagster_storage_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.DAGSTER_STORAGE_SUBNET_CIDR,
+        )
+
+        public_access_rules = [
+            network.SecurityRuleArgs(
+                name="AllowInternetToProxy",
+                priority=200,
+                direction="Inbound",
+                access="Allow",
+                protocol="Tcp",
+                source_address_prefix="Internet",
+                source_port_range="*",
+                destination_address_prefix="*",
+                destination_port_range="4180",
+            )
+        ]
+
+        self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.network_provider.dagster_storage_subnet_name,
+            subnet=subnet,
+            source_prefixes=[self.config.DAGSTER_SUBNET_CIDR, self.config.DAGSTER_STORAGE_SUBNET_CIDR],
+            additional_rules=public_access_rules,
+        )
+        return subnet
+
     def _create_resources(self):
         """Create all Dagster infrastructure resources"""
         # Get existing resources
         self.vnet = self.network_provider.get_vnet()
-        self.existing_cap_subnet = self.network_provider.get_dagster_subnet()
-        self.dagster_storage_subnet = self.network_provider.get_dagster_storage_subnet()
+        self.existing_cap_subnet = self._create_dagster_subnet()
+        self.dagster_storage_subnet = self._create_dagster_storage_subnet()
 
         # Create new resources
         self.dagster_database = self._create_postgres_database()
@@ -56,12 +115,14 @@ class Dagster(pulumi.ComponentResource):
             private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
         )
 
-        self.datalake = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name,
-            subnet_id=self.dagster_storage_subnet.id,
-            vnet_id=self.vnet.id,
-            blob_only=True,
-            existing_blob_dns_zone=self.blob_dns_zone,
+        self.datalake = pulumi.Output.all(subnet_id=self.dagster_storage_subnet.id).apply(
+            lambda args: self.storage_factory.create_storage_account(
+                service_name=self.config.storage_service_name,
+                subnet_id=args["subnet_id"],
+                vnet_id=self.vnet.id,
+                blob_only=True,
+                existing_blob_dns_zone=self.blob_dns_zone,
+            )
         )
 
         self.identity = self._create_identity()

@@ -3,24 +3,10 @@ from typing import Optional
 import pulumi
 from pulumi_azure_native import network
 
-from aihub_iac.azure.modules.nats.Nats import Nats
+from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
-from aihub_iac.azure.modules.webui.WebUI import WebUI
+from aihub_iac.azure.modules.stores.StoresConfig import StoresConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
-
-# Address prefix constants
-VNET_ADDRESS_SPACE = "10.0.0.0/16"  # 10.0.0.0 - 10.0.255.255
-APP_SUBNET_PREFIX = "10.0.2.0/23"  # 10.0.2.0 - 10.0.3.255
-PG_SUBNET_PREFIX = "10.0.4.0/24"  # 10.0.4.0 - 10.0.4.255
-PRIVATE_ENDPOINT_SUBNET_PREFIX = "10.0.6.0/24"  # 10.0.6.0 - 10.0.6.255
-CAPP_SUBNET_PREFIX = "10.0.8.0/23"  # 10.0.8.0 - 10.0.10.255
-AGENTS_SUBNET_PREFIX = "10.0.16.0/20"  # 10.0.16.0 - 10.0.31.255
-COSMOS_SUBNET_PREFIX = "10.0.33.0/24"  # 10.0.33.0 - 10.0.33.255
-SEARCH_SUBNET_PREFIX = "10.0.34.0/24"  # 10.0.34.0 - 10.0.34.255
-DAGSTER_STORAGE_SUBNET_PREFIX = "10.0.35.0/24"  # 10.0.35.0 - 10.0.35.255
-PHOENIX_SUBNET_PREFIX = "10.0.36.0/24"  # 10.0.36.0 - 10.0.36.255
-API_COSMOS_SUBNET_PREFIX = "10.0.37.0/24"  # 10.0.37.0 - 10.0.37.255
-DAGSTER_SUBNET_PREFIX = "10.0.38.0/23"  # 10.0.38.0 - 10.0.39.255
 
 
 class Network(pulumi.ComponentResource):
@@ -49,15 +35,7 @@ class Network(pulumi.ComponentResource):
 
         # Create subnets
         self.subnets["app"] = self._create_app_subnet()
-        self.subnets["pg"] = self._create_pg_subnet()
-        self.subnets["capp"] = self._create_capp_subnet()
         self.subnets["agents"] = self._create_agents_subnet()
-        self.subnets["stores_cosmos"] = self._create_stores_cosmos_subnet()
-        self.subnets["search"] = self._create_search_subnet()
-        self.subnets["dagster"] = self._create_dagster_subnet()
-        self.subnets["dagster_storage"] = self._create_dagster_storage_subnet()
-        self.subnets["phoenix"] = self._create_phoenix_subnet()
-        self.subnets["api_cosmos"] = self._create_api_cosmos_subnet()
 
         # Export outputs
         self._register_outputs()
@@ -68,7 +46,7 @@ class Network(pulumi.ComponentResource):
             resource_name=self.network_provider.v_net_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
-            address_space=network.AddressSpaceArgs(address_prefixes=[VNET_ADDRESS_SPACE]),
+            address_space=network.AddressSpaceArgs(address_prefixes=[self.config.VNET_ADDRESS_SPACE]),
             opts=pulumi.ResourceOptions(parent=self),
             tags={
                 "Stack": self.stack,
@@ -81,7 +59,7 @@ class Network(pulumi.ComponentResource):
             resource_name=self.network_provider.app_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=APP_SUBNET_PREFIX,
+            address_prefix=self.config.APP_SUBNET_CIDR,
             delegations=[
                 network.DelegationArgs(
                     name="app-delegation",
@@ -95,43 +73,9 @@ class Network(pulumi.ComponentResource):
             stack=self.stack,
             subnet_name=self.network_provider.app_subnet_name,
             subnet=subnet,
-            source_prefixes=[Nats.NATS_SUBNET_CIDR],
+            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR],
         )
         return subnet
-
-    def _create_pg_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.pg_subnet_name,
-            resource_name=self.network_provider.pg_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=PG_SUBNET_PREFIX,
-            delegations=[
-                network.DelegationArgs(
-                    name="postgres-delegation",
-                    service_name="Microsoft.DBforPostgreSQL/flexibleServers",
-                )
-            ],
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.pg_subnet_name,
-            subnet=subnet,
-            source_prefixes=[DAGSTER_SUBNET_PREFIX, PHOENIX_SUBNET_PREFIX, WebUI.WEBUI_SUBNET_CIDR],
-        )
-        return subnet
-
-    def _create_capp_subnet(self) -> network.Subnet:
-        return network.Subnet(
-            name=self.network_provider.cap_subnet_name,
-            resource_name=self.network_provider.cap_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=CAPP_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
 
     def _create_agents_subnet(self) -> network.Subnet:
         subnet = network.Subnet(
@@ -139,7 +83,7 @@ class Network(pulumi.ComponentResource):
             resource_name=self.network_provider.agents_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=AGENTS_SUBNET_PREFIX,
+            address_prefix=self.config.AGENTS_SUBNET_CIDR,
             delegations=[
                 network.DelegationArgs(
                     name="aci-agent-delegation",
@@ -153,144 +97,11 @@ class Network(pulumi.ComponentResource):
             stack=self.stack,
             subnet_name=self.network_provider.agents_subnet_name,
             subnet=subnet,
-            source_prefixes=[SEARCH_SUBNET_PREFIX, COSMOS_SUBNET_PREFIX, Nats.NATS_SUBNET_CIDR],
-        )
-        return subnet
-
-    def _create_stores_cosmos_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.cosmos_subnet_name,
-            resource_name=self.network_provider.cosmos_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=COSMOS_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.cosmos_subnet_name,
-            subnet=subnet,
-            source_prefixes=[AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
-        )
-        return subnet
-
-    def _create_search_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.search_subnet_name,
-            resource_name=self.network_provider.search_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=SEARCH_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.search_subnet_name,
-            subnet=subnet,
-            source_prefixes=[AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX]
-        )
-        return subnet
-
-    def _create_dagster_storage_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.dagster_storage_subnet_name,
-            resource_name=self.network_provider.dagster_storage_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=DAGSTER_STORAGE_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-
-        public_access_rules = [
-            network.SecurityRuleArgs(
-                name="AllowInternetToProxy",
-                priority=200,
-                direction="Inbound",
-                access="Allow",
-                protocol="Tcp",
-                source_address_prefix="Internet",
-                source_port_range="*",
-                destination_address_prefix="*",
-                destination_port_range="4180",
-            )
-        ]
-
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.dagster_storage_subnet_name,
-            subnet=subnet,
-            source_prefixes=[DAGSTER_SUBNET_PREFIX],
-            additional_rules=public_access_rules,
-        )
-        return subnet
-
-    def _create_phoenix_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.phoenix_subnet_name,
-            resource_name=self.network_provider.phoenix_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=PHOENIX_SUBNET_PREFIX,
-            delegations=[
-                network.DelegationArgs(
-                    name="app-delegation",
-                    service_name="Microsoft.Web/serverFarms",
-                )
+            source_prefixes=[
+                StoresConfig.SEARCH_SUBNET_CIDR,
+                StoresConfig.COSMOS_SUBNET_CIDR,
+                NatsConfig.NATS_SUBNET_CIDR,
             ],
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        return subnet
-
-    def _create_dagster_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.dagster_subnet_name,
-            resource_name=self.network_provider.dagster_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=DAGSTER_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.dagster_subnet_name,
-            subnet=subnet,
-            source_prefixes=[],
-        )
-        return subnet
-
-    def _create_api_cosmos_subnet(self) -> network.Subnet:
-        subnet = network.Subnet(
-            name=self.network_provider.api_cosmos_subnet_name,
-            resource_name=self.network_provider.api_cosmos_subnet_name,
-            resource_group_name=self.config.resource_group,
-            virtual_network_name=self.vnet.name,
-            address_prefix=API_COSMOS_SUBNET_PREFIX,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
-        )
-        public_access_rules = [
-            network.SecurityRuleArgs(
-                name="AllowVPN1ToProxy",
-                priority=200,
-                direction="Inbound",
-                access="Allow",
-                protocol="Tcp",
-                source_address_prefix="192.168.35.145/32",
-                source_port_range="*",
-                destination_address_prefix="*",
-                destination_port_range="*",
-            )
-        ]
-        self.network_provider.create_subnet_nsg(
-            parent=self,
-            stack=self.stack,
-            subnet_name=self.network_provider.api_cosmos_subnet_name,
-            subnet=subnet,
-            source_prefixes=[APP_SUBNET_PREFIX],
-            additional_rules=public_access_rules,
         )
         return subnet
 

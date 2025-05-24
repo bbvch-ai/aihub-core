@@ -166,6 +166,7 @@ class StorageResourceFactory:
             virtual_network=network.SubResourceArgs(id=vnet_id),
             registration_enabled=False,
             location="Global",
+            opts=pulumi.ResourceOptions(parent=blob_dns_zone),
         )
         return blob_dns_zone
 
@@ -183,6 +184,7 @@ class StorageResourceFactory:
             virtual_network=network.SubResourceArgs(id=vnet_id),
             registration_enabled=False,
             location="Global",
+            opts=pulumi.ResourceOptions(parent=file_dns_zone),
         )
         return file_dns_zone
 
@@ -212,6 +214,11 @@ class StorageResourceFactory:
         Returns:
             The created file share
         """
+        storage_account_keys = pulumi.Output.all(storage_account.name, self.config.resource_group).apply(
+            lambda args: storage.list_storage_account_keys(resource_group_name=args[1], account_name=args[0])
+        )
+
+        # Create file share args
         file_share_args = {
             "resource_name": name,
             "resource_group_name": self.config.resource_group,
@@ -224,7 +231,7 @@ class StorageResourceFactory:
         if enabled_protocols:
             file_share_args["enabled_protocols"] = enabled_protocols
 
-        return storage.FileShare(**file_share_args)
+        return storage_account_keys.apply(lambda _: storage.FileShare(**file_share_args))
 
     def create_blob_container(
         self, name: str, storage_account: storage.StorageAccount, public_access: Optional[storage.PublicAccess] = None

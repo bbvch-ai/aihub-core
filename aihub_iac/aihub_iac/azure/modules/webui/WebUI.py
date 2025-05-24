@@ -12,6 +12,7 @@ from aihub_iac.azure.constants.resources import (
     STORAGE_ACCOUNT,
 )
 from aihub_iac.azure.modules.nats.Nats import Nats
+from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.managed_environment.ManagedEnvironment import ManagedEnvironment
@@ -20,9 +21,6 @@ from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageReso
 
 
 class WebUI(pulumi.ComponentResource):
-
-    WEBUI_SUBNET_CIDR = "10.0.40.0/23"
-    WEBUI_STORAGE_SUBNET_CIDR = "10.0.42.0/24"
 
     def __init__(
         self,
@@ -72,33 +70,31 @@ class WebUI(pulumi.ComponentResource):
             resource_name=self.webui_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=self.WEBUI_SUBNET_CIDR,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
+            address_prefix=self.config.WEBUI_SUBNET_CIDR,
         )
         self.network_provider.create_subnet_nsg(
             parent=self,
             stack=self.stack,
-            subnet_name=self.network_provider.webui_subnet_name,
+            subnet_name=self.webui_subnet_name,
             subnet=subnet,
-            source_prefixes=[self.WEBUI_SUBNET_CIDR],
+            source_prefixes=[self.config.WEBUI_SUBNET_CIDR],
         )
         return subnet
 
     def _create_webui_storage_subnet(self) -> network.Subnet:
         subnet = network.Subnet(
-            name=self.network_provider.webui_storage_subnet_name,
-            resource_name=self.network_provider.webui_storage_subnet_name,
+            name=self.webui_storage_subnet_name,
+            resource_name=self.webui_storage_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=self.WEBUI_STORAGE_SUBNET_CIDR,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
+            address_prefix=self.config.WEBUI_STORAGE_SUBNET_CIDR,
         )
         self.network_provider.create_subnet_nsg(
             parent=self,
             stack=self.stack,
-            subnet_name=self.network_provider.webui_storage_subnet_name,
+            subnet_name=self.webui_storage_subnet_name,
             subnet=subnet,
-            source_prefixes=[Nats.NATS_SUBNET_CIDR, self.WEBUI_STORAGE_SUBNET_CIDR],
+            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR, self.config.WEBUI_STORAGE_SUBNET_CIDR],
         )
         return subnet
 
@@ -116,7 +112,7 @@ class WebUI(pulumi.ComponentResource):
             private_zone_name="privatelink.file.core.windows.net", resource_group_name=self.config.resource_group
         )
 
-        self.storage_account = pulumi.Output.all(subnet_id=self.nats_storage_subnet.id).apply(
+        self.storage_account = pulumi.Output.all(subnet_id=self.webui_storage_subnet.id).apply(
             lambda args: self.storage_factory.create_storage_account(
                 service_name=self.config.storage_service_name,
                 subnet_id=args["subnet_id"],

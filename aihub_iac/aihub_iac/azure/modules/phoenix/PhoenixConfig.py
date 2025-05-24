@@ -14,6 +14,7 @@ class PhoenixConfig(BaseConfig):
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
 
     DEFAULT_PHOENIX_SUFFIX: ClassVar[str] = "phoenix"
+    PHOENIX_SUBNET_CIDR: ClassVar[str] = "10.0.36.0/24"
 
     # Docker Image settings
     repo_image_url: str = Field(

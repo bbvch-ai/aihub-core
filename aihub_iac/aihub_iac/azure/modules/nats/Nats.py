@@ -4,8 +4,9 @@ import pulumi
 from pulumi_azure_native import containerinstance, network
 
 from aihub_iac.azure.constants.resources import SUB_NET, STORAGE_ACCOUNT, CONTAINER_INSTANCE
+from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
-from aihub_iac.azure.modules.network.Network import APP_SUBNET_PREFIX, AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX
+from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageResourceFactory
 
@@ -17,9 +18,6 @@ class Nats(pulumi.ComponentResource):
     config = NatsConfig.from_env(stack="Nats", name="nats", nats_image_tag="1.2.3", redis_image_tag="1.2.3")
     Nats(stack, name, config=config)
     """
-
-    NATS_SUBNET_CIDR = "10.0.1.0/29"
-    NATS_STORAGE_SUBNET_CIDR = "10.0.32.0/24"
 
     def __init__(self, stack: str, name: str, config: NatsConfig, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
@@ -81,21 +79,24 @@ class Nats(pulumi.ComponentResource):
             resource_name=self.nats_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=self.NATS_SUBNET_CIDR,
+            address_prefix=self.config.NATS_SUBNET_CIDR,
             delegations=[
                 network.DelegationArgs(
                     name="aci-delegation",
                     service_name="Microsoft.ContainerInstance/containerGroups",
                 )
             ],
-            opts=pulumi.ResourceOptions(parent=self.vnet),
         )
         self.network_provider.create_subnet_nsg(
             parent=self,
             stack=self.stack,
             subnet_name=self.nats_subnet_name,
             subnet=subnet,
-            source_prefixes=[APP_SUBNET_PREFIX, AGENTS_SUBNET_PREFIX, DAGSTER_SUBNET_PREFIX],
+            source_prefixes=[
+                NetworkConfig.APP_SUBNET_CIDR,
+                NetworkConfig.AGENTS_SUBNET_CIDR,
+                DagsterConfig.DAGSTER_SUBNET_CIDR,
+            ],
         )
         return subnet
 
@@ -105,8 +106,7 @@ class Nats(pulumi.ComponentResource):
             resource_name=self.nats_storage_subnet_name,
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
-            address_prefix=self.NATS_STORAGE_SUBNET_CIDR,
-            opts=pulumi.ResourceOptions(parent=self.vnet),
+            address_prefix=self.config.NATS_STORAGE_SUBNET_CIDR,
         )
 
         self.network_provider.create_subnet_nsg(
@@ -114,7 +114,7 @@ class Nats(pulumi.ComponentResource):
             stack=self.stack,
             subnet_name=self.nats_storage_subnet_name,
             subnet=subnet,
-            source_prefixes=[self.NATS_SUBNET_CIDR, self.NATS_STORAGE_SUBNET_CIDR],
+            source_prefixes=[self.config.NATS_SUBNET_CIDR, self.config.NATS_STORAGE_SUBNET_CIDR],
         )
         return subnet
 
@@ -134,7 +134,7 @@ class Nats(pulumi.ComponentResource):
 
         self.storage_account_key = self.storage_factory.get_storage_account_key(self.storage_account)
 
-        self.nats_file_share = self.storage_factory.create_file_share("blob", self.storage_account)
+        self.nats_file_share = self.storage_factory.create_file_share("nats", self.storage_account)
         self.redis_file_share = self.storage_factory.create_file_share("redis", self.storage_account)
 
         self.nats_container = self._create_nats_container()
