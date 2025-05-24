@@ -65,9 +65,7 @@ class Dagster(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.DAGSTER_SUBNET_CIDR,
-            network_security_group={
-                "id": nsg.id
-            },
+            network_security_group={"id": nsg.id},
         )
 
         return subnet
