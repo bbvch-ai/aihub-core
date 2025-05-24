@@ -1,13 +1,7 @@
 import pulumi
 from pulumi_azure_native import network
 
-from aihub_iac.azure.constants.resources import (
-    APP_SERVICE,
-    CONTAINER_APP,
-    CONTAINER_INSTANCE,
-    SUB_NET,
-    V_NET,
-)
+from aihub_iac.azure.constants.resources import APP_SERVICE, CONTAINER_APP, CONTAINER_INSTANCE, SUB_NET, V_NET
 
 
 class NetworkProvider:

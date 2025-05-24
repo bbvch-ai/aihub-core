@@ -1,9 +1,9 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import dbforpostgresql, documentdb, search, network
+from pulumi_azure_native import dbforpostgresql, documentdb, network, search
 
-from aihub_iac.azure.constants.resources import SUB_NET, COSMOS, AI_SEARCH_SERVICE, POSTGRES
+from aihub_iac.azure.constants.resources import AI_SEARCH_SERVICE, COSMOS, POSTGRES, SUB_NET
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
 from aihub_iac.azure.modules.phoenix.PhoenixConfig import PhoenixConfig

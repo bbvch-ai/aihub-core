@@ -3,7 +3,7 @@ from typing import List, Optional
 import pulumi
 from pulumi_azure_native import app, dbforpostgresql, network
 
-from aihub_iac.azure.constants.resources import SUB_NET, CONTAINER_APP, STORAGE_ACCOUNT
+from aihub_iac.azure.constants.resources import CONTAINER_APP, STORAGE_ACCOUNT, SUB_NET
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider

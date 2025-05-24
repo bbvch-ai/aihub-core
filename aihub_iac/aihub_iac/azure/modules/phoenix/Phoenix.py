@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import dbforpostgresql, web, network
+from pulumi_azure_native import dbforpostgresql, network, web
 
 from aihub_iac.azure.constants.resources import APP_SERVICE, SUB_NET
 from aihub_iac.azure.modules.phoenix.PhoenixConfig import PhoenixConfig

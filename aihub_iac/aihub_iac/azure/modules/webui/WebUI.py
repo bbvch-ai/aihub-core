@@ -4,14 +4,13 @@ import pulumi
 from pulumi_azure_native import app, containerinstance, dbforpostgresql, network
 
 from aihub_iac.azure.constants.resources import (
+    CONTAINER_APP,
     CONTAINER_APP_ENVIRONMENT,
     CONTAINER_INSTANCE,
     POSTGRES,
-    SUB_NET,
-    CONTAINER_APP,
     STORAGE_ACCOUNT,
+    SUB_NET,
 )
-from aihub_iac.azure.modules.nats.Nats import Nats
 from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
@@ -21,7 +20,6 @@ from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageReso
 
 
 class WebUI(pulumi.ComponentResource):
-
     def __init__(
         self,
         stack: str,

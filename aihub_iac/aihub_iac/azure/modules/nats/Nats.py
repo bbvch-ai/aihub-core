@@ -3,7 +3,7 @@ from typing import Optional
 import pulumi
 from pulumi_azure_native import containerinstance, network
 
-from aihub_iac.azure.constants.resources import SUB_NET, STORAGE_ACCOUNT, CONTAINER_INSTANCE
+from aihub_iac.azure.constants.resources import CONTAINER_INSTANCE, STORAGE_ACCOUNT, SUB_NET
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
