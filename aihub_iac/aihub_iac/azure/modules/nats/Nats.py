@@ -16,6 +16,8 @@ class Nats(pulumi.ComponentResource):
     Nats(stack, name, config=config)
     """
 
+    NATS_IP_ADDRESS = "10.0.1.4"
+
     def __init__(self, stack: str, name: str, config: NatsConfig, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
@@ -124,6 +126,7 @@ class Nats(pulumi.ComponentResource):
                     containerinstance.PortArgs(port=8222, protocol=containerinstance.ContainerGroupNetworkProtocol.TCP),
                     containerinstance.PortArgs(port=6379, protocol=containerinstance.ContainerGroupNetworkProtocol.TCP),
                 ],
+                ip=self.NATS_IP_ADDRESS,
             ),
             containers=[self.nats_container, self.redis_container],
             image_registry_credentials=[
