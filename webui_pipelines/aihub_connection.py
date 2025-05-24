@@ -128,7 +128,7 @@ class Pipe:
         )
         AIHUB_API_BASE_URL: str = Field(
             default="http://localhost:8000/api/v1/openai",
-            description="Base URL for accessing OpenAI API endpoints.",
+            description="Base URL for accessing OpenAI API compatible AI-Hub endpoints.",
         )
         AIHUB_API_KEY: str = Field(
             default="",

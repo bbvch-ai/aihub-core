@@ -32,7 +32,7 @@
     <div class="w-full pl-[50px]">
       <div class="fixed z-50 flex h-[50px] w-full items-center justify-between bg-surface-50 pr-[50px] dark:bg-surface-950">
         <Breadcrumb
-          class="!bg-transparent"
+          class="!bg-transparent text-xs opacity-70"
           :home="apps[0]"
           :model="breadcrumbItems"
         >

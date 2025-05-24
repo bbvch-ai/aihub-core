@@ -33,23 +33,28 @@
           </p>
         </div>
         <div
-          v-for="(block, index) in message.blocks"
-          :key="index"
-          class="mb-1 w-full max-w-[90%] rounded-3xl text-lg"
-          :class="{
-            'cursor-pointer': isClickable,
-            'hover:opacity-80': isClickable,
-            'bg-surface-50 px-5 py-2 dark:bg-surface-800': message.role == 'user',
-          }"
+          class="mb-1 w-full max-w-[90%] rounded-3xl border border-surface-100 bg-white px-5 pb-4 pt-2 text-lg dark:bg-surface-800"
         >
-          <p v-if="block?.block_type === 'text'">
-            {{ block.text }}
-          </p>
-          <img
-            v-if="block?.block_type === 'image'"
-            :src="block.url"
+          <div
+            v-for="(block, index) in message.blocks"
+            :key="index"
+            :class="{
+              'cursor-pointer': isClickable,
+              'hover:opacity-80 hover:shadow-md': isClickable,
+              '': message.role == 'user',
+            }"
           >
+            <MarkdownRenderer
+              v-if="block?.block_type === 'text'"
+              :md="block.text"
+            />
+            <img
+              v-if="block?.block_type === 'image'"
+              :src="block.url"
+            >
+          </div>
         </div>
+
         <span
           v-if="props.date"
           class="ml-0.5 flex w-full translate-y-px text-xs font-medium text-surface-400"

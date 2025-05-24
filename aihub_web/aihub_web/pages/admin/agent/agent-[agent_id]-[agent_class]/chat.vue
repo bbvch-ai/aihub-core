@@ -1,12 +1,9 @@
 <template>
   <StructuralColumn
-    title="Chat"
+    :title="t('agent.chat.title')"
     close-route="/admin/agent"
   >
     <div class="relative flex flex-col gap-2 p-3">
-      <p class="text-xl font-bold">
-        {{ t('agent.chat.title') }}
-      </p>
       <div>
         <div />
         <div>
@@ -16,10 +13,13 @@
             auto-resize
             rows="5"
             cols="30"
+            :placeholder="t('agent.chat.placeholder')"
+            @keydown.enter="submitMessage"
           />
           <Button
             :label="t('agent.chat.createThreadAndSend')"
             class="w-full"
+            :disabled="!userInput"
             @click="submitMessage"
           />
         </div>

@@ -1,13 +1,13 @@
 import html
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -19,7 +19,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
-    SECTION_START_LINE,
     SOURCE,
     TYPE,
     UPDATED_AT,
@@ -48,47 +47,45 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
 
 
 def combine_nodes_in_order(
-    context_nodes: List[Document],
+    context_nodes: List[IngestedNode],
     locale_handler: LocaleHandler,
     context_prompt: LocaleString = None,
 ) -> ChatMessage:
-    nodes_per_document = defaultdict(list)
+    nodes_per_document: Dict[str, List[IngestedNode]] = defaultdict(list)
 
     for context_node in context_nodes:
-        if not context_node.metadata or SOURCE not in context_node.metadata:
-            raise ValueError(f"Context node must contain metadata {SOURCE}")
-        key = context_node.metadata.get(SOURCE)
+        key = context_node.source
         nodes_per_document[key].append(context_node)
 
     documents = []
 
     for key, nodes in nodes_per_document.items():
-        metadata = nodes[0].metadata
+        node: IngestedNode = nodes[0]
 
         metadata_fields = {
-            "source": key,
-            "namespace": metadata.get(NAMESPACE),
-            "type": metadata.get(TYPE),
-            "language": metadata.get(LANGUAGE),
-            "version": metadata.get(VERSION),
-            "created_at": format_unix_timestamp(metadata.get(CREATED_AT)),
-            "updated_at": format_unix_timestamp(metadata.get(UPDATED_AT)),
-            "inserted_at": format_unix_timestamp(metadata.get(INSERTED_AT)),
+            SOURCE: key,
+            NAMESPACE: node.namespace,
+            TYPE: node.content_type,
+            LANGUAGE: node.language,
+            VERSION: node.version,
+            CREATED_AT: node.created_at,
+            UPDATED_AT: node.updated_at,
+            INSERTED_AT: node.inserted_at,
         }
 
         metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
 
         metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
 
-        doc_header = f"<DOCUMENT {metadata_string}>\n\n"
+        doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
 
         text_parts = [doc_header]
-        sorted_nodes = sorted(nodes, key=lambda x: x.metadata.get(SECTION_START_LINE, 0))
+        sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
 
         for n in sorted_nodes:
             text_parts.append(f"{n.content}\n\n")
 
-        text_parts.append("</DOCUMENT>\n")
+        text_parts.append("</REFERENCE_DOCUMENT>\n")
         text_parts.append("\n---\n")
 
         documents.append("".join(text_parts))

@@ -23,6 +23,7 @@ import { useLocalePath } from '#i18n'
 const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const subPath = (path: string) => {
   return `/admin/thread/${route.params.thread_id}/${path}`
@@ -37,10 +38,10 @@ const isActive = (path: string) => {
 
 const navItems = computed<NavItem[]>(() => {
   return [
-    { name: 'Basic', key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
-    { name: 'Hierarchy', key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
-    { name: 'Chat', key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
-    { name: 'Displays', key: 'display', path: subPath('display'), isActive: isActive('display') },
+    { name: t('thread.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
+    { name: t('thread.navigation.hierarchy'), key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
+    { name: t('thread.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
+    { name: t('thread.navigation.display'), key: 'display', path: subPath('display'), isActive: isActive('display') },
   ]
 })
 

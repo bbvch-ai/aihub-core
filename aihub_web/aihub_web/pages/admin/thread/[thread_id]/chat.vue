@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    title="Chat"
+    :title="t('thread.chat.title')"
     close-route="/admin/thread"
     :loading="threadIsLoading || threadEventsAreLoading"
   >
@@ -30,6 +30,7 @@ const route = useRoute()
 
 const { thread, threadIsLoading } = useThread()
 const { threadEvents, threadEventsAreLoading } = useThreadEvents()
+const { t } = useI18n()
 
 const { sendMessages } = useChatCompletions()
 

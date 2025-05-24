@@ -3,6 +3,7 @@
     :value="threads"
     table-style="min-width: 50rem"
     selection-mode="single"
+    :selection="selectedThread"
     @update:selection="emit('selected', $event)"
   >
     <Column
@@ -111,9 +112,10 @@
 <script setup lang="ts">
 import type { ThreadDto, UserDto } from '@core/sdk/client'
 
+const route = useRoute()
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
   threads: ThreadDto[]
 }>()
 
@@ -124,4 +126,10 @@ const emit = defineEmits<{
 const initials = (user: UserDto) => user.name?.split(' ').map(n => n[0]).join('')
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
 const { pendingType } = useThreadUtils()
+
+const selectedThread = computed(() => {
+  return props.threads.filter((thread: ThreadDto) => {
+    return thread.id === route.params.thread_id
+  })
+})
 </script>

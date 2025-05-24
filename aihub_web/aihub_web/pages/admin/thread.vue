@@ -1,7 +1,7 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
-      title="Test"
+      :title="t('thread.title')"
       :loading="isLoading"
     >
       <ThreadList
@@ -30,6 +30,7 @@ import { useLocalePath } from '#i18n'
 
 const router = useRouter()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const {
   threads,

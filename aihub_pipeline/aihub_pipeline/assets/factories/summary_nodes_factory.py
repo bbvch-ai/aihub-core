@@ -4,6 +4,7 @@ from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDef
 from llama_index.core.schema import TextNode
 
 from aihub_pipeline.ops.nodes.embed_nodes import embed_nodes
+from aihub_pipeline.ops.nodes.ensure_node_default_metadata import ensure_node_default_metadata
 from aihub_pipeline.ops.nodes.extend_nodes_with_summary_nodes_using_recursive_summary_parser import (
     extend_nodes_with_summary_nodes_using_recursive_summary_parser,
 )
@@ -32,7 +33,9 @@ def summary_nodes_factory(
     )
     def summary_nodes(nodes: List[TextNode], document: RefDocDocument) -> Output[List[TextNode]]:
         return insert_nodes_into_vector_store(
-            embed_nodes(extend_nodes_with_summary_nodes_using_recursive_summary_parser(nodes)),
+            embed_nodes(
+                ensure_node_default_metadata(extend_nodes_with_summary_nodes_using_recursive_summary_parser(nodes)),
+            ),
             document,
         )
 

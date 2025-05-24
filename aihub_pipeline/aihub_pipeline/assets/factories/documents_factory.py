@@ -1,6 +1,7 @@
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 
 from aihub_pipeline.ops.data_lake.data_lake_file_to_ref_doc import data_lake_file_to_ref_doc
+from aihub_pipeline.ops.document.ensure_refdoc_default_metadata import ensure_refdoc_default_metadata
 from aihub_pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
@@ -25,6 +26,6 @@ def documents_factory(
         description="Create RefDocs from data lake files and insert them into the docstore",
     )
     def document(data_lake_file: DataLakeFile) -> Output[RefDocDocument]:
-        return insert_ref_doc_into_docstore(data_lake_file_to_ref_doc(data_lake_file))
+        return insert_ref_doc_into_docstore(ensure_refdoc_default_metadata(data_lake_file_to_ref_doc(data_lake_file)))
 
     return document
