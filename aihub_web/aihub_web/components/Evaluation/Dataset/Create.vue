@@ -74,7 +74,3 @@ const save = () => {
   emit('close')
 }
 </script>
-
-<style scoped>
-
-</style>

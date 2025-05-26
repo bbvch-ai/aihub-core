@@ -12,7 +12,3 @@
 <script setup lang="ts">
 const { experiment, experimentIsLoading } = useExperiment()
 </script>
-
-<style scoped>
-
-</style>

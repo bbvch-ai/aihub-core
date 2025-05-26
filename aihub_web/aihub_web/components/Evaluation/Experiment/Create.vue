@@ -125,7 +125,3 @@ const save = () => {
   emit('success', promise)
 }
 </script>
-
-<style scoped>
-
-</style>

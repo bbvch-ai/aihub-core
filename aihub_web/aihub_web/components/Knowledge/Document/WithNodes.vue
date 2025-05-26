@@ -72,7 +72,3 @@ const combinedNodes = computed<{ node: IngestedNode, isActive: boolean }[]>(() =
   return combNodes
 })
 </script>
-
-<style scoped>
-
-</style>

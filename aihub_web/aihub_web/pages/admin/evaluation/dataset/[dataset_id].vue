@@ -76,7 +76,3 @@ const safeDataset = (event) => {
   })
 }
 </script>
-
-<style scoped>
-
-</style>

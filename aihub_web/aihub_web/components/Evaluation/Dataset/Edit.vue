@@ -125,7 +125,3 @@ const isTemporaryItem = (item: DatasetItem) => {
   return !item.id || item.id.startsWith('tmp')
 }
 </script>
-
-<style scoped>
-
-</style>

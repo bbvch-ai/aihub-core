@@ -1,6 +1,6 @@
 import logging
 from datetime import UTC, datetime
-from typing import Annotated, Any, Dict, Optional
+from typing import Any, Dict, Optional
 
 import phoenix as px
 from bson import ObjectId
@@ -13,29 +13,15 @@ from phoenix.experiments.types import Dataset as PhoenixDataset
 from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResult
 from phoenix.experiments.types import Example as PhoenixExample
 from phoenix.experiments.types import RanExperiment
-from pydantic import BaseModel, Field
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
 
 logger = logging.getLogger(__name__)
-
-
-class JudgeOutput(BaseModel):
-    """
-    Defines the structured output expected from the LLM Judge for each evaluation.
-    This ensures consistent, parseable results from the LLM calls.
-    """
-
-    score: Annotated[float, Field(description="The evaluation score, typically between 0.0 and 1.0.")]
-    reasoning: Annotated[str, Field(description="A brief explanation for the assigned score.")]
-    error: Annotated[
-        Optional[bool],
-        Field(description="Flag indicating if the judge encountered an issue evaluating.", default=False),
-    ] = False
 
 
 class PhoenixExperimentEvaluator:
