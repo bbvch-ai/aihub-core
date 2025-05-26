@@ -45,6 +45,8 @@ def documents_factory(
         doc_with_figures = inject_figures(doc_with_figures, figure_metadata)
         doc_with_figures = reformat_tables(doc_with_figures)
 
-        return insert_ref_doc_into_docstore(ensure_refdoc_default_metadata(doc_with_figures_to_ref_doc(data_lake_file, doc_with_figures)))
+        return insert_ref_doc_into_docstore(
+            ensure_refdoc_default_metadata(doc_with_figures_to_ref_doc(data_lake_file, doc_with_figures))
+        )
 
     return document
