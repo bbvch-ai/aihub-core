@@ -15,8 +15,8 @@
             fill="transparent"
           />
           <div class="flex flex-row gap-2 font-normal">
-            <span class="font-bold">Experiment is running!</span>
-            <span>This might take several minutes. You can also leave this page and come back later.</span>
+            <span class="font-bold">{{ t('evaluation.experiment.running') }}</span>
+            <span>{{ t('evaluation.experiment.running_description') }}</span>
           </div>
         </div>
       </Message>
@@ -25,8 +25,8 @@
         severity="error"
       >
         <div class="flex flex-row gap-2 font-normal">
-          <span class="font-bold">Experiment Failed!</span>
-          <span>Please contact AI-Hub dev team to find out what went wrong.</span>
+          <span class="font-bold">{{ t('evaluation.experiment.failed') }}</span>
+          <span>{{ t('evaluation.experiment.failed_description') }}</span>
         </div>
       </Message>
       <div class="flex justify-between">
@@ -38,7 +38,7 @@
             :options="filterableAgents"
             option-label="agent_config.name"
             :option-value="(agent: MinimalAgentDto) => `${agent.agent_class}.${agent.agent_id}`"
-            placeholder="Filter by Assistant"
+            :placeholder="t('evaluation.experiment.filter_by_assistant')"
             :loading="experimentsAreLoading"
           />
           <MultiSelect
@@ -48,13 +48,13 @@
             :options="filterableDatasets"
             option-label="dataset_name"
             option-value="id"
-            placeholder="Filter by Dataset"
+            :placeholder="t('evaluation.experiment.filter_by_dataset')"
             :loading="experimentsAreLoading"
           />
         </div>
         <div>
           <Button
-            label="Run Experiment"
+            :label="t('evaluation.experiment.run_experiment')"
             icon="pi pi-plus"
             @click="createModalOpen = true"
           />
@@ -63,7 +63,7 @@
       <Dialog
         v-model:visible="createModalOpen"
         modal
-        header="Create new Dataset"
+        :header="t('evaluation.experiment.create_new')"
       >
         <EvaluationExperimentCreate
           @close="createModalOpen = false"
@@ -102,7 +102,7 @@ const selectedAgents = useRouteQuery<string[]>('assistants', [])
 const selectedDatasets = useRouteQuery<string[]>('datasets', [])
 
 const toExperiment = (experiment: MinimalExperiment) => {
-  router.push(localePath(`/admin/evaluation/experiment/${experiment.id}`))
+  router.push(localePath(`/admin/evaluations/experiments/${experiment.id}`))
 }
 
 const filterableAgents = computed<MinimalAgentDto[]>(() => {

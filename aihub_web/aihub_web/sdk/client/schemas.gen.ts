@@ -3610,7 +3610,7 @@ export const ExperimentSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'agent', 'dataset', 'locale'],
+    required: ['id', 'name', 'agent', 'dataset', 'locale', 'items'],
     title: 'Experiment'
 } as const;
 

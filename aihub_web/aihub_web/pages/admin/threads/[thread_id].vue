@@ -9,22 +9,24 @@
       size="small"
       @update:model-value="toNavItem"
     />
-    <NuxtPage />
+    <div class="flex gap-8">
+      <NuxtPage />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { NavItem } from '@core/types/NavItem'
 
+import { useLocalePath } from '#i18n'
+
 const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const { agent } = useAgent()
-
 const subPath = (path: string) => {
-  return `/admin/agent/agent-${route.params.agent_id}-${route.params.agent_class}/${path}`
+  return `/admin/threads/${route.params.thread_id}/${path}`
 }
 
 const isActive = (path: string) => {
@@ -35,16 +37,12 @@ const isActive = (path: string) => {
 }
 
 const navItems = computed<NavItem[]>(() => {
-  const items: NavItem[] = [
-    { name: t('agent.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
-    { name: t('agent.navigation.workflow'), key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
-    { name: t('agent.navigation.threads'), key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
+  return [
+    { name: t('thread.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
+    { name: t('thread.navigation.hierarchy'), key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
+    { name: t('thread.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
+    { name: t('thread.navigation.display'), key: 'display', path: subPath('display'), isActive: isActive('display') },
   ]
-  if (agent.value?.is_conversational) {
-    items.push({ name: t('agent.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
-    )
-  }
-  return items
 })
 
 const toNavItem = (navItem: NavItem) => {

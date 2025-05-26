@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="thread?.name"
-    close-route="/admin/thread"
+    close-route="/admin/threads"
     :loading="threadIsLoading"
     size="large"
   >

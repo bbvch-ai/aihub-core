@@ -46,14 +46,14 @@ class EvaluationController(Controller):
     def __init__(
         self,
         judge: ChatLLMConfig,
-        route: str = "/evaluation",
+        route: str = "/evaluations",
         auth: Optional[AuthHandler] = None,
         is_admin_only: bool = True,
     ):
         super().__init__(route, auth=auth, is_admin_only=is_admin_only)
         self.judge = judge
 
-    def create_dataset(self, route: str = "/dataset") -> "EvaluationController":
+    def create_dataset(self, route: str = "/datasets") -> "EvaluationController":
         @self.router.post(
             route,
             tags=self.tags,
@@ -68,7 +68,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def get_datasets(self, route: str = "/dataset") -> "EvaluationController":
+    def get_datasets(self, route: str = "/datasets") -> "EvaluationController":
         @self.router.get(
             route,
             tags=self.tags,
@@ -82,7 +82,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def get_dataset(self, route: str = "/dataset/{dataset_id}") -> "EvaluationController":
+    def get_dataset(self, route: str = "/datasets/{dataset_id}") -> "EvaluationController":
         @self.router.get(
             route,
             tags=self.tags,
@@ -97,7 +97,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def update_dataset(self, route: str = "/dataset/{dataset_id}") -> "EvaluationController":
+    def update_dataset(self, route: str = "/datasets/{dataset_id}") -> "EvaluationController":
         @self.router.put(
             route,
             tags=self.tags,

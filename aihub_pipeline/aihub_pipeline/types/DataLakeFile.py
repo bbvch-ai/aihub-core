@@ -111,7 +111,9 @@ class DataLakeFile(BaseModel):
             uri=uri,
             size=size,
             content_type=mimetypes.guess_type(filename)[0] or "application/octet-stream",
-            owner=os.getenv("USER") or os.getenv("USERNAME") or "pipeline-user", #  Fallback chain: Unix USER -> Windows USERNAME -> default
+            owner=os.getenv("USER")
+            or os.getenv("USERNAME")
+            or "pipeline-user",  #  Fallback chain: Unix USER -> Windows USERNAME -> default
             hash=md5_hash_str,
             created=current_timestamp,
             updated=current_timestamp,

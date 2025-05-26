@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { NavItem } from '@core/types/NavItem'
 
 import { useLocalePath } from '#i18n'
@@ -23,14 +25,15 @@ import { useLocalePath } from '#i18n'
 const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
+const { t } = useI18n()
 
 const subPath = (path: string) => {
-  return `/admin/evaluation/${path}`
+  return `/admin/evaluations/${path}`
 }
 
 onMounted(() => {
-  if (route.path === localePath('/admin/evaluation')) {
-    router.push(localePath(subPath('experiment')))
+  if (route.path === localePath('/admin/evaluations')) {
+    router.push(localePath(subPath('experiments')))
   }
 })
 
@@ -43,8 +46,8 @@ const isActive = (path: string) => {
 
 const navItems = computed<NavItem[]>(() => {
   return [
-    { name: 'Dataset', key: 'dataset', path: subPath('dataset'), isActive: isActive('dataset') },
-    { name: 'Experiments', key: 'experiment', path: subPath('experiment'), isActive: isActive('experiment') },
+    { name: t('evaluation.dataset.title'), key: 'datasets', path: subPath('datasets'), isActive: isActive('datasets') },
+    { name: t('evaluation.experiment.title'), key: 'experiments', path: subPath('experiments'), isActive: isActive('experiments') },
   ]
 })
 

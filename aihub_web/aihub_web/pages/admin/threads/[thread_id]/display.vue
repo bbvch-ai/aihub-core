@@ -2,7 +2,7 @@
   <StructuralSubstructure>
     <StructuralColumn
       :title="t('thread.display.title')"
-      close-route="/admin/thread"
+      close-route="/admin/threads"
       :loading="threadIsLoading"
     >
       <DisplayList
@@ -24,6 +24,6 @@ const { t } = useI18n()
 const { thread, threadIsLoading } = useThread()
 
 const toDisplay = (display: DisplayStatistics) => {
-  router.push(localePath(`/admin/thread/${thread.value.id}/display/${display.display_id}`))
+  router.push(localePath(`/admin/threads/${thread.value.id}/display/${display.display_id}`))
 }
 </script>

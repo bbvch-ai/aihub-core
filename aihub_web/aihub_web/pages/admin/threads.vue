@@ -1,10 +1,9 @@
 <template>
-  <StructuralColumn
-    :title="t('agent.threads.title')"
-    close-route="/admin/agent"
-    :loading="isLoading"
-  >
-    <div class="p-3">
+  <StructuralScreen>
+    <StructuralColumn
+      :title="t('thread.title')"
+      :loading="isLoading"
+    >
       <ThreadList
         :threads="threads"
         @selected="toThread"
@@ -19,8 +18,9 @@
           @page="onPageChange"
         />
       </div>
-    </div>
-  </StructuralColumn>
+    </StructuralColumn>
+    <NuxtPage />
+  </StructuralScreen>
 </template>
 
 <script setup lang="ts">
@@ -40,10 +40,10 @@ const {
   pageSize,
   setPage,
   setPageSize,
-} = useAgentThreads()
+} = useThreads()
 
 const toThread = (thread: ThreadDto) => {
-  router.push(localePath(`/admin/thread/${thread.id}/overview`))
+  router.push(localePath(`/admin/threads/${thread.id}/overview`))
 }
 
 const onPageChange = (event) => {

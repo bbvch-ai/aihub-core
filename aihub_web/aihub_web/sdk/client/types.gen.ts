@@ -1447,7 +1447,7 @@ export type Experiment = {
     /**
      * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
      */
-    items?: Array<ExperimentRunRecord>;
+    items: Array<ExperimentRunRecord>;
 };
 
 export type ExperimentCreate = {
@@ -3785,7 +3785,7 @@ export type GetSuiteData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/suite/';
+    url: '/suites/';
 };
 
 export type GetSuiteResponses = {
@@ -3801,7 +3801,7 @@ export type GetMyUserData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/user/me';
+    url: '/users/me';
 };
 
 export type GetMyUserResponses = {
@@ -3817,7 +3817,7 @@ export type GetMyDashboardData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/user/dashboard';
+    url: '/users/dashboard';
 };
 
 export type GetMyDashboardResponses = {
@@ -3833,7 +3833,7 @@ export type UpdateMyDashboardData = {
     body: DashboardDto;
     path?: never;
     query?: never;
-    url: '/user/dashboard';
+    url: '/users/dashboard';
 };
 
 export type UpdateMyDashboardErrors = {
@@ -3878,7 +3878,7 @@ export type GetEventsData = {
         display_id?: string;
         event_class?: string;
     };
-    url: '/event/';
+    url: '/events/';
 };
 
 export type GetEventsErrors = {
@@ -3913,7 +3913,7 @@ export type GetEventTimeseriesData = {
         agent_class?: string;
         event_name?: string;
     };
-    url: '/event/timeseries/{time_range}';
+    url: '/events/timeseries/{time_range}';
 };
 
 export type GetEventTimeseriesErrors = {
@@ -3947,7 +3947,7 @@ export type GetUserThreadsData = {
          */
         page_size?: number;
     };
-    url: '/thread/';
+    url: '/threads/';
 };
 
 export type GetUserThreadsErrors = {
@@ -3972,7 +3972,7 @@ export type CreateThreadData = {
     body: CreateThreadRequest;
     path?: never;
     query?: never;
-    url: '/thread/';
+    url: '/threads/';
 };
 
 export type CreateThreadErrors = {
@@ -3999,7 +3999,7 @@ export type GetThreadData = {
         thread_id: string;
     };
     query?: never;
-    url: '/thread/{thread_id}';
+    url: '/threads/{thread_id}';
 };
 
 export type GetThreadErrors = {
@@ -4026,7 +4026,7 @@ export type AddAgentToThreadData = {
         thread_id: string;
     };
     query?: never;
-    url: '/thread/{thread_id}/agents';
+    url: '/threads/{thread_id}/agents';
 };
 
 export type AddAgentToThreadErrors = {
@@ -4055,7 +4055,7 @@ export type RemoveAgentFromThreadData = {
         agent_id: string;
     };
     query?: never;
-    url: '/thread/{thread_id}/agents/{agent_class}/{agent_id}';
+    url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}';
 };
 
 export type RemoveAgentFromThreadErrors = {
@@ -4082,7 +4082,7 @@ export type AddUserToThreadData = {
         thread_id: string;
     };
     query?: never;
-    url: '/thread/{thread_id}/users';
+    url: '/threads/{thread_id}/users';
 };
 
 export type AddUserToThreadErrors = {
@@ -4110,7 +4110,7 @@ export type RemoveUserFromThreadData = {
         remove_user_id: string;
     };
     query?: never;
-    url: '/thread/{thread_id}/users/{remove_user_id}';
+    url: '/threads/{thread_id}/users/{remove_user_id}';
 };
 
 export type RemoveUserFromThreadErrors = {
@@ -4138,7 +4138,7 @@ export type GetAgentData = {
         agent_id: string;
     };
     query?: never;
-    url: '/agent/{agent_class}/{agent_id}';
+    url: '/agents/{agent_class}/{agent_id}';
 };
 
 export type GetAgentErrors = {
@@ -4175,7 +4175,7 @@ export type GetAgentThreadsData = {
          */
         page_size?: number;
     };
-    url: '/agent/{agent_class}/{agent_id}/threads';
+    url: '/agents/{agent_class}/{agent_id}/threads';
 };
 
 export type GetAgentThreadsErrors = {
@@ -4200,7 +4200,7 @@ export type GetAgentsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/agent/';
+    url: '/agents/';
 };
 
 export type GetAgentsResponses = {
@@ -4216,7 +4216,7 @@ export type DiscoverAgentsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/agent/discover';
+    url: '/agents/discover';
 };
 
 export type DiscoverAgentsResponses = {
@@ -4235,7 +4235,7 @@ export type SendEventToLlmWrappingAgentDevAgentSendEventData = {
         thread_id?: string;
         display_id?: string;
     };
-    url: '/agent/l_l_m_wrapping_agent/dev_agent/send_event';
+    url: '/agents/l_l_m_wrapping_agent/dev_agent/send_event';
 };
 
 export type SendEventToLlmWrappingAgentDevAgentSendEventErrors = {
@@ -4263,7 +4263,7 @@ export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventData = {
         thread_id?: string;
         display_id?: string;
     };
-    url: '/agent/bot_in_the_loop_agent/bot_in_the_loop_agent/send_event';
+    url: '/agents/bot_in_the_loop_agent/bot_in_the_loop_agent/send_event';
 };
 
 export type SendEventToBotInTheLoopAgentBotInTheLoopAgentSendEventErrors = {
@@ -4522,7 +4522,7 @@ export type GetDatasetsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/evaluation/dataset';
+    url: '/evaluations/datasets';
 };
 
 export type GetDatasetsResponses = {
@@ -4538,7 +4538,7 @@ export type CreateDatasetData = {
     body: DatasetCreate;
     path?: never;
     query?: never;
-    url: '/evaluation/dataset';
+    url: '/evaluations/datasets';
 };
 
 export type CreateDatasetErrors = {
@@ -4568,7 +4568,7 @@ export type GetDatasetData = {
         dataset_id: string;
     };
     query?: never;
-    url: '/evaluation/dataset/{dataset_id}';
+    url: '/evaluations/datasets/{dataset_id}';
 };
 
 export type GetDatasetErrors = {
@@ -4598,7 +4598,7 @@ export type UpdateDatasetData = {
         dataset_id: string;
     };
     query?: never;
-    url: '/evaluation/dataset/{dataset_id}';
+    url: '/evaluations/datasets/{dataset_id}';
 };
 
 export type UpdateDatasetErrors = {
@@ -4628,7 +4628,7 @@ export type GetExperimentData = {
         experiment_id: string;
     };
     query?: never;
-    url: '/evaluation/experiments/{experiment_id}';
+    url: '/evaluations/experiments/{experiment_id}';
 };
 
 export type GetExperimentErrors = {
@@ -4653,7 +4653,7 @@ export type GetExperimentsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/evaluation/experiments';
+    url: '/evaluations/experiments';
 };
 
 export type GetExperimentsResponses = {
@@ -4669,7 +4669,7 @@ export type RunExperimentData = {
     body: ExperimentCreate;
     path?: never;
     query?: never;
-    url: '/evaluation/experiments';
+    url: '/evaluations/experiments';
 };
 
 export type RunExperimentErrors = {

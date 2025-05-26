@@ -46,7 +46,7 @@ export const getSuite = <TComposable extends Composable, DefaultT extends GetSui
                 type: 'http'
             }
         ],
-        url: '/suite/',
+        url: '/suites/',
         ...options
     });
 };
@@ -67,7 +67,7 @@ export const getMyUser = <TComposable extends Composable, DefaultT extends GetMy
                 type: 'http'
             }
         ],
-        url: '/user/me',
+        url: '/users/me',
         ...options
     });
 };
@@ -88,7 +88,7 @@ export const getMyDashboard = <TComposable extends Composable, DefaultT extends 
                 type: 'http'
             }
         ],
-        url: '/user/dashboard',
+        url: '/users/dashboard',
         ...options
     });
 };
@@ -110,7 +110,7 @@ export const updateMyDashboard = <TComposable extends Composable, DefaultT exten
                 type: 'http'
             }
         ],
-        url: '/user/dashboard',
+        url: '/users/dashboard',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ export const getEvents = <TComposable extends Composable, DefaultT extends GetEv
                 type: 'http'
             }
         ],
-        url: '/event/',
+        url: '/events/',
         ...options
     });
 };
@@ -184,7 +184,7 @@ export const getEventTimeseries = <TComposable extends Composable, DefaultT exte
             }
         ],
         responseTransformer: getEventTimeseriesResponseTransformer,
-        url: '/event/timeseries/{time_range}',
+        url: '/events/timeseries/{time_range}',
         ...options
     });
 };
@@ -205,7 +205,7 @@ export const getUserThreads = <TComposable extends Composable, DefaultT extends 
                 type: 'http'
             }
         ],
-        url: '/thread/',
+        url: '/threads/',
         ...options
     });
 };
@@ -227,7 +227,7 @@ export const createThread = <TComposable extends Composable, DefaultT extends Cr
                 type: 'http'
             }
         ],
-        url: '/thread/',
+        url: '/threads/',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -253,7 +253,7 @@ export const getThread = <TComposable extends Composable, DefaultT extends GetTh
                 type: 'http'
             }
         ],
-        url: '/thread/{thread_id}',
+        url: '/threads/{thread_id}',
         ...options
     });
 };
@@ -274,7 +274,7 @@ export const addAgentToThread = <TComposable extends Composable, DefaultT extend
                 type: 'http'
             }
         ],
-        url: '/thread/{thread_id}/agents',
+        url: '/threads/{thread_id}/agents',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ export const removeAgentFromThread = <TComposable extends Composable, DefaultT e
                 type: 'http'
             }
         ],
-        url: '/thread/{thread_id}/agents/{agent_class}/{agent_id}',
+        url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}',
         ...options
     });
 };
@@ -320,7 +320,7 @@ export const addUserToThread = <TComposable extends Composable, DefaultT extends
                 type: 'http'
             }
         ],
-        url: '/thread/{thread_id}/users',
+        url: '/threads/{thread_id}/users',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -345,7 +345,7 @@ export const removeUserFromThread = <TComposable extends Composable, DefaultT ex
                 type: 'http'
             }
         ],
-        url: '/thread/{thread_id}/users/{remove_user_id}',
+        url: '/threads/{thread_id}/users/{remove_user_id}',
         ...options
     });
 };
@@ -366,7 +366,7 @@ export const getAgent = <TComposable extends Composable, DefaultT extends GetAge
                 type: 'http'
             }
         ],
-        url: '/agent/{agent_class}/{agent_id}',
+        url: '/agents/{agent_class}/{agent_id}',
         ...options
     });
 };
@@ -387,7 +387,7 @@ export const getAgentThreads = <TComposable extends Composable, DefaultT extends
                 type: 'http'
             }
         ],
-        url: '/agent/{agent_class}/{agent_id}/threads',
+        url: '/agents/{agent_class}/{agent_id}/threads',
         ...options
     });
 };
@@ -408,7 +408,7 @@ export const getAgents = <TComposable extends Composable, DefaultT extends GetAg
                 type: 'http'
             }
         ],
-        url: '/agent/',
+        url: '/agents/',
         ...options
     });
 };
@@ -429,7 +429,7 @@ export const discoverAgents = <TComposable extends Composable, DefaultT extends 
                 type: 'http'
             }
         ],
-        url: '/agent/discover',
+        url: '/agents/discover',
         ...options
     });
 };
@@ -450,7 +450,7 @@ export const sendEventToLLMWrappingAgentDevAgentSendEvent = <TComposable extends
                 type: 'http'
             }
         ],
-        url: '/agent/l_l_m_wrapping_agent/dev_agent/send_event',
+        url: '/agents/l_l_m_wrapping_agent/dev_agent/send_event',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -475,7 +475,7 @@ export const sendEventToBotInTheLoopAgentBotInTheLoopAgentSendEvent = <TComposab
                 type: 'http'
             }
         ],
-        url: '/agent/bot_in_the_loop_agent/bot_in_the_loop_agent/send_event',
+        url: '/agents/bot_in_the_loop_agent/bot_in_the_loop_agent/send_event',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -723,7 +723,7 @@ export const createSpeech = <TComposable extends Composable, DefaultT = undefine
 
 /**
  * List Evaluation Datasets
- * Retrieves a list of all evaluation datasets from Arize Phoenix.
+ * Retrieves a list of all evaluation datasets.
  */
 export const getDatasets = <TComposable extends Composable, DefaultT extends GetDatasetsResponse = GetDatasetsResponse>(options: Options<TComposable, GetDatasetsData, GetDatasetsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDatasetsResponse | DefaultT, unknown, DefaultT>({
@@ -738,14 +738,14 @@ export const getDatasets = <TComposable extends Composable, DefaultT extends Get
             }
         ],
         responseTransformer: getDatasetsResponseTransformer,
-        url: '/evaluation/dataset',
+        url: '/evaluations/datasets',
         ...options
     });
 };
 
 /**
  * Create Evaluation Dataset
- * Creates a new evaluation dataset in Arize Phoenix.
+ * Creates a new evaluation dataset.
  */
 export const createDataset = <TComposable extends Composable, DefaultT extends CreateDatasetResponse = CreateDatasetResponse>(options: Options<TComposable, CreateDatasetData, CreateDatasetResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateDatasetResponse | DefaultT, CreateDatasetError, DefaultT>({
@@ -760,7 +760,7 @@ export const createDataset = <TComposable extends Composable, DefaultT extends C
             }
         ],
         responseTransformer: createDatasetResponseTransformer,
-        url: '/evaluation/dataset',
+        url: '/evaluations/datasets',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -786,7 +786,7 @@ export const getDataset = <TComposable extends Composable, DefaultT extends GetD
             }
         ],
         responseTransformer: getDatasetResponseTransformer,
-        url: '/evaluation/dataset/{dataset_id}',
+        url: '/evaluations/datasets/{dataset_id}',
         ...options
     });
 };
@@ -808,7 +808,7 @@ export const updateDataset = <TComposable extends Composable, DefaultT extends U
             }
         ],
         responseTransformer: updateDatasetResponseTransformer,
-        url: '/evaluation/dataset/{dataset_id}',
+        url: '/evaluations/datasets/{dataset_id}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -834,14 +834,14 @@ export const getExperiment = <TComposable extends Composable, DefaultT extends G
             }
         ],
         responseTransformer: getExperimentResponseTransformer,
-        url: '/evaluation/experiments/{experiment_id}',
+        url: '/evaluations/experiments/{experiment_id}',
         ...options
     });
 };
 
 /**
  * List Evaluation Experiments
- * Retrieves a list of all evaluation experiments from Arize Phoenix.
+ * Retrieves a list of all evaluation experiments.
  */
 export const getExperiments = <TComposable extends Composable, DefaultT extends GetExperimentsResponse = GetExperimentsResponse>(options: Options<TComposable, GetExperimentsData, GetExperimentsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetExperimentsResponse | DefaultT, unknown, DefaultT>({
@@ -856,7 +856,7 @@ export const getExperiments = <TComposable extends Composable, DefaultT extends 
             }
         ],
         responseTransformer: getExperimentsResponseTransformer,
-        url: '/evaluation/experiments',
+        url: '/evaluations/experiments',
         ...options
     });
 };
@@ -878,7 +878,7 @@ export const runExperiment = <TComposable extends Composable, DefaultT extends R
             }
         ],
         responseTransformer: runExperimentResponseTransformer,
-        url: '/evaluation/experiments',
+        url: '/evaluations/experiments',
         ...options,
         headers: {
             'Content-Type': 'application/json',

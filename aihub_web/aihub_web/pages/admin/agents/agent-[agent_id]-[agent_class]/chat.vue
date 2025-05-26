@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('agent.chat.title')"
-    close-route="/admin/agent"
+    close-route="/admin/agents"
   >
     <div class="relative flex flex-col gap-2 p-3">
       <div>
@@ -59,6 +59,6 @@ const submitMessage = async () => {
     threadId: thread.id,
   })
   userInput.value = ''
-  router.push(localeRoute(`/admin/thread/${thread.id}/chat`))
+  router.push(localeRoute(`/admin/threads/${thread.id}/chat`))
 }
 </script>

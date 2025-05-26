@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="dataset?.dataset_name"
-    close-route="/admin/evaluation/dataset"
+    close-route="/admin/evaluations/datasets"
     :loading="datasetIsLoading"
   >
     <ConfirmPopup />
@@ -10,7 +10,7 @@
       <Button
         v-if="changedItems.length > 0"
         class="w-full"
-        label="Save Dataset"
+        :label="t('evaluation.dataset.save_button')"
         icon="pi pi-save"
         @click="safeDataset($event)"
       />
@@ -23,8 +23,11 @@
 import cloneDeep from 'lodash.clonedeep'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 
 import type { Dataset, DatasetItem, DatasetItemCreate } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 const { dataset, datasetIsLoading } = useDataset()
 const editableDataset = ref<Dataset | null>(null)
@@ -56,21 +59,21 @@ const changedItems = computed<DatasetItemCreate[]>(() => {
 const safeDataset = (event) => {
   confirm.require({
     target: event.currentTarget,
-    message: 'Save dataset? Once added, you can not remove items again.',
+    message: t('evaluation.dataset.save_confirmation'),
     icon: 'pi pi-exclamation-triangle',
     rejectProps: {
-      label: 'Cancel',
+      label: t('evaluation.dataset.cancel_button'),
       severity: 'secondary',
       outlined: true,
     },
     acceptProps: {
-      label: 'Save',
+      label: t('evaluation.dataset.save_action'),
     },
     accept: () => {
       const items = changedItems.value
       if (items.length > 0) {
         updateDataset({ dataset: { items } })
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'Dataset saved', life: 3000 })
+        toast.add({ severity: 'success', summary: t('evaluation.dataset.saved_summary'), detail: t('evaluation.dataset.saved_detail'), life: 3000 })
       }
     },
   })

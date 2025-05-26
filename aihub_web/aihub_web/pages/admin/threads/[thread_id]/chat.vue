@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('thread.chat.title')"
-    close-route="/admin/thread"
+    close-route="/admin/threads"
     :loading="threadIsLoading || threadEventsAreLoading"
   >
     <ChatThread

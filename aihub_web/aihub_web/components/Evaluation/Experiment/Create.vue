@@ -1,7 +1,7 @@
 <template>
   <div>
     <span class="mb-8 block text-surface-500 dark:text-surface-400">
-      Create a new experiment with a dataset and an Assistant!
+      {{ t('evaluation.experiment.create_description') }}
     </span>
     <div class="mb-4 flex flex-col gap-4">
       <div class="flex flex-col">
@@ -9,7 +9,7 @@
           for="name"
           class="font-semibold"
         >
-          Name
+          {{ t('evaluation.experiment.name') }}
         </label>
         <InputText
           id="name"
@@ -23,7 +23,7 @@
           for="description"
           class="w-24 font-semibold"
         >
-          Description
+          {{ t('evaluation.experiment.description') }}
         </label>
         <Textarea
           id="description"
@@ -37,14 +37,14 @@
           for="dataset"
           class="w-24 font-semibold"
         >
-          Dataset
+          {{ t('evaluation.experiment.dataset') }}
         </label>
         <Select
           v-model="experiment.dataset_id"
           :options="datasets"
           option-label="dataset_name"
           option-value="id"
-          placeholder="Select an Dataset"
+          :placeholder="t('evaluation.experiment.select_dataset')"
           :loading="datasetsAreLoading"
         />
       </div>
@@ -53,26 +53,26 @@
           for="agent"
           class="font-semibold"
         >
-          Agent
+          {{ t('evaluation.experiment.agent') }}
         </label>
         <Select
           v-model="agent"
           :options="validAgents"
           option-label="agent_config.name"
-          placeholder="Select an Assistant"
+          :placeholder="t('evaluation.experiment.select_assistant')"
           :loading="agentsAreLoading"
         />
       </div>
       <div class="flex justify-end gap-2">
         <Button
           type="button"
-          label="Cancel"
+          :label="t('evaluation.experiment.cancel')"
           severity="secondary"
           @click="close"
         />
         <Button
           type="button"
-          label="Save"
+          :label="t('evaluation.experiment.save')"
           :disabled="!readyToSave"
           @click="save"
         />
@@ -82,7 +82,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { AgentDto, ExperimentCreate } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 const experiment = ref<ExperimentCreate>({
   agent_class: '',

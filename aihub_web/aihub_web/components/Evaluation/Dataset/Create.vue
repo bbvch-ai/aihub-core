@@ -1,7 +1,7 @@
 <template>
   <div>
     <span class="mb-8 block text-surface-500 dark:text-surface-400">
-      Create a new dataset that you can use to evaluate the performance of your Assitants!
+      {{ t('evaluation.dataset.create_description') }}
     </span>
     <div class="mb-4 flex flex-col gap-4">
       <div class="flex flex-col">
@@ -9,7 +9,7 @@
           for="name"
           class="font-semibold"
         >
-          Name
+          {{ t('evaluation.dataset.name') }}
         </label>
         <InputText
           id="name"
@@ -23,7 +23,7 @@
           for="description"
           class="w-24 font-semibold"
         >
-          Description
+          {{ t('evaluation.dataset.description') }}
         </label>
         <Textarea
           id="description"
@@ -36,13 +36,13 @@
       <div class="flex justify-end gap-2">
         <Button
           type="button"
-          label="Cancel"
+          :label="t('evaluation.dataset.cancel')"
           severity="secondary"
           @click="close"
         />
         <Button
           type="button"
-          label="Save"
+          :label="t('evaluation.dataset.save')"
           :disabled="!dataset.dataset_name || !dataset.description || dataset.items.length === 0"
           @click="save"
         />
@@ -52,7 +52,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { DatasetCreate } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 const dataset = ref<DatasetCreate>({
   dataset_name: '',

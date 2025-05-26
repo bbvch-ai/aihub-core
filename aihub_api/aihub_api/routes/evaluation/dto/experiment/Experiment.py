@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 from aihub_api.routes.evaluation.dto.experiment.MinimalExperiment import MinimalExperiment
 
 
-# Re-using your TaskSummaryData and EvaluationSummaryData from your snippet
 class TaskSummaryData(BaseModel):
     n_examples: Annotated[int, Field(description="Number of examples in the experiment.")]
     n_runs: Annotated[int, Field(description="Number of task runs executed.")]

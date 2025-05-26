@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="agent?.agent_config.name"
-    close-route="/admin/agent"
+    close-route="/admin/agents"
     :loading="agentIsLoading"
     size="large"
   >

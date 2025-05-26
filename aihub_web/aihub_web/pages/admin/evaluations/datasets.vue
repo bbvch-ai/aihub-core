@@ -36,8 +36,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDatasets } from '@core/composables/evaluation/useDatasets'
-
 import type { MinimalDataset } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
@@ -50,6 +48,6 @@ const { datasets, datasetsAreLoading } = useDatasets()
 const createModalOpen = ref(false)
 
 const toDataset = (dataset: MinimalDataset) => {
-  router.push(localePath(`/admin/evaluation/dataset/${dataset.id}`))
+  router.push(localePath(`/admin/evaluations/datasets/${dataset.id}`))
 }
 </script>

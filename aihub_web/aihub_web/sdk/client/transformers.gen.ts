@@ -97,11 +97,9 @@ const experimentSchemaResponseTransformer = (data: any) => {
         data.created_at = new Date(data.created_at);
     }
     data.dataset = minimalDatasetSchemaResponseTransformer(data.dataset);
-    if (data.items) {
-        data.items = data.items.map((item: any) => {
-            return experimentRunRecordSchemaResponseTransformer(item);
-        });
-    }
+    data.items = data.items.map((item: any) => {
+        return experimentRunRecordSchemaResponseTransformer(item);
+    });
     return data;
 };
 

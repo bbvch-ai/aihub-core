@@ -6,7 +6,7 @@ judge:
   error_response: '{"score": 0.0, "reasoning": "Die Bewertung ist aufgrund eines Fehlers im Richter oder in der Eingabe fehlgeschlagen.", "error": true}'
 
   correctness:
-    system_addon: "Bewerten Sie die AGENT_RESPONSE auf ihre sachliche Korrektheit basierend auf der REFERENCE_ANSWER zur gegebenen QUESTION. Eine korrekte Antwort behandelt die Frage genau und stimmt mit der Referenzantwort überein. Bestrafen Sie Halluzinationen oder Ungenauigkeiten. Bewerten Sie mit 1.0 für perfekt, 0.0 für völlig falsch."
+    system_addon: "Bewerten Sie die Agentenantwort auf ihre sachliche Korrektheit basierend auf der Referenzantwort zur gegebenen Frage. Eine korrekte Antwort behandelt die Frage genau und stimmt mit der Referenzantwort überein. Bestrafen Sie Halluzinationen oder Ungenauigkeiten. Bewerten Sie mit 1.0 für perfekt, 0.0 für völlig falsch."
     user_structure: |
       <Kontext>
       Frage: {question}
@@ -54,7 +54,7 @@ judge:
         assistant: '{"score": 0.0, "reasoning": "Der Agent hat einen völlig falschen Autor angegeben."}'
 
   completeness:
-    system_addon: "Bewerten Sie, ob die AGENT_RESPONSE alle Aspekte der QUESTION, sowohl explizite als auch implizite, vollständig behandelt. Berücksichtigen Sie, ob alle Teile der Frage beantwortet wurden. Bewerten Sie mit 1.0 für vollständig, 0.0 für gar nicht behandelt."
+    system_addon: "Bewerten Sie, ob die Agentenantwort alle Aspekte der Frage, sowohl explizite als auch implizite, vollständig behandelt. Berücksichtigen Sie, ob alle Teile der Frage beantwortet wurden. Bewerten Sie mit 1.0 für vollständig, 0.0 für gar nicht behandelt."
     user_structure: |
       <Kontext>
       Frage: {question}
@@ -97,7 +97,7 @@ judge:
         assistant: '{"score": 0.6, "reasoning": "Der Agent hat Tomaten und Käse erwähnt, aber Basilikum, eine wichtige Zutat, vergessen."}'
 
   conciseness:
-    system_addon: "Bewerten Sie, ob die AGENT_RESPONSE prägnant und auf den Punkt gebracht ist und unnötige Ausführlichkeit oder irrelevante Details für die gegebene QUESTION vermeidet. Konzentrieren Sie sich *nur* auf die Prägnanz, nicht auf Korrektheit oder Vollständigkeit. Bewerten Sie mit 1.0 für perfekt prägnant, 0.0 für extrem weitschweifig."
+    system_addon: "Bewerten Sie, ob die Agentenantwort prägnant und auf den Punkt gebracht ist und unnötige Ausführlichkeit oder irrelevante Details für die gegebene Frage vermeidet. Konzentrieren Sie sich *nur* auf die Prägnanz, nicht auf Korrektheit oder Vollständigkeit. Bewerten Sie mit 1.0 für perfekt prägnant, 0.0 für extrem weitschweifig."
     user_structure: |
       <Kontext>
       Frage: {question}

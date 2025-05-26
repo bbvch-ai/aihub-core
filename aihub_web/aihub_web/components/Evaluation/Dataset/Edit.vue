@@ -4,7 +4,7 @@
       v-if="modelValue.items.length === 0"
       class="text-sm text-surface-500 dark:text-surface-400"
     >
-      Add at least 1 Datapoint
+      {{ t('evaluation.dataset.add_at_least_one') }}
     </p>
     <DataTable
       v-else
@@ -12,20 +12,20 @@
     >
       <Column
         field="question"
-        header="Question"
+        :header="t('evaluation.dataset.question_header')"
       />
       <Column
         field="answer"
-        header="Answer"
+        :header="t('evaluation.dataset.answer_header')"
       />
       <Column
-        header="Status"
+        :header="t('evaluation.dataset.status')"
         class="w-24 !text-end"
       >
         <template #body="{ data: item }">
           <Tag
             v-if="isTemporaryItem(item)"
-            value="New"
+            :value="t('evaluation.dataset.new')"
             severity="success"
           />
         </template>
@@ -51,7 +51,7 @@
         </InputGroupAddon>
         <InputText
           v-model="question"
-          placeholder="Question"
+          :placeholder="t('evaluation.dataset.question_placeholder')"
           @click.enter="add"
         />
       </InputGroup>
@@ -61,14 +61,14 @@
         </InputGroupAddon>
         <InputText
           v-model="answer"
-          placeholder="Answer"
+          :placeholder="t('evaluation.dataset.answer_placeholder')"
           @click.enter="add"
         />
       </InputGroup>
       <div>
         <Button
           type="button"
-          label="Add"
+          :label="t('evaluation.dataset.add_button')"
           icon="pi pi-search"
           :disabled="!question || !answer"
           @click="add"
@@ -79,7 +79,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { Dataset, DatasetCreate, DatasetItem } from '@core/sdk/client'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: Dataset | DatasetCreate
