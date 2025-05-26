@@ -17,7 +17,7 @@ sort-imports:
 pr-ready: sort-imports format lint
 	@echo "Running full check (format, sort)..."
 
-.PHONY: mirror help
+.PHONY: mirror
 
 # Mirror an image from source to target
 # Usage: make mirror SOURCE=source/image:tag TARGET=target/image:tag
