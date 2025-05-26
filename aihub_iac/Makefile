@@ -24,7 +24,7 @@ pr-ready: sort-imports format lint
 mirror-image:
 	@if [ -z "$(SOURCE)" ] || [ -z "$(TARGET)" ]; then \
 		echo "Error: SOURCE and TARGET parameters are required"; \
-		echo "Usage: make mirror SOURCE=source/image:tag TARGET=target/image:tag"; \
+		echo "Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag"; \
 		exit 1; \
 	fi
 	@echo "Mirroring $(SOURCE) to $(TARGET)..."
