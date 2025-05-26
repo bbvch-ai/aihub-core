@@ -1,6 +1,6 @@
 services:
   phoenix:
-    image: arizephoenix/phoenix:latest
+    image: arizephoenix/phoenix:version-10.0.4
     ports:
       - "6006:6006"  # Phoenix UI and OTLP HTTP collector
       - "4317:4317"  # Phoenix OTLP gRPC collector
@@ -10,7 +10,7 @@ services:
     restart: always
 
   nats:
-    image: nats:latest
+    image: nats:2.11.4
     command: -c /etc/nats/nats.conf
     volumes:
       - ./nats/standalone/nats.conf:/etc/nats/nats.conf
@@ -20,7 +20,7 @@ services:
     restart: always
 
   redis:
-    image: redis:latest
+    image: redis:8.0.1
     container_name: redis
     command: "redis-server --save 30 1 --loglevel warning"
     volumes:
@@ -41,7 +41,7 @@ services:
         max-file: "3"
 
   mongo:
-    image: mongo:latest
+    image: mongo:8.0.9
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
@@ -54,7 +54,7 @@ services:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
 
   llama.cpp:
-    image: ghcr.io/ggerganov/llama.cpp:server
+    image: ghcr.io/ggml-org/llama.cpp:server-b5490
     platform: linux/amd64
     ports:
       - "8182:8182"
@@ -67,7 +67,7 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
 
   hf-TEI:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.6
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-sha-5bcc41f
     ports:
       - "8183:8183"
     command: >

@@ -58,13 +58,12 @@ class EvaluationController(Controller):
             route,
             tags=self.tags,
             summary="Create Evaluation Dataset",
-            description="Creates a new evaluation dataset in Arize Phoenix.",
+            description="Creates a new evaluation dataset.",
         )
         async def create_dataset(
             create_dto: Annotated[DatasetCreate, Body()],
             user: AuthenticatedUser = Security(self.auth),
         ) -> Dataset:
-            """Creates a new evaluation dataset."""
             return await EvaluationService.create_dataset(create_dto)
 
         return self
@@ -74,12 +73,11 @@ class EvaluationController(Controller):
             route,
             tags=self.tags,
             summary="List Evaluation Datasets",
-            description="Retrieves a list of all evaluation datasets from Arize Phoenix.",
+            description="Retrieves a list of all evaluation datasets.",
         )
         async def get_datasets(
             user: AuthenticatedUser = Security(self.auth),
         ) -> List[MinimalDataset]:
-            """Retrieves all available evaluation datasets."""
             return await EvaluationService.get_datasets()
 
         return self
@@ -95,7 +93,6 @@ class EvaluationController(Controller):
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to retrieve.")],
             user: AuthenticatedUser = Security(self.auth),
         ) -> Dataset:
-            """Retrieves a single evaluation dataset by its ID."""
             return await EvaluationService.get_dataset(dataset_id)
 
         return self
@@ -112,7 +109,6 @@ class EvaluationController(Controller):
             update_dto: Annotated[DatasetUpdate, Body()],
             user: AuthenticatedUser = Security(self.auth),
         ) -> Dataset:
-            """Updates an existing evaluation dataset by appending items."""
             return await EvaluationService.update_dataset(dataset_id, update_dto)
 
         return self
@@ -122,13 +118,12 @@ class EvaluationController(Controller):
             route,
             tags=self.tags,
             summary="List Evaluation Experiments",
-            description="Retrieves a list of all evaluation experiments from Arize Phoenix.",
+            description="Retrieves a list of all evaluation experiments.",
         )
         async def get_experiments(
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[MinimalExperiment]:
-            """Retrieves all available evaluation experiments."""
             return await EvaluationService.get_experiments(t)
 
         return self
@@ -145,7 +140,6 @@ class EvaluationController(Controller):
             user: AuthenticatedUser = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> Experiment:
-            """Retrieves a single evaluation experiment by its ID."""
             return await EvaluationService.get_experiment(experiment_id, t)
 
         return self
@@ -164,7 +158,6 @@ class EvaluationController(Controller):
             external_event_distributor: ExternalEventDistributor = Depends(use_external_event_distributor),
             t: LocaleHandler = Depends(use_locale),
         ) -> Experiment:
-            """Initiates and runs a new evaluation experiment."""
             return await EvaluationService.run_experiment_evaluation(
                 create_dto=create_dto,
                 nats_client=nats_client,

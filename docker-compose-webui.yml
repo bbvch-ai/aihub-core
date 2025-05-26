@@ -24,7 +24,7 @@ services:
         max-file: "3"
 
   openwebui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:git-82716f3
     network_mode: "host"
     volumes:
       - open-webui:/app/backend/data
