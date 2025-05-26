@@ -227,6 +227,7 @@ evaluation:
     description: "Description"
     cancel: "Annuler"
     save: "Enregistrer"
+    create_new: "Créer un nouveau jeu de données"
     add_at_least_one: "Ajoutez au moins 1 point de données"
     question_header: "Question"
     answer_header: "Réponse"

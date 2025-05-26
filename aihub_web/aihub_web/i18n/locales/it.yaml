@@ -227,6 +227,7 @@ evaluation:
     description: "Descrizione"
     cancel: "Annulla"
     save: "Salva"
+    create_new: "Crea nuovo set di dati"
     add_at_least_one: "Aggiungi almeno 1 punto dati"
     question_header: "Domanda"
     answer_header: "Risposta"

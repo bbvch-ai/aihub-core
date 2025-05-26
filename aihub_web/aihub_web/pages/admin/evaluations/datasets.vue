@@ -6,14 +6,14 @@
     <div class="flex flex-col gap-2">
       <div class="flex w-full justify-end">
         <Button
-          label="Create new Dataset"
+          :label="t('evaluation.dataset.create_new')"
           icon="pi pi-plus"
           @click="createModalOpen = true"
         />
         <Dialog
           v-model:visible="createModalOpen"
           modal
-          header="Create new Dataset"
+          :header="t('evaluation.dataset.create_new')"
         >
           <EvaluationDatasetCreate
             @close="createModalOpen = false"

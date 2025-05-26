@@ -228,6 +228,7 @@ evaluation:
     description: "Description"
     cancel: "Cancel"
     save: "Save"
+    create_new: "Create new Dataset"
     add_at_least_one: "Add at least 1 Datapoint"
     question_header: "Question"
     answer_header: "Answer"

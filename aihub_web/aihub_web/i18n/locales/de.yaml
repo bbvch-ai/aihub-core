@@ -228,6 +228,7 @@ evaluation:
     description: "Beschreibung"
     cancel: "Abbrechen"
     save: "Speichern"
+    create_new: "Neuen Datensatz erstellen"
     add_at_least_one: "Fügen Sie mindestens 1 Datenpunkt hinzu"
     question_header: "Frage"
     answer_header: "Antwort"
