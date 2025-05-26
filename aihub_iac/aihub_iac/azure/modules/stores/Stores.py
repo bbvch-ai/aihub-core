@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import dbforpostgresql, documentdb, network, search
+from pulumi_azure_native import cosmosdb, dbforpostgresql, network, search
 
 from aihub_iac.azure.constants.resources import AI_SEARCH_SERVICE, COSMOS, POSTGRES, SUB_NET
 from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
@@ -97,7 +97,7 @@ class Stores(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.API_COSMOS_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
         return subnet
 
@@ -114,7 +114,7 @@ class Stores(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.SEARCH_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
         return subnet
 
@@ -141,7 +141,7 @@ class Stores(pulumi.ComponentResource):
                     service_name="Microsoft.DBforPostgreSQL/flexibleServers",
                 )
             ],
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -159,7 +159,7 @@ class Stores(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.COSMOS_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
         return subnet
 
@@ -242,38 +242,38 @@ class Stores(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _create_document_db(self) -> documentdb.DatabaseAccount:
+    def _create_document_db(self) -> cosmosdb.DatabaseAccount:
         """Create the document store Cosmos DB account"""
-        return documentdb.DatabaseAccount(
+        return cosmosdb.DatabaseAccount(
             resource_name=self.config.doc_store_name,
             account_name=self.config.doc_store_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             kind="MongoDB",
-            database_account_offer_type=documentdb.DatabaseAccountOfferType.STANDARD,
-            api_properties=documentdb.ApiPropertiesArgs(server_version="4.2"),
-            locations=[documentdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
-            capabilities=[documentdb.CapabilityArgs(name="EnableServerless")],
-            public_network_access=documentdb.PublicNetworkAccess.DISABLED,
+            database_account_offer_type=cosmosdb.DatabaseAccountOfferType.STANDARD,
+            api_properties=cosmosdb.ApiPropertiesArgs(server_version="4.2"),
+            locations=[cosmosdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
+            capabilities=[cosmosdb.CapabilityArgs(name="EnableServerless")],
+            public_network_access=cosmosdb.PublicNetworkAccess.DISABLED,
             tags={
                 "Stack": self.stack,
             },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _create_api_db(self) -> documentdb.DatabaseAccount:
+    def _create_api_db(self) -> cosmosdb.DatabaseAccount:
         """Create the API Cosmos DB account"""
-        return documentdb.DatabaseAccount(
+        return cosmosdb.DatabaseAccount(
             resource_name=self.config.store_name,
             account_name=self.config.store_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             kind="MongoDB",
-            database_account_offer_type=documentdb.DatabaseAccountOfferType.STANDARD,
-            api_properties=documentdb.ApiPropertiesArgs(server_version="4.2"),
-            locations=[documentdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
-            capabilities=[documentdb.CapabilityArgs(name="EnableServerless")],
-            public_network_access=documentdb.PublicNetworkAccess.DISABLED,
+            database_account_offer_type=cosmosdb.DatabaseAccountOfferType.STANDARD,
+            api_properties=cosmosdb.ApiPropertiesArgs(server_version="4.2"),
+            locations=[cosmosdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
+            capabilities=[cosmosdb.CapabilityArgs(name="EnableServerless")],
+            public_network_access=cosmosdb.PublicNetworkAccess.DISABLED,
             tags={
                 "Stack": self.stack,
             },

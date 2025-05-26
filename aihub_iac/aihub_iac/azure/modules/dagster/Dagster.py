@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import app, dbforpostgresql, network
+from pulumi_azure_native import app, dbforpostgresql, network, privatedns
 
 from aihub_iac.azure.constants.resources import CONTAINER_APP, STORAGE_ACCOUNT, SUB_NET
 from aihub_iac.azure.constants.roles import ROLES
@@ -65,7 +65,7 @@ class Dagster(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.DAGSTER_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -99,7 +99,7 @@ class Dagster(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.DAGSTER_STORAGE_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -113,7 +113,7 @@ class Dagster(pulumi.ComponentResource):
 
         # Create new resources
         self.dagster_database = self._create_postgres_database()
-        self.blob_dns_zone = network.get_private_zone(
+        self.blob_dns_zone = privatedns.get_private_zone(
             private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
         )
 

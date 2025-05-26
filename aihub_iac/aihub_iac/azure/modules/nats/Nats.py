@@ -99,7 +99,7 @@ class Nats(pulumi.ComponentResource):
                     service_name="Microsoft.ContainerInstance/containerGroups",
                 )
             ],
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -118,7 +118,7 @@ class Nats(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.NATS_STORAGE_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet

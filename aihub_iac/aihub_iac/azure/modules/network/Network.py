@@ -74,7 +74,7 @@ class Network(pulumi.ComponentResource):
                 )
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -104,7 +104,7 @@ class Network(pulumi.ComponentResource):
                 )
             ],
             opts=pulumi.ResourceOptions(parent=self.vnet),
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet

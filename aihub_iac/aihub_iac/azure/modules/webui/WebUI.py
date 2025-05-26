@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import app, containerinstance, dbforpostgresql, network
+from pulumi_azure_native import app, containerinstance, dbforpostgresql, network, privatedns
 
 from aihub_iac.azure.constants.resources import (
     CONTAINER_APP,
@@ -75,7 +75,7 @@ class WebUI(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.WEBUI_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -93,7 +93,7 @@ class WebUI(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.WEBUI_STORAGE_SUBNET_CIDR,
-            network_security_group={"id": nsg.id},
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
         return subnet
@@ -105,10 +105,10 @@ class WebUI(pulumi.ComponentResource):
         self.webui_subnet = self._create_webui_subnet()
         self.webui_storage_subnet = self._create_webui_storage_subnet()
 
-        self.blob_dns_zone = network.get_private_zone(
+        self.blob_dns_zone = privatedns.get_private_zone(
             private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
         )
-        self.file_dns_zone = network.get_private_zone(
+        self.file_dns_zone = privatedns.get_private_zone(
             private_zone_name="privatelink.file.core.windows.net", resource_group_name=self.config.resource_group
         )
 

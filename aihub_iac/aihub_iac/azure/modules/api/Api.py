@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import containerinstance, documentdb, web
+from pulumi_azure_native import containerinstance, cosmosdb, web
 
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.modules.api.ApiConfig import ApiConfig
@@ -84,9 +84,9 @@ class Api(pulumi.ComponentResource):
         else:
             raise ValueError(f"No private IP found for container group {container_group.name}")
 
-    def _get_api_db(self) -> documentdb.GetDatabaseAccountResult:
+    def _get_api_db(self) -> cosmosdb.GetDatabaseAccountResult:
         """Get the Cosmos DB account"""
-        return documentdb.get_database_account(
+        return cosmosdb.get_database_account(
             account_name=self.config.effective_cosmos_account_name,
             resource_group_name=self.config.effective_cosmos_resource_group,
         )
