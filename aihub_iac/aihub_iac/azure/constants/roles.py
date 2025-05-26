@@ -2,6 +2,15 @@ from enum import Enum
 
 
 class ROLES(Enum):
+    """
+    Enum representing globally defined roles in Azure.
+
+    These IDs correspond to specific roles that can be assigned to users or service principals
+    within the Azure ecosystem. They are used to manage permissions and access control across
+    various Azure resources. Each role is identified by a unique GUID globally on Azure.
+    See the list of roles and their Ids at:
+    https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
+    """
     OPENAI_USER = "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
     CONTRIBUTOR_ROLE_ID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
     DB_ACCOUNT_CONTRIBUTOR_ROLE_ID = "5bd9cd88-fe45-4216-938b-f97437e15450"
