@@ -4,8 +4,8 @@ from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.semantic.retriever.Document import Document
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
 
 
@@ -15,9 +15,9 @@ class RetrieverEvent(SemanticEvent):
         "lib.events.semantic_retriever_event.description"
     )
 
-    documents: Optional[List[Document]] = Field(
+    nodes: Optional[List[IngestedNode]] = Field(
         None,
-        description="List of documents retrieved by the retriever, including document IDs, scores, and content.",
+        description="List of nodes retrieved by the retriever, including document IDs, scores, and content.",
     )
 
     def to_semantic_convention(self) -> Dict[str, str]:
@@ -26,16 +26,16 @@ class RetrieverEvent(SemanticEvent):
         }
 
         # Flatten retrieved documents
-        if self.documents:
-            for i, doc in enumerate(self.documents):
+        if self.nodes:
+            for i, node in enumerate(self.nodes):
                 attributes = {
                     **attributes,
-                    **doc.to_semantic_convention(SpanAttributes.RETRIEVAL_DOCUMENTS, i),
+                    **node.to_semantic_convention(SpanAttributes.RETRIEVAL_DOCUMENTS, i),
                 }
 
         return {k: v for k, v in attributes.items() if v is not None}
 
     @classmethod
     def from_nodes(cls, nodes: List[NodeWithScore]) -> "RetrieverEvent":
-        documents = [Document.from_node(node) for node in nodes]
-        return cls(documents=documents)
+        nodes = [IngestedNode.from_llama_index_node_with_score(node) for node in nodes]
+        return cls(nodes=nodes)

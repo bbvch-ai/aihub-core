@@ -105,6 +105,8 @@ class ExternalEventDistributor:
             logger.debug(f"Assembled message history {external_event.event.messages}")
 
         for agent in thread.agents:
+            event = external_event.event.model_copy(deep=True)
+            event.event_id = str(ObjectId())
             topic_manager = AgentThreadTopicManager(
                 agent_class=agent.agent_class,
                 agent_id=agent.agent_id,
@@ -113,10 +115,10 @@ class ExternalEventDistributor:
                 run_id=run_id,
             )
             subject = topic_manager.get_subject_for_control_event_in_thread(
-                event_name=external_event.event.event_name,
-                event_id=external_event.event.event_id,
+                event_name=event.event_name,
+                event_id=event.event_id,
             )
-            await self.js_publisher.publish_event(external_event.event, subject)
+            await self.js_publisher.publish_event(event, subject)
 
     async def _handle_display_message(self, external_event: ExternalEvent, run_id: str, user: AuthenticatedUser):
         """

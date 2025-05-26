@@ -16,7 +16,7 @@ condenser:
 rag:
   context_prompt: |
     Des informations contextuelles supplémentaires vous sont fournies sous la forme de documents structurés. Chaque document suit 
-    un format cohérent, commençant par `<DOCUMENT [metadata]>` et se terminant par `</DOCUMENT>`. Ces documents contiennent des 
+    un format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant par `</REFERENCE_DOCUMENT>`. Ces documents contiennent des 
     détails essentiels qui doivent être utilisés pour comprendre et répondre avec précision à la requête de l’utilisateur.
 
     Chaque document comprend des métadonnées telles que la source, l’espace de noms, le type, la langue, la version et les 

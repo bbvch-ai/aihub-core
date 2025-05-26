@@ -4,6 +4,7 @@ from os.path import join, dirname, abspath, isdir
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
+from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
@@ -26,6 +27,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -144,6 +146,17 @@ async def main():
         .generate_image()
         .stt()
         .tts(),
+        KnowledgeController(
+            auth=auth,
+            vector_store_factory=lambda collection: create_milvus_vector_store(
+                "http://localhost:19530", collection, 3072
+            ),
+        )
+        .get_databases()
+        .get_documents_for_namespace()
+        .get_document_by_id()
+        .get_nodes_for_document()
+        .get_summary_nodes_for_document(),
     )
 
     await runner.run()

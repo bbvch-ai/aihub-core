@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
-    title="Events"
-    close-route="/admin/thread"
+    :title="t('thread.events.title')"
+    :close-route="`/admin/thread/${route.params.thread_id}/display`"
     :loading="threadIsLoading || threadEventsAreLoading"
   >
     <EventList
@@ -14,4 +14,7 @@
 <script setup lang="ts">
 const { thread, threadIsLoading } = useThread()
 const { threadEvents, threadEventsAreLoading } = useThreadEvents()
+
+const route = useRoute()
+const { t } = useI18n()
 </script>

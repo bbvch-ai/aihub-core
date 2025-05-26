@@ -36,7 +36,7 @@ class HealthController(Controller):
     description = LocaleString(en="Health Controller")
     icon = "solar:health-bold"
 
-    def __init__(self, route: str = "/health", auth: AuthHandler | None = None, is_admin_only=False):
+    def __init__(self, route: str = "/health", auth: AuthHandler | None = None, is_admin_only=True):
         super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def get_health(self, route: str = "/") -> "HealthController":

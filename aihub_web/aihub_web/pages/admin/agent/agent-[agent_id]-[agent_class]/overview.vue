@@ -1,6 +1,6 @@
 <template>
   <StructuralColumn
-    title="Overview"
+    :title="agent?.agent_config?.name"
     close-route="/admin/agent"
     :loading="agentIsLoading"
     size="large"
@@ -63,7 +63,7 @@ const { timeRange, charts } = useBasicEventStatistics()
 </script>
 
 <style scoped>
-.panel :deep(p-panel-header) {
+.panel :deep(.p-panel-header) {
   padding: 0 !important;
 }
 </style>

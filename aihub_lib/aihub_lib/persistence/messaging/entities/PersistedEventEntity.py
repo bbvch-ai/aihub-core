@@ -198,6 +198,7 @@ class PersistedEventEntity(Document):
                     "agent_class": {"$first": "$agent_class"},
                     "agent_id": {"$first": "$agent_id"},
                     "event_data": {"$first": "$event_data"},  # For LLM cost calculation
+                    "event_type": {"$first": "$event_type"},
                 }
             },
             # 5. Group events by run_id to calculate run-level stats
@@ -209,7 +210,20 @@ class PersistedEventEntity(Document):
                     "first_event_time": {"$min": "$event_time"},
                     "latest_event_time": {"$max": "$event_time"},
                     "n_events": {"$sum": 1},
-                    "start_events": {"$sum": {"$cond": [{"$in": ["StartEvent", "$event_parents"]}, 1, 0]}},
+                    "start_events": {
+                        "$sum": {
+                            "$cond": [
+                                {
+                                    "$and": [
+                                        {"$in": ["StartEvent", "$event_parents"]},
+                                        {"$eq": ["$event_type", TopicManager.CONTROL_EVENT]},
+                                    ]
+                                },
+                                1,
+                                0,
+                            ]
+                        }
+                    },
                     "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
                     "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
                     "hitl_request_events": {
@@ -257,6 +271,7 @@ class PersistedEventEntity(Document):
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
                             "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
+                            "is_control": {"$eq": ["$event_type", TopicManager.CONTROL_EVENT]},
                         }
                     },
                 }
@@ -287,7 +302,7 @@ class PersistedEventEntity(Document):
                             "$filter": {
                                 "input": "$potential_start_events",
                                 "as": "event",
-                                "cond": {"$and": ["$$event.is_start", "$$event.is_not_user"]},
+                                "cond": {"$and": ["$$event.is_start", "$$event.is_not_user", "$$event.is_control"]},
                             }
                         }
                     },

@@ -19,6 +19,7 @@ def fetch_ref_docs_to_remove(
 
     connect_to_mongo_db(doc_store_resource.document_store_name)
     ref_docs = RefDoc.by_namespace(
+        db_alias="default",  # While in the pipeline, we only have a connection to the doc-store mongodb
         namespace=doc_store_resource.namespace_name,
         exclude_ids=ids,
     )

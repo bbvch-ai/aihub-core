@@ -13,6 +13,7 @@ from llama_index.core.schema import Document
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
+from aihub_lib.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
 
 
 class DocumentIntelligenceLoader(BaseReader):
@@ -44,7 +45,7 @@ class DocumentIntelligenceLoader(BaseReader):
             figure_ids = [figure.id for figure in result.figures]
 
             metadata = {
-                "number_of_pages": len(result.pages),
+                NUMBER_OF_PAGES: len(result.pages),
                 "operation_id": operation_id,
                 "figure_ids": figure_ids,
             }
