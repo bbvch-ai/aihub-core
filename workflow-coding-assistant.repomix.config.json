@@ -1,0 +1,46 @@
+{
+  "output": {
+    "filePath": "workflow-coding-assistant.repomix.output.xml",
+    "style": "xml",
+    "parsableStyle": false,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "compress": false,
+    "topFilesLength": 20,
+    "showLineNumbers": false,
+    "copyToClipboard": false,
+    "git": {
+      "sortByChanges": false,
+      "sortByChangesMaxCommits": 100
+    }
+  },
+  "include": [
+    "aihub_agent/aihub_agent/runners/**",
+    "aihub_agent/aihub_agent/agents/**",
+    "aihub_agent/aihub_agent/i18n/**",
+    "aihub_agent/playground/agent/**",
+    "aihub_agent/playground/minimal_workflow/**",
+    "aihub_lib/aihub_lib/generative_ai/**",
+    "aihub_lib/aihub_lib/i18n/**",
+    "aihub_lib/aihub_lib/nats/events/**",
+    "aihub_doc/0_*.md",
+    "aihub_doc/1_*.md",
+    "aihub_doc/2_*.md",
+    "aihub_doc/3_*.md",
+    "aihub_doc/4_*.md",
+    "aihub_doc/5_*.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": []
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}

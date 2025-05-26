@@ -58,3 +58,6 @@ use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
 	poetry run python switch_dependencies.py remote --tag "$(TAG)"
 
+workflow-coding-assistant:
+	@echo "Creating repomix output for workflow coding assistant"
+	npm install -g repomix && poetry run repomix --config workflow-coding-assistant.repomix.config.json

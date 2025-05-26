@@ -1,0 +1,17 @@
+# Ignore translation files
+**/*.de.yml
+**/*.fr.yml
+**/*.it.yml
+
+# idea
+.idea
+
+# Ignore poetry artifacts
+**/poetry.lock
+
+# Ignore pnpm artifacts
+**/pnpm-lock.yaml
+
+**/test/**
+**/tests/**
+**/test_*.py
