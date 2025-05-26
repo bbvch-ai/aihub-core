@@ -20,7 +20,7 @@ pr-ready: sort-imports format lint
 .PHONY: mirror
 
 # Mirror an image from source to target
-# Usage: make mirror SOURCE=source/image:tag TARGET=target/image:tag
+# Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag
 mirror-image:
 	@if [ -z "$(SOURCE)" ] || [ -z "$(TARGET)" ]; then \
 		echo "Error: SOURCE and TARGET parameters are required"; \
