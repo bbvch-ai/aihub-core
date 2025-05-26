@@ -400,7 +400,9 @@ class Dispatcher:
 
             # If the step returns events, publish them
             if result:
-                if not isinstance(result, list):
+                if (isinstance(result, (list, tuple, set))):
+                    result = list(result)
+                else:
                     result = [result]
 
                 await self.tracer.trace_step_stop(step_span, result)
