@@ -17,6 +17,7 @@ from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler imp
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.gemini.GeminiLLMConfig import GeminiLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -26,6 +27,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
+from aihub_lib.infrastructure.google.gemini.GeminiConfig import GeminiConfig
 from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
@@ -115,6 +117,22 @@ async def main():
                     api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
+                ),
+                GeminiLLMConfig(
+                    name="gemini-2.5-flash-preview-05-20",
+                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                    context_size=1_000_000,
+                    prompt_tokens_costs_per_thousand=0.15/1000,
+                    completion_tokens_costs_per_thousand=0.6/1000,
+                    api_key=GeminiConfig().GOOGLE_GEMINI_API_KEY,
+                ),
+                GeminiLLMConfig(
+                    name="gemini-2.5-pro-preview-05-06",
+                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                    context_size=1_000_000,
+                    prompt_tokens_costs_per_thousand=1.25/1000,
+                    completion_tokens_costs_per_thousand=10/1000,
+                    api_key=GeminiConfig().GOOGLE_GEMINI_API_KEY,
                 ),
             ],
             image_models=[
