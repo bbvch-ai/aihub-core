@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: write
-  packages: read
   security-events: write
 
 jobs:
@@ -24,6 +23,7 @@ jobs:
       issues: read
       checks: write
       pull-requests: write
+      packages: read
 
     outputs:
       test_report_passed: ${{ steps.test_report.outputs.passed }}
