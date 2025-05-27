@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   security-events: write
+  packages: read
 
 jobs:
   test-modules:
