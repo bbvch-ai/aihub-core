@@ -70,6 +70,25 @@ services:
       options:
         max-size: "10m"
         max-file: "2"
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3000NAME                     IMAGE                                                            COMMAND                  SERVICE      CREATED         STATUS                   PORTS
+aihub-core-attu-1        zilliz/attu:v2.5                                                 "docker-entrypoint.s…"   attu         3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:3003->3000/tcp, [::]:3003->3000/tcp
+aihub-core-hf-TEI-1      ghcr.io/huggingface/text-embeddings-inference:cuda-sha-5bcc41f   "./entrypoint.sh --p…"   hf-TEI       3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:8183->8183/tcp, [::]:8183->8183/tcp
+aihub-core-llama.cpp-1   ghcr.io/ggml-org/llama.cpp:server-cuda-b5490                     "/app/llama-server -…"   llama.cpp    3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:8182->8182/tcp, [::]:8182->8182/tcp
+aihub-core-mongo-1       mongo:8.0.9                                                      "docker-entrypoint.s…"   mongo        3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp
+aihub-core-nats-1        nats:2.11.4                                                      "/nats-server -c /et…"   nats         3 minutes ago   Up 3 minutes             0.0.0.0:4222->4222/tcp, [::]:4222->4222/tcp, 0.0.0.0:8222->8222/tcp, [::]:8222->8222/tcp, 6222/tcp
+aihub-core-openwebui-1   ghcr.io/open-webui/open-webui:git-82716f3                        "bash start.sh"          openwebui    3 minutes ago   Up 3 minutes (healthy)   
+aihub-core-phoenix-1     arizephoenix/phoenix:version-10.0.4                              "/usr/bin/python3.11…"   phoenix      3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:4317->4317/tcp, [::]:4317->4317/tcp, 0.0.0.0:6006->6006/tcp, [::]:6006->6006/tcp, 9090/tcp
+milvus-etcd              quay.io/coreos/etcd:v3.6.0                                       "etcd -advertise-cli…"   etcd         3 minutes ago   Up 3 minutes (healthy)   2379-2380/tcp
+milvus-minio             minio/minio:RELEASE.2025-05-24T17-08-30Z                         "/usr/bin/docker-ent…"   minio        3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
+milvus-standalone        milvusdb/milvus:v2.5.10                                          "/tini -- milvus run…"   standalone   3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:9091->9091/tcp, [::]:9091->9091/tcp, 0.0.0.0:19530->19530/tcp, [::]:19530->19530/tcp
+postgres                 pgvector/pgvector:pg17                                           "docker-entrypoint.s…"   postgres     3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+redis                    redis:8.0.1                                                      "docker-entrypoint.s…"   redis        3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp/#/healthz', (res) => process.exit(res.statusCode === 200 ? 0 : 1))" ]
+      interval: 30s
+      start_period: 30s
+      timeout: 20s
+      retries: 3
+
 
 networks:
   default:

@@ -2,9 +2,14 @@ services:
   phoenix:
     image: arizephoenix/phoenix:version-10.0.4
     ports:
-      - "6006:6006"  # Phoenix UI and OTLP HTTP collector
-      - "4317:4317"  # Phoenix OTLP gRPC collector
+      - "6006:6006"
+      - "4317:4317"
     restart: always
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:6006/healthz')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   nats:
     image: nats:2.11.4
@@ -12,30 +17,46 @@ services:
     volumes:
       - ./nats/standalone/nats.conf:/etc/nats/nats.conf
     ports:
-      - "4222:4222"  # Client connections
-      - "8222:8222"  # HTTP monitoring interface
-    restart: always
-    healthcheck:
-      test: wget --no-check-certificate -q http://0.0.0.0:8222/healthz -O /dev/null || exit 1
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      - "4222:4222"
+      - "8222:8222"
 
   redis:
     image: redis:8.0.1
+    container_name: redis
+    command: "redis-server --save 30 1 --loglevel warning"
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   mongo:
     image: mongo:8.0.9
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongo-data:/data/db
     ports:
       - "27017:27017"
     restart: always
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   llama.cpp:
     image: ghcr.io/ggml-org/llama.cpp:server-cuda-b5490
@@ -57,6 +78,10 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   hf-TEI:
     image: ghcr.io/huggingface/text-embeddings-inference:cuda-sha-5bcc41f
@@ -77,3 +102,11 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  redis-data: {}
+  mongo-data: {}
