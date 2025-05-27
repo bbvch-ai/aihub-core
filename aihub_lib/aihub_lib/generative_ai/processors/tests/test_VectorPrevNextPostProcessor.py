@@ -2,7 +2,7 @@ import asyncio
 from time import sleep
 
 import pytest
-from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo, TextNode
+from llama_index.core.schema import NodeRelationship, NodeWithScore, RelatedNodeInfo, TextNode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor

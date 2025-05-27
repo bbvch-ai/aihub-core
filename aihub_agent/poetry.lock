@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.170.0"
+version = "v0.171.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
