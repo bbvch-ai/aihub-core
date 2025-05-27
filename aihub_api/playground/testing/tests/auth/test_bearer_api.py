@@ -13,7 +13,7 @@ from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
-USER_ENDPOINT = "/api/v1/user/me"
+USER_ENDPOINT = "/api/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 

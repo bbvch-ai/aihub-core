@@ -34,7 +34,7 @@ services:
       timeout: 20s
       retries: 3
 
-  milvus:
+  standalone:
     container_name: milvus-standalone
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.3
     command: [ "milvus", "run", "standalone" ]
@@ -57,15 +57,16 @@ services:
     depends_on:
       - "etcd"
       - "minio"
+
   attu:
     image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5
     restart: always
     ports:
       - "3003:3000"
     depends_on:
-      - "milvus"
+      - "standalone"
     environment:
-      - MILVUS_URL=milvus:19530
+      - MILVUS_URL=standalone:19530
     logging:
       options:
         max-size: "10m"
