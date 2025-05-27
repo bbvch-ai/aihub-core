@@ -14,6 +14,8 @@ class NatsConfig(StorageConfig, BaseConfig):
 
     DEFAULT_NATS_SUFFIX: ClassVar[str] = "nats"
     DEFAULT_REDIS_SUFFIX: ClassVar[str] = "redis"
+    NATS_SUBNET_CIDR: ClassVar[str] = "10.0.1.0/29"
+    NATS_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.32.0/24"
 
     # Required fields
     nats_image_tag: str = Field(description="NATS image tag")

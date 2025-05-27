@@ -12,6 +12,10 @@ class StoresConfig(BaseConfig):
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
 
     DEFAULT_DOCSTORE_SUFFIX: ClassVar[str] = "docstore"
+    API_COSMOS_SUBNET_CIDR: ClassVar[str] = "10.0.37.0/24"
+    SEARCH_SUBNET_CIDR: ClassVar[str] = "10.0.34.0/24"
+    PG_SUBNET_CIDR: ClassVar[str] = "10.0.4.0/24"
+    COSMOS_SUBNET_CIDR: ClassVar[str] = "10.0.33.0/24"
 
     postgres_username: str = Field(
         default_factory=lambda: StoresConfig._postgres_settings.POSTGRES_USERNAME,

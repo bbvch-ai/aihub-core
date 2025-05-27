@@ -1,9 +1,14 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import dbforpostgresql, documentdb, search
+from pulumi_azure_native import cosmosdb, dbforpostgresql, network, search
 
+from aihub_iac.azure.constants.resources import AI_SEARCH_SERVICE, COSMOS, POSTGRES, SUB_NET
+from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
+from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
+from aihub_iac.azure.modules.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_iac.azure.modules.stores.StoresConfig import StoresConfig
+from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.providers.PrivateEndpointProvider import PrivateEndpointProvider
 
@@ -32,7 +37,7 @@ class Stores(pulumi.ComponentResource):
         self.config = config
 
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         # Initialize private endpoint manager
@@ -49,50 +54,169 @@ class Stores(pulumi.ComponentResource):
         # Create resources
         self._create_resources()
 
+    @property
+    def api_cosmos_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{COSMOS}-api"
+
+    @property
+    def cosmos_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{COSMOS}-store"
+
+    @property
+    def search_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{AI_SEARCH_SERVICE}-store"
+
+    @property
+    def pg_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{POSTGRES}"
+
+    def _create_api_cosmos_subnet(self) -> network.Subnet:
+        public_access_rules = [
+            network.SecurityRuleArgs(
+                name="AllowVPN1ToProxy",
+                priority=200,
+                direction="Inbound",
+                access="Allow",
+                protocol="Tcp",
+                source_address_prefix="192.168.35.145/32",
+                source_port_range="*",
+                destination_address_prefix="*",
+                destination_port_range="*",
+            )
+        ]
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.api_cosmos_subnet_name,
+            source_prefixes=[NetworkConfig.APP_SUBNET_CIDR],
+            additional_rules=public_access_rules,
+        )
+        subnet = network.Subnet(
+            name=self.api_cosmos_subnet_name,
+            resource_name=self.api_cosmos_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.API_COSMOS_SUBNET_CIDR,
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+        return subnet
+
+    def _create_search_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.search_subnet_name,
+            source_prefixes=[NetworkConfig.AGENTS_SUBNET_CIDR, DagsterConfig.DAGSTER_SUBNET_CIDR],
+        )
+        subnet = network.Subnet(
+            name=self.search_subnet_name,
+            resource_name=self.search_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.SEARCH_SUBNET_CIDR,
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+        return subnet
+
+    def _create_pg_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.pg_subnet_name,
+            source_prefixes=[
+                DagsterConfig.DAGSTER_SUBNET_CIDR,
+                PhoenixConfig.PHOENIX_SUBNET_CIDR,
+                WebUIConfig.WEBUI_SUBNET_CIDR,
+            ],
+        )
+        subnet = network.Subnet(
+            name=self.pg_subnet_name,
+            resource_name=self.pg_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.PG_SUBNET_CIDR,
+            delegations=[
+                network.DelegationArgs(
+                    name="postgres-delegation",
+                    service_name="Microsoft.DBforPostgreSQL/flexibleServers",
+                )
+            ],
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+
+        return subnet
+
+    def _create_stores_cosmos_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.cosmos_subnet_name,
+            source_prefixes=[NetworkConfig.AGENTS_SUBNET_CIDR, DagsterConfig.DAGSTER_SUBNET_CIDR],
+        )
+        subnet = network.Subnet(
+            name=self.cosmos_subnet_name,
+            resource_name=self.cosmos_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.COSMOS_SUBNET_CIDR,
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+        return subnet
+
     def _create_resources(self):
         """Create all data service resources"""
         # Create search service (vector database)
-        self.search_subnet = self.network_provider.get_search_subnet()
+        self.vnet = self.network_provider.get_vnet()
+
+        self.search_subnet = self._create_search_subnet()
         self.search_dns_zone = self.pe_manager.create_dns_zone("search", "privatelink.search.windows.net")
         self.vector_db = self._create_search_service()
-        self.search_private_endpoint = self.pe_manager.create_private_endpoint(
-            name=self.config.ai_search_service_name,
-            resource_id=self.vector_db.id,
-            subnet_id=self.search_subnet.id,
-            group_id="searchService",
-            dns_zone=self.search_dns_zone,
-            depends_on=[self.vector_db],
+
+        self.search_private_endpoint = pulumi.Output.all(subnet_id=self.search_subnet.id).apply(
+            lambda args: self.pe_manager.create_private_endpoint(
+                name=self.config.ai_search_service_name,
+                resource_id=self.vector_db.id,
+                subnet_id=args["subnet_id"],
+                group_id="searchService",
+                dns_zone=self.search_dns_zone,
+                depends_on=[self.vector_db],
+            )
         )
 
         # Create Cosmos DB resources
-        self.cosmos_subnet = self.network_provider.get_cosmos_subnet()
+        self.cosmos_subnet = self._create_stores_cosmos_subnet()
         self.cosmos_dns_zone = self.pe_manager.create_dns_zone("cosmos", "privatelink.mongo.cosmos.azure.com")
 
         # Create document store (Cosmos DB)
         self.document_db = self._create_document_db()
-        self.document_db_private_endpoint = self.pe_manager.create_private_endpoint(
-            name=self.config.doc_store_name,
-            resource_id=self.document_db.id,
-            subnet_id=self.cosmos_subnet.id,
-            group_id="MongoDB",
-            dns_zone=self.cosmos_dns_zone,
-            depends_on=[self.document_db],
+        self.document_db_private_endpoint = pulumi.Output.all(subnet_id=self.cosmos_subnet.id).apply(
+            lambda args: self.pe_manager.create_private_endpoint(
+                name=self.config.doc_store_name,
+                resource_id=self.document_db.id,
+                subnet_id=args["subnet_id"],
+                group_id="MongoDB",
+                dns_zone=self.cosmos_dns_zone,
+                depends_on=[self.document_db],
+            )
         )
 
         # Create API database (Cosmos DB)
-        self.api_cosmos_subnet = self.network_provider.get_api_cosmos_subnet()
+        self.api_cosmos_subnet = self._create_api_cosmos_subnet()
         self.api_db = self._create_api_db()
-        self.api_db_private_endpoint = self.pe_manager.create_private_endpoint(
-            name=self.config.store_name,
-            resource_id=self.api_db.id,
-            subnet_id=self.api_cosmos_subnet.id,
-            group_id="MongoDB",
-            dns_zone=self.cosmos_dns_zone,
-            depends_on=[self.api_db],
+
+        self.api_db_private_endpoint = pulumi.Output.all(subnet_id=self.api_cosmos_subnet.id).apply(
+            lambda args: self.pe_manager.create_private_endpoint(
+                name=self.config.store_name,
+                resource_id=self.api_db.id,
+                subnet_id=args["subnet_id"],
+                group_id="MongoDB",
+                dns_zone=self.cosmos_dns_zone,
+                depends_on=[self.api_db],
+            )
         )
 
         # Create PostgreSQL resources
-        self.postgres_subnet = self.network_provider.get_pg_subnet()
+        self.postgres_subnet = self._create_pg_subnet()
         self.postgres_dns_zone = self.pe_manager.create_dns_zone(
             "postgres", f"privatelink.{self.config.location.lower()}.postgres.database.azure.com"
         )
@@ -118,38 +242,38 @@ class Stores(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _create_document_db(self) -> documentdb.DatabaseAccount:
+    def _create_document_db(self) -> cosmosdb.DatabaseAccount:
         """Create the document store Cosmos DB account"""
-        return documentdb.DatabaseAccount(
+        return cosmosdb.DatabaseAccount(
             resource_name=self.config.doc_store_name,
             account_name=self.config.doc_store_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             kind="MongoDB",
-            database_account_offer_type=documentdb.DatabaseAccountOfferType.STANDARD,
-            api_properties=documentdb.ApiPropertiesArgs(server_version="4.2"),
-            locations=[documentdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
-            capabilities=[documentdb.CapabilityArgs(name="EnableServerless")],
-            public_network_access=documentdb.PublicNetworkAccess.DISABLED,
+            database_account_offer_type=cosmosdb.DatabaseAccountOfferType.STANDARD,
+            api_properties=cosmosdb.ApiPropertiesArgs(server_version="4.2"),
+            locations=[cosmosdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
+            capabilities=[cosmosdb.CapabilityArgs(name="EnableServerless")],
+            public_network_access=cosmosdb.PublicNetworkAccess.DISABLED,
             tags={
                 "Stack": self.stack,
             },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _create_api_db(self) -> documentdb.DatabaseAccount:
+    def _create_api_db(self) -> cosmosdb.DatabaseAccount:
         """Create the API Cosmos DB account"""
-        return documentdb.DatabaseAccount(
+        return cosmosdb.DatabaseAccount(
             resource_name=self.config.store_name,
             account_name=self.config.store_name,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             kind="MongoDB",
-            database_account_offer_type=documentdb.DatabaseAccountOfferType.STANDARD,
-            api_properties=documentdb.ApiPropertiesArgs(server_version="4.2"),
-            locations=[documentdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
-            capabilities=[documentdb.CapabilityArgs(name="EnableServerless")],
-            public_network_access=documentdb.PublicNetworkAccess.DISABLED,
+            database_account_offer_type=cosmosdb.DatabaseAccountOfferType.STANDARD,
+            api_properties=cosmosdb.ApiPropertiesArgs(server_version="4.2"),
+            locations=[cosmosdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
+            capabilities=[cosmosdb.CapabilityArgs(name="EnableServerless")],
+            public_network_access=cosmosdb.PublicNetworkAccess.DISABLED,
             tags={
                 "Stack": self.stack,
             },
@@ -171,13 +295,13 @@ class Stores(pulumi.ComponentResource):
                 geo_redundant_backup="Disabled",
             ),
             storage=dbforpostgresql.StorageArgs(
-                storage_size_gb=32,
+                storage_size_gb=64,
             ),
             high_availability=dbforpostgresql.HighAvailabilityArgs(
                 mode="Disabled",
             ),
             sku=dbforpostgresql.SkuArgs(
-                name="Standard_B1ms",
+                name="Standard_B2s",
                 tier="Burstable",
             ),
             network=dbforpostgresql.NetworkArgs(
