@@ -1,7 +1,7 @@
 services:
   etcd:
     container_name: milvus-etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.6.0
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.18
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
       - ETCD_AUTO_COMPACTION_RETENTION=1000
@@ -9,7 +9,7 @@ services:
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
       - etcd:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: [ "CMD", "etcdctl", "endpoint", "health" ]
       interval: 30s
@@ -18,7 +18,7 @@ services:
 
   minio:
     container_name: milvus-minio
-    image: ghcr.io/bbvch-ai/aihub-core/minio:RELEASE.2025-05-24T17-08-30Z
+    image: ghcr.io/bbvch-ai/aihub-core/minio:RELEASE.2023-03-20T20-16-18Z
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -34,7 +34,7 @@ services:
       timeout: 20s
       retries: 3
 
-  standalone:
+  milvus:
     container_name: milvus-standalone
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.10
     command: [ "milvus", "run", "standalone" ]
@@ -63,9 +63,9 @@ services:
     ports:
       - "3003:3000"
     depends_on:
-      - "standalone"
+      - "milvus"
     environment:
-      - MILVUS_URL=standalone:19530
+      - MILVUS_URL=milvus:19530
     logging:
       options:
         max-size: "10m"
