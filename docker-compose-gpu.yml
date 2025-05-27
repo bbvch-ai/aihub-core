@@ -84,7 +84,7 @@ services:
       start_period: 30s
 
   hf-TEI:
-    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cuda-sha-5bcc41f
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cuda-1.6
     ports:
       - "8183:8183"
     command: >
