@@ -1,9 +1,12 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import containerinstance
+from pulumi_azure_native import containerinstance, network
 
+from aihub_iac.azure.constants.resources import CONTAINER_INSTANCE, STORAGE_ACCOUNT, SUB_NET
+from aihub_iac.azure.modules.dagster.DagsterConfig import DagsterConfig
 from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
+from aihub_iac.azure.modules.network.NetworkConfig import NetworkConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageResourceFactory
 
@@ -26,9 +29,17 @@ class Nats(pulumi.ComponentResource):
         self.config = config
         self.storage_factory = StorageResourceFactory(self.config, self.stack)
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
         self._create_resources()
+
+    @property
+    def nats_storage_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{STORAGE_ACCOUNT}-nats"
+
+    @property
+    def nats_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{CONTAINER_INSTANCE}-nats"
 
     def _create_nats_container(self) -> containerinstance.ContainerArgs:
         """Create a NATS container configuration"""
@@ -64,20 +75,71 @@ class Nats(pulumi.ComponentResource):
             ),
         )
 
+    def _create_nats_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.nats_subnet_name,
+            source_prefixes=[
+                NetworkConfig.APP_SUBNET_CIDR,
+                NetworkConfig.AGENTS_SUBNET_CIDR,
+                DagsterConfig.DAGSTER_SUBNET_CIDR,
+            ],
+        )
+
+        subnet = network.Subnet(
+            name=self.nats_subnet_name,
+            resource_name=self.nats_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.NATS_SUBNET_CIDR,
+            delegations=[
+                network.DelegationArgs(
+                    name="aci-delegation",
+                    service_name="Microsoft.ContainerInstance/containerGroups",
+                )
+            ],
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+
+        return subnet
+
+    def _create_nats_storage_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.nats_storage_subnet_name,
+            source_prefixes=[self.config.NATS_SUBNET_CIDR, self.config.NATS_STORAGE_SUBNET_CIDR],
+        )
+
+        subnet = network.Subnet(
+            name=self.nats_storage_subnet_name,
+            resource_name=self.nats_storage_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.NATS_STORAGE_SUBNET_CIDR,
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+
+        return subnet
+
     def _create_resources(self):
         """Create all required resources with proper dependency management"""
         self.vnet = self.network_provider.get_vnet()
-        self.nats_storage_subnet = self.network_provider.get_nats_storage_subnet()
-        self.nats_subnet = self.network_provider.get_nats_subnet()
+        self.nats_storage_subnet = self._create_nats_storage_subnet()
+        self.nats_subnet = self._create_nats_subnet()
 
-        self.storage_account = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name,
-            subnet_id=self.nats_storage_subnet.id,
-            vnet_id=self.vnet.id,
+        self.storage_account = pulumi.Output.all(subnet_id=self.nats_storage_subnet.id, vnet_id=self.vnet.id).apply(
+            lambda args: self.storage_factory.create_storage_account(
+                service_name=self.config.storage_service_name,
+                subnet_id=args["subnet_id"],
+                vnet_id=args["vnet_id"],
+            )
         )
+
         self.storage_account_key = self.storage_factory.get_storage_account_key(self.storage_account)
 
-        self.nats_file_share = self.storage_factory.create_file_share("blob", self.storage_account)
+        self.nats_file_share = self.storage_factory.create_file_share("nats", self.storage_account)
         self.redis_file_share = self.storage_factory.create_file_share("redis", self.storage_account)
 
         self.nats_container = self._create_nats_container()
