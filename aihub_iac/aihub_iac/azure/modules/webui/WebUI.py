@@ -1,9 +1,17 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import app, containerinstance, dbforpostgresql, network
+from pulumi_azure_native import app, containerinstance, dbforpostgresql, network, privatedns
 
-from aihub_iac.azure.constants.resources import CONTAINER_APP_ENVIRONMENT, CONTAINER_INSTANCE, POSTGRES
+from aihub_iac.azure.constants.resources import (
+    CONTAINER_APP,
+    CONTAINER_APP_ENVIRONMENT,
+    CONTAINER_INSTANCE,
+    POSTGRES,
+    STORAGE_ACCOUNT,
+    SUB_NET,
+)
+from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.modules.webui.WebUIConfig import WebUIConfig
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 from aihub_iac.azure.resources.managed_environment.ManagedEnvironment import ManagedEnvironment
@@ -27,7 +35,7 @@ class WebUI(pulumi.ComponentResource):
 
         self.storage_factory = StorageResourceFactory(self.config, self.stack)
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         # Initialize resources
@@ -46,27 +54,74 @@ class WebUI(pulumi.ComponentResource):
         # Create resources
         self._create_resources()
 
+    @property
+    def webui_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{CONTAINER_APP}-webui"
+
+    @property
+    def webui_storage_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{STORAGE_ACCOUNT}-webui"
+
+    def _create_webui_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.webui_subnet_name,
+            source_prefixes=[self.config.WEBUI_SUBNET_CIDR],
+        )
+        subnet = network.Subnet(
+            name=self.webui_subnet_name,
+            resource_name=self.webui_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.WEBUI_SUBNET_CIDR,
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+
+        return subnet
+
+    def _create_webui_storage_subnet(self) -> network.Subnet:
+        nsg = self.network_provider.create_subnet_nsg(
+            parent=self,
+            stack=self.stack,
+            subnet_name=self.webui_storage_subnet_name,
+            source_prefixes=[NatsConfig.NATS_SUBNET_CIDR, self.config.WEBUI_STORAGE_SUBNET_CIDR],
+        )
+        subnet = network.Subnet(
+            name=self.webui_storage_subnet_name,
+            resource_name=self.webui_storage_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.WEBUI_STORAGE_SUBNET_CIDR,
+            network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
+        )
+
+        return subnet
+
     def _create_resources(self):
         """Create all container app resources in the correct order"""
         # Step 1: Get network resources
         self.vnet = self.network_provider.get_vnet()
-        self.webui_subnet = self.network_provider.get_webui_subnet()
-        self.webui_storage_subnet = self.network_provider.get_webui_storage_subnet()
+        self.webui_subnet = self._create_webui_subnet()
+        self.webui_storage_subnet = self._create_webui_storage_subnet()
 
-        self.blob_dns_zone = network.get_private_zone(
+        self.blob_dns_zone = privatedns.get_private_zone(
             private_zone_name="privatelink.blob.core.windows.net", resource_group_name=self.config.resource_group
         )
-        self.file_dns_zone = network.get_private_zone(
+        self.file_dns_zone = privatedns.get_private_zone(
             private_zone_name="privatelink.file.core.windows.net", resource_group_name=self.config.resource_group
         )
 
-        self.storage_account = self.storage_factory.create_storage_account(
-            service_name=self.config.storage_service_name,
-            subnet_id=self.webui_storage_subnet.id,
-            vnet_id=self.vnet.id,
-            existing_blob_dns_zone=self.blob_dns_zone,
-            existing_file_dns_zone=self.file_dns_zone,
+        self.storage_account = pulumi.Output.all(subnet_id=self.webui_storage_subnet.id).apply(
+            lambda args: self.storage_factory.create_storage_account(
+                service_name=self.config.storage_service_name,
+                subnet_id=args["subnet_id"],
+                vnet_id=self.vnet.id,
+                existing_blob_dns_zone=self.blob_dns_zone,
+                existing_file_dns_zone=self.file_dns_zone,
+            )
         )
+
         self.storage_account_key = self.storage_factory.get_storage_account_key(self.storage_account)
 
         self.webui_file_share = self.storage_factory.create_file_share("webui", self.storage_account)

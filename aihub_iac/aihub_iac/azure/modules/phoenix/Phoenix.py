@@ -1,8 +1,9 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import dbforpostgresql, web
+from pulumi_azure_native import dbforpostgresql, network, web
 
+from aihub_iac.azure.constants.resources import APP_SERVICE, SUB_NET
 from aihub_iac.azure.modules.phoenix.PhoenixConfig import PhoenixConfig
 from aihub_iac.azure.providers.IdentityProvider import IdentityProvider
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
@@ -22,7 +23,7 @@ class Phoenix(pulumi.ComponentResource):
 
         # Initialize providers
         self.network_provider = NetworkProvider(
-            self.config.resource_group, self.config.project_name, self.config.location_short
+            self.config.resource_group, self.config.project_name, self.config.location, self.config.location_short
         )
 
         self.identity_provider = IdentityProvider(
@@ -43,10 +44,30 @@ class Phoenix(pulumi.ComponentResource):
         # Create resources
         self._create_resources()
 
+    @property
+    def phoenix_subnet_name(self):
+        return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{APP_SERVICE}-phoenix"
+
+    def _create_phoenix_subnet(self) -> network.Subnet:
+        subnet = network.Subnet(
+            name=self.phoenix_subnet_name,
+            resource_name=self.phoenix_subnet_name,
+            resource_group_name=self.config.resource_group,
+            virtual_network_name=self.vnet.name,
+            address_prefix=self.config.PHOENIX_SUBNET_CIDR,
+            delegations=[
+                network.DelegationArgs(
+                    name="app-delegation",
+                    service_name="Microsoft.Web/serverFarms",
+                )
+            ],
+        )
+        return subnet
+
     def _create_resources(self):
         """Create all Phoenix infrastructure resources"""
         self.vnet = self.network_provider.get_vnet()
-        self.subnet = self.network_provider.get_phoenix_subnet()
+        self.subnet = self._create_phoenix_subnet()
 
         # Step 2: Create postgres database on existing server
         self.phoenix_database = self._create_postgres_database()

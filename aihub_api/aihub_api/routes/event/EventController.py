@@ -44,7 +44,7 @@ class EventController(Controller):
     description = LocaleString(en="Inspect events in the system")
     icon = "mdi:apache-kafka"
 
-    def __init__(self, route: str = "/event", auth: AuthHandler | None = None, is_admin_only=True):
+    def __init__(self, route: str = "/events", auth: AuthHandler | None = None, is_admin_only=True):
         super().__init__(route, auth, is_admin_only=is_admin_only)
 
     def get_events(self, path: str = "/") -> "EventController":
@@ -74,7 +74,7 @@ class EventController(Controller):
 
         return self
 
-    def get_events_in_thread(self, path: str = "/thread/{thread_id}") -> "EventController":
+    def get_events_in_thread(self, path: str = "/threads/{thread_id}") -> "EventController":
         @self.router.get(path, tags=self.tags)
         async def get_events_in_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],

@@ -1,7 +1,7 @@
 from typing import Dict
 
 import pulumi
-from pulumi_azure_native import network
+from pulumi_azure_native import network, privatedns
 
 from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 
@@ -21,13 +21,13 @@ class PrivateEndpointProvider:
         self.location = location
         self.network_provider = network_provider
         self.parent = parent
-        self.dns_zones: Dict[str, network.PrivateZone] = {}
-        self.vnet_links: Dict[str, network.VirtualNetworkLink] = {}
+        self.dns_zones: Dict[str, privatedns.PrivateZone] = {}
+        self.vnet_links: Dict[str, privatedns.VirtualNetworkLink] = {}
         self.stack = stack
 
-    def create_dns_zone(self, zone_name: str, zone_domain: str) -> network.PrivateZone:
+    def create_dns_zone(self, zone_name: str, zone_domain: str) -> privatedns.PrivateZone:
         """Create a private DNS zone and associated virtual network link."""
-        dns_zone = network.PrivateZone(
+        dns_zone = privatedns.PrivateZone(
             resource_name=f"{zone_name}-dns-zone",
             private_zone_name=zone_domain,
             resource_group_name=self.resource_group,
@@ -38,7 +38,7 @@ class PrivateEndpointProvider:
             },
         )
 
-        vnet_link = network.VirtualNetworkLink(
+        vnet_link = privatedns.VirtualNetworkLink(
             resource_name=f"{zone_name}-vnet-link",
             virtual_network_link_name=f"{zone_name}-vnet-link",
             private_zone_name=dns_zone.name,
@@ -65,7 +65,7 @@ class PrivateEndpointProvider:
         resource_id: pulumi.Output,
         subnet_id: pulumi.Output,
         group_id: str,
-        dns_zone: network.PrivateZone,
+        dns_zone: privatedns.PrivateZone,
         depends_on=None,
     ) -> network.PrivateEndpoint:
         """Create a private endpoint with DNS zone group."""

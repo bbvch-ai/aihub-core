@@ -65,7 +65,3 @@ const isActive = computed(() => {
   return route.params.agent_id === props.agent.agent_id && route.params.agent_class === props.agent.agent_class
 })
 </script>
-
-<style scoped>
-
-</style>

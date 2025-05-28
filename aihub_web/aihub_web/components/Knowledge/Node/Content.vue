@@ -69,7 +69,3 @@ const scoreRank = computed<string>(() => {
   return 'A++'
 })
 </script>
-
-<style scoped>
-
-</style>

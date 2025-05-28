@@ -42,7 +42,7 @@ async def agent_api_client():
 @pytest.mark.asyncio(loop_scope="module")
 async def test_discover_agents(agent_api_client):
     """Test GET /agent/discover returns a list containing the simulated agent."""
-    response = await agent_api_client.get("/agent/discover")
+    response = await agent_api_client.get("/agents/discover")
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()
@@ -54,7 +54,7 @@ async def test_discover_agents(agent_api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_get_agent(agent_api_client):
     """Test GET /agent/{agent_class}/{agent_id} returns correct agent details."""
-    response = await agent_api_client.get(f"/agent/{AGENT_CLASS}/{AGENT_ID}")
+    response = await agent_api_client.get(f"/agents/{AGENT_CLASS}/{AGENT_ID}")
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()
@@ -70,7 +70,7 @@ async def test_send_event_to_agent(agent_api_client):
     user_message = create_input_model(UserMessageEvent)(messages=[ChatMessage(role="user", content="Hey!")])
     print(user_message.model_dump_json())
     response = await agent_api_client.post(
-        f"/agent/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
+        f"/agents/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
     )
     assert response.status_code == 200, f"Response: {response.text}"
 

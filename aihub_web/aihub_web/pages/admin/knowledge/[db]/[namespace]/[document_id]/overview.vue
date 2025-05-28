@@ -18,7 +18,3 @@
 const { document, documentIsLoading } = useDocument()
 const route = useRoute()
 </script>
-
-<style scoped>
-
-</style>
