@@ -25,7 +25,7 @@ def documents_factory(
     """
     Creates a document asset that represents a Ref Doc in the Document Store.
     This asset takes a Data Lake File as input, parses it into a Ref Doc, and saves the corresponding
-    Ref Doc with the text and image content into the Document store, as well as providing it as an output for
+    Ref Doc with the text and image url into the Document store, as well as providing it as an output for
     downstream assets.
     """
 
@@ -42,11 +42,11 @@ def documents_factory(
     ) -> Output[RefDocDocument]:
         doc_with_figures = parse_document_from_data_lake(data_lake_file)
         figure_metadata = save_figures_to_data_lake(doc_with_figures, data_lake_file)
-        doc_with_figures = inject_figures(doc_with_figures, figure_metadata)
-        doc_with_figures = reformat_tables(doc_with_figures)
+        doc_with_injected_figures = inject_figures(doc_with_figures, figure_metadata)
+        reformatted_doc = reformat_tables(doc_with_injected_figures)
 
         return insert_ref_doc_into_docstore(
-            ensure_refdoc_default_metadata(doc_with_figures_to_ref_doc(data_lake_file, doc_with_figures))
+            ensure_refdoc_default_metadata(doc_with_figures_to_ref_doc(data_lake_file, reformatted_doc))
         )
 
     return document

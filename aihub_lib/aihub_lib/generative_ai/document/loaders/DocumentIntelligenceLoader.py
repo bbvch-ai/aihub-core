@@ -15,6 +15,8 @@ from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.Doc
 )
 from aihub_lib.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
 
+PAGE_BREAK = "<!-- PageBreak -->"
+
 
 class DocumentIntelligenceLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:

@@ -12,6 +12,7 @@ from llama_index.core.utils import get_tqdm_iterable
 from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
+from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
@@ -165,8 +166,6 @@ class NodeCreatorFromSplits:
 
         page = 1
         for split in splits:
-            if "<!-- PageBreak -->" in split.content:
-                page += 1
             split.metadata.update({PAGE: page})
 
             split_texts = []
@@ -189,6 +188,10 @@ class NodeCreatorFromSplits:
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
+
+            # Increment page AFTER processing the split containing the PAGE_BREAK
+            if PAGE_BREAK in split.content:
+                page += 1
 
         return nodes
 

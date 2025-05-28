@@ -10,6 +10,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_pipeline.ops.data_lake.process_document_without_figures import process_document_without_figures
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
+from aihub_pipeline.util.path_utils import get_data_lake_client_figure_path
 
 
 @op(code_version="v1")
@@ -30,7 +31,7 @@ def inject_figures(
     figure_tags = soup.find_all("figure")
 
     if len(figure_tags) != len(figures_metadata):
-        context.log.warning(
+        context.log.error(
             f"Mismatch between figure tags ({len(figure_tags)}) and figure metadata ({len(figures_metadata)})"
         )
 
@@ -40,7 +41,7 @@ def inject_figures(
         text_before = figure_tag.previous_sibling[-1500:] if figure_tag.previous_sibling else ""
         text_after = figure_tag.next_sibling[:1500] if figure_tag.next_sibling else ""
         surrounding_text = f"{text_before}\n\n[IMAGE LOCATION]\n\n{text_after}"
-        figure_path = "/".join(figure_metadata.figure_path.split("/")[1:])
+        figure_path = get_data_lake_client_figure_path(figure_metadata.figure_path)
         context.log.info(f"Trying to load figure with path: {figure_path}")
         blob_client = data_lake_client.get_file_client(figure_path)
         image_bytes = blob_client.download_file().readall()
@@ -68,7 +69,7 @@ def generate_description(
     surrounding_text: Optional[str] = None,
 ) -> str:
     """
-    Generate a detailed description of an image using the GPT-4o vision model,
+    Generate a detailed description of an image using a vision model,
     taking into account the surrounding text context from the document.
     """
     try:
