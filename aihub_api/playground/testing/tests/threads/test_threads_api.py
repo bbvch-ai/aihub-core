@@ -16,7 +16,7 @@ from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
 
-THREAD_BASE = "/api/v1/thread"
+THREAD_BASE = "/api/v1/threads"
 DEFAULT_USER_ID = "1234567890"
 
 

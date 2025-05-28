@@ -93,7 +93,3 @@ const documentMap = computed<Record<string, DocumentInfo>>(() => {
   return docs
 })
 </script>
-
-<style scoped>
-
-</style>

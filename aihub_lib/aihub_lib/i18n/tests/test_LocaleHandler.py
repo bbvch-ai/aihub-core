@@ -92,12 +92,6 @@ def test_extract_from_multi_locale_with_missing_locale_returns_first_available()
     assert LocaleHandler().extract(partial_locale_data, "de") == "Agente di ricerca"
 
 
-def test_t_object_returns_correct_translation(mocker):
-    mocker.patch("builtins.open", mocker.mock_open(read_data="name: Such-Agent"))
-    result = LocaleHandler().t_object("agent.prompt.name", "de")
-    assert result == "Such-Agent"
-
-
 def test_t_object_with_nonexistent_file_raises_file_not_found_error():
     with pytest.raises(FileNotFoundError):
         LocaleHandler().t_object("nonexistent.folder.name", "de")

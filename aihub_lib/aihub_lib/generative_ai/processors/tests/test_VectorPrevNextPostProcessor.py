@@ -2,7 +2,7 @@ import asyncio
 from time import sleep
 
 import pytest
-from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
+from llama_index.core.schema import NodeRelationship, NodeWithScore, RelatedNodeInfo, TextNode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
@@ -39,7 +39,7 @@ def get_node_ids(result):
 def _(datatable):
     nodes = []
     for row in datatable:
-        nodes.append(Document(id_=row[0], text=row[1], metadata={}))
+        nodes.append(TextNode(id_=row[0], text=row[1], metadata={}))
     return nodes
 
 

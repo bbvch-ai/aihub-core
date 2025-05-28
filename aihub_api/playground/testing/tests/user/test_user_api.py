@@ -9,7 +9,7 @@ from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandle
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 
-USER_ENDPOINT = "/api/v1/user/me"
+USER_ENDPOINT = "/api/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 

@@ -18,7 +18,3 @@ const { nodes, nodesAreLoading } = useNodes()
 const { t } = useI18n()
 const route = useRoute()
 </script>
-
-<style scoped>
-
-</style>
