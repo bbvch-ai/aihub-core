@@ -1,8 +1,8 @@
 import html
-import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
+import bs4
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
@@ -165,38 +165,25 @@ class NodeCreatorFromSplits:
 
         page = 1
         for split in splits:
-
-            split.metadata.update({PAGE: page})
-
             if "<!-- PageBreak -->" in split.content:
                 page += 1
-
-            table_pattern = r"(\|[^\n\r]*\|(?:\r?\n|\r)\|[:\-| ]*\|(?:\r?\n|\r)(?:\|[^\n\r]*\|(?:\r?\n|\r))*)"
-            image_pattern = r"!\[[^\]]{0,4000}\]\([a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^\s\)]{1,2000}\)"
+            split.metadata.update({PAGE: page})
 
             split_texts = []
+            soup = bs4.BeautifulSoup(split.content, "html.parser")
+            buffer = ""
 
-            table_matches = list(re.finditer(table_pattern, split.content, re.DOTALL))
-            image_matches = list(re.finditer(image_pattern, split.content))
+            for child in soup.children:
+                if isinstance(child, bs4.element.Tag) and child.name in ["table", "figure"]:
+                    if buffer.strip():
+                        split_texts.extend(self.sentence_splitter.split_text(buffer))
+                        buffer = ""
+                    split_texts.append(child.text)
+                else:
+                    buffer += str(child)
 
-            all_matches = sorted(table_matches + image_matches, key=lambda m: m.start())
-
-            last_end = 0
-            for match in all_matches:
-                start, end = match.span()
-
-                if last_end < start:
-                    normal_text = split.content[last_end:start]
-                    if normal_text:
-                        split_texts.extend(self.sentence_splitter.split_text(normal_text))
-
-                split_texts.append(match.group(0))
-                last_end = end
-
-            if last_end < len(split.content):
-                normal_text = split.content[last_end:]
-                if normal_text:
-                    split_texts.extend(self.sentence_splitter.split_text(normal_text))
+            if buffer.strip():
+                split_texts.extend(self.sentence_splitter.split_text(buffer))
 
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
             self._set_relationships_within_split(split_nodes)

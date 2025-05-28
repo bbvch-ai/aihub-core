@@ -40,19 +40,15 @@ class DocumentIntelligenceLoader(BaseReader):
 
         result: AnalyzeResult = poller.result()
         operation_id = poller.details["operation_id"]
+        metadata = {
+            NUMBER_OF_PAGES: len(result.pages),
+            "operation_id": operation_id,
+        }
 
         if result.figures:
             figure_ids = [figure.id for figure in result.figures]
 
-            metadata = {
-                NUMBER_OF_PAGES: len(result.pages),
-                "operation_id": operation_id,
-                "figure_ids": figure_ids,
-            }
-        else:
-            metadata = {
-                "number_of_pages": len(result.pages),
-            }
+            metadata.update({"figure_ids": figure_ids})
 
         return [
             Document(

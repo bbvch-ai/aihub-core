@@ -21,6 +21,5 @@ def parse_document_from_data_lake(
     documents = reader.load_data(data_lake_file.uri, fs=data_lake_file_system)
     document = documents[0]
 
-    doc = DocumentWithFigureInfo(**document.dict())
-
-    return doc
+    doc_with_figures = DocumentWithFigureInfo(**document.model_dump())
+    return doc_with_figures

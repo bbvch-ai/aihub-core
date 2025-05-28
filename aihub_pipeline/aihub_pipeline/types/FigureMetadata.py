@@ -1,15 +1,11 @@
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
 class FigureMetadata(BaseModel):
-    """Contains metadata about extracted figures from a document"""
+    """Contains metadata about an extracted figure from a document."""
 
-    figure_paths: Optional[List[str]] = Field(
-        default_factory=list, description="Blob storage paths to the saved figures"
-    )
-    figure_urls: Optional[List[str]] = Field(
-        default_factory=list,
-        description="Externally accessible URLs of the saved figures for reference in the document",
+    figure_path: str = Field(..., description="Blob storage path to the saved figure.")
+    figure_url: str = Field(
+        ...,
+        description="Externally accessible URL of the saved figure for reference in a document.",
     )

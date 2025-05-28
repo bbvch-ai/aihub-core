@@ -1,5 +1,8 @@
 from typing import Dict
 
+from dagster._config.pythonic_config import ConfigurableResourceFactory
+from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
+
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -9,9 +12,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
     AzureOpenAIEmbeddingParameter,
 )
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
-from dagster._config.pythonic_config import ConfigurableResourceFactory
-from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
-
 from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
 from aihub_pipeline.io.VectorStoreIOManager import VectorStoreIOManager
@@ -26,14 +26,18 @@ from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource impo
 from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import MilvusVectorStoreResource
 
 
-def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[str, ConfigurableResourceFactory]:
+def azure_data_lake_resources(
+    container_name: str, directory_name: str, figures_directory_name: str
+) -> Dict[str, ConfigurableResourceFactory]:
     data_lake_client = DataLakeClientResource(container_name=container_name)
     data_lake_file_system = DataLakeFileSystemResource()
     data_lake_io_manager = AzureDataLakeIOManager(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(container_name=container_name, directory_name=directory_name)
+    data_lake_resource = DataLakeResource(
+        container_name=container_name, directory_name=directory_name, figures_directory_name=figures_directory_name
+    )
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,

@@ -1,8 +1,8 @@
-import re
-from typing import Optional
+from typing import Optional, List
 
 from azure.storage.filedatalake import FileSystemClient
-from dagster import OpExecutionContext, op, ResourceParam, RetryPolicy, Backoff
+from bs4 import BeautifulSoup
+from dagster import OpExecutionContext, op, ResourceParam
 from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ImageBlock
 from llama_index.core.llms import LLM
 
@@ -11,84 +11,51 @@ from aihub_pipeline.ops.data_lake.process_document_without_figures import proces
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
 
-system_prompt = """"""
 
-
-@op(code_version="v2", retry_policy=RetryPolicy(max_retries=6, delay=1, backoff=Backoff.EXPONENTIAL))
+@op(code_version="v1")
 def inject_figures(
     context: OpExecutionContext,
     doc_with_figures: DocumentWithFigureInfo,
-    figure_metadata: FigureMetadata,
+    figures_metadata: Optional[List[FigureMetadata]],
     language_model: ResourceParam[LLM],
     data_lake_client: ResourceParam[FileSystemClient],
 ) -> DocumentWithFigureInfo:
     """Injects image Markdown tags into the document content by replacing HTML figure tags."""
-    if not figure_metadata.figure_paths:
+    if not figures_metadata:
         context.log.info("No figures found, skipping injection")
         doc_with_figures = process_document_without_figures(doc_with_figures)
         return doc_with_figures
 
-    figure_pattern = r"<figure>.*?</figure>"
+    soup = BeautifulSoup(doc_with_figures.text_resource.text, "html.parser")
+    figure_tags = soup.find_all("figure")
 
-    updated_content = doc_with_figures.text_resource.text
-    figures_replaced = 0
+    if len(figure_tags) != len(figures_metadata):
+        context.log.warning(
+            f"Mismatch between figure tags ({len(figure_tags)}) and figure metadata ({len(figures_metadata)})"
+        )
 
-    for i, (image_path, image_url) in enumerate(zip(figure_metadata.figure_paths, figure_metadata.figure_urls)):
+    for i, (figure_tag, figure_metadata) in enumerate(zip(figure_tags, figures_metadata)):
 
-        match = re.search(figure_pattern, updated_content, re.DOTALL)
+        # 3000 characters of surrounding text, 1500 before and 1500 after the figure tag
+        text_before = figure_tag.previous_sibling[-1500:] if figure_tag.previous_sibling else ""
+        text_after = figure_tag.next_sibling[:1500] if figure_tag.next_sibling else ""
+        surrounding_text = f"{text_before}\n\n[IMAGE LOCATION]\n\n{text_after}"
+        figure_path = "/".join(figure_metadata.figure_path.split("/")[1:])
+        context.log.info(f"Trying to load figure with path: {figure_path}")
+        blob_client = data_lake_client.get_file_client(figure_path)
+        image_bytes = blob_client.download_file().readall()
 
-        if not match:
-            if figures_replaced == 0:
-                context.log.warning("No figure tags found in document content")
-            else:
-                context.log.warning(f"No more figure tags found after replacing {figures_replaced} figures")
-            break
+        figure_description = generate_description(
+            context=context,
+            language_model=language_model,
+            image_bytes=image_bytes,
+            figure_index=i,
+            surrounding_text=surrounding_text,
+        )
+        markdown_figure = f"![{figure_description}]({figure_metadata.figure_url})"
+        figure_tag.replace_with(f"<figure>{markdown_figure}</figure>")
 
-        start, end = match.span()
-
-        context_window = 1000
-        text_before = updated_content[max(0, start - context_window) : start]
-        text_after = updated_content[end : min(len(updated_content), end + context_window)]
-
-        def extract_paragraphs(text, max_paragraphs=2):
-
-            paragraphs = re.split(r"\n\n+", text)
-
-            if len(paragraphs) <= 1:
-                paragraphs = re.split(r"(?<=[.!?])\s+", text)
-
-            if text == text_before:
-                return " ".join(paragraphs[-max_paragraphs:])
-            else:
-                return " ".join(paragraphs[:max_paragraphs])
-
-        refined_before = extract_paragraphs(text_before)
-        refined_after = extract_paragraphs(text_after)
-
-        surrounding_text = f"{refined_before}\n\n[IMAGE LOCATION]\n\n{refined_after}"
-
-        try:
-            blob_client = data_lake_client.get_file_client(image_path)
-            image_bytes = blob_client.download_file().readall()
-
-            description = generate_description(
-                context=context,
-                language_model=language_model,
-                image_bytes=image_bytes,
-                figure_index=i,
-                surrounding_text=surrounding_text,
-            )
-        except Exception as e:
-            context.log.error(f"Error processing image {i+1} for description: {str(e)}")
-            description = f"Figure {i+1}"
-
-        markdown_image = f"![{description}]({image_url})"
-
-        updated_content = updated_content[:start] + markdown_image + updated_content[end:]
-        figures_replaced += 1
-
-    doc_with_figures.text_resource.text = updated_content
-    context.log.info(f"Updated document content with {figures_replaced} markdown image with contextual descriptions.")
+    doc_with_figures.text_resource.text = str(soup)
 
     return doc_with_figures
 

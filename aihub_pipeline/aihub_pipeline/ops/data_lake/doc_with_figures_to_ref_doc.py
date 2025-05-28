@@ -12,7 +12,7 @@ def doc_with_figures_to_ref_doc(
 ) -> RefDocDocument:
     """Turns a DocumentWithFigureInfo into a RefDocDocument."""
 
-    ref_doc = RefDocDocument(**doc_with_figures.dict())
+    ref_doc = RefDocDocument(**doc_with_figures.model_dump())
     ref_doc.add_metadata_from_data_lake_file(data_lake_file)
 
     return ref_doc
