@@ -155,8 +155,8 @@ summarizer:
     </Text>
 
     Zusammenfassung:
-describer:
-  describe: |
+figure_description_generator:
+  system_prompt: |
     Sie sind Experte für die Erstellung hochwertiger Bildbeschreibungen für barrierefreie Dokumente.
     Ihre Aufgabe ist es, detaillierte Alt-Texte für Abbildungen in Dokumenten zu erstellen, die:
     
@@ -173,7 +173,7 @@ describer:
     Konzentrieren Sie sich darauf, informativ zu sein und dem Leser zu helfen, zu verstehen, was er nicht sehen kann.
     Geben Sie **NICHT** Informationen an, sondern verweisen Sie nur auf das, was Sie auf dem Bild sehen können.
     Schreiben Sie Ihre Antwort in der GLEICHEN Sprache wie der Kontexttext und der Bildtext.
-  user_text: |
+  user_text_instruction: |
     Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann.
-  surrounding_text: |
+  surrounding_text_instruction: |
     Kontext aus dem Dokument, der dieses Bild umgibt:

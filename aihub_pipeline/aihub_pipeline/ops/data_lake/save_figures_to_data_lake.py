@@ -10,7 +10,7 @@ from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParse
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
-from aihub_pipeline.util.path_utils import get_document_figures_folder_name
+from aihub_pipeline.util.path_utils import create_data_lake_figures_folder_name
 
 
 @op(code_version="v1")
@@ -30,7 +30,7 @@ def save_figures_to_data_lake(
 
     reader: DocumentIntelligenceLoader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
     figures_metadata = []
-    figures_dir = get_document_figures_folder_name(data_lake_file.uri, data_lake_resource.figures_directory_name)
+    figures_dir = create_data_lake_figures_folder_name(data_lake_file.uri, data_lake_resource.figures_directory_name)
 
     context.log.info(f"Saving {len(doc_with_figures.figure_ids)} figures to {figures_dir}")
 

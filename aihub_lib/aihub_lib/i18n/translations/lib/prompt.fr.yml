@@ -153,8 +153,8 @@ summarizer:
     </Texte>
 
     Résumé:
-describer:
-  describe: |
+figure_description_generator:
+  system_prompt: |
     Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
     Votre tâche consiste à générer un texte alt détaillé pour les figures dans les documents qui :
 
@@ -171,7 +171,7 @@ describer:
     Concentrez-vous sur l'information et aidez le lecteur à comprendre ce qu'il ne peut pas voir.
     N'inventez PAS d'informations, ne faites référence qu'à ce que vous pouvez voir dans l'image.
     Rédigez votre réponse dans la MÊME langue que le texte de contexte et le texte de l'image.
-  user_text: |
+  user_text_instruction: |
     Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace.
-  surrounding_text: |
+  surrounding_text_instruction: |
     Contexte du document entourant cette image:

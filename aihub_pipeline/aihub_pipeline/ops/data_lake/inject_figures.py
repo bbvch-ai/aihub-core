@@ -74,11 +74,11 @@ def generate_description(
     """
     try:
         locale_handler = LocaleHandler(locale="en")
-        system_prompt = locale_handler("lib.prompt.describer.describe")
-        user_text = locale_handler("lib.prompt.describer.user_text")
+        system_prompt = locale_handler("lib.prompt.figure_description_generator.system_prompt")
+        user_text = locale_handler("lib.prompt.figure_description_generator.user_text_instruction")
 
         if surrounding_text:
-            user_text += f"\n\n{locale_handler('lib.prompt.describer.surrounding_text')}\n\n{surrounding_text}"
+            user_text += f"\n\n{locale_handler('lib.prompt.figure_description_generator.surrounding_text_instruction')}\n\n{surrounding_text}"
 
         messages = [
             ChatMessage(

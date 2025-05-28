@@ -2,14 +2,13 @@ from io import StringIO
 
 import pandas as pd
 from bs4 import BeautifulSoup
-from dagster import OpExecutionContext, op
+from dagster import op
 
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 
 
 @op(code_version="v1")
 def reformat_tables(
-    context: OpExecutionContext,
     document: DocumentWithFigureInfo,
 ) -> DocumentWithFigureInfo:
     """
