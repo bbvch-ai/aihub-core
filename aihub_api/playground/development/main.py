@@ -8,11 +8,14 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.routes.process.AgenticProcess import AgenticProcess
+from aihub_api.routes.process.AgenticProcessController import AgenticProcessController
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
@@ -177,6 +180,11 @@ async def main():
         .get_document_by_id()
         .get_nodes_for_document()
         .get_summary_nodes_for_document(),
+        AgenticProcessController(
+            controller_base_route="/process",
+            auth=NoAuthHandler(),
+            process_class=AgenticProcess
+        )
     )
 
     await runner.run()
