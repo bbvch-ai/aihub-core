@@ -16,6 +16,8 @@ from openai.types.chat import (
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Annotated, Literal
 
+from aihub_lib.records.ReceivedFile import ReceivedFile
+
 
 def resolve_message_content(message: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -92,28 +94,6 @@ def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
     additional_kwargs = {k: v for k, v in message.items() if k not in ["role", "content"]}
 
     return ChatMessage(role=MessageRole(role), blocks=blocks, additional_kwargs=additional_kwargs)
-
-
-class FileMetadata(BaseModel):
-    name: str
-    content_type: Optional[str] = None
-
-
-class FileData(BaseModel):
-    content: str
-
-
-class InternalFile(BaseModel):
-    id: str
-    user_id: str
-    hash: str
-    meta: FileMetadata
-    data: FileData
-
-
-class ReceivedFile(BaseModel):
-    type: str
-    file: InternalFile
 
 
 class Metadata(BaseModel):

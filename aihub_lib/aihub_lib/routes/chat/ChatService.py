@@ -30,6 +30,7 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from aihub_lib.records.ReceivedFile import ReceivedFile
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ class ChatService:
         messages: List[ChatMessage],
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        files: Optional[List[ReceivedFile]] = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -129,9 +131,7 @@ class ChatService:
             display_id = event.request_event.topic.display_id
         else:
             event = UserMessageEvent(
-                messages=messages,
-                user=user,
-                locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                messages=messages, user=user, locale=locale or LocaleHandler.DEFAULT_LOCALE, files=files
             )
 
         event = ExternalEvent(
@@ -160,6 +160,7 @@ class ChatService:
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        files: Optional[List[ReceivedFile]] = None,
         locale: Optional[str] = None,
     ) -> StreamingResources:
         """
@@ -172,6 +173,7 @@ class ChatService:
             messages=messages,
             thread_id=thread_id,
             display_id=display_id,
+            files=files,
             subscribe_to_thread=True,
             locale=locale,
         )

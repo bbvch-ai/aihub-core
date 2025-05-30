@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import io
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Literal, Optional, Tuple
@@ -316,6 +318,7 @@ class OpenaiService:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
                 chat_completion_request, thread_id
             )
+        files = OpenaiService._extract_files(chat_completion_request)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
@@ -326,6 +329,7 @@ class OpenaiService:
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
+            files=files,
             locale=locale,
         )
 
