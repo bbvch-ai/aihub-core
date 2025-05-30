@@ -1,10 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from azure.ai.documentintelligence.models import (
-    AnalyzeOutputOption,
-    AnalyzeResult,
-    DocumentContentFormat,
-)
+from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs

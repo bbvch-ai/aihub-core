@@ -1,8 +1,8 @@
 from typing import List
 
+from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from dagster import OpExecutionContext, op
 
-from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_pipeline.resources.doc_store.DocStoreResource import DocStoreResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument

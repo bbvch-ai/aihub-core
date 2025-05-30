@@ -1,4 +1,4 @@
-from dagster import op, OpExecutionContext, ResourceParam
+from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource

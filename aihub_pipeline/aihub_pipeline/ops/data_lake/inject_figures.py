@@ -1,12 +1,12 @@
-from typing import Optional, List
-
-from azure.storage.filedatalake import FileSystemClient
-from bs4 import BeautifulSoup
-from dagster import OpExecutionContext, op, ResourceParam
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ImageBlock
-from llama_index.core.llms import LLM
+from typing import List, Optional
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from azure.storage.filedatalake import FileSystemClient
+from bs4 import BeautifulSoup
+from dagster import OpExecutionContext, ResourceParam, op
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
+from llama_index.core.llms import LLM
+
 from aihub_pipeline.ops.data_lake.process_document_without_figures import process_document_without_figures
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
@@ -36,7 +36,6 @@ def inject_figures(
         )
 
     for i, (figure_tag, figure_metadata) in enumerate(zip(figure_tags, figures_metadata)):
-
         # 3000 characters of surrounding text, 1500 before and 1500 after the figure tag
         text_before = figure_tag.previous_sibling[-1500:] if figure_tag.previous_sibling else ""
         text_after = figure_tag.next_sibling[:1500] if figure_tag.next_sibling else ""

@@ -1,7 +1,7 @@
 from typing import List
 
 from azure.storage.filedatalake import FileSystemClient
-from dagster import OpExecutionContext, op, ResourceParam
+from dagster import OpExecutionContext, ResourceParam, op
 
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.RefDocDocument import RefDocDocument

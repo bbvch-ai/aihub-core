@@ -124,7 +124,6 @@ class MarkdownContentSplitter:
         return splits
 
     def _update_metadata(self, new_header: str, new_header_level: int) -> None:
-
         if new_header_level > 0:
             self.current_headers[f"h{new_header_level}"] = new_header
 

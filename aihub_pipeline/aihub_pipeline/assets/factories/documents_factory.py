@@ -1,11 +1,4 @@
-from dagster import (
-    AssetIn,
-    AssetKey,
-    AutomationCondition,
-    DynamicPartitionsDefinition,
-    Output,
-    graph_asset,
-)
+from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 
 from aihub_pipeline.ops.data_lake.doc_with_figures_to_ref_doc import doc_with_figures_to_ref_doc
 from aihub_pipeline.ops.data_lake.inject_figures import inject_figures

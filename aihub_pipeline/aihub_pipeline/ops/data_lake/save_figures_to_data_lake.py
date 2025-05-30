@@ -1,10 +1,10 @@
 from typing import List, Optional
 
+from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from azure.storage.filedatalake import FileSystemClient
-from dagster import OpExecutionContext, op, ResourceParam
+from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 
-from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
