@@ -62,7 +62,7 @@ class UserAssignedIdentity:
             account_name=account_name or CosmosDocstore.name(self.project_name, self.location_short_name),
         )
         self.assign_role_to_identity(ROLES.CONTRIBUTOR_ROLE_ID, docstore_account.id, docstore_account.name)
-        self.assign_role_to_identity(ROLES.DOCUMENTDB_ACCOUNT_CONTRIBUTOR, docstore_account.id, docstore_account.name)
+        self.assign_role_to_identity(ROLES.DB_ACCOUNT_CONTRIBUTOR_ROLE_ID, docstore_account.id, docstore_account.name)
 
     @property
     def client_id(self):
