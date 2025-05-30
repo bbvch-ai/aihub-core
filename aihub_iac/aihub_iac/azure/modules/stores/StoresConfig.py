@@ -27,7 +27,7 @@ class StoresConfig(BaseConfig):
     )
 
     @property
-    def ai_search_service_name(self) -> str:
+    def ai_search_service_name_force(self) -> str:
         return self.resource_namer.ai_search_name()
 
     @property
