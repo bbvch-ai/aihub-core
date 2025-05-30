@@ -32,7 +32,7 @@ from starlette.responses import StreamingResponse
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
 from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
+from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest, ReceivedFile
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
 from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
@@ -252,6 +252,7 @@ class OpenaiService:
         locale: Optional[str] = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
+        files = OpenaiService._extract_files(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
                 chat_completion_request, thread_id
@@ -486,6 +487,13 @@ class OpenaiService:
         thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
         display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
         return thread_id, display_id
+
+    @staticmethod
+    def _extract_files(
+        chat_completion_request: ChatCompletionRequest,
+    ) -> List[ReceivedFile] | None:
+        files = chat_completion_request.metadata.files if chat_completion_request.metadata else None
+        return files
 
     @staticmethod
     async def _reconstruct_history(

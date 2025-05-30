@@ -212,6 +212,10 @@ class OpenaiController(Controller):
             t: LocaleHandler = Depends(use_locale),
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.oid
+            logger.debug(f"completion_request: {completion_request}")
+            logger.debug(f"Files: {completion_request.metadata.files}")
+            print(f"Chat completion with assistants: {completion_request.model}, user: {user.oid}")
+            print(f"Files: {completion_request.metadata.files}")
             return await OpenaiService.chat_completion_with_assistants(
                 self.chat_models, completion_request.model, completion_request, user, nc, external_event_distributor, t
             )

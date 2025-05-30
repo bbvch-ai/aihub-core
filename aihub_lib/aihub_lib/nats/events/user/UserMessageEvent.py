@@ -51,6 +51,7 @@ class UserMessageEvent(StartEvent):
         description="A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
         default_factory=list,
     )
+    # files: # TODO Pass files here...
 
     @property
     def user_query(self) -> str:

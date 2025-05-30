@@ -87,10 +87,6 @@ async def main():
         OpenaiController(
             auth=auth,
             embedding_models=[
-                SelfHostedEmbeddingConfig(
-                    name="Alibaba-NLP/gte-base-en-v1.5",
-                    base_url="http://localhost:8183",
-                ),
                 AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
@@ -99,12 +95,6 @@ async def main():
                 ),
             ],
             chat_models=[
-                OpenaiLikeLLMConfig(
-                    name="unsloth/Llama-3.2-1B-Instruct",
-                    base_url="http://localhost:8182/v1",
-                    is_function_calling_model=False,
-                    context_size=512,
-                ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o",
                     base_url="https://bbvaihub-openai-sui.openai.azure.com",

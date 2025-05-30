@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, IO
 
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from openai.types import ChatModel
@@ -94,6 +94,28 @@ def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
     return ChatMessage(role=MessageRole(role), blocks=blocks, additional_kwargs=additional_kwargs)
 
 
+class FileMetadata(BaseModel):
+    name: str
+    content_type: Optional[str] = None
+
+
+class FileData(BaseModel):
+    content: str
+
+
+class InternalFile(BaseModel):
+    id: str
+    user_id: str
+    hash: str
+    meta: FileMetadata
+    data: FileData
+
+
+class ReceivedFile(BaseModel):
+    type: str
+    file: InternalFile
+
+
 class Metadata(BaseModel):
     thread_id: Annotated[
         Optional[str], Field(description="Provide thread ID to continue conversation in an existing thread.")
@@ -105,6 +127,10 @@ class Metadata(BaseModel):
             description="When set to True, message set on UserMessageEvent will be calculated based on thread event history"
         ),
     ] = None
+    files: Annotated[
+        Optional[List[ReceivedFile]],
+        Field(description="List of files to attach to the request, if supported by the model."),
+    ] = []
 
 
 class ChatCompletionRequest(BaseModel):
