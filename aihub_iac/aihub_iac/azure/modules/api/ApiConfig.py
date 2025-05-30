@@ -2,6 +2,7 @@ from typing import ClassVar, Optional
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_NATS_SUFFIX, DEFAULT_API_SUFFIX
 from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
@@ -11,8 +12,6 @@ from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 class ApiConfig(BaseConfig):
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
     _oauth_settings: ClassVar[OAuthSettings] = OAuthSettings()
-
-    DEFAULT_API_SUFFIX: ClassVar[str] = "api"
 
     # Docker Image settings
     repo_image_url: str = Field(description="URL of the Docker repository")
@@ -55,7 +54,7 @@ class ApiConfig(BaseConfig):
 
     @property
     def service_name(self) -> str:
-        return self.resource_namer.app_service_name(ApiConfig.DEFAULT_API_SUFFIX)
+        return self.resource_namer.app_service_name(DEFAULT_API_SUFFIX)
 
     @property
     def effective_cosmos_account_name(self) -> str:
@@ -67,7 +66,7 @@ class ApiConfig(BaseConfig):
 
     @property
     def nats_container_group_name(self) -> str:
-        return self.resource_namer.container_instance_name(NatsConfig.DEFAULT_NATS_SUFFIX)
+        return self.resource_namer.container_instance_name(DEFAULT_NATS_SUFFIX)
 
     @property
     def effective_docker_image(self) -> str:

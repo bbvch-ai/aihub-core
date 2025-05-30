@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_API_SUFFIX, DEFAULT_WEBUI_SUFFIX
 from aihub_iac.azure.modules.api.ApiConfig import ApiConfig
 from aihub_iac.azure.modules.webui.OpenWebUIConfig import OpenWebUIConfig
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
@@ -15,7 +16,6 @@ class WebUIConfig(StorageConfig):
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
 
-    DEFAULT_WEBUI_SUFFIX: ClassVar[str] = "webui"
     WEBUI_SUBNET_CIDR: ClassVar[str] = "10.0.40.0/23"
     WEBUI_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.42.0/24"
 
@@ -58,23 +58,23 @@ class WebUIConfig(StorageConfig):
 
     @property
     def log_analytics_name(self) -> str:
-        return self.resource_namer.log_workspace(WebUIConfig.DEFAULT_WEBUI_SUFFIX)
+        return self.resource_namer.log_workspace(DEFAULT_WEBUI_SUFFIX)
 
     @property
     def webui_container_env(self) -> str:
-        return self.resource_namer.container_app_environment_name(WebUIConfig.DEFAULT_WEBUI_SUFFIX)
+        return self.resource_namer.container_app_environment_name(DEFAULT_WEBUI_SUFFIX)
 
     @property
     def webui_container_app(self) -> str:
-        return self.resource_namer.container_app_name(WebUIConfig.DEFAULT_WEBUI_SUFFIX)
+        return self.resource_namer.container_app_name(DEFAULT_WEBUI_SUFFIX)
 
     @property
     def webui_storage(self) -> str:
-        return self.resource_namer.storage_account_name(WebUIConfig.DEFAULT_WEBUI_SUFFIX)
+        return self.resource_namer.storage_account_name(DEFAULT_WEBUI_SUFFIX)
 
     @property
     def api_service_name(self) -> str:
-        return self.resource_namer.app_service_name(ApiConfig.DEFAULT_API_SUFFIX)
+        return self.resource_namer.app_service_name(DEFAULT_API_SUFFIX)
 
     @property
     def postgres_name(self) -> str:
