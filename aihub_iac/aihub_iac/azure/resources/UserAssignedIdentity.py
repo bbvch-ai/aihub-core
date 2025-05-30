@@ -66,4 +66,4 @@ class UserAssignedIdentity:
 
     @property
     def client_id(self):
-        return self.user_identity.client_id_test
+        return self.user_identity.client_id
