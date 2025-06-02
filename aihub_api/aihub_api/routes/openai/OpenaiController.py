@@ -190,9 +190,7 @@ class OpenaiController(Controller):
             user: AuthenticatedUser = Security(self.auth),
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.oid
-            return await OpenaiService.chat_completion(
-                self.chat_models, completion_request.model, completion_request
-            )
+            return await OpenaiService.chat_completion(self.chat_models, completion_request.model, completion_request)
 
         return self
 
@@ -225,7 +223,7 @@ class OpenaiController(Controller):
             user: AuthenticatedUser = Security(self.auth),
         ) -> ImagesResponse:
             return await OpenaiService.generate_image(
-                self.image_models, str(generation_request.model), generation_request.model_dump()
+                self.image_models, str(generation_request.model), generation_request
             )
 
         return self
@@ -272,7 +270,7 @@ class OpenaiController(Controller):
             user: AuthenticatedUser = Security(self.auth),
         ) -> StreamingResponse:
             tts_response = await OpenaiService.tts(
-                self.tts_models, speech_request.model, speech_request.input, speech_request.model_dump()
+                self.tts_models, speech_request.model, speech_request.input, speech_request
             )
 
             async def stream_generator() -> AsyncIterator[bytes]:
