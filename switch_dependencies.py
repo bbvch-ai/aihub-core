@@ -1,5 +1,5 @@
 """
-A script to switch each microservice's 'aihub_lib' dependency between
+A script to switch each microservice's in-project dependencies between
 a local path and a remote Git reference, using tomlkit to preserve the
 existing file structure.
 
@@ -8,12 +8,13 @@ It specifically looks for pyproject.toml in:
   - aihub_api/
   - aihub_bot/
   - aihub_pipeline/
+  - aihub_process/
 
 Usage:
-  python switch_dependency.py [local|remote] [--tag <TAG>] [--local-path <PATH>]
+  python switch_dependency.py [local|remote] [--tag <TAG>]
 
 Examples:
-  # Switch to local references (default path="../aihub_lib")
+  # Switch to local references
   python switch_dependency.py local
 
   # Switch to remote references (default tag="v0.1.0")
@@ -40,16 +41,18 @@ except ImportError:
     sys.exit(1)
 
 MICROSERVICE_DIRS = [
+    "aihub_lib",
     "aihub_agent",
     "aihub_api",
     "aihub_bot",
     "aihub_pipeline",
+    "aihub_process",
 ]
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Toggle 'aihub_lib' between local and remote references "
+        description="Toggle dependencies between local and remote references "
         "for specified microservice folders (using tomlkit)."
     )
     parser.add_argument(
@@ -61,11 +64,6 @@ def parse_args():
         "--tag",
         default="v0.1.0",
         help="Git tag (or branch) to use when in 'remote' mode. (Default: v0.1.0)",
-    )
-    parser.add_argument(
-        "--local-path",
-        default="../aihub_lib",
-        help="Local path to the aihub_lib for 'local' mode. (Default: ../aihub_lib)",
     )
     return parser.parse_args()
 
@@ -84,23 +82,23 @@ def main():
         process_file(
             pyproject_path=pyproject_path,
             mode=args.mode,
-            local_path=args.local_path,
             remote_tag=args.tag,
         )
 
 
-def process_file(pyproject_path: Path, mode: str, local_path: str, remote_tag: str):
+def process_file(pyproject_path: Path, mode: str, remote_tag: str):
     original_text = pyproject_path.read_text(encoding="utf-8")
     doc = tomlkit.parse(original_text)
 
-    update_aihub_lib(doc, mode, local_path, remote_tag)
-    pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
+    for dependency_name in MICROSERVICE_DIRS:
+        update_dependency(doc, mode, remote_tag, dependency_name)
+        pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
 
     subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent)
     subprocess.run(["poetry", "install"], cwd=pyproject_path.parent)
 
 
-def update_aihub_lib(doc: tomlkit.container.Container, mode: str, local_path: str, remote_tag: str):
+def update_dependency(doc: tomlkit.container.Container, mode: str, remote_tag: str, dependency_name: str):
     if "tool" not in doc or "poetry" not in doc["tool"]:
         return
 
@@ -109,22 +107,22 @@ def update_aihub_lib(doc: tomlkit.container.Container, mode: str, local_path: st
         return
 
     deps = poetry_section["dependencies"]
-    if "aihub_lib" not in deps:
+    if dependency_name not in deps:
         return
 
     if mode == "local":
         new_dep = {
-            "path": local_path,
+            "path": f"../{dependency_name}",
             "develop": True,
         }
     else:
         new_dep = {
             "git": "https://github.com/bbvch-ai/aihub-core.git",
             "tag": remote_tag,
-            "subdirectory": "aihub_lib",
+            "subdirectory": dependency_name,
         }
 
-    deps["aihub_lib"] = new_dep
+    deps[dependency_name] = new_dep
 
 
 if __name__ == "__main__":

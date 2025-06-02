@@ -10,6 +10,7 @@ from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.AgenticProcess import AgenticProcess
 from aihub_api.routes.process.AgenticProcessController import AgenticProcessController
+from aihub_api.routes.process.example.AgenticCVProcess import AgenticCVProcess
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
@@ -183,7 +184,7 @@ async def main():
         AgenticProcessController(
             controller_base_route="/process",
             auth=NoAuthHandler(),
-            process_class=AgenticProcess
+            process_class=AgenticCVProcess
         )
     )
 
