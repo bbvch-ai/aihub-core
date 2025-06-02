@@ -191,7 +191,7 @@ class OpenaiController(Controller):
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.oid
             return await OpenaiService.chat_completion(
-                self.chat_models, completion_request.model, completion_request.model_dump()
+                self.chat_models, completion_request.model, completion_request
             )
 
         return self
