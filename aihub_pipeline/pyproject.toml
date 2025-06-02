@@ -12,17 +12,18 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
-dagster-webserver = "^1.9.6"
-dagster-postgres = "^0.25.6"
-dagster-azure = "^0.25.6"
+dagster-webserver = "^1.10.18"
+dagster-postgres = "^0.26.18"
+dagster-azure = "^0.26.18"
 llama-index-readers-file = "^0.4.1"
 matplotlib = "^3.9.2"
 adlfs = "^2024.12.0"
+dagster-celery = "^0.26.18"
+click = "8.1.8"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.174.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

@@ -1,0 +1,49 @@
+services:
+  postgres-dagster:
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    container_name: postgres-dagster
+    environment:
+      POSTGRES_USER: dagster
+      POSTGRES_PASSWORD: dagster_password
+      POSTGRES_DB: dagster
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-dagster-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dagster" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis-dagster:
+    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
+    container_name: redis-dagster
+    command: "redis-server --save 30 1 --loglevel warning"
+    volumes:
+      - redis-dagster-data:/data
+    ports:
+      - "6389:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  redis-dagster-data: {}
+  postgres-dagster-data: {}

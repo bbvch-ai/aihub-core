@@ -26,6 +26,3 @@ test-cov:
 	poetry run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing --junitxml=pytest.xml \
 	|| echo "No tests found. Skipping..."
 
-playground:
-	@echo "Running playground..."
-	poetry run dagster dev -m playground --use-legacy-code-server-behavior

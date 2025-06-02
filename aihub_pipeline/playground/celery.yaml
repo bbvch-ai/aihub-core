@@ -1,0 +1,4 @@
+execution:
+  config:
+    broker: "redis://localhost:6389/0"
+    backend: "redis://localhost:6389/1"

@@ -1,0 +1,5 @@
+load_from:
+  - grpc_server:
+      host: localhost
+      port: 4000
+      location_name: "default_rag_pipeline"
