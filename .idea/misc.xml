@@ -5,5 +5,5 @@
     <option name="enabledOnSave" value="true" />
     <option name="sdkName" value="Poetry (aihub-core)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 virtualenv at C:\Users\mariushoegger\AppData\Local\pypoetry\Cache\virtualenvs\aihub-api-oTklx6uu-py3.11" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (aihub-core)" project-jdk-type="Python SDK" />
 </project>
