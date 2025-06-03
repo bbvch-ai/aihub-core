@@ -1,9 +1,9 @@
-from pulumi_azure_native import cognitiveservices, managedidentity, search, cosmosdb
+from pulumi_azure_native import cognitiveservices, cosmosdb, managedidentity, search
 
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.providers.RoleProvider import RoleProvider
-from aihub_iac.azure.resources.CosmosDocstore import CosmosDocstore
 from aihub_iac.azure.resources.AISearch import AISearch
+from aihub_iac.azure.resources.CosmosDocstore import CosmosDocstore
 from aihub_iac.azure.resources.OpenAI import OpenAI
 
 
