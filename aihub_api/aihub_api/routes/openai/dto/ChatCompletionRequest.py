@@ -1,5 +1,6 @@
-from typing import Any, Dict, Iterable, List, Optional, Union, IO
+from typing import Any, Dict, Iterable, List, Optional, Union
 
+from aihub_lib.records.ReceivedFile import ReceivedFile
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from openai.types import ChatModel
 from openai.types.chat import (
@@ -15,8 +16,6 @@ from openai.types.chat import (
 )
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Annotated, Literal
-
-from aihub_lib.records.ReceivedFile import ReceivedFile
 
 
 def resolve_message_content(message: Dict[str, Any]) -> Dict[str, Any]:

@@ -1,7 +1,6 @@
 import asyncio
-import io
 import inspect
-import base64
+import io
 import logging
 import uuid
 from datetime import datetime, timezone
