@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -8,10 +8,8 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
     INDEX,
-    LANGUAGE,
-    NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
-    TYPE,
+    TYPE, LANGUAGE, NODE_LANGUAGE_ENGLISH,
 )
 
 
@@ -42,20 +40,12 @@ class RecursiveNodeSummarizer:
         if not nodes:
             return []
 
-        locale_str: str = NODE_LANGUAGE_ENGLISH
-        for node_meta_check in nodes:
-            if LANGUAGE in node_meta_check.metadata:
-                meta_lang = node_meta_check.metadata[LANGUAGE]
-                if isinstance(meta_lang, str):  # Ensure it's a string
-                    locale_str = meta_lang
-                    break
-
-        locale_handler: LocaleHandler = LocaleHandler(locale=locale_str)
+        locale = nodes[0].metadata.get(LANGUAGE, NODE_LANGUAGE_ENGLISH)
+        locale_handler = LocaleHandler(locale=locale)
         llm_summarizer: LLMSummarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
 
         self.node_id_to_node = {node.node_id: node for node in nodes}
-
-        grouped_nodes: Dict[int, List[TextNode]] = self._group_nodes_by_level(nodes)
+        grouped_nodes = self._group_nodes_by_level(nodes)
         for level_nodes_list in grouped_nodes.values():
             level_nodes_list.sort(key=lambda n: n.metadata.get("section_start_line", float("inf")))
 
@@ -273,25 +263,21 @@ class RecursiveNodeSummarizer:
             grouped_nodes.setdefault(level, []).append(node)
         return grouped_nodes
 
-    def _get_relevant_child_summaries(
-        self, parent_ref_node: TextNode, direct_child_summaries: List[TextNode]
-    ) -> List[TextNode]:
-        relevant_children: List[TextNode] = []
-        parent_level: int = self._get_summary_level(parent_ref_node)
-        parent_headers_prefix_tuple: Tuple[Optional[Any], ...] = self._get_header_hierarchy_values_tuple(
-            parent_ref_node, parent_level
-        )
+    def _get_relevant_child_summaries(self, parent_node: TextNode, child_summaries: List[TextNode]) -> List[TextNode]:
+        return [child for child in child_summaries if self._is_child_of(child, parent_node)]
 
-        for child_summary in direct_child_summaries:
-            child_summary_heading_level = child_summary.metadata.get(HEADING_LEVEL)
-            if isinstance(child_summary_heading_level, int) and child_summary_heading_level == parent_level + 1:
-                child_lineage_prefix_tuple: Tuple[Optional[Any], ...] = self._get_header_hierarchy_values_tuple(
-                    child_summary, parent_level
-                )
-                if child_lineage_prefix_tuple == parent_headers_prefix_tuple:
-                    relevant_children.append(child_summary)
-        return relevant_children
+    def _is_child_of(self, child_node: TextNode, parent_node: TextNode) -> bool:
+        child_headers = self._get_header_hierarchy(child_node)
+        parent_headers = self._get_header_hierarchy(parent_node)
+        return len(child_headers) == len(parent_headers) + 1 and child_headers[:-1] == parent_headers
 
     @staticmethod
-    def _get_header_hierarchy_values_tuple(node: TextNode, depth: int) -> Tuple[Optional[str], ...]:
-        return tuple(node.metadata.get(f"h{i}") for i in range(1, depth + 1))
+    def _get_header_hierarchy(node: TextNode) -> List[str]:
+        headers = []
+        for i in range(1, 7):
+            header = node.metadata.get(f"h{i}")
+            if header is not None:
+                headers.append(header)
+            else:
+                break
+        return headers
