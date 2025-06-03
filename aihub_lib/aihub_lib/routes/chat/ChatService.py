@@ -233,6 +233,7 @@ class ChatService:
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        files: Optional[List[ReceivedFile]] = None,
         locale: Optional[str] = None,
     ) -> JsonResources:
         """
@@ -245,6 +246,7 @@ class ChatService:
             messages=messages,
             thread_id=thread_id,
             display_id=display_id,
+            files=files,
             subscribe_to_thread=True,
             locale=locale,
         )

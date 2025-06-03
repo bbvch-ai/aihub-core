@@ -42,7 +42,6 @@ asgi-lifespan = "^2.1.0"
 
 [tool.poetry.dependencies.aihub_lib]
 path = "../aihub_lib"
-develop = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

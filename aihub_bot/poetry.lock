@@ -50,7 +50,7 @@ optional = false
 python-versions = ">=3.11, <3.12"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 adlfs = "^2024.12.0"
@@ -6070,4 +6070,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "abd5a63cc8e2efdf78acdfb7efc586bb7599b7ddaadd6c50a3e925cf5399a618"
+content-hash = "8da6a636ef009e1b9cdea7c560f62dd20c688def4e62d64ee72f269158a36f3c"

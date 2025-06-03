@@ -33,7 +33,6 @@ stringcase = "^1.2.0"
 
 [tool.poetry.dependencies.aihub_lib]
 path = "../aihub_lib"
-develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
