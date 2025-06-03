@@ -7,7 +7,6 @@ from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
-    INDEX,
     LANGUAGE,
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
@@ -42,53 +41,13 @@ class RecursiveNodeSummarizer:
         locale_handler = LocaleHandler(locale=locale)
         llm_summarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
         self.node_id_to_node = {node.node_id: node for node in nodes}
-
         grouped_nodes = self._group_nodes_by_level(nodes)
         max_level = max(grouped_nodes.keys()) if grouped_nodes else 0
-
         summary_nodes = []
-        level_indices = {level: 0 for level in range(max_level + 1)}
 
         for level in range(max_level, -1, -1):
             level_nodes = grouped_nodes.get(level, [])
             summarized_level_nodes = self._summarize_level(level_nodes, summary_nodes, level, llm_summarizer)
-
-            # First assign indices to all nodes at this level
-            for node in sorted(
-                summarized_level_nodes, key=lambda n: n.metadata.get(f"h{self._get_summary_level(n)}", "")
-            ):
-                node.metadata[INDEX] = level_indices[level]
-                level_indices[level] += 1
-
-            # Group by parent for relationships
-            by_parent = {}
-            for node in summarized_level_nodes:
-                parent_headers = []
-                node_level = self._get_summary_level(node)
-                for i in range(1, node_level):
-                    header = node.metadata.get(f"h{i}")
-                    if header:
-                        parent_headers.append((i, header))
-
-                parent_key = tuple(parent_headers)
-                if parent_key not in by_parent:
-                    by_parent[parent_key] = []
-                by_parent[parent_key].append(node)
-
-            # Establish relationships only between siblings
-            for siblings in by_parent.values():
-                if len(siblings) < 2:
-                    continue
-
-                siblings.sort(key=lambda n: n.metadata.get(f"h{self._get_summary_level(n)}", ""))
-
-                for i, node in enumerate(siblings):
-                    if i > 0:
-                        node.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=siblings[i - 1].node_id)
-
-                    if i < len(siblings) - 1:
-                        node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=siblings[i + 1].node_id)
-
             summary_nodes.extend(summarized_level_nodes)
 
         return nodes.copy() + summary_nodes
@@ -117,20 +76,11 @@ class RecursiveNodeSummarizer:
         processed_nodes = set()
 
         if not level_nodes:
-            by_parent = {}
-            for node in child_summaries:
-                if self._get_summary_level(node) == level + 1:
-                    headers = tuple(self._get_header_hierarchy(node)[:-1])
-                    if headers not in by_parent:
-                        by_parent[headers] = []
-                    by_parent[headers].append(node)
-
-            for summaries in by_parent.values():
-                if summaries:
-                    level_summary = self._summarize_summaries(summaries, level, summarizer)
-                    summarized_nodes.append(level_summary)
-
-            return summarized_nodes
+            relevant_child_summaries = [node for node in child_summaries if self._get_summary_level(node) == level + 1]
+            if relevant_child_summaries:
+                level_summary = self._summarize_summaries(relevant_child_summaries, level, summarizer)
+                return [level_summary]
+            return []
 
         for node in level_nodes:
             if node.node_id in processed_nodes:
