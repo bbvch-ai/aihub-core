@@ -1,16 +1,14 @@
 from typing import List, Optional
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from azure.storage.filedatalake import FileSystemClient
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
+from fsspec import AbstractFileSystem
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 from llama_index.core.llms import LLM
 
-from aihub_pipeline.ops.data_lake.process_document_without_figures import process_document_without_figures
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
-from aihub_pipeline.util.path_utils import get_data_lake_client_figure_path
 
 
 @op(code_version="v1")
@@ -19,12 +17,11 @@ def inject_figures(
     doc_with_figures: DocumentWithFigureInfo,
     figures_metadata: Optional[List[FigureMetadata]],
     language_model: ResourceParam[LLM],
-    data_lake_client: ResourceParam[FileSystemClient],
+    data_lake_file_system: ResourceParam[AbstractFileSystem],
 ) -> DocumentWithFigureInfo:
     """Injects image Markdown tags into the document content by replacing HTML figure tags."""
     if not figures_metadata:
         context.log.info("No figures found, skipping injection")
-        doc_with_figures = process_document_without_figures(doc_with_figures)
         return doc_with_figures
 
     soup = BeautifulSoup(doc_with_figures.text_resource.text, "html.parser")
@@ -40,10 +37,10 @@ def inject_figures(
         text_before = figure_tag.previous_sibling[-1500:] if figure_tag.previous_sibling else ""
         text_after = figure_tag.next_sibling[:1500] if figure_tag.next_sibling else ""
         surrounding_text = f"{text_before}\n\n[IMAGE LOCATION]\n\n{text_after}"
-        figure_path = get_data_lake_client_figure_path(figure_metadata.figure_path)
-        context.log.info(f"Trying to load figure with path: {figure_path}")
-        blob_client = data_lake_client.get_file_client(figure_path)
-        image_bytes = blob_client.download_file().readall()
+
+        context.log.info(f"Trying to load figure with path: {figure_metadata.figure_path}")
+        with data_lake_file_system.open(figure_metadata.figure_path) as f:
+            image_bytes = f.read()
 
         figure_description = generate_description(
             context=context,
@@ -71,33 +68,28 @@ def generate_description(
     Generate a detailed description of an image using a vision model,
     taking into account the surrounding text context from the document.
     """
-    try:
-        locale_handler = LocaleHandler(locale="en")
-        system_prompt = locale_handler("lib.prompt.figure_description_generator.system_prompt")
-        user_text = locale_handler("lib.prompt.figure_description_generator.user_text_instruction")
+    locale_handler = LocaleHandler(locale="en")
+    system_prompt = locale_handler("lib.prompt.figure_description_generator.system_prompt")
+    user_text = locale_handler("lib.prompt.figure_description_generator.user_text_instruction")
 
-        if surrounding_text:
-            user_text += f"\n\n{locale_handler('lib.prompt.figure_description_generator.surrounding_text_instruction')}\n\n{surrounding_text}"
+    if surrounding_text:
+        user_text += f"\n\n{locale_handler('lib.prompt.figure_description_generator.surrounding_text_instruction')}\n\n{surrounding_text}"
 
-        messages = [
-            ChatMessage(
-                role=MessageRole.SYSTEM,
-                content=system_prompt,
-            ),
-            ChatMessage(
-                role=MessageRole.USER,
-                blocks=[
-                    TextBlock(text=user_text),
-                    ImageBlock(image=image_bytes),
-                ],
-            ),
-        ]
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content=system_prompt,
+        ),
+        ChatMessage(
+            role=MessageRole.USER,
+            blocks=[
+                TextBlock(text=user_text),
+                ImageBlock(image=image_bytes),
+            ],
+        ),
+    ]
 
-        response = language_model.chat(messages=messages)
-        description = response.message.content.replace("\n", " ")
+    response = language_model.chat(messages=messages)
+    description = response.message.content.replace("\n", " ")
 
-        return description
-
-    except Exception as e:
-        context.log.error(f"Failed to generate image description: {str(e)}")
-        return f"Figure {figure_index + 1}"
+    return description

@@ -157,7 +157,6 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
                 for partition_key in all_partition_keys:
                     document_uri = partition_key
                     context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-                    # TODO handle case where file has been deleted and cannot be loaded
                     data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
 
                     # Decode metadata after retrieval

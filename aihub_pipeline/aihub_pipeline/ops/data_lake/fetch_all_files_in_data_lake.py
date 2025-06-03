@@ -23,12 +23,12 @@ def fetch_all_files_in_data_lake_no_op(
             continue
 
         path_parts = path.name.split("/")
-        document_namespace = path_parts[0]
+        directory_name = path_parts[0]
 
         is_root_folder = len(path_parts) == 1
-        is_wrong_namespace = document_namespace != data_lake_directory_name
+        is_wrong_name = directory_name != data_lake_directory_name
         is_figure_folder = data_lake_figures_directory_name in path_parts
-        if is_root_folder or is_wrong_namespace or is_figure_folder:
+        if is_root_folder or is_wrong_name or is_figure_folder:
             continue
 
         document_uri = f"{data_lake_container_name}/{path.name.lstrip('/')}"

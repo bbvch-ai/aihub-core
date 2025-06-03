@@ -37,7 +37,6 @@ DIRECTORY_NAME = "test"
 FIGURES_DIRECTORY_NAME = "__figures__"
 NAMESPACE_NAME = "test"
 STORE_NAME = "test"
-DOCUMENT_STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
