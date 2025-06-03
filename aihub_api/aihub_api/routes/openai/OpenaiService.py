@@ -1,11 +1,11 @@
 import asyncio
-import base64
 import io
+import inspect
+import base64
 import logging
-import os
 import uuid
 from datetime import datetime, timezone
-from typing import AsyncGenerator, Dict, List, Literal, Optional, Tuple
+from typing import Any, AsyncGenerator, Callable, Dict, List, Literal, Optional, Tuple
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
@@ -29,6 +29,7 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+from pydantic import BaseModel
 from pydub import AudioSegment
 from starlette.responses import StreamingResponse
 
@@ -37,8 +38,10 @@ from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest, ReceivedFile
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
+from aihub_api.routes.openai.dto.ImageGenerationRequest import ImageGenerationRequest
 from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
 from aihub_api.routes.openai.dto.ModelResponse import ModelResponse
+from aihub_api.routes.openai.dto.TextToSpeechRequest import TextToSpeechRequest
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 logger = logging.getLogger(__name__)
@@ -167,7 +170,9 @@ class OpenaiService:
 
     @staticmethod
     async def chat_completion(
-        chat_models: List[ChatLLMConfig], model_name: str, function_args: Dict
+        chat_models: List[ChatLLMConfig],
+        model_name: str,
+        chat_completion_request: ChatCompletionRequest,
     ) -> ChatCompletion | StreamingResponse:
         """
         Execute a chat completion request with an LLM.
@@ -181,24 +186,21 @@ class OpenaiService:
         chat_model, _ = chat_model_config.to_llama_index()
         client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
 
-        function_args = {k: v for k, v in function_args.items() if v is not None}
+        if chat_completion_request.stream:
 
-        if "metadata" in function_args:
-            del function_args["metadata"]
-
-        if function_args.get("stream", False):
-
-            async def stream_chat_completion(**kwargs) -> AsyncGenerator[str, None]:
+            async def stream_chat_completion() -> AsyncGenerator[str, None]:
                 """Handles streaming responses from OpenAI's API."""
+                kwargs = OpenaiService._filter_kwargs(client.chat.completions.create, chat_completion_request)
                 response = await client.chat.completions.create(**kwargs)
 
                 async for chunk in response:
                     yield f"data: {chunk.model_dump_json()}\n\n"
                     await asyncio.sleep(0)
 
-            return StreamingResponse(stream_chat_completion(**function_args), media_type="text/event-stream")
+            return StreamingResponse(stream_chat_completion(), media_type="text/event-stream")
         else:
-            return await client.chat.completions.create(**function_args)
+            kwargs = OpenaiService._filter_kwargs(client.chat.completions.create, chat_completion_request)
+            return await client.chat.completions.create(**kwargs)
 
     @staticmethod
     async def chat_completion_with_assistants(
@@ -216,7 +218,7 @@ class OpenaiService:
         """
         models = [model for model in chat_models if model.name == model_name]
         if len(models) > 0:
-            return await OpenaiService.chat_completion(chat_models, model_name, chat_completion_request.model_dump())
+            return await OpenaiService.chat_completion(chat_models, model_name, chat_completion_request)
 
         agent_class, agent_id = model_name.split("/")
 
@@ -390,7 +392,9 @@ class OpenaiService:
 
     @staticmethod
     async def generate_image(
-        image_models: List[AzureOpenaiImageModelConfig], model_name: str, function_args: Dict
+        image_models: List[AzureOpenaiImageModelConfig],
+        model_name: str,
+        image_generation_request: ImageGenerationRequest,
     ) -> ImagesResponse:
         """
         Generate an image using the specified image model.
@@ -401,7 +405,10 @@ class OpenaiService:
             raise ValueError(f"Model {model_name} not found.")
         image_model_config = models[0]
         client: AsyncOpenAI | AsyncAzureOpenAI = image_model_config.get_openai_client()
-        return await client.images.generate(**function_args)
+
+        kwargs = OpenaiService._filter_kwargs(client.images.generate, image_generation_request)
+
+        return await client.images.generate(**kwargs)
 
     @staticmethod
     async def stt(
@@ -471,7 +478,7 @@ class OpenaiService:
         tts_models: List[AzureOpenaiTTSConfig],
         model_name: str,
         input_text: str,
-        function_args: Dict,
+        tts_request: TextToSpeechRequest,
     ) -> HttpxBinaryResponseContent:
         """
         Convert text to speech and return the audio content.
@@ -483,7 +490,9 @@ class OpenaiService:
 
         tts_model_config = models[0]
         client: AsyncOpenAI | AsyncAzureOpenAI = tts_model_config.get_openai_client()
-        return await client.audio.speech.create(**function_args)
+        kwargs = OpenaiService._filter_kwargs(client.audio.speech.create, tts_request)
+
+        return await client.audio.speech.create(input=input_text, **kwargs)
 
     @staticmethod
     def _extract_thread_and_display_id(
@@ -507,3 +516,21 @@ class OpenaiService:
         history = await ThreadService.thread_as_message_history(thread_id)
         user_message = chat_completion_request.messages[-1]
         return history.messages + [user_message]
+
+    @staticmethod
+    def _filter_kwargs(sdk_fn: Callable, fn_kwargs_model: BaseModel) -> Dict[str, Any]:
+        """
+        Wraps an SDK client's `chat.completions.create` method, intelligently preparing
+        arguments from a Pydantic model instance.
+        """
+        sdk_method_signature = inspect.signature(sdk_fn)
+        sdk_known_param_names = set(sdk_method_signature.parameters.keys())
+        payload_dict = fn_kwargs_model.model_dump(exclude_unset=True)
+
+        sdk_call_kwargs: Dict[str, Any] = {}
+
+        for key, value in payload_dict.items():
+            if key in sdk_known_param_names and key != "metadata":
+                sdk_call_kwargs[key] = value
+
+        return sdk_call_kwargs
