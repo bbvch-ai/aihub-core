@@ -1,44 +1,65 @@
 services:
   phoenix:
-    image: arizephoenix/phoenix:version-7.0.1
+    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
     ports:
-      - "6006:6006"  # Phoenix UI and OTLP HTTP collector
-      - "4317:4317"  # Phoenix OTLP gRPC collector
-    restart: always
-
-  nats:
-    image: nats:latest
-    command: -c /etc/nats/nats.conf
-    volumes:
-      - ./nats/standalone/nats.conf:/etc/nats/nats.conf
-    ports:
-      - "4222:4222"  # Client connections
-      - "8222:8222"  # HTTP monitoring interface
+      - "6006:6006"
+      - "4317:4317"
     restart: always
     healthcheck:
-      test: wget --no-check-certificate -q http://0.0.0.0:8222/healthz -O /dev/null || exit 1
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:6006/healthz')" ]
       interval: 10s
       timeout: 5s
       retries: 3
 
+  nats:
+    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    command: -c /etc/nats/nats.conf
+    volumes:
+      - ./nats/standalone/nats.conf:/etc/nats/nats.conf
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
   redis:
-    image: redis:latest
+    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
+    container_name: redis
+    command: "redis-server --save 30 1 --loglevel warning"
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   mongo:
-    image: mongo:latest
+    image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongo-data:/data/db
     ports:
       - "27017:27017"
     restart: always
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   llama.cpp:
-    image: ghcr.io/ggerganov/llama.cpp:server-cuda
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b5490
     platform: linux/amd64
     ports:
       - "8182:8182"
@@ -57,9 +78,13 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   hf-TEI:
-    image: ghcr.io/huggingface/text-embeddings-inference:cuda-latest
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cuda-1.6
     ports:
       - "8183:8183"
     command: >
@@ -77,3 +102,11 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  redis-data: {}
+  mongo-data: {}

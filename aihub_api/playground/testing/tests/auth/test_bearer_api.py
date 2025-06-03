@@ -8,18 +8,19 @@ from mongoengine import connect, disconnect
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
-USER_ENDPOINT = "/api/v1/user/me"
+USER_ENDPOINT = "/api/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db="aihub", host=CosmosAccess().get_connection_string())
+    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
     yield
     disconnect()
 

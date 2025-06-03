@@ -3,6 +3,7 @@
     :value="displays"
     table-style="min-width: 50rem"
     selection-mode="single"
+    :selection="selectedDisplay"
     @update:selection="emit('selected', $event)"
   >
     <Column
@@ -69,9 +70,10 @@
 <script setup lang="ts">
 import type { DisplayStatistics } from '@core/sdk/client'
 
+const route = useRoute()
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
   displays: DisplayStatistics[]
 }>()
 
@@ -81,4 +83,10 @@ const emit = defineEmits<{
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), t('thread.display.list.dateFormat'))
 const { pendingType } = useThreadUtils()
+
+const selectedDisplay = computed(() => {
+  return props.displays.filter((display: DisplayStatistics) => {
+    return display.display_id === route.params.display_id
+  })
+})
 </script>

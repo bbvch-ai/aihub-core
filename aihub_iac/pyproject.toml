@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_iac"
-version = "v0.166.0"
+version = "v0.173.0"
 description = "iac core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -14,9 +14,9 @@ license = "Proprietary"
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
 pydantic = "^2.10.3"
-pulumi-azure-native = "^2.90.0"
-pydantic-settings = "^2.8.1"
-pulumi-command = "^1.0.2"
+pulumi-azure-native = "^3.5.0"
+pydantic-settings = "^2.9.1"
+pulumi-command = "^1.0.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

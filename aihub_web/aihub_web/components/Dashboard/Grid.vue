@@ -161,7 +161,6 @@ onBeforeUnmount(() => {
 const saveLayout = () => {
   if (grid) {
     const serializedData = grid.save(true, true)
-    console.log('Saved Layout:', JSON.stringify(serializedData, null, 2))
     saveDashboard({ grid: serializedData })
   }
 }

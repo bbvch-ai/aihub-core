@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   security-events: write
+  packages: read
 
 jobs:
   test-modules:
@@ -23,6 +24,7 @@ jobs:
       issues: read
       checks: write
       pull-requests: write
+      packages: read
 
     outputs:
       test_report_passed: ${{ steps.test_report.outputs.passed }}
@@ -54,7 +56,7 @@ jobs:
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}
           docker_compose_paths: ${{ matrix.docker_compose_files }}
           use_local_core: "true"

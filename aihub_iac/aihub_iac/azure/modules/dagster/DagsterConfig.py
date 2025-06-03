@@ -17,6 +17,8 @@ class DagsterConfig(StorageConfig):
 
     DEFAULT_WEBSERVER_SUFFIX: ClassVar[str] = "dagster"
     DEFAULT_DAEMON_SUFFIX: ClassVar[str] = "dagster-daemon"
+    DAGSTER_SUBNET_CIDR: ClassVar[str] = "10.0.38.0/23"
+    DAGSTER_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.35.0/24"
 
     # Docker Image settings
     repo_image_url: str = Field(description="URL of the Docker repository")
@@ -73,8 +75,8 @@ class DagsterConfig(StorageConfig):
     # resources
     proxy_cpu: float = Field(default=0.5, description="CPU allocation in cores for the proxy container")
     proxy_memory: str = Field(default="1Gi", description="Memory allocation in GB for the proxy container")
-    webserver_cpu: float = Field(default=0.5, description="CPU allocation in cores for the webserver container")
-    webserver_memory: str = Field(default="1Gi", description="Memory allocation in GB for the webserver container")
+    webserver_cpu: float = Field(default=1.5, description="CPU allocation in cores for the webserver container")
+    webserver_memory: str = Field(default="3Gi", description="Memory allocation in GB for the webserver container")
     daemon_cpu: float = Field(default=2, description="CPU allocation in cores for the daemon container")
     daemon_memory: str = Field(default="4Gi", description="Memory allocation in GB for the daemon container")
 

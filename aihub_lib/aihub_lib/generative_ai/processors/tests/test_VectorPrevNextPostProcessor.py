@@ -2,7 +2,7 @@ import asyncio
 from time import sleep
 
 import pytest
-from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
+from llama_index.core.schema import NodeRelationship, NodeWithScore, RelatedNodeInfo, TextNode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
@@ -10,6 +10,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
 )
+from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.milvus_vector_store_content import fill_collection
 
@@ -38,7 +39,7 @@ def get_node_ids(result):
 def _(datatable):
     nodes = []
     for row in datatable:
-        nodes.append(Document(id_=row[0], text=row[1], metadata={}))
+        nodes.append(TextNode(id_=row[0], text=row[1], metadata={}))
     return nodes
 
 
@@ -75,11 +76,13 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
         collection_name="prev_next_test",
         embedding_vector_dimension=768,
     )
+    doc_store = create_mongo_document_store(document_store_name="development")
 
     fill_collection(
         embedding_config,
         vector_store,
-        documents=nodes_with_relationships,
+        doc_store,
+        nodes=nodes_with_relationships,
     )
     sleep(1)
     yield vector_store

@@ -16,6 +16,8 @@ class WebUIConfig(StorageConfig):
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
 
     DEFAULT_WEBUI_SUFFIX: ClassVar[str] = "webui"
+    WEBUI_SUBNET_CIDR: ClassVar[str] = "10.0.40.0/23"
+    WEBUI_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.42.0/24"
 
     openwebui_config: OpenWebUIConfig
 

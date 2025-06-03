@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi
-from pulumi_azure_native import network, storage
+from pulumi_azure_native import network, privatedns, storage
 
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 
@@ -24,8 +24,8 @@ class StorageResourceFactory:
         is_hns_enabled: bool = True,
         network_rule_set: Optional[storage.NetworkRuleSetArgs] = None,
         blob_only: bool = False,
-        existing_blob_dns_zone: Optional[network.GetPrivateZoneResult] = None,
-        existing_file_dns_zone: Optional[network.GetPrivateZoneResult] = None,
+        existing_blob_dns_zone: Optional[privatedns.GetPrivateZoneResult] = None,
+        existing_file_dns_zone: Optional[privatedns.GetPrivateZoneResult] = None,
     ) -> storage.StorageAccount:
         """
         Create a storage account resource
@@ -153,36 +153,38 @@ class StorageResourceFactory:
         return private_endpoint
 
     def _create_blob_dns_zone(self, vnet_id: str):
-        blob_dns_zone = network.PrivateZone(
+        blob_dns_zone = privatedns.PrivateZone(
             "blob-dns-zone",
             resource_group_name=self.config.resource_group,
             private_zone_name="privatelink.blob.core.windows.net",
             location="Global",
         )
-        network.VirtualNetworkLink(
+        privatedns.VirtualNetworkLink(
             "blob-zone-link",
             resource_group_name=self.config.resource_group,
             private_zone_name=blob_dns_zone.name,
             virtual_network=network.SubResourceArgs(id=vnet_id),
             registration_enabled=False,
             location="Global",
+            opts=pulumi.ResourceOptions(parent=blob_dns_zone),
         )
         return blob_dns_zone
 
     def _create_file_dns_zone(self, vnet_id: str):
-        file_dns_zone = network.PrivateZone(
+        file_dns_zone = privatedns.PrivateZone(
             "file-dns-zone",
             resource_group_name=self.config.resource_group,
             private_zone_name="privatelink.file.core.windows.net",
             location="Global",
         )
-        network.VirtualNetworkLink(
+        privatedns.VirtualNetworkLink(
             "file-zone-link",
             resource_group_name=self.config.resource_group,
             private_zone_name=file_dns_zone.name,
             virtual_network=network.SubResourceArgs(id=vnet_id),
             registration_enabled=False,
             location="Global",
+            opts=pulumi.ResourceOptions(parent=file_dns_zone),
         )
         return file_dns_zone
 
@@ -212,10 +214,15 @@ class StorageResourceFactory:
         Returns:
             The created file share
         """
+        account_name = pulumi.Output.all(storage_account.name, storage_account.provisioning_state).apply(
+            lambda args: args[0]
+        )
+
+        # Create file share args
         file_share_args = {
             "resource_name": name,
             "resource_group_name": self.config.resource_group,
-            "account_name": storage_account.name,
+            "account_name": account_name,
             "share_name": name,
             "share_quota": quota,
             "opts": pulumi.ResourceOptions(depends_on=[storage_account]),

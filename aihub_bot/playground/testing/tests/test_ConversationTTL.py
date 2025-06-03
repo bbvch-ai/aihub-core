@@ -14,6 +14,7 @@ from mongoengine import connect, disconnect
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, ConversationTracker, Message, Content
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 
@@ -48,7 +49,7 @@ def mongodb_direct_connection():
     """Direct MongoDB connection for basic tests"""
     # Use a different alias to avoid conflicts
     connect(
-        db="aihub",
+        db=ApiConfig().DB_NAME,
         host="mongodb://admin:admin@localhost:27017/",
     )
     yield

@@ -24,7 +24,6 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
         if (
             DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_ENDPOINT
             and DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_API_KEY
-            and DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_API_VERSION
         ):
             self.di_client = DocumentIntelligenceClient(
                 endpoint=DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_ENDPOINT,
