@@ -8,8 +8,10 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
     INDEX,
+    LANGUAGE,
+    NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
-    TYPE, LANGUAGE, NODE_LANGUAGE_ENGLISH,
+    TYPE,
 )
 
 
@@ -219,8 +221,7 @@ class RecursiveNodeSummarizer:
         )
 
         if NodeRelationship.SOURCE in original_node.relationships:
-            source_rel: RelatedNodeInfo = original_node.relationships[NodeRelationship.SOURCE]
-            summary_node.relationships[NodeRelationship.SOURCE] = source_rel
+            summary_node.relationships[NodeRelationship.SOURCE] = original_node.relationships[NodeRelationship.SOURCE]
         return summary_node
 
     @staticmethod
