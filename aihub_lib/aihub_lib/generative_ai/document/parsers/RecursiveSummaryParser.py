@@ -34,9 +34,9 @@ class RecursiveNodeSummarizer:
         llm: LLM,
         min_summarization_length: int = 250,
     ):
-        self._llm: LLM = llm
-        self.min_summarization_length: int = min_summarization_length
-        self.node_id_to_node: Dict[str, TextNode] = {}
+        self._llm = llm
+        self.min_summarization_length = min_summarization_length
+        self.node_id_to_node = {}
 
     def summarize_nodes(self, nodes: List[TextNode]) -> List[TextNode]:
         if not nodes:
@@ -258,9 +258,9 @@ class RecursiveNodeSummarizer:
         return 0
 
     def _group_nodes_by_level(self, nodes: List[TextNode]) -> Dict[int, List[TextNode]]:
-        grouped_nodes: Dict[int, List[TextNode]] = {}
+        grouped_nodes = {}
         for node in nodes:
-            level: int = self._get_summary_level(node)
+            level = self._get_summary_level(node)
             grouped_nodes.setdefault(level, []).append(node)
         return grouped_nodes
 
