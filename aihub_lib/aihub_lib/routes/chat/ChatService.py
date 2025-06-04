@@ -12,8 +12,8 @@ from nats.aio.client import Client as NATS
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import (
     BaseEvent,
     ChunkEvent,
@@ -79,7 +79,7 @@ class ChatService:
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
         locale: Optional[str] = None,
-    ) -> Tuple[ExternalEvent, AgentThreadTopicManager]:
+    ) -> Tuple[ExternalAgentEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
@@ -134,7 +134,7 @@ class ChatService:
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
             )
 
-        event = ExternalEvent(
+        event = ExternalAgentEvent(
             thread_id=str(thread_id),
             display_id=str(display_id),
             event=event,
@@ -157,7 +157,7 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         locale: Optional[str] = None,
@@ -228,7 +228,7 @@ class ChatService:
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         locale: Optional[str] = None,
@@ -255,10 +255,10 @@ class ChatService:
         user: AuthenticatedUser,
         agent_class: str,
         agent_id: str,
-        external_event: ExternalEvent,
+        external_event: ExternalAgentEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
     ):
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []

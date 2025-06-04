@@ -11,6 +11,7 @@ from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEve
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from nats.aio.client import Client as NATS
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from openinference.semconv.resource import ResourceAttributes
@@ -23,8 +24,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
-
-from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
 logger = logging.getLogger(__name__)
 

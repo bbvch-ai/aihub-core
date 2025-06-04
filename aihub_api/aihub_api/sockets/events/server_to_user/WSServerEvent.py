@@ -32,6 +32,7 @@ from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.events.semantic.guard import GuardEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag
 from typing_extensions import override
@@ -122,7 +123,7 @@ class WSServerEvent(BaseModel):
     display_id: str = Field(..., description="Display session ID, used to group events for the UI.")
     run_id: Optional[str] = Field(None, description="Optional run ID if the event is associated with a particular run.")
     event_type: Optional[str] = Field(
-        TopicManager.DISPLAY_EVENT, description="Type of the event (default: 'display_event')."
+        AgentTopicManager.DISPLAY_EVENT, description="Type of the event (default: 'display_event')."
     )
     event_name: str = Field(..., description="Name of the event, indicating its subtype or category.")
     event_id: str = Field(..., description="Unique identifier of this event instance.")

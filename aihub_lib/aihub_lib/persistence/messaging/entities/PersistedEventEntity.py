@@ -10,6 +10,7 @@ from mongoengine import DictField, Document, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:
@@ -77,7 +78,7 @@ class PersistedEventEntity(Document):
             {"fields": ["thread_id", "event_type"]},
             {"fields": ["agent_id", "event_type"]},
             {"fields": ["thread_id", "event_parents"]},
-            {"fields": ["run_id"]},
+            {"fields": ["execution_context_id"]},
             {"fields": ["event_data.created_at"]},
         ],
     }
@@ -114,7 +115,7 @@ class PersistedEventEntity(Document):
     def display_events_for_thread(
         cls, thread_id: str, display_id: Optional[str] = None, event_name: Optional[str] = None
     ) -> List["PersistedEventEntity"]:
-        query = cls.objects().filter(thread_id=thread_id, event_type=TopicManager.DISPLAY_EVENT)
+        query = cls.objects().filter(thread_id=thread_id, event_type=AgentTopicManager.DISPLAY_EVENT)
 
         if display_id is not None:
             query = query.filter(display_id=display_id)
@@ -128,7 +129,7 @@ class PersistedEventEntity(Document):
     def display_events_for_threads(
         cls, thread_ids: List[str], event_name: Optional[str] = None
     ) -> List["PersistedEventEntity"]:
-        query = cls.objects().filter(thread_id__in=thread_ids, event_type=TopicManager.DISPLAY_EVENT)
+        query = cls.objects().filter(thread_id__in=thread_ids, event_type=AgentTopicManager.DISPLAY_EVENT)
 
         if event_name is not None:
             query = query.filter(event_parents__contains=event_name)
@@ -139,7 +140,7 @@ class PersistedEventEntity(Document):
     def display_events_for_agent(cls, agent_id: str) -> List["PersistedEventEntity"]:
         return (
             cls.objects()
-            .filter(agent_id=agent_id, event_type=TopicManager.DISPLAY_EVENT)
+            .filter(agent_id=agent_id, event_type=AgentTopicManager.DISPLAY_EVENT)
             .order_by("event_data__created_at")
         )
 
@@ -158,7 +159,7 @@ class PersistedEventEntity(Document):
             .filter(
                 thread_id=thread_id,
                 event_parents__contains="HumanInTheLoopResponseEvent",
-                event_type=TopicManager.CONTROL_EVENT,
+                event_type=AgentTopicManager.CONTROL_EVENT,
             )
             .order_by("event_data__created_at")
         )
@@ -185,13 +186,13 @@ class PersistedEventEntity(Document):
             {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
-            # 4. Group by run_id and event_id to de-duplicate events
+            # 4. Group by execution_context_id and event_id to de-duplicate events
             # We take the first occurrence of each event_id within a run.
             # All fields needed for the subsequent $group stage must be preserved here.
             {
                 "$group": {
-                    "_id": {"run_id": "$run_id", "event_id": "$event_id"},
-                    "run_id_val": {"$first": "$run_id"},  # Keep run_id for next stage
+                    "_id": {"execution_context_id": "$execution_context_id", "event_id": "$event_id"},
+                    "run_id_val": {"$first": "$execution_context_id"},  # Keep execution_context_id for next stage
                     "display_id": {"$first": "$display_id"},
                     "event_time": {"$first": "$event_time"},
                     "event_parents": {"$first": "$event_parents"},
@@ -201,7 +202,7 @@ class PersistedEventEntity(Document):
                     "event_type": {"$first": "$event_type"},
                 }
             },
-            # 5. Group events by run_id to calculate run-level stats
+            # 5. Group events by execution_context_id to calculate run-level stats
             # This stage now operates on the de-duplicated events from the previous stage.
             {
                 "$group": {
@@ -216,7 +217,7 @@ class PersistedEventEntity(Document):
                                 {
                                     "$and": [
                                         {"$in": ["StartEvent", "$event_parents"]},
-                                        {"$eq": ["$event_type", TopicManager.CONTROL_EVENT]},
+                                        {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
                                     ]
                                 },
                                 1,
@@ -271,7 +272,7 @@ class PersistedEventEntity(Document):
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
                             "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
-                            "is_control": {"$eq": ["$event_type", TopicManager.CONTROL_EVENT]},
+                            "is_control": {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
                         }
                     },
                 }
@@ -279,7 +280,7 @@ class PersistedEventEntity(Document):
             # 6. Project/AddFields to calculate derived stats for each run and format output
             {
                 "$addFields": {
-                    "run_id": "$_id",
+                    "execution_context_id": "$_id",
                     "started_at": "$first_event_time",
                     "ended_at": "$latest_event_time",
                     "duration": {
@@ -312,7 +313,7 @@ class PersistedEventEntity(Document):
             {
                 "$project": {
                     "_id": 0,
-                    "run_id": 1,
+                    "execution_context_id": 1,
                     "display_id": 1,
                     "started_at": 1,
                     "ended_at": 1,
@@ -354,7 +355,7 @@ class PersistedEventEntity(Document):
             cls.objects()
             .filter(
                 thread_id=thread_id,
-                event_type=TopicManager.DISPLAY_EVENT,
+                event_type=AgentTopicManager.DISPLAY_EVENT,
                 event_parents__in=[
                     "ChunkEvent",
                     "UserMessageEvent",
@@ -363,7 +364,7 @@ class PersistedEventEntity(Document):
                 ],
             )
             .order_by("event_data__created_at")
-            .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
+            .only("event_name", "event_data", "agent_id", "agent_class", "execution_context_id")
         )
 
         message_history: List[UserChatMessage | AssistantChatMessage] = []

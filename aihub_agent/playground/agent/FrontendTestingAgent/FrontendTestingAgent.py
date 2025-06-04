@@ -20,7 +20,7 @@ from aihub_lib.nats.events import (
 )
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from aihub_lib.nats.workflow.decorators.step import step
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent

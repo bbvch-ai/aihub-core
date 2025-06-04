@@ -1,8 +1,8 @@
 from typing import List
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.precondition import precondition
-from aihub_agent.workflow.decorators.step import step
+from aihub_lib.nats.workflow.decorators.precondition import precondition
+from aihub_lib.nats.workflow.decorators.step import step
 from aihub_lib.nats.events import StopEvent, StartEvent
 from playground.minimal_workflow.precondition_workflow.PreconditionAgentConfig import PreconditionAgentConfig
 from playground.minimal_workflow.precondition_workflow.events.ParallelEvent import ParallelEvent

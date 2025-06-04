@@ -1,8 +1,8 @@
 from llama_index.core.base.llms.types import ChatMessage
 
-from aihub_api.routes.process.AgenticProcess import AgenticProcess
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.process.decorators.process_start import process_start
 from aihub_process.process.decorators.process_step import process_step
 from aihub_process.process.entities.agent.Agent import Agent

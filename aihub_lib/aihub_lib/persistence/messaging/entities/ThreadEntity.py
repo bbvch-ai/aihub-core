@@ -22,6 +22,9 @@ class ThreadEntity(Document):
     }
     name = StringField(required=True)
     created_at = DateTimeField(required=True)
+    process_class = StringField(required=False)
+    process_id = StringField(required=False)
+    process_walkthrough_id = StringField(required=False)
     users = ListField(EmbeddedDocumentField(User))
     agents = ListField(EmbeddedDocumentField(Agent))
 

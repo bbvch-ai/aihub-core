@@ -10,7 +10,7 @@ from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
@@ -54,7 +54,7 @@ class AgentTestRunner(AgentRunner):
     ### Usage
     ```python
     async with AgentTestRunner(...).test_run() as partial_topic:
-        # send events using partial_topic (which contains thread_id, display_id, run_id)
+        # send events using partial_topic (which contains thread_id, display_id, execution_context_id)
         # await test_runner.send_event_from_topic(some_start_event, partial_topic)
         # ... run your scenario ...
 
@@ -136,14 +136,14 @@ class AgentTestRunner(AgentRunner):
 
         self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
-            topic_manager=TopicManager(),
+            topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
         self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
             nc=self.nc,
-            topic_manager=TopicManager(),
+            topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_response_event_subscriber.start()

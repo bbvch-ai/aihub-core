@@ -1,3 +1,4 @@
+import abc
 import logging
 from typing import Any, ClassVar, Dict, Type
 
@@ -6,7 +7,7 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-class Topic(BaseModel):
+class Topic(BaseModel, abc.ABC):
     """
     Base class for representing structured topics.
 
@@ -32,6 +33,15 @@ class Topic(BaseModel):
     """
 
     _topic_registry: ClassVar[Dict[str, Type["Topic"]]] = {}
+
+    @abc.abstractmethod
+    @property
+    def execution_context_id(self) -> str:
+        """
+        The execution context ID of a topic is usually the most narrow ID that groups events logically together.
+        For example, in Agents, the most narrow grouping is the execution_context_id. For Processes, it is the walkthrough_id.
+        """
+        pass
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:

@@ -8,7 +8,6 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_api.routes.process.AgenticProcess import AgenticProcess
 from aihub_api.routes.process.AgenticProcessController import AgenticProcessController
 from aihub_api.routes.process.example.AgenticCVProcess import AgenticCVProcess
 from aihub_api.routes.suite.SuiteController import SuiteController
@@ -182,10 +181,8 @@ async def main():
         .get_nodes_for_document()
         .get_summary_nodes_for_document(),
         AgenticProcessController(
-            controller_base_route="/process",
-            auth=NoAuthHandler(),
-            process_class=AgenticCVProcess
-        )
+            controller_base_route="/process", auth=NoAuthHandler(), process_class=AgenticCVProcess
+        ),
     )
 
     await runner.run()

@@ -752,7 +752,7 @@ passing remains consistent, scalable, and transparent, regardless of how many ag
   Each agent has its own subscriber group, and events are published under subjects that encode the run ID, thread ID,
   and event type. This naming scheme ensures that each agent only receives the events intended for it.
 
-**Workflow Dispatcher:**
+**Workflow AgentDispatcher:**
 
 - **Step Dispatching:**  
   Inside each agent, the dispatcher logic matches incoming events to steps based on their input types. This ensures that

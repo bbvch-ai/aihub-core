@@ -24,7 +24,7 @@ class RunStatistics(BaseEventStatistics):
         run_ended_at_dt: Optional[datetime] = run_data.get("ended_at")
 
         return cls(
-            run_id=run_data["run_id"],
+            run_id=run_data["execution_context_id"],
             agent=agent_dto,
             n_events=run_data.get("n_events", 0),
             has_errors=run_data.get("has_errors", False),

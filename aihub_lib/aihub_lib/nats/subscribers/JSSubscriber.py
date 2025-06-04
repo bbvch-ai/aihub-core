@@ -68,7 +68,7 @@ class JSSubscriber(Generic[TEvent]):
         Ensures the agent stream exists and subscribes to the subject with the given queue group.
         Once started, the subscriber begins consuming messages from JetStream.
         """
-        await self.stream_manager.ensure_agent_stream_exists()
+        await self.stream_manager.ensure_stream_exists()
         self.js_subscription = await self.js.subscribe(
             self.subject, cb=self.message_handler, stream=self.stream_manager.stream_name, queue=self.queue_group
         )

@@ -1,5 +1,5 @@
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from aihub_lib.nats.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
     FirstStepHumanInTheLoop,

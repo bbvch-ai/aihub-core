@@ -5,7 +5,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -13,13 +13,14 @@ from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import DiscoveryTopic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_bot.runners.BotTestRunner import BotTestRunner
+from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
+    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: AgentDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
@@ -161,7 +162,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+            self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
 

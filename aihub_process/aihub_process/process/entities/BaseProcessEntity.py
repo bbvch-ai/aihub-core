@@ -21,18 +21,3 @@ class BaseProcessEntity(abc.ABC):
         @abc.abstractmethod
         def to_persisted(self) -> DBBaseProcessEntityOut:
             pass
-
-        @abc.abstractmethod
-        async def delegate(
-            self,
-            dispatcher: 'ProcessDispatcher',
-            process_instance_id: str,
-            db_step_doc: 'ProcessStepInstanceEntity',
-            work_request_obj: BaseModel
-        ) -> None:
-            pass
-
-        @abc.abstractmethod
-        def get_step_doc_type(self) -> Type['ProcessStepInstanceEntity']:
-            """Returns the specific ProcessStepInstanceEntity subclass for this delegation type."""
-            pass

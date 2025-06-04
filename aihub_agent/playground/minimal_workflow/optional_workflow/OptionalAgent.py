@@ -4,7 +4,7 @@ from typing import List, Optional
 from aihub_lib.nats.events import StartEvent, StopEvent
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from aihub_lib.nats.workflow.decorators.step import step
 from playground.minimal_workflow.optional_workflow.events.EventOptionalA import EventOptionalA
 from playground.minimal_workflow.optional_workflow.events.EventOptionalB import EventOptionalB
 from playground.minimal_workflow.optional_workflow.events.EventOptionalC import EventOptionalC

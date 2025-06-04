@@ -11,7 +11,7 @@ from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import Phoeni
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
 from phoenix.experiments.types import Dataset as PhoenixInternalDataset
 from phoenix.experiments.types import RanExperiment
@@ -379,7 +379,7 @@ class EvaluationService:
     async def run_experiment_evaluation(
         create_dto: ExperimentCreate,
         nats_client: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         judge: ChatLLMConfig,
         authenticated_user: AuthenticatedUser,
         t: LocaleHandler,

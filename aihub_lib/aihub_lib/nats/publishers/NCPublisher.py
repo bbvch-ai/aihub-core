@@ -5,6 +5,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +43,12 @@ class NCPublisher(Generic[TEvent]):
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
 
-        if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
+        if f".{AgentTopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
             logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
 
-        if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
+        if f".{AgentTopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
             logger.warning(f"Display event {event.event_name} is being published to a non-display subject: {subject}")
+
+        # TODO: Add work request and work events
 
         await self.nc.publish(subject, serialized_event.encode())

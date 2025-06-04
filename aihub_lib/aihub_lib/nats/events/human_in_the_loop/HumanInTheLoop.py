@@ -1,6 +1,7 @@
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
@@ -37,7 +38,7 @@ class HumanInTheLoop:
         return cls.request(
             **kwargs,
             topic=PartialAgentTopic(
-                event_type=TopicManager.CONTROL_EVENT,
+                event_type=AgentTopicManager.CONTROL_EVENT,
                 event_name=cls.response.event_name_from_class(),
             ),
         )

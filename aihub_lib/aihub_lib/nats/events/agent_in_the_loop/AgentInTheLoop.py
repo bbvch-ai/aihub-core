@@ -5,6 +5,7 @@ from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent 
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import PartialAgentTopic
 
 
@@ -56,7 +57,7 @@ class AgentInTheLoop:
             other_agent_topic=PartialAgentTopic(
                 agent_id=agent_id,
                 agent_class=agent_class,
-                event_type=TopicManager.CONTROL_EVENT,
+                event_type=AgentTopicManager.CONTROL_EVENT,
                 event_name=start_event.event_name,
                 event_id=str(ObjectId()),
             ),

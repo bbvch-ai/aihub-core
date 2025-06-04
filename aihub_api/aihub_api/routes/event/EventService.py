@@ -3,10 +3,11 @@ from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity, TimeRange
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
@@ -31,12 +32,12 @@ class EventService:
     By isolating event logic in a service, the controller remains clean and easy to maintain.
     The service deals with:
     - Database retrieval of persisted events.
-    - Handling user commands/events and relaying them to the correct subsystem (via ExternalEventDistributor).
+    - Handling user commands/events and relaying them to the correct subsystem (via ExternalAgentEventDistributor).
     - Sending errors back to the user if something goes wrong.
 
     ### Key Operations
     - `get_user_events`: Returns all events relevant to a user’s threads.
-    - `handle_external_event`: Receives a `ExternalEvent`, processes it, and sends out responses or errors as needed.
+    - `handle_external_event`: Receives a `ExternalAgentEvent`, processes it, and sends out responses or errors as needed.
 
     ### Error Handling
     If an exception occurs while handling an external event, an `ExceptionEvent` is sent back through the WebSocket,
@@ -78,9 +79,9 @@ class EventService:
 
     @staticmethod
     async def handle_external_event(
-        event: ExternalEvent,
+        event: ExternalAgentEvent,
         user: AuthenticatedUser,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         ws_sender: WebSocketSender,
     ):
         """
@@ -101,7 +102,7 @@ class EventService:
                     run_id=str(ObjectId()),
                     thread_id=event.thread_id,
                     display_id=event.display_id,
-                    event_type=TopicManager.DISPLAY_EVENT,
+                    event_type=AgentTopicManager.DISPLAY_EVENT,
                     event_name=ExceptionEvent.event_name_from_class(),
                     event_id=str(ObjectId()),
                 ),
@@ -112,7 +113,7 @@ class EventService:
         websocket: WebSocket,
         ws_sender: WebSocketSender,
         ws_manager: WebSocketManager,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         user: AuthenticatedUser,
         t: LocaleHandler,
     ):
@@ -125,7 +126,7 @@ class EventService:
             while True:
                 data = await websocket.receive_json()
                 logger.debug(f"Received data: {data}")
-                event = ExternalEvent.deserialize_event(data)
+                event = ExternalAgentEvent.deserialize_event(data)
 
                 # Handle the received event
                 await EventService.handle_external_event(event, user, external_event_distributor, ws_sender)

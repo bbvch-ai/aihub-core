@@ -9,6 +9,7 @@ from nats.errors import BadSubscriptionError, ConnectionDrainingError
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics import Topic
 
@@ -144,7 +145,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_agent_discovery_request_events(
         cls,
         nc: NATS,
-        topic_manager: TopicManager,
+        topic_manager: AgentTopicManager,
         handler: Callable[[BaseEvent, Topic], Awaitable[None]],
         call_id: str = "*",
     ):
@@ -161,7 +162,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_agent_discovery_response_events(
         cls,
         nc: NATS,
-        topic_manager: TopicManager,
+        topic_manager: AgentTopicManager,
         handler: Callable[[BaseEvent, Topic], Awaitable[None]],
         call_id: str = "*",
     ):
@@ -178,7 +179,7 @@ class NCSubscriber(Generic[TEvent]):
     def for_all_agent_events(
         cls,
         nc: NATS,
-        topic_manager: TopicManager,
+        topic_manager: AgentTopicManager,
         handler: Callable[[BaseEvent, Topic], Awaitable[None]],
     ):
         """
