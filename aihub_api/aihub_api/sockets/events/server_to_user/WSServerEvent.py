@@ -31,7 +31,6 @@ from aihub_lib.nats.events import (
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.events.semantic.guard import GuardEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag

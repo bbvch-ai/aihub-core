@@ -1,6 +1,5 @@
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import BotInTheLoopRequestEvent
 from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import BotInTheLoopResponseEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 

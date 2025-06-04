@@ -9,7 +9,6 @@ from llama_index.core.base.llms.types import MessageRole
 from mongoengine import DictField, Document, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 

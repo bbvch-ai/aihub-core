@@ -6,7 +6,6 @@ from typing import Generic, TypeVar
 from nats.js import JetStreamContext
 
 from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 logger = logging.getLogger(__name__)
