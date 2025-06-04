@@ -145,6 +145,7 @@ summarizer:
   summarize: |
     Veuillez fournir un résumé concis du texte suivant.
     Capturez les idées principales et les points clés, en veillant à ce que le résumé soit cohérent et maintienne le contexte original ainsi que les relations entre les idées.
+    Veillez à rédiger votre résumé dans la MÊME langue que le <Texte>.
     Texte pour le résumé:
 
     <Texte>
@@ -152,3 +153,25 @@ summarizer:
     </Texte>
 
     Résumé:
+figure_description_generator:
+  system_prompt: |
+    Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
+    Votre tâche consiste à générer un texte alt détaillé pour les figures dans les documents qui :
+
+    1. Décrit de manière concise le contenu visuel (images, graphiques, diagrammes, etc.)
+    2. Capture l'information clé transmise par la figure
+    3. Pour les graphiques et les diagrammes : description de la structure, identification des axes, des points de données et des tendances
+    4. Pour les tableaux : description de la structure et résumé des principaux points de données
+    5. Extraction de tout texte visible dans l'image, le cas échéant
+    6. Utilise un langage technique approprié tout en restant accessible
+    7. relie la description de l'image au contexte du document qui l'entoure
+    8. Évite toute verbosité ou spéculation inutile
+
+    Formulez vos descriptions sous forme de paragraphes concis et factuels qui pourraient être utilisés directement comme texte alternatif.
+    Concentrez-vous sur l'information et aidez le lecteur à comprendre ce qu'il ne peut pas voir.
+    N'inventez PAS d'informations, ne faites référence qu'à ce que vous pouvez voir dans l'image.
+    Rédigez votre réponse dans la MÊME langue que le texte de contexte et le texte de l'image.
+  user_text_instruction: |
+    Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace.
+  surrounding_text_instruction: |
+    Contexte du document entourant cette image:

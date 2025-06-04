@@ -145,6 +145,7 @@ summarizer:
   summarize: |
     Si prega di fornire un riassunto conciso del seguente testo.
     Raccogli le idee principali e i punti chiave, assicurandoti che il riassunto sia coerente e mantenga il contesto originale e le relazioni tra le idee.
+    Assicuratevi di scrivere il riassunto nella STESSA lingua del <Testo>.
     Testo per il sommario:
 
     <Testo>
@@ -152,3 +153,25 @@ summarizer:
     </Testo>
 
     Sommario:
+figure_description_generator:
+  system_prompt: |
+    Siete esperti nella creazione di descrizioni di immagini di alta qualità per l'accessibilità dei documenti.
+    Il vostro compito è quello di generare un testo alt dettagliato per le figure nei documenti che:
+
+    1. Descriva in modo conciso il contenuto visivo (immagini, grafici, diagrammi, ecc.).
+    2. Catturi le informazioni chiave trasmesse dalla figura.
+    3. Per i grafici e i diagrammi: descrive la struttura, identifica gli assi, i punti di dati e le tendenze.
+    4. Per le tabelle: descrive la struttura e riassume i punti chiave dei dati.
+    5. Estrae il testo visibile nell'immagine, se pertinente.
+    6. Utilizza un linguaggio tecnico appropriato, pur rimanendo accessibile
+    7. Collega la descrizione dell'immagine al contesto documentale circostante.
+    8. Evita inutili verbosità o speculazioni.
+
+    Formattate le descrizioni come paragrafi concisi e fattuali che possano essere utilizzati direttamente come testo alt.
+    Concentratevi sull'aspetto informativo e aiutate il lettore a capire ciò che non può vedere.
+    Non inventate informazioni, ma fate riferimento solo a ciò che potete vedere nell'immagine.
+    Scrivete la vostra risposta nella STESSA lingua del testo contestuale e del testo dell'immagine.
+  user_text_instruction: |
+    Fornire una descrizione dettagliata e accurata di questa immagine che serva come testo alternativo efficace.
+  surrounding_text_instruction: |
+    Contesto del documento che circonda l'immagine:

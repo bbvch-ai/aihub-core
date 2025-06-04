@@ -11,6 +11,7 @@ def fetch_all_files_in_data_lake_no_op(
     data_lake_client: ResourceParam[FileSystemClient],
     data_lake_container_name: str,
     data_lake_directory_name: str,
+    data_lake_figures_directory_name: str,
 ) -> List[DataLakeFile]:
     paths = data_lake_client.get_paths(path=f"{data_lake_directory_name}/", recursive=True)
     data_lake_files: List[DataLakeFile] = []
@@ -22,9 +23,12 @@ def fetch_all_files_in_data_lake_no_op(
             continue
 
         path_parts = path.name.split("/")
-        document_namespace = path_parts[0]
+        directory_name = path_parts[0]
 
-        if len(path_parts) == 1 or document_namespace != data_lake_directory_name:
+        is_root_folder = len(path_parts) == 1
+        is_wrong_name = directory_name != data_lake_directory_name
+        is_figure_folder = data_lake_figures_directory_name in path_parts
+        if is_root_folder or is_wrong_name or is_figure_folder:
             continue
 
         document_uri = f"{data_lake_container_name}/{path.name.lstrip('/')}"
@@ -40,6 +44,7 @@ def fetch_all_files_in_data_lake(
     data_lake_client: ResourceParam[FileSystemClient],
     data_lake_container_name: str,
     data_lake_directory_name: str,
+    data_lake_figures_directory_name: str,
 ) -> List[DataLakeFile]:
     """Fetches all files in the data lake for a given namespace."""
     return fetch_all_files_in_data_lake_no_op(
@@ -47,4 +52,5 @@ def fetch_all_files_in_data_lake(
         data_lake_client=data_lake_client,
         data_lake_container_name=data_lake_container_name,
         data_lake_directory_name=data_lake_directory_name,
+        data_lake_figures_directory_name=data_lake_figures_directory_name,
     )

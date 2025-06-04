@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_WEBSERVER_SUFFIX, DEFAULT_DAEMON_SUFFIX
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
@@ -15,8 +16,6 @@ class DagsterConfig(StorageConfig):
     _oauth_settings: ClassVar[OAuthSettings] = OAuthSettings()
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
 
-    DEFAULT_WEBSERVER_SUFFIX: ClassVar[str] = "dagster"
-    DEFAULT_DAEMON_SUFFIX: ClassVar[str] = "dagster-daemon"
     DAGSTER_SUBNET_CIDR: ClassVar[str] = "10.0.38.0/23"
     DAGSTER_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.35.0/24"
 
@@ -90,11 +89,11 @@ class DagsterConfig(StorageConfig):
 
     @property
     def dagster_webserver(self) -> str:
-        return self.resource_namer.container_app_name(DagsterConfig.DEFAULT_WEBSERVER_SUFFIX)
+        return self.resource_namer.container_app_name(DEFAULT_WEBSERVER_SUFFIX)
 
     @property
     def dagster_daemon(self) -> str:
-        return self.resource_namer.container_app_name(DagsterConfig.DEFAULT_DAEMON_SUFFIX)
+        return self.resource_namer.container_app_name(DEFAULT_DAEMON_SUFFIX)
 
     @property
     def storage_service_name(self) -> str:

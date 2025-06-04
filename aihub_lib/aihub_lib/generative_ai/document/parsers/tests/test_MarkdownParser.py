@@ -3,6 +3,7 @@ from time import time
 import pytest
 from llama_index.core.schema import Document, NodeRelationship
 
+from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -708,3 +709,65 @@ def test_complex_text_correct_node_index_meta(node_parser_with_chunk_size, compl
 
     for i, node in enumerate(nodes):
         assert node.metadata[INDEX] == i
+
+
+def test_page_numbers_are_set_correctly(node_parser):
+    text = (
+        """# Page 1
+    Content on page 1.
+    """
+        + f"{PAGE_BREAK}\n"
+        + """
+    # Page 2
+    Content on page 2.
+    """
+        + f"{PAGE_BREAK}\n"
+        + """
+    # Page 3
+    Content on page 3."""
+    )
+    document = Document(text=text)
+    nodes = node_parser.get_nodes_from_node(document)
+    # Should have 3 nodes, each with correct page number
+    assert nodes[0].metadata["page"] == 1
+    assert nodes[1].metadata["page"] == 2
+    assert nodes[2].metadata["page"] == 3
+    assert nodes[0].text.startswith("# Page 1")
+    assert nodes[1].text.startswith("# Page 2")
+    assert nodes[2].text.startswith("# Page 3")
+
+
+def test_table_extraction(node_parser):
+    text = """# Section
+    Some intro text.
+    <table><tr><td>Cell 1</td><td>Cell 2</td></tr></table>
+    Some outro text."""
+    document = Document(text=text)
+    nodes = node_parser.get_nodes_from_node(document)
+    # Should extract the table as a separate node
+    table_nodes = [n for n in nodes if "Cell 1" in n.text and "Cell 2" in n.text]
+    assert len(table_nodes) == 1
+    assert table_nodes[0].text.strip().startswith("Cell 1")
+    # The other nodes should contain the intro and outro text
+    intro_nodes = [n for n in nodes if "Some intro text." in n.text]
+    outro_nodes = [n for n in nodes if "Some outro text." in n.text]
+    assert intro_nodes
+    assert outro_nodes
+
+
+def test_figure_extraction(node_parser):
+    text = """# Section
+    Some intro text.
+    <figure>Figure content here</figure>
+    Some outro text."""
+    document = Document(text=text)
+    nodes = node_parser.get_nodes_from_node(document)
+    # Should extract the figure as a separate node
+    figure_nodes = [n for n in nodes if "Figure content here" in n.text]
+    assert len(figure_nodes) == 1
+    assert figure_nodes[0].text.strip().startswith("Figure content here")
+    # The other nodes should contain the intro and outro text
+    intro_nodes = [n for n in nodes if "Some intro text." in n.text]
+    outro_nodes = [n for n in nodes if "Some outro text." in n.text]
+    assert intro_nodes
+    assert outro_nodes
