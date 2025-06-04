@@ -58,7 +58,6 @@ def get_azure_cli_user_info():
         return None, None, None
 
 
-
 cli_user_oid, cli_user_name, cli_user_preferred_username = get_azure_cli_user_info()
 
 if not all([cli_user_oid, cli_user_name, cli_user_preferred_username]):

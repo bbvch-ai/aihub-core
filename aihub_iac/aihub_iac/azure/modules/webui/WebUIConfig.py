@@ -3,7 +3,6 @@ from typing import ClassVar
 from pydantic import Field
 
 from aihub_iac.azure.constants.suffix import DEFAULT_API_SUFFIX, DEFAULT_WEBUI_SUFFIX
-from aihub_iac.azure.modules.api.ApiConfig import ApiConfig
 from aihub_iac.azure.modules.webui.OpenWebUIConfig import OpenWebUIConfig
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings

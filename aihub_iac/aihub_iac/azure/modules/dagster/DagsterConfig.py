@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from pydantic import Field
 
-from aihub_iac.azure.constants.suffix import DEFAULT_WEBSERVER_SUFFIX, DEFAULT_DAEMON_SUFFIX
+from aihub_iac.azure.constants.suffix import DEFAULT_DAEMON_SUFFIX, DEFAULT_WEBSERVER_SUFFIX
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings

@@ -24,13 +24,13 @@ from aihub_lib.nats.events import (
     StopEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.nats.events.user.UserUploadedFile import ReceivedFile
 from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from aihub_lib.records.ReceivedFile import ReceivedFile
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +131,10 @@ class ChatService:
             display_id = event.request_event.topic.display_id
         else:
             event = UserMessageEvent(
-                messages=messages, user=user, locale=locale or LocaleHandler.DEFAULT_LOCALE, files=files
+                messages=messages,
+                user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                files=files,
             )
 
         event = ExternalEvent(

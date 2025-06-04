@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterable, List, Optional, Union
 
-from aihub_lib.records.ReceivedFile import ReceivedFile
+from aihub_lib.nats.events.user.UserUploadedFile import ReceivedFile
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from openai.types import ChatModel
 from openai.types.chat import (

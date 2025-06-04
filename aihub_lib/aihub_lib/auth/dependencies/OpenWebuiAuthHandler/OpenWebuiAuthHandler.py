@@ -44,7 +44,6 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
             logger.warning(f"Token authentication failed: {e}")
             raise HTTPException(status_code=401, detail=str(e))
 
-        logger.debug(f"request.headers {request.headers}.")
         open_webui_user_name = request.headers.get("X-OpenWebUI-User-Name")
         open_webui_user_email = request.headers.get("X-OpenWebUI-User-Email")
 
