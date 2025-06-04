@@ -2,6 +2,7 @@ import html
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
+import bs4
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
@@ -11,11 +12,13 @@ from llama_index.core.utils import get_tqdm_iterable
 from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
+from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
     INDEX,
+    PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
 )
@@ -121,7 +124,6 @@ class MarkdownContentSplitter:
         return splits
 
     def _update_metadata(self, new_header: str, new_header_level: int) -> None:
-        # Update the current header levels
         if new_header_level > 0:
             self.current_headers[f"h{new_header_level}"] = new_header
 
@@ -129,7 +131,6 @@ class MarkdownContentSplitter:
         for i in range(new_header_level + 1, 7):
             self.current_headers[f"h{i}"] = None
 
-        # Update the metadata with the current header levels
         self.metadata.update(self.current_headers)
         self.metadata[HEADING_LEVEL] = new_header_level or 0
 
@@ -162,12 +163,35 @@ class NodeCreatorFromSplits:
         nodes = []
         last_nodes_stack = []
 
+        page = 1
         for split in splits:
-            split_texts = self.sentence_splitter.split_text(split.content)
+            split.metadata.update({PAGE: page})
+
+            split_texts = []
+            soup = bs4.BeautifulSoup(split.content, "html.parser")
+            buffer = ""
+
+            for child in soup.children:
+                if isinstance(child, bs4.element.Tag) and child.name in ["table", "figure"]:
+                    if buffer.strip():
+                        split_texts.extend(self.sentence_splitter.split_text(buffer))
+                        buffer = ""
+                    split_texts.append(child.text)
+                else:
+                    buffer += str(child)
+
+            if buffer.strip():
+                split_texts.extend(self.sentence_splitter.split_text(buffer))
+
             split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
+
+            # Increment page AFTER processing the split containing the PAGE_BREAK
+            if PAGE_BREAK in split.content:
+                page += 1
+
         return nodes
 
     def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:

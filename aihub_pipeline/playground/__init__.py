@@ -32,11 +32,11 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
-DATALAKE_CONTAINER_NAME = "uitest"
-DATALAKE_DIRECTORY_NAME = "papers"
-
-NAMESPACE_NAME = "papers"
-STORE_NAME = "papers"
+CONTAINER_NAME = "playground"
+DIRECTORY_NAME = "test"
+FIGURES_DIRECTORY_NAME = "__figures__"
+NAMESPACE_NAME = "test"
+STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -55,9 +55,7 @@ assets = [
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_azure_datalake_resources(
-            container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
-        ),
+        **default_io_manager_azure_datalake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
         "document_parser": DocumentParserResource(),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
@@ -66,7 +64,9 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME),
+        **azure_data_lake_resources(
+            container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME, figures_directory_name=FIGURES_DIRECTORY_NAME
+        ),
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",
@@ -78,7 +78,7 @@ defs = Definitions(
         ),
         "language_model": LanguageModelResource(
             llm_config=AzureOpenAILLMConfig(
-                name="gpt-4o-mini",
+                name="gpt-4o",
                 base_url="https://bbvaihub-openai-sui.openai.azure.com/",
                 api_version="2024-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.00013599,
