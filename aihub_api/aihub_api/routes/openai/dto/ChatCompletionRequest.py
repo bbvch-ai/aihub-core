@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterable, List, Optional, Union
 
-from aihub_lib.nats.events.user.UserUploadedFile import ReceivedFile
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from openai.types import ChatModel
 from openai.types.chat import (
@@ -107,7 +107,7 @@ class Metadata(BaseModel):
         ),
     ] = None
     files: Annotated[
-        Optional[List[ReceivedFile]],
+        Optional[List[UserUploadedFile]],
         Field(description="List of files to attach to the request, if supported by the model."),
     ] = []
 

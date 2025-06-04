@@ -34,7 +34,7 @@ from starlette.responses import StreamingResponse
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
 from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest, ReceivedFile
+from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest, UserUploadedFile
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
 from aihub_api.routes.openai.dto.ImageGenerationRequest import ImageGenerationRequest
@@ -504,7 +504,7 @@ class OpenaiService:
     @staticmethod
     def _extract_files(
         chat_completion_request: ChatCompletionRequest,
-    ) -> List[ReceivedFile] | None:
+    ) -> List[UserUploadedFile] | None:
         files = chat_completion_request.metadata.files if chat_completion_request.metadata else None
         return files
 

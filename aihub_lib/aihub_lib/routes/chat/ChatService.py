@@ -24,7 +24,7 @@ from aihub_lib.nats.events import (
     StopEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events.user.UserUploadedFile import ReceivedFile
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -76,7 +76,7 @@ class ChatService:
         messages: List[ChatMessage],
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
-        files: Optional[List[ReceivedFile]] = None,
+        files: Optional[List[UserUploadedFile]] = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -163,7 +163,7 @@ class ChatService:
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
-        files: Optional[List[ReceivedFile]] = None,
+        files: Optional[List[UserUploadedFile]] = None,
         locale: Optional[str] = None,
     ) -> StreamingResources:
         """
@@ -236,7 +236,7 @@ class ChatService:
         external_event_distributor: ExternalEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
-        files: Optional[List[ReceivedFile]] = None,
+        files: Optional[List[UserUploadedFile]] = None,
         locale: Optional[str] = None,
     ) -> JsonResources:
         """
