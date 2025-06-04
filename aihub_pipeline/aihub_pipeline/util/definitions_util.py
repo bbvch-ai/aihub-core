@@ -47,8 +47,7 @@ def default_definitions(
     datalake_container_name: str,
     namespace_name: str,
     datalake_directory_name: str,
-    vector_store_name: str,
-    document_store_name: str,
+    store_name: str,
     dimensions: int = 3072,
 ) -> Definitions:
     document_partitions = DynamicPartitionsDefinition(name="document_partitions")
@@ -81,8 +80,7 @@ def default_definitions(
                 container_name=datalake_container_name, directory_name=datalake_directory_name
             ),
             **mongo_aisearch_storage_context_resources(
-                vector_store_name=vector_store_name,
-                document_store_name=document_store_name,
+                store_name=store_name,
                 namespace_name=namespace_name,
                 dimensions=dimensions,
             ),

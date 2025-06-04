@@ -2,7 +2,7 @@ import inspect
 import logging
 from collections import defaultdict
 from types import UnionType
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, get_args, get_origin
+from typing import Annotated, Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, get_args, get_origin
 
 import networkx as nx
 from aihub_lib.agents.visualizers.types.EdgeData import EdgeData
@@ -83,7 +83,7 @@ class WorkflowVisualizer:
         self.graph = G
         return G
 
-    def _add_step_node(self, G: nx.DiGraph, step_name: str, step_method: Any) -> None:
+    def _add_step_node(self, graph: nx.DiGraph, step_name: str, step_method: Any) -> None:
         """Add a step node to the graph with all its attributes."""
         step_name_localized = self._get_localized_step_name(step_method, step_name)
         step_description = self._get_localized_step_description(step_method)
@@ -93,7 +93,7 @@ class WorkflowVisualizer:
         input_events = self._get_step_input_events(step_method)
         output_events = self._get_step_output_events(step_method)
 
-        G.add_node(
+        graph.add_node(
             step_name,
             type="step",
             node_id=f"step_{step_name}",
@@ -219,13 +219,15 @@ class WorkflowVisualizer:
         else:
             return " | ".join(self._get_human_readable_type(arg) for arg in args)
 
-    def _create_event_mappings(self, G: nx.DiGraph, step_names: Dict[str, Any], START_NODE: str, END_NODE: str) -> None:
+    def _create_event_mappings(
+        self, graph: nx.DiGraph, step_names: Dict[str, Any], start_node: str, end_node: str
+    ) -> None:
         """Create direct step-to-step connections based on event flow."""
         event_producers: Dict[EventType, Set[str]] = defaultdict(set)
         event_consumers: Dict[EventType, Set[str]] = defaultdict(set)
 
         self._build_event_mappings(step_names, event_producers, event_consumers)
-        self._add_event_edges(G, event_producers, event_consumers, START_NODE, END_NODE)
+        self._add_event_edges(graph, event_producers, event_consumers, start_node, end_node)
 
     def _build_event_mappings(
         self,
@@ -250,11 +252,11 @@ class WorkflowVisualizer:
 
     def _add_event_edges(
         self,
-        G: nx.DiGraph,
+        graph: nx.DiGraph,
         event_producers: Dict[EventType, Set[str]],
         event_consumers: Dict[EventType, Set[str]],
-        START_NODE: str,
-        END_NODE: str,
+        start_node: str,
+        end_node: str,
     ) -> None:
         """Add edges to the graph based on event flow."""
         for event_class in set(event_producers.keys()) | set(event_consumers.keys()):
@@ -282,22 +284,22 @@ class WorkflowVisualizer:
             if is_start_event:
                 edge_attrs["is_start_event"] = True
                 for consumer in consumers:
-                    self._add_edge(G, START_NODE, consumer, **edge_attrs)
+                    self._add_edge(graph, start_node, consumer, **edge_attrs)
             elif is_stop_event:
                 edge_attrs["is_stop_event"] = True
                 for producer in producers:
-                    self._add_edge(G, producer, END_NODE, **edge_attrs)
+                    self._add_edge(graph, producer, end_node, **edge_attrs)
             else:
                 for producer in producers:
                     for consumer in consumers:
-                        self._add_edge(G, producer, consumer, **edge_attrs)
+                        self._add_edge(graph, producer, consumer, **edge_attrs)
 
         # Add special connections for "in the loop" patterns
-        self._add_in_the_loop_edges(G, event_producers, event_consumers)
+        self._add_in_the_loop_edges(graph, event_producers, event_consumers)
 
     def _add_in_the_loop_edges(
         self,
-        G: nx.DiGraph,
+        graph: nx.DiGraph,
         event_producers: Dict[EventType, Set[str]],
         event_consumers: Dict[EventType, Set[str]],
     ) -> None:
@@ -305,8 +307,8 @@ class WorkflowVisualizer:
         Add special edges for request-response pairs in "in the loop" patterns.
         """
         # Find all request event producers and response event consumers
-        request_events = {}
-        response_events = {}
+        request_events: Dict[str, Tuple[Type[BaseEvent], Set[str]]] = {}
+        response_events: Dict[str, Tuple[Type[BaseEvent], Set[str]]] = {}
 
         # Collect all events by name
         for event_class, producers in event_producers.items():
@@ -319,6 +321,18 @@ class WorkflowVisualizer:
             if "Response" in name and "Request" not in name:
                 response_events[name] = (event_class, consumers)
 
+        self._add_in_the_loop_connecting_edges(graph, request_events, response_events)
+
+    def _add_in_the_loop_connecting_edges(
+        self,
+        graph: nx.DiGraph,
+        request_events: Annotated[
+            Dict[str, Tuple[Type[BaseEvent], Set[str]]], "Maps itL-Request graph node name to Producers"
+        ],
+        response_events: Annotated[
+            Dict[str, Tuple[Type[BaseEvent], Set[str]]], "Maps itl-Response graph node name to Consumers"
+        ],
+    ):
         # Match request-response pairs using direct name transformation
         for req_name, (req_class, producers) in request_events.items():
             # Get expected response name by replacing "Request" with "Response"
@@ -338,24 +352,24 @@ class WorkflowVisualizer:
                             "is_stop_event": False,
                             "payload": {},
                         }
-                        self._add_edge(G, producer, consumer, **edge_attrs)
+                        self._add_edge(graph, producer, consumer, **edge_attrs)
 
-    def _add_edge(self, G: nx.DiGraph, source: str, target: str, **attributes: Any) -> None:
+    def _add_edge(self, graph: nx.DiGraph, source: str, target: str, **attributes: Any) -> None:
         """
         Add an edge to the graph with the given attributes.
         Handle potential parallel edges between the same nodes.
         """
         # If there's already an edge between these nodes, make this a multi-edge
-        if G.has_edge(source, target):
+        if graph.has_edge(source, target):
             # Get existing edges between these nodes
-            existing_edges = [data for _, _, data in G.edges(data=True) if _ == source]
+            existing_edges = [data for _, _, data in graph.edges(data=True) if _ == source]
 
             # Add counter to edge ID to make it unique
             edge_id = len(existing_edges)
-            G.add_edge(source, target, edge_id=edge_id, **attributes)
+            graph.add_edge(source, target, edge_id=edge_id, **attributes)
         else:
             # First edge between these nodes
-            G.add_edge(source, target, edge_id=0, **attributes)
+            graph.add_edge(source, target, edge_id=0, **attributes)
 
     def to_pydantic(self) -> WorkflowGraph:
         """
@@ -364,44 +378,15 @@ class WorkflowVisualizer:
         if self.graph is None:
             self.build_workflow_graph()
 
-        graph = cast(nx.DiGraph, self.graph)  # We know it's not None at this point
+        graph = cast(nx.DiGraph, self.graph)
+        nodes: List[NodeData] = self._nodes_to_pydantic(graph)
+        links: List[EdgeData] = self._edges_to_pydantic(graph)
 
-        # Prepare node data models
-        nodes = []
-        for node, attrs in graph.nodes(data=True):
-            # Create a copy of attributes and add the id
-            node_attrs = dict(attrs)
-            node_attrs["id"] = node
+        return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)
 
-            # Convert any nested dicts to appropriate Pydantic models
-            if "input_events" in node_attrs and node_attrs["input_events"]:
-                input_events = {}
-                for param, event_data in node_attrs["input_events"].items():
-                    # If it's already a Pydantic model, use it directly
-                    if isinstance(event_data, InputEventInfo):
-                        input_events[param] = event_data
-                    else:
-                        # Otherwise, construct the model
-                        input_events[param] = InputEventInfo.model_validate(event_data)
-                node_attrs["input_events"] = input_events
-
-            if "output_events" in node_attrs and node_attrs["output_events"]:
-                output_events = []
-                for event_data in node_attrs["output_events"]:
-                    # If it's already a Pydantic model, use it directly
-                    if isinstance(event_data, EventInfo):
-                        output_events.append(event_data)
-                    else:
-                        # Otherwise, construct the model
-                        output_events.append(EventInfo.model_validate(event_data))
-                node_attrs["output_events"] = output_events
-
-            # Create the node model
-            node_model = NodeData.model_validate(node_attrs)
-            nodes.append(node_model)
-
+    def _edges_to_pydantic(self, graph: nx.DiGraph) -> List[EdgeData]:
         # Prepare edge data models
-        links = []
+        links: List[EdgeData] = []
         for source, target, attrs in graph.edges(data=True):
             # Create a copy of attributes and add source/target
             edge_attrs = dict(attrs)
@@ -423,6 +408,40 @@ class WorkflowVisualizer:
             # Create the edge model
             edge_model = EdgeData.model_validate(edge_attrs)
             links.append(edge_model)
+        return links
 
-        # Create and return the workflow graph model
-        return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)
+    def _nodes_to_pydantic(self, graph: nx.DiGraph) -> List[NodeData]:
+        # Prepare node data models
+        nodes: List[NodeData] = []
+        for node, attrs in graph.nodes(data=True):
+            node_model = self._node_to_pydantic(attrs, node)
+            nodes.append(node_model)
+        return nodes
+
+    def _node_to_pydantic(self, attrs: Dict[str, Any], node: NodeData):
+        node_attrs = dict(attrs)
+        node_attrs["id"] = node
+        # Convert any nested dicts to appropriate Pydantic models
+        if "input_events" in node_attrs and node_attrs["input_events"]:
+            input_events = {}
+            for param, event_data in node_attrs["input_events"].items():
+                # If it's already a Pydantic model, use it directly
+                if isinstance(event_data, InputEventInfo):
+                    input_events[param] = event_data
+                else:
+                    # Otherwise, construct the model
+                    input_events[param] = InputEventInfo.model_validate(event_data)
+            node_attrs["input_events"] = input_events
+        if "output_events" in node_attrs and node_attrs["output_events"]:
+            output_events = []
+            for event_data in node_attrs["output_events"]:
+                # If it's already a Pydantic model, use it directly
+                if isinstance(event_data, EventInfo):
+                    output_events.append(event_data)
+                else:
+                    # Otherwise, construct the model
+                    output_events.append(EventInfo.model_validate(event_data))
+            node_attrs["output_events"] = output_events
+        # Create the node model
+        node_model = NodeData.model_validate(node_attrs)
+        return node_model

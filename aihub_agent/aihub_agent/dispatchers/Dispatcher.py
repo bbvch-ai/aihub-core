@@ -470,6 +470,7 @@ class Dispatcher:
             if param.annotation == RunContext:
                 kwargs[param.name] = run_context
                 continue
+
             if param.annotation == ThreadContext:
                 kwargs[param.name] = thread_context
                 continue
@@ -489,17 +490,39 @@ class Dispatcher:
                 continue
 
             # Handle event parameters
-            event_value = self._get_event_value(param, method, events, trigger_event)
-            if event_value is not None or parameter_optional_map.get(param.name, False):
-                kwargs[param.name] = event_value
-            else:
-                raise ValueError(f"[{method.__name__}] Missing required event for parameter '{param.name}'")
-
-            if isinstance(event_value, list):
-                all_input_events.extend([event for event in event_value if event.is_control_event])
-            elif isinstance(event_value, BaseEvent) and event_value.is_control_event:
-                all_input_events.append(event_value)
+            detected_input_events = await self._handle_event_kwarg(
+                events,
+                kwargs,
+                method,
+                param,
+                parameter_optional_map,
+                trigger_event,
+            )
+            all_input_events.extend(detected_input_events)
         return all_input_events, kwargs
+
+    async def _handle_event_kwarg(
+        self,
+        events: Annotated[
+            Dict[str, List[ControlEvent]],
+            "All events for this run, keyed by event name.",
+        ],
+        kwargs: Annotated[Dict[str, Any], "Mutable dict to be filled with step method kwargs"],
+        method: Annotated[Callable, "The method to prepare the args for."],
+        param: Annotated[inspect.Parameter, "Method parameter that is inspected"],
+        parameter_optional_map: Annotated[Dict[str, bool], "Indicates which parameters are optional"],
+        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
+    ) -> List[ControlEvent]:
+        event_value = self._get_event_value(param, method, events, trigger_event)
+        if event_value is not None or parameter_optional_map.get(param.name, False):
+            kwargs[param.name] = event_value
+        else:
+            raise ValueError(f"[{method.__name__}] Missing required event for parameter '{param.name}'")
+        if isinstance(event_value, list):
+            return [event for event in event_value if event.is_control_event]
+        elif isinstance(event_value, BaseEvent) and event_value.is_control_event:
+            return [event_value]
+        return []
 
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]

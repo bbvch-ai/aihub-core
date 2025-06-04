@@ -141,30 +141,7 @@ class JetStreamEventStore:
                 )
 
                 # Fetch and process all historical events
-                msg_count = 0
-                while True:
-                    try:
-                        # Fetch a batch of messages
-                        messages = await pull_sub.fetch(batch=100, timeout=1)
-                        if not messages:
-                            break  # No more messages
-
-                        for msg in messages:
-                            try:
-                                topic = AgentTopic.from_subject(msg.subject)
-                                event = ControlEvent.deserialize_event(msg.data)
-                                event._jetstream_sequence = msg.metadata.sequence.stream
-                                self._add_event_to_store(topic.run_id, event)
-                                msg_count += 1
-                            except Exception as e:
-                                logger.exception(f"Error processing replayed message: {e}")
-                    except Exception as e:
-                        if "timeout" in str(e).lower():
-                            break  # No more messages
-                        logger.exception(f"Error fetching messages: {e}")
-                        break
-
-                logger.info(f"Replayed {msg_count} historical events")
+                await self.replay_messages(pull_sub)
 
                 # Clean up the temporary consumer
                 try:
@@ -178,6 +155,34 @@ class JetStreamEventStore:
             except Exception as e:
                 logger.exception(f"Error initializing event store: {e}")
                 raise
+
+    async def replay_messages(self, pull_sub: JetStreamContext.PullSubscription):
+        """Fetches all past messages by replaying through all messages through a pull subscription"""
+        msg_count = 0
+        while True:
+            try:
+                # Fetch a batch of messages
+                messages = await pull_sub.fetch(batch=100, timeout=1)
+                if not messages:
+                    break  # No more messages
+
+                for msg in messages:
+                    try:
+                        topic = AgentTopic.from_subject(msg.subject)
+                        event = ControlEvent.deserialize_event(msg.data)
+                        event._jetstream_sequence = msg.metadata.sequence.stream
+                        self._add_event_to_store(topic.run_id, event)
+                        msg_count += 1
+                    except Exception as e:
+                        logger.exception(f"Error processing replayed message: {e}")
+            except Exception as e:
+                if "timeout" in str(e).lower():
+                    break  # No more messages
+                logger.exception(f"Error fetching messages: {e}")
+                break
+
+        logger.info(f"Replayed {msg_count} historical events")
+        return msg_count
 
     async def stop(self):
         """
