@@ -71,6 +71,18 @@ class ManagedEnvironment(pulumi.ComponentResource):
             vnet_configuration=app.VnetConfigurationArgs(
                 infrastructure_subnet_id=infrastructure_subnet_id,
             ),
+            workload_profiles=[
+                app.WorkloadProfileArgs(
+                    name="Consumption",
+                    workload_profile_type="Consumption",
+                ),
+                app.WorkloadProfileArgs(
+                    name="general-D4",
+                    workload_profile_type="D4",
+                    minimum_count=1,
+                    maximum_count=3,
+                ),
+            ],
             opts=pulumi.ResourceOptions(parent=self),
             tags={
                 "Stack": self.stack,

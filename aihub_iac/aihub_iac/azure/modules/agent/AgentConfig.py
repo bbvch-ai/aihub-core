@@ -3,7 +3,6 @@ from typing import ClassVar, Dict, Optional, Union
 from pydantic import Field
 
 from aihub_iac.azure.constants.suffix import DEFAULT_NATS_SUFFIX
-from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
