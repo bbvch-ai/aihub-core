@@ -2,8 +2,7 @@ from typing import ClassVar, Optional
 
 from pydantic import Field
 
-from aihub_iac.azure.constants.suffix import DEFAULT_NATS_SUFFIX, DEFAULT_BOT_SUFFIX
-from aihub_iac.azure.modules.nats.NatsConfig import NatsConfig
+from aihub_iac.azure.constants.suffix import DEFAULT_BOT_SUFFIX, DEFAULT_NATS_SUFFIX
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.OAuthSettings import OAuthSettings
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
