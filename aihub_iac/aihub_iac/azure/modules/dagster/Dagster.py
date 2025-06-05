@@ -171,7 +171,7 @@ class Dagster(pulumi.ComponentResource):
             resource_name=self.config.database_name,
             resource_group_name=self.config.resource_group,
             server_name=self.config.postgres_name,
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=self, retain_on_delete=True),
         )
 
     def _create_proxy_container(self):
