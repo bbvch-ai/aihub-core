@@ -418,7 +418,7 @@ class WorkflowVisualizer:
             nodes.append(node_model)
         return nodes
 
-    def _node_to_pydantic(self, attrs: Dict[str, Any], node: NodeData):
+    def _node_to_pydantic(self, attrs: Dict[str, Any], node: str):
         node_attrs = dict(attrs)
         node_attrs["id"] = node
         # Convert any nested dicts to appropriate Pydantic models
