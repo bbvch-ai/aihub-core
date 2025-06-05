@@ -109,7 +109,7 @@ class Metadata(BaseModel):
     files: Annotated[
         Optional[List[UserUploadedFile]],
         Field(description="List of files to attach to the request, if supported by the model."),
-    ] = []
+    ] = None
 
 
 class ChatCompletionRequest(BaseModel):

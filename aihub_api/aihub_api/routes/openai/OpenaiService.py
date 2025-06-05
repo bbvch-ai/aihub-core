@@ -505,8 +505,7 @@ class OpenaiService:
     def _extract_files(
         chat_completion_request: ChatCompletionRequest,
     ) -> List[UserUploadedFile] | None:
-        files = chat_completion_request.metadata.files if chat_completion_request.metadata else None
-        return files
+        return chat_completion_request.metadata.files if chat_completion_request.metadata else None
 
     @staticmethod
     async def _reconstruct_history(
