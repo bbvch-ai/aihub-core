@@ -29,11 +29,13 @@ finden und erfinden Sie nichts neues. Ebenfalls ist es wichtig zu überprüfen, 
 die Daten dem richtigen key im GTO zugewiesen werden, daruch kann die Korrektheit 
 der Daten sichergestellt werden.
 
-Hier ist die GTO:
+<Frage>
+{question}
+</Frage>
 
 <GTO>
 {gto}
-<\GTO>
+</GTO>
 
 Zeigen Sie Ihre Ergebnisse in einer Tabelle mit den gefundenen Werten an. Wenn Sie 
 mehrere Referenzen für denselben Raum finden, erstellen Sie nur ein einziges GTO für 
@@ -744,7 +746,13 @@ class Pipe:
 
     def __init__(self):
         self.valves = self.Valves()
-        self.current_gto = None
+        self.headers = {
+            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        self.current_gto = {}
+        self.parsed_gtos = []
+        self.gto_key = None
 
     def pipe(self, body: dict, __user__: dict, __metadata__: dict):
         messages = body.get("messages", [])
@@ -754,51 +762,71 @@ class Pipe:
             gto_names = self.get_gto_names()
             return gto_names
 
-        elif "<use_gto>" and "</use_gto>" in user_message:
+        elif "<use_gto>" in user_message and "</use_gto>" in user_message:
             gto_key = user_message[9:-10]
-            definition = self.get_gto_definition(gto_key)
+            self.gto_key = gto_key
+            definition = self.get_gto_definition()
             self.current_gto = definition
+            return f'GTO "{self.current_gto["name"]}" wird nun verwendet.'
 
-            body["messages"][-1]["content"] = GTO_PROMPT.replace(
-                "{gto}", str(self.current_gto)
+        elif "<query>" in user_message and "</query>" in user_message:
+            cleaned_message = user_message[7:-8]
+            body["messages"][-1]["content"] = GTO_PROMPT.format(
+                question=cleaned_message, gto=str(self.current_gto)
             )
+            response = self.query_model(body)
+            gto_message = response["messages"][-1]["content"]
+            self.extract_gtos(gto_message)
+            return self.format_gto_str()
+
+        elif "<save/>" in user_message:
+            self.update_gtos(body)
+            self.save_gtos_to_lcdm_hub()
+            # TODO check if changes were made to tables and reflect them to self.parsed_gtos
 
         return self.query_model(body)
 
     def get_gto_names(self):
         table = dict_to_md_table(TEST_DEFINITIONS)
         return table
-        headers = {
-            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-            "Content-Type": "application/json",
-        }
         try:
             r = requests.get(
-                f"{self.valves.LCDM_HUB_BASE_URL}/availablenames", json=headers
+                f"{self.valves.LCDM_HUB_BASE_URL}/availablenames", json=self.headers
             )
-            return r.json()
+            return dict_to_md_table(r.json())
 
         except requests.exceptions.RequestException as e:
             print(f"Retrieving GTOs failed: {e}")
 
-    def get_gto_definition(self, gto_key: str):
+    def get_gto_definition(self):
         return TEST_GTO
-        headers = {
-            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-            "Content-Type": "application/json",
-        }
         try:
-            r = requests.get(f"{self.valves.LCDM_HUB_BASE_URL}/{gto_key}", json=headers)
+            r = requests.get(
+                f"{self.valves.LCDM_HUB_BASE_URL}/{self.gto_key}", json=self.headers
+            )
             return r.json()
 
         except requests.exceptions.RequestException as e:
             print(f"Retrieving GTO definition failed: {e}")
 
+    def update_gtos(self, body: dict):
+        pass
+
+    def save_gtos_to_lcdm_hub(self):
+        try:
+            r = requests.post(
+                f"{self.valves.LCDM_HUB_BASE_URL}/save/{self.gto_key}",
+                # TODO add self.extracted_gtos to body
+                json=self.headers,
+            )
+        except requests.exceptions.RequestException as e:
+            print(f"Saving GTOs failed: {e}")
+
     def query_model(self, body: dict):
         headers = {
             "Authorization": f"Bearer {self.valves.OPENAI_API_KEY}",
             "Content-Type": "application/json",
-        }
+        } 
         payload = {
             **body,
             "model": "gpt-4o",
@@ -819,6 +847,12 @@ class Pipe:
 
         except Exception as e:
             return f"Error: {e}"
+
+    def extract_gtos(self, message: str) -> str:
+        pass
+
+    def format_gto_str(self) -> str:
+        pass
 
 
 def dict_to_md_table(data):
