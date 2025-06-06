@@ -211,9 +211,7 @@ class Tools:
             )
 
             if response.status_code == 200 or response.status_code == 201:
-                success_msg = (
-                    f"GTO '{gto.name}' (ID: {gto.id}) erfolgreich im LCDM Hub erstellt."
-                )
+                success_msg = f"GTO '{gto.name}' erfolgreich im LCDM Hub erstellt."
 
                 if __event_emitter__:
                     await __event_emitter__(
@@ -226,9 +224,7 @@ class Tools:
                     await __event_emitter__(
                         {
                             "type": "message",
-                            "data": {
-                                "content": f"✅ **Erfolg!** {success_msg}\n\n**Antwort:** {response.text if response.text else 'Erfolgreich erstellt.'}"
-                            },
+                            "data": {"content": f"✅ **Erfolg!** {success_msg}"},
                         }
                     )
 
