@@ -65,6 +65,12 @@ class Dagster(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.DAGSTER_SUBNET_CIDR,
+            delegations=[
+                network.DelegationArgs(
+                    name="env-delegation",
+                    service_name="Microsoft.App/environments",
+                )
+            ],
             network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
@@ -165,7 +171,7 @@ class Dagster(pulumi.ComponentResource):
             resource_name=self.config.database_name,
             resource_group_name=self.config.resource_group,
             server_name=self.config.postgres_name,
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=self, retain_on_delete=True),
         )
 
     def _create_proxy_container(self):
