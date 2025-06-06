@@ -7,12 +7,14 @@ version: 0.1.0
 import os
 import requests
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Callable, Any, List, Dict
 
 
 class GtoAttributeDefinition(BaseModel):
-    id: int = Field(..., description="Unique identifier of the GTO attribute")
+    id: int = Field(
+        0, description="Unique identifier of the GTO attribute, needs to be 0"
+    )
     key: str = Field(..., description="The name of the GTO attribute")
     dataType: Optional[str] = Field(
         None, description="The datatype for the attributes value"
@@ -31,24 +33,34 @@ class GtoAttributeDefinition(BaseModel):
     reportFields: Optional[Dict] = Field(None, description="")
     spellingValues: Optional[List] = Field(None, description="")
 
+    @field_validator("id")
+    @classmethod
+    def force_zero(cls, v):
+        return 0
+
 
 class GTO(BaseModel):
-    id: int = Field(..., description="Unique identifier of the GTO")
+    id: int = Field(0, description="Unique identifier of the GTO")
     name: str = Field(..., description="Name of the GTO")
     idguid: str = Field(..., description="")
     gtoAttributeDefinitions: Dict[str, GtoAttributeDefinition] = Field(
         ..., description="All the attributes of the GTO"
     )
 
+    @field_validator("id")
+    @classmethod
+    def force_zero(cls, v):
+        return 0
+
     class Config:
         schema_extra = {
             "example": {
-                "id": 7220792,
+                "id": 0,
                 "name": "Door",
                 "idguid": "string",
                 "gtoAttributeDefinitions": {
-                    "0010": {
-                        "id": 7221698,
+                    "0005": {
+                        "id": 0,
                         "key": "Material",
                         "dataType": "MANUAL_VALUE_TYPE",
                         "valueType": "string",
@@ -62,7 +74,39 @@ class GTO(BaseModel):
                         "relatedGtoAttributeKey": None,
                         "reportFields": {},
                         "spellingValues": [],
-                    }
+                    },
+                    "0010": {
+                        "id": 0,
+                        "key": "Size",
+                        "dataType": "MANUAL_VALUE_TYPE",
+                        "valueType": "int",
+                        "unitOfMeasurement": "m²",
+                        "leadOfData": "SOURCE",
+                        "reportRelevant": False,
+                        "gtoAttributeDefinitionsKey": "string",
+                        "mandatory": False,
+                        "relationFinderActive": None,
+                        "relatedGtoId": 0,
+                        "relatedGtoAttributeKey": None,
+                        "reportFields": {},
+                        "spellingValues": [],
+                    },
+                    "0015": {
+                        "id": 0,
+                        "key": "Roomnumber",
+                        "dataType": "MANUAL_VALUE_TYPE",
+                        "valueType": "string",
+                        "unitOfMeasurement": "",
+                        "leadOfData": "SOURCE",
+                        "reportRelevant": False,
+                        "gtoAttributeDefinitionsKey": "string",
+                        "mandatory": False,
+                        "relationFinderActive": None,
+                        "relatedGtoId": 0,
+                        "relatedGtoAttributeKey": None,
+                        "reportFields": {},
+                        "spellingValues": [],
+                    },
                 },
             }
         }
@@ -71,7 +115,7 @@ class GTO(BaseModel):
 class Tools:
     class Valves(BaseModel):
         LCDM_HUB_BASE_URL: str = Field(
-            default="https://dev.swisslcdmhub.bbv.ch/restapi/1.0/gto",
+            default="https://dev.swisslcdmhub.bbv.ch/restapi/1.0/gto/",
             description="URL for accessing LCDM Hub API endpoints.",
         )
         LCDM_HUB_TOKEN: str = Field(
@@ -119,6 +163,7 @@ class Tools:
 
             try:
                 gto = GTO.model_validate(gto_data)
+                gto = rekey_gto_definitions(gto)
             except Exception as validation_error:
                 error_msg = f"GTO Validierung fehlgeschlagen: {str(validation_error)}"
                 if __event_emitter__:
@@ -228,3 +273,15 @@ class Tools:
                     {"type": "status", "data": {"description": error_msg, "done": True}}
                 )
             return f"Fehler: {error_msg}"
+
+
+def rekey_gto_definitions(gto: GTO) -> GTO:
+    """Rekey a GTO object's attribute definitions to follow the proper numbering pattern"""
+    definitions = list(gto.gtoAttributeDefinitions.values())
+    new_definitions = {}
+
+    for i, definition in enumerate(definitions):
+        new_key = f"{(i + 1) * 5:04d}"  # 0005, 0010, 0015, etc.
+        new_definitions[new_key] = definition
+
+    return gto.model_copy(update={"gtoAttributeDefinitions": new_definitions})
