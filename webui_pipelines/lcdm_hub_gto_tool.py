@@ -122,6 +122,14 @@ class Tools:
             default="",
             description="Token to authenticate requests to the LCDM Hub API.",
         )
+        OPENAI_API_BASE_URL: str = Field(
+            default="https://bbvaihub-app-sui-api.azurewebsites.net/api/v1/openai",
+            description="Base URL for accessing OpenAI API endpoints.",
+        )
+        OPENAI_API_KEY: str = Field(
+            default="",
+            description="API key for authenticating requests to the OpenAI API.",
+        )
         timeout_seconds: int = Field(
             default=30, description="Request timeout in seconds"
         )
@@ -163,7 +171,10 @@ class Tools:
 
             try:
                 gto = GTO.model_validate(gto_data)
-                gto = rekey_gto_definitions(gto)
+                gto = self.rekey_gto_definitions(gto)
+
+                name_exists = self.check_name_against_existing_gtos(gto.name)
+
             except Exception as validation_error:
                 error_msg = f"GTO Validierung fehlgeschlagen: {str(validation_error)}"
                 if __event_emitter__:
@@ -174,6 +185,17 @@ class Tools:
                         }
                     )
                 return f"Validierungsfehler: {error_msg}"
+
+            if name_exists:
+                error_msg = f"GTO Name '{gto.name}' existiert bereits oder ist zu ähnlich zu einem bestehenden GTO."
+                if __event_emitter__:
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {"description": error_msg, "done": True},
+                        }
+                    )
+                return f"Fehler: {error_msg}"
 
             if __event_emitter__:
                 await __event_emitter__(
@@ -270,14 +292,63 @@ class Tools:
                 )
             return f"Fehler: {error_msg}"
 
+    def rekey_gto_definitions(self, gto: GTO) -> GTO:
+        """Rekey a GTO object's attribute definitions to follow the proper numbering pattern"""
+        definitions = list(gto.gtoAttributeDefinitions.values())
+        new_definitions = {}
 
-def rekey_gto_definitions(gto: GTO) -> GTO:
-    """Rekey a GTO object's attribute definitions to follow the proper numbering pattern"""
-    definitions = list(gto.gtoAttributeDefinitions.values())
-    new_definitions = {}
+        for i, definition in enumerate(definitions):
+            new_key = f"{(i + 1) * 5:04d}"  # 0005, 0010, 0015, etc.
+            new_definitions[new_key] = definition
 
-    for i, definition in enumerate(definitions):
-        new_key = f"{(i + 1) * 5:04d}"  # 0005, 0010, 0015, etc.
-        new_definitions[new_key] = definition
+        return gto.model_copy(update={"gtoAttributeDefinitions": new_definitions})
 
-    return gto.model_copy(update={"gtoAttributeDefinitions": new_definitions})
+    def get_existing_gto_names(self):
+        """Fetch existing GTOs from the LCDM Hub."""
+        headers = {
+            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        response = requests.get(
+            f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
+            headers=headers,
+        )
+        names = response.text
+        return names
+
+    async def check_name_against_existing_gtos(self, name: str) -> bool:
+        """
+        Check if the GTO name already exists in the LCDM Hub.
+        """
+        existing_names = self.get_existing_gto_names()
+
+        headers = {
+            "Authorization": f"Bearer {self.valves.OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that checks if a GTO name already exists in a list of existing GTO names.",
+            },
+            {
+                "role": "user",
+                "content": f"Does the name '{name}' already exist in the following list of GTO names or is very similar to one?\n\n<Existing GTOs>{existing_names}</Existing GTOs>\n\nPlease respond with ONLY a boolean and nothing else. True if it exists or is similar, otherwise respond with False.",
+            },
+        ]
+        payload = {
+            "model": "gpt-4o",
+            "messages": messages,
+            "max_tokens": 10,
+            "temperature": 0.0,
+        }
+        response = requests.post(
+            url=f"{self.valves.OPENAI_API_BASE_URL}/chat/completions",
+            json=payload,
+            headers=headers,
+            stream=True,
+        )
+        result = response.json()
+        similar = result["choices"][0]["message"]["content"]
+        return similar.strip().lower() == "true"
