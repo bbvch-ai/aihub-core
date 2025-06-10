@@ -34,7 +34,7 @@ from starlette.responses import StreamingResponse
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
 from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
+from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest, UserUploadedFile
 from aihub_api.routes.openai.dto.Embeddings import Embeddings
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
 from aihub_api.routes.openai.dto.ImageGenerationRequest import ImageGenerationRequest
@@ -259,6 +259,7 @@ class OpenaiService:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
                 chat_completion_request, thread_id
             )
+        files = OpenaiService._extract_files(chat_completion_request)
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -269,6 +270,7 @@ class OpenaiService:
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
+            files=files,
             locale=locale,
         )
         # Wait until all events are processed
@@ -318,6 +320,7 @@ class OpenaiService:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
                 chat_completion_request, thread_id
             )
+        files = OpenaiService._extract_files(chat_completion_request)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
@@ -328,6 +331,7 @@ class OpenaiService:
             external_event_distributor=external_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
+            files=files,
             locale=locale,
         )
 
@@ -496,6 +500,12 @@ class OpenaiService:
         thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
         display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
         return thread_id, display_id
+
+    @staticmethod
+    def _extract_files(
+        chat_completion_request: ChatCompletionRequest,
+    ) -> List[UserUploadedFile] | None:
+        return chat_completion_request.metadata.files if chat_completion_request.metadata else None
 
     @staticmethod
     async def _reconstruct_history(
