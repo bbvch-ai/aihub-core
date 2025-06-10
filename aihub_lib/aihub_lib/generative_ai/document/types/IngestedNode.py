@@ -79,34 +79,40 @@ class IngestedNode(IngestedBase):
         document_id = node.ref_doc_id or node.metadata.get(
             DOCUMENT_ID, node.metadata.get("doc_id", node.metadata.get("ref_doc_id"))
         )
-        return cls(
-            id=node.node_id,
-            content=node.text,
-            start_char_idx=getattr(node, "start_char_idx", None),
-            end_char_idx=getattr(node, "end_char_idx", None),
-            document_id=document_id,
-            source=node.metadata.get(SOURCE),
-            namespace=node.metadata.get(NAMESPACE),
-            content_type=node.metadata.get(TYPE, NODE_TYPE_CONTENT),
-            document_title=node.metadata.get(DOCUMENT_TITLE, ""),
-            language=node.metadata.get(LANGUAGE),
-            version=node.metadata.get(VERSION, 1),
-            index=node.metadata.get(INDEX, 0),
-            section_start_line=node.metadata.get(SECTION_START_LINE),
-            section_end_line=node.metadata.get(SECTION_END_LINE),
-            h1=node.metadata.get(H1),
-            h2=node.metadata.get(H2),
-            h3=node.metadata.get(H3),
-            h4=node.metadata.get(H4),
-            h5=node.metadata.get(H5),
-            h6=node.metadata.get(H6),
-            heading_level=node.metadata.get(
-                HEADING_LEVEL,
-            ),
-            created_at=to_iso(node.metadata.get(CREATED_AT, 0)),
-            updated_at=to_iso(node.metadata.get(UPDATED_AT, 0)),
-            inserted_at=to_iso(node.metadata.get(INSERTED_AT, 0)),
-        )
+
+        metadata = node.metadata.copy() if node.metadata else {}
+
+        base_data = {
+            "id": node.node_id,
+            "content": node.text,
+            "start_char_idx": getattr(node, "start_char_idx", None),
+            "end_char_idx": getattr(node, "end_char_idx", None),
+            "document_id": document_id,
+            "source": metadata.pop(SOURCE),
+            "namespace": metadata.pop(NAMESPACE),
+            "content_type": metadata.pop(TYPE, NODE_TYPE_CONTENT),
+            "document_title": metadata.pop(DOCUMENT_TITLE, ""),
+            "language": metadata.pop(LANGUAGE),
+            "version": metadata.pop(VERSION, 1),
+            "index": metadata.pop(INDEX, 0),
+            "section_start_line": metadata.pop(SECTION_START_LINE, None),
+            "section_end_line": metadata.pop(SECTION_END_LINE, None),
+            "h1": metadata.pop(H1, None),
+            "h2": metadata.pop(H2, None),
+            "h3": metadata.pop(H3, None),
+            "h4": metadata.pop(H4, None),
+            "h5": metadata.pop(H5, None),
+            "h6": metadata.pop(H6, None),
+            "heading_level": metadata.pop(HEADING_LEVEL, None),
+            "created_at": to_iso(metadata.pop(CREATED_AT, 0)),
+            "updated_at": to_iso(metadata.pop(UPDATED_AT, 0)),
+            "inserted_at": to_iso(metadata.pop(INSERTED_AT, 0)),
+        }
+
+        if node.metadata:
+            base_data["metadata"] = node.metadata
+
+        return cls(**base_data)
 
     @classmethod
     def from_llama_index_node_with_score(cls, node_with_score: NodeWithScore):
