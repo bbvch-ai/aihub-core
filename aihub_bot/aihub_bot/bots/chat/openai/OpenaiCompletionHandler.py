@@ -6,7 +6,6 @@ from asyncio import Event, Task
 from typing import AsyncGenerator, List
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-
 from botbuilder.core import TurnContext
 from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
