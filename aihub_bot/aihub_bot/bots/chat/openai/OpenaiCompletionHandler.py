@@ -33,7 +33,11 @@ class OpenaiCompletionHandler(CompletionHandler):
 
     @staticmethod
     async def get_completion(
-        turn_context: TurnContext, path: str, model_name: str, client: AsyncOpenAI | AsyncAzureOpenAI, **kwargs
+        turn_context: TurnContext,
+        path: str,
+        model_name: str,
+        client: AsyncOpenAI | AsyncAzureOpenAI,
+        **kwargs,
     ) -> str:
         chat_completion: ChatCompletion = await OpenaiCompletionHandler.chat_completion(
             turn_context=turn_context,
@@ -50,6 +54,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         path: str,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Get a streaming OpenAI completion."""
         chat_completion: AsyncStream[ChatCompletionChunk] = await OpenaiCompletionHandler.chat_completion(

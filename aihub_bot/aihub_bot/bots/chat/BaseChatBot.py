@@ -148,7 +148,6 @@ class BaseChatBot(ActivityHandler):
         if is_streaming:
             # Get streaming response
             response_generator = await self.completion_handler.get_stream_completion(
-                service=self.completion_handler,
                 turn_context=turn_context,
                 path=self.path,
                 thread_id=str_to_object_id(turn_context.activity.conversation.id),
@@ -168,7 +167,6 @@ class BaseChatBot(ActivityHandler):
         else:
             # Get json response
             response = await self.completion_handler.get_completion(
-                service=self.completion_handler,
                 turn_context=turn_context,
                 path=self.path,
                 thread_id=str_to_object_id(turn_context.activity.conversation.id),
