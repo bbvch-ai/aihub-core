@@ -23,7 +23,7 @@ async def main():
     runner = AgentTestRunner(
         agent_type=RAGAgent,
         agent_config=RAGAgentConfig(
-            agent_id="rag_agent",
+            agent_id="dev_agent",
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
             system_prompt=LocaleString(
@@ -39,17 +39,17 @@ async def main():
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
                     api_version="2024-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                 ),
-                index_namespaces=["papers"],
+                index_namespaces=["test_ksb"],
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content"],
                 vector_store=create_milvus_vector_store(
                     uri="http://localhost:19530",
-                    collection_name="papers",
+                    collection_name="test_ksb",
                     embedding_vector_dimension=3072,
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(num_nodes=10, mode=ModeOptions.BOTH),
