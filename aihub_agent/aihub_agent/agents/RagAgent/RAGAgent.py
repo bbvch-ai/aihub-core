@@ -1,5 +1,5 @@
 from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, ImageBlock, TextBlock
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
@@ -11,6 +11,7 @@ from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptE
 from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.agents.RagAgent.events.ProcessedImagesEvent import ProcessedImagesEvent
 from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
@@ -19,6 +20,7 @@ from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_i
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.process_images import process_images
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -29,6 +31,7 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+import logging
 
 
 class RAGAgent(Agent):
@@ -171,13 +174,40 @@ class RAGAgent(Agent):
         )
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
+    @step(
+        name=LocaleString(en="Process Images"),
+        description=LocaleString(en="Extracts and fetches images from markdown image nodes"),
+    )
+    async def process_images_step(
+        self,
+        event: InOrderNodeCombinerEvent,
+        retriever_event: RetrieverEvent,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> ProcessedImagesEvent:
+        """
+        Processes image URLs found in retrieved nodes by extracting them from markdown
+        and fetching the actual image data from Azure blob storage or HTTP URLs.
+        """
+        await displayer.display_thought(t("agent.thought.processing_images"))
+
+        # Process images using the utility function
+        context_message_with_images = await process_images(
+            retriever_event.nodes, 
+            event.context_message
+        )
+        
+        return ProcessedImagesEvent(
+            context_message_with_images=context_message_with_images,
+        )
+
     @step()
     async def context_sufficient_guard_step(
         self,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        event: InOrderNodeCombinerEvent,
+        event: ProcessedImagesEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
         run_context: RunContext,
     ) -> ContextSufficientEvent | ContextInsufficientEvent | ContextInsufficientWithQueryEvent:
@@ -198,7 +228,7 @@ class RAGAgent(Agent):
                 llm=llm,
                 t=t,
                 user_query=user_query_event.condensed_chat_message.content,
-                context=event.context_message.content,
+                context=event.context_message_with_images.content,
                 prev_queries=prev_queries,
                 more_hops_available=more_hops_available,
             )
@@ -220,20 +250,40 @@ class RAGAgent(Agent):
     @step()
     async def limit_chat_history_with_context_step(
         self,
-        nodes_event: InOrderNodeCombinerEvent,
+        nodes_event: ProcessedImagesEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientEvent,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         """
-        Includes the combined context and truncates chat history again.
+        Includes the combined context with processed images and truncates chat history again.
         """
         chat_history = chat_history_event.limited_history
         system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
+        
+        # Create context messages including both text and images
+        context_messages = [nodes_event.context_message_with_images]
+        
+        # Add image blocks if we have processed images
+        if nodes_event.processed_images:
+            # Create blocks for the context message - combine text and images
+            blocks = [TextBlock(text=nodes_event.context_message_with_images.content)]
+            
+            # Add image blocks for each processed image
+            for image_url, image_data in nodes_event.processed_images.items():
+                blocks.append(ImageBlock(url=image_data))
+            
+            # Create a new context message with both text and image blocks
+            context_message_with_images = ChatMessage(
+                role=MessageRole.SYSTEM,
+                blocks=blocks
+            )
+            context_messages = [context_message_with_images]
+        
         limited_chat_history = limit_chat_history_with_context(
             chat_history=chat_history_event.limited_history,
-            context_messages=[nodes_event.context_message],
+            context_messages=context_messages,
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
             tokenizer=agent_config.llm.tokenizer,

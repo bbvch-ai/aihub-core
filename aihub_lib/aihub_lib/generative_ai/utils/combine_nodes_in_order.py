@@ -1,4 +1,5 @@
 import html
+import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -46,6 +47,27 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
         return None
 
 
+def remove_markdown_images(content: str) -> str:
+    """
+    Remove markdown image syntax from content.
+    Matches patterns like: ![description](url)
+    """
+    # [^\]]{10,1000} matches non bracket characters between 10 and 1000 times, [^\s\)]{10,2048} matches non whitespace and non closing parenthesis characters between 10 and 2048 times
+    markdown_image_pattern = r'^!\[[^\]]{10,1000}\]\(https?:\/\/[^\s\)]{10,2048}\)$'
+    cleaned_content = re.sub(markdown_image_pattern, '', content)
+    
+    cleaned_content = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned_content)
+    cleaned_content = cleaned_content.strip()
+    
+    return cleaned_content
+
+
+def is_image_only_node(content: str) -> bool:
+    cleaned_content = remove_markdown_images(content)
+    
+    return not cleaned_content.strip()
+
+
 def combine_nodes_in_order(
     context_nodes: List[IngestedNode],
     locale_handler: LocaleHandler,
@@ -83,7 +105,10 @@ def combine_nodes_in_order(
         sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
 
         for n in sorted_nodes:
-            text_parts.append(f"{n.content}\n\n")
+            if is_image_only_node(n.content):
+                text_parts.append("<IMAGE>\n\n")
+            else:
+                text_parts.append(f"{n.content}\n\n")              
 
         text_parts.append("</REFERENCE_DOCUMENT>\n")
         text_parts.append("\n---\n")
