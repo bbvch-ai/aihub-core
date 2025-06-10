@@ -22,7 +22,7 @@ from openai.types.chat import (
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
 from typing_extensions import override
 
-from aihub_bot.bots.chat.BaseChatBot import CompletionHandler
+from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import Content, Message
 
 logger = logging.getLogger(__name__)
