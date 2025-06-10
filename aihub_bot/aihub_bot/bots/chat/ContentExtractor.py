@@ -182,7 +182,7 @@ class ContentExtractor:
         file_info = ContentExtractor._fetch_file(file_info)
 
         # Process by content type
-        if file_info.content_type.startswith("image/"):
+        if file_info.content_type and file_info.content_type.startswith("image/"):
             data_url = ContentExtractor._to_base64_data_url(file_info)
             return Content(text=data_url, type="image_url")
 
@@ -190,7 +190,7 @@ class ContentExtractor:
             # PDF files are not supported, return a placeholder
             return Content(text=f"<file name='{file_info.name}'>PDF files are not supported yet</file>", type="text")
 
-        elif file_info.content_type.startswith("text/") or file_info.content_type.startswith("application/"):
+        elif file_info.content_type and (file_info.content_type.startswith("text/") or file_info.content_type.startswith("application/")):
             try:
                 text = file_info.content_bytes.decode("utf-8", errors="replace")
                 return Content(text=f"<file name='{file_info.name}'>{text}</file>", type="text")
