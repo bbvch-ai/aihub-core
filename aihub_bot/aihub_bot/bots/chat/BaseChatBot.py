@@ -64,7 +64,10 @@ class BaseChatBot(ActivityHandler):
         await self._process_message(turn_context, is_streaming=False)
 
     def _get_locale_handler(self, turn_context: TurnContext) -> LocaleHandler:
-        locale = self.locale_handler.get_locale(turn_context.activity.locale.split("-")[0])
+        if turn_context.activity.locale:
+            locale = self.locale_handler.get_locale(turn_context.activity.locale.split("-")[0])
+        else:
+            locale = self.locale_handler.DEFAULT_LOCALE
         return self.locale_handler.in_locale(locale)
 
     async def _process_message(self, turn_context: TurnContext, is_streaming: bool = False):
