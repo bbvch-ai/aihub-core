@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from pydantic import Field
 
@@ -40,6 +40,8 @@ class WebUIConfig(StorageConfig):
     # resources
     cpu: float = Field(default=2, description="CPU cores for the container")
     memory: str = Field(default="4Gi", description="Memory for the container")
+    min_replicas: int = Field(default=1, description="Minimum number of replicas for the container")
+    max_replicas: Optional[int] = Field(default=None, description="Maximum number of replicas for the container")
 
     # Registry settings
     registry_user: str = Field(
