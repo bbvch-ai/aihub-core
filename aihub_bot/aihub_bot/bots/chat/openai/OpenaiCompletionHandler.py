@@ -5,6 +5,8 @@ import unicodedata
 from asyncio import Event, Task
 from typing import AsyncGenerator, List
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+
 from botbuilder.core import TurnContext
 from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
@@ -173,7 +175,11 @@ class OpenaiCompletionHandler(CompletionHandler):
     @staticmethod
     @override
     async def handle_exception(
-        turn_context: TurnContext, exception: Exception, typing_task: Task, typing_stop_signal: Event
+        turn_context: TurnContext,
+        exception: Exception,
+        typing_task: Task,
+        typing_stop_signal: Event,
+        t: LocaleHandler,
     ) -> str:
         if isinstance(exception, APIStatusError):
             logger.warning(f"APIStatusError: {exception}\nTurnContext: {turn_context}")
@@ -190,4 +196,5 @@ class OpenaiCompletionHandler(CompletionHandler):
                 exception=exception,
                 typing_task=typing_task,
                 typing_stop_signal=typing_stop_signal,
+                t=t,
             )
