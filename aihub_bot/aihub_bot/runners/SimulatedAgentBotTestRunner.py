@@ -9,6 +9,7 @@ from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import Ag
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -160,7 +161,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         await self.nc.connect(servers=["nats://localhost:4222"])
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()

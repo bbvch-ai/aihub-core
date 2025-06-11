@@ -35,7 +35,7 @@ class ProcessWalkthroughTopicManager(ProcessInstanceTopicManager):
         """Returns a subject pattern for work request events of a given name within this walkthrough."""
         return self.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id=self.process_walkthrough_id,
-            event_type=self.WORK_REQUEST,
+            event_type=self.WORK_REQUEST_EVENT,
             event_name=event_name,
             event_id=event_id,
         )
@@ -48,7 +48,7 @@ class ProcessWalkthroughTopicManager(ProcessInstanceTopicManager):
         """Returns a subject pattern for work events of a given name within this walkthrough."""
         return self.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id=self.process_walkthrough_id,
-            event_type=self.WORK,
+            event_type=self.WORK_EVENT,
             event_name=event_name,
             event_id=event_id,
         )

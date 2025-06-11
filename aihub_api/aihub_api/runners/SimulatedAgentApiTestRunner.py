@@ -20,6 +20,8 @@ from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -190,13 +192,13 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_events(
+        self.agent_control_event_subscriber = AgentJSSubscriber.for_agent_instance_events(
             self.nc,
             self.topic_manager,
             js=self.js,

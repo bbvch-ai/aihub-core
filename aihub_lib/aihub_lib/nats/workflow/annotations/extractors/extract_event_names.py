@@ -57,6 +57,11 @@ def extract_event_classes(
     origin = get_origin(annotation)
     args = get_args(annotation)
 
+    # Check if event is wrapped in Annotated and only extract the first part if so
+    if origin is Annotated:
+        core_type = args[0]
+        return extract_event_classes(core_type)
+
     # Check if annotation has a _required_size attribute indicating a fixed-size container.
     if hasattr(annotation, "_required_size"):
         required_size = annotation._required_size

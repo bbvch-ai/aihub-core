@@ -5,7 +5,7 @@ from typing import Annotated, Type, Callable, Dict, List
 from nats.js import JetStreamContext
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
-from aihub_lib.nats.events import ControlEvent, BaseEvent
+from aihub_lib.nats.events import BaseEvent, WorkEvent
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
@@ -46,10 +46,17 @@ class ProcessDispatcher(BaseDispatcher):
 
     async def handle_event(
         self,
-        event: Annotated[ControlEvent, "The incoming control event to handle."],
+        event: Annotated[WorkEvent, "The incoming work event to handle."],
         topic: Annotated[ProcessTopic, "The parsed topic of the event."],
     ):
         await super().handle_event(event, topic)
+
+        # TODO Make sure to delete event and step store on some "stop" signal
+        # await self.event_store.delete_all(topic.execution_context_id)
+        # await self.step_store.delete_all(topic.execution_context_id)
+
+        # TODO Make sure to handle exceptions right
+        # await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
 
         steps = self.process.get_steps_waiting_for_event(type(event))
         for step_method in steps:
@@ -66,7 +73,7 @@ class ProcessDispatcher(BaseDispatcher):
     async def is_step_ready(
         self,
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[ProcessTopic, "Topic info for the current process."],
     ) -> bool:
         """
@@ -83,13 +90,43 @@ class ProcessDispatcher(BaseDispatcher):
 
     async def execute_step(
             self,
-            trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
+            trigger_event: Annotated[WorkEvent, "The event that caused this step to trigger."],
             step_method: Annotated[Callable, "The step method to execute."],
-            events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
+            events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
             topic: Annotated[ProcessTopic, "Topic info for the current process."],
     ):
-        # TODO implement
-        pass
+        all_input_events, kwargs = await self._build_event_kwargs(trigger_event, step_method, events)
+
+        duplicated_run = await self.step_store.was_called_with_events(
+            topic.execution_context_id, step_method.__name__, all_input_events
+        )
+        if duplicated_run:
+            logger.debug(f"Skipping step '{step_method.__name__}' as it has already been called with the same events.")
+            return
+
+        await self.step_store.report_execution_context_with_events(
+            topic.execution_context_id, step_method.__name__, all_input_events
+        )
+
+        process_instance = self.process()
+
+        try:
+            result = await step_method(process_instance, **kwargs)
+        except Exception as e:
+            # TODO: What to do on failed process steps?
+            # if getattr(step_method, "_stop_on_error", False):
+            #     event = ExceptionEvent(message=str(e))
+            #     await self.publish_event(event, topic)
+            logger.exception(e)
+            logger.exception(f"Error executing step '{step_method.__name__}': {e}")
+            return
+
+        if result:
+            if not isinstance(result, list):
+                result = [result]
+
+            for event in result:
+                await self.publish_event(event, topic)
 
     def get_topic_manager_for_process_walkthrough(
         self, topic: Annotated[ProcessTopic, "Topic identifying the run/thread."]
@@ -109,13 +146,11 @@ class ProcessDispatcher(BaseDispatcher):
         topic: Annotated[ProcessTopic, "Current process topic context."],
     ):
         """
-        Publishes a given event (Control or Display) to the correct subject.
+        Publishes a given event to the correct subject.
         Uses the per-thread topic manager to form the right event subject and publishes via JSPublisher.
         """
         topic_manager = self.get_topic_manager_for_process_walkthrough(topic)
-        if event.is_control_event:
-            subject = topic_manager.get_subject_for_control_event_in_walkthrough(event.event_name, event.event_id)
-            await self.js_publisher.publish_event(event, subject)
-        if event.is_display_event:
-            subject = topic_manager.get_subject_for_display_event_in_walkthrough(event.event_name, event.event_id)
-            await self.nc_publisher.publish_event(event, subject)
+        if not event.is_work_request_event:
+            raise ValueError("ProcessDispatcher must only emit WorkRequest-Events")
+        subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)
+        await self.js_publisher.publish_event(event, subject)

@@ -9,7 +9,7 @@ from redis.asyncio import Redis
 
 from aihub_lib.nats.dispatcher.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_lib.nats.dispatcher.stores.step.StepStore import StepStore
-from aihub_lib.nats.events import BaseEvent, ControlEvent
+from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
@@ -67,7 +67,7 @@ class BaseDispatcher:
 
     async def handle_event(
         self,
-        event: Annotated[ControlEvent, "The incoming control event to handle."],
+        event: Annotated[BaseEvent, "The incoming control event to handle."],
         topic: Annotated[Topic, "The parsed topic of the event."],
     ):
         """
@@ -89,7 +89,7 @@ class BaseDispatcher:
     async def step_meets_basic_execution_requirements(
         self,
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[Topic, "Topic info for the current execution context."],
     ) -> bool:
         """
@@ -117,7 +117,7 @@ class BaseDispatcher:
                 )
                 return False
 
-        input_event_mapping: Dict[str, Set[Type[ControlEvent]]] = getattr(step_method, "_input_event_mapping", {})
+        input_event_mapping: Dict[str, Set[Type[BaseEvent]]] = getattr(step_method, "_input_event_mapping", {})
         parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
         size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
 
@@ -154,14 +154,14 @@ class BaseDispatcher:
 
     async def _build_event_kwargs(
         self,
-        trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
+        trigger_event: Annotated[BaseEvent, "The event that caused this step to trigger."],
         method: Annotated[Callable, "The method to prepare the args for."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
-    ) -> Tuple[List[ControlEvent], Dict[str, Any]]:
+        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+    ) -> Tuple[List[BaseEvent], Dict[str, Any]]:
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(method)
         parameter_optional_map = getattr(method, "_parameter_optional_map", {})
-        all_input_events: List[ControlEvent] = []
+        all_input_events: List[BaseEvent] = []
 
         for param in step_signature.parameters.values():
             if param.name == "self":
@@ -186,10 +186,10 @@ class BaseDispatcher:
         param: Annotated[inspect.Parameter, "A parameter of the step method."],
         step_method: Annotated[Callable, "The step method we're preparing arguments for."],
         events: Annotated[
-            Dict[str, List[ControlEvent]],
+            Dict[str, List[BaseEvent]],
             "All events for this run, keyed by event name.",
         ],
-        trigger_event: Annotated[ControlEvent, "The event that triggered this step execution."],
+        trigger_event: Annotated[BaseEvent, "The event that triggered this step execution."],
     ) -> Optional[Any]:
         """
         Finds the appropriate value for a given step parameter.
@@ -207,7 +207,7 @@ class BaseDispatcher:
         required_size = size_requirements.get(param.name)
 
         # Gather all matching events
-        all_matching_events: List[ControlEvent] = []
+        all_matching_events: List[BaseEvent] = []
         for event_class in event_classes:
             event_list = events.get(event_class.event_name_from_class(), [])
             all_matching_events.extend(event_list)

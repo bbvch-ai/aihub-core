@@ -11,7 +11,7 @@ from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -134,7 +134,7 @@ class AgentService:
 
         topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        nc_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
@@ -176,7 +176,7 @@ class AgentService:
 
         topic_manager = AgentTopicManager()
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        nc_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()

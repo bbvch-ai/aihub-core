@@ -7,8 +7,8 @@ from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
@@ -122,7 +122,7 @@ class AgentTestRunner(AgentRunner):
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
-        self.test_event_subscriber = NCSubscriber.for_all_thread_events(
+        self.test_event_subscriber = AgentNCSubscriber.for_all_thread_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
                 self.topic_manager,
@@ -134,14 +134,14 @@ class AgentTestRunner(AgentRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,

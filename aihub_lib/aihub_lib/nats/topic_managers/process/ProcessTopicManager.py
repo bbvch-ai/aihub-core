@@ -6,8 +6,8 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 class ProcessTopicManager(TopicManager):
     PROCESS_TOPIC = "process"
 
-    WORK_REQUEST = "work_request"
-    WORK = "work"
+    WORK_REQUEST_EVENT = "work_request"
+    WORK_EVENT = "work"
 
     def get_process_discovery_subject_request(
         self,
@@ -56,7 +56,7 @@ class ProcessTopicManager(TopicManager):
             process_class="*",
             process_id="*",
             process_walkthrough_id="*",
-            event_type=self.WORK_REQUEST,
+            event_type=self.WORK_REQUEST_EVENT,
             event_name="*",
             event_id="*",
         )
@@ -67,7 +67,7 @@ class ProcessTopicManager(TopicManager):
             process_class="*",
             process_id="*",
             process_walkthrough_id="*",
-            event_type=self.WORK,
+            event_type=self.WORK_EVENT,
             event_name="*",
             event_id="*",
         )

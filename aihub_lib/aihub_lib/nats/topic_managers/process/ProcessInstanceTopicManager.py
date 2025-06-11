@@ -78,7 +78,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
         """Returns a subject pattern matching all work events within this process instance."""
         return self.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id="*",
-            event_type=self.WORK_REQUEST,
+            event_type=self.WORK_REQUEST_EVENT,
             event_name="*",
             event_id="*",
         )
@@ -87,7 +87,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
         """Returns a subject pattern matching all work events within this process instance."""
         return self.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id="*",
-            event_type=self.WORK,
+            event_type=self.WORK_EVENT,
             event_name="*",
             event_id="*",
         )
@@ -113,7 +113,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
             process_class=self.process_class,
             process_id=self.process_id,
             process_walkthrough_id="*",
-            event_type=self.WORK_REQUEST,
+            event_type=self.WORK_REQUEST_EVENT,
             event_name="*",
             event_id="*",
         )
@@ -124,7 +124,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
             process_class=self.process_class,
             process_id=self.process_id,
             process_walkthrough_id="*",
-            event_type=self.WORK,
+            event_type=self.WORK_EVENT,
             event_name="*",
             event_id="*",
         )

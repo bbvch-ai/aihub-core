@@ -3,15 +3,15 @@ from llama_index.core.base.llms.types import ChatMessage
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.delegators.agent.Agent import Agent
+from aihub_process.delegators.human.Human import Human
+from aihub_process.delegators.program.Program import Program
 from aihub_process.process.decorators.process_start import process_start
 from aihub_process.process.decorators.process_step import process_step
-from aihub_process.process.entities.agent.Agent import Agent
-from aihub_process.process.entities.human.Human import Human
-from aihub_process.process.entities.program.Program import Program
-from playground.AgenticCVProcess.io.agent.AnalyzeCVRequest import AnalyzeCVRequest
-from playground.AgenticCVProcess.io.human.AcceptRejectRequest import AcceptRejectRequest
-from playground.AgenticCVProcess.io.program.SaveDecisionRequest import SaveDecisionRequest
-from playground.AgenticCVProcess.io.program.SubmittedCV import SubmittedCV
+from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
+from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest
+from playground.AgenticCVProcess.events.program.SaveDecisionRequest import SaveDecisionRequest
+from playground.AgenticCVProcess.events.program.SubmittedCV import SubmittedCV
 
 
 class AgenticCVProcess(AgenticProcess):

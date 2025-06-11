@@ -9,7 +9,7 @@ from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
 
 from aihub_lib.nats.dispatcher.stores.event.ExecutionContextEventStore import ExecutionContextEventStore
-from aihub_lib.nats.events import ControlEvent
+from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topics import Topic
@@ -152,7 +152,7 @@ class JetStreamEventStore:
                         for msg in messages:
                             try:
                                 topic = self.topic.from_subject(msg.subject)
-                                event = ControlEvent.deserialize_event(msg.data)
+                                event = BaseEvent.deserialize_event(msg.data)
                                 event._jetstream_sequence = msg.metadata.sequence.stream
                                 self._add_event_to_store(topic.execution_context_id, event)
                                 msg_count += 1
@@ -196,7 +196,7 @@ class JetStreamEventStore:
             self.execution_context_stores[store_execution_context_id] = ExecutionContextEventStore()
         return self.execution_context_stores[store_execution_context_id]
 
-    def _add_event_to_store(self, store_execution_context_id: str, event: ControlEvent):
+    def _add_event_to_store(self, store_execution_context_id: str, event: BaseEvent):
         """Add an event to the store and handle any pending synchronization"""
         # Get the run store and add the event
         execution_context_store = self._get_execution_context_store(store_execution_context_id)
@@ -226,7 +226,7 @@ class JetStreamEventStore:
         try:
             topic = self.topic.from_subject(msg.subject)
             store_execution_context_id = topic.execution_context_id
-            event = ControlEvent.deserialize_event(msg.data)
+            event = BaseEvent.deserialize_event(msg.data)
             event._jetstream_sequence = msg.metadata.sequence.stream
 
             # Add the event to the store
@@ -245,7 +245,7 @@ class JetStreamEventStore:
     async def ensure_event_stored(
         self,
         store_execution_context_id: Annotated[str, "Unique identifier for the jetstream store context"],
-        event: Annotated[ControlEvent, "The event to ensure is stored"],
+        event: Annotated[BaseEvent, "The event to ensure is stored"],
         timeout: Annotated[float, "Maximum time to wait in seconds"] = 10.0,
     ) -> bool:
         """
@@ -299,10 +299,8 @@ class JetStreamEventStore:
         self,
         store_execution_context_id: Annotated[str, "Unique identifier for the jetstream store context"],
         class_name: Annotated[str, "The event class name to retrieve"],
-        until_event: Annotated[
-            Optional[ControlEvent], "Only include events created until this event was received"
-        ] = None,
-    ) -> List[ControlEvent]:
+        until_event: Annotated[Optional[BaseEvent], "Only include events created until this event was received"] = None,
+    ) -> List[BaseEvent]:
         """
         Retrieves all events of the specified type for a execution context.
         If 'until' is specified, only returns events created until that timestamp.
@@ -314,10 +312,8 @@ class JetStreamEventStore:
         self,
         store_execution_context_id: Annotated[str, "Unique identifier for the jetstream store context"],
         class_names: Annotated[List[str], "List of event class names to retrieve"],
-        until_event: Annotated[
-            Optional[ControlEvent], "Only include events created until this event was received"
-        ] = None,
-    ) -> Dict[str, List[ControlEvent]]:
+        until_event: Annotated[Optional[BaseEvent], "Only include events created until this event was received"] = None,
+    ) -> Dict[str, List[BaseEvent]]:
         """
         Retrieves events for multiple types, organized by event type name.
         This is the primary method used by the Dispatcher.

@@ -8,6 +8,8 @@ from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import Ag
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -179,13 +181,13 @@ class AgentRunner:
         await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
-        self.control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
+        self.control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,

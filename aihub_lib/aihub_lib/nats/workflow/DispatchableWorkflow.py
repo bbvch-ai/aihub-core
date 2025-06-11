@@ -7,6 +7,8 @@ from aihub_lib.nats.events import ControlEvent
 
 
 class DispatchableWorkflow(abc.ABC):
+    STEP_ANNOTATION = "_is_step"
+
     @classmethod
     @functools.cache
     def get_steps(cls) -> List[Callable]:
@@ -17,7 +19,7 @@ class DispatchableWorkflow(abc.ABC):
         return [
             method
             for name, method in inspect.getmembers(cls, predicate=inspect.isfunction)
-            if getattr(method, "_is_step", False)
+            if getattr(method, cls.STEP_ANNOTATION, False)
         ]
 
     @classmethod

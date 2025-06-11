@@ -2,20 +2,16 @@ import asyncio
 import logging
 from typing import List, Optional, Type
 
-from aihub_lib.nats.events import StartEvent, UserMessageEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent
-from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
+from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import DiscoveryTopic, ProcessDiscoveryTopic
-from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
+from aihub_lib.nats.topics import ProcessDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
@@ -68,7 +64,7 @@ class ProcessRunner:
         """
         Handles discovery requests by returning an `ProcessDiscoveryResponseEvent`.
 
-        If the discovery request doesn't match this agent (i.e., different process_class/process_id), it ignores it.
+        If the discovery request doesn't match this process (i.e., different process_class/process_id), it ignores it.
         """
         if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [self.process_id, "*"]:
             logger.debug(
@@ -87,14 +83,14 @@ class ProcessRunner:
 
     async def start(self):
         """
-        Connects to NATS, sets up JetStream, initializes the AgentDispatcher and subscribers,
+        Connects to NATS, sets up JetStream, initializes the ProcessDispatcher and subscribers,
         and starts listening for events.
 
         - Starts the discovery subscriber so other services can discover this process' capabilities.
         - Starts the control event subscriber to handle workflow execution.
         """
         if self.running:
-            logger.warning("AgentRunner is already running.")
+            logger.warning("ProcessRunner is already running.")
             return
 
         self.running = True
@@ -119,13 +115,13 @@ class ProcessRunner:
         await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = NCSubscriber.for_process_discovery_request_events( # TODO
+        self.discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
             self.nc, ProcessTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
-        self.control_event_subscriber = JSSubscriber.for_process_instance_control_events(  # TODO
+        self.work_event_subscriber = ProcessJSSubscriber.for_process_instance_work_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,
@@ -142,7 +138,7 @@ class ProcessRunner:
         Stops the process by setting a stop event, unsubscribing, and closing the NATS connection.
         """
         if not self.running:
-            logger.warning("AgentRunner is not running.")
+            logger.warning("ProcessRunner is not running.")
             return
 
         logger.debug(f"Shutting down {self.process_class}...")

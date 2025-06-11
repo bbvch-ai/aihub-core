@@ -6,7 +6,7 @@ from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
@@ -76,7 +76,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Persist all agent events
         persister = EventPersister("default")
-        persist_subscriber = NCSubscriber.for_all_agent_events(
+        persist_subscriber = AgentNCSubscriber.for_all_agent_events(
             nc=nc, topic_manager=topic_manager, handler=persister.persist_event
         )
         await persist_subscriber.start()
@@ -84,7 +84,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Setup WebSocket event flow
         ws_manager = WebSocketManager()
         ws_sender = WebSocketSender(ws_manager=ws_manager)
-        ws_subscriber = NCSubscriber.all_for_agent_display_events(
+        ws_subscriber = AgentNCSubscriber.for_all_agents_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=ws_sender.send_event,

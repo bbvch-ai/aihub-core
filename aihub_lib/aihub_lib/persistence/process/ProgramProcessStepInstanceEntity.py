@@ -18,8 +18,8 @@ class ProgramOut(BaseProcessEntityOut):
 
 
 class ProgramProcessStepInstanceEntity(ProcessStepInstanceEntity):
-    work_request_schema_name = StringField()  # Pydantic model name of the ProgramWorkRequest
+    work_request_schema_name = StringField()  # Pydantic model name of the ProgramWorkRequestEvent
     work_request_payload = DictField()
 
-    work_response_schema_name = StringField()  # Pydantic model name of the ProgramWork
+    work_response_schema_name = StringField()  # Pydantic model name of the ProgramWorkEvent
     work_response_payload = DictField()

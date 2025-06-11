@@ -45,7 +45,7 @@ class EventDisplayer:
 
     def __init__(
         self,
-        publisher: Annotated[JSPublisher, "Publisher for sending events to JetStream"],
+        publisher: Annotated[JSPublisher, "AbstractPublisher for sending events to JetStream"],
         topic_manager: Annotated[AgentThreadTopicManager, "Manages event subjects for a thread"],
     ):
         self.publisher = publisher

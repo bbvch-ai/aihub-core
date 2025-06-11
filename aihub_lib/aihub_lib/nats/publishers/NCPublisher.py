@@ -1,17 +1,13 @@
 import logging
-from typing import Generic, TypeVar
 
 from nats.aio.client import Client as NATS
 
-from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
 
 logger = logging.getLogger(__name__)
 
-TEvent = TypeVar("TEvent", bound=BaseEvent)
 
-
-class NCPublisher(Generic[TEvent]):
+class NCPublisher(AbstractPublisher):
     """
     A generic publisher for sending typed events to NATS subjects.
 
@@ -38,16 +34,10 @@ class NCPublisher(Generic[TEvent]):
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
         """
+        self._ensure_event_type_matches_subject(event, subject)
+
         logger.debug(f"Publishing event {event.event_name} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
-
-        if f".{AgentTopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
-            logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
-
-        if f".{AgentTopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
-            logger.warning(f"Display event {event.event_name} is being published to a non-display subject: {subject}")
-
-        # TODO: Add work request and work events
 
         await self.nc.publish(subject, serialized_event.encode())

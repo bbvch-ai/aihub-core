@@ -25,6 +25,7 @@ from aihub_lib.nats.events import (
 )
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.events.utils import get_parent_classes_until_base
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -207,7 +208,7 @@ class ChatService:
                 await subscriber.stop()
                 stop_signal.set()
 
-        subscriber = NCSubscriber.for_thread_display_events(
+        subscriber = AgentNCSubscriber.for_thread_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
@@ -297,7 +298,7 @@ class ChatService:
                 await resources.subscriber.stop()
                 resources.stop_signal.set()
 
-        subscriber = NCSubscriber.for_thread_display_events(
+        subscriber = AgentNCSubscriber.for_thread_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,

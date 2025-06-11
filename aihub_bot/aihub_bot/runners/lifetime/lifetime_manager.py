@@ -6,7 +6,7 @@ from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
@@ -43,7 +43,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Setup Bot In The Loop subscriber
         bot_in_the_loop_handler = BotInTheLoopHandler()
-        bot_in_the_loop_subscriber = NCSubscriber.for_all_agent_events(
+        bot_in_the_loop_subscriber = AgentNCSubscriber.for_all_agent_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=bot_in_the_loop_handler.handle_event,
