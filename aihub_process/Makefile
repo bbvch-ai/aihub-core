@@ -15,7 +15,7 @@ typecheck:
 # Sort imports with isort
 sort-imports:
 	@echo "Sorting imports..."
-	poetry run isort aihub_api
+	poetry run isort aihub_process
 
 test-cov:
 	@echo "Running tests in aihub_api with coverage..."

@@ -16,20 +16,23 @@ from playground.AgenticCVProcess.events.program.SubmittedCV import SubmittedCV
 
 
 class AgenticCVProcess(AgenticProcess):
-
     @process_step()
     def received_cv_2_analyzed_cv(
         self,
         cv: Annotated[SubmittedCV, Program.In(route="/cv", method="POST")],
     ) -> Annotated[AnalyzeCVRequest, Agent.Out(agent_class="LLMWrappingAgent", agent_id="dev_agent")]:
         return AnalyzeCVRequest(
-            start_event=UserMessageEvent(messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")], user=fake_user())
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")], user=fake_user()
+            )
         )
 
     @process_step()
     def analyzed_cv_2_accept_reject(
         self,
-        analyzed_cv: Annotated[AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")],
+        analyzed_cv: Annotated[
+            AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")
+        ],
     ) -> Annotated[AcceptRejectRequest, Human.Out()]:
         pass
 
@@ -38,16 +41,11 @@ class AgenticCVProcess(AgenticProcess):
         self,
         accepted_cv: Annotated[AcceptRejectRequest.accept, Human.In(route="/cv/accept", method="POST")],
     ) -> Annotated[SaveDecisionRequest, Program.Out(route="http://my-webserver.com/cv/accept", method="POST")]:
-        return SaveDecisionRequest(
-            decision=f"Accepted due to {accepted_cv.reason}"
-        )
+        return SaveDecisionRequest(decision=f"Accepted due to {accepted_cv.reason}")
 
     @process_step()
     def reject_cv(
         self,
         rejected_cv: Annotated[AcceptRejectRequest.reject, Human.In(route="/cv/reject", method="POST")],
     ) -> Annotated[SaveDecisionRequest, Program.Out(route="http://my-webserver.com/cv/reject", method="POST")]:
-        return SaveDecisionRequest(
-            decision=f"Rejected due to {rejected_cv.reason}"
-        )
-
+        return SaveDecisionRequest(decision=f"Rejected due to {rejected_cv.reason}")

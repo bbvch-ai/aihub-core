@@ -1,43 +1,37 @@
-from dataclasses import dataclass
-from typing import Annotated, Type, List, Set
+from typing import Annotated, Type
 
-from bson import ObjectId
-from nats.js import JetStreamContext
-
+from aihub_lib.nats.events import AgentWorkEvent, AgentWorkRequestEvent, ControlEvent, ProcessStartEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
+from aihub_lib.nats.topics import AgentTopic
 from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
-
+from bson import ObjectId
 from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
-from aihub_lib.nats.events import AgentWorkRequestEvent, ControlEvent, ProcessStartEvent, AgentWorkEvent
-from aihub_lib.nats.topics import AgentTopic
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
 from aihub_process.delegators.agent.Agent import Agent
 
 
 class AgentDelegator(AbstractEntityDelegator):
-
     def _init__(
-            self,
-            process: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
-            nc: Annotated[NATS, "NATS client for messaging."],
-            js: Annotated[
-                JetStreamContext,
-                "JetStream context for persistent storage and event streams.",
-            ],
-            topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects."],
-            topic: Annotated[Type[ProcessTopic], "Topic under which these events were published"],
+        self,
+        process: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
+        nc: Annotated[NATS, "NATS client for messaging."],
+        js: Annotated[
+            JetStreamContext,
+            "JetStream context for persistent storage and event streams.",
+        ],
+        topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects."],
+        topic: Annotated[Type[ProcessTopic], "Topic under which these events were published"],
     ):
         super()._init__(process, nc, js, topic_manager, topic)
         self.subscriptions = []
 
     async def start(self):
-
         for work_event, config in self.process.get_events_with_agent_in():
             control_events = work_event.get_stop_event_type()
             if not control_events:
@@ -74,7 +68,6 @@ class AgentDelegator(AbstractEntityDelegator):
             await subscription.stop()
 
     def _get_start_handler(self, work_event_type: Type[AgentWorkEvent], is_process_start: bool):
-
         async def _handle_process_step_input(
             event: Annotated[ControlEvent, "The incoming agent event to handle."],
             topic: Annotated[AgentTopic, "The parsed topic of the event."],
@@ -84,8 +77,7 @@ class AgentDelegator(AbstractEntityDelegator):
             # Create a new process walkthrough
             if is_process_start:
                 walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
-                    topic_manager=self.topic_manager,
-                    process_walkthrough_id=str(ObjectId())
+                    topic_manager=self.topic_manager, process_walkthrough_id=str(ObjectId())
                 )
                 subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
                     event_name=work_event.event_name,
@@ -97,7 +89,6 @@ class AgentDelegator(AbstractEntityDelegator):
                 pass
 
         return _handle_process_step_input
-
 
     async def _delegate_output(self, event: AgentWorkRequestEvent, out: Agent.Out):
         # Publish event.start_event to agent

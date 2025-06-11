@@ -1,9 +1,11 @@
 import inspect
-from typing import Annotated, List, Tuple, get_origin, get_args, Type
+from typing import Annotated, List, Tuple, Type, get_args, get_origin
 
 from aihub_lib.nats.events import WorkRequestEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_names import extract_event_classes
+
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
+
 
 def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEvent], BaseProcessEntity.Out]]:
     """

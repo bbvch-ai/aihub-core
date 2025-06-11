@@ -1,9 +1,18 @@
 import functools
 from typing import List, Tuple, Type
 
-from aihub_lib.nats.events import AgentWorkEvent, WorkEvent, ProgramWorkEvent, HumanWorkEvent, WorkRequestEvent, \
-    AgentWorkRequestEvent, HumanWorkRequestEvent, ProgramWorkRequestEvent
+from aihub_lib.nats.events import (
+    AgentWorkEvent,
+    AgentWorkRequestEvent,
+    HumanWorkEvent,
+    HumanWorkRequestEvent,
+    ProgramWorkEvent,
+    ProgramWorkRequestEvent,
+    WorkEvent,
+    WorkRequestEvent,
+)
 from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
+
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.human.Human import Human
@@ -15,7 +24,9 @@ class AgenticProcess(DispatchableWorkflow):
 
     @classmethod
     @functools.cache
-    def get_events_with_in_type(cls, config_class: Type[BaseProcessEntity.In]) -> List[Tuple[Type[WorkEvent], BaseProcessEntity.In]]:
+    def get_events_with_in_type(
+        cls, config_class: Type[BaseProcessEntity.In]
+    ) -> List[Tuple[Type[WorkEvent], BaseProcessEntity.In]]:
         """
         Scans all process steps to find inputs matching a specific configuration class.
         This now iterates over the pre-processed list stored on each step method.
@@ -45,7 +56,9 @@ class AgenticProcess(DispatchableWorkflow):
 
     @classmethod
     @functools.cache
-    def get_events_with_out_type(cls, config_class: Type[BaseProcessEntity.Out]) -> List[Tuple[Type[WorkRequestEvent], BaseProcessEntity.Out]]:
+    def get_events_with_out_type(
+        cls, config_class: Type[BaseProcessEntity.Out]
+    ) -> List[Tuple[Type[WorkRequestEvent], BaseProcessEntity.Out]]:
         """
         Scans all process steps to find outputs matching a specific configuration class.
         This now iterates over the pre-processed list stored on each step method.

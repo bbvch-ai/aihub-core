@@ -11,7 +11,7 @@ license = "Proprietary"
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.12"
-pydantic = "^ very basic agent2.10.3"
+pydantic = "^2.10.3"
 nats-py = "^2.9.0"
 fastapi = "^0.115.6"
 cachetools = "^5.5.0"

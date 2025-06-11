@@ -1,6 +1,7 @@
 from typing import Annotated, Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
+
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 from aihub_process.process.decorators.process_step import process_step
 
@@ -15,14 +16,11 @@ def process_start(
 ):
     def decorator(func):
         step_decorator = process_step(
-            input_from=input_from,
-            delegate_to=delegate_to,
-            name=name,
-            icon=icon,
-            description=description
+            input_from=input_from, delegate_to=delegate_to, name=name, icon=icon, description=description
         )
-        decorated_func = step_decorator(func) # Call the decorator to set attributes
+        decorated_func = step_decorator(func)  # Call the decorator to set attributes
 
         setattr(decorated_func, "_is_process_start", True)
         return decorated_func
+
     return decorator

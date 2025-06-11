@@ -3,10 +3,13 @@ from typing import Annotated, Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
-from aihub_process.process.annotations.extractors.extract_function_process_in_events import \
-    extract_function_process_in_events
-from aihub_process.process.annotations.extractors.extract_function_process_out_events import \
-    extract_function_process_out_events
+
+from aihub_process.process.annotations.extractors.extract_function_process_in_events import (
+    extract_function_process_in_events,
+)
+from aihub_process.process.annotations.extractors.extract_function_process_out_events import (
+    extract_function_process_out_events,
+)
 
 
 def process_step(
@@ -37,4 +40,5 @@ def process_step(
         setattr(func, "_python_method_name", func.__name__)
 
         return func
+
     return decorator

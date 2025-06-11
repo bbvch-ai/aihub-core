@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class ProcessRunner:
-
     def __init__(
         self,
         servers: List[str],

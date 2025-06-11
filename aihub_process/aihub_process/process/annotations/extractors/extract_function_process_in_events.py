@@ -1,8 +1,9 @@
 import inspect
-from typing import Annotated, List, Tuple, get_origin, get_args, Type
+from typing import Annotated, List, Tuple, Type, get_args, get_origin
 
 from aihub_lib.nats.events import WorkEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_names import extract_event_classes
+
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
@@ -19,7 +20,7 @@ def extract_function_process_in_events(func) -> List[Tuple[Type[WorkEvent], Base
     input_tuples = []
 
     for param in sig.parameters.values():
-        if param.name == 'self':
+        if param.name == "self":
             continue
 
         annotation = param.annotation

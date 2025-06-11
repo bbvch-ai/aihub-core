@@ -1,8 +1,7 @@
-from typing import List, Annotated
+from typing import Annotated, List
 
 from pydantic import Field
 
-from aihub_lib.persistence.process.HumanProcessStepInstanceEntity import HumanIn as DBHumanIn, HumanOut as DBHumanOut
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
@@ -13,4 +12,3 @@ class Human(BaseProcessEntity):
 
     class Out(BaseProcessEntity.Out):
         users: Annotated[List[str], Field(description="The list of users.")]
-

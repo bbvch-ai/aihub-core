@@ -1,38 +1,34 @@
 import asyncio
 import logging
-from typing import Annotated, Type, Callable, Dict, List
-
-from nats.js import JetStreamContext
+from typing import Annotated, Callable, Dict, List, Type
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
 from aihub_lib.nats.events import BaseEvent, WorkEvent
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
-from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
-
 from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
+from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.i18n.ProcessLocaleHandler import ProcessLocaleHandler
-
 
 logger = logging.getLogger(__name__)
 
 
 class ProcessDispatcher(BaseDispatcher):
-
     def __init__(
-            self,
-            process: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
-            nc: Annotated[NATS, "NATS client for messaging."],
-            js: Annotated[
-                JetStreamContext,
-                "JetStream context for persistent storage and event streams.",
-            ],
-            redis: Annotated[Redis, "Redis client for distributed storage."],
-            topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects for this agent instance."],
-            locale_handler: Annotated[ProcessLocaleHandler, "Manages localization for the agent."],
+        self,
+        process: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
+        nc: Annotated[NATS, "NATS client for messaging."],
+        js: Annotated[
+            JetStreamContext,
+            "JetStream context for persistent storage and event streams.",
+        ],
+        redis: Annotated[Redis, "Redis client for distributed storage."],
+        topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects for this agent instance."],
+        locale_handler: Annotated[ProcessLocaleHandler, "Manages localization for the agent."],
     ):
         super().__init__(nc, js, redis, topic_manager, ProcessTopic)
         self.process = process
@@ -89,11 +85,11 @@ class ProcessDispatcher(BaseDispatcher):
         return await self.step_meets_basic_execution_requirements(step_method, events, topic)
 
     async def execute_step(
-            self,
-            trigger_event: Annotated[WorkEvent, "The event that caused this step to trigger."],
-            step_method: Annotated[Callable, "The step method to execute."],
-            events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
-            topic: Annotated[ProcessTopic, "Topic info for the current process."],
+        self,
+        trigger_event: Annotated[WorkEvent, "The event that caused this step to trigger."],
+        step_method: Annotated[Callable, "The step method to execute."],
+        events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
+        topic: Annotated[ProcessTopic, "Topic info for the current process."],
     ):
         all_input_events, kwargs = await self._build_event_kwargs(trigger_event, step_method, events)
 
