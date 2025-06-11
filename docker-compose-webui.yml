@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg17
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
     container_name: postgres
     environment:
       POSTGRES_USER: webui
@@ -24,7 +24,7 @@ services:
         max-file: "3"
 
   openwebui:
-    image: ghcr.io/open-webui/open-webui:git-82716f3
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
     network_mode: "host"
     volumes:
       - open-webui:/app/backend/data

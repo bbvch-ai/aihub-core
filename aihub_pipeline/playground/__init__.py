@@ -34,7 +34,7 @@ SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
 DATALAKE_DIRECTORY_NAME = "papers"
-
+FIGURES_DIRECTORY_NAME = "__figures__"
 NAMESPACE_NAME = "papers"
 STORE_NAME = "papers"
 
@@ -55,9 +55,7 @@ assets = [
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_azure_datalake_resources(
-            container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
-        ),
+        **default_io_manager_azure_datalake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
         "document_parser": DocumentParserResource(),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
@@ -66,7 +64,9 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME),
+        **azure_data_lake_resources(
+            container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME, figures_directory_name=FIGURES_DIRECTORY_NAME
+        ),
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",

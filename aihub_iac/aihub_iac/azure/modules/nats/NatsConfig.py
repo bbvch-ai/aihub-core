@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_NATS_SUFFIX, DEFAULT_REDIS_SUFFIX
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.resources.storage.StorageConfig import StorageConfig
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
@@ -12,8 +13,6 @@ class NatsConfig(StorageConfig, BaseConfig):
 
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
 
-    DEFAULT_NATS_SUFFIX: ClassVar[str] = "nats"
-    DEFAULT_REDIS_SUFFIX: ClassVar[str] = "redis"
     NATS_SUBNET_CIDR: ClassVar[str] = "10.0.1.0/29"
     NATS_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.32.0/24"
 
@@ -42,15 +41,15 @@ class NatsConfig(StorageConfig, BaseConfig):
 
     @property
     def nats_service_name(self) -> str:
-        return self.resource_namer.app_service_name(NatsConfig.DEFAULT_NATS_SUFFIX)
+        return self.resource_namer.app_service_name(DEFAULT_NATS_SUFFIX)
 
     @property
     def redis_service_name(self) -> str:
-        return self.resource_namer.app_service_name(NatsConfig.DEFAULT_REDIS_SUFFIX)
+        return self.resource_namer.app_service_name(DEFAULT_REDIS_SUFFIX)
 
     @property
     def container_instance_name(self) -> str:
-        return self.resource_namer.container_instance_name(NatsConfig.DEFAULT_NATS_SUFFIX)
+        return self.resource_namer.container_instance_name(DEFAULT_NATS_SUFFIX)
 
     @property
     def storage_service_name(self) -> str:

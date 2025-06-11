@@ -16,6 +16,7 @@ class OpenWebUISettings(BaseSettings):
     OPENWEBUI_AUDIO_TTS_OPENAI_API_KEY: Optional[str] = Field(None, description="tbd")
     OPENWEBUI_IMAGES_OPENAI_API_KEY: Optional[str] = Field(None, description="tbd")
     OPENWEBUI_JINA_API_KEY: Optional[str] = Field(None, description="tbd")
+    OPENWEBUI_SECRET_KEY: Optional[str] = Field(None, description="tbd")
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -29,7 +29,8 @@ INSERTED_AT: str = "inserted_at"
 DATA_LAKE_URI: str = "data_lake_uri"
 
 # Node level - Metadata
-INDEX: str = "index"
+INDEX = "index"
+PAGE = "page"
 SECTION_START_LINE: str = "section_start_line"
 SECTION_END_LINE: str = "section_end_line"
 H1: str = "h1"
@@ -89,6 +90,7 @@ DEFAULT_METADATA: Dict[str, Any] = {
     UPDATED_AT: None,
     INSERTED_AT: None,
     INDEX: 0,
+    PAGE: 0,
     SECTION_START_LINE: 0,
     SECTION_END_LINE: 0,
     H1: None,
@@ -115,6 +117,7 @@ DEFAULT_METADATA_FIELDS: Dict[str, tuple] = {
     UPDATED_AT: (UPDATED_AT, MetadataIndexFieldType.INT32),
     INSERTED_AT: (INSERTED_AT, MetadataIndexFieldType.INT32),
     INDEX: (INDEX, MetadataIndexFieldType.INT32),
+    PAGE: (PAGE, MetadataIndexFieldType.INT32),
     SECTION_START_LINE: (SECTION_START_LINE, MetadataIndexFieldType.INT32),
     SECTION_END_LINE: (SECTION_END_LINE, MetadataIndexFieldType.INT32),
     H1: (H1, MetadataIndexFieldType.STRING),

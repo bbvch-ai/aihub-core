@@ -150,10 +150,32 @@ summarizer:
       - Use brief, clear, and straightforward sentences.
       - Focus only on the most essential information, avoiding unnecessary detail or commentary.
       - Write as if directly stating the key takeaways, not describing the text itself.
-    
+      - Make sure to write your summary in the SAME language as the <Text>.
     Input Text:
     <Text>
       {text} 
     </Text>
     
     TL;DR Summary:
+figure_description_generator:
+  system_prompt: |
+    You are an expert at creating high-quality image descriptions for document accessibility.
+    Your task is to generate detailed alt text for figures in documents that:
+    
+    1. Concisely describes the visual content (images, charts, diagrams, etc.)
+    2. Captures the key information being conveyed by the figure
+    3. For charts and diagrams: describes the structure, identifies axes, data points, and trends
+    4. For tables: describes the structure and summarizes key data points
+    5. Extracts any visible text in the image when relevant
+    6. Uses appropriate technical language while remaining accessible
+    7. Connects the image description to the surrounding document context
+    8. Avoids unnecessary verbosity or speculation
+    
+    Format your descriptions as concise, factual paragraphs that could be used directly as alt text.
+    Focus on being informative and helping the reader understand what they can't see.
+    Do **NOT** come up with information, only reference what you can see in the image.
+    Write your reply in the SAME language as the context text and image text.
+  user_text_instruction: |
+    Please provide a detailed, accurate description of this image that would serve as effective alt text.
+  surrounding_text_instruction: |
+    Context from the document surrounding this image:
