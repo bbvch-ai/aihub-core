@@ -1,5 +1,6 @@
 import asyncio
 
+from dotenv import load_dotenv
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -16,7 +17,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.logging.logger import enable_logging
 
-enable_logging()
+enable_logging(30)
+load_dotenv()
 
 
 async def main():
@@ -27,7 +29,8 @@ async def main():
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
             system_prompt=LocaleString(
-                en="You're an agent answering user requests. Only use the context information provided."
+                en="You're an agent answering user requests. Only use the context information provided, either as documents or images."
+                "Analyze the context information and provide a detailed answer to the user question. If you don't know the answer, say 'I don't know'."
             ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
@@ -67,7 +70,8 @@ async def main():
             context_prompt=LocaleString(
                 en="You are provided with some additional context information in form of structured documents with its general"
                 "structure and relevant information in more detail. Each document starts with an indicator <REFERENCE_DOCUMENT [metadata]>"
-                "and ends with </REFERENCE_DOCUMENT>."
+                "and ends with </REFERENCE_DOCUMENT>. Inside the documents images are marked with <IMAGE> tags. Take a look ath the images"
+                "if there are any, they might contain relevant information for the user question."
                 "Here are the relevant documents for the context:"
                 "\n"
                 "{context_str}"
@@ -82,3 +86,35 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+{
+    "number_of_pages": 11,
+    "namespace": "test_ksb",
+    "content_hash": "NJ8WwYT7BNPJBcyDOyGqmw==",
+    "updated_at": 1749201967,
+    "created_at": 1749203801,
+    "inserted_at": 1749203801,
+    "type": "content",
+    "data_lake_uri": "playground/test_ksb/6.36 Aufzug/6.36 Aufzug/Checkliste für Gebäudekontrolle vor Montagebeginn.pdf",
+    "source": "playground/test_ksb/6.36 Aufzug/6.36 Aufzug/Checkliste für Gebäudekontrolle vor Montagebeginn.pdf",
+    "document_title": "Checkliste für Gebäudekontrolle vor Montagebeginn.pdf",
+    "language": "en",
+    "version": 1,
+    "index": 13,
+    "page": 2,
+    "section_start_line": 51,
+    "section_end_line": 293,
+    "h1": "2.1",
+    "h2": null,
+    "h3": null,
+    "h4": null,
+    "h5": null,
+    "h6": null,
+    "heading_level": 1,
+    "reference_name": null,
+    "reference_url": null,
+    "_node_content": '{"id_": "09f8f46b-8662-42ee-8d08-4693f3188041", "embedding": null, "metadata": {"number_of_pages": 11, "namespace": "test_ksb", "content_hash": "NJ8WwYT7BNPJBcyDOyGqmw==", "updated_at": 1749201967, "created_at": 1749203801, "inserted_at": 1749203801, "type": "content", "data_lake_uri": "playground/test_ksb/6.36 Aufzug/6.36 Aufzug/Checkliste f\\u00fcr Geb\\u00e4udekontrolle vor Montagebeginn.pdf", "source": "playground/test_ksb/6.36 Aufzug/6.36 Aufzug/Checkliste f\\u00fcr Geb\\u00e4udekontrolle vor Montagebeginn.pdf", "document_title": "Checkliste f\\u00fcr Geb\\u00e4udekontrolle vor Montagebeginn.pdf", "language": "en", "version": 1, "index": 13, "page": 2, "section_start_line": 51, "section_end_line": 293, "h1": "2.1", "h2": null, "h3": null, "h4": null, "h5": null, "h6": null, "heading_level": 1, "reference_name": null, "reference_url": null}, "excluded_embed_metadata_keys": [], "excluded_llm_metadata_keys": [], "relationships": {"1": {"node_id": "aa47a5053c83b81cd85fe680", "node_type": "4", "metadata": {"number_of_pages": 11, "namespace": "test_ksb", "content_hash": "NJ8WwYT7BNPJBcyDOyGqmw==", "updated_at": 1749201967, "created_at": 1749203801, "inserted_at": 1749203801, "type": "content", "data_lake_uri": "playground/test_ksb/6.36 Aufzug/6.36 Aufzug/Checkliste f\\u00fcr Geb\\u00e4udekontrolle vor Montagebeginn.pdf", "source": "playground/test_ksb/6.36 Aufzug/6.36 Aufzug/Checkliste f\\u00fcr Geb\\u00e4udekontrolle vor Montagebeginn.pdf", "document_title": "Checkliste f\\u00fcr Geb\\u00e4udekontrolle vor Montagebeginn.pdf"}, "hash": "NJ8WwYT7BNPJBcyDOyGqmw==", "class_name": "RelatedNodeInfo"}, "2": {"node_id": "9d041429-582d-48e6-b709-43e774fdf59a", "node_type": null, "metadata": {}, "hash": null, "class_name": "RelatedNodeInfo"}, "3": {"node_id": "510f3c4e-0ffc-4ac9-8b21-2264ac2366d0", "node_type": null, "metadata": {}, "hash": null, "class_name": "RelatedNodeInfo"}, "4": {"node_id": "dd5030e1-467b-4152-9add-f6a7be15aaa2", "node_type": null, "metadata": {}, "hash": null, "class_name": "RelatedNodeInfo"}}, "metadata_template": "{key}: {value}", "metadata_separator": "\\n", "text": "", "mimetype": "text/plain", "start_char_idx": 745, "end_char_idx": 754, "metadata_seperator": "\\n", "text_template": "{metadata_str}\\n\\n{content}", "class_name": "TextNode"}',
+    "_node_type": "TextNode",
+    "doc_id": "aa47a5053c83b81cd85fe680",
+    "ref_doc_id": "aa47a5053c83b81cd85fe680",
+}

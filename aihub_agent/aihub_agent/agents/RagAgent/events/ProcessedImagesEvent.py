@@ -1,6 +1,7 @@
-from typing import List, Dict
+from typing import List, Optional
+
 from pydantic import Field
-from llama_index.core.base.llms.types import ChatMessage
+
 from aihub_lib.nats.events import ControlEvent
 
 
@@ -10,6 +11,6 @@ class ProcessedImagesEvent(ControlEvent):
     This event is generated after extracting and fetching images from markdown image nodes.
     """
 
-    context_message_with_images: ChatMessage = Field(
-        ..., description="The original context message including the images from the nodes."
+    images: Optional[List[str]] = Field(
+        None, description="A list of uft-8 encoded bytes representing the processed images."
     )
