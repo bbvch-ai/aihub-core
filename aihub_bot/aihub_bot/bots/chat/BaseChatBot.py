@@ -101,7 +101,7 @@ class BaseChatBot(ActivityHandler):
             if turn_context is None:
                 return
 
-        # Typing indicator cannot start before the Slack message is processed such that no typing indicator is sent
+        # Typing must be sent after the Slack message is processed such that no typing indicator is sent
         # when the bot should not respond to the message.
         typing_stop_signal = Event()
         typing_task: Task = asyncio.create_task(
