@@ -74,7 +74,7 @@ class BaseChatBot(ActivityHandler):
         locale_handler = self._get_locale_handler(turn_context)
         conversation_id = turn_context.activity.conversation.id
 
-        # Check if we should show expiration message
+        # Check if we should show an expiration message
         if (
             ConversationTracker.should_show_expiration_message(conversation_id)
             and turn_context.activity.type == "message"
