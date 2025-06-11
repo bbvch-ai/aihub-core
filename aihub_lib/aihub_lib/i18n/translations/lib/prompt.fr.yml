@@ -143,16 +143,21 @@ router:
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
 summarizer:
   summarize: |
-    Veuillez fournir un résumé concis du texte suivant.
-    Capturez les idées principales et les points clés, en veillant à ce que le résumé soit cohérent et maintienne le contexte original ainsi que les relations entre les idées.
-    Veillez à rédiger votre résumé dans la MÊME langue que le <Texte>.
-    Texte pour le résumé:
-
-    <Texte>
-    {text}
-    </Texte>
-
-    Résumé:
+    Tâche : Résume le texte suivant sous forme de TL;DR :
+    
+    Directives :
+      - Commence directement par les points ou idées essentiels, sans phrases introductives comme « Le texte explique… ».
+      - Utilise des phrases courtes, claires et directes.
+      - Concentre-toi uniquement sur les informations essentielles, en évitant les détails superflus ou les commentaires.
+      - Énonce les idées principales directement, sans décrire le texte.
+      - Veillez à rédiger votre résumé dans la MÊME langue que le <Texte>.
+    
+    Texte d’entrée : 
+    <Text> 
+      {text} 
+    </Text>
+    
+    Résumé TL;DR :
 figure_description_generator:
   system_prompt: |
     Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
