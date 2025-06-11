@@ -11,6 +11,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     LANGUAGE,
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
+    SECTION_START_LINE,
     TYPE,
 )
 
@@ -49,7 +50,7 @@ class RecursiveNodeSummarizer:
         self.node_id_to_node = {node.node_id: node for node in nodes}
         grouped_nodes = self._group_nodes_by_level(nodes)
         for level_nodes_list in grouped_nodes.values():
-            level_nodes_list.sort(key=lambda n: n.metadata.get("section_start_line", float("inf")))
+            level_nodes_list.sort(key=lambda n: n.metadata.get(SECTION_START_LINE, float("inf")))
 
         max_level: int = max(grouped_nodes.keys()) if grouped_nodes else -1
 
