@@ -143,16 +143,20 @@ router:
       Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
 summarizer:
   summarize: |
-    Please provide a concise summary of the following text.
-    Capture the main ideas and key points, ensuring the summary is coherent and maintains the original context and relationships between ideas.
-    Make sure to write your summary in the SAME language as the <Text>.
-    Text for Summary:
-
+    Task: Summarize the following text as a TL;DR:
+    
+    Guidelines:
+      - Begin with the most critical points or ideas immediately, without introductory phrases like "The text explains..."
+      - Use brief, clear, and straightforward sentences.
+      - Focus only on the most essential information, avoiding unnecessary detail or commentary.
+      - Write as if directly stating the key takeaways, not describing the text itself.
+      - Make sure to write your summary in the SAME language as the <Text>.
+    Input Text:
     <Text>
-    {text}
+      {text} 
     </Text>
-
-    Summary:
+    
+    TL;DR Summary:
 figure_description_generator:
   system_prompt: |
     You are an expert at creating high-quality image descriptions for document accessibility.
