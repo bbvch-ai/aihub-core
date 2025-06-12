@@ -22,8 +22,8 @@ async def main():
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             system_prompt=LocaleString(en="You are an agent"),
             slack_channel_id="C08MK7Z8GU9",
-            open_webui_knowledge_id="19f27af1-ab04-494f-877c-2f3e5fb24e52",
-            open_webui_api_key="sk-95736c105e1d48119a48f4f38716550c",
+            open_webui_knowledge_id="c49fd8bb-8e6b-4ed5-ba31-5e97b55bcbe8",
+            open_webui_api_key="sk-acb200cc04414a84867ad239471549cb",
             open_webui_api_url="http://localhost:8080",
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",

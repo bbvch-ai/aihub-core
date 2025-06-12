@@ -141,8 +141,10 @@ document:
     title: "Dokumenttitel"
     created: "Erstellt"
     updated_at: "Zuletzt aktualisiert"
+    language: "Sprache"
     document_type: "Dokumenttyp"
     number_of_pages: "Anzahl der Seiten"
+    download: "Download"
 
 knowledge:
   title: "Wissensdatenbanken"

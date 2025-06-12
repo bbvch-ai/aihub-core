@@ -33,13 +33,13 @@
       </template>
     </Column>
     <Column
-      field="document_type"
-      :header="t('document.list.document_type')"
+      field="language"
+      :header="t('document.list.language')"
     >
       <template #body="{ data }">
         <Tag
           severity="secondary"
-          :value="data.content_type"
+          :value="data.language"
         />
       </template>
     </Column>
@@ -54,11 +54,25 @@
         />
       </template>
     </Column>
+    <Column
+      field="source"
+      :header="t('document.list.download')"
+    >
+      <template #body="{ data }">
+        <Button
+          rounded
+          size="small"
+          variant="outlined"
+          icon="pi pi-download"
+          @click="() => downloadFile(data.source)"
+        />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
 <script setup lang="ts">
-import type { IngestedDocument } from '@core/sdk/client'
+import { getFileUrl, type IngestedDocument } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -78,4 +92,17 @@ const selectedDocument = computed(() => {
     return document.id === route.params.document_id
   })
 })
+
+const downloadFile = async (src: string) => {
+  const [container, file_path] = [src.split('/')[0], src.split('/').slice(1).join('/')]
+
+  const { url } = await getFileUrl({
+    composable: '$fetch',
+    path: {
+      container,
+      file_path,
+    },
+  })
+  window.open(url, '_blank')
+}
 </script>
