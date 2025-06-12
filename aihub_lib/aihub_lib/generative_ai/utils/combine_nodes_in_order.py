@@ -1,4 +1,5 @@
 import html
+import logging
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -29,6 +30,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
 
+logger = logging.getLogger(__name__)
+
 
 def sanitize_metadata_value(value: str) -> str:
     if not isinstance(value, str):
@@ -48,23 +51,10 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
         return None
 
 
-def remove_markdown_images(content: str) -> str:
-    """
-    Remove markdown image syntax from content.
-    Matches patterns like: ![description](url)
-    """
-    cleaned_content = re.sub(MARKDOWN_IMAGE_PATTERN, "", content)
-
-    cleaned_content = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned_content)
-    cleaned_content = cleaned_content.strip()
-
-    return cleaned_content
-
-
 def is_image_only_node(content: str) -> bool:
-    cleaned_content = remove_markdown_images(content)
+    images = re.findall(MARKDOWN_IMAGE_PATTERN, content)
 
-    return not cleaned_content.strip()
+    return len(images) == 1
 
 
 def combine_nodes_in_order(
@@ -105,6 +95,7 @@ def combine_nodes_in_order(
 
         for n in sorted_nodes:
             if is_image_only_node(n.content):
+                logger.warning(f"Node with text '{n.content}' contains only an image, skipping content.")
                 text_parts.append("<IMAGE>\n\n")
             else:
                 text_parts.append(f"{n.content}\n\n")
