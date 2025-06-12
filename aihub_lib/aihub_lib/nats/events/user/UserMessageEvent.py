@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
@@ -9,6 +9,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 
 
 class UserMessageEvent(StartEvent):
@@ -50,6 +51,10 @@ class UserMessageEvent(StartEvent):
     messages: List[ChatMessage | UserChatMessage | AssistantChatMessage] = Field(
         description="A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
         default_factory=list,
+    )
+    files: Optional[List[UserUploadedFile]] = Field(
+        None,
+        description="A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
     )
 
     @property
