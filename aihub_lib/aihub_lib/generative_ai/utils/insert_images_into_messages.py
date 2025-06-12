@@ -1,4 +1,3 @@
-import logging
 import re
 from typing import List, Optional
 
@@ -6,8 +5,6 @@ from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
-
-logger = logging.getLogger(__name__)
 
 # [^\]]{10,5000} matches non bracket characters between 10 and 5000 times, [^\s\)]{10,1000} matches non whitespace and non closing parenthesis characters between 10 and 1000 times
 MARKDOWN_IMAGE_PATTERN = r"^!\[[^\]]{10,5000}\]\(([^\s\)]{10,1000})\)$"
@@ -38,7 +35,6 @@ async def insert_images_into_messages(nodes: List[IngestedNode], messages: List[
     """Complete image processing pipeline: extract URLs from nodes, fetch images, and return processed data."""
     image_urls_found = extract_image_urls_from_nodes(nodes)
     if not image_urls_found:
-        logger.warning("No images found, returning empty list")
         return messages
 
     user_message = messages[-1]
@@ -57,5 +53,5 @@ async def _fetch_image_from_azure_blob(blob_path: str) -> Optional[bytes]:
 
     with fs_client.open(blob_path, "rb") as f:
         image_bytes = f.read()
-    logger.error(f"Fetched image from {blob_path} with size {len(image_bytes)} bytes")
+
     return image_bytes
