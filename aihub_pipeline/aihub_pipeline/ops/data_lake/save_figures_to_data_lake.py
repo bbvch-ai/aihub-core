@@ -1,10 +1,9 @@
 from typing import List, Optional
 
-from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
-from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 
+from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
@@ -18,7 +17,6 @@ def save_figures_to_data_lake(
     context: OpExecutionContext,
     doc_with_figures: DocumentWithFigureInfo,
     data_lake_file: DataLakeFile,
-    data_lake_client: ResourceParam[FileSystemClient],
     data_lake_file_system: ResourceParam[AbstractFileSystem],
     data_lake_resource: ResourceParam[DataLakeResource],
     document_parser: ResourceParam[DocumentParserResource],
@@ -46,8 +44,6 @@ def save_figures_to_data_lake(
             for chunk in response:
                 f.write(chunk)
 
-        file_client = data_lake_client.get_file_client(blob_path)
-
-        figures_metadata.append(FigureMetadata(figure_path=blob_path, figure_url=file_client.url))
+        figures_metadata.append(FigureMetadata(figure_path=blob_path))
 
     return figures_metadata

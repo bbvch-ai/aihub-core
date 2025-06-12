@@ -1,12 +1,12 @@
 from typing import List, Optional
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 from llama_index.core.llms import LLM
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
 
@@ -43,13 +43,11 @@ def inject_figures(
             image_bytes = f.read()
 
         figure_description = generate_description(
-            context=context,
             language_model=language_model,
             image_bytes=image_bytes,
-            figure_index=i,
             surrounding_text=surrounding_text,
         )
-        markdown_figure = f"![{figure_description}]({figure_metadata.figure_url})"
+        markdown_figure = f"![{figure_description}]({figure_metadata.figure_path})"
         figure_tag.replace_with(f"<figure>{markdown_figure}</figure>")
 
     doc_with_figures.text_resource.text = str(soup)
@@ -58,10 +56,8 @@ def inject_figures(
 
 
 def generate_description(
-    context: OpExecutionContext,
     language_model: LLM,
     image_bytes: bytes,
-    figure_index: int,
     surrounding_text: Optional[str] = None,
 ) -> str:
     """
