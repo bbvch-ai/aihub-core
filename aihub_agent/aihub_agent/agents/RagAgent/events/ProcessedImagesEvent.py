@@ -1,8 +1,7 @@
 from typing import List, Optional
 
-from pydantic import Field
-
 from aihub_lib.nats.events import ControlEvent
+from pydantic import Field
 
 
 class ProcessedImagesEvent(ControlEvent):
