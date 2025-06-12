@@ -69,6 +69,8 @@ class MarkdownContentSplitter:
             self.metadata = DEFAULT_METADATA.copy()
 
         content = content.strip()
+        if not content:
+            return []
         splits = []
         headers = find_markdown_headers(content)
 
