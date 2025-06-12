@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
+from aihub_lib.generative_ai.utils.insert_images_into_messages import MARKDOWN_IMAGE_PATTERN
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -52,9 +53,7 @@ def remove_markdown_images(content: str) -> str:
     Remove markdown image syntax from content.
     Matches patterns like: ![description](url)
     """
-    # [^\]]{10,1000} matches non bracket characters between 10 and 1000 times, [^\s\)]{10,2048} matches non whitespace and non closing parenthesis characters between 10 and 2048 times
-    markdown_image_pattern = r"^!\[[^\]]{10,1000}\]\(https?:\/\/[^\s\)]{10,2048}\)$"
-    cleaned_content = re.sub(markdown_image_pattern, "", content)
+    cleaned_content = re.sub(MARKDOWN_IMAGE_PATTERN, "", content)
 
     cleaned_content = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned_content)
     cleaned_content = cleaned_content.strip()

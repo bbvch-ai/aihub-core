@@ -17,7 +17,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.logging.logger import enable_logging
 
-enable_logging(30)
+enable_logging()
 load_dotenv()
 
 
