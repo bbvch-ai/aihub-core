@@ -92,7 +92,7 @@ class IngestedNode(IngestedBase):
             "namespace": metadata.pop(NAMESPACE),
             "content_type": metadata.pop(TYPE, NODE_TYPE_CONTENT),
             "document_title": metadata.pop(DOCUMENT_TITLE, ""),
-            "language": metadata.pop(LANGUAGE),
+            "language": metadata.pop(LANGUAGE, "en"),
             "version": metadata.pop(VERSION, 1),
             "index": metadata.pop(INDEX, 0),
             "section_start_line": metadata.pop(SECTION_START_LINE, None),
