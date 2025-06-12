@@ -37,7 +37,7 @@ services:
       GLOBAL_LOG_LEVEL: "debug"
 
       WEBUI_NAME: "bbv AI-Hub"
-      CORS_ALLOW_ORIGIN: "http://localhost:5173"
+      CORS_ALLOW_ORIGIN: "http://localhost:8080"
       ENABLE_SIGNUP: true
       ENABLE_LOGIN_FORM: true
       ENABLE_ADMIN_EXPORT: true
@@ -115,7 +115,7 @@ services:
       ENABLE_API_KEY: true
       RAG_EMBEDDING_BATCH_SIZE: 64
 
-      WEBUI_URL: "http://localhost:5173"
+      WEBUI_URL: "http://localhost:8080"
 
       ENABLE_OAUTH_SIGNUP: true
       OAUTH_CLIENT_ID: "3dc76991-ddd7-4c2d-9cf9-ac2146f33d23"

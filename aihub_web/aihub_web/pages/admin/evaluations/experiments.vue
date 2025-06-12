@@ -90,6 +90,7 @@ import type { MinimalExperiment, MinimalAgentDto, MinimalDataset } from '@core/s
 
 import { useLocalePath } from '#i18n'
 
+const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -98,8 +99,8 @@ const { experiments, experimentsAreLoading } = useExperiments()
 const createModalOpen = ref(false)
 const runStarted = ref(false)
 const runHasErrors = ref(false)
-const selectedAgents = useRouteQuery<string[]>('assistants', [])
-const selectedDatasets = useRouteQuery<string[]>('datasets', [])
+const selectedAgents = useRouteQuery<string[]>('assistants', [], { route, router })
+const selectedDatasets = useRouteQuery<string[]>('datasets', [], { route, router })
 
 const toExperiment = (experiment: MinimalExperiment) => {
   router.push(localePath(`/admin/evaluations/experiments/${experiment.id}`))

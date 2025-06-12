@@ -42,6 +42,7 @@ H6: str = "h6"
 HEADING_LEVEL: str = "heading_level"
 REFERENCE_NAME: str = "reference_name"
 REFERENCE_URL: str = "reference_url"
+DOCUMENT_STORE_NAME = "document_store_name"
 
 # Allowed node types with literal typing
 NODE_TYPE_CONTENT: NodeTypeValue = "content"
@@ -101,6 +102,7 @@ DEFAULT_METADATA: Dict[str, Any] = {
     HEADING_LEVEL: 0,
     REFERENCE_NAME: None,
     REFERENCE_URL: None,
+    DOCUMENT_STORE_NAME: None,
 }
 
 # Field definitions with their types for Azure Search
@@ -127,4 +129,5 @@ DEFAULT_METADATA_FIELDS: Dict[str, tuple] = {
     HEADING_LEVEL: (HEADING_LEVEL, MetadataIndexFieldType.INT32),
     REFERENCE_NAME: (REFERENCE_NAME, MetadataIndexFieldType.STRING),
     REFERENCE_URL: (REFERENCE_URL, MetadataIndexFieldType.STRING),
+    DOCUMENT_STORE_NAME: (DOCUMENT_STORE_NAME, MetadataIndexFieldType.STRING),
 }
