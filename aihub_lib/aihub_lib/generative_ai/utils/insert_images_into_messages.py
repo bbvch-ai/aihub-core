@@ -1,6 +1,5 @@
 import logging
 import re
-import urllib.parse
 from typing import List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
@@ -70,7 +69,7 @@ async def insert_images_into_messages(nodes: List[IngestedNode], messages: List[
     return messages
 
 
-async def _fetch_image_from_azure_blob(url: str) -> Optional[bytes]:
+async def _fetch_image_from_azure_blob(blob_path: str) -> Optional[bytes]:
     """
     Fetch image from Azure blob storage and return as base64 data URL.
 
@@ -81,24 +80,13 @@ async def _fetch_image_from_azure_blob(url: str) -> Optional[bytes]:
         Base64 data URL string or None if fetching failed
     """
     try:
-        path_parts = url.replace("https://bbvaihubdatalake.dfs.core.windows.net/", "").split("/", 1)
-        if len(path_parts) != 2:
-            logger.error(f"Invalid Azure blob URL format: {url}")
-            return None
-
-        container_name, blob_path = path_parts
-        blob_path = blob_path.replace("%2F", "/")[11:]
-
         fs_client = DataLakeAccess().get_fs_client()
 
-        full_path = f"{container_name}/{blob_path}"
-        full_path = urllib.parse.unquote(full_path)
-
-        with fs_client.open(full_path, "rb") as f:
+        with fs_client.open(blob_path, "rb") as f:
             image_bytes = f.read()
 
         return image_bytes
 
     except Exception as e:
-        logger.error(f"Error fetching image from Azure blob {url}: {e}")
+        logger.error(f"Error fetching image from Azure blob {blob_path}: {e}")
         return None
