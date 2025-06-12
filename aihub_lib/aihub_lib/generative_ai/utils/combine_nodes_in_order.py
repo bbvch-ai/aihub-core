@@ -1,5 +1,4 @@
 import html
-import logging
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -29,8 +28,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
-
-logger = logging.getLogger(__name__)
 
 
 def sanitize_metadata_value(value: str) -> str:
@@ -95,7 +92,6 @@ def combine_nodes_in_order(
 
         for n in sorted_nodes:
             if is_image_only_node(n.content):
-                logger.warning(f"Node with text '{n.content}' contains only an image, skipping content.")
                 text_parts.append("<IMAGE>\n\n")
             else:
                 text_parts.append(f"{n.content}\n\n")
