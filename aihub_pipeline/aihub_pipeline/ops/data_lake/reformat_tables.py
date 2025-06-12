@@ -14,6 +14,9 @@ def reformat_tables(
     """
     Convert HTML tables in the document to Markdown tables.
     """
+    if not document.text_resource or not document.text_resource.text:
+        return document
+
     soup = BeautifulSoup(document.text_resource.text, "html.parser")
 
     table_tags = soup.find_all("table")
