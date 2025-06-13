@@ -116,7 +116,7 @@ def _():
 def _(the_context_nodes, the_locale_handler, the_context_prompt):
     try:
         return combine_nodes_in_order(
-            context_nodes=the_context_nodes, locale_handler=the_locale_handler, context_prompt=the_context_prompt
+            context_nodes=the_context_nodes, t=the_locale_handler, context_prompt=the_context_prompt
         )
     except ValueError as e:
         return e
