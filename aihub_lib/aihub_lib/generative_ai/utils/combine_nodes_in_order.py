@@ -1,5 +1,4 @@
 import html
-import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -8,7 +7,6 @@ from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRol
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.generative_ai.utils.insert_images_into_messages import MARKDOWN_IMAGE_PATTERN
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -97,8 +95,7 @@ def combine_nodes_in_order(
             content = n.content
 
             if n.content_type == NODE_CONTENT_TYPE_FIGURE:
-                match = re.findall(MARKDOWN_IMAGE_PATTERN, content)
-                image_path = match[0]
+                image_path = content.split("](")[-1][:-1]
                 container, blob_path = image_path.split("/", 1)
                 image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
                 context_blocks.append(ImageBlock(url=image_url))
