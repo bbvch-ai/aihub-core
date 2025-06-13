@@ -1,15 +1,14 @@
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import ClassVar, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
-from typing_extensions import override
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
-from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
+from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
 
 
 class UserMessageEvent(StartEvent):
@@ -64,28 +63,3 @@ class UserMessageEvent(StartEvent):
         """
         user_messages = [msg for msg in self.messages if msg.role == "user"]
         return user_messages[-1].content if user_messages else ""
-
-    @override
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        """
-        Overrides BaseEvent's model_dump to fix the AnyUrl serialization issue.
-        """
-        data = super().model_dump(**kwargs)
-
-        # Fix the serialized messages
-        serialized_messages = []
-        for msg in self.messages:
-            msg_dict = msg.model_dump()
-
-            # Fix the URLs in blocks
-            for block in msg_dict["blocks"]:
-                if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
-                    block["url"] = str(block["url"])
-                    if block.get("path") is not None:
-                        block["path"] = str(block["path"])
-
-            serialized_messages.append(msg_dict)
-
-        data["messages"] = serialized_messages
-
-        return data

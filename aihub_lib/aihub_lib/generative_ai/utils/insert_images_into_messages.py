@@ -8,7 +8,7 @@ from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 
 # [^\]]{10,5000} matches non bracket characters between 10 and 5000 times, [^\s\)]{10,1000} matches non whitespace and non closing parenthesis characters between 10 and 1000 times
-MARKDOWN_IMAGE_PATTERN = r"^!\[[^\]]{10,5000}\]\((https?:\/\/[^\s\)]{10,1000})\)$"
+MARKDOWN_IMAGE_PATTERN = r"^!\[[^\]]{10,5000}\]\(([^\s\)]{10,1000})\)$"
 
 
 def extract_image_urls_from_nodes(nodes: List[IngestedNode]) -> List[str]:

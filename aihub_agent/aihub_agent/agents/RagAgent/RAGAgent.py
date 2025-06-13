@@ -17,7 +17,6 @@ from aihub_lib.generative_ai.guards.context_sufficient_guard import context_suff
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
-from aihub_lib.generative_ai.utils.insert_images_into_messages import insert_images_into_messages
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
@@ -247,7 +246,6 @@ class RAGAgent(Agent):
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientEvent,
         limited_history_without_context: LimitChatHistoryEvent,
-        retriever_event: RetrieverEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -263,9 +261,7 @@ class RAGAgent(Agent):
                 ),
             ]
         else:
-            # To avoid adding images as payload to NATs events, we decided against adding images in a separate step
-            messages = await insert_images_into_messages(retriever_event.nodes, event.limited_history_with_context)
-
+            messages = event.limited_history_with_context
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, messages)

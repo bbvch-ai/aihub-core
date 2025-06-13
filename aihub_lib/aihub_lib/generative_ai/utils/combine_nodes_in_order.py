@@ -26,6 +26,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
     VERSION,
+    NODE_CONTENT_TYPE_FIGURE,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
@@ -89,41 +90,27 @@ def combine_nodes_in_order(
 
         doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
 
-        text_blocks = [TextBlock(text=prompt_parts[0]), TextBlock(text=doc_header)]
+        context_blocks = [TextBlock(text=prompt_parts[0]), TextBlock(text=doc_header)]
         sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
 
         for n in sorted_nodes:
             content = n.content
-            blocks = []
-            last_end = 0
 
-            for match in re.finditer(MARKDOWN_IMAGE_PATTERN, content):
-                start, end = match.span()
-                image_path = match.group(1)
-                path_segments = image_path.split("/")
-                container = path_segments[0]
-                blob_path = "/".join(path_segments[1:])
-
-                if start > last_end:
-                    blocks.append(TextBlock(text=content[last_end:start].strip()))
-
+            if n.content_type == NODE_CONTENT_TYPE_FIGURE:
+                match = re.findall(MARKDOWN_IMAGE_PATTERN, content)
+                image_path = match[0]
+                container, blob_path = image_path.split("/", 1)
                 image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
-                blocks.append(ImageBlock(url=image_url))
-                last_end = end
+                context_blocks.append(ImageBlock(url=image_url))
+            else:
+                context_blocks.append(TextBlock(text=n.content))
 
-            if last_end < len(content):
-                blocks.append(TextBlock(text=content[last_end:].strip()))
+        context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n"))
+        context_blocks.append(TextBlock(text="\n---\n"))
 
-            text_blocks.extend(blocks)
-
-        text_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n"))
-        text_blocks.append(TextBlock(text="\n---\n"))
-
-        blocks.extend(text_blocks)
-
-    blocks.append(TextBlock(text=prompt_parts[1]))
+    context_blocks.append(TextBlock(text=prompt_parts[1]))
 
     return ChatMessage(
         role=MessageRole.SYSTEM,
-        content=blocks,
+        blocks=context_blocks,
     )

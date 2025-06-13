@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
+from llama_index.core.base.llms.types import ChatMessage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 from typing_extensions import override
 
@@ -284,11 +285,19 @@ class BaseEvent(BaseModel):
         """
         data = super().model_dump(**kwargs)
         for field_name, value in self.__dict__.items():
-            if isinstance(value, BaseModel):
+            if isinstance(value, ChatMessage):
+                data[field_name] = serialize_chat_message_blocks(value.model_dump())
+            elif isinstance(value, BaseModel):
                 data[field_name] = value.model_dump()
-            # Handle lists containing events
             elif isinstance(value, list):
-                data[field_name] = [item.model_dump() if isinstance(item, BaseModel) else item for item in value]
+                data[field_name] = [
+                    (
+                        serialize_chat_message_blocks(item.model_dump())
+                        if isinstance(item, ChatMessage)
+                        else item.model_dump() if isinstance(item, BaseModel) else item
+                    )
+                    for item in value
+                ]
 
         if not self._unknown_data:
             return data
@@ -305,3 +314,13 @@ class BaseEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         return json.dumps(self.model_dump(**kwargs), default=str)
+
+
+def serialize_chat_message_blocks(msg_dict: dict) -> dict:
+    for block in msg_dict["blocks"]:
+        if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
+            block["url"] = str(block["url"])
+            if block.get("path") is not None:
+                block["path"] = str(block["path"])
+
+    return msg_dict

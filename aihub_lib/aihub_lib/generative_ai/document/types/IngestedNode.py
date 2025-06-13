@@ -35,6 +35,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT,
     NODE_CONTENT_TYPE_TEXT,
     NODE_CONTENT_TYPE,
+    NodeContentType,
 )
 
 
@@ -51,7 +52,7 @@ class IngestedNode(IngestedBase):
     id: Annotated[str, Field(description="The unique identifier of the Node.")]
     content: Annotated[str, Field(description="The textual content of the Node.")]
     type: Annotated[NodeTypeValue, Field(description="Type (content or summary).")] = NODE_CONTENT
-    content_type: Annotated[NodeTypeValue, Field(description="Content type (text, figure or table).")] = (
+    content_type: Annotated[NodeContentType, Field(description="Content type (text, figure or table).")] = (
         NODE_CONTENT_TYPE_TEXT
     )
     document_id: Annotated[str, Field(description="ID of original ref_doc.")]
