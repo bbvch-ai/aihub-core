@@ -25,6 +25,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
+    NodeContentType,
 )
 
 
@@ -37,6 +38,12 @@ class MarkdownHeader:
     @property
     def level(self) -> int:
         return len(self.hashes)
+
+
+@dataclass(frozen=True)
+class TextChunk:
+    content: str
+    content_type: NodeContentType
 
 
 def find_markdown_headers(content: str) -> List[MarkdownHeader]:
@@ -166,14 +173,14 @@ class NodeCreatorFromSplits:
         self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
         self.id_func = id_func
 
-        nodes = []  # TODO @skype if you initialize empty lists, please type them
-        last_nodes_stack = []  # TODO @skype if you initialize empty lists, please type them
+        nodes: List[TextNode] = []
+        last_nodes_stack = []
 
         page = 1
         for split in splits:
             split.metadata.update({PAGE: page})
 
-            text_chunks_with_types = []  # TODO @skype if you initialize empty lists, please type them
+            text_chunks: List[TextChunk] = []
             soup = bs4.BeautifulSoup(split.content, "html.parser")
             buffer = ""
 
@@ -182,40 +189,43 @@ class NodeCreatorFromSplits:
                     NODE_CONTENT_TYPE_TABLE,
                     NODE_CONTENT_TYPE_FIGURE,
                 ]:
-                    # TODO add child.name as node content type in metadata, but not for the split but for the node
-                    split.metadata.update({NODE_CONTENT_TYPE: child.name})
                     if buffer.strip():
-                        text_chunks_with_types.extend(
+                        text_chunks.extend(
                             [
-                                (text_split, NODE_CONTENT_TYPE_TEXT)
+                                TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
                                 for text_split in self.sentence_splitter.split_text(buffer)
                             ]
                         )
                         buffer = ""
-                    text_chunks_with_types.append((child.text, child.name))
+                    text_chunks.append(TextChunk(child.text, child.name))
                 else:
                     buffer += str(child)
 
             if buffer.strip():
-                split_texts.extend(self.sentence_splitter.split_text(buffer))
+                text_chunks.extend(
+                    [
+                        TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
+                        for text_split in self.sentence_splitter.split_text(buffer)
+                    ]
+                )
 
-            split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
+            split_nodes = [self._build_node_from_split(text_chunk, node, split.metadata) for text_chunk in text_chunks]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
 
-            # Increment page AFTER processing the split containing the PAGE_BREAK
             if PAGE_BREAK in split.content:
                 page += 1
 
         return nodes
 
-    def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
-        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+    def _build_node_from_split(self, text_chunk: TextChunk, node: BaseNode, metadata: dict) -> TextNode:
+        node = build_nodes_from_splits([text_chunk.content], node, id_func=self.id_func)[0]
         if self.include_metadata:
-            metadata[INDEX] = self.current_index  # Set the index in the metadata
+            metadata[INDEX] = self.current_index
             node.metadata = {**self.metadata, **metadata}
-        self.current_index += 1  # Increment the index counter
+            node.metadata.update({NODE_CONTENT_TYPE: text_chunk.content_type})
+        self.current_index += 1
         return node
 
     @staticmethod

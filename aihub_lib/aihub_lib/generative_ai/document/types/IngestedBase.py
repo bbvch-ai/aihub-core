@@ -1,6 +1,6 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Dict
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from aihub_lib.persistence.rag.vectors.node_metadata import LanguageValue
 
@@ -13,8 +13,6 @@ class IngestedBase(BaseModel):
     Note that all attributes that are specific to text documents, like number_of_pages, title, language, etc.,
     must be strictly optional, but all attributes that are purely technical like source are strictly necessary.
     """
-
-    model_config = ConfigDict(extra="allow")
 
     source: Annotated[str, Field(description="Source URI of original document.")]
     namespace: Annotated[str, Field(description="The namespace of the document within its metadata.")]
@@ -32,3 +30,4 @@ class IngestedBase(BaseModel):
     inserted_at: Annotated[
         str, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
+    metadata: Annotated[Optional[Dict], Field(description="Additional metadata for the document.")] = None

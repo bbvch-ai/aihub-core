@@ -32,6 +32,9 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     VERSION,
     HeadingLevelValue,
     NodeTypeValue,
+    NODE_CONTENT,
+    NODE_CONTENT_TYPE_TEXT,
+    NODE_CONTENT_TYPE,
 )
 
 
@@ -47,7 +50,10 @@ class IngestedNode(IngestedBase):
 
     id: Annotated[str, Field(description="The unique identifier of the Node.")]
     content: Annotated[str, Field(description="The textual content of the Node.")]
-    content_type: Annotated[NodeTypeValue, Field(description="Content type (content or summary).")] = "content"
+    type: Annotated[NodeTypeValue, Field(description="Type (content or summary).")] = NODE_CONTENT
+    content_type: Annotated[NodeTypeValue, Field(description="Content type (text, figure or table).")] = (
+        NODE_CONTENT_TYPE_TEXT
+    )
     document_id: Annotated[str, Field(description="ID of original ref_doc.")]
 
     start_char_idx: Annotated[Optional[int], Field(description="The start character index of the Node.")] = None
@@ -81,38 +87,36 @@ class IngestedNode(IngestedBase):
         )
 
         metadata = node.metadata.copy() if node.metadata else {}
+        inst = cls(
+            id=node.node_id,
+            content=node.text,
+            start_char_idx=getattr(node, "start_char_idx", None),
+            end_char_idx=getattr(node, "end_char_idx", None),
+            document_id=document_id,
+            source=metadata.pop(SOURCE),
+            namespace=metadata.pop(NAMESPACE),
+            type=metadata.pop(TYPE, NODE_TYPE_CONTENT),
+            content_type=metadata.pop(NODE_CONTENT_TYPE, NODE_CONTENT_TYPE_TEXT),
+            document_title=metadata.pop(DOCUMENT_TITLE, ""),
+            language=metadata.pop(LANGUAGE, "en"),
+            version=metadata.pop(VERSION, 1),
+            index=metadata.pop(INDEX, 0),
+            section_start_line=metadata.pop(SECTION_START_LINE, None),
+            section_end_line=metadata.pop(SECTION_END_LINE, None),
+            h1=metadata.pop(H1, None),
+            h2=metadata.pop(H2, None),
+            h3=metadata.pop(H3, None),
+            h4=metadata.pop(H4, None),
+            h5=metadata.pop(H5, None),
+            h6=metadata.pop(H6, None),
+            heading_level=metadata.pop(HEADING_LEVEL, None),
+            created_at=to_iso(metadata.pop(CREATED_AT, 0)),
+            updated_at=to_iso(metadata.pop(UPDATED_AT, 0)),
+            inserted_at=to_iso(metadata.pop(INSERTED_AT, 0)),
+            metadata=metadata,
+        )
 
-        base_data = {
-            "id": node.node_id,
-            "content": node.text,
-            "start_char_idx": getattr(node, "start_char_idx", None),
-            "end_char_idx": getattr(node, "end_char_idx", None),
-            "document_id": document_id,
-            "source": metadata.pop(SOURCE),
-            "namespace": metadata.pop(NAMESPACE),
-            "content_type": metadata.pop(TYPE, NODE_TYPE_CONTENT),
-            "document_title": metadata.pop(DOCUMENT_TITLE, ""),
-            "language": metadata.pop(LANGUAGE, "en"),
-            "version": metadata.pop(VERSION, 1),
-            "index": metadata.pop(INDEX, 0),
-            "section_start_line": metadata.pop(SECTION_START_LINE, None),
-            "section_end_line": metadata.pop(SECTION_END_LINE, None),
-            "h1": metadata.pop(H1, None),
-            "h2": metadata.pop(H2, None),
-            "h3": metadata.pop(H3, None),
-            "h4": metadata.pop(H4, None),
-            "h5": metadata.pop(H5, None),
-            "h6": metadata.pop(H6, None),
-            "heading_level": metadata.pop(HEADING_LEVEL, None),
-            "created_at": to_iso(metadata.pop(CREATED_AT, 0)),
-            "updated_at": to_iso(metadata.pop(UPDATED_AT, 0)),
-            "inserted_at": to_iso(metadata.pop(INSERTED_AT, 0)),
-        }
-
-        if node.metadata:
-            base_data["metadata"] = node.metadata
-
-        return cls(**base_data)
+        return inst
 
     @classmethod
     def from_llama_index_node_with_score(cls, node_with_score: NodeWithScore):
