@@ -1,12 +1,12 @@
 from typing import List, Optional
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 from llama_index.core.llms import LLM
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
 

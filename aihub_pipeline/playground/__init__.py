@@ -33,10 +33,10 @@ REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
-DATALAKE_DIRECTORY_NAME = "papers"
+DATALAKE_DIRECTORY_NAME = "test"
 FIGURES_DIRECTORY_NAME = "__figures__"
-NAMESPACE_NAME = "papers"
-STORE_NAME = "papers"
+NAMESPACE_NAME = "test"
+STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
