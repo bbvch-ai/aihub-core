@@ -82,7 +82,8 @@ const selectedDocument = computed(() => {
 })
 
 const downloadFile = async (src: string) => {
-  const [container, file_path] = [src.split('/')[0], src.split('/').slice(1).join('/')]
+  const parts = src.split('/')
+  const [container, file_path] = [parts[0], parts.slice(1).join('/')]
 
   const { url } = await getFileUrl({
     composable: '$fetch',

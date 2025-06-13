@@ -32,10 +32,8 @@ const fetchAndSetImageUrl = async () => {
     return props.src
   }
 
-  console.log(props.src)
-  const [container, file_path] = [props.src.split('/')[0], props.src.split('/').slice(1).join('/')]
-
-  console.log({ container, file_path })
+  const parts = src.split('/')
+  const [container, file_path] = [parts[0], parts.slice(1).join('/')]
 
   const { url } = await getFileUrl({
     composable: '$fetch',
