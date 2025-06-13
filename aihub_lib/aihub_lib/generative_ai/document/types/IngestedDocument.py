@@ -83,6 +83,7 @@ class IngestedDocument(IngestedBase):
             content=entity.data.text,
             source=entity.data.metadata.source,
             namespace=entity.data.metadata.namespace,
+            number_of_pages=entity.data.metadata.number_of_pages,
             document_title=entity.data.metadata.document_title,
             language=entity.data.metadata.language,
             version=entity.data.metadata.version or 1,

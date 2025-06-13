@@ -47,7 +47,7 @@ def inject_figures(
             image_bytes=image_bytes,
             surrounding_text=surrounding_text,
         )
-        markdown_figure = f"![{figure_description}]({figure_metadata.figure_url})"
+        markdown_figure = f"![{figure_description}]({figure_metadata.figure_path})"
         figure_tag.replace_with(f"<figure>{markdown_figure}</figure>")
 
     doc_with_figures.text_resource.text = str(soup)

@@ -33,24 +33,26 @@
       </template>
     </Column>
     <Column
-      field="document_type"
-      :header="t('document.list.document_type')"
-    >
-      <template #body="{ data }">
-        <Tag
-          severity="secondary"
-          :value="data.content_type"
-        />
-      </template>
-    </Column>
-    <Column
       field="number_of_pages"
       :header="t('document.list.number_of_pages')"
     >
       <template #body="{ data }">
         <Badge
-          :value="data.number_of_pages"
-          size="large"
+          :value="data.number_of_pages ?? '-'"
+        />
+      </template>
+    </Column>
+    <Column
+      field="source"
+      :header="t('document.list.download')"
+    >
+      <template #body="{ data }">
+        <Button
+          rounded
+          size="small"
+          variant="outlined"
+          icon="pi pi-download"
+          @click="() => downloadFile(data.source)"
         />
       </template>
     </Column>
@@ -58,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IngestedDocument } from '@core/sdk/client'
+import { getFileUrl, type IngestedDocument } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -78,4 +80,18 @@ const selectedDocument = computed(() => {
     return document.id === route.params.document_id
   })
 })
+
+const downloadFile = async (src: string) => {
+  const parts = src.split('/')
+  const [container, file_path] = [parts[0], parts.slice(1).join('/')]
+
+  const { url } = await getFileUrl({
+    composable: '$fetch',
+    path: {
+      container,
+      file_path,
+    },
+  })
+  window.open(url, '_blank')
+}
 </script>

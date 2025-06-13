@@ -34,8 +34,8 @@ def documents_factory(
         data_lake_file: DataLakeFile,
     ) -> Output[RefDocDocument]:
         doc_with_figures = parse_document_from_data_lake(data_lake_file)
-        figure_metadata = save_figures_to_data_lake(doc_with_figures, data_lake_file)
-        doc_with_injected_figures = inject_figures(doc_with_figures, figure_metadata)
+        figure_metadata = save_figures_to_data_lake(doc_with_figures=doc_with_figures, data_lake_file=data_lake_file)
+        doc_with_injected_figures = inject_figures(doc_with_figures=doc_with_figures, figures_metadata=figure_metadata)
         reformatted_doc = reformat_tables(doc_with_injected_figures)
 
         return insert_ref_doc_into_docstore(
