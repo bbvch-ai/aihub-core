@@ -18,10 +18,13 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
     INDEX,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_FIGURE,
+    NODE_CONTENT_TYPE_TABLE,
+    NODE_CONTENT_TYPE_TEXT,
     PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
-    NODE_CONTENT_TYPE,
 )
 
 
@@ -163,24 +166,30 @@ class NodeCreatorFromSplits:
         self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
         self.id_func = id_func
 
-        nodes = []
-        last_nodes_stack = []
+        nodes = []  # TODO @skype if you initialize empty lists, please type them
+        last_nodes_stack = []  # TODO @skype if you initialize empty lists, please type them
 
         page = 1
         for split in splits:
             split.metadata.update({PAGE: page})
 
-            text_chunks_with_types = []
+            text_chunks_with_types = []  # TODO @skype if you initialize empty lists, please type them
             soup = bs4.BeautifulSoup(split.content, "html.parser")
             buffer = ""
 
             for child in soup.children:
-                if isinstance(child, bs4.element.Tag) and child.name in ["table", "figure"]:
+                if isinstance(child, bs4.element.Tag) and child.name in [
+                    NODE_CONTENT_TYPE_TABLE,
+                    NODE_CONTENT_TYPE_FIGURE,
+                ]:
                     # TODO add child.name as node content type in metadata, but not for the split but for the node
                     split.metadata.update({NODE_CONTENT_TYPE: child.name})
                     if buffer.strip():
                         text_chunks_with_types.extend(
-                            [(text_split, "text") for text_split in self.sentence_splitter.split_text(buffer)]
+                            [
+                                (text_split, NODE_CONTENT_TYPE_TEXT)
+                                for text_split in self.sentence_splitter.split_text(buffer)
+                            ]
                         )
                         buffer = ""
                     text_chunks_with_types.append((child.text, child.name))

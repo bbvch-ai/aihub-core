@@ -49,6 +49,7 @@ DOCUMENT_STORE_NAME = "document_store_name"
 # Allowed node types with literal typing
 NODE_TYPE_CONTENT: NodeTypeValue = "content"
 NODE_TYPE_SUMMARY: NodeTypeValue = "summary"
+
 NODE_CONTENT_TYPE_TABLE: NodeContentType = "table"
 NODE_CONTENT_TYPE_FIGURE: NodeContentType = "figure"
 NODE_CONTENT_TYPE_TEXT: NodeContentType = "text"

@@ -4,8 +4,9 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ImageBlock
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.utils.insert_images_into_messages import MARKDOWN_IMAGE_PATTERN
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -98,11 +99,15 @@ def combine_nodes_in_order(
 
             for match in re.finditer(MARKDOWN_IMAGE_PATTERN, content):
                 start, end = match.span()
-                image_url = match.group(1)
+                image_path = match.group(1)
+                path_segments = image_path.split("/")
+                container = path_segments[0]
+                blob_path = "/".join(path_segments[1:])
 
                 if start > last_end:
                     blocks.append(TextBlock(text=content[last_end:start].strip()))
 
+                image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
                 blocks.append(ImageBlock(url=image_url))
                 last_end = end
 

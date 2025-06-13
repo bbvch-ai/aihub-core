@@ -1,9 +1,6 @@
 from datetime import datetime
 from typing import List
 
-from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
-from llama_index.core.schema import TextNode
-
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -17,6 +14,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    NODE_CONTENT_TYPE,
     PAGE,
     REFERENCE_NAME,
     REFERENCE_URL,
@@ -26,8 +24,10 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
     VERSION,
-    NODE_CONTENT_TYPE,
 )
+from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
+from llama_index.core.schema import TextNode
+
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 

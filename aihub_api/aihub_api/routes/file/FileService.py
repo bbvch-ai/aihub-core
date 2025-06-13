@@ -1,9 +1,11 @@
+import hashlib
 import hmac
+import math
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
-from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -15,51 +17,30 @@ class FileService:
     """
 
     @staticmethod
-    def generate_sas_url(container: str, file_path: str) -> str:
-        """Generates a temporary read-only SAS URL for a specific blob."""
-        access = BlobStorageAccess()
-        account_name = access.get_account_name()
-        service_endpoint = access.get_service_endpoint()
-        blob_service_client = access.get_blob_service_client()
-
-        delegation_key_start_time = datetime.now(timezone.utc)
-        delegation_key_expiry_time = delegation_key_start_time + timedelta(hours=24)
-
-        user_delegation_key = blob_service_client.get_user_delegation_key(
-            key_start_time=delegation_key_start_time, key_expiry_time=delegation_key_expiry_time
-        )
-
-        sas_token = generate_blob_sas(
-            account_name=account_name,
-            container_name=container,
-            blob_name=file_path,
-            user_delegation_key=user_delegation_key,
-            permission=BlobSasPermissions(read=True),
-            expiry=datetime.now(timezone.utc) + timedelta(hours=24),
-        )
-
-        return f"{service_endpoint}/{container}/{file_path}?{sas_token}"
-
-    @staticmethod
     def get_authenticated_file_redirect(container: str, file_path: str) -> RedirectResponse:
         """
         For logged-in users. Generates a SAS URL and returns a redirect response.
         """
-        sas_url = FileService.generate_sas_url(container, file_path)
+        sas_url = AnonymousFileAccessService.generate_sas_url(container, file_path)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
     def get_anonymous_file_url(container: str, file_path: str, expires: int, signature: str) -> str:
-        if datetime.now(timezone.utc).timestamp() > expires:
+        now_timestamp = datetime.now(timezone.utc).timestamp()
+
+        if now_timestamp > expires:
             raise HTTPException(status_code=status.HTTP_410_GONE, detail="This link has expired.")
 
-        expected_signature = AnonymousFileAccessService.generate_internal_signature(
+        expected_signature = FileService._generate_internal_signature(
             container=container, path=file_path, expires=expires
         )
         if not hmac.compare_digest(expected_signature, signature):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature.")
 
-        return FileService.generate_sas_url(container, file_path)
+        remaining_seconds = expires - now_timestamp
+        lifetime_hours = math.ceil(remaining_seconds / 3600)
+
+        return AnonymousFileAccessService.generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
 
     @staticmethod
     def get_anonymous_file_redirect(container: str, file_path: str, expires: int, signature: str) -> RedirectResponse:
@@ -69,3 +50,38 @@ class FileService:
         """
         sas_url = FileService.get_anonymous_file_url(container, file_path, expires, signature)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+    @staticmethod
+    def _generate_internal_signature(container: str, path: str, expires: int) -> str:
+        """Generates an HMAC signature for our internal anonymous URL."""
+        secret = BlobStorageAccess().get_url_signing_secret()
+        msg = f"{container}{path}{expires}".encode("utf-8")
+        return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+
+    @staticmethod
+    def create_anonymous_url(
+        get_anonymous_file_redirect_api_endpoint: Annotated[
+            str, "https url of FileController.get_anonymous_file_redirect route"
+        ],
+        container: Annotated[str, "Blob container name (or - in data lake settings - usually root folder name)"],
+        file_path: Annotated[str, "Path to file within container (or within root folder)"],
+        lifetime_hours: Annotated[int, "Link lifetime, can be at most 24 hours"] = 24,
+    ) -> str:
+        """
+        Creates a secure, time-limited URL for anonymous sharing.
+        This method would be called by another service when a user wants to "share" a file.
+        """
+        if lifetime_hours > 24 * 30:
+            raise ValueError("Lifetime is too large, can be at most valid for 30 days.")
+
+        if file_path.startswith("/"):
+            file_path = file_path[1:]
+
+        expires_dt = datetime.now(timezone.utc) + timedelta(hours=lifetime_hours)
+        expires_timestamp = int(expires_dt.timestamp())
+
+        signature = FileService._generate_internal_signature(
+            container=container, path=file_path, expires=expires_timestamp
+        )
+
+        return f"{get_anonymous_file_redirect_api_endpoint}/{container}/{file_path}?expires={expires_timestamp}&signature={signature}"

@@ -1,6 +1,7 @@
 from io import StringIO
 
 import pandas as pd
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_TABLE
 from bs4 import BeautifulSoup
 from dagster import op
 
@@ -24,7 +25,7 @@ def reformat_tables(
     for table in table_tags:
         # TODO if table is very long split into smaller tables with copied headers
         markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
-        table.replace_with(f"<table>{markdown_table}</table>")
+        table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
 
     document.text_resource.text = str(soup)
 
