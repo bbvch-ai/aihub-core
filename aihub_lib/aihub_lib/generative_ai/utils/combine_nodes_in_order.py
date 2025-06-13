@@ -26,6 +26,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
     VERSION,
+    NODE_CONTENT_TYPE,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
@@ -67,7 +68,8 @@ def combine_nodes_in_order(
         metadata_fields = {
             SOURCE: key,
             NAMESPACE: node.namespace,
-            TYPE: node.content_type,
+            TYPE: node.type,
+            NODE_CONTENT_TYPE: node.content_type,
             LANGUAGE: node.language,
             VERSION: node.version,
             CREATED_AT: node.created_at,

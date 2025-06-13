@@ -126,6 +126,6 @@ def _(the_context_nodes, the_locale_handler, the_context_prompt):
 def _(the_result, docstring):
     assert isinstance(the_result, ChatMessage)
     expected = "\n".join(line.rstrip() for line in docstring.strip().splitlines())
-    actual = "\n".join(line.rstrip() for line in the_result.content.strip().splitlines())
+    actual = "\n".join(line.rstrip() for line in the_result.blocks[0].text.strip().splitlines())
 
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"
