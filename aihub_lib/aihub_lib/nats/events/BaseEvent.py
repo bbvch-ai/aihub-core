@@ -16,6 +16,17 @@ from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classe
 logger = logging.getLogger(__name__)
 
 
+def serialize_chat_message_blocks(chat_message: ChatMessage) -> Dict:
+    msg_dict = chat_message.model_dump()
+    for block in msg_dict["blocks"]:
+        if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
+            block["url"] = str(block["url"])
+            if block.get("path") is not None:
+                block["path"] = str(block["path"])
+
+    return msg_dict
+
+
 class BaseEvent(BaseModel):
     """
     The foundational event model from which all other event types inherit.
@@ -294,7 +305,9 @@ class BaseEvent(BaseModel):
                     (
                         serialize_chat_message_blocks(item.model_dump())
                         if isinstance(item, ChatMessage)
-                        else item.model_dump() if isinstance(item, BaseModel) else item
+                        else item.model_dump()
+                        if isinstance(item, BaseModel)
+                        else item
                     )
                     for item in value
                 ]
@@ -314,13 +327,3 @@ class BaseEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         return json.dumps(self.model_dump(**kwargs), default=str)
-
-
-def serialize_chat_message_blocks(msg_dict: dict) -> dict:
-    for block in msg_dict["blocks"]:
-        if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
-            block["url"] = str(block["url"])
-            if block.get("path") is not None:
-                block["path"] = str(block["path"])
-
-    return msg_dict

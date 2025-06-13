@@ -21,11 +21,11 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    NODE_CONTENT_TYPE_FIGURE,
     SOURCE,
     TYPE,
     UPDATED_AT,
     VERSION,
-    NODE_CONTENT_TYPE_FIGURE,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
@@ -95,8 +95,7 @@ def combine_nodes_in_order(
             else:
                 context_blocks.append(TextBlock(text=n.content))
 
-        context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n"))
-        context_blocks.append(TextBlock(text="\n---\n"))
+        context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n\n---\n"))
 
     if context_prompt:
         context_prompt_locale = t.extract(context_prompt, t.locale)

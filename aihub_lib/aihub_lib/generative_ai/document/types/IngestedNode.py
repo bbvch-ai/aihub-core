@@ -22,6 +22,9 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    NODE_CONTENT,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_TEXT,
     NODE_TYPE_CONTENT,
     NUMBER_OF_PAGES,
     SECTION_END_LINE,
@@ -31,11 +34,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
     VERSION,
     HeadingLevelValue,
-    NodeTypeValue,
-    NODE_CONTENT,
-    NODE_CONTENT_TYPE_TEXT,
-    NODE_CONTENT_TYPE,
     NodeContentType,
+    NodeTypeValue,
 )
 
 
