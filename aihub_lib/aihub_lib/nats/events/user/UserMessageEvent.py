@@ -7,8 +7,8 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
-from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 
 
 class UserMessageEvent(StartEvent):
