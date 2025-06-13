@@ -140,8 +140,10 @@ document:
     title: "Titre du document"
     created: "Créé"
     updated_at: "Dernière mise à jour"
+    language: "Langue"
     document_type: "Type de document"
     number_of_pages: "Nombre de pages"
+    download: "Download"
 
 knowledge:
   title: "Bases de connaissances"
