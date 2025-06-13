@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ImageBlock
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.utils.insert_images_into_messages import MARKDOWN_IMAGE_PATTERN
@@ -48,12 +48,6 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
         return None
 
 
-def is_image_only_node(content: str) -> bool:
-    images = re.findall(MARKDOWN_IMAGE_PATTERN, content)
-
-    return len(images) == 1
-
-
 def combine_nodes_in_order(
     context_nodes: List[IngestedNode],
     locale_handler: LocaleHandler,
@@ -65,7 +59,14 @@ def combine_nodes_in_order(
         key = context_node.source
         nodes_per_document[key].append(context_node)
 
-    documents = []
+    if context_prompt:
+        context_prompt_locale = LocaleHandler(locale_handler.locale).extract(context_prompt, locale_handler.locale)
+    else:
+        context_prompt_locale = locale_handler("lib.prompt.rag.context_prompt")
+
+    prompt_parts = context_prompt_locale.split("{context_str}")
+
+    blocks = []
 
     for key, nodes in nodes_per_document.items():
         node: IngestedNode = nodes[0]
@@ -87,26 +88,37 @@ def combine_nodes_in_order(
 
         doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
 
-        text_parts = [doc_header]
+        text_blocks = [TextBlock(text=prompt_parts[0]), TextBlock(text=doc_header)]
         sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
 
         for n in sorted_nodes:
-            if is_image_only_node(n.content):
-                text_parts.append("<IMAGE>\n\n")
-            else:
-                text_parts.append(f"{n.content}\n\n")
+            content = n.content
+            blocks = []
+            last_end = 0
 
-        text_parts.append("</REFERENCE_DOCUMENT>\n")
-        text_parts.append("\n---\n")
+            for match in re.finditer(MARKDOWN_IMAGE_PATTERN, content):
+                start, end = match.span()
+                image_url = match.group(1)
 
-        documents.append("".join(text_parts))
+                if start > last_end:
+                    blocks.append(TextBlock(text=content[last_end:start].strip()))
 
-    if context_prompt:
-        context_prompt_locale = LocaleHandler(locale_handler.locale).extract(context_prompt, locale_handler.locale)
-    else:
-        context_prompt_locale = locale_handler("lib.prompt.rag.context_prompt")
+                blocks.append(ImageBlock(url=image_url))
+                last_end = end
+
+            if last_end < len(content):
+                blocks.append(TextBlock(text=content[last_end:].strip()))
+
+            text_blocks.extend(blocks)
+
+        text_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n"))
+        text_blocks.append(TextBlock(text="\n---\n"))
+
+        blocks.extend(text_blocks)
+
+    blocks.append(TextBlock(text=prompt_parts[1]))
 
     return ChatMessage(
         role=MessageRole.SYSTEM,
-        content=context_prompt_locale.format(context_str="".join(documents)),
+        content=blocks,
     )

@@ -1,4 +1,5 @@
 import re
+import urllib.parse
 from typing import List
 
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
@@ -7,7 +8,7 @@ from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 
 # [^\]]{10,5000} matches non bracket characters between 10 and 5000 times, [^\s\)]{10,1000} matches non whitespace and non closing parenthesis characters between 10 and 1000 times
-MARKDOWN_IMAGE_PATTERN = r"^!\[[^\]]{10,5000}\]\(([^\s\)]{10,1000})\)$"
+MARKDOWN_IMAGE_PATTERN = r"^!\[[^\]]{10,5000}\]\((https?:\/\/[^\s\)]{10,1000})\)$"
 
 
 def extract_image_urls_from_nodes(nodes: List[IngestedNode]) -> List[str]:
@@ -19,11 +20,14 @@ def extract_image_urls_from_nodes(nodes: List[IngestedNode]) -> List[str]:
     return list(set(image_urls_found))
 
 
-async def fetch_images_from_urls(blob_paths: List[str]) -> List[ImageBlock]:
+async def fetch_images_from_urls(urls: List[str]) -> List[ImageBlock]:
     fs_client = DataLakeAccess().get_fs_client()
 
     images = []
-    for blob_path in blob_paths:
+    for url in urls:
+        _, _, _, _, raw_blob_path = url.split("/", 4)
+        blob_path = urllib.parse.unquote(raw_blob_path)
+
         with fs_client.open(blob_path, "rb") as f:
             image_bytes = f.read()
 

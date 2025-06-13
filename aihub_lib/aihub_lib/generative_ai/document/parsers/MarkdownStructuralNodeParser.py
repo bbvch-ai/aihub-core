@@ -21,6 +21,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
+    NODE_CONTENT_TYPE,
 )
 
 
@@ -167,16 +168,20 @@ class NodeCreatorFromSplits:
         for split in splits:
             split.metadata.update({PAGE: page})
 
-            split_texts = []
+            text_chunks_with_types = []
             soup = bs4.BeautifulSoup(split.content, "html.parser")
             buffer = ""
 
             for child in soup.children:
                 if isinstance(child, bs4.element.Tag) and child.name in ["table", "figure"]:
+                    # TODO add child.name as node content type in metadata, but not for the split but for the node
+                    split.metadata.update({NODE_CONTENT_TYPE: child.name})
                     if buffer.strip():
-                        split_texts.extend(self.sentence_splitter.split_text(buffer))
+                        text_chunks_with_types.extend(
+                            [(text_split, "text") for text_split in self.sentence_splitter.split_text(buffer)]
+                        )
                         buffer = ""
-                    split_texts.append(child.text)
+                    text_chunks_with_types.append((child.text, child.name))
                 else:
                     buffer += str(child)
 

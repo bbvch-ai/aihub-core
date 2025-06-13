@@ -1,6 +1,5 @@
 import asyncio
 
-from dotenv import load_dotenv
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -18,7 +17,6 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import cr
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
-load_dotenv()
 
 
 async def main():
