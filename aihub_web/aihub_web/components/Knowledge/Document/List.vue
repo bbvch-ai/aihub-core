@@ -33,24 +33,12 @@
       </template>
     </Column>
     <Column
-      field="language"
-      :header="t('document.list.language')"
-    >
-      <template #body="{ data }">
-        <Tag
-          severity="secondary"
-          :value="data.language"
-        />
-      </template>
-    </Column>
-    <Column
       field="number_of_pages"
       :header="t('document.list.number_of_pages')"
     >
       <template #body="{ data }">
         <Badge
-          :value="data.number_of_pages"
-          size="large"
+          :value="data.number_of_pages ?? '-'"
         />
       </template>
     </Column>

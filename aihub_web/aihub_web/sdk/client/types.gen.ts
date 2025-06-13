@@ -3359,6 +3359,7 @@ export type IngestedDocument = {
      * Content of the document.
      */
     content?: string;
+    [key: string]: unknown | string | number | (string | null) | (number | null) | (string | null) | (('de' | 'en' | 'fr' | 'it') | null) | undefined;
 };
 
 /**
@@ -3506,6 +3507,7 @@ export type IngestedNode = {
      * Score representing the relevance of the document.
      */
     score?: number | null;
+    [key: string]: unknown | string | number | (string | null) | (number | null) | (string | null) | (('de' | 'en' | 'fr' | 'it') | null) | ('content' | 'summary') | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (string | null) | (string | null) | (string | null) | (string | null) | (string | null) | ((0 | 1 | 2 | 3 | 4 | 5 | 6) | null) | (number | null) | undefined;
 };
 
 /**

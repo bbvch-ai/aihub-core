@@ -994,10 +994,7 @@ export const getSummaryNodesForDocument = <TComposable extends Composable, Defau
 
 /**
  * Get signed file URL
- * Provides access to a file for an authenticated user.
- *
- * This endpoint validates the user's session, generates a short-lived
- * secure link to the blob resource, and redirects the user to it.
+ * Generates a short-lived secure link to the blob resource, and returns the URL.
  */
 export const getFileUrl = <TComposable extends Composable, DefaultT extends GetFileUrlResponse = GetFileUrlResponse>(options: Options<TComposable, GetFileUrlData, GetFileUrlResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetFileUrlResponse | DefaultT, GetFileUrlError, DefaultT>({
@@ -1018,10 +1015,7 @@ export const getFileUrl = <TComposable extends Composable, DefaultT extends GetF
 
 /**
  * Access file as logged-in user
- * Provides access to a file for an authenticated user.
- *
- * This endpoint validates the user's session, generates a short-lived
- * secure link to the blob resource, and redirects the user to it.
+ * Generates a short-lived secure link to the blob resource, and redirects the user to it.
  */
 export const getFileRedirect = <TComposable extends Composable, DefaultT = undefined>(options: Options<TComposable, GetFileRedirectData, unknown, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, unknown | DefaultT, GetFileRedirectError, DefaultT>({
@@ -1042,11 +1036,7 @@ export const getFileRedirect = <TComposable extends Composable, DefaultT = undef
 
 /**
  * Access file url via shared link
- * Provides access to a file via a temporary, signed URL.
- *
- * This endpoint validates that the link has not expired and that the
- * signature is valid for the requested file path. If successful, it
- * redirects the user to the blob resource.
+ * Provides access to a file via a temporary, signed URL and returns the URL.
  */
 export const getAnonymousFileRedirect = <TComposable extends Composable, DefaultT = undefined>(options: Options<TComposable, GetAnonymousFileRedirectData, unknown, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, unknown | DefaultT, GetAnonymousFileRedirectError, DefaultT>({
@@ -1057,11 +1047,7 @@ export const getAnonymousFileRedirect = <TComposable extends Composable, Default
 
 /**
  * Access file via shared link
- * Provides access to a file via a temporary, signed URL.
- *
- * This endpoint validates that the link has not expired and that the
- * signature is valid for the requested file path. If successful, it
- * redirects the user to the blob resource.
+ * Provides access to a file via a temporary URL and redirects the user to it.
  */
 export const getAnonymousFileRedirect2 = <TComposable extends Composable, DefaultT = undefined>(options: Options<TComposable, GetAnonymousFileRedirect2Data, unknown, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, unknown | DefaultT, GetAnonymousFileRedirect2Error, DefaultT>({

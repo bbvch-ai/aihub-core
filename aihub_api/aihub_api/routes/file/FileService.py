@@ -1,7 +1,7 @@
-import hashlib
 import hmac
 from datetime import datetime, timedelta, timezone
 
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from fastapi import HTTPException, status
@@ -41,13 +41,6 @@ class FileService:
         return f"{service_endpoint}/{container}/{file_path}?{sas_token}"
 
     @staticmethod
-    def _generate_internal_signature(container: str, path: str, expires: int) -> str:
-        """Generates an HMAC signature for our internal anonymous URL."""
-        secret = BlobStorageAccess().get_url_signing_secret()
-        msg = f"{container}{path}{expires}".encode("utf-8")
-        return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
-
-    @staticmethod
     def get_authenticated_file_redirect(container: str, file_path: str) -> RedirectResponse:
         """
         For logged-in users. Generates a SAS URL and returns a redirect response.
@@ -60,7 +53,7 @@ class FileService:
         if datetime.now(timezone.utc).timestamp() > expires:
             raise HTTPException(status_code=status.HTTP_410_GONE, detail="This link has expired.")
 
-        expected_signature = FileService._generate_internal_signature(
+        expected_signature = AnonymousFileAccessService.generate_internal_signature(
             container=container, path=file_path, expires=expires
         )
         if not hmac.compare_digest(expected_signature, signature):
@@ -76,23 +69,3 @@ class FileService:
         """
         sas_url = FileService.get_anonymous_file_url(container, file_path, expires, signature)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
-
-    @staticmethod
-    def create_anonymous_url(container: str, file_path: str, lifetime_hours: int = 24) -> str:
-        """
-        Creates a secure, time-limited URL for anonymous sharing.
-        This method would be called by another service when a user wants to "share" a file.
-        """
-        if lifetime_hours > 24:
-            raise ValueError("Lifetime hours cannot be greater than 24.")
-        if file_path.startswith("/"):
-            file_path = file_path[1:]
-
-        expires_dt = datetime.now(timezone.utc) + timedelta(hours=lifetime_hours)
-        expires_timestamp = int(expires_dt.timestamp())
-
-        signature = FileService._generate_internal_signature(
-            container=container, path=file_path, expires=expires_timestamp
-        )
-
-        return f"/{container}/{file_path}?expires={expires_timestamp}&signature={signature}"

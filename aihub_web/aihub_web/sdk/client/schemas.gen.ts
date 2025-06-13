@@ -4524,6 +4524,7 @@ export const IngestedDocumentSchema = {
             description: 'Content of the document.'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
     title: 'IngestedDocument',
@@ -4794,6 +4795,7 @@ export const IngestedNodeSchema = {
             description: 'Score representing the relevance of the document.'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
     title: 'IngestedNode',

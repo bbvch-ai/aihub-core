@@ -31,6 +31,15 @@ export default defineNuxtConfig({
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
   ],
 
+  mdc: {
+    components: {
+      prose: false,
+      map: {
+        img: 'ResolveImageComponent',
+      },
+    },
+  },
+
   alias: {
     '@core': fileURLToPath(new URL('./', import.meta.url)),
   },
@@ -92,4 +101,5 @@ export default defineNuxtConfig({
       from: fileURLToPath(new URL('./themes/aihub-theme.ts', import.meta.url)),
     },
   },
+
 })

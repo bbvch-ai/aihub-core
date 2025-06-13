@@ -2,7 +2,7 @@
   <div class="content overflow-x-auto">
     <MDC
       :value="md"
-      tag="article"
+      :tag="false"
     />
   </div>
 </template>
@@ -18,27 +18,27 @@ defineProps<{
   @apply font-light text-xs
 }
 .content :deep(h1) {
-  @apply mb-4 text-xl font-bold before:content-['#'] before:pr-1 before:text-gray-400;
+  @apply my-8 text-xl font-bold before:content-['#'] before:pr-1 before:text-gray-400;
 }
 
 .content :deep(h2) {
-  @apply mt-6 text-lg font-bold before:content-['##'] before:pr-1 before:text-gray-400;
+  @apply mt-12 text-lg font-bold before:content-['##'] before:pr-1 before:text-gray-400;
 }
 
 .content :deep(h3) {
-  @apply mt-4 text-base font-bold before:content-['###'] before:pr-1 before:text-gray-400;;
+  @apply mt-10 text-base font-bold before:content-['###'] before:pr-1 before:text-gray-400;;
 }
 
 .content :deep(h4) {
-  @apply mt-4 font-bold before:content-['####'] before:pr-1 before:text-gray-400;;
+  @apply mt-8 font-bold before:content-['####'] before:pr-1 before:text-gray-400;;
 }
 
 .content :deep(h5) {
-  @apply mt-2 font-bold before:content-['#####'] before:pr-1 before:text-gray-400;;
+  @apply mt-6 font-bold before:content-['#####'] before:pr-1 before:text-gray-400;;
 }
 
 .content :deep(h6) {
-  @apply mt-2 font-bold before:content-['######'] before:pr-1 before:text-gray-400;;
+  @apply mt-4 font-bold before:content-['######'] before:pr-1 before:text-gray-400;;
 }
 
 .content :deep(p) {
@@ -70,10 +70,10 @@ defineProps<{
 }
 
 .content :deep(p a) {
-  @apply text-white border-b border-dotted border-white after:content-['↗'] after:pl-[1px];
+  @apply  border-b border-dotted border-gray-400  after:content-['↗'] after:pl-[1px];
 }
 .content :deep(ul a) {
-  @apply text-white border-b border-dotted border-white after:content-['↗'] after:pl-[1px];
+  @apply  border-b border-dotted border-gray-400  after:content-['↗'] after:pl-[1px];
 }
 .content :deep(table) {
   @apply my-8;
