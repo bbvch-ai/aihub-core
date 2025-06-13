@@ -83,6 +83,7 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
             model=self.name,
             azure_endpoint=self.base_url,
             azure_ad_token_provider=token_provider,
+            use_azure_ad=True,
             api_version=self.api_version,
             additional_kwargs=additional_kwargs,
             callback_manager=CallbackManager([token_counter]),
