@@ -3,7 +3,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
+from llama_index.core.prompts import RichPromptTemplate
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
@@ -50,7 +51,7 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
 
 def combine_nodes_in_order(
     context_nodes: List[IngestedNode],
-    locale_handler: LocaleHandler,
+    t: LocaleHandler,
     context_prompt: LocaleString = None,
 ) -> ChatMessage:
     nodes_per_document: Dict[str, List[IngestedNode]] = defaultdict(list)
@@ -59,15 +60,7 @@ def combine_nodes_in_order(
         key = context_node.source
         nodes_per_document[key].append(context_node)
 
-    if context_prompt:
-        context_prompt_locale = LocaleHandler(locale_handler.locale).extract(context_prompt, locale_handler.locale)
-    else:
-        context_prompt_locale = locale_handler("lib.prompt.rag.context_prompt")
-
-    prompt_parts = context_prompt_locale.split("{context_str}")
-
-    blocks = []
-
+    context_blocks: List[ImageBlock | TextBlock] = []
     for key, nodes in nodes_per_document.items():
         node: IngestedNode = nodes[0]
 
@@ -88,7 +81,7 @@ def combine_nodes_in_order(
 
         doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
 
-        context_blocks = [TextBlock(text=prompt_parts[0]), TextBlock(text=doc_header)]
+        context_blocks.append(TextBlock(text=doc_header))
         sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
 
         for n in sorted_nodes:
@@ -105,9 +98,13 @@ def combine_nodes_in_order(
         context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n"))
         context_blocks.append(TextBlock(text="\n---\n"))
 
-    context_blocks.append(TextBlock(text=prompt_parts[1]))
+    if context_prompt:
+        context_prompt_locale = t.extract(context_prompt, t.locale)
+    else:
+        context_prompt_locale = t("lib.prompt.rag.context_prompt")
 
-    return ChatMessage(
-        role=MessageRole.SYSTEM,
-        blocks=context_blocks,
-    )
+    messages = RichPromptTemplate(
+        template_str=context_prompt_locale,
+    ).format_messages(context_blocks=context_blocks)
+
+    return messages[0]

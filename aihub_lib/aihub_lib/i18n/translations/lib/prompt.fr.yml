@@ -15,6 +15,7 @@ condenser:
 
 rag:
   context_prompt: |
+    {% chat role="system" %}
     Des informations contextuelles supplémentaires vous sont fournies sous la forme de documents structurés. Chaque document suit 
     un format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant par `</REFERENCE_DOCUMENT>`. Ces documents contiennent des 
     détails essentiels qui doivent être utilisés pour comprendre et répondre avec précision à la requête de l’utilisateur.
@@ -25,11 +26,19 @@ rag:
     Voici les documents pertinents :
 
     <context_documents>
-    {context_str}
+    {% for block in context_blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url.__str__() | image}}
+    {% endif %}
+    {% endfor %}
     </context_documents>
 
     Instruction : Utilisez les informations des documents fournis pour générer une réponse détaillée et bien structurée 
     à la question de l'utilisateur.
+    {% endchat %}
 
 router:
   selection_option_index: Index of the selected option (0-based)

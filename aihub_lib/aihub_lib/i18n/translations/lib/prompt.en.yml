@@ -15,6 +15,7 @@ condenser:
 
 rag:
   context_prompt: |
+    {% chat role="system" %}
     You are provided with additional context information in the form of structured documents. Each document follows a 
     consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain 
     essential details that should be utilized to accurately understand and respond to the user’s query.
@@ -25,11 +26,19 @@ rag:
     Below are the relevant documents:
 
     <context_documents>
-    {context_str}
+    {% for block in context_blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.path | image}}
+    {% endif %}
+    {% endfor %}
     </context_documents>
 
     Instruction: Using the information from the provided documents, generate a detailed and well-structured response 
     to the user’s question.
+    {% endchat %}
 
 router:
   selection_option_index: Index of the selected option (0-based)

@@ -65,17 +65,6 @@ async def main():
                 "Follow-up input: {question}"
                 "Standalone question:"
             ),
-            context_prompt=LocaleString(
-                en="You are provided with some additional context information in form of structured documents with its general"
-                "structure and relevant information in more detail. Each document starts with an indicator <REFERENCE_DOCUMENT [metadata]>"
-                "and ends with </REFERENCE_DOCUMENT>. Inside the documents images are marked with <IMAGE> tags. Take a look ath the images"
-                "if there are any, they might contain relevant information for the user question."
-                "Here are the relevant documents for the context:"
-                "\n"
-                "{context_str}"
-                "\n"
-                "Instruction: Based on the above documents, provide a detailed answer for the user question below."
-            ),
         ),
     )
 
