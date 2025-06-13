@@ -297,17 +297,15 @@ class BaseEvent(BaseModel):
         data = super().model_dump(**kwargs)
         for field_name, value in self.__dict__.items():
             if isinstance(value, ChatMessage):
-                data[field_name] = serialize_chat_message_blocks(value.model_dump())
+                data[field_name] = serialize_chat_message_blocks(value)
             elif isinstance(value, BaseModel):
                 data[field_name] = value.model_dump()
             elif isinstance(value, list):
                 data[field_name] = [
                     (
-                        serialize_chat_message_blocks(item.model_dump())
+                        serialize_chat_message_blocks(item)
                         if isinstance(item, ChatMessage)
-                        else item.model_dump()
-                        if isinstance(item, BaseModel)
-                        else item
+                        else item.model_dump() if isinstance(item, BaseModel) else item
                     )
                     for item in value
                 ]
