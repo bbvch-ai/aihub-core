@@ -305,7 +305,9 @@ class BaseEvent(BaseModel):
                     (
                         serialize_chat_message_blocks(item)
                         if isinstance(item, ChatMessage)
-                        else item.model_dump() if isinstance(item, BaseModel) else item
+                        else item.model_dump()
+                        if isinstance(item, BaseModel)
+                        else item
                     )
                     for item in value
                 ]

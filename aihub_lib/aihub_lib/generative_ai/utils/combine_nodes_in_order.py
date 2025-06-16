@@ -21,12 +21,12 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    NODE_CONTENT_TYPE,
     NODE_CONTENT_TYPE_FIGURE,
     SOURCE,
     TYPE,
     UPDATED_AT,
     VERSION,
-    NODE_CONTENT_TYPE,
 )
 
 _headers_in_order = [H6, H5, H4, H3, H2, H1]
