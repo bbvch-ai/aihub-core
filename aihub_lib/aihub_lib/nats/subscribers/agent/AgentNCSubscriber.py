@@ -4,6 +4,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, DiscoveryRequestEvent, DisplayEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import AgentTopic
@@ -113,10 +114,10 @@ class AgentNCSubscriber(NCSubscriber):
         )
 
     @classmethod
-    def for_specific_control_event_in_agent(
+    def for_specific_control_event_in_agent_instance(
         cls,
         nc: NATS,
-        topic_manager: AgentTopicManager,
+        topic_manager: AgentInstanceTopicManager,
         handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
         event: Type[BaseEvent],
     ):
@@ -124,12 +125,12 @@ class AgentNCSubscriber(NCSubscriber):
         Creates a NCSubscriber for all agent events.
         Use this when you want a single subscriber to handle every agent event in the system.
         """
-        subject = topic_manager.get_subject_for_specific_event_in_agent(
+        subject = topic_manager.get_subject_for_specific_event_in_agent_instance(
             thread_id="*",
             display_id="*",
             run_id="*",
             event_type=AgentTopicManager.CONTROL_EVENT,
-            event_name=event.__name__,
+            event_name=event.event_name_from_class(),
             event_id="*",
         )
 

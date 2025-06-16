@@ -34,10 +34,6 @@ class NCSubscriber(AbstractSubscriber):
       structured Topic object, making it easy for handlers to understand the origin and scope of the event.
     - **Lifecycle Management:** `start()` and `stop()` methods manage the subscription lifecycle,
       including safe unsubscription.
-
-    ### Example
-    Create a subscriber that listens to all display events for a given agent, providing a handler
-    function that updates a UI or logs the events.
     """
 
     def __init__(

@@ -1,19 +1,24 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, List, Type, Optional, Annotated
-
-from openai import BaseModel
+from typing import Annotated, AsyncGenerator, List, Optional, Type
 
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.events import BaseEvent, ProcessStartEvent, ProcessStopEvent, ProcessExceptionEvent, \
-    DiscoveryRequestEvent
+from aihub_lib.nats.events import (
+    BaseEvent,
+    DiscoveryRequestEvent,
+    ProcessExceptionEvent,
+    ProcessStartEvent,
+    ProcessStopEvent,
+)
 from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import Topic, ProcessTopic
+from aihub_lib.nats.topics import ProcessTopic, Topic
+from openai import BaseModel
+
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.runners.ProcessRunner import ProcessRunner
 
@@ -27,13 +32,13 @@ class ObservedEvent(BaseModel):
     event: BaseEvent
     topic: Topic
 
-class ProcessTestRunner(ProcessRunner):
 
+class ProcessTestRunner(ProcessRunner):
     def __init__(
-            self,
-            process_type: Type[AgenticProcess],
-            process_id: str,
-            locale_paths: Optional[List[str]] = None,
+        self,
+        process_type: Type[AgenticProcess],
+        process_id: str,
+        locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
@@ -132,44 +137,44 @@ class ProcessTestRunner(ProcessRunner):
         )
 
     def get_topics(
-            self,
-            event_class: Type[BaseEvent],
-            exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> List[ProcessTopic]:
         """Returns the topics of all observed events of the specified class, if any are ProcessTopic."""
         return [
             ev.topic
             for ev in self.observed_events
             if isinstance(ev.event, event_class)
-               and (not exact or event_class.event_name_from_class() == ev.event.event_name)
-               and isinstance(ev.topic, ProcessTopic)
+            and (not exact or event_class.event_name_from_class() == ev.event.event_name)
+            and isinstance(ev.topic, ProcessTopic)
         ]
 
     def get_events_of_class(
-            self,
-            event_class: Type[BaseEvent],
-            exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> List[BaseEvent]:
         """Returns all observed events of the specified class."""
         return [
             ev.event
             for ev in self.observed_events
             if isinstance(ev.event, event_class)
-               and (not exact or event_class.event_name_from_class() == ev.event.event_name)
+            and (not exact or event_class.event_name_from_class() == ev.event.event_name)
         ]
 
     def has_event_of_class(
-            self,
-            event_class: Type[BaseEvent],
-            exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> bool:
         """Check if any event of the specified class was observed."""
         return len(self.get_events_of_class(event_class, exact)) > 0
 
     def get_event_of_class(
-            self,
-            event_class: Type[BaseEvent],
-            exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+        self,
+        event_class: Type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> BaseEvent:
         """
         Returns the first observed event of the specified class.
@@ -181,10 +186,10 @@ class ProcessTestRunner(ProcessRunner):
         raise StopIteration(f"No event of class {event_class.event_name_from_class()} was observed")
 
     async def wait_for_event(
-            self,
-            event_class: Type[BaseEvent],
-            timeout: float = 60.0,
-            interval: float = 0.1,
+        self,
+        event_class: Type[BaseEvent],
+        timeout: float = 60.0,
+        interval: float = 0.1,
     ) -> BaseEvent:
         """
         Wait until an event of the specified class is observed or until the timeout is reached.

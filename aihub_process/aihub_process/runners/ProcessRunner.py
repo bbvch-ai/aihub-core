@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Type
 
+from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -12,6 +13,7 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics import ProcessDiscoveryTopic
+from mongoengine import connect
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
@@ -98,6 +100,10 @@ class ProcessRunner:
         self.running = True
         self._stop_signal.clear()
 
+        connect(
+            host=CosmosAccess().get_connection_string(),
+        )
+
         self.nc = NATS()
         await self.nc.connect(servers=self.servers)
 
@@ -128,9 +134,7 @@ class ProcessRunner:
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
-            self.nc,
-            ProcessTopicManager(),
-            self.discovery_handler
+            self.nc, ProcessTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 

@@ -1,9 +1,15 @@
 import logging
-from typing import Annotated, Type, List
+from typing import Annotated, List, Type
 
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import AgentWorkEvent, AgentWorkRequestEvent, ControlEvent, ProcessStartEvent
+from aihub_lib.nats.events import (
+    AgentWorkEvent,
+    AgentWorkRequestEvent,
+    ControlEvent,
+    ProcessStartEvent,
+    WorkRequestEvent,
+)
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
@@ -20,7 +26,6 @@ from nats.js import JetStreamContext
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
-from aihub_process.delegators.agent.Agent import Agent
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +60,6 @@ class AgentDelegator(AbstractEntityDelegator):
 
         logger.debug(f"Subscribed to agent work request event within process '{self.process_id}'")
 
-
         logger.debug(f"Starting agent delegator for process '{self.process_id}'")
         for work_event, config in self.process_class.get_events_with_agent_in():
             logger.debug(f"Found process step with agent work input: '{work_event.event_name_from_class()}'")
@@ -63,7 +67,9 @@ class AgentDelegator(AbstractEntityDelegator):
 
             for stop_event in stop_events:
                 if stop_event is None:
-                    raise ValueError("Agent.In Annotation detected for an event that doesn't have a stop event type. Please add a stop event type to the event annotation.")
+                    raise ValueError(
+                        "Agent.In Annotation detected for an event that doesn't have a stop event type. Please add a stop event type to the event annotation."
+                    )
 
                 agent_instance_topic_manager = AgentInstanceTopicManager(
                     agent_class=config.agent_class,
@@ -75,7 +81,7 @@ class AgentDelegator(AbstractEntityDelegator):
                     is_process_start=issubclass(work_event, ProcessStartEvent),
                 )
 
-                subscription = AgentNCSubscriber.for_specific_control_event_in_agent(
+                subscription = AgentNCSubscriber.for_specific_control_event_in_agent_instance(
                     nc=self.nc,
                     topic_manager=agent_instance_topic_manager,
                     handler=handler,
@@ -84,8 +90,9 @@ class AgentDelegator(AbstractEntityDelegator):
                 await subscription.start()
                 self.subscriptions.append(subscription)
 
-                logger.debug(f"Subscribed to agent '{config.agent_class}' with id '{config.agent_id}' for event '{stop_event.event_name}'")
-
+                logger.debug(
+                    f"Subscribed to agent '{config.agent_class}' with id '{config.agent_id}' for event '{stop_event.event_name_from_class()}'"
+                )
 
     async def stop(self):
         for subscription in self.subscriptions:
@@ -115,19 +122,21 @@ class AgentDelegator(AbstractEntityDelegator):
                 event_name=work_event.event_name,
                 event_id=work_event.event_id,
             )
-            logger.debug(f"Publishing work {event} to subject '{subject}'")
-            await self.js_publisher.publish_event(event, subject)
+            logger.debug(f"Publishing work {work_event} to subject '{subject}'")
+            await self.js_publisher.publish_event(work_event, subject)
 
         return _handle_process_step_input
 
-    async def _handle_process_step_output(self, event: AgentWorkRequestEvent, topic: ProcessTopic, out: Agent.Out):
-        logger.debug(f"Delegating agent output to external agent: {out.agent_class} with id {out.agent_id}")
+    async def _handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+        if not isinstance(event, AgentWorkRequestEvent):
+            return
+        logger.debug(f"Delegating agent output to external agent: {event.agent_class} with id {event.agent_id}")
         thread_id = ObjectId()
         display_id = ObjectId()
 
         ThreadEntity.create_process_thread(
             name=self.process_class.__name__,
-            agent=AgentInThread(agent_class=out.agent_class, agent_id=out.agent_id),
+            agent=AgentInThread(agent_class=event.agent_class, agent_id=event.agent_id),
             thread_id=thread_id,
             process_class=self.process_class.__name__,
             process_id=self.process_id,

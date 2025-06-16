@@ -1,7 +1,7 @@
 import inspect
 from typing import Annotated, List, Tuple, Type, get_args, get_origin
 
-from aihub_lib.nats.events import WorkRequestEvent, ProcessStopEvent
+from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_names import extract_event_classes
 
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity

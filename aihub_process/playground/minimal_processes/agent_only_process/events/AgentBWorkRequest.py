@@ -7,4 +7,3 @@ from playground.minimal_processes.agent_only_process.events.AgentBWork import Ag
 
 class AgentBWorkRequest(AgentWorkRequestEvent[AgentBStartEvent]):
     work: ClassVar[Type[AgentWorkEvent]] = AgentBWork
-

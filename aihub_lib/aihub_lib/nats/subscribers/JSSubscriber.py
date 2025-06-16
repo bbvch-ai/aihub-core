@@ -9,7 +9,6 @@ from nats.js import JetStreamContext
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +28,8 @@ class JSSubscriber(AbstractSubscriber):
     ### Key Features
     - **Stream Management:** Automatically ensures that the corresponding stream is created and configured.
     - **Event Deserialization:** Converts raw message data into typed event instances.
-    - **Topic Parsing:** Transforms the NATS subject into a structured `AgentTopic` for context-aware handling.
+    - **Topic Parsing:** Transforms the NATS subject into a structured `Topic` for context-aware handling.
     - **Queue Groups:** Allows multiple subscribers to share a single queue, distributing load.
-
-    ### Example
-    Use `for_all_agent_events` to subscribe to all events from all agents in a durable manner. If a
-    subscriber crashes, events remain in JetStream and can be reprocessed by another subscriber in the queue group.
     """
 
     # Class-level semaphore to limit concurrent processing
@@ -59,7 +54,7 @@ class JSSubscriber(AbstractSubscriber):
 
     async def start(self):
         """
-        Ensures the agent stream exists and subscribes to the subject with the given queue group.
+        Ensures the stream exists and subscribes to the subject with the given queue group.
         Once started, the subscriber begins consuming messages from JetStream.
         """
         await self.stream_manager.ensure_stream_exists()
@@ -80,7 +75,7 @@ class JSSubscriber(AbstractSubscriber):
         """
         try:
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
-            topic = AgentTopic.from_subject(msg.subject)
+            topic = Topic.from_subject(msg.subject)
             event_data = msg.data
             event = self.event_cls.deserialize_event(event_data)
             event._jetstream_sequence = msg.metadata.sequence.stream

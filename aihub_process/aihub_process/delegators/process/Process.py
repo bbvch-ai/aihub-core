@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 

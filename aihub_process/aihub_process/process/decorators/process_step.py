@@ -20,10 +20,15 @@ def process_step(
 ):
     def decorator(func):
         # --- Part 1: Standard Event Extraction (for dispatching system) ---
-        input_events, output_events, _, _, _ = extract_function_events(func)
+        input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements = (
+            extract_function_events(func)
+        )
         setattr(func, "_is_process_step", True)
         setattr(func, "_input_events", input_events)
         setattr(func, "_output_events", output_events)
+        setattr(func, "_input_event_mapping", input_event_mapping)
+        setattr(func, "_parameter_optional_map", parameter_optional_map)
+        setattr(func, "_size_requirements", size_requirements)
 
         # --- Part 2: Centralized I/O Extraction using new separated functions ---
         process_inputs = extract_function_process_in_events(func)

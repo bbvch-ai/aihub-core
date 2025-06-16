@@ -3,8 +3,15 @@ import logging
 from typing import Annotated, Callable, Dict, List, Type
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
-from aihub_lib.nats.events import BaseEvent, ProcessExceptionEvent, WorkEvent, AgentWorkRequestEvent, \
-    ProgramWorkRequestEvent, HumanWorkRequestEvent, ProcessStopEvent
+from aihub_lib.nats.events import (
+    AgentWorkRequestEvent,
+    BaseEvent,
+    HumanWorkRequestEvent,
+    ProcessExceptionEvent,
+    ProcessStopEvent,
+    ProgramWorkRequestEvent,
+    WorkEvent,
+)
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
@@ -12,8 +19,8 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
-from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.process.Process import Process
 from aihub_process.delegators.program.Program import Program
@@ -131,14 +138,19 @@ class ProcessDispatcher(BaseDispatcher):
             if not isinstance(result, list):
                 result = [result]
 
-            event_types, configs = getattr(step_method, "_process_outputs", [])
+            event_type_config_tuples = getattr(step_method, "_process_outputs", [])
+            event_types, configs = zip(*event_type_config_tuples)
 
             if len(event_types) != len(result):
-                raise RuntimeError(f"Step '{step_method.__name__}' returned {len(result)} events, but expected {len(event_types)}")
+                raise RuntimeError(
+                    f"Step '{step_method.__name__}' returned {len(result)} events, but expected {len(event_types)}"
+                )
 
             for event, event_type, config in zip(result, event_types, configs):
                 if not isinstance(event, event_type):
-                    raise RuntimeError(f"Step '{step_method.__name__}' returned an event of type {type(event)}, but expected {event_type}")
+                    raise RuntimeError(
+                        f"Step '{step_method.__name__}' returned an event of type {type(event)}, but expected {event_type}"
+                    )
 
                 if isinstance(event, AgentWorkRequestEvent) and isinstance(config, Agent.Out):
                     event.agent_class = config.agent_class
@@ -155,12 +167,14 @@ class ProcessDispatcher(BaseDispatcher):
                     event.process_class = topic.process_class
                     event.process_id = topic.process_id
                     event.process_walkthrough_id = topic.process_walkthrough_id
+                    print("Received process STOP event")
 
                 else:
-                    raise RuntimeError(f"Mismatch found between event '{event.__class__.__name__}' and config '{config.__class__.__name__}' step '{step_method.__name__}'")
+                    raise RuntimeError(
+                        f"Mismatch found between event '{event.__class__.__name__}' and config '{config.__class__.__name__}' step '{step_method.__name__}'"
+                    )
 
                 await self.publish_event(event, topic)
-
 
     def get_topic_manager_for_process_walkthrough(
         self, topic: Annotated[ProcessTopic, "Topic identifying the run/thread."]
@@ -184,7 +198,10 @@ class ProcessDispatcher(BaseDispatcher):
         Uses the per-thread topic manager to form the right event subject and publishes via JSPublisher.
         """
         topic_manager = self.get_topic_manager_for_process_walkthrough(topic)
-        if not event.is_work_request_event:
-            raise ValueError("ProcessDispatcher must only emit WorkRequest-Events")
         subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)
+
+        if not (event.is_work_request_event or event.is_process_exception_event or event.is_process_stop_event):
+            raise ValueError("ProcessDispatcher must only emit WorkRequest-, ProcessException-, or ProcessStop-Events")
+
+        logger.debug(f"Publishing event '{event.event_name}' to subject '{subject}'")
         await self.js_publisher.publish_event(event, subject)

@@ -206,7 +206,7 @@ class BaseDispatcher:
 
         Returns None if no suitable event is found and the parameter is optional.
         """
-        event_classes = step_method._input_event_mapping.get(param.name, set())
+        event_classes = getattr(step_method, "_input_event_mapping", {}).get(param.name, set())
         size_requirements = getattr(step_method, "_size_requirements", {})
         required_size = size_requirements.get(param.name)
 

@@ -6,7 +6,6 @@ from playground.minimal_processes.agent_only_process.AgentA.events.AgentAStopEve
 
 
 class AgentA(Agent):
-
     @step()
     async def step(self, event: AgentAStartEvent) -> AgentAStopEvent:
         print("[AgentA.step]", event)
