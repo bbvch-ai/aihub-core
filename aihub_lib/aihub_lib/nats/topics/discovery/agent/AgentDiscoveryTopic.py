@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
 
 
@@ -30,8 +30,8 @@ class AgentDiscoveryTopic(DiscoveryTopic):
             request_response,
             call_id,
         ) = subject.split(".")
-        assert topic_type == TopicManager.DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
-        assert discovery_topic == TopicManager.AGENT_TOPIC, f"Not an agent discovery topic: {subject}"
+        assert topic_type == AgentTopicManager.DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
+        assert discovery_topic == AgentTopicManager.AGENT_TOPIC, f"Not an agent discovery topic: {subject}"
 
         return cls(
             discovery_topic=discovery_topic,

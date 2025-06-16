@@ -79,6 +79,9 @@ class AgentTestRunner(AgentRunner):
         self.observed_events: List[ObservedEvent] = []
         self.topic: Optional[PartialAgentTopic] = None
 
+        self.observe_discovery_event_subscriber: Optional[AgentNCSubscriber] = None
+        self.observe_discovery_response_event_subscriber: Optional[AgentNCSubscriber] = None
+
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
         Sends a StartEvent (or another initiating event) to the run identified by the PartialAgentTopic.

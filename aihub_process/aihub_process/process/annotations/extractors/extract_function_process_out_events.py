@@ -1,7 +1,7 @@
 import inspect
 from typing import Annotated, List, Tuple, Type, get_args, get_origin
 
-from aihub_lib.nats.events import WorkRequestEvent
+from aihub_lib.nats.events import WorkRequestEvent, ProcessStopEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_names import extract_event_classes
 
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
@@ -43,7 +43,7 @@ def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEven
         raise TypeError(f"Could not extract a valid event type from return annotation in '{func.__name__}'.")
 
     for event_cls in event_classes:
-        if not issubclass(event_cls, WorkRequestEvent):
+        if not issubclass(event_cls, (WorkRequestEvent, ProcessStopEvent)):
             raise TypeError(
                 f"In process step '{func.__name__}', the return event type '{event_cls.__name__}' "
                 f"is not a subclass of WorkRequestEvent."

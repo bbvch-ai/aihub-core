@@ -1,8 +1,9 @@
 import inspect
-from typing import Annotated, Optional, Tuple, Type, Union, get_args, get_origin
+from typing import Annotated, Optional, Tuple, Type, Union, get_args, get_origin, TypeVar, Generic, get_type_hints
 
 from aihub_lib.nats.events import ControlEvent, StopEvent
 from aihub_lib.nats.events.work.WorkEvent import WorkEvent
+from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
 
 def get_base_type(annotation: Type) -> Type | tuple[Type, ...]:
@@ -36,15 +37,38 @@ def get_base_type(annotation: Type) -> Type | tuple[Type, ...]:
     return annotation
 
 
-class AgentWorkEvent(WorkEvent):
-    agent_event: StopEvent
+TEvent = TypeVar("TEvent", bound=StopEvent)
+
+class AgentWorkEvent(WorkEvent, Generic[TEvent]):
+    agent_event: TEvent
 
     @classmethod
-    def get_stop_event_type(cls) -> Optional[Type[ControlEvent] | Tuple[Type[ControlEvent]]]:
-        annotations = inspect.get_annotations(cls, eval_str=True)
+    def get_stop_event_type(cls) -> Tuple[Type[TEvent], ...]:
+        """
+        Correctly and robustly extracts the concrete type(s) used to specialize
+        TEvent in any subclass.
+        """
+        # This check prevents calling on the generic base class itself.
+        if cls is AgentWorkEvent:
+            raise TypeError(
+                "Cannot get stop event type from the non-specialized "
+                "generic base class 'AgentWorkEvent'."
+            )
 
-        if "agent_event" not in annotations:
-            return None
+        # __orig_bases__ holds the base classes with their generic types intact.
+        # e.g., for AgentAWork, it contains AgentWorkEvent[AgentAStopEvent]
+        print("orig_bases", getattr(cls, "__orig_bases__", []))
+        for base in getattr(cls, "__orig_bases__", []):
+            # get_origin gets the base generic type (e.g., AgentWorkEvent)
+            if get_origin(base) is AgentWorkEvent:
+                # get_args gets the types used in the specialization
+                # e.g., (AgentAStopEvent,)
+                args = get_args(base)
+                if args:
+                    # We found the specialization. Return the concrete types.
+                    return args
 
-        field_annotation = annotations["agent_event"]
-        return get_base_type(field_annotation)
+        raise ValueError(
+            f"Could not determine the concrete type for TEvent in class '{cls.__name__}'. "
+            f"Ensure '{cls.__name__}' inherits from AgentWorkEvent[SomeStopEventClass]."
+        )

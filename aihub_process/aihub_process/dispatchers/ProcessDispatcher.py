@@ -3,7 +3,8 @@ import logging
 from typing import Annotated, Callable, Dict, List, Type
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
-from aihub_lib.nats.events import BaseEvent, WorkEvent
+from aihub_lib.nats.events import BaseEvent, ProcessExceptionEvent, WorkEvent, AgentWorkRequestEvent, \
+    ProgramWorkRequestEvent, HumanWorkRequestEvent, ProcessStopEvent
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
@@ -11,7 +12,11 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
+from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.delegators.human.Human import Human
+from aihub_process.delegators.process.Process import Process
+from aihub_process.delegators.program.Program import Program
 from aihub_process.i18n.ProcessLocaleHandler import ProcessLocaleHandler
 
 logger = logging.getLogger(__name__)
@@ -47,12 +52,19 @@ class ProcessDispatcher(BaseDispatcher):
     ):
         await super().handle_event(event, topic)
 
-        # TODO Make sure to delete event and step store on some "stop" signal
-        # await self.event_store.delete_all(topic.execution_context_id)
-        # await self.step_store.delete_all(topic.execution_context_id)
+        if event.is_process_start_event:
+            logger.debug(f"Handling ProcessStartEvent: {event.event_name}")
 
-        # TODO Make sure to handle exceptions right
-        # await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+        if event.is_process_stop_event:
+            logger.debug(f"Handling ProcessStopEvent: {event.event_name}")
+            await self.event_store.delete_all(topic.execution_context_id)
+            await self.step_store.delete_all(topic.execution_context_id)
+
+        if event.is_process_exception_event:
+            logger.debug(f"Handling ProcessExceptionEvent: {event.event_name}")
+            # Mark run as crashed so no further steps are executed
+            await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+            return
 
         steps = self.process.get_steps_waiting_for_event(type(event))
         for step_method in steps:
@@ -109,10 +121,8 @@ class ProcessDispatcher(BaseDispatcher):
         try:
             result = await step_method(process_instance, **kwargs)
         except Exception as e:
-            # TODO: What to do on failed process steps?
-            # if getattr(step_method, "_stop_on_error", False):
-            #     event = ExceptionEvent(message=str(e))
-            #     await self.publish_event(event, topic)
+            event = ProcessExceptionEvent(message=str(e))
+            await self.publish_event(event, topic)
             logger.exception(e)
             logger.exception(f"Error executing step '{step_method.__name__}': {e}")
             return
@@ -121,8 +131,36 @@ class ProcessDispatcher(BaseDispatcher):
             if not isinstance(result, list):
                 result = [result]
 
-            for event in result:
+            event_types, configs = getattr(step_method, "_process_outputs", [])
+
+            if len(event_types) != len(result):
+                raise RuntimeError(f"Step '{step_method.__name__}' returned {len(result)} events, but expected {len(event_types)}")
+
+            for event, event_type, config in zip(result, event_types, configs):
+                if not isinstance(event, event_type):
+                    raise RuntimeError(f"Step '{step_method.__name__}' returned an event of type {type(event)}, but expected {event_type}")
+
+                if isinstance(event, AgentWorkRequestEvent) and isinstance(config, Agent.Out):
+                    event.agent_class = config.agent_class
+                    event.agent_id = config.agent_id
+
+                elif isinstance(event, ProgramWorkRequestEvent) and isinstance(config, Program.Out):
+                    event.endpoint = config.endpoint
+                    event.method = config.method
+
+                elif isinstance(event, HumanWorkRequestEvent) and isinstance(config, Human.Out):
+                    event.users = config.users
+
+                elif isinstance(event, ProcessStopEvent) and isinstance(config, Process.Out):
+                    event.process_class = topic.process_class
+                    event.process_id = topic.process_id
+                    event.process_walkthrough_id = topic.process_walkthrough_id
+
+                else:
+                    raise RuntimeError(f"Mismatch found between event '{event.__class__.__name__}' and config '{config.__class__.__name__}' step '{step_method.__name__}'")
+
                 await self.publish_event(event, topic)
+
 
     def get_topic_manager_for_process_walkthrough(
         self, topic: Annotated[ProcessTopic, "Topic identifying the run/thread."]

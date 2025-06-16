@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.topics.Topic import Topic
 
 
 class ProcessTopic(Topic):
@@ -32,4 +32,29 @@ class ProcessTopic(Topic):
             f"{self.event_type}."
             f"{self.event_name}."
             f"{self.event_id}"
+        )
+
+    @classmethod
+    def from_subject(cls, subject: str) -> "ProcessTopic":
+        """
+        Constructs a ProcessTopic from a subject string that may contain wildcards.
+        """
+        (
+            topic_type,
+            process_class,
+            process_id,
+            process_walkthrough_id,
+            event_type,
+            event_name,
+            event_id,
+        ) = subject.split(".")
+        assert topic_type == ProcessTopicManager.PROCESS_TOPIC, f"Unexpected topic type in subject: {subject}"
+
+        return cls(
+            process_class=process_class,
+            process_id=process_id,
+            process_walkthrough_id=process_walkthrough_id,
+            event_type=event_type,
+            event_name=event_name,
+            event_id=event_id,
         )

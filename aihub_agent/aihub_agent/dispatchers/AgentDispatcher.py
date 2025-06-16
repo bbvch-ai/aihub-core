@@ -184,7 +184,7 @@ class AgentDispatcher(BaseDispatcher):
 
         Returns True if the step can execute, False otherwise.
         """
-        if not self.step_meets_basic_execution_requirements(step_method, events, topic):
+        if not await self.step_meets_basic_execution_requirements(step_method, events, topic):
             return False
 
         precondition_fn: Optional[Callable[..., Awaitable[bool]]] = getattr(step_method, "_precondition_fn", None)

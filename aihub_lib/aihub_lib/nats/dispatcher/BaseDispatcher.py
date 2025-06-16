@@ -168,13 +168,17 @@ class BaseDispatcher:
                 continue
 
             event_value = self._get_event_value(param, method, events, trigger_event)
-            if event_value is None:
-                continue
 
+            # If parameter is optional, we can assign in all cases (None or actual Event)
             if parameter_optional_map.get(param.name, False):
                 kwargs[param.name] = event_value
 
-            if isinstance(event_value, list):
+            if event_value is None:
+                continue
+
+            kwargs[param.name] = event_value
+
+            if isinstance(event_value, (list, tuple, ListOfSize)):
                 all_input_events.extend([event for event in event_value if event.is_control_event])
             elif isinstance(event_value, BaseEvent) and event_value.is_control_event:
                 all_input_events.append(event_value)

@@ -34,8 +34,8 @@ class Topic(BaseModel, abc.ABC):
 
     _topic_registry: ClassVar[Dict[str, Type["Topic"]]] = {}
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def execution_context_id(self) -> str:
         """
         The execution context ID of a topic is usually the most narrow ID that groups events logically together.
@@ -57,6 +57,7 @@ class Topic(BaseModel, abc.ABC):
             Topic._topic_registry[cls.__name__] = cls
 
     @classmethod
+    @abc.abstractmethod
     def from_subject(cls, subject: str) -> "Topic":
         """
         Attempts to parse a subject string using all known `Topic` subclasses in the registry.
@@ -67,6 +68,11 @@ class Topic(BaseModel, abc.ABC):
         Use this method when you need to handle arbitrary subjects, letting the topic classes
         themselves decide if the subject matches their pattern.
         """
+        if cls is not Topic:
+            # If this method is called on a subclass, it means the subclass has not
+            # overridden it. In this case, we should indicate failure to prevent recursion.
+            raise ValueError(f"'{cls.__name__}' does not implement 'from_subject' and cannot parse subject '{subject}'")
+
         for topic_type, topic_class in Topic._topic_registry.items():
             try:
                 return topic_class.from_subject(subject)

@@ -1,4 +1,3 @@
-
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 

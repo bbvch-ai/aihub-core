@@ -77,7 +77,7 @@ class PersistedEventEntity(Document):
             {"fields": ["thread_id", "event_type"]},
             {"fields": ["agent_id", "event_type"]},
             {"fields": ["thread_id", "event_parents"]},
-            {"fields": ["execution_context_id"]},
+            {"fields": ["run_id"]},
             {"fields": ["event_data.created_at"]},
         ],
     }
@@ -185,13 +185,13 @@ class PersistedEventEntity(Document):
             {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
-            # 4. Group by execution_context_id and event_id to de-duplicate events
+            # 4. Group by run_id and event_id to de-duplicate events
             # We take the first occurrence of each event_id within a run.
             # All fields needed for the subsequent $group stage must be preserved here.
             {
                 "$group": {
-                    "_id": {"execution_context_id": "$execution_context_id", "event_id": "$event_id"},
-                    "run_id_val": {"$first": "$execution_context_id"},  # Keep execution_context_id for next stage
+                    "_id": {"run_id": "$run_id", "event_id": "$event_id"},
+                    "run_id_val": {"$first": "$run_id"},  # Keep run_id for next stage
                     "display_id": {"$first": "$display_id"},
                     "event_time": {"$first": "$event_time"},
                     "event_parents": {"$first": "$event_parents"},
@@ -201,7 +201,7 @@ class PersistedEventEntity(Document):
                     "event_type": {"$first": "$event_type"},
                 }
             },
-            # 5. Group events by execution_context_id to calculate run-level stats
+            # 5. Group events by run_id to calculate run-level stats
             # This stage now operates on the de-duplicated events from the previous stage.
             {
                 "$group": {
@@ -279,7 +279,7 @@ class PersistedEventEntity(Document):
             # 6. Project/AddFields to calculate derived stats for each run and format output
             {
                 "$addFields": {
-                    "execution_context_id": "$_id",
+                    "run_id": "$_id",
                     "started_at": "$first_event_time",
                     "ended_at": "$latest_event_time",
                     "duration": {
@@ -312,7 +312,7 @@ class PersistedEventEntity(Document):
             {
                 "$project": {
                     "_id": 0,
-                    "execution_context_id": 1,
+                    "run_id": 1,
                     "display_id": 1,
                     "started_at": 1,
                     "ended_at": 1,
@@ -363,7 +363,7 @@ class PersistedEventEntity(Document):
                 ],
             )
             .order_by("event_data__created_at")
-            .only("event_name", "event_data", "agent_id", "agent_class", "execution_context_id")
+            .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
         )
 
         message_history: List[UserChatMessage | AssistantChatMessage] = []

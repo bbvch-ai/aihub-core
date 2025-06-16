@@ -17,6 +17,7 @@ from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
 from aihub_process.dispatchers.ProcessDispatcher import ProcessDispatcher
 from aihub_process.i18n.ProcessLocaleHandler import ProcessLocaleHandler
 
@@ -53,8 +54,10 @@ class ProcessRunner:
 
         self.dispatcher: Optional[ProcessDispatcher] = None
 
+        self.agent_delegator: Optional[AgentDelegator] = None
+
         self.discovery_event_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
-        self.control_event_subscriber: Optional[JSSubscriber] = None
+        self.work_event_subscriber: Optional[JSSubscriber] = None
         self.nc_publisher: Optional[NCPublisher[ProcessDiscoveryResponseEvent]] = None
 
         self.locale_handler = ProcessLocaleHandler(locale_paths=locale_paths)
@@ -113,9 +116,21 @@ class ProcessRunner:
         )
         await self.dispatcher.start()
 
+        self.agent_delegator = AgentDelegator(
+            self.process_type,
+            self.process_id,
+            self.nc,
+            self.js,
+            self.topic_manager,
+            queue_group=f"agent_delegator_{self.process_class}_{self.process_id}",
+        )
+        await self.agent_delegator.start()
+
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
-            self.nc, ProcessTopicManager(), self.discovery_handler
+            self.nc,
+            ProcessTopicManager(),
+            self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
@@ -127,7 +142,7 @@ class ProcessRunner:
             js=self.js,
             queue_group=f"process_runner_{self.process_class}_{self.process_id}",
         )
-        await self.control_event_subscriber.start()
+        await self.work_event_subscriber.start()
 
         logger.debug(f"{self.process_class} is now running and subscribed to incoming messages.")
         asyncio.create_task(self._run_loop())
@@ -144,8 +159,10 @@ class ProcessRunner:
         self._stop_signal.set()
         self.running = False
 
-        await self.control_event_subscriber.stop()
+        await self.work_event_subscriber.stop()
         await self.dispatcher.stop()
+
+        await self.agent_delegator.stop()
 
         if self.nc:
             await self.nc.close()

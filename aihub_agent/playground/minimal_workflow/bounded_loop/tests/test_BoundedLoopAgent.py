@@ -10,7 +10,7 @@ from playground.minimal_workflow.bounded_loop.BoundedLoopAgent import BoundedLoo
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig
 from playground.minimal_workflow.bounded_loop.events.BeginEvent import BeginEvent
 from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
-from playground.minimal_workflow.bounded_loop.events.ProcessEvent import ProcessEvent
+from playground.minimal_workflow.bounded_loop.events.ProcessAEvent import ProcessAEvent
 
 scenarios("./features/bounded_loop_agent.feature")
 
@@ -55,10 +55,10 @@ def _(loop_max: int, agent_runner: AgentTestRunner):
     assert received_loop_max == loop_max, f"Agent received {received_loop_max} BeginEvents, but expected {loop_max}"
 
 
-@then(parsers.parse('"{loop_max:d}" ProcessEvent are present'))
+@then(parsers.parse('"{loop_max:d}" ProcessAEvent are present'))
 def _(loop_max: int, agent_runner: AgentTestRunner):
-    received_loop_max = len(agent_runner.get_events_of_class(ProcessEvent))
-    assert received_loop_max == loop_max, f"Agent received {received_loop_max} ProcessEvents, but expected {loop_max}"
+    received_loop_max = len(agent_runner.get_events_of_class(ProcessAEvent))
+    assert received_loop_max == loop_max, f"Agent received {received_loop_max} ProcessAEvent, but expected {loop_max}"
 
 
 @then("a DecisionEvent is present")

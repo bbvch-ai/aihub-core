@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from bson import ObjectId
 from nats.aio.client import Client as NATS
@@ -54,21 +55,23 @@ class ExternalAgentEventDistributor:
         self.nc_publisher = NCPublisher(nc)
         self.js_publisher = JSPublisher(js)
 
-    async def distribute_event(self, external_event: ExternalAgentEvent, user: AuthenticatedUser):
+    async def distribute_event(self, external_event: ExternalAgentEvent, user: Optional[AuthenticatedUser] = None):
         """
         Entry point for distributing an external event (ExternalAgentEvent) to agents or other systems through NATs.
 
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.
         """
-        user_id = user.oid
         thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
-        logger.debug(f"Received event {external_event.event.event_name} for thread {external_event.thread_id}")
-        users_in_thread = [user.user_id for user in thread.users]
 
-        if user_id not in users_in_thread:
-            logger.exception(f"User {user_id} is not in thread {external_event.thread_id}")
-            raise PermissionError(f"User {user_id} is not in thread {external_event.thread_id}")
+        if user:
+            user_id = user.oid
+            logger.debug(f"Received event {external_event.event.event_name} for thread {external_event.thread_id}")
+            users_in_thread = [user.user_id for user in thread.users]
+
+            if user_id not in users_in_thread:
+                logger.exception(f"User {user_id} is not in thread {external_event.thread_id}")
+                raise PermissionError(f"User {user_id} is not in thread {external_event.thread_id}")
 
         if external_event.event.is_start_event:
             run_id = str(ObjectId())
@@ -85,7 +88,8 @@ class ExternalAgentEventDistributor:
         if external_event.event.is_bitl_response_event:
             await self._handle_human_in_the_loop_response(thread, external_event)
 
-        if external_event.event.is_display_event:
+        # Display the message back to the user who sent it - if it was user-sent
+        if external_event.event.is_display_event and user:
             await self._handle_display_message(external_event, run_id, user)
 
         if external_event.event.is_start_event:
