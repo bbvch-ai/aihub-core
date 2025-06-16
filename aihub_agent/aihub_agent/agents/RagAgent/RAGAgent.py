@@ -56,7 +56,6 @@ class RAGAgent(Agent):
         self,
         event: UserMessageEvent,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit
@@ -167,7 +166,7 @@ class RAGAgent(Agent):
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         ordered_nodes = combine_nodes_in_order(
             context_nodes=event.nodes,
-            locale_handler=t,
+            t=t,
             context_prompt=agent_config.context_prompt,
         )
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)

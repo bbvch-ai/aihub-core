@@ -1,5 +1,6 @@
 import asyncio
 from os.path import join, dirname, abspath, isdir
+
 import nest_asyncio
 
 from aihub_api.routes.agent.AgentController import AgentController
@@ -14,10 +15,7 @@ from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
-from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
-from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
-from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
@@ -29,7 +27,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent, StopEvent
+from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
@@ -47,11 +45,11 @@ async def main():
     if isdir(join(frontend_dir, "_nuxt")):
         runner.mount_frontend(frontend_dir)
 
-    auth = TokenAndOauth2Handler(
-        bearer_handlers=[OpenWebuiAuthHandler(), TokenAuthHandler()],
-        oauth2_handlers=[OAuth2AuthHandler()],
-    )
-    # auth = NoAuthHandler()
+    # auth = TokenAndOauth2Handler(
+    #     bearer_handlers=[OpenWebuiAuthHandler(), TokenAuthHandler()],
+    #     oauth2_handlers=[OAuth2AuthHandler()],
+    # )
+    auth = NoAuthHandler()
 
     runner.mount(
         HealthController().get_health(),
@@ -73,16 +71,10 @@ async def main():
         .get_agents()
         .discover_agents()
         .send_event_to(
-            "LLMWrappingAgent",
+            "RAGAgent",
             "dev_agent",
             start_event_class=UserMessageEvent,
             stop_event_class=LLMStopEvent,
-        )
-        .send_event_to(
-            "BotInTheLoopAgent",
-            "bot_in_the_loop_agent",
-            start_event_class=UserMessageEvent,
-            stop_event_class=StopEvent,
         ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         OpenaiController(
@@ -94,7 +86,7 @@ async def main():
                 ),
                 AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
                     api_version="2024-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
                 ),
@@ -115,7 +107,7 @@ async def main():
                 ),
                 AzureOpenAILLMConfig(
                     name="o1-mini",
-                    base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
+                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
                     api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,

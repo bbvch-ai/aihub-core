@@ -1,42 +1,33 @@
-import hashlib
-import hmac
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+
+from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
 
 
 class AnonymousFileAccessService:
     @staticmethod
-    def generate_internal_signature(container: str, path: str, expires: int) -> str:
-        """Generates an HMAC signature for our internal anonymous URL."""
-        secret = BlobStorageAccess().get_url_signing_secret()
-        msg = f"{container}{path}{expires}".encode("utf-8")
-        return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+    def generate_sas_url(container: str, file_path: str, lifetime_hours: int = 24) -> str:
+        """Generates a temporary read-only SAS URL for a specific blob."""
+        access = BlobStorageAccess()
+        account_name = access.get_account_name()
+        service_endpoint = access.get_service_endpoint()
+        blob_service_client = access.get_blob_service_client()
 
-    @staticmethod
-    def create_anonymous_url(
-        get_anonymous_file_redirect_api_endpoint: Annotated[
-            str, "https url of FileController.get_anonymous_file_redirect route"
-        ],
-        container: Annotated[str, "Blob container name (or - in data lake settings - usually root folder name)"],
-        file_path: Annotated[str, "Path to file within container (or within root folder)"],
-        lifetime_hours: Annotated[int, "Link lifetime, can be at most 24 hours"] = 24,
-    ) -> str:
-        """
-        Creates a secure, time-limited URL for anonymous sharing.
-        This method would be called by another service when a user wants to "share" a file.
-        """
-        if lifetime_hours > 24:
-            raise ValueError("Lifetime hours cannot be greater than 24.")
-        if file_path.startswith("/"):
-            file_path = file_path[1:]
+        delegation_key_start_time = datetime.now(timezone.utc)
+        delegation_key_expiry_time = delegation_key_start_time + timedelta(hours=lifetime_hours)
 
-        expires_dt = datetime.now(timezone.utc) + timedelta(hours=lifetime_hours)
-        expires_timestamp = int(expires_dt.timestamp())
-
-        signature = AnonymousFileAccessService.generate_internal_signature(
-            container=container, path=file_path, expires=expires_timestamp
+        user_delegation_key = blob_service_client.get_user_delegation_key(
+            key_start_time=delegation_key_start_time, key_expiry_time=delegation_key_expiry_time
         )
 
-        return f"{get_anonymous_file_redirect_api_endpoint}/{container}/{file_path}?expires={expires_timestamp}&signature={signature}"
+        sas_token = generate_blob_sas(
+            account_name=account_name,
+            container_name=container,
+            blob_name=file_path,
+            user_delegation_key=user_delegation_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.now(timezone.utc) + timedelta(hours=lifetime_hours),
+        )
+
+        return f"{service_endpoint}/{container}/{file_path}?{sas_token}"
