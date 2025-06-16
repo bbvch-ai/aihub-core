@@ -1,5 +1,6 @@
 Feature: Combine nodes in order
 
+  @slow
   Scenario: Combine nodes with default context prompt
     Given a locale handler
     And no context prompt
@@ -25,7 +26,11 @@ Feature: Combine nodes in order
 
 
       Doc1 line10 content
+
+
       Doc1 line20 content
+
+
       </REFERENCE_DOCUMENT>
 
       ---
@@ -34,6 +39,8 @@ Feature: Combine nodes in order
 
 
       Doc2 line15 content
+
+
       </REFERENCE_DOCUMENT>
 
       ---
@@ -57,14 +64,16 @@ Feature: Combine nodes in order
       """
       Custom prompt: <REFERENCE_DOCUMENT source='docA' namespace='research_paper' type='content' content_type='text' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
-
       Node docA line=5
+
       Node docA line=10
+
       </REFERENCE_DOCUMENT>
 
       ---
       """
 
+  @slow
   Scenario: Multiple docs but empty final text
     Given a locale handler
     And no context prompt
@@ -82,13 +91,13 @@ Feature: Combine nodes in order
       Below are the relevant documents:
 
       <context_documents>
-
       </context_documents>
 
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
       """
 
+  @slow
   Scenario: Another custom scenario with multiple sources
     Given a locale handler
     And no context prompt
@@ -115,14 +124,21 @@ Feature: Combine nodes in order
 
 
       docX line=1
+
+
       docX line=2
+
+
       </REFERENCE_DOCUMENT>
 
       ---
 
       <REFERENCE_DOCUMENT source='docY' namespace='legal_document' type='content' content_type='text' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
+
       docY line=5
+
+
       </REFERENCE_DOCUMENT>
 
       ---
@@ -133,6 +149,7 @@ Feature: Combine nodes in order
       to the user’s question.
       """
 
+  @slow
   Scenario: Combine nodes with all metadata fields
     Given a locale handler
     And a custom context prompt
@@ -147,14 +164,16 @@ Feature: Combine nodes in order
       Custom prompt: <REFERENCE_DOCUMENT source='doc1' namespace='research_paper' type='content' content_type='text' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       Doc1 line10 content
+
       Doc1 line20 content
+
       </REFERENCE_DOCUMENT>
 
       ---
-
       <REFERENCE_DOCUMENT source='doc2' namespace='legal_document' type='content' content_type='text' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
       Doc2 line15 content
+
       </REFERENCE_DOCUMENT>
 
       ---

@@ -95,7 +95,7 @@ def combine_nodes_in_order(
                 image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
                 context_blocks.append(ImageBlock(url=image_url))
             else:
-                context_blocks.append(TextBlock(text=n.content))
+                context_blocks.append(TextBlock(text=(f"{content}\n\n")))
 
         context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n\n---\n"))
 
