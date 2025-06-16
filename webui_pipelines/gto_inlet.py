@@ -26,27 +26,32 @@ class Filter:
 
     def __init__(self):
         self.valves = self.Valves()
-        self.gto_text = None
+        self.gto_text = "\n\n %% \n\n"
 
-    def inlet(self, body: dict, __user__: Optional[dict] = None) -> dict:
-
+    async def inlet(self, body: dict, __user__: Optional[dict] = None, __event_emitter__=None) -> dict:
         if not self.gto_text:
+            if __event_emitter__:
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "description": "GTO Daten werden geladen...",
+                            "done": False,
+                        },
+                    }
+                )
             self.get_gto_data()
 
-        messages = body.get("messages", [])
+        context_message = {
+            "role": "system",
+            "content": self.gto_text,
+        }
 
-        gto_system_message = {"role": "system", "content": self.gto_text}
-
-        messages.insert(0, gto_system_message)
-
-        body["messages"] = messages
+        body.setdefault("messages", []).insert(0, context_message)
 
         return body
 
-    def get_gto_data(self):
-        if self.gto_text:
-            return self.gto_text
-
+    async def get_gto_data(self, __event_emitter__=None):
         headers = {
             "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
             "Accept": "application/json",
@@ -69,6 +74,14 @@ class Filter:
             gto_definitions.append(r.json())
 
         self.gto_text = f"\n\n<GTO_SCHEMAS>{dict_to_md_table(names_list)}</GTO_SCHEMAS>\n\n<GTO_definitions>{gto_definitions}</GTO_definitions>"
+
+        if __event_emitter__:
+            await __event_emitter__(
+                {
+                    "type": "status",
+                    "data": {"description": "GTO Daten sind bereit!", "done": True},
+                }
+            )
 
 
 def dict_to_md_table(data):

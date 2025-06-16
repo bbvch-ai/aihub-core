@@ -4,25 +4,18 @@ author: Noah Hermann
 version: 0.1.0
 """
 
-import os
-import requests
-from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Callable, Any, List, Dict
+
+import requests
+from pydantic import BaseModel, Field, field_validator
 
 
 class GtoAttributeDefinition(BaseModel):
-    id: int = Field(
-        0, description="Unique identifier of the GTO attribute, needs to be 0"
-    )
+    id: int = Field(0, description="Unique identifier of the GTO attribute, needs to be 0")
     key: str = Field(..., description="The name of the GTO attribute")
-    dataType: Optional[str] = Field(
-        None, description="The datatype for the attributes value"
-    )
+    dataType: Optional[str] = Field(None, description="The datatype for the attributes value")
     valueType: str = Field(..., description="")
-    unitOfMeasurement: Optional[str] = Field(
-        None, description="Mostly used for integers"
-    )
+    unitOfMeasurement: Optional[str] = Field(None, description="Mostly used for integers")
     leadOfData: Optional[str] = Field(None, description="")
     reportRelevant: Optional[bool] = Field(None, description="")
     gtoAttributeDefinitionsKey: Optional[str] = Field(None, description="")
@@ -43,9 +36,7 @@ class GTO(BaseModel):
     id: int = Field(0, description="Unique identifier of the GTO")
     name: str = Field(..., description="Name of the GTO")
     idguid: str = Field(..., description="")
-    gtoAttributeDefinitions: Dict[str, GtoAttributeDefinition] = Field(
-        ..., description="All the attributes of the GTO"
-    )
+    gtoAttributeDefinitions: Dict[str, GtoAttributeDefinition] = Field(..., description="All the attributes of the GTO")
 
     @field_validator("id")
     @classmethod
@@ -130,9 +121,7 @@ class Tools:
             default="",
             description="API key for authenticating requests to the OpenAI API.",
         )
-        timeout_seconds: int = Field(
-            default=30, description="Request timeout in seconds"
-        )
+        timeout_seconds: int = Field(default=30, description="Request timeout in seconds")
 
     def __init__(self):
         self.valves = self.Valves()
@@ -152,9 +141,7 @@ class Tools:
         if not self.valves.LCDM_HUB_TOKEN:
             error_msg = "Das LCDM Hub Token ist nicht konfiguriert. Bitte hinterlegen Sie ihn in den Einstellungen."
             if __event_emitter__:
-                await __event_emitter__(
-                    {"type": "status", "data": {"description": error_msg, "done": True}}
-                )
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Error: {error_msg}"
 
         try:
@@ -173,8 +160,6 @@ class Tools:
                 gto = GTO.model_validate(gto_data)
                 gto = self.rekey_gto_definitions(gto)
 
-                name_exists = self.check_name_against_existing_gtos(gto.name)
-
             except Exception as validation_error:
                 error_msg = f"GTO Validierung fehlgeschlagen: {str(validation_error)}"
                 if __event_emitter__:
@@ -185,17 +170,6 @@ class Tools:
                         }
                     )
                 return f"Validierungsfehler: {error_msg}"
-
-            if name_exists:
-                error_msg = f"GTO Name '{gto.name}' existiert bereits oder ist zu ähnlich zu einem bestehenden GTO."
-                if __event_emitter__:
-                    await __event_emitter__(
-                        {
-                            "type": "status",
-                            "data": {"description": error_msg, "done": True},
-                        }
-                    )
-                return f"Fehler: {error_msg}"
 
             if __event_emitter__:
                 await __event_emitter__(
@@ -271,25 +245,19 @@ class Tools:
         except requests.exceptions.Timeout:
             error_msg = f"Anfrage timeout nach {self.valves.timeout_seconds} Sekunden."
             if __event_emitter__:
-                await __event_emitter__(
-                    {"type": "status", "data": {"description": error_msg, "done": True}}
-                )
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Timeout Fehler: {error_msg}"
 
         except requests.exceptions.ConnectionError:
             error_msg = "Verbindung zur LCDM Hub API fehlgeschlagen."
             if __event_emitter__:
-                await __event_emitter__(
-                    {"type": "status", "data": {"description": error_msg, "done": True}}
-                )
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Verbindungsfehler: {error_msg}"
 
         except Exception as e:
             error_msg = f"Unerwarteter Fehler aufgetreten: {str(e)}"
             if __event_emitter__:
-                await __event_emitter__(
-                    {"type": "status", "data": {"description": error_msg, "done": True}}
-                )
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Fehler: {error_msg}"
 
     def rekey_gto_definitions(self, gto: GTO) -> GTO:
@@ -316,39 +284,3 @@ class Tools:
         )
         names = response.text
         return names
-
-    async def check_name_against_existing_gtos(self, name: str) -> bool:
-        """
-        Check if the GTO name already exists in the LCDM Hub.
-        """
-        existing_names = self.get_existing_gto_names()
-
-        headers = {
-            "Authorization": f"Bearer {self.valves.OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-        }
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant that checks if a GTO name already exists in a list of existing GTO names.",
-            },
-            {
-                "role": "user",
-                "content": f"Does the name '{name}' already exist in the following list of GTO names or is very similar to one?\n\n<Existing GTOs>{existing_names}</Existing GTOs>\n\nPlease respond with ONLY a boolean and nothing else. True if it exists or is similar, otherwise respond with False.",
-            },
-        ]
-        payload = {
-            "model": "gpt-4o",
-            "messages": messages,
-            "max_tokens": 10,
-            "temperature": 0.0,
-        }
-        response = requests.post(
-            url=f"{self.valves.OPENAI_API_BASE_URL}/chat/completions",
-            json=payload,
-            headers=headers,
-            stream=True,
-        )
-        result = response.json()
-        similar = result["choices"][0]["message"]["content"]
-        return similar.strip().lower() == "true"
