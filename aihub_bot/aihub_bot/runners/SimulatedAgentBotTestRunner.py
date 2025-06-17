@@ -9,6 +9,7 @@ from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import Ag
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -167,7 +168,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
+        self.agent_control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
             js=self.js,
