@@ -33,12 +33,12 @@ class Agent(DispatchableWorkflow):
     as it makes the agent 'conversational'. However, try not to limit your agents to conversations only, as it
     makes the agent inflexible to participate in other types of interactions.
     """
+
     STEP_ANNOTATION = "_is_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
     STOP_ON_ERROR_ANNOTATION = "_stop_on_error"
     MAX_EXECUTION_PER_RUN_ANNOTATION = "_max_executions_per_run"
-
 
     @classmethod
     @functools.cache

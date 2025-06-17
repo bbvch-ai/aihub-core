@@ -23,6 +23,7 @@ class DispatchableWorkflow(abc.ABC):
     The abstract DispatchableWorkflow class provides a set of utility methods that can be used to extract information
     from dispatchable workflow classes, such as the set of steps, the set of input events, and the set of output events.
     """
+
     # Defines what attribute must be present on a method to be considered a dispatchable workflow step
     STEP_ANNOTATION = "_is_step"
 

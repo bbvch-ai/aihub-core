@@ -3,8 +3,8 @@ from typing import Annotated, Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
-from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 
+from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.process.annotations.extractors.extract_function_process_in_events import (
     extract_function_process_in_events,
 )
@@ -38,7 +38,9 @@ def process_step(
         setattr(func, AgenticProcess.PROCESS_OUTPUTS_ANNOTATION, process_outputs)
 
         # --- Part 3: Standard Metadata ---
-        setattr(func, AgenticProcess.STEP_NAME_ANNOTATION, name or LocaleString(en=func.__name__.replace("_", " ").title()))
+        setattr(
+            func, AgenticProcess.STEP_NAME_ANNOTATION, name or LocaleString(en=func.__name__.replace("_", " ").title())
+        )
         setattr(func, AgenticProcess.STEP_DESCRIPTION_ANNOTATION, description)
         setattr(func, AgenticProcess.STEP_ICON_ANNOTATION, icon)
         setattr(func, AgenticProcess.SIGNATURE_ANNOTATION, inspect.signature(func))

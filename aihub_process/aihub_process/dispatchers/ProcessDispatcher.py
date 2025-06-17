@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Annotated, Callable, Dict, List, Type
+from typing import Annotated, Callable, Dict, List, Type, override
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
 from aihub_lib.nats.events import (
@@ -52,6 +52,7 @@ class ProcessDispatcher(BaseDispatcher):
         self._initialized = False
         self._init_lock = asyncio.Lock()
 
+    @override
     async def handle_event(
         self,
         event: Annotated[WorkEvent, "The incoming work event to handle."],
@@ -85,6 +86,7 @@ class ProcessDispatcher(BaseDispatcher):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
                 asyncio.create_task(self.execute_step(event, step_method, events, topic))
 
+    @override
     async def is_step_ready(
         self,
         step_method: Annotated[Callable, "The step method to check."],
@@ -101,8 +103,9 @@ class ProcessDispatcher(BaseDispatcher):
 
         Returns True if the step can execute, False otherwise.
         """
-        return await self.step_meets_basic_execution_requirements(step_method, events, topic)
+        return await self._step_meets_basic_execution_requirements(step_method, events, topic)
 
+    @override
     async def execute_step(
         self,
         trigger_event: Annotated[WorkEvent, "The event that caused this step to trigger."],
@@ -185,18 +188,7 @@ class ProcessDispatcher(BaseDispatcher):
 
                 await self.publish_event(event, topic)
 
-    def get_topic_manager_for_process_walkthrough(
-        self, topic: Annotated[ProcessTopic, "Topic identifying the run/thread."]
-    ) -> ProcessWalkthroughTopicManager:
-        """
-        Returns a thread-specific topic manager derived from the agent's instance topic manager.
-        Useful for publishing thread-scoped events.
-        """
-        return ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
-            topic_manager=self.topic_manager,
-            process_walkthrough_id=topic.process_walkthrough_id,
-        )
-
+    @override
     async def publish_event(
         self,
         event: Annotated[BaseEvent, "The event to publish."],
@@ -214,3 +206,15 @@ class ProcessDispatcher(BaseDispatcher):
 
         logger.debug(f"Publishing event '{event.event_name}' to subject '{subject}'")
         await self.js_publisher.publish_event(event, subject)
+
+    def get_topic_manager_for_process_walkthrough(
+        self, topic: Annotated[ProcessTopic, "Topic identifying the run/thread."]
+    ) -> ProcessWalkthroughTopicManager:
+        """
+        Returns a thread-specific topic manager derived from the agent's instance topic manager.
+        Useful for publishing thread-scoped events.
+        """
+        return ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+            topic_manager=self.topic_manager,
+            process_walkthrough_id=topic.process_walkthrough_id,
+        )

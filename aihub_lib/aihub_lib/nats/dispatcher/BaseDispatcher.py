@@ -1,3 +1,4 @@
+import abc
 import asyncio
 import inspect
 import logging
@@ -19,7 +20,32 @@ from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSi
 logger = logging.getLogger(__name__)
 
 
-class BaseDispatcher:
+class BaseDispatcher(abc.ABC):
+    """
+    The dispatcher is where the actual magic happens! Given a dispatchable workflow, the dispatcher creates
+    the appropriate connection to jetstream to ensure all events published towards this workflow entity are stored
+    and ready to access. It also handles event replaying, ensuring that all historical events are available
+    as well.
+    The dispatcher then listens to incoming events. For each new event, it checks for each method in the workflow
+    whether the conditions to run this methods are satisfied, e.g. whether all the events specified as
+    method arguments are available. If so, it triggers the execution of this method asynchronously and. After
+    the execution completed, the dispatcher publishes the new events that were created by this method as well,
+    potentially triggering new method executions.
+
+    Hence, the four most important functions within a dispatcher are:
+    - `handle_event`: Called whenever a new event arrives.
+    - `is_step_ready`: Checks if a step can be run given the current state (events available, etc.).
+    - `execute_step`: Triggers the execution of a step asynchronously.
+    - `publish_event`: Publishes the returned events from a step.
+
+    Note that a dispatcher works in a completely distributed manner. Hence, the class itself does NOT hold any state.
+    Why?
+    Well, event for the exact same workflow class and workflow instance, multiple dispatchers can exist.
+    JetStream will do load balancing and send each event to exactly one dispatcher. Hence, the dispatchers need
+    to share state, even when they are hosted on different servers in different countries. This is why we always
+    rely on JetStream or Redis for state and never on class or instance variables on the dispatcher itself.
+    """
+
     def __init__(
         self,
         nc: Annotated[NATS, "NATS client for messaging."],
@@ -48,10 +74,69 @@ class BaseDispatcher:
         self._initialized = False
         self._init_lock = asyncio.Lock()
 
+    @abc.abstractmethod
+    async def handle_event(
+        self,
+        event: Annotated[BaseEvent, "The incoming control event to handle."],
+        topic: Annotated[Topic, "The parsed topic of the event."],
+    ):
+        """
+        This method is called each time an event is received by this workflow instance. Hence, this method
+        is potentially called A LOT, like, for some agents, hunderts of times per second.
+        The primary responsibility of this method is to handle special kinds of events, like StartEvent or StopEvent
+        that mark setup or teardown of a run, and looping through all workflow methods, checking for each of them
+        whether they can be executed given the current state of the run. If so, it triggers the execution of this
+        method.
+        Note that in the base dispatcher, there is not much logic. It simply ensures that the dispatcher is
+        initialized and that the event is stored in the event store.
+        All logic regarding setup/teardown/triggering must be implemented in subclasses.
+        """
+        if not self._initialized:
+            await self.start()
+
+        logger.debug(f"Handling event {event.event_name} for subject {topic}")
+
+        await self.event_store.ensure_event_stored(topic.execution_context_id, event)
+
+    @abc.abstractmethod
+    async def is_step_ready(
+        self,
+        step_method: Annotated[Callable, "The step method to check."],
+        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+        topic: Annotated[Topic, "Topic info for the current process."],
+    ) -> bool:
+        """
+        This method must decide - for a given step methods and a set of events received so far - whether the step
+        can be executed. It should return True if the step can be executed, False otherwise.
+        """
+        pass
+
+    @abc.abstractmethod
+    async def execute_step(
+        self,
+        trigger_event: Annotated[BaseEvent, "The event that caused this step to trigger."],
+        step_method: Annotated[Callable, "The step method to execute."],
+        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+        topic: Annotated[Topic, "Topic info for the current process."],
+    ):
+        """
+        This method should execute the step method asynchronously and publish the events returned by the
+        step method to jetstream.
+        """
+        pass
+
+    @abc.abstractmethod
+    async def publish_event(
+        self,
+        event: Annotated[BaseEvent, "The event to publish."],
+        topic: Annotated[Topic, "Current process topic context."],
+    ):
+        """Publishes an event to jetstream."""
+        pass
+
     async def start(self):
         """
-        Initialize the dispatcher by starting the event store.
-        This must be called before the dispatcher can process any events.
+        Ensures that the event store holds all past events for this workflow and hence has a commplete state.
         """
         async with self._init_lock:
             if self._initialized:
@@ -65,28 +150,7 @@ class BaseDispatcher:
     async def stop(self):
         await self.event_store.stop()
 
-    async def handle_event(
-        self,
-        event: Annotated[BaseEvent, "The incoming control event to handle."],
-        topic: Annotated[Topic, "The parsed topic of the event."],
-    ):
-        """
-        Called whenever a new event arrives. This method:
-        - Stores the event.
-        - Updates run/thread contexts if necessary.
-        - If the event is Start/Stop/Exception, handles run lifecycle changes.
-        - Checks for steps that can now execute due to the event.
-
-        If steps are ready, it triggers their execution asynchronously.
-        """
-        if not self._initialized:
-            await self.start()
-
-        logger.debug(f"Handling event {event.event_name} for subject {topic}")
-
-        await self.event_store.ensure_event_stored(topic.execution_context_id, event)
-
-    async def step_meets_basic_execution_requirements(
+    async def _step_meets_basic_execution_requirements(
         self,
         step_method: Annotated[Callable, "The step method to check."],
         events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],

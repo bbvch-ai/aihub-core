@@ -2,11 +2,11 @@ import httpx
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.events import LLMEvent, LLMStopEvent, UserMessageEvent
 from aihub_lib.nats.events.semantic import Message
-from aihub_agent.workflow.decorators.step import step
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.WebuiAgent.utils import _display_streamed_content, _parse_sse_chunk
 from aihub_agent.agents.WebuiAgent.WebuiAgentConfig import WebuiAgentConfig
+from aihub_agent.workflow.decorators.step import step
 
 
 class WebuiAgent(Agent):

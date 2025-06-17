@@ -15,10 +15,28 @@ logger = logging.getLogger(__name__)
 
 
 class ProcessDelegator(AbstractEntityDelegator):
-    async def start(self):
-        await super().start()
-        logger.debug(f"Subscribed to external-process work request event within process '{self.process_id}'")
+    """
+    The process delegator is responsible for connecting one terminated process to the input of another.
+    Note that processes do not 'delegate' work to each other. Hence, the 'handle_process_step_output' is completely
+    empty.
+    However, process can very well be triggered by the termination of another process, hence, the delegator
+    finds all Process.In annotations and creates a nats subscription to these processes and their respective
+    ProcessStopEvent, translating them into AgentWorkEvents and publishing them into their own process topic.
+    Hence, the process delegator acts as a bridge between processes.
+    Note that Process.In is only valid for a process start.
+    Why?
+    Because processes never explicitly delegate to another process, hence, there is never a specific
+    association between two different process walkthrough's. Hence, it is only valid that the complted
+    walkthrough of one process triggers a fresh walkthrough of another, but never that one walkthrough
+    is like a 'sub walkthrough' of another.
+    """
 
+    async def start(self):
+        """
+        The process delegator must find all process steps that are configured with Process.In and
+        create a nats subscription to these processes with the relevant process stop event.
+        """
+        await super().start()
         logger.debug(f"Starting external-process delegator for process '{self.process_id}'")
         for work_event, config in self.process_class.get_events_with_process_in():
             logger.debug(f"Found process step with process work input: '{work_event.event_name_from_class()}'")

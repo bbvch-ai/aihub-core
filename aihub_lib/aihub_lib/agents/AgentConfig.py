@@ -24,46 +24,50 @@ class StepConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     """
-    Describes the configuration for an agent, including its identity, prompts, and style.
+    The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
+    that follow the same workflow can still be configured to achieve different outcomes through a different
+    set of configurations.
 
-    ### Why AgentConfig?
-    An agent might need:
-    - Basic metadata (ID, name, description).
-    - System prompts defining its initial behavior.
-    - UI attributes (color, voice) to influence how it's presented or how it speaks.
+    Usually, you will want to inherit from this AgentConfig and pass it to your runner. The dispatcher will then flexibly
+    inject the config into each step, giving you full control over the agent's runtime behavior.
 
-    Storing these in a structured configuration object makes it easy for other
-    components—like frontends or orchestrators—to retrieve and apply these settings.
+    Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
+    way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
 
-    ### Features
-    - **Agent Identity:** `agent_id`, `name`, and `description` define who the agent is.
-    - **Prompts & Voice:** `system_prompt` and `voice` control how the agent communicates.
-    - **Color:** A HEX color code for UI theming.
-    - **Step Configurations:** Dynamically retrieve all `StepConfig` instances attached to this agent.
-
-    ### Example
     ```python
-    config = AgentConfig(
-        agent_id="agent_123",
-        name=LocaleString(en="My Agent"),
-        description=LocaleString(en="Handles user queries"),
-        system_prompt=LocaleString(en="You are a helpful assistant."),
-    )
-    ```
+    class StepXConfig(StepConfig):
+        some_setting: str
 
-    Retrieving step configs:
-    ```python
-    step_configs = config.get_step_configs()
+    class MyCustomAgentConfig(AgentConfig):
+        step_x: StepXConfig = StepXConfig(some_setting="some value")
+
+    class MyAgent(Agent):
+        @step()
+        def step_x(self, step_x_config: StepXConfig):
+            print(step_x_config.some_setting)
     ```
     """
 
-    agent_id: str = Field(..., description="The id of the agent.")
+    agent_id: str = Field(..., description="Uniquely identifies the agent instance.", pattern=r"^[a-z_-]+$")
     name: LocaleString = Field(..., description="The name of the agent.")
     description: LocaleString = Field(..., description="The description of the agent.")
-    system_prompt: LocaleString = Field(..., description="The system prompt of the agent.")
-    color: Optional[str] = Field("#10A37F", description="The color of the agent UI theme.")
-    voice: Optional[str] = Field("de-DE-ChristophNeural", description="The TTS voice ID the agent uses.")
-    icon: Optional[str] = Field("meteor-icons:robot", description="The icon representing the agent.")
+    icon: str = Field("meteor-icons:robot", description="The icon representing the agent.")
+
+    color: Optional[str] = Field(
+        "#10A37F",
+        description="The color of the agent UI theme.",
+        deprecated="This field is deprecated. It will be removed in a future release. If you need a color, please define it yourself in a subclass of AgentConfig.",
+    )
+    voice: Optional[str] = Field(
+        "de-DE-ChristophNeural",
+        description="The TTS voice ID the agent uses.",
+        deprecated="This field is deprecated. It will be removed in a future release. If you need a voice, please define it yourself in a subclass of AgentConfig.",
+    )
+    system_prompt: LocaleString = Field(
+        ...,
+        description="The system prompt of the agent.",
+        deprecated="This field is deprecated. It will be removed in a future release. If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
+    )
 
     def get_step_configs(self) -> Dict[Type[StepConfig], StepConfig]:
         """

@@ -15,7 +15,6 @@ from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_agent.workflow.decorators.step import step
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -29,6 +28,7 @@ from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptE
 from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):

@@ -2,9 +2,10 @@ import inspect
 import logging
 from typing import Annotated, Awaitable, Callable, Optional
 
-from aihub_agent.agents.Agent import Agent
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
+
+from aihub_agent.agents.Agent import Agent
 
 logger = logging.getLogger(__name__)
 

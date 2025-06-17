@@ -6,6 +6,10 @@ from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
 class Human(BaseProcessEntity):
+    """
+    WIP!
+    """
+
     class In(BaseProcessEntity.In):
         route: str
         method: str = "POST"

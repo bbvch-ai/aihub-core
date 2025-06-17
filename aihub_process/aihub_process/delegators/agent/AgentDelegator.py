@@ -29,6 +29,39 @@ logger = logging.getLogger(__name__)
 
 
 class AgentDelegator(AbstractEntityDelegator):
+    """
+    The agent delegator is responsible to connect agents with a process workflow. It does that by analyzing the
+    Agent.In for each step in the process and subscribing to the relevant agent StopEvents. Whenever such a StopEvent
+    is received, the delegator wraps it into a WorkEvent and publishes it to the process.
+    Vice-versa, for every WorkRequest received from the process, the delegator delegates it to the relevant agent
+    by emitting the agents StartEvent.
+
+    The agent delegator must differentiate the cases in which the agents stop event (indicating it has done some work)
+    can:
+    - Start the process execution (hence, the agent thread/run itself was initially tarted by something
+    or someone else, like a user through a direct message), or
+    - Can only continue an existing process execution.
+    When a StopEvent can start the process execution, the thread_id associated with the StopEvent is irrelevant.
+    However, if the StopEvent can not start a process but merely progress the process execution,
+    it is mandatory that the agent execution was also started by the same process walkthrough and hence,
+    the agents thread is associated with this process walkthrough.
+
+    Why is this important? Well, imagine having an agent with a very generic use-case, like an agent that
+    corrects the grammer in a text. It receives a text and returns it with perfect grammar. This agent could be
+    used in hundrets of agentic processes. Hence, hundrets of AgentDelegators listen to this agents StopEvents. How
+    do we know to which process walkthrough the StopEvent belongs to? Well, when the agent was triggered by a
+    process, the thread into which we send the StartEvent is associated with the process walkthrough. Hence, all
+    agent delegators ignore all StopEvents that do not belong to the process walkthrough that they themselves know.
+
+    However, let's look at a different scenario: A process starts when an expert asking agent returned a
+    KnowledgeMissingStopEvent. The thread associated with this Stop event does certainly NOT belong to any
+    process walkthroughs, as the thread is just a direct interaction between the agent and the user.
+    However, in this case, the agent delegator must still listen to this KnowledgeMissingStopEvent, and even if it is
+    not associated with the current walkthrough, it must still translate the KnowledgeMissingStopEvent into a WorkEvent.
+
+    We can differenciate the two cases easily by checking that the WorkEvent is also a ProcessStartEvent.
+    """
+
     def __init__(
         self,
         process_class: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
@@ -45,11 +78,13 @@ class AgentDelegator(AbstractEntityDelegator):
         self.external_agent_event_distributor = ExternalAgentEventDistributor(nc=self.nc, js=self.js)
 
     async def start(self):
+        """
+        The agent delegator must find all process steps that are configured wiht Agent.In and
+        create a nats subscription to these agents with the relevant stop event.
+        """
         await super().start()
-
-        logger.debug(f"Subscribed to agent work request event within process '{self.process_id}'")
-
         logger.debug(f"Starting agent delegator for process '{self.process_id}'")
+
         for work_event, config in self.process_class.get_events_with_agent_in():
             logger.debug(f"Found process step with agent work input: '{work_event.event_name_from_class()}'")
             stop_events = work_event.get_stop_event_type()
@@ -81,6 +116,14 @@ class AgentDelegator(AbstractEntityDelegator):
     def handle_process_step_input_factory(
         self, work_event_type: Type[AgentWorkEvent], is_process_start: bool
     ) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
+        """
+        The agent delegator must differentiate the cases in which the agent can trigger a new process walkthrough
+        and the case in which the agent can only continue an existing process walkthrough.
+
+        If the agent can trigger a new process walkthrough, the thread_id associated with the StopEvent is irrelevant.
+        Otherwise, we can assume that the thread has an association with the process_walkthrough_id of the process.
+        """
+
         async def _handle_process_step_input(
             event: Annotated[ControlEvent, "The incoming agent event to handle."],
             topic: Annotated[AgentTopic, "The parsed topic of the event."],
@@ -88,12 +131,16 @@ class AgentDelegator(AbstractEntityDelegator):
             logger.debug(f"Handling agent event: {event.event_name}")
             work_event = work_event_type(agent_event=event)
 
-            # Create a new process walkthrough
             if is_process_start:
                 process_walkthrough_id = str(ObjectId())
                 logger.debug(f"Creating new walkthrough with ID {process_walkthrough_id}")
             else:
                 thread = ThreadEntity.get_thread_by_id(topic.thread_id)
+
+                if thread.process_id != self.process_id or thread.process_class != self.process_class.__name__:
+                    logger.debug("Ignoring agent event because it does not belong to this process")
+                    return
+
                 process_walkthrough_id = thread.process_walkthrough_id
                 logger.debug(f"Continuing existing walkthrough with ID {process_walkthrough_id}")
 
@@ -110,6 +157,10 @@ class AgentDelegator(AbstractEntityDelegator):
         return _handle_process_step_input
 
     async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+        """
+        When receiving a AgentWorkRequestEvent, we can simply create a new thread and send the start event
+        that is part of te AgentWorkReqeustEvent to the appropriate agent as an external event.
+        """
         if not isinstance(event, AgentWorkRequestEvent):
             return
 
