@@ -1,8 +1,6 @@
 import inspect
 from typing import Annotated, Callable, Dict, Optional, Set, Tuple, Type
 
-from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_names import extract_event_classes
 from aihub_lib.nats.workflow.annotations.extractors.extract_return_events import extract_return_events
@@ -69,9 +67,6 @@ def extract_function_events(
         if param.name == "self":
             continue
         annotation = param.annotation
-        # Skip run/thread context params, not considered event inputs
-        if annotation in (RunContext, ThreadContext):
-            continue
 
         event_classes, is_optional, required_size = extract_event_classes(annotation)
         if event_classes:

@@ -6,8 +6,6 @@ from typing import Annotated, Any, Awaitable, Callable, Dict, List, Optional, Tu
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.context.run.RunContext import RunContext
-from aihub_lib.nats.context.thread.ThreadContext import ThreadContext
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
@@ -24,6 +22,8 @@ from redis.asyncio import Redis
 from typing_extensions import override
 
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
 
@@ -118,7 +118,7 @@ class AgentDispatcher(BaseDispatcher):
         steps = self.agent.get_steps_waiting_for_event(type(event))
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            input_events = getattr(step_method, "_input_events", set())
+            input_events = getattr(step_method, Agent.INPUT_EVENTS_ANNOTATION, set())
             input_event_class_names = [event_class.event_name_from_class() for event_class in input_events]
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
@@ -150,7 +150,20 @@ class AgentDispatcher(BaseDispatcher):
         if not await self._step_meets_basic_execution_requirements(step_method, events, topic):
             return False
 
-        precondition_fn: Optional[Callable[..., Awaitable[bool]]] = getattr(step_method, "_precondition_fn", None)
+        max_executions = getattr(step_method, Agent.MAX_EXECUTION_PER_RUN_ANNOTATION, None)
+        if max_executions is not None:
+            execution_count = await self.step_store.get_execution_count(
+                topic.execution_context_id, step_method.__name__
+            )
+            if execution_count >= max_executions:
+                logger.debug(
+                    f"[{step_method.__name__}] Max executions reached ({execution_count}/{max_executions}), skipping."
+                )
+                return False
+
+        precondition_fn: Optional[Callable[..., Awaitable[bool]]] = getattr(
+            step_method, Agent.PRECONDITION_FUNCTION_ANNOTATION, None
+        )
 
         if precondition_fn:
             _, precondition_args = await self._build_method_kwargs(
@@ -185,7 +198,7 @@ class AgentDispatcher(BaseDispatcher):
         - Logs the exception.
         - Publishes an ExceptionEvent if `_stop_on_error` is True.
         """
-        max_executions = getattr(step_method, "_max_executions_per_run", None)
+        max_executions = getattr(step_method, Agent.MAX_EXECUTION_PER_RUN_ANNOTATION, None)
 
         if max_executions is not None:
             await self.step_store.increment_execution_count(topic.execution_context_id, step_method.__name__)
@@ -224,7 +237,7 @@ class AgentDispatcher(BaseDispatcher):
                 result = await step_method(agent_instance, **kwargs)
             except Exception as e:
                 await self.tracer.trace_step_error(step_span, e)
-                if getattr(step_method, "_stop_on_error", False):
+                if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
                 logger.exception(e)

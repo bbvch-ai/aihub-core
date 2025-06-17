@@ -13,13 +13,13 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics import ProcessDiscoveryTopic
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from mongoengine import connect
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
-from aihub_process.agentic_processes.ProcessConfig import ProcessConfig
 from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
 from aihub_process.delegators.process.ProcessDelegator import ProcessDelegator
 from aihub_process.dispatchers.ProcessDispatcher import ProcessDispatcher
@@ -29,6 +29,12 @@ logger = logging.getLogger(__name__)
 
 
 class ProcessRunner:
+    """
+    The process runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
+    as running the process through an process dispatcher.
+    The runner is also responsible for making the process discoverable by responding to discovery requests.
+    """
+
     def __init__(
         self,
         servers: List[str],
@@ -69,9 +75,8 @@ class ProcessRunner:
 
     async def discovery_handler(self, event: DiscoveryRequestEvent, topic: ProcessDiscoveryTopic):
         """
-        Handles discovery requests by returning an `ProcessDiscoveryResponseEvent`.
-
-        If the discovery request doesn't match this process (i.e., different process_class/process_id), it ignores it.
+        Responds to discovery requests by publishing a ProcessDiscoveryResponseEvent that includes the basic
+        process configuration.
         """
         if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [
             self.process_config.process_id,
@@ -88,16 +93,14 @@ class ProcessRunner:
         process_discovery_response_event = ProcessDiscoveryResponseEvent(
             process_class=self.process_class,
             process_id=self.process_config.process_id,
+            process_config=self.process_config,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
     async def start(self):
         """
-        Connects to NATS, sets up JetStream, initializes the ProcessDispatcher and subscribers,
-        and starts listening for events.
-
-        - Starts the discovery subscriber so other services can discover this process' capabilities.
-        - Starts the control event subscriber to handle workflow execution.
+        Connects to all external services and starts the process dispatcher with connecting it to a JetStream stream.
+        To connect the process to all process entities, we must also start the individual delegators.
         """
         if self.running:
             logger.warning("ProcessRunner is already running.")
@@ -170,6 +173,7 @@ class ProcessRunner:
     async def stop(self):
         """
         Stops the process by setting a stop event, unsubscribing, and closing the NATS connection.
+        Also stops all delegators.
         """
         if not self.running:
             logger.warning("ProcessRunner is not running.")

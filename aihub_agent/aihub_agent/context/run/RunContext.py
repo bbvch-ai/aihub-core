@@ -2,7 +2,7 @@ import logging
 
 from redis.asyncio import Redis
 
-from aihub_lib.nats.context.BaseContext import BaseContext
+from aihub_agent.context.BaseContext import BaseContext
 
 logger = logging.getLogger(__name__)
 

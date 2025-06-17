@@ -1,4 +1,4 @@
-from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_agent.context.run.RunContext import RunContext
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent

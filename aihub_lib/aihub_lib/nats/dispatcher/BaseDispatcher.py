@@ -16,6 +16,7 @@ from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
+from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
 
 logger = logging.getLogger(__name__)
 
@@ -170,20 +171,15 @@ class BaseDispatcher(abc.ABC):
             logger.warning(f"Run {topic.execution_context_id} is crashed; skipping step.")
             return False
 
-        max_executions = getattr(step_method, "_max_executions_per_run", None)
-        if max_executions is not None:
-            execution_count = await self.step_store.get_execution_count(
-                topic.execution_context_id, step_method.__name__
-            )
-            if execution_count >= max_executions:
-                logger.debug(
-                    f"[{step_method.__name__}] Max executions reached ({execution_count}/{max_executions}), skipping."
-                )
-                return False
-
-        input_event_mapping: Dict[str, Set[Type[BaseEvent]]] = getattr(step_method, "_input_event_mapping", {})
-        parameter_optional_map: Dict[str, bool] = getattr(step_method, "_parameter_optional_map", {})
-        size_requirements: Dict[str, Optional[int]] = getattr(step_method, "_size_requirements", {})
+        input_event_mapping: Dict[str, Set[Type[BaseEvent]]] = getattr(
+            step_method, DispatchableWorkflow.INPUT_EVENT_MAPPING_ANNOTATION, {}
+        )
+        parameter_optional_map: Dict[str, bool] = getattr(
+            step_method, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION, {}
+        )
+        size_requirements: Dict[str, Optional[int]] = getattr(
+            step_method, DispatchableWorkflow.SIZE_REQUIREMENT_ANNOTATION, {}
+        )
 
         # For each parameter, check if we have enough events
         for argument_name, event_classes in input_event_mapping.items():
@@ -224,7 +220,7 @@ class BaseDispatcher(abc.ABC):
     ) -> Tuple[List[BaseEvent], Dict[str, Any]]:
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(method)
-        parameter_optional_map = getattr(method, "_parameter_optional_map", {})
+        parameter_optional_map = getattr(method, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION, {})
         all_input_events: List[BaseEvent] = []
 
         for param in step_signature.parameters.values():
@@ -270,8 +266,10 @@ class BaseDispatcher(abc.ABC):
 
         Returns None if no suitable event is found and the parameter is optional.
         """
-        event_classes = getattr(step_method, "_input_event_mapping", {}).get(param.name, set())
-        size_requirements = getattr(step_method, "_size_requirements", {})
+        event_classes = getattr(step_method, DispatchableWorkflow.INPUT_EVENT_MAPPING_ANNOTATION, {}).get(
+            param.name, set()
+        )
+        size_requirements = getattr(step_method, DispatchableWorkflow.SIZE_REQUIREMENT_ANNOTATION, {})
         required_size = size_requirements.get(param.name)
 
         # Gather all matching events

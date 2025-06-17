@@ -17,10 +17,10 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics import ProcessTopic, Topic
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from openai import BaseModel
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
-from aihub_process.agentic_processes.ProcessConfig import ProcessConfig
 from aihub_process.runners.ProcessRunner import ProcessRunner
 
 
@@ -35,6 +35,15 @@ class ObservedEvent(BaseModel):
 
 
 class ProcessTestRunner(ProcessRunner):
+    """
+    A specialized runner intended for testing processs. It extends `ProcessRunner` by:
+    - Observing events published by the process and storing them for assertions in tests.
+    - Providing a `test_run` context manager that sets up a test environment, including
+      event subscriptions and automatic cleanup after a delay.
+    - Utilities to quickly check if certain event classes (ProcessStart/ProcessStop/ProcessException) have been emitted,
+      and to retrieve all events of a particular type.
+    """
+
     def __init__(
         self,
         process_type: Type[AgenticProcess],

@@ -1,5 +1,5 @@
 from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.context.run.RunContext import RunContext
+from aihub_agent.context.run.RunContext import RunContext
 from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
 from aihub_agent.workflow.decorators.step import step

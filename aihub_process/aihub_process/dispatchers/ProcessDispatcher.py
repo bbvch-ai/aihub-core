@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Annotated, Callable, Dict, List, Type, override
+from typing import Annotated, Callable, Dict, List, Type
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
 from aihub_lib.nats.events import (
@@ -18,6 +18,7 @@ from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
+from typing_extensions import override
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
@@ -77,7 +78,7 @@ class ProcessDispatcher(BaseDispatcher):
         steps = self.process.get_steps_waiting_for_event(type(event))
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            input_events = getattr(step_method, "_input_events", set())
+            input_events = getattr(step_method, AgenticProcess.INPUT_EVENTS_ANNOTATION, set())
             input_event_class_names = [event_class.event_name_from_class() for event_class in input_events]
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
@@ -142,7 +143,7 @@ class ProcessDispatcher(BaseDispatcher):
                 result = [result]
             result = tuple(result)
 
-            event_type_config_tuples = getattr(step_method, "_process_outputs", [])
+            event_type_config_tuples = getattr(step_method, AgenticProcess.PROCESS_OUTPUTS_ANNOTATION, [])
             event_types, configs = zip(*event_type_config_tuples)
 
             if len(event_types) != len(result):

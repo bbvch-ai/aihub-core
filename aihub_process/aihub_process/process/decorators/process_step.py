@@ -19,6 +19,35 @@ def process_step(
     icon: Annotated[Optional[str], "An icon name for the step"] = None,
     description: Annotated[Optional[LocaleString], "A localized description of what the step does"] = None,
 ):
+    """
+    Decorator that marks a function as a process step, attaching metadata and analyzing its event inputs.
+
+    ### Why This Decorator?
+    In a process system, steps are special functions that:
+    - Define from which the process input originates - e.g. who did the work
+    - To which the process step output shall be delegated - e.g. who should do work next
+    - Consume Work
+    - Delegate Work
+
+    By decorating a function with `@process_step`, you:
+    1. Flag it as a step in the process engine.
+    2. Extract information about input and output delegation.
+    3. Extract and store the event type requirements of its parameters for automated wiring.
+    4. Attach metadata (like a user-friendly name and description).
+
+    ### Example
+    ```python
+    @process_step()
+    async def step(
+        self, some_work: Annotated[AgentWorkRequest.work, Agent.In(agent_class="AgentA", agent_id="agent_a")]
+    ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
+        return CustomProcessStopEvent(...)
+    ```
+
+    This step expects work from an Agent 'AgentA' with ID 'agent_a' and maps the work to a terminating process
+    event.
+    """
+
     def decorator(func):
         # --- Part 1: Standard Event Extraction (for dispatching system) ---
         input_events, output_events, input_event_mapping, parameter_optional_map, size_requirements = (
@@ -38,9 +67,7 @@ def process_step(
         setattr(func, AgenticProcess.PROCESS_OUTPUTS_ANNOTATION, process_outputs)
 
         # --- Part 3: Standard Metadata ---
-        setattr(
-            func, AgenticProcess.STEP_NAME_ANNOTATION, name or LocaleString(en=func.__name__.replace("_", " ").title())
-        )
+        setattr(func, AgenticProcess.STEP_NAME_ANNOTATION, name)
         setattr(func, AgenticProcess.STEP_DESCRIPTION_ANNOTATION, description)
         setattr(func, AgenticProcess.STEP_ICON_ANNOTATION, icon)
         setattr(func, AgenticProcess.SIGNATURE_ANNOTATION, inspect.signature(func))

@@ -39,27 +39,6 @@ class AgentTestRunner(AgentRunner):
       event subscriptions and automatic cleanup after a delay.
     - Utilities to quickly check if certain event classes (Start/Stop/Exception) have been emitted,
       and to retrieve all events of a particular type.
-
-    ### Why AgentTestRunner?
-    In a test scenario, you may want to:
-    - Start an agent runner in a controlled environment.
-    - Send initial events (like StartEvent) to initiate a workflow.
-    - Observe what events the agent produces in response.
-    - After a delay (e.g., after the workflow finishes), stop the runner and inspect the observed events.
-
-    AgentTestRunner simplifies this by integrating the lifecycle of the runner and event observation into
-    a single context manager. This pattern makes writing tests more straightforward and ensures proper
-    cleanup after tests.
-
-    ### Usage
-    ```python
-    async with AgentTestRunner(...).test_run() as partial_topic:
-        # send events using partial_topic (which contains thread_id, display_id, execution_context_id)
-        # await test_runner.send_event_from_topic(some_start_event, partial_topic)
-        # ... run your scenario ...
-
-    # After exiting the context block, test_runner.observed_events contains all captured events.
-    ```
     """
 
     def __init__(
