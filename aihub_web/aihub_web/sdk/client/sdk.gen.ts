@@ -114,7 +114,7 @@ export const updateMyDashboard = <TComposable extends Composable, DefaultT exten
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -231,7 +231,7 @@ export const createThread = <TComposable extends Composable, DefaultT extends Cr
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -278,7 +278,7 @@ export const addAgentToThread = <TComposable extends Composable, DefaultT extend
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -324,7 +324,7 @@ export const addUserToThread = <TComposable extends Composable, DefaultT extends
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -454,7 +454,7 @@ export const sendEventToLLMWrappingAgentDevAgentSendEvent = <TComposable extends
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -479,7 +479,7 @@ export const sendEventToBotInTheLoopAgentBotInTheLoopAgentSendEvent = <TComposab
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -527,7 +527,7 @@ export const createTokenEndpoint = <TComposable extends Composable, DefaultT ext
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -615,7 +615,7 @@ export const getEmbeddings = <TComposable extends Composable, DefaultT extends G
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -640,7 +640,7 @@ export const chatCompletionWithAssistants = <TComposable extends Composable, Def
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -665,7 +665,7 @@ export const generateImage = <TComposable extends Composable, DefaultT extends G
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -691,7 +691,7 @@ export const createTranscription = <TComposable extends Composable, DefaultT ext
         ...options,
         headers: {
             'Content-Type': null,
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -716,7 +716,7 @@ export const createSpeech = <TComposable extends Composable, DefaultT = undefine
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -764,7 +764,7 @@ export const createDataset = <TComposable extends Composable, DefaultT extends C
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -812,7 +812,7 @@ export const updateDataset = <TComposable extends Composable, DefaultT extends U
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
@@ -882,7 +882,7 @@ export const runExperiment = <TComposable extends Composable, DefaultT extends R
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options?.headers
+            ...options.headers
         }
     });
 };
