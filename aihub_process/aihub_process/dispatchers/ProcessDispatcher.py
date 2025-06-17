@@ -135,8 +135,9 @@ class ProcessDispatcher(BaseDispatcher):
             return
 
         if result:
-            if not isinstance(result, list):
+            if not isinstance(result, (list, tuple)):
                 result = [result]
+            result = tuple(result)
 
             event_type_config_tuples = getattr(step_method, "_process_outputs", [])
             event_types, configs = zip(*event_type_config_tuples)
@@ -147,31 +148,37 @@ class ProcessDispatcher(BaseDispatcher):
                 )
 
             for event, event_type, config in zip(result, event_types, configs):
+                logger.debug(f"Process step returned '{event.event_name_from_class()}' and config '{config.__class__.__name__}' step '{step_method.__name__}'")
+
                 if not isinstance(event, event_type):
                     raise RuntimeError(
                         f"Step '{step_method.__name__}' returned an event of type {type(event)}, but expected {event_type}"
                     )
 
                 if isinstance(event, AgentWorkRequestEvent) and isinstance(config, Agent.Out):
+                    logger.debug("Step return correctly identified as AgentWorkRequestEvent")
                     event.agent_class = config.agent_class
                     event.agent_id = config.agent_id
 
                 elif isinstance(event, ProgramWorkRequestEvent) and isinstance(config, Program.Out):
+                    logger.debug("Step return correctly identified as ProgramWorkRequestEvent")
                     event.endpoint = config.endpoint
                     event.method = config.method
 
                 elif isinstance(event, HumanWorkRequestEvent) and isinstance(config, Human.Out):
+                    logger.debug("Step return correctly identified as HumanWorkRequestEvent")
                     event.users = config.users
 
                 elif isinstance(event, ProcessStopEvent) and isinstance(config, Process.Out):
+                    logger.debug("Step return correctly identified as ProcessStopEvent")
                     event.process_class = topic.process_class
                     event.process_id = topic.process_id
                     event.process_walkthrough_id = topic.process_walkthrough_id
-                    print("Received process STOP event")
+                    logger.debug("Received process STOP event")
 
                 else:
                     raise RuntimeError(
-                        f"Mismatch found between event '{event.__class__.__name__}' and config '{config.__class__.__name__}' step '{step_method.__name__}'"
+                        f"Mismatch found between event '{event.event_name_from_class()}' and config '{config.__class__.__name__}' step '{step_method.__name__}'"
                     )
 
                 await self.publish_event(event, topic)

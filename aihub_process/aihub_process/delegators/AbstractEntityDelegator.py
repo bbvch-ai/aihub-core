@@ -1,11 +1,15 @@
 import abc
-from typing import Annotated, Type
+from typing import Annotated, Type, List, Callable, Coroutine, Any, Awaitable
 
+from aihub_lib.nats.events import WorkRequestEvent, WorkEvent, BaseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
+from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
+from aihub_lib.nats.topics import ProcessTopic, Topic
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 
 
@@ -33,10 +37,27 @@ class AbstractEntityDelegator(abc.ABC):
 
         self.queue_group = queue_group
 
-    @abc.abstractmethod
+        self.subscriptions: List[ProcessNCSubscriber | ProcessJSSubscriber] = []
+
     async def start(self):
+        subscription = ProcessJSSubscriber.for_process_instance_work_request_events(
+            nc=self.nc,
+            topic_manager=self.topic_manager,
+            handler=self.handle_process_step_output,
+            queue_group=self.queue_group,
+            js=self.js,
+        )
+        await subscription.start()
+        self.subscriptions.append(subscription)
+
+    async def stop(self):
+        for subscription in self.subscriptions:
+            await subscription.stop()
+
+    @abc.abstractmethod
+    def handle_process_step_input_factory(self, work_event_type: Type[WorkEvent], is_process_start: bool) -> Callable[[BaseEvent, Topic], Awaitable[None]]:
         pass
 
     @abc.abstractmethod
-    async def stop(self):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
         pass

@@ -19,7 +19,9 @@ from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.agentic_processes.ProcessConfig import ProcessConfig
 from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
+from aihub_process.delegators.process.ProcessDelegator import ProcessDelegator
 from aihub_process.dispatchers.ProcessDispatcher import ProcessDispatcher
 from aihub_process.i18n.ProcessLocaleHandler import ProcessLocaleHandler
 
@@ -32,7 +34,7 @@ class ProcessRunner:
         servers: List[str],
         redis_url: str,
         process_type: Type[AgenticProcess],
-        process_id: str,
+        process_config: ProcessConfig,
         locale_paths: Optional[List[str]] = None,
     ):
         if not isinstance(process_type, type):
@@ -43,13 +45,13 @@ class ProcessRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.process_type = process_type
-        self.process_id = process_id
+        self.process_config = process_config
 
         self.running = False
         self._stop_signal = asyncio.Event()
 
         self.process_class = self.process_type.__name__
-        self.topic_manager = ProcessInstanceTopicManager(self.process_class, self.process_id)
+        self.topic_manager = ProcessInstanceTopicManager(self.process_class, self.process_config.process_id)
 
         self.nc: Optional[NATS] = None
         self.js: Optional[JetStreamContext] = None
@@ -57,6 +59,7 @@ class ProcessRunner:
         self.dispatcher: Optional[ProcessDispatcher] = None
 
         self.agent_delegator: Optional[AgentDelegator] = None
+        self.process_delegator: Optional[ProcessDelegator] = None
 
         self.discovery_event_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
         self.work_event_subscriber: Optional[JSSubscriber] = None
@@ -70,7 +73,7 @@ class ProcessRunner:
 
         If the discovery request doesn't match this process (i.e., different process_class/process_id), it ignores it.
         """
-        if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [self.process_id, "*"]:
+        if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [self.process_config.process_id, "*"]:
             logger.debug(
                 f"Discovery request for {topic.process_class} with id {topic.process_id} does not match this process."
             )
@@ -81,7 +84,7 @@ class ProcessRunner:
 
         process_discovery_response_event = ProcessDiscoveryResponseEvent(
             process_class=self.process_class,
-            process_id=self.process_id,
+            process_id=self.process_config.process_id,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -124,13 +127,23 @@ class ProcessRunner:
 
         self.agent_delegator = AgentDelegator(
             self.process_type,
-            self.process_id,
+            self.process_config.process_id,
             self.nc,
             self.js,
             self.topic_manager,
-            queue_group=f"agent_delegator_{self.process_class}_{self.process_id}",
+            queue_group=f"agent_delegator_{self.process_class}_{self.process_config.process_id}",
         )
         await self.agent_delegator.start()
+
+        self.process_delegator = ProcessDelegator(
+            self.process_type,
+            self.process_config.process_id,
+            self.nc,
+            self.js,
+            self.topic_manager,
+            queue_group=f"process_delegator_{self.process_class}_{self.process_config.process_id}",
+        )
+        await self.process_delegator.start()
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
@@ -144,7 +157,7 @@ class ProcessRunner:
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
-            queue_group=f"process_runner_{self.process_class}_{self.process_id}",
+            queue_group=f"process_runner_{self.process_class}_{self.process_config.process_id}",
         )
         await self.work_event_subscriber.start()
 
@@ -167,6 +180,7 @@ class ProcessRunner:
         await self.dispatcher.stop()
 
         await self.agent_delegator.stop()
+        await self.process_delegator.stop()
 
         if self.nc:
             await self.nc.close()
@@ -188,7 +202,7 @@ class ProcessRunner:
         Starts the process and waits indefinitely (or until a stop event is triggered).
         Useful for production usage where the process should run until manually stopped.
         """
-        logger.debug(f"Starting {self.process_class}.{self.process_id}")
+        logger.debug(f"Starting {self.process_class}.{self.process_config.process_id}")
         await self.start()
         try:
             await self._stop_signal.wait()

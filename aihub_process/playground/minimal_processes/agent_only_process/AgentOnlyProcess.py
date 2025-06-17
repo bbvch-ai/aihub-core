@@ -4,10 +4,10 @@ from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
-from playground.minimal_processes.agent_only_process.AgentB.events.AgentBStartEvent import AgentBStartEvent
-from playground.minimal_processes.agent_only_process.AgentB.events.CustomProcessStopEvent import CustomProcessStopEvent
-from playground.minimal_processes.agent_only_process.events.AgentBWorkRequest import AgentBWorkRequest
-from playground.minimal_processes.agent_only_process.events.AgentAWork import AgentAWork
+from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent
+from playground.events.AgentBWorkRequest import AgentBWorkRequest
+from playground.events.AgentAWork import AgentAWork
+from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 
 
 class AgentOnlyProcess(AgenticProcess):

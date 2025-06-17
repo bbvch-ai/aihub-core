@@ -11,11 +11,13 @@ from aihub_lib.nats.events import (
     WorkEvent,
     WorkRequestEvent,
 )
+from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
 from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
 
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.human.Human import Human
+from aihub_process.delegators.process.Process import Process
 from aihub_process.delegators.program.Program import Program
 
 
@@ -53,6 +55,11 @@ class AgenticProcess(DispatchableWorkflow):
     @functools.cache
     def get_events_with_program_in(cls) -> List[Tuple[Type[ProgramWorkEvent], Program.In]]:
         return cls.get_events_with_in_type(Program.In)
+
+    @classmethod
+    @functools.cache
+    def get_events_with_process_in(cls) -> List[Tuple[Type[ProcessWorkEvent], Process.In]]:
+        return cls.get_events_with_in_type(Process.In)
 
     @classmethod
     @functools.cache

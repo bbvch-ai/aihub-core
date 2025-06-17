@@ -1,7 +1,7 @@
 from aihub_agent.agents.Agent import Agent
 from aihub_lib.nats.workflow.decorators.step import step
-from playground.minimal_processes.agent_only_process.AgentB.events.AgentBStartEvent import AgentBStartEvent
-from playground.minimal_processes.agent_only_process.AgentB.events.AgentBStopEvent import AgentBStopEvent
+from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent
+from playground.agents.AgentB.events.AgentBStopEvent import AgentBStopEvent
 
 
 class AgentB(Agent):

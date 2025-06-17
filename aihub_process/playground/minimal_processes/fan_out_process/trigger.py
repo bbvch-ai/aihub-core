@@ -10,7 +10,7 @@ from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
 from playground.agents.AgentA.AgentA import AgentA
 from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
 from playground.agents.AgentB.AgentB import AgentB
-from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
+from playground.minimal_processes.fan_out_process.FanOutProcess import FanOutProcess
 
 enable_logging()
 
@@ -37,9 +37,9 @@ async def main():
     )
 
     process_runner = ProcessTestRunner(
-        process_type=AgentOnlyProcess,
+        process_type=FanOutProcess,
         process_config=ProcessConfig(
-            process_id="agent_only_process",
+            process_id="fan_out_process",
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

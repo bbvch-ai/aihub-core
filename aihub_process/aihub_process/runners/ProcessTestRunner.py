@@ -20,6 +20,7 @@ from aihub_lib.nats.topics import ProcessTopic, Topic
 from openai import BaseModel
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.agentic_processes.ProcessConfig import ProcessConfig
 from aihub_process.runners.ProcessRunner import ProcessRunner
 
 
@@ -37,14 +38,14 @@ class ProcessTestRunner(ProcessRunner):
     def __init__(
         self,
         process_type: Type[AgenticProcess],
-        process_id: str,
+        process_config: ProcessConfig,
         locale_paths: Optional[List[str]] = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
             redis_url=RedisConfig().REDIS_URL,
             process_type=process_type,
-            process_id=process_id,
+            process_config=process_config,
             locale_paths=locale_paths,
         )
         self.test_event_subscriber: Optional[JSSubscriber] = None
@@ -74,7 +75,7 @@ class ProcessTestRunner(ProcessRunner):
             nc=self.nc,
             topic_manager=ProcessInstanceTopicManager(
                 process_class=self.process_class,
-                process_id=self.process_id,
+                process_id=self.process_config.process_id,
             ),
             handler=self.observe_event,
         )
@@ -132,7 +133,7 @@ class ProcessTestRunner(ProcessRunner):
         return any(
             isinstance(event.event, ProcessDiscoveryResponseEvent)
             and event.event.process_class == self.process_class
-            and event.event.process_id == self.process_id
+            and event.event.process_id == self.process_config.process_id
             for event in self.observed_events
         )
 

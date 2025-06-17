@@ -1,5 +1,5 @@
-from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
+from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 
 
-class ProcessStartEvent(ProcessEvent):
+class ProcessStartEvent(WorkEvent):
     pass

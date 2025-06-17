@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List, Type
+from typing import Annotated, List, Type, Callable, Coroutine, Any, Awaitable
 
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -11,8 +11,6 @@ from aihub_lib.nats.events import (
     WorkRequestEvent,
 )
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
-from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
@@ -45,18 +43,9 @@ class AgentDelegator(AbstractEntityDelegator):
     ):
         super().__init__(process_class, process_id, nc, js, topic_manager, queue_group)
         self.external_agent_event_distributor = ExternalAgentEventDistributor(nc=self.nc, js=self.js)
-        self.subscriptions: List[ProcessNCSubscriber | ProcessJSSubscriber] = []
 
     async def start(self):
-        subscription = ProcessJSSubscriber.for_process_instance_work_request_events(
-            nc=self.nc,
-            topic_manager=self.topic_manager,
-            handler=self._handle_process_step_output,
-            queue_group=self.queue_group,
-            js=self.js,
-        )
-        await subscription.start()
-        self.subscriptions.append(subscription)
+        await super().start()
 
         logger.debug(f"Subscribed to agent work request event within process '{self.process_id}'")
 
@@ -66,17 +55,12 @@ class AgentDelegator(AbstractEntityDelegator):
             stop_events = work_event.get_stop_event_type()
 
             for stop_event in stop_events:
-                if stop_event is None:
-                    raise ValueError(
-                        "Agent.In Annotation detected for an event that doesn't have a stop event type. Please add a stop event type to the event annotation."
-                    )
-
                 agent_instance_topic_manager = AgentInstanceTopicManager(
                     agent_class=config.agent_class,
                     agent_id=config.agent_id,
                 )
 
-                handler = self._get_start_handler(
+                handler = self.handle_process_step_input_factory(
                     work_event_type=work_event,
                     is_process_start=issubclass(work_event, ProcessStartEvent),
                 )
@@ -94,11 +78,7 @@ class AgentDelegator(AbstractEntityDelegator):
                     f"Subscribed to agent '{config.agent_class}' with id '{config.agent_id}' for event '{stop_event.event_name_from_class()}'"
                 )
 
-    async def stop(self):
-        for subscription in self.subscriptions:
-            await subscription.stop()
-
-    def _get_start_handler(self, work_event_type: Type[AgentWorkEvent], is_process_start: bool):
+    def handle_process_step_input_factory(self, work_event_type: Type[AgentWorkEvent], is_process_start: bool) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
         async def _handle_process_step_input(
             event: Annotated[ControlEvent, "The incoming agent event to handle."],
             topic: Annotated[AgentTopic, "The parsed topic of the event."],
@@ -127,9 +107,10 @@ class AgentDelegator(AbstractEntityDelegator):
 
         return _handle_process_step_input
 
-    async def _handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
         if not isinstance(event, AgentWorkRequestEvent):
             return
+
         logger.debug(f"Delegating agent output to external agent: {event.agent_class} with id {event.agent_id}")
         thread_id = ObjectId()
         display_id = ObjectId()
