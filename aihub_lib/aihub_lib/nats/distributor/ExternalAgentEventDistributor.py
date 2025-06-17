@@ -11,7 +11,7 @@ from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class ExternalAgentEventDistributor:
         logger.debug(f"Handling start event for thread {external_event.thread_id}")
 
         if hasattr(external_event.event, "messages") and len(external_event.event.messages) == 0:
-            external_event.event.messages = PersistedEventEntity.to_message_history(str(thread.id))
+            external_event.event.messages = PersistedAgentEventEntity.to_message_history(str(thread.id))
             logger.debug(f"Assembled message history {external_event.event.messages}")
 
         for agent in thread.agents:

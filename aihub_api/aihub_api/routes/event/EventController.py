@@ -7,7 +7,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import TimeRange
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import TimeRange
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket

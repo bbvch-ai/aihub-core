@@ -23,10 +23,10 @@ class MultiInputProcess(AgenticProcess):
         Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")],
         Annotated[AgentCWorkRequest, Agent.Out(agent_class="AgentC", agent_id="agent_c")],
     ]:
-        print(f"[MultiInputProcess.start_with_output_from_agent_a] {work_from_agent_a.agent_event.payload}")
+        print(f"[MultiInputProcess.start_with_output_from_agent_a] {work_from_agent_a.agent_stop_event.payload}")
         return (
-            AgentBWorkRequest(start_event=AgentBStartEvent(payload=work_from_agent_a.agent_event.payload)),
-            AgentCWorkRequest(start_event=AgentCStartEvent(payload=work_from_agent_a.agent_event.payload)),
+            AgentBWorkRequest(start_event=AgentBStartEvent(payload=work_from_agent_a.agent_stop_event.payload)),
+            AgentCWorkRequest(start_event=AgentCStartEvent(payload=work_from_agent_a.agent_stop_event.payload)),
         )
 
     @process_step()
@@ -35,8 +35,12 @@ class MultiInputProcess(AgenticProcess):
         work_from_agent_b: Annotated[AgentBWork, Agent.In(agent_class="AgentB", agent_id="agent_b")],
         work_from_agent_c: Annotated[AgentCWork, Agent.In(agent_class="AgentC", agent_id="agent_c")],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
-        print(f"[MultiInputProcess.end_with_multiple_events] work_from_agent_b:{work_from_agent_b.agent_event.payload}")
-        print(f"[MultiInputProcess.end_with_multiple_events] work_from_agent_c:{work_from_agent_c.agent_event.payload}")
+        print(
+            f"[MultiInputProcess.end_with_multiple_events] work_from_agent_b:{work_from_agent_b.agent_stop_event.payload}"
+        )
+        print(
+            f"[MultiInputProcess.end_with_multiple_events] work_from_agent_c:{work_from_agent_c.agent_stop_event.payload}"
+        )
         return CustomProcessStopEvent(
-            payload=work_from_agent_b.agent_event.payload + work_from_agent_c.agent_event.payload
+            payload=work_from_agent_b.agent_stop_event.payload + work_from_agent_c.agent_stop_event.payload
         )

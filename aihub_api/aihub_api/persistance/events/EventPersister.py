@@ -1,6 +1,6 @@
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 
 
 class EventPersister:
@@ -14,7 +14,7 @@ class EventPersister:
     concerns between event handling and data persistence.
 
     ### Features
-    - Converts `BaseEvent` and associated `AgentTopic` metadata into a `PersistedEventEntity`.
+    - Converts `BaseEvent` and associated `AgentTopic` metadata into a `PersistedAgentEventEntity`.
     - Assigns a unique MongoDB ObjectId, populates agent and run details, and stores a fully serializable
       JSON snapshot of the event.
 
@@ -30,4 +30,4 @@ class EventPersister:
 
     async def persist_event(self, event: BaseEvent, topic: AgentTopic) -> None:
         """Persist the given event along with its topic metadata into MongoDB."""
-        PersistedEventEntity.persist_event(event, topic, self.db)
+        PersistedAgentEventEntity.persist_event(event, topic, self.db)

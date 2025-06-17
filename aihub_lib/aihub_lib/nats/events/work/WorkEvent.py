@@ -7,6 +7,12 @@ from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
 
 
 class WorkEvent(ProcessEvent):
+    """
+    A work event signals that a piece of work was successfully completed by some entity involved in the process.
+    You should generally never inherit from this class directly but use a more specific child class such as
+    AgentWorkEvent, HumanWorkEvent, ... etc. instead.
+    """
+
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.process_steps.work_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
         "lib.process_steps.work_event.description"

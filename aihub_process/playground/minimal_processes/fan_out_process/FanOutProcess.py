@@ -20,7 +20,7 @@ class FanOutProcess(AgenticProcess):
         Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")],
         Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")],
     ]:
-        print(f"[FanOutProcess.start_with_output_from_agent_a] {work_from_agent_a.agent_event.payload}")
+        print(f"[FanOutProcess.start_with_output_from_agent_a] {work_from_agent_a.agent_stop_event.payload}")
         return (
             AgentBWorkRequest(start_event=AgentBStartEvent(payload="1")),
             AgentBWorkRequest(start_event=AgentBStartEvent(payload="2")),
@@ -33,6 +33,6 @@ class FanOutProcess(AgenticProcess):
             FixedList(AgentBWorkRequest.work, 2), Agent.In(agent_class="AgentB", agent_id="agent_b")
         ],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
-        print(f"[FanOutProcess.end_with_output_from_agent_b.0] {work_from_agent_b[0].agent_event.payload}")
-        print(f"[FanOutProcess.end_with_output_from_agent_b.1] {work_from_agent_b[1].agent_event.payload}")
+        print(f"[FanOutProcess.end_with_output_from_agent_b.0] {work_from_agent_b[0].agent_stop_event.payload}")
+        print(f"[FanOutProcess.end_with_output_from_agent_b.1] {work_from_agent_b[1].agent_stop_event.payload}")
         return CustomProcessStopEvent(payload="done")

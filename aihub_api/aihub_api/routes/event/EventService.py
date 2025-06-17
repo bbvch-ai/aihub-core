@@ -8,7 +8,7 @@ from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAge
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity, TimeRange
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity, TimeRange
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -60,9 +60,9 @@ class EventService:
         if thread_id is None:
             user_threads = ThreadEntity.get_threads_by_user(user_oid)
             thread_ids = [str(thread.id) for thread in user_threads]
-            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids, event_name=event_class)
+            persisted_events = PersistedAgentEventEntity.display_events_for_threads(thread_ids, event_name=event_class)
         else:
-            persisted_events = PersistedEventEntity.display_events_for_thread(
+            persisted_events = PersistedAgentEventEntity.display_events_for_thread(
                 thread_id=str(thread_id),
                 display_id=str(display_id) if display_id is not None else None,
                 event_name=event_class,
@@ -70,11 +70,11 @@ class EventService:
         return [WSServerEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod
-    def get_all_thread_display_events(thread_id: str) -> List[PersistedEventEntity]:
+    def get_all_thread_display_events(thread_id: str) -> List[PersistedAgentEventEntity]:
         """
         Retrieves all display events for a thread.
         """
-        return PersistedEventEntity.display_events_for_thread(thread_id)
+        return PersistedAgentEventEntity.display_events_for_thread(thread_id)
 
     @staticmethod
     async def handle_external_event(
@@ -144,7 +144,7 @@ class EventService:
         event_name: Optional[str] = None,
     ) -> EventTimeseries:
         """Gets time-based statistics for a thread."""
-        buckets, start_time, end_time, resolution = PersistedEventEntity.get_event_timeseries(
+        buckets, start_time, end_time, resolution = PersistedAgentEventEntity.get_event_timeseries(
             time_range=time_range,
             agent_id=agent_id,
             agent_class=agent_class,

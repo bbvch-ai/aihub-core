@@ -69,9 +69,9 @@ TIME_RANGE_CONFIG: Dict[TimeRange, TimeRangeDetailConfig] = {
 }
 
 
-class PersistedEventEntity(Document):
+class PersistedAgentEventEntity(Document):
     meta = {
-        "collection": "events",
+        "collection": "agent_events",
         "strict": False,
         "indexes": [
             {"fields": ["thread_id", "event_type"]},
@@ -113,7 +113,7 @@ class PersistedEventEntity(Document):
     @classmethod
     def display_events_for_thread(
         cls, thread_id: str, display_id: Optional[str] = None, event_name: Optional[str] = None
-    ) -> List["PersistedEventEntity"]:
+    ) -> List["PersistedAgentEventEntity"]:
         query = cls.objects().filter(thread_id=thread_id, event_type=AgentTopicManager.DISPLAY_EVENT)
 
         if display_id is not None:
@@ -127,7 +127,7 @@ class PersistedEventEntity(Document):
     @classmethod
     def display_events_for_threads(
         cls, thread_ids: List[str], event_name: Optional[str] = None
-    ) -> List["PersistedEventEntity"]:
+    ) -> List["PersistedAgentEventEntity"]:
         query = cls.objects().filter(thread_id__in=thread_ids, event_type=AgentTopicManager.DISPLAY_EVENT)
 
         if event_name is not None:
@@ -136,7 +136,7 @@ class PersistedEventEntity(Document):
         return query.order_by("event_data__created_at")
 
     @classmethod
-    def display_events_for_agent(cls, agent_id: str) -> List["PersistedEventEntity"]:
+    def display_events_for_agent(cls, agent_id: str) -> List["PersistedAgentEventEntity"]:
         return (
             cls.objects()
             .filter(agent_id=agent_id, event_type=AgentTopicManager.DISPLAY_EVENT)
@@ -144,7 +144,7 @@ class PersistedEventEntity(Document):
         )
 
     @classmethod
-    def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
+    def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> List["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
             .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
@@ -152,7 +152,7 @@ class PersistedEventEntity(Document):
         )
 
     @classmethod
-    def human_in_the_loop_response_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
+    def human_in_the_loop_response_events_for_thread(cls, thread_id: str) -> List["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
             .filter(
@@ -164,13 +164,13 @@ class PersistedEventEntity(Document):
         )
 
     @classmethod
-    def all_events_for_thread(cls, thread_id: str) -> List["PersistedEventEntity"]:
+    def all_events_for_thread(cls, thread_id: str) -> List["PersistedAgentEventEntity"]:
         """
         Retrieves all events (both display and control) for a thread.
         """
         return list(cls.objects().filter(thread_id=thread_id).order_by("event_data__created_at"))
 
-    # Inside ThreadService or potentially PersistedEventEntity as a class method
+    # Inside ThreadService or potentially PersistedAgentEventEntity as a class method
 
     @classmethod
     def get_aggregated_run_statistics(cls, thread_id: str) -> List[dict]:

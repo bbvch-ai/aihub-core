@@ -3666,7 +3666,7 @@ export type ValidationError = {
  * debugging or logging outbound messages.
  *
  * ### Conversion from Persisted Events
- * The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedEventEntity`,
+ * The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedAgentEventEntity`,
  * allowing previously stored events to be replayed or displayed to users.
  */
 export type WsServerEvent = {

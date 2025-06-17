@@ -29,7 +29,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 
 logger = logging.getLogger(__name__)
@@ -104,10 +104,10 @@ class ChatService:
             )
         logger.debug(f"Created thread: {thread.id}")
 
-        hitl_requests = PersistedEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
+        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
         logger.debug(f"hitl_requests: {hitl_requests}")
 
-        hitl_responses = PersistedEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
+        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
         logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)

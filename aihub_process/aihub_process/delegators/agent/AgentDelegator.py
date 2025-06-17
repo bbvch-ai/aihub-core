@@ -129,7 +129,7 @@ class AgentDelegator(AbstractEntityDelegator):
             topic: Annotated[AgentTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling agent event: {event.event_name}")
-            work_event = work_event_type(agent_event=event)
+            work_event = work_event_type(agent_stop_event=event)
 
             if is_process_start:
                 process_walkthrough_id = str(ObjectId())

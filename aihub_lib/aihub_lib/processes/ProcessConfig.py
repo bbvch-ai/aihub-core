@@ -25,7 +25,9 @@ class ProcessConfig(BaseModel):
     injected into each agent step at-runtime.
     """
 
-    process_id: str = Field(..., description="Used to uniquely identify this process instance.", pattern=r"^[a-z_-]+$")
+    process_id: str = Field(
+        ..., description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$"
+    )
     name: LocaleString = Field(..., description="The name of the process.")
     description: LocaleString = Field(..., description="The description of the process.")
     icon: str = Field("meteor-icons:robot", description="The icon representing the agent.")

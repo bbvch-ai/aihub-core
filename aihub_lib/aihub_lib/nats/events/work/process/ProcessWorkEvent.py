@@ -1,5 +1,7 @@
 import inspect
-from typing import Generic, Tuple, Type, TypeVar, cast
+from typing import Annotated, Generic, Tuple, Type, TypeVar, cast
+
+from pydantic import Field
 
 from aihub_lib.nats.events import ProcessStartEvent, ProcessStopEvent
 from aihub_lib.nats.events.utils import get_base_type
@@ -8,12 +10,22 @@ TEvent = TypeVar("TEvent", bound=ProcessStopEvent)
 
 
 class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
-    process_stop_event: TEvent
+    """
+    Signals a piece of work completed by another process.
+    As this work event is generated automatically by the process delegator, you can't really add attributes to this
+    class.
+    The delegator will add the stop event type to the `process_stop_event` field, making the output information
+    from the process work accessible for you to use in your process.
+    Note that this event is a ProcessStartEvent, as processes can start other processes, but not be part of other
+    processes.
+    """
+
+    process_stop_event: Annotated[TEvent, Field(description="The stop event of the process that completed the work.")]
 
     @classmethod
     def get_stop_event_type(cls) -> Tuple[Type[ProcessStopEvent], ...]:
         """
-        Extracts the concrete stop event type(s) from the `agent_event` field.
+        Extracts the concrete stop event type(s) from the `agent_stop_event` field.
         This version uses Pydantic's `model_fields` for robust type resolution
         before unwrapping complex type hints.
         """

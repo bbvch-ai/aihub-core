@@ -48,7 +48,7 @@ class AgentConfig(BaseModel):
     ```
     """
 
-    agent_id: str = Field(..., description="Uniquely identifies the agent instance.", pattern=r"^[a-z_-]+$")
+    agent_id: str = Field(..., description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")
     name: LocaleString = Field(..., description="The name of the agent.")
     description: LocaleString = Field(..., description="The description of the agent.")
     icon: str = Field("meteor-icons:robot", description="The icon representing the agent.")
