@@ -1,5 +1,5 @@
 from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStartEvent import MyCustomStartEvent
 from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStopEvent import MyCustomStopEvent
 

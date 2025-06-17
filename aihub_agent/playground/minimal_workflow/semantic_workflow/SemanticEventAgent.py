@@ -1,5 +1,5 @@
 from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, RerankerEvent, RetrieverEvent, LLMStopEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode

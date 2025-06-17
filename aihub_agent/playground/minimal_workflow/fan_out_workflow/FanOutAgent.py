@@ -2,7 +2,7 @@ from typing import List
 
 from aihub_agent.agents.Agent import Agent
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import FixedList
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB

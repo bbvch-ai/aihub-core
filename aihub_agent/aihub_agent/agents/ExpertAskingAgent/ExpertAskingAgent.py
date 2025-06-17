@@ -9,7 +9,7 @@ from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.step import step
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 from stringcase import alphanumcase

@@ -1,7 +1,7 @@
 from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
 
 from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StartEvent, StopEvent
 
 

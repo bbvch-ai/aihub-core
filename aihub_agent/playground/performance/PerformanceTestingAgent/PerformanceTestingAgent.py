@@ -1,8 +1,8 @@
 from typing import List
 
 from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.workflow.decorators.precondition import precondition
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.precondition import precondition
+from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events import StopEvent, StartEvent
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import PerformanceTestingAgentConfig
 from playground.performance.PerformanceTestingAgent.events.ParallelEvent import ParallelEvent

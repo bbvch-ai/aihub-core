@@ -5,8 +5,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import AgentInTheLoop, HumanInTheLoop, LLMStopEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.nats.workflow.decorators.precondition import precondition
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.precondition import precondition
+from aihub_agent.workflow.decorators.step import step
 from llama_index.core.prompts.rich import RichPromptTemplate
 
 from aihub_agent.agents.Agent import Agent

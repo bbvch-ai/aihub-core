@@ -6,7 +6,7 @@ from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import GuardRejectionEvent, LLMEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_lib.nats.workflow.decorators.step import step
+from aihub_agent.workflow.decorators.step import step
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent

@@ -2,6 +2,7 @@ import inspect
 import logging
 from typing import Annotated, Awaitable, Callable, Optional
 
+from aihub_agent.agents.Agent import Agent
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
 
@@ -69,19 +70,19 @@ def step(
         )
 
         # Mark the function as a step and store extracted metadata
-        setattr(func, "_is_step", True)
-        setattr(func, "_precondition_fn", precondition)
-        setattr(func, "_input_events", input_events)
-        setattr(func, "_output_events", output_events)
-        setattr(func, "_input_event_mapping", input_event_mapping)
-        setattr(func, "_parameter_optional_map", parameter_optional_map)
-        setattr(func, "_size_requirements", size_requirements)
-        setattr(func, "_max_executions_per_run", max_executions_per_run)
-        setattr(func, "_stop_on_error", stop_on_error)
-        setattr(func, "_step_name", name)
-        setattr(func, "_step_description", description)
-        setattr(func, "_step_icon", icon)
-        setattr(func, "__signature__", inspect.signature(func))
+        setattr(func, Agent.STEP_ANNOTATION, True)
+        setattr(func, Agent.PRECONDITION_FUNCTION_ANNOTATION, precondition)
+        setattr(func, Agent.INPUT_EVENTS_ANNOTATION, input_events)
+        setattr(func, Agent.OUTPUT_EVENTS_ANNOTATION, output_events)
+        setattr(func, Agent.INPUT_EVENT_MAPPING_ANNOTATION, input_event_mapping)
+        setattr(func, Agent.PARAMETER_OPTIONAL_MAP_ANNOTATION, parameter_optional_map)
+        setattr(func, Agent.SIZE_REQUIREMENT_ANNOTATION, size_requirements)
+        setattr(func, Agent.MAX_EXECUTION_PER_RUN_ANNOTATION, max_executions_per_run)
+        setattr(func, Agent.STOP_ON_ERROR_ANNOTATION, stop_on_error)
+        setattr(func, Agent.STEP_NAME_ANNOTATION, name)
+        setattr(func, Agent.STEP_DESCRIPTION_ANNOTATION, description)
+        setattr(func, Agent.STEP_ICON_ANNOTATION, icon)
+        setattr(func, Agent.SIGNATURE_ANNOTATION, inspect.signature(func))
 
         logger.debug(f"Decorated step: {func.__name__} with input events: {input_events}")
         logger.debug(f"Decorated step: {func.__name__} with input event mapping: {input_event_mapping}")
