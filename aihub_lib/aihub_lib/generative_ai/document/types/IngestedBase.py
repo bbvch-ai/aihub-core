@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -30,3 +30,4 @@ class IngestedBase(BaseModel):
     inserted_at: Annotated[
         str, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
+    metadata: Annotated[Optional[Dict], Field(description="Additional metadata for the document.")] = None

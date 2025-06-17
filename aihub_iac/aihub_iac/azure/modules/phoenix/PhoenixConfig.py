@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_PHOENIX_SUFFIX
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
@@ -13,7 +14,6 @@ class PhoenixConfig(BaseConfig):
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
 
-    DEFAULT_PHOENIX_SUFFIX: ClassVar[str] = "phoenix"
     PHOENIX_SUBNET_CIDR: ClassVar[str] = "10.0.36.0/24"
 
     # Docker Image settings
@@ -61,7 +61,7 @@ class PhoenixConfig(BaseConfig):
 
     @property
     def service_name(self) -> str:
-        return self.resource_namer.app_service_name(PhoenixConfig.DEFAULT_PHOENIX_SUFFIX)
+        return self.resource_namer.app_service_name(DEFAULT_PHOENIX_SUFFIX)
 
     @property
     def effective_docker_image(self) -> str:

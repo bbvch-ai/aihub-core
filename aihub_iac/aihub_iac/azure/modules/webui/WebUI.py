@@ -75,6 +75,12 @@ class WebUI(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.WEBUI_SUBNET_CIDR,
+            delegations=[
+                network.DelegationArgs(
+                    name="env-delegation",
+                    service_name="Microsoft.App/environments",
+                )
+            ],
             network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
@@ -224,8 +230,10 @@ class WebUI(pulumi.ComponentResource):
             "DO_NOT_TRACK": "true",
             "ANONYMIZED_TELEMETRY": "true",
             # Websocket support
+            "WEBUI_SECRET_KEY": self.config.openwebui_config.webui_secret_key,
             "ENABLE_WEBSOCKET_SUPPORT": "true",
             "WEBSOCKET_MANAGER": "redis",
+            "REDIS_URL": f"redis://{nats_ip}:6379/1",
             "WEBSOCKET_REDIS_URL": f"redis://{nats_ip}:6379/1",
             "WEB_CONCURRENCY": "4",
             # UI and Security
@@ -309,6 +317,8 @@ class WebUI(pulumi.ComponentResource):
             "RAG_FULL_CONTEXT": "false",
             "RAG_WEB_SEARCH_FULL_CONTEXT": "true",
             "ENABLE_DIRECT_CONNECTIONS": "false",
+            "UVICORN_WORKERS": f"{self.config.cpu}",
+            "THREAD_POOL_SIZE": f"{self.config.cpu * 20}",
         }
 
         # Apply any additional/override environment variables from config
@@ -379,7 +389,8 @@ class WebUI(pulumi.ComponentResource):
                 containers=container_list,
                 volumes=self.app_volumes,
                 scale=app.ScaleArgs(
-                    min_replicas=1,
+                    min_replicas=self.config.min_replicas,
+                    max_replicas=self.config.max_replicas,
                 ),
             ),
             tags={

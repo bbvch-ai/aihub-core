@@ -24,6 +24,7 @@ from aihub_lib.nats.events import (
     StopEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -76,6 +77,7 @@ class ChatService:
         messages: List[ChatMessage],
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        files: Optional[List[UserUploadedFile]] = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -133,6 +135,7 @@ class ChatService:
                 messages=messages,
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                files=files,
             )
 
         event = ExternalAgentEvent(
@@ -161,6 +164,7 @@ class ChatService:
         external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        files: Optional[List[UserUploadedFile]] = None,
         locale: Optional[str] = None,
     ) -> StreamingResources:
         """
@@ -173,6 +177,7 @@ class ChatService:
             messages=messages,
             thread_id=thread_id,
             display_id=display_id,
+            files=files,
             subscribe_to_thread=True,
             locale=locale,
         )
@@ -232,6 +237,7 @@ class ChatService:
         external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
+        files: Optional[List[UserUploadedFile]] = None,
         locale: Optional[str] = None,
     ) -> JsonResources:
         """
@@ -244,6 +250,7 @@ class ChatService:
             messages=messages,
             thread_id=thread_id,
             display_id=display_id,
+            files=files,
             subscribe_to_thread=True,
             locale=locale,
         )

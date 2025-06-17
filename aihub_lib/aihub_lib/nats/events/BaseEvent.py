@@ -7,12 +7,24 @@ from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
+from llama_index.core.base.llms.types import ChatMessage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 from typing_extensions import override
 
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 logger = logging.getLogger(__name__)
+
+
+def serialize_chat_message_blocks(chat_message: ChatMessage) -> Dict:
+    msg_dict = chat_message.model_dump()
+    for block in msg_dict["blocks"]:
+        if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
+            block["url"] = str(block["url"])
+            if block.get("path") is not None:
+                block["path"] = str(block["path"])
+
+    return msg_dict
 
 
 class BaseEvent(BaseModel):
@@ -308,11 +320,21 @@ class BaseEvent(BaseModel):
         """
         data = super().model_dump(**kwargs)
         for field_name, value in self.__dict__.items():
-            if isinstance(value, BaseModel):
+            if isinstance(value, ChatMessage):
+                data[field_name] = serialize_chat_message_blocks(value)
+            elif isinstance(value, BaseModel):
                 data[field_name] = value.model_dump()
-            # Handle lists containing events
             elif isinstance(value, list):
-                data[field_name] = [item.model_dump() if isinstance(item, BaseModel) else item for item in value]
+                data[field_name] = [
+                    (
+                        serialize_chat_message_blocks(item)
+                        if isinstance(item, ChatMessage)
+                        else item.model_dump()
+                        if isinstance(item, BaseModel)
+                        else item
+                    )
+                    for item in value
+                ]
 
         if not self._unknown_data:
             return data

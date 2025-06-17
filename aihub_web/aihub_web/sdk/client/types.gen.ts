@@ -133,11 +133,11 @@ export type AgentEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -149,7 +149,7 @@ export type AgentEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -168,12 +168,12 @@ export type AgentEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    display_description?: LocaleString;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -199,11 +199,11 @@ export type AgentInTheLoopExceptionEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * The exception event from the delegated agent containing error details and failure context.
      */
@@ -219,7 +219,7 @@ export type AgentInTheLoopExceptionEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ExceptionEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | ExceptionEventReadable | Array<string> | undefined;
 };
 
 /**
@@ -245,16 +245,16 @@ export type AgentInTheLoopExceptionEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * The exception event from the delegated agent containing error details and failure context.
      */
     exception_event: ExceptionEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ExceptionEventWritable | undefined;
+    [key: string]: unknown | string | number | LocaleString | ExceptionEventWritable | undefined;
 };
 
 /**
@@ -281,11 +281,11 @@ export type AgentInTheLoopRequestEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Start Event
      * The event that will be sent to the other agent to initiate its task.
@@ -322,7 +322,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -349,11 +349,11 @@ export type AgentInTheLoopRequestEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Start Event
      * The event that will be sent to the other agent to initiate its task.
@@ -379,7 +379,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
      */
     share_run_id?: boolean;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentTopic) | boolean | undefined;
+    [key: string]: unknown | string | number | LocaleString | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentTopic) | boolean | undefined;
 };
 
 /**
@@ -404,11 +404,11 @@ export type AgentInTheLoopResponseEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * The stop event from the delegated agent containing the task results and marks the completion.
      */
@@ -424,7 +424,7 @@ export type AgentInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | StopEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | StopEventReadable | Array<string> | undefined;
 };
 
 /**
@@ -449,16 +449,16 @@ export type AgentInTheLoopResponseEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * The stop event from the delegated agent containing the task results and marks the completion.
      */
     stop_event: StopEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | StopEventWritable | undefined;
+    [key: string]: unknown | string | number | LocaleString | StopEventWritable | undefined;
 };
 
 /**
@@ -511,7 +511,7 @@ export type AgentTopic = {
     event_type: string;
     /**
      * Event Name
-     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
+     * Name of the event (e.g., 'start', 'stop', 'error').
      */
     event_name: string;
     /**
@@ -755,11 +755,11 @@ export type ChainEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Metadata
      * Metadata associated with the chain as a dictionary JSON string. For example, LangChain uses metadata to store user-defined attributes for a chain.
@@ -778,7 +778,7 @@ export type ChainEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+    [key: string]: unknown | string | number | LocaleString | ({
         [key: string]: unknown;
     } | null) | Array<string> | undefined;
 };
@@ -799,11 +799,11 @@ export type ChainEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Metadata
      * Metadata associated with the chain as a dictionary JSON string. For example, LangChain uses metadata to store user-defined attributes for a chain.
@@ -811,7 +811,7 @@ export type ChainEventWritable = {
     metadata?: {
         [key: string]: unknown;
     } | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+    [key: string]: unknown | string | number | LocaleString | ({
         [key: string]: unknown;
     } | null) | undefined;
 };
@@ -1421,11 +1421,11 @@ export type ChunkEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Content
      * The actual chunk of text or data produced at this stage.
@@ -1452,7 +1452,7 @@ export type ChunkEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | Array<string> | undefined;
 };
 
 /**
@@ -1480,11 +1480,11 @@ export type ChunkEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Content
      * The actual chunk of text or data produced at this stage.
@@ -1500,7 +1500,7 @@ export type ChunkEventWritable = {
      * The textual representation of the agent’s internal reasoning at a particular point in time.
      */
     reasoning_content?: string | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | undefined;
 };
 
 /**
@@ -1898,11 +1898,11 @@ export type DisplayEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -1914,7 +1914,7 @@ export type DisplayEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -1946,12 +1946,12 @@ export type DisplayEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    display_description?: LocaleString;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -2112,11 +2112,11 @@ export type EmbeddingEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Text
      * The text represented in the embedding
@@ -2143,7 +2143,7 @@ export type EmbeddingEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | (Array<Embedding> | null) | Array<string> | undefined;
 };
 
 /**
@@ -2162,11 +2162,11 @@ export type EmbeddingEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Text
      * The text represented in the embedding
@@ -2182,7 +2182,7 @@ export type EmbeddingEventWritable = {
      * A list of embedding objects containing text and vector data.
      */
     embeddings?: Array<Embedding> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | (Array<Embedding> | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | (Array<Embedding> | null) | undefined;
 };
 
 /**
@@ -2480,11 +2480,11 @@ export type ExceptionEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Message
      * A human-readable description of the exception or error that occurred.
@@ -2506,7 +2506,7 @@ export type ExceptionEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -2537,11 +2537,11 @@ export type ExceptionEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Message
      * A human-readable description of the exception or error that occurred.
@@ -2552,7 +2552,7 @@ export type ExceptionEventWritable = {
      * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
      */
     http_status_code?: number;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -2828,11 +2828,11 @@ export type GuardEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -2844,7 +2844,7 @@ export type GuardEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -2863,12 +2863,12 @@ export type GuardEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    display_description?: LocaleString;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -2894,11 +2894,11 @@ export type GuardRejectionEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Reason
      * Reason why the Guard rejected the request.
@@ -2915,7 +2915,7 @@ export type GuardRejectionEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -2941,17 +2941,17 @@ export type GuardRejectionEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Reason
      * Reason why the Guard rejected the request.
      */
     reason: string;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -3002,11 +3002,11 @@ export type HumanInTheLoopRequestEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Question
      * The query or prompt presented to the human operator.
@@ -3028,7 +3028,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
 };
 
 /**
@@ -3053,11 +3053,11 @@ export type HumanInTheLoopRequestEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Question
      * The query or prompt presented to the human operator.
@@ -3068,7 +3068,7 @@ export type HumanInTheLoopRequestEventWritable = {
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
     topic: PartialAgentTopic | AgentTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentTopic) | undefined;
+    [key: string]: unknown | string | number | LocaleString | (PartialAgentTopic | AgentTopic) | undefined;
 };
 
 /**
@@ -3093,11 +3093,11 @@ export type HumanInTheLoopResponseEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Response
      * The human operator's answer or decision.
@@ -3118,7 +3118,7 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
@@ -3143,11 +3143,11 @@ export type HumanInTheLoopResponseEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Response
      * The human operator's answer or decision.
@@ -3157,7 +3157,7 @@ export type HumanInTheLoopResponseEventWritable = {
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
     request_event: HumanInTheLoopRequestEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
+    [key: string]: unknown | string | number | LocaleString | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -3359,6 +3359,7 @@ export type IngestedDocument = {
      * Content of the document.
      */
     content?: string;
+    [key: string]: unknown | string | number | (string | null) | (number | null) | (string | null) | (('de' | 'en' | 'fr' | 'it') | null) | undefined;
 };
 
 /**
@@ -3506,6 +3507,7 @@ export type IngestedNode = {
      * Score representing the relevance of the document.
      */
     score?: number | null;
+    [key: string]: unknown | string | number | (string | null) | (number | null) | (string | null) | (('de' | 'en' | 'fr' | 'it') | null) | ('content' | 'summary') | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (string | null) | (string | null) | (string | null) | (string | null) | (string | null) | ((0 | 1 | 2 | 3 | 4 | 5 | 6) | null) | (number | null) | undefined;
 };
 
 /**
@@ -3617,11 +3619,11 @@ export type LlmCostEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Llm Name
      * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
@@ -3638,7 +3640,7 @@ export type LlmCostEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | number | number | string | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | number | number | string | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -3695,17 +3697,17 @@ export type LlmCostEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Llm Name
      * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
      */
     llm_name: string;
-    [key: string]: unknown | number | number | string | (LocaleString | null) | (LocaleString | null) | undefined;
+    [key: string]: unknown | number | number | string | LocaleString | undefined;
 };
 
 /**
@@ -3724,11 +3726,11 @@ export type LlmEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Messages
      * List of messages sent to the LLM as input.
@@ -3811,7 +3813,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -3836,11 +3838,11 @@ export type LlmEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Messages
      * List of messages sent to the LLM as input.
@@ -3912,7 +3914,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -3937,11 +3939,11 @@ export type LlmStopEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Messages
      * List of messages sent to the LLM as input.
@@ -4024,7 +4026,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4049,11 +4051,11 @@ export type LlmStopEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Messages
      * List of messages sent to the LLM as input.
@@ -4125,7 +4127,7 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4141,11 +4143,11 @@ export type LlmStopEventOutputReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Messages
      * List of messages sent to the LLM as input.
@@ -4226,11 +4228,11 @@ export type LlmStopEventOutputWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Messages
      * List of messages sent to the LLM as input.
@@ -4321,11 +4323,11 @@ export type LimitChatHistoryEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Limited History
      * Limited chat history based on number of input tokens.
@@ -4342,7 +4344,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -4362,17 +4364,17 @@ export type LimitChatHistoryEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Limited History
      * Limited chat history based on number of input tokens.
      */
     limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -4398,22 +4400,18 @@ export type LocaleResponse = {
 export type LocaleString = {
     /**
      * De
-     * German
      */
     de?: string | null;
     /**
      * En
-     * English
      */
     en?: string | null;
     /**
      * Fr
-     * French
      */
     fr?: string | null;
     /**
      * It
-     * Italian
      */
     it?: string | null;
 };
@@ -4571,6 +4569,11 @@ export type Metadata = {
      * When set to True, message set on UserMessageEvent will be calculated based on thread event history
      */
     reconstruct_history?: boolean | null;
+    /**
+     * Files
+     * List of files to attach to the request, if supported by the model.
+     */
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -5018,11 +5021,11 @@ export type RerankerEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Nodes
      * List of input documents provided to the reranker.
@@ -5059,7 +5062,7 @@ export type RerankerEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
 };
 
 /**
@@ -5078,11 +5081,11 @@ export type RerankerEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Input Nodes
      * List of input documents provided to the reranker.
@@ -5108,7 +5111,7 @@ export type RerankerEventWritable = {
      * The top K parameter, representing the number of results to be reranked.
      */
     top_k?: number | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | undefined;
 };
 
 /**
@@ -5173,11 +5176,11 @@ export type RetrieverEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Nodes
      * List of nodes retrieved by the retriever, including document IDs, scores, and content.
@@ -5194,7 +5197,7 @@ export type RetrieverEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | Array<string> | undefined;
 };
 
 /**
@@ -5213,17 +5216,17 @@ export type RetrieverEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Nodes
      * List of nodes retrieved by the retriever, including document IDs, scores, and content.
      */
     nodes?: Array<IngestedNode> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | (Array<IngestedNode> | null) | undefined;
 };
 
 /**
@@ -5252,11 +5255,11 @@ export type RouteOptionsReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Name
      * For UI purpose only
@@ -5287,7 +5290,7 @@ export type RouteOptionsReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ControlEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | ControlEventReadable | Array<string> | undefined;
 };
 
 /**
@@ -5306,11 +5309,11 @@ export type RouteOptionsWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Name
      * For UI purpose only
@@ -5330,7 +5333,7 @@ export type RouteOptionsWritable = {
      * Possible event to route to
      */
     event: ControlEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ControlEventWritable | undefined;
+    [key: string]: unknown | string | number | LocaleString | ControlEventWritable | undefined;
 };
 
 /**
@@ -5350,11 +5353,11 @@ export type RouterEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Routes
      * List of options
@@ -5380,7 +5383,7 @@ export type RouterEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<RouteOptionsReadable> | RouteOptionsReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<RouteOptionsReadable> | RouteOptionsReadable | Array<string> | undefined;
 };
 
 /**
@@ -5400,11 +5403,11 @@ export type RouterEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Routes
      * List of options
@@ -5419,7 +5422,7 @@ export type RouterEventWritable = {
      * Reason for the decision
      */
     reason: string;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<RouteOptionsWritable> | RouteOptionsWritable | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<RouteOptionsWritable> | RouteOptionsWritable | undefined;
 };
 
 /**
@@ -5540,11 +5543,11 @@ export type SemanticEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5556,7 +5559,7 @@ export type SemanticEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -5601,12 +5604,12 @@ export type SemanticEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    display_description?: LocaleString;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -5636,6 +5639,17 @@ export type ServiceDto = {
 };
 
 /**
+ * SignedUrlDto
+ */
+export type SignedUrlDto = {
+    /**
+     * Url
+     * The signed URL of the file
+     */
+    url: string;
+};
+
+/**
  * StandaloneQuestionCondenserEvent
  * Event to condense chat messages into a single standalone question as a chat message.
  */
@@ -5652,11 +5666,11 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Single chat message containing the condensed user question.
      */
@@ -5672,7 +5686,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | ChatMessageOutput | Array<string> | undefined;
 };
 
 /**
@@ -5692,16 +5706,16 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Single chat message containing the condensed user question.
      */
     condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | undefined;
+    [key: string]: unknown | string | number | LocaleString | ChatMessageOutput | undefined;
 };
 
 /**
@@ -5729,11 +5743,11 @@ export type StartEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5745,7 +5759,7 @@ export type StartEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -5773,12 +5787,12 @@ export type StartEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    display_description?: LocaleString;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -5814,11 +5828,11 @@ export type StopEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5830,7 +5844,7 @@ export type StopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | Array<string> | undefined;
 };
 
 /**
@@ -5866,12 +5880,12 @@ export type StopEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    display_description?: LocaleString;
+    [key: string]: unknown | string | number | LocaleString | undefined;
 };
 
 /**
@@ -5881,11 +5895,11 @@ export type StopEventOutput = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
 };
 
 /**
@@ -5985,11 +5999,11 @@ export type ThoughtEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Content
      * The actual chunk of text or data produced at this stage.
@@ -6016,7 +6030,7 @@ export type ThoughtEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | Array<string> | undefined;
 };
 
 /**
@@ -6043,11 +6057,11 @@ export type ThoughtEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Content
      * The actual chunk of text or data produced at this stage.
@@ -6063,7 +6077,7 @@ export type ThoughtEventWritable = {
      * The textual representation of the agent’s internal reasoning at a particular point in time.
      */
     reasoning_content?: string | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
+    [key: string]: unknown | string | number | LocaleString | (string | null) | undefined;
 };
 
 /**
@@ -6248,11 +6262,11 @@ export type ToolEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Name
      * The name of the tool being utilized
@@ -6288,7 +6302,7 @@ export type ToolEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | ({
         [key: string]: unknown;
     } | null) | ({
         [key: string]: unknown;
@@ -6311,11 +6325,11 @@ export type ToolEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Name
      * The name of the tool being utilized
@@ -6340,7 +6354,7 @@ export type ToolEventWritable = {
     parameters?: {
         [key: string]: unknown;
     } | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | ({
+    [key: string]: unknown | string | number | LocaleString | (string | null) | (string | null) | ({
         [key: string]: unknown;
     } | null) | ({
         [key: string]: unknown;
@@ -6625,11 +6639,11 @@ export type UserMessageEventReadable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Locale
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
@@ -6645,6 +6659,11 @@ export type UserMessageEventReadable = {
      */
     messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
     /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -6655,7 +6674,7 @@ export type UserMessageEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -6696,11 +6715,11 @@ export type UserMessageEventWritable = {
     /**
      * Display name for the event
      */
-    display_name?: LocaleString | null;
+    display_name?: LocaleString;
     /**
      * Display description for the event
      */
-    display_description?: LocaleString | null;
+    display_description?: LocaleString;
     /**
      * Locale
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
@@ -6715,7 +6734,12 @@ export type UserMessageEventWritable = {
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
     messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | undefined;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+    [key: string]: unknown | string | number | LocaleString | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
@@ -6727,6 +6751,32 @@ export type UserMessageEventInput = {
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
     messages?: Array<ChatMessageInput | UserChatMessageInput | AssistantChatMessageInput>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type UserUploadedFile = {
+    /**
+     * Filename
+     * The name of the uploaded file, including the extension.
+     */
+    filename: string;
+    /**
+     * File Data
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
 };
 
 /**
@@ -6763,7 +6813,7 @@ export type ValidationError = {
  * debugging or logging outbound messages.
  *
  * ### Conversion from Persisted Events
- * The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedAgentEventEntity`,
+ * The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedEventEntity`,
  * allowing previously stored events to be replayed or displayed to users.
  */
 export type WsServerEventReadable = {
@@ -6845,7 +6895,7 @@ export type WsServerEventReadable = {
  * debugging or logging outbound messages.
  *
  * ### Conversion from Persisted Events
- * The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedAgentEventEntity`,
+ * The `from_persisted_event` method rebuilds a `WSServerEvent` from a `PersistedEventEntity`,
  * allowing previously stored events to be replayed or displayed to users.
  */
 export type WsServerEventWritable = {
@@ -8182,6 +8232,158 @@ export type GetSummaryNodesForDocumentResponses = {
 };
 
 export type GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponses[keyof GetSummaryNodesForDocumentResponses];
+
+export type GetFileUrlData = {
+    body?: never;
+    path: {
+        /**
+         * Container
+         */
+        container: string;
+        /**
+         * File Path
+         */
+        file_path: string;
+    };
+    query?: never;
+    url: '/file/logged-in/url/{container}/{file_path}';
+};
+
+export type GetFileUrlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetFileUrlError = GetFileUrlErrors[keyof GetFileUrlErrors];
+
+export type GetFileUrlResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignedUrlDto;
+};
+
+export type GetFileUrlResponse = GetFileUrlResponses[keyof GetFileUrlResponses];
+
+export type GetFileRedirectData = {
+    body?: never;
+    path: {
+        /**
+         * Container
+         */
+        container: string;
+        /**
+         * File Path
+         */
+        file_path: string;
+    };
+    query?: never;
+    url: '/file/logged-in/redirect/{container}/{file_path}';
+};
+
+export type GetFileRedirectErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetFileRedirectError = GetFileRedirectErrors[keyof GetFileRedirectErrors];
+
+export type GetFileRedirectResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetAnonymousFileRedirectData = {
+    body?: never;
+    path: {
+        /**
+         * Container
+         */
+        container: string;
+        /**
+         * File Path
+         */
+        file_path: string;
+    };
+    query: {
+        /**
+         * Expires
+         * The UNIX timestamp when the link expires.
+         */
+        expires: number;
+        /**
+         * Signature
+         * The signature to validate the request.
+         */
+        signature: string;
+    };
+    url: '/file/anonymous/url/{container}/{file_path}';
+};
+
+export type GetAnonymousFileRedirectErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAnonymousFileRedirectError = GetAnonymousFileRedirectErrors[keyof GetAnonymousFileRedirectErrors];
+
+export type GetAnonymousFileRedirectResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetAnonymousFileRedirect2Data = {
+    body?: never;
+    path: {
+        /**
+         * Container
+         */
+        container: string;
+        /**
+         * File Path
+         */
+        file_path: string;
+    };
+    query: {
+        /**
+         * Expires
+         * The UNIX timestamp when the link expires.
+         */
+        expires: number;
+        /**
+         * Signature
+         * The signature to validate the request.
+         */
+        signature: string;
+    };
+    url: '/file/anonymous/redirect/{container}/{file_path}';
+};
+
+export type GetAnonymousFileRedirect2Errors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAnonymousFileRedirect2Error = GetAnonymousFileRedirect2Errors[keyof GetAnonymousFileRedirect2Errors];
+
+export type GetAnonymousFileRedirect2Responses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

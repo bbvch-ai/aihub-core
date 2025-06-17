@@ -10,6 +10,8 @@ class OpenWebUIConfig(BaseModel):
     admin_email: str = Field(description="Admin email for web UI")
     default_locale: str = Field(description="Default locale for web UI")
 
+    webui_secret_key: str = Field(description="Secret key for web UI")
+
     aihub_api_key: Optional[str] = Field(None, description="AIHub API key")
     custom_openai_api_key: Optional[str] = Field(None, description="OpenAI API key")
     custom_rag_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for RAG")

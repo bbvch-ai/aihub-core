@@ -1,8 +1,9 @@
-from pulumi_azure_native import cognitiveservices, managedidentity, search
+from pulumi_azure_native import cognitiveservices, cosmosdb, managedidentity, search
 
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.providers.RoleProvider import RoleProvider
 from aihub_iac.azure.resources.AISearch import AISearch
+from aihub_iac.azure.resources.CosmosDocstore import CosmosDocstore
 from aihub_iac.azure.resources.OpenAI import OpenAI
 
 
@@ -54,6 +55,14 @@ class UserAssignedIdentity:
         )
         self.assign_role_to_identity(ROLES.CONTRIBUTOR_ROLE_ID, aisearch_account.id, aisearch_account.name)
         self.assign_role_to_identity(ROLES.SEARCH_INDEX_DATA_CONTRIBUTOR, aisearch_account.id, aisearch_account.name)
+
+    def assign_docstore_roles(self, account_name: str | None = None, resource_group: str | None = None):
+        docstore_account = cosmosdb.get_database_account(
+            resource_group_name=resource_group or self.resource_group,
+            account_name=account_name or CosmosDocstore.name(self.project_name, self.location_short_name),
+        )
+        self.assign_role_to_identity(ROLES.CONTRIBUTOR_ROLE_ID, docstore_account.id, docstore_account.name)
+        self.assign_role_to_identity(ROLES.DB_ACCOUNT_CONTRIBUTOR_ROLE_ID, docstore_account.id, docstore_account.name)
 
     @property
     def client_id(self):

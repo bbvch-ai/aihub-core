@@ -4706,6 +4706,7 @@ export const IngestedDocumentSchema = {
             description: 'Content of the document.'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
     title: 'IngestedDocument',
@@ -4976,6 +4977,7 @@ export const IngestedNodeSchema = {
             description: 'Score representing the relevance of the document.'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
     title: 'IngestedNode',
@@ -6145,6 +6147,21 @@ export const MetadataSchema = {
             ],
             title: 'Reconstruct History',
             description: 'When set to True, message set on UserMessageEvent will be calculated based on thread event history'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'List of files to attach to the request, if supported by the model.'
         }
     },
     type: 'object',
@@ -7414,6 +7431,19 @@ export const ServiceDTOSchema = {
     title: 'ServiceDTO'
 } as const;
 
+export const SignedUrlDtoSchema = {
+    properties: {
+        url: {
+            type: 'string',
+            title: 'Url',
+            description: 'The signed URL of the file'
+        }
+    },
+    type: 'object',
+    required: ['url'],
+    title: 'SignedUrlDto'
+} as const;
+
 export const StandaloneQuestionCondenserEventSchema = {
     properties: {
         event_id: {
@@ -8569,6 +8599,21 @@ export const UserMessageEventSchema = {
             title: 'Messages',
             description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
         },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -8633,10 +8678,49 @@ export const UserMessageEventInputSchema = {
             type: 'array',
             title: 'Messages',
             description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
         }
     },
     type: 'object',
     title: 'UserMessageEventInput'
+} as const;
+
+export const UserUploadedFileSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.',
+            examples: ['image/png', 'application/pdf']
+        }
+    },
+    type: 'object',
+    required: ['filename', 'file_data', 'file_type'],
+    title: 'UserUploadedFile'
 } as const;
 
 export const ValidationErrorSchema = {

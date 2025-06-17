@@ -32,11 +32,11 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
-DATALAKE_CONTAINER_NAME = "uitest"
-DATALAKE_DIRECTORY_NAME = "papers"
-
-NAMESPACE_NAME = "papers"
-STORE_NAME = "papers"
+DATALAKE_CONTAINER_NAME = "playground"
+DATALAKE_DIRECTORY_NAME = "test"
+FIGURES_DIRECTORY_NAME = "__figures__"
+NAMESPACE_NAME = "test"
+STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -66,7 +66,11 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME),
+        **azure_data_lake_resources(
+            container_name=DATALAKE_CONTAINER_NAME,
+            directory_name=DATALAKE_DIRECTORY_NAME,
+            figures_directory_name=FIGURES_DIRECTORY_NAME,
+        ),
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",

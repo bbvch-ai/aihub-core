@@ -6,6 +6,7 @@ from pytest_bdd import given, scenarios, then, when
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
@@ -42,7 +43,16 @@ def no_context_prompt():
 
 @pytest.fixture
 def custom_prompt():
-    return "Custom prompt: {context_str}"
+    return LocaleString(
+        en="Custom prompt: {% for block in context_blocks %}"
+        "{% if block.block_type == 'text' %}"
+        "{{ block.text }}"
+        "{% endif %}"
+        "{% if block.block_type == 'image' %}"
+        "{{ block.path | image}}"
+        "{% endif %}"
+        "{% endfor %}"
+    )
 
 
 @given("a locale handler", target_fixture="the_locale_handler")
@@ -113,10 +123,10 @@ def _():
 
 
 @when("the combine_nodes_in_order function is called", target_fixture="the_result")
-def _(the_context_nodes, the_locale_handler, the_context_prompt):
+def _(the_context_nodes, the_locale_handler, the_context_prompt: LocaleString):
     try:
         return combine_nodes_in_order(
-            context_nodes=the_context_nodes, locale_handler=the_locale_handler, context_prompt=the_context_prompt
+            context_nodes=the_context_nodes, t=the_locale_handler, context_prompt=the_context_prompt
         )
     except ValueError as e:
         return e
@@ -126,6 +136,6 @@ def _(the_context_nodes, the_locale_handler, the_context_prompt):
 def _(the_result, docstring):
     assert isinstance(the_result, ChatMessage)
     expected = "\n".join(line.rstrip() for line in docstring.strip().splitlines())
-    actual = "\n".join(line.rstrip() for line in the_result.content.strip().splitlines())
+    actual = "\n".join(line.rstrip() for line in the_result.blocks[0].text.strip().splitlines())
 
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"

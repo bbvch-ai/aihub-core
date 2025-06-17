@@ -141,8 +141,10 @@ document:
     title: "Document Titel"
     created: "Created"
     updated_at: "Last updated"
+    language: "Language"
     document_type: "Document Type"
     number_of_pages: "Number of Pages"
+    download: "Download"
 
 knowledge:
   title: "Knowledge Databases"

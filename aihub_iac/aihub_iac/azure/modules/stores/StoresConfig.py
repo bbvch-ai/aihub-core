@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_DOCSTORE_SUFFIX
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
 
@@ -11,7 +12,6 @@ class StoresConfig(BaseConfig):
 
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
 
-    DEFAULT_DOCSTORE_SUFFIX: ClassVar[str] = "docstore"
     API_COSMOS_SUBNET_CIDR: ClassVar[str] = "10.0.37.0/24"
     SEARCH_SUBNET_CIDR: ClassVar[str] = "10.0.34.0/24"
     PG_SUBNET_CIDR: ClassVar[str] = "10.0.4.0/24"
@@ -32,7 +32,7 @@ class StoresConfig(BaseConfig):
 
     @property
     def doc_store_name(self) -> str:
-        return self.resource_namer.cosmos_name(StoresConfig.DEFAULT_DOCSTORE_SUFFIX)
+        return self.resource_namer.cosmos_name(DEFAULT_DOCSTORE_SUFFIX)
 
     @property
     def store_name(self) -> str:
