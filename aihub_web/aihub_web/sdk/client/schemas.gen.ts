@@ -4695,6 +4695,19 @@ export const IngestedDocumentSchema = {
             title: 'Inserted At',
             description: 'Date source document was inserted into document store (ISO format string)'
         },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Additional metadata for the document.'
+        },
         id: {
             type: 'string',
             title: 'Id',
@@ -4706,7 +4719,6 @@ export const IngestedDocumentSchema = {
             description: 'Content of the document.'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
     title: 'IngestedDocument',
@@ -4797,6 +4809,19 @@ export const IngestedNodeSchema = {
             title: 'Inserted At',
             description: 'Date source document was inserted into document store (ISO format string)'
         },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Additional metadata for the document.'
+        },
         id: {
             type: 'string',
             title: 'Id',
@@ -4807,12 +4832,19 @@ export const IngestedNodeSchema = {
             title: 'Content',
             description: 'The textual content of the Node.'
         },
-        content_type: {
+        type: {
             type: 'string',
             enum: ['content', 'summary'],
-            title: 'Content Type',
-            description: 'Content type (content or summary).',
+            title: 'Type',
+            description: 'Type (content or summary).',
             default: 'content'
+        },
+        content_type: {
+            type: 'string',
+            enum: ['text', 'figure', 'table'],
+            title: 'Content Type',
+            description: 'Content type (text, figure or table).',
+            default: 'text'
         },
         document_id: {
             type: 'string',
@@ -4977,7 +5009,6 @@ export const IngestedNodeSchema = {
             description: 'Score representing the relevance of the document.'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
     title: 'IngestedNode',
@@ -7641,35 +7672,6 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 ### Use Cases
 - Signaling that a response is ready, and no more actions are needed.
 - Informing the user interface that the conversation or task has concluded.`
-} as const;
-
-export const StopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        }
-    },
-    type: 'object',
-    title: 'StopEventOutput'
 } as const;
 
 export const SuiteDTOSchema = {
