@@ -5,8 +5,6 @@ from aihub_lib.nats.events import StopEvent
 from aihub_lib.nats.events.utils import get_base_type
 from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 
-
-
 TEvent = TypeVar("TEvent", bound=StopEvent)
 
 

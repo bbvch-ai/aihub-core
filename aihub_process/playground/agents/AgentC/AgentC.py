@@ -1,0 +1,11 @@
+from aihub_agent.agents.Agent import Agent
+from aihub_lib.nats.workflow.decorators.step import step
+from playground.agents.AgentC.events.AgentCStartEvent import AgentCStartEvent
+from playground.agents.AgentC.events.AgentCStopEvent import AgentCStopEvent
+
+
+class AgentC(Agent):
+    @step()
+    async def step(self, event: AgentCStartEvent) -> AgentCStopEvent:
+        print("[AgentB.step]", event)
+        return AgentCStopEvent(payload=event.payload)

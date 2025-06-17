@@ -1,5 +1,5 @@
 import inspect
-from typing import TypeVar, Generic, Tuple, Type, cast
+from typing import Generic, Tuple, Type, TypeVar, cast
 
 from aihub_lib.nats.events import ProcessStartEvent, ProcessStopEvent
 from aihub_lib.nats.events.utils import get_base_type

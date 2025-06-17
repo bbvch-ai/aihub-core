@@ -148,7 +148,9 @@ class ProcessDispatcher(BaseDispatcher):
                 )
 
             for event, event_type, config in zip(result, event_types, configs):
-                logger.debug(f"Process step returned '{event.event_name_from_class()}' and config '{config.__class__.__name__}' step '{step_method.__name__}'")
+                logger.debug(
+                    f"Process step returned '{event.event_name_from_class()}' and config '{config.__class__.__name__}' step '{step_method.__name__}'"
+                )
 
                 if not isinstance(event, event_type):
                     raise RuntimeError(

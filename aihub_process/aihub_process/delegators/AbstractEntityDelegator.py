@@ -1,15 +1,15 @@
 import abc
-from typing import Annotated, Type, List, Callable, Coroutine, Any, Awaitable
+from typing import Annotated, Awaitable, Callable, List, Type
 
-from aihub_lib.nats.events import WorkRequestEvent, WorkEvent, BaseEvent
+from aihub_lib.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from aihub_lib.nats.topics import ProcessTopic, Topic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.topics import ProcessTopic, Topic
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 
 
@@ -55,7 +55,9 @@ class AbstractEntityDelegator(abc.ABC):
             await subscription.stop()
 
     @abc.abstractmethod
-    def handle_process_step_input_factory(self, work_event_type: Type[WorkEvent], is_process_start: bool) -> Callable[[BaseEvent, Topic], Awaitable[None]]:
+    def handle_process_step_input_factory(
+        self, work_event_type: Type[WorkEvent], is_process_start: bool
+    ) -> Callable[[BaseEvent, Topic], Awaitable[None]]:
         pass
 
     @abc.abstractmethod

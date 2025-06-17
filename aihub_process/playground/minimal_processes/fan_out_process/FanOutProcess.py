@@ -28,7 +28,10 @@ class FanOutProcess(AgenticProcess):
 
     @process_step()
     async def end_with_output_from_agent_b(
-        self, work_from_agent_b: Annotated[FixedList(AgentBWorkRequest.work, 2), Agent.In(agent_class="AgentB", agent_id="agent_b")]
+        self,
+        work_from_agent_b: Annotated[
+            FixedList(AgentBWorkRequest.work, 2), Agent.In(agent_class="AgentB", agent_id="agent_b")
+        ],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
         print(f"[FanOutProcess.end_with_output_from_agent_b.0] {work_from_agent_b[0].agent_event.payload}")
         print(f"[FanOutProcess.end_with_output_from_agent_b.1] {work_from_agent_b[1].agent_event.payload}")

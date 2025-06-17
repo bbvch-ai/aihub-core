@@ -1,21 +1,20 @@
 import logging
-from typing import Type, Callable, Coroutine, Any, Awaitable, Annotated
+from typing import Annotated, Awaitable, Callable, Type
 
-from bson import ObjectId
-
-from aihub_lib.nats.events import WorkRequestEvent, WorkEvent, ProcessStopEvent, ControlEvent
+from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
 from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics import ProcessTopic
+from bson import ObjectId
+
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
 
 logger = logging.getLogger(__name__)
 
 
 class ProcessDelegator(AbstractEntityDelegator):
-
     async def start(self):
         await super().start()
         logger.debug(f"Subscribed to external-process work request event within process '{self.process_id}'")
@@ -36,7 +35,7 @@ class ProcessDelegator(AbstractEntityDelegator):
                     topic_manager=process_instance_topic_manager,
                     handler=self.handle_process_step_input_factory(
                         work_event_type=work_event,
-                        is_process_start=True, # Being triggered from another process is only valid for a process start
+                        is_process_start=True,  # Being triggered from another process is only valid for a process start
                     ),
                     event=stop_event,
                 )
@@ -47,11 +46,12 @@ class ProcessDelegator(AbstractEntityDelegator):
                     f"Subscribed to external-process '{config.process_class}' with id '{config.process_id}' for event '{stop_event.event_name_from_class()}'"
                 )
 
-
-    def handle_process_step_input_factory(self, work_event_type: Type[ProcessWorkEvent], is_process_start: bool) -> Callable[[ProcessStopEvent, ProcessTopic], Awaitable[None]]:
+    def handle_process_step_input_factory(
+        self, work_event_type: Type[ProcessWorkEvent], is_process_start: bool
+    ) -> Callable[[ProcessStopEvent, ProcessTopic], Awaitable[None]]:
         async def _handle_process_step_input(
-                event: Annotated[ProcessStopEvent, "The incoming process stop event to handle."],
-                topic: Annotated[ProcessTopic, "The parsed topic of the event."],
+            event: Annotated[ProcessStopEvent, "The incoming process stop event to handle."],
+            topic: Annotated[ProcessTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling process stop event: {event.event_name}")
             work_event = work_event_type(process_stop_event=event)

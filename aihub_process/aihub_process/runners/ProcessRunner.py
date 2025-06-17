@@ -73,7 +73,10 @@ class ProcessRunner:
 
         If the discovery request doesn't match this process (i.e., different process_class/process_id), it ignores it.
         """
-        if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [self.process_config.process_id, "*"]:
+        if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [
+            self.process_config.process_id,
+            "*",
+        ]:
             logger.debug(
                 f"Discovery request for {topic.process_class} with id {topic.process_id} does not match this process."
             )

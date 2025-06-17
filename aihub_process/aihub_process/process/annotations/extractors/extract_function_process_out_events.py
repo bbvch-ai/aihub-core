@@ -63,4 +63,3 @@ def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEven
         all_output_tuples.append((event_cls, config_instance))
 
     return all_output_tuples
-

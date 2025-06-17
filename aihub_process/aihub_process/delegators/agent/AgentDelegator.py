@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List, Type, Callable, Coroutine, Any, Awaitable
+from typing import Annotated, Awaitable, Callable, Type
 
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -78,7 +78,9 @@ class AgentDelegator(AbstractEntityDelegator):
                     f"Subscribed to agent '{config.agent_class}' with id '{config.agent_id}' for event '{stop_event.event_name_from_class()}'"
                 )
 
-    def handle_process_step_input_factory(self, work_event_type: Type[AgentWorkEvent], is_process_start: bool) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
+    def handle_process_step_input_factory(
+        self, work_event_type: Type[AgentWorkEvent], is_process_start: bool
+    ) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
         async def _handle_process_step_input(
             event: Annotated[ControlEvent, "The incoming agent event to handle."],
             topic: Annotated[AgentTopic, "The parsed topic of the event."],

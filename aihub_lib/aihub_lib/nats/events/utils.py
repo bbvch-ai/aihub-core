@@ -1,5 +1,5 @@
 from functools import cache
-from typing import TYPE_CHECKING, Type, Tuple, get_origin, Annotated, get_args, Union, List
+from typing import TYPE_CHECKING, Annotated, List, Tuple, Type, Union, get_args, get_origin
 
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
