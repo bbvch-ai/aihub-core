@@ -1,13 +1,13 @@
 from typing import List, Optional
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 from llama_index.core.llms import LLM
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
 
@@ -42,12 +42,16 @@ def inject_figures(
         context.log.info(f"Trying to load figure with path: {figure_metadata.figure_path}")
         with data_lake_file_system.open(figure_metadata.figure_path) as f:
             image_bytes = f.read()
+        try:
+            figure_description = generate_description(
+                language_model=language_model,
+                image_bytes=image_bytes,
+                surrounding_text=surrounding_text,
+            )
+        except Exception as e:
+            context.log.error(f"Failed to generate description for figure {i + 1}: {e}")
+            figure_description = "Figure description could not be generated."
 
-        figure_description = generate_description(
-            language_model=language_model,
-            image_bytes=image_bytes,
-            surrounding_text=surrounding_text,
-        )
         markdown_figure = f"![{figure_description}]({figure_metadata.figure_path})"
         figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
 

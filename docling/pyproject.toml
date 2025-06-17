@@ -1,0 +1,96 @@
+[tool.poetry]
+name = "docling"
+version = "0.1.0"
+description = "Pipelines for [customer] AI-Hub"
+authors = [
+    "Joel Barmettler <joel.barmettler@bbv.ch>",
+    "Marius Högger <marius.hoegger@bbv.ch>",
+    "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bvv.ch>"
+]
+readme = "README.md"
+package-mode = false
+packages = []
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+notebook = "^7.4.3"
+azure-ai-documentintelligence = "^1.0.2"
+lxml = "^5.4.0"
+html5lib = "^1.1"
+pandas = "^2.2.3"
+docling = "^2.37.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.1"
+mypy = "^1.13.0"
+isort = "^5.13.2"
+black = { extras = ["jupyter"], version = "24.10.0" }
+pytest-cov = "^6.0.0"
+
+[tool.poetry.dependencies.aihub_pipeline]
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.190.0"
+subdirectory = "aihub_pipeline"
+
+[tool.poetry.dependencies.aihub_lib]
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.190.0"
+subdirectory = "aihub_lib"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.tomlsort]
+all = true
+in_place = true
+spaces_before_inline_comment = 2
+spaces_indent_inline_array = 4
+trailing_comma_inline_array = true
+
+[tool.ruff]
+line-length = 120
+target-version = 'py311'
+
+[tool.ruff.lint]
+extend-ignore = ["E203"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.mypy]
+python_version = "v0.13.0"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+plugins = ['pydantic.mypy']
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.dagster]
+modules = [
+    { type = "module", name = "handbook_ingestion" },
+    { type = "module", name = "position_ingestion" },
+]
