@@ -1,12 +1,13 @@
 services:
   docling:
-    image: my-docling-serve:latest
+    image: my-docling-serve-cpu:latest
     container_name: docling-serve
     ports:
       - 5001:5001
     environment:
       - DOCLING_SERVE_ARTIFACTS_PATH=/app/models
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - DOCLING_SERVE_MAX_SYNC_WAIT=1000
     deploy:
       resources:
         reservations:
