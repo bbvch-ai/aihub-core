@@ -1,9 +1,12 @@
 """
-title: LCDM Hub GTO Instance Manager
+title: LCDM Hub GTO Ingestion Tool
 author: Noah Hermann
 version: 0.1.0
 """
 
+import hashlib
+import json
+from datetime import datetime
 from typing import Optional, Callable, Any, List, Dict, Type
 
 import requests
@@ -14,7 +17,7 @@ class Tools:
     class Valves(BaseModel):
         LCDM_HUB_BASE_URL: str = Field(
             default="https://dev.swisslcdmhub.bbv.ch/restapi/1.0/gto/",
-            description="URL for accessing LCDM Hub API endpoints.",
+            description="Base URL for accessing LCDM Hub API endpoints.",
         )
         LCDM_HUB_TOKEN: str = Field(
             default="",
@@ -24,51 +27,23 @@ class Tools:
 
     def __init__(self):
         self.valves = self.Valves()
-        self._schema_cache = {}  # Cache for GTO schemas to avoid repeated requests
 
-    async def validate_and_store_gto_instances(
+    async def ingest_gto_instances(
         self,
-        gto_schema_id: int,
-        instances: List[Dict],
+        gto_id: str,
+        instances_data: List[Dict],
         __event_emitter__: Optional[Callable[[dict], Any]] = None,
     ) -> str:
-        """
-        Validates GTO instances against their schema and stores them in the LCDM Hub.
-
-        This tool performs the following steps:
-        1. Fetches the GTO schema definition from the LCDM Hub using the provided schema ID
-        2. Creates a dynamic Pydantic model based on the schema's attribute definitions
-        3. Validates each provided instance against this dynamic model
-        4. Stores all valid instances to the LCDM Hub via the aihub-data endpoint
-
-        Use this tool when you need to:
-        - Validate structured data extracted from documents against a specific GTO schema
-        - Store multiple instances of a GTO type at once
-        - Ensure data quality before inserting into the LCDM Hub system
-
-        The tool expects instances to be provided as a list of dictionaries where:
-        - Each dictionary represents one instance of the GTO
-        - Keys should match the attribute keys defined in the GTO schema
-        - Values should match the expected data types (string, int, float, bool)
-
-        Example usage scenarios:
-        - Processing invoice data: schema_id=101, instances=[{"invoice_number": "INV-001", "amount": 1500.50, "date": "2024-01-15"}]
-        - Building inventory: schema_id=205, instances=[{"door_material": "Wood", "room_number": "A101", "size": 15}]
-        - Equipment tracking: schema_id=303, instances=[{"equipment_type": "Laptop", "serial_number": "SN12345", "status": "Active"}]
-
-        :param gto_schema_id: The unique identifier of the GTO schema to validate against
-        :param instances: List of dictionaries representing GTO instances to validate and store
-        :return: Success message with validation and storage results, or error details
-        """
+        """Validates and ingests GTO instances into the LCDM Hub."""
 
         if not self.valves.LCDM_HUB_TOKEN:
-            error_msg = "LCDM Hub Token ist nicht konfiguriert. Bitte in den Einstellungen hinterlegen."
+            error_msg = "Das LCDM Hub Token ist nicht konfiguriert. Bitte hinterlegen Sie ihn in den Einstellungen."
             if __event_emitter__:
                 await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Error: {error_msg}"
 
-        if not instances:
-            error_msg = "Keine Instanzen zum Validieren und Speichern bereitgestellt."
+        if not instances_data:
+            error_msg = "Keine GTO Instanzen zum Verarbeiten bereitgestellt."
             if __event_emitter__:
                 await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Error: {error_msg}"
@@ -79,24 +54,18 @@ class Tools:
                     {
                         "type": "status",
                         "data": {
-                            "description": f"Lade GTO Schema mit ID {gto_schema_id}...",
+                            "description": f"Lade GTO Schema für '{gto_id}'...",
                             "done": False,
                         },
                     }
                 )
 
-            schema_definition = await self._fetch_gto_schema(gto_schema_id)
-
-            if __event_emitter__:
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "description": f"Schema '{schema_definition.get('name', 'Unknown')}' erfolgreich geladen.",
-                            "done": False,
-                        },
-                    }
-                )
+            gto_schema = await self._fetch_gto_schema(gto_id)
+            if not gto_schema:
+                error_msg = f"GTO Schema für '{gto_id}' nicht gefunden."
+                if __event_emitter__:
+                    await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+                return f"Error: {error_msg}"
 
             if __event_emitter__:
                 await __event_emitter__(
@@ -109,224 +78,234 @@ class Tools:
                     }
                 )
 
-            dynamic_model = self._create_dynamic_model(schema_definition)
+            validation_model = self._create_dynamic_model(gto_schema)
 
+            # Step 3: Validate instances
             if __event_emitter__:
                 await __event_emitter__(
                     {
                         "type": "status",
                         "data": {
-                            "description": f"Validiere {len(instances)} Instanz(en)...",
+                            "description": f"Validiere {len(instances_data)} GTO Instanzen...",
                             "done": False,
                         },
                     }
                 )
 
-            validated_instances = []
             validation_errors = []
+            validated_instances = []
 
-            for i, instance in enumerate(instances):
+            for i, instance_data in enumerate(instances_data):
                 try:
-                    validated_instance = dynamic_model(**instance)
-                    validated_instances.append(validated_instance.model_dump())
+                    validated_instance = validation_model.model_validate(instance_data)
+                    validated_instances.append(validated_instance)
                 except ValidationError as e:
                     validation_errors.append(f"Instanz {i+1}: {str(e)}")
 
             if validation_errors:
-                error_msg = f"Validierung fehlgeschlagen:\n" + "\n".join(validation_errors)
+                error_msg = f"Validierungsfehler gefunden:\n" + "\n".join(validation_errors)
                 if __event_emitter__:
                     await __event_emitter__(
-                        {"type": "status", "data": {"description": "Validierungsfehler aufgetreten", "done": True}}
+                        {"type": "status", "data": {"description": "Validierung fehlgeschlagen", "done": True}}
                     )
                 return f"Validation Error: {error_msg}"
 
+            # Step 4: Transform to LCDM Hub format
             if __event_emitter__:
                 await __event_emitter__(
                     {
                         "type": "status",
                         "data": {
-                            "description": f"Alle {len(validated_instances)} Instanzen erfolgreich validiert.",
+                            "description": "Transformiere Daten für LCDM Hub...",
                             "done": False,
                         },
                     }
                 )
 
+            hub_data = self._transform_to_hub_format(validated_instances, gto_schema, gto_id)
+
+            # Step 5: Save to LCDM Hub
             if __event_emitter__:
                 await __event_emitter__(
                     {
                         "type": "status",
                         "data": {
-                            "description": "Speichere Instanzen im LCDM Hub...",
+                            "description": f"Speichere {len(hub_data)} Einträge im LCDM Hub...",
                             "done": False,
                         },
                     }
                 )
 
-            success_count = 0
-            storage_errors = []
+            result = await self._save_to_hub(hub_data)
 
-            for i, instance in enumerate(validated_instances):
-                try:
-                    await self._store_instance(gto_schema_id, instance)
-                    success_count += 1
-
-                    if __event_emitter__:
-                        await __event_emitter__(
-                            {
-                                "type": "status",
-                                "data": {
-                                    "description": f"Instanz {i+1}/{len(validated_instances)} gespeichert",
-                                    "done": False,
-                                },
-                            }
-                        )
-                except Exception as e:
-                    storage_errors.append(f"Instanz {i+1}: {str(e)}")
-
-            if storage_errors:
-                result_msg = (
-                    f"Teilweise erfolgreich: {success_count}/{len(validated_instances)} Instanzen gespeichert.\nFehler:\n"
-                    + "\n".join(storage_errors)
-                )
+            if result.startswith("Success"):
+                success_msg = f"Erfolgreich {len(validated_instances)} GTO Instanzen vom Typ '{gto_id}' gespeichert."
+                if __event_emitter__:
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {"description": success_msg, "done": True},
+                        }
+                    )
+                    await __event_emitter__(
+                        {
+                            "type": "message",
+                            "data": {"content": f"✅ **Erfolg!** {success_msg}"},
+                        }
+                    )
+                return f"Success: {success_msg}"
             else:
-                result_msg = (
-                    f"Vollständig erfolgreich: Alle {success_count} Instanzen validiert und im LCDM Hub gespeichert."
-                )
-
-            if __event_emitter__:
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {"description": "Vorgang abgeschlossen", "done": True},
-                    }
-                )
-
-                await __event_emitter__(
-                    {
-                        "type": "message",
-                        "data": {"content": f"✅ **Ergebnis:** {result_msg}"},
-                    }
-                )
-
-            return f"Success: {result_msg}"
+                return result
 
         except Exception as e:
-            error_msg = f"Unerwarteter Fehler: {str(e)}"
+            error_msg = f"Unerwarteter Fehler beim Verarbeiten der GTO Instanzen: {str(e)}"
             if __event_emitter__:
                 await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Error: {error_msg}"
 
-    async def _fetch_gto_schema(self, gto_schema_id: int) -> Dict:
-        """Fetch GTO schema definition from the LCDM Hub."""
-        if gto_schema_id in self._schema_cache:
-            return self._schema_cache[gto_schema_id]
+    async def _fetch_gto_schema(self, gto_id: str) -> Optional[Dict]:
+        """Fetches GTO schema from the LCDM Hub API."""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+                "Accept": "application/json",
+            }
 
-        headers = {
-            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-            "Accept": "application/json",
-        }
+            # First, get available GTOs to find the ID for the given type
+            response = requests.get(
+                f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
+                headers=headers,
+                timeout=self.valves.timeout_seconds,
+            )
 
-        response = requests.get(
-            f"{self.valves.LCDM_HUB_BASE_URL}{gto_schema_id}",
-            headers=headers,
-            timeout=self.valves.timeout_seconds,
-        )
+            if response.status_code != 200:
+                return None
 
-        if response.status_code != 200:
-            raise Exception(f"Fehler beim Laden des GTO Schemas: {response.status_code} - {response.text}")
+            names = response.text
+            names_list = eval(names)
+            if gto_id not in [key for key, _ in names_list]:
+                return None
 
-        schema_data = response.json()
+            schema_response = requests.get(
+                f"{self.valves.LCDM_HUB_BASE_URL}{gto_id}",
+                headers=headers,
+                timeout=self.valves.timeout_seconds,
+            )
 
-        self._schema_cache[gto_schema_id] = schema_data
+            if schema_response.status_code == 200:
+                return schema_response.json()
 
-        return schema_data
+            return None
 
-    def _create_dynamic_model(self, schema_definition: Dict) -> Type[BaseModel]:
-        """Create a dynamic Pydantic model based on GTO schema definition."""
+        except Exception:
+            return None
 
-        gto_name = schema_definition.get("name", "DynamicGTO")
-        attribute_definitions = schema_definition.get("gtoAttributeDefinitions", {})
+    def _create_dynamic_model(self, gto_schema: Dict) -> Type[BaseModel]:
+        """Creates a dynamic Pydantic model from GTO schema."""
+        fields = {}
 
-        field_definitions = {}
+        attribute_definitions = gto_schema.get("gtoAttributeDefinitions", {})
 
         for attr_key, attr_def in attribute_definitions.items():
             field_name = attr_def.get("key", attr_key)
-            value_type = attr_def.get("valueType", "string")
-            mandatory = attr_def.get("mandatory", False)
-            unit = attr_def.get("unitOfMeasurement", "")
+            data_type = attr_def.get("dataType", "string")
+            is_mandatory = attr_def.get("mandatory", False)
 
-            python_type = self._map_value_type_to_python(value_type)
-
-            description = f"GTO attribute: {field_name}"
-            if unit:
-                description += f" (Unit: {unit})"
-
-            if mandatory:
-                field_definitions[field_name] = (python_type, Field(..., description=description))
+            if data_type == "int" or attr_def.get("valueType") == "int":
+                python_type = int
+            elif data_type == "float" or attr_def.get("valueType") == "float":
+                python_type = float
+            elif data_type == "bool" or attr_def.get("valueType") == "bool":
+                python_type = bool
             else:
-                field_definitions[field_name] = (Optional[python_type], Field(None, description=description))
+                python_type = str
 
-        dynamic_model = create_model(f"{gto_name}Instance", **field_definitions)
+            if not is_mandatory:
+                python_type = Optional[python_type]
+                fields[field_name] = (python_type, Field(default=None))
+            else:
+                fields[field_name] = (python_type, Field(...))
 
-        return dynamic_model
+        DynamicGTOModel = create_model("DynamicGTOModel", **fields)
+        return DynamicGTOModel
 
-    def _map_value_type_to_python(self, value_type: str) -> Type:
-        """Map GTO value types to Python types."""
-        type_mapping = {
-            "string": str,
-            "String": str,
-            "int": int,
-            "integer": int,
-            "float": float,
-            "double": float,
-            "boolean": bool,
-            "bool": bool,
-            "datetime": str,
-            "date": str,
-        }
+    def _generate_unique_obj_id(self, instance_data: Dict, gto_type: str) -> str:
+        """Generates a unique objId based on GTO data."""
+        # Create a hash from the instance data and timestamp
+        data_string = json.dumps(instance_data, sort_keys=True) + gto_type + str(datetime.now().timestamp())
+        hash_object = hashlib.md5(data_string.encode())
+        return hash_object.hexdigest()[:8].upper()
 
-        return type_mapping.get(value_type.lower(), str)
+    def _transform_to_hub_format(
+        self, validated_instances: List[BaseModel], gto_schema: Dict, gto_type: str
+    ) -> List[Dict]:
+        """Transforms validated instances to LCDM Hub format."""
+        hub_data = []
+        gto_id = gto_schema.get("id")
+        attribute_definitions = gto_schema.get("gtoAttributeDefinitions", {})
 
-    async def _store_instance(self, gto_schema_id: int, instance: Dict) -> None:
-        """Store a single GTO instance via the aihub-data endpoint."""
-        headers = {
-            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        for instance in validated_instances:
+            instance_dict = instance.model_dump()
+            obj_id = self._generate_unique_obj_id(instance_dict, gto_type)
 
-        response = requests.post(
-            f"{self.valves.LCDM_HUB_BASE_URL}{gto_schema_id}/aihub-data",
-            json=instance,
-            headers=headers,
-            timeout=self.valves.timeout_seconds,
-        )
+            # Create hub entry for each attribute
+            for attr_key, attr_def in attribute_definitions.items():
+                field_name = attr_def.get("key")
+                source_value = instance_dict.get(field_name, "")
 
-        if response.status_code not in [200, 201]:
-            raise Exception(f"Speichern fehlgeschlagen: {response.status_code} - {response.text}")
+                hub_entry = {
+                    "id": 0,
+                    "gtoTyp": gto_type,
+                    "objId": obj_id,
+                    "keyId": field_name,
+                    "sourceValue": str(source_value) if source_value is not None else "",
+                    "targetValue": "",
+                    "manualValue": str(source_value) if source_value is not None else "",
+                    "gtoId": gto_id,
+                    "manuallyModified": False,
+                    "released": False,
+                    "gtoTransferType": "NOTRANSMISSION",
+                    "gtoAttributeDefinitionsKey": attr_key,
+                    "issuedUpdatedByAdaptorId": 0,
+                    "gtoRelationStatus": "NONE",
+                    "gtoBlockJoining": "",
+                    "qccValidationMessages": [],
+                    "metaDataFields": {},
+                    "sensitiveData": False,
+                    "failedQualityRuleTypes": [],
+                    "participantMandatory": False,
+                }
 
+                hub_data.append(hub_entry)
 
-[
-    {
-        "id": 0,  # default, 0 for new values
-        "gtoTyp": "Test GTO",  # GTO name, already created so should be known
-        "objId": "150006",  # block number, data in GTOs are stored into blocks, should be something like id or another identifier of data
-        "keyId": "TEST Attribute",  # the attribute which you are storing data, already defined in the GTO structure
-        "sourceValue": "",  # the value of source column, the value you actually get from the unstructured data about this attribute
-        "targetValue": "",  # the value of target column, the value you write (in most cases it should be blank because adaptors do write)
-        "manualValue": "",  # manual value, any correction you manually make in the source value (probably will be the same as source)
-        "gtoId": 7223392,  # the id of the GTO
-        "manuallyModified": False,  # default, changes when you enter manual value through the app
-        "released": False,  # default, changes when you release the value through adaptor execution in the app
-        "gtoTransferType": "NOTRANSMISSION",  # default, changes when you release the value through adaptor execution in the app
-        "gtoAttributeDefinitionsKey": "0005",  # the gto attribute key you get from the GTO definition (should match, else you get blocked)
-        "issuedUpdatedByAdaptorId": 0,  # default, changes when you release the value through adaptor execution in the app
-        "gtoRelationStatus": "NONE",  # default, change only if necessary from GTO attribute definition (GTO specs)
-        "gtoBlockJoining": "",  # default, change only if necessary from GTO attribute definition (GTO specs)
-        "qccValidationMessages": [],  # default, change only if necessary from GTO attribute definition (GTO specs)
-        "metaDataFields": {},  # default, change only if necessary from GTO attribute definition (GTO specs)
-        "sensitiveData": False,  # default, change only if there is a special role required for this data to be visible (eg medical data)
-        "failedQualityRuleTypes": [],  # default, change only if necessary from GTO attribute definition (GTO specs)
-        "participantMandatory": False,  # default
-    }
-]
+        return hub_data
+
+    async def _save_to_hub(self, hub_data: List[Dict]) -> str:
+        """Saves transformed data to LCDM Hub."""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+
+            # Assuming there's an endpoint for batch saving GTO instances
+            # You may need to adjust this endpoint based on your actual API
+            response = requests.post(
+                f"{self.valves.LCDM_HUB_BASE_URL}gto/instances",
+                json=hub_data,
+                headers=headers,
+                timeout=self.valves.timeout_seconds,
+            )
+
+            if response.status_code in [200, 201]:
+                return f"Success: Daten erfolgreich gespeichert."
+            else:
+                return f"API Error: Anfrage fehlgeschlagen mit Status {response.status_code}: {response.text}"
+
+        except requests.exceptions.Timeout:
+            return f"Timeout Error: Anfrage timeout nach {self.valves.timeout_seconds} Sekunden."
+        except requests.exceptions.ConnectionError:
+            return f"Connection Error: Verbindung zur LCDM Hub API fehlgeschlagen."
+        except Exception as e:
+            return f"Error: Unerwarteter Fehler beim Speichern: {str(e)}"
