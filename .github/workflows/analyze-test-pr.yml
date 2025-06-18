@@ -46,7 +46,7 @@ jobs:
             docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
           - module: aihub_bot
             docker_compose_files: "docker-compose.yml"
-          - module: aihub_bot
+          - module: aihub_process
             docker_compose_files: "docker-compose.yml"
 
     steps:
