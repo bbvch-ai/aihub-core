@@ -13,6 +13,28 @@ import requests
 from pydantic import BaseModel, Field, create_model, ValidationError
 
 
+class AttributeField(BaseModel):
+    id: int = Field(0, description="")
+    gtoTyp: str = Field(..., description="GTO name")
+    objId: int = Field(..., description="")
+    keyId: str = Field(..., description="GTO attribute key")
+    targetValue: str = Field("", description="")
+    manualValue: str = Field("", description="")
+    gtoId: int = Field(..., description="")
+    manuallyModified: bool = Field(False, description="")
+    released: bool = Field(False, description="")
+    gtoTransferType: str = Field("NOTRANSMISSION", description="")
+    gtoAttributeDefinitionsKey: str = Field(..., description="")
+    issuedUpdatedByAdaptorId: int = Field(0, description="")
+    gtoRelationStatus: str = Field("NONE", description="")
+    gtoBlockJoining: str = Field("", description="")
+    qccValidationMessages: List = Field([], description="")
+    metaDataFields: dict = Field({}, description="")
+    sensitiveData: bool = Field(False, description="")
+    failedQualityRuleTypes: List = Field([], description="")
+    participantMandatory: bool = Field(False, description="")
+
+
 class Tools:
     class Valves(BaseModel):
         LCDM_HUB_BASE_URL: str = Field(
@@ -200,16 +222,15 @@ class Tools:
         except Exception:
             return None
 
-    def _create_dynamic_model(self, gto_schema: Dict) -> Type[BaseModel]:
+    def _create_dynamic_model(self, gto_schema: Dict) -> Dict[str, Type[BaseModel]]:
         """Creates a dynamic Pydantic model from GTO schema."""
-        fields = {}
+        models = {}
 
         attribute_definitions = gto_schema.get("gtoAttributeDefinitions", {})
 
         for attr_key, attr_def in attribute_definitions.items():
             field_name = attr_def.get("key", attr_key)
             data_type = attr_def.get("dataType", "string")
-            is_mandatory = attr_def.get("mandatory", False)
 
             if data_type == "int" or attr_def.get("valueType") == "int":
                 python_type = int
@@ -220,14 +241,11 @@ class Tools:
             else:
                 python_type = str
 
-            if not is_mandatory:
-                python_type = Optional[python_type]
-                fields[field_name] = (python_type, Field(default=None))
-            else:
-                fields[field_name] = (python_type, Field(...))
+            fields = {"sourceValue": (python_type, Field(..., description=""))}
+            dynamic_model = create_model(field_name, __base__=AttributeField, **fields)
+            models.update({field_name: dynamic_model})
 
-        DynamicGTOModel = create_model("DynamicGTOModel", **fields)
-        return DynamicGTOModel
+        return models
 
     def _generate_unique_obj_id(self, instance_data: Dict, gto_type: str) -> str:
         """Generates a unique objId based on GTO data."""
