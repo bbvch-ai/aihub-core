@@ -46,6 +46,8 @@ jobs:
             docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
           - module: aihub_bot
             docker_compose_files: "docker-compose.yml"
+          - module: aihub_bot
+            docker_compose_files: "docker-compose.yml"
 
     steps:
       - name: Checkout repository
@@ -76,7 +78,7 @@ jobs:
 
     strategy:
       matrix:
-        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot ]
+        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot, aihub_process ]
 
     steps:
       - name: Coverage comment
@@ -111,6 +113,9 @@ jobs:
             report_coverage: 'true'
           - folder: aihub_bot
             sonar_project_key: aihub-core_bot-core
+            report_coverage: 'true'
+          - folder: aihub_process
+            sonar_project_key: aihub-core_process-core
             report_coverage: 'true'
           - folder: aihub_web
             sonar_project_key: aihub-core_aihub-web
