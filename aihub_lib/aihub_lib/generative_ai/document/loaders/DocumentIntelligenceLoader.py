@@ -1,4 +1,4 @@
-import base64
+import os
 from io import StringIO
 from typing import Any, Dict, List, Optional
 
@@ -10,13 +10,14 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
+from aihub_lib.generative_ai.utils.path_utils import create_data_lake_figures_folder_name
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NUMBER_OF_PAGES,
-    NODE_CONTENT_TYPE_FIGURE,
     NODE_CONTENT_TYPE_TABLE,
+    NODE_CONTENT_TYPE_FIGURE,
 )
 
 PAGE_BREAK = "<!-- PageBreak -->"
@@ -51,40 +52,30 @@ class DocumentIntelligenceLoader(BaseReader):
 
         text = reformat_tables(result.content)
 
-        if not result.figures:
-            return [
-                Document(
-                    text=text,
-                    extra_info={**extra_info, **metadata} if extra_info else metadata,
-                )
-            ]
-
         operation_id = poller.details["operation_id"]
-        markdown_figures = []
-        for idx, figure in enumerate(result.figures):
+        figures_dir = create_data_lake_figures_folder_name(file, resource.figures_directory_name)
+
+        soup = BeautifulSoup(text, "html.parser")
+        figure_tags = soup.find_all("figure")
+
+        for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
             response = self.document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",
                 result_id=operation_id,
                 figure_id=figure.id,
             )
 
-            figure_bytes = bytes()
-            for chunk in response:
-                figure_bytes += chunk
-            figure_bytes = base64.b64encode(figure_bytes).decode("utf-8")
-            figure_str = f"data:image/png;base64,{figure_bytes}"
-            markdown_figure = f"![Figure {idx + 1}]({figure_str})"
-            markdown_figures.append(markdown_figure)
+            blob_path = os.path.join(figures_dir, f"figure_{idx + 1}.png")
+            with fs.open(blob_path, "wb") as pdf_file:
+                for chunk in response:
+                    pdf_file.write(chunk)
 
-        soup = BeautifulSoup(text, "html.parser")
-        figure_tags = soup.find_all("figure")
-
-        for i, (figure_tag, markdown_figure) in enumerate(zip(figure_tags, markdown_figures)):
+            markdown_figure = f"![Figure {idx + 1}]({blob_path})"
             figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
 
         return [
             Document(
-                text=text,
+                text=str(soup),
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
