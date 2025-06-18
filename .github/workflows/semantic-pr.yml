@@ -73,21 +73,4 @@ jobs:
           errorMessage: 'Invalid branch name. Please follow the pattern'
           allowed: |
             main
-            initiative/agent-custom
-            initiative/agent-xp
-            initiative/avatar
-            initiative/chat-xp
-            initiative/chat-backend
-            initiative/debt
-            initiative/dagster
-            initiative/confidence
-            initiative/deploy
-            initiative/ui
-            initiative/guards
-            initiative/rag
-            initiative/local
-            initiative/tracing
-            initiative/workflows
-            initiative/micro
-            initiative/bots
-            /^(quickfix|hotfix|agent-custom|agent-xp|avatar|chat-xp|chat-backend|debt|dagster|confidence|deploy|ui|guards|rag|local|tracing|workflows|micro|bots)\/([a-z-0-9])+$/
+            /^([a-z])\/([a-z-0-9])+$/
