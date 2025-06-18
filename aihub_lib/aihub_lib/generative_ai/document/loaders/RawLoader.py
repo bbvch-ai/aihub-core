@@ -11,6 +11,8 @@ class RawLoader(BaseReader):
         file: str,
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
+        *args,
+        **kwargs,
     ) -> List[Document]:
         """Parse file into string."""
         with fs.open(str(file), "r", encoding="utf-8") as f:

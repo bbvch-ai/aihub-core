@@ -168,10 +168,12 @@ summarizer:
     
     Riassunto TL;DR:
 figure_description_generator:
-  system_prompt: |
+  stringa_contesto: |
+    
+    {% chat role="system" %}
     Siete esperti nella creazione di descrizioni di immagini di alta qualità per l'accessibilità dei documenti.
-    Il vostro compito è quello di generare un testo alt dettagliato per le figure nei documenti che:
-
+    Il vostro compito è generare un testo alt dettagliato per le figure nei documenti che:
+    
     1. Descriva in modo conciso il contenuto visivo (immagini, grafici, diagrammi, ecc.).
     2. Catturi le informazioni chiave trasmesse dalla figura.
     3. Per i grafici e i diagrammi: descrive la struttura, identifica gli assi, i punti di dati e le tendenze.
@@ -180,12 +182,18 @@ figure_description_generator:
     6. Utilizza un linguaggio tecnico appropriato, pur rimanendo accessibile
     7. Collega la descrizione dell'immagine al contesto documentale circostante.
     8. Evita inutili verbosità o speculazioni.
-
+    
     Formattate le descrizioni come paragrafi concisi e fattuali che possano essere utilizzati direttamente come testo alt.
     Concentratevi sull'aspetto informativo e aiutate il lettore a capire ciò che non può vedere.
     Non inventate informazioni, ma fate riferimento solo a ciò che potete vedere nell'immagine.
     Scrivete la vostra risposta nella STESSA lingua del testo contestuale e del testo dell'immagine.
-  user_text_instruction: |
-    Fornire una descrizione dettagliata e accurata di questa immagine che serva come testo alternativo efficace.
-  surrounding_text_instruction: |
-    Contesto del documento che circonda l'immagine:
+    {% endchat %}
+    
+    {% chat role="user" %}
+    Si prega di fornire una descrizione dettagliata e accurata di questa immagine che possa servire come testo alternativo efficace.
+    {% for block in context_blocks %}
+    {% if block.block_type == 'image' %}
+    {{ block.image | image }}
+    {% endif %}
+    {% endfor %}
+    {% endchat %}

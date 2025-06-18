@@ -1,9 +1,8 @@
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 
 from aihub_pipeline.ops.data_lake.doc_with_figures_to_ref_doc import doc_with_figures_to_ref_doc
-from aihub_pipeline.ops.data_lake.inject_figures import inject_figures
+from aihub_pipeline.ops.data_lake.generate_figure_descriptions import generate_figure_descriptions
 from aihub_pipeline.ops.data_lake.parse_document_from_data_lake import parse_document_from_data_lake
-from aihub_pipeline.ops.data_lake.save_figures_to_data_lake import save_figures_to_data_lake
 from aihub_pipeline.ops.document.ensure_refdoc_default_metadata import ensure_refdoc_default_metadata
 from aihub_pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
@@ -33,8 +32,7 @@ def documents_factory(
         data_lake_file: DataLakeFile,
     ) -> Output[RefDocDocument]:
         doc_with_figures = parse_document_from_data_lake(data_lake_file)
-        figure_metadata = save_figures_to_data_lake(doc_with_figures=doc_with_figures, data_lake_file=data_lake_file)
-        doc_with_injected_figures = inject_figures(doc_with_figures=doc_with_figures, figures_metadata=figure_metadata)
+        doc_with_injected_figures = generate_figure_descriptions(doc_with_figures=doc_with_figures)
 
         return insert_ref_doc_into_docstore(
             ensure_refdoc_default_metadata(doc_with_figures_to_ref_doc(data_lake_file, doc_with_injected_figures))

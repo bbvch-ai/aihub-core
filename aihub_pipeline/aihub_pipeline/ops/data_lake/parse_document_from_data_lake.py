@@ -20,7 +20,9 @@ def parse_document_from_data_lake(
 
     context.log.info(f"Using reader {reader.__class__.__name__} for document of type {data_lake_file.filetype}")
 
-    documents = reader.load_data(data_lake_file.uri, fs=data_lake_file_system, resource=data_lake_resource)
+    documents = reader.load_data(
+        data_lake_file.uri, fs=data_lake_file_system, figures_directory_name=data_lake_resource.figures_directory_name
+    )
     document = documents[0]
 
     doc_with_figures = DocumentWithFigureInfo(**document.model_dump())

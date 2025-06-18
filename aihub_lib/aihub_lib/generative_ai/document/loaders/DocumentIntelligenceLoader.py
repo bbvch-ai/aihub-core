@@ -1,3 +1,4 @@
+import html
 import os
 from io import StringIO
 from typing import Any, Dict, List, Optional
@@ -34,7 +35,7 @@ class DocumentIntelligenceLoader(BaseReader):
         file: str,
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
-        resource=None,
+        figures_directory_name: Optional[str] = None,
     ) -> List[Document]:
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
@@ -52,8 +53,16 @@ class DocumentIntelligenceLoader(BaseReader):
 
         text = reformat_tables(result.content)
 
+        if not figures_directory_name or not result.figures:
+            return [
+                Document(
+                    text=text,
+                    extra_info={**extra_info, **metadata} if extra_info else metadata,
+                )
+            ]
+
         operation_id = poller.details["operation_id"]
-        figures_dir = create_data_lake_figures_folder_name(file, resource.figures_directory_name)
+        figures_dir = create_data_lake_figures_folder_name(file, figures_directory_name)
 
         soup = BeautifulSoup(text, "html.parser")
         figure_tags = soup.find_all("figure")
@@ -75,7 +84,7 @@ class DocumentIntelligenceLoader(BaseReader):
 
         return [
             Document(
-                text=str(soup),
+                text=html.unescape(str(soup)),
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
@@ -93,4 +102,4 @@ def reformat_tables(document_text: str) -> str:
         markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
         table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
 
-    return str(soup)
+    return html.unescape(str(soup))
