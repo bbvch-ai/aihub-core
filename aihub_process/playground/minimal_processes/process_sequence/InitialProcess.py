@@ -14,5 +14,8 @@ class InitialProcess(AgenticProcess):
         self,
         work_from_agent_a: Annotated[AgentAWork, Agent.In(agent_class="AgentA", agent_id="agent_a")],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
-        print(f"[InitialProcess.step] {work_from_agent_a.agent_stop_event.payload}")
-        return CustomProcessStopEvent(payload=work_from_agent_a.agent_stop_event.payload)
+        payload_from_a = work_from_agent_a.agent_stop_event.payload
+        print(f"[InitialProcess.step] From AgentA: {payload_from_a}")
+
+        final_payload = f"{payload_from_a} -> InitialProcess output"
+        return CustomProcessStopEvent(payload=final_payload)

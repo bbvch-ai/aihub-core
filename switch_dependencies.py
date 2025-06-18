@@ -95,7 +95,11 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str):
         pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
 
     subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent)
-    subprocess.run(["poetry", "install"], cwd=pyproject_path.parent)
+
+    if mode == "local":
+        subprocess.run(["poetry", "install", "--with", "dev"], cwd=pyproject_path.parent)
+    else:
+        subprocess.run(["poetry", "install"], cwd=pyproject_path.parent)
 
 
 def update_dependency(doc: tomlkit.container.Container, mode: str, remote_tag: str, dependency_name: str):

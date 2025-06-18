@@ -24,4 +24,5 @@ class AgentOnlyProcess(AgenticProcess):
         self, work_from_agent_b: Annotated[AgentBWorkRequest.work, Agent.In(agent_class="AgentB", agent_id="agent_b")]
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
         print(f"[AgentOnlyProcess.end_with_output_from_agent_b] {work_from_agent_b.agent_stop_event.payload}")
-        return CustomProcessStopEvent(payload=work_from_agent_b.agent_stop_event.payload)
+        payload = f"{work_from_agent_b.agent_stop_event.payload} -> AgentOnlyProcess output"
+        return CustomProcessStopEvent(payload=payload)

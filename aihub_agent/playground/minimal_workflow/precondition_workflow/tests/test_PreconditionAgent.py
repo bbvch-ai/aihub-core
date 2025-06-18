@@ -7,7 +7,7 @@ from playground.minimal_workflow.precondition_workflow.PreconditionAgent import 
 from playground.minimal_workflow.precondition_workflow.PreconditionAgentConfig import PreconditionAgentConfig
 from playground.minimal_workflow.precondition_workflow.events.ParallelEvent import ParallelEvent
 
-scenarios("../tests/features/precondition_agent.feature")
+scenarios("./features/precondition_agent.feature")
 
 
 @given(parsers.parse("a PreconditionAgent runner with {number_of_events:d} events"), target_fixture="agent_runner")

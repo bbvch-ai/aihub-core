@@ -11,7 +11,7 @@ from playground.minimal_workflow.discoverable_workflow.DiscoverableAgentConfig i
     DiscoverableAgentConfig,
 )
 
-scenarios("../tests/features/discoverable_agent.feature")
+scenarios("./features/discoverable_agent.feature")
 
 
 @given("a DiscoverableAgent runner", target_fixture="agent_runner")

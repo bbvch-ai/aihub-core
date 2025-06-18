@@ -8,4 +8,5 @@ class AgentB(Agent):
     @step()
     async def step(self, event: AgentBStartEvent) -> AgentBStopEvent:
         print("[AgentB.step]", event)
-        return AgentBStopEvent(payload=event.payload)
+        processed_payload = f"{event.payload} -> AgentB processed"
+        return AgentBStopEvent(payload=processed_payload)

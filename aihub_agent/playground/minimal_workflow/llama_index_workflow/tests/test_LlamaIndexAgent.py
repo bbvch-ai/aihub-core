@@ -13,7 +13,7 @@ from aihub_lib.testing.auth_utils.fake_user import fake_user
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 
-scenarios("../tests/features/llama_index_agent.feature")
+scenarios("./features/llama_index_agent.feature")
 
 
 @given("a LlamaIndexAgent is initialized and configured with a language model", target_fixture="agent_runner")

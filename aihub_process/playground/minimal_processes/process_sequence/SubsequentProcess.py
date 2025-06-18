@@ -11,9 +11,12 @@ class SubsequentProcess(AgenticProcess):
     @process_step()
     async def step(
         self,
-        work_from_other_process: Annotated[
+        work_from_initial_process: Annotated[
             InitialProcessWorkEvent, Process.In(process_class="InitialProcess", process_id="initial_process")
         ],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
-        print(f"[SubsequentProcess.step] {work_from_other_process.process_stop_event.payload}")
-        return CustomProcessStopEvent(payload=work_from_other_process.process_stop_event.payload)
+        payload_from_initial = work_from_initial_process.process_stop_event.payload
+        print(f"[SubsequentProcess.step] From InitialProcess: {payload_from_initial}")
+
+        final_payload = f"{payload_from_initial} -> SubsequentProcess output"
+        return CustomProcessStopEvent(payload=final_payload)

@@ -5,34 +5,50 @@ from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
-from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent
-from playground.events.AgentBWorkRequest import AgentBWorkRequest
+
+# Assuming AgentAWork, AgentBWorkRequest, AgentBStartEvent, CustomProcessStopEvent
+# are correctly imported from your playground.events and playground.agents.*.events
 from playground.events.AgentAWork import AgentAWork
+from playground.events.AgentBWorkRequest import AgentBWorkRequest
+from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 
 
 class FanOutProcess(AgenticProcess):
     @process_step()
-    async def start_with_output_from_agent_a(
+    async def start_and_fan_out_to_agent_b(
         self,
         work_from_agent_a: Annotated[AgentAWork, Agent.In(agent_class="AgentA", agent_id="agent_a")],
     ) -> Tuple[
         Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")],
         Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")],
     ]:
-        print(f"[FanOutProcess.start_with_output_from_agent_a] {work_from_agent_a.agent_stop_event.payload}")
+        # AgentA's output payload will be the base for AgentB inputs
+        base_payload_from_a = work_from_agent_a.agent_stop_event.payload
+        print(f"[FanOutProcess.start_and_fan_out_to_agent_b] Received from AgentA: {base_payload_from_a}")
+
+        # Create distinct payloads for the two AgentB instances
+        payload_for_b1 = f"{base_payload_from_a} -> Branch 1"
+        payload_for_b2 = f"{base_payload_from_a} -> Branch 2"
+
         return (
-            AgentBWorkRequest(start_event=AgentBStartEvent(payload="1")),
-            AgentBWorkRequest(start_event=AgentBStartEvent(payload="2")),
+            AgentBWorkRequest(start_event=AgentBStartEvent(payload=payload_for_b1)),
+            AgentBWorkRequest(start_event=AgentBStartEvent(payload=payload_for_b2)),
         )
 
     @process_step()
-    async def end_with_output_from_agent_b(
+    async def aggregate_and_stop(
         self,
-        work_from_agent_b: Annotated[
+        work_from_agent_b_list: Annotated[
             FixedList(AgentBWorkRequest.work, 2), Agent.In(agent_class="AgentB", agent_id="agent_b")
         ],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
-        print(f"[FanOutProcess.end_with_output_from_agent_b.0] {work_from_agent_b[0].agent_stop_event.payload}")
-        print(f"[FanOutProcess.end_with_output_from_agent_b.1] {work_from_agent_b[1].agent_stop_event.payload}")
-        return CustomProcessStopEvent(payload="done")
+        payload_b1 = work_from_agent_b_list[0].agent_stop_event.payload
+        payload_b2 = work_from_agent_b_list[1].agent_stop_event.payload
+
+        print(f"[FanOutProcess.aggregate_and_stop] From AgentB (1): {payload_b1}")
+        print(f"[FanOutProcess.aggregate_and_stop] From AgentB (2): {payload_b2}")
+
+        combined_payload = " | ".join(sorted([payload_b1, payload_b2]))
+        final_payload = f"{combined_payload} -> FanOutProcess output"
+        return CustomProcessStopEvent(payload=final_payload)

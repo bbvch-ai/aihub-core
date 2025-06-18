@@ -7,7 +7,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import SemanticEventAgent
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import SemanticEventAgentConfig
 
-scenarios("../tests/features/semantic_event_agent.feature")
+scenarios("./features/semantic_event_agent.feature")
 
 
 @given("a SemanticEventAgent runner", target_fixture="agent_runner")
