@@ -4,12 +4,12 @@ from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 
+from aihub_lib.generative_ai.utils.path_utils import create_data_lake_figures_folder_name
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
-from aihub_pipeline.util.path_utils import create_data_lake_figures_folder_name
 
 
 @op(code_version="v1")
