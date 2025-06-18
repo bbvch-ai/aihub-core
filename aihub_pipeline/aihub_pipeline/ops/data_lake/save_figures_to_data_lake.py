@@ -1,6 +1,5 @@
 from typing import List, Optional
 
-from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
@@ -28,7 +27,7 @@ def save_figures_to_data_lake(
         context.log.info("No figures found, skip saving to data lake.")
         return None
 
-    reader: DocumentIntelligenceLoader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
+    reader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
     figures_metadata = []
     figures_dir = create_data_lake_figures_folder_name(data_lake_file.uri, data_lake_resource.figures_directory_name)
 
