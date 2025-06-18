@@ -1,6 +1,8 @@
 import base64
+from io import StringIO
 from typing import Any, Dict, List, Optional
 
+import pandas as pd
 from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
 from bs4 import BeautifulSoup
 from fsspec import AbstractFileSystem
@@ -11,7 +13,11 @@ from llama_index.core.schema import Document
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
-from aihub_lib.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES, NODE_CONTENT_TYPE_FIGURE
+from aihub_lib.persistence.rag.vectors.node_metadata import (
+    NUMBER_OF_PAGES,
+    NODE_CONTENT_TYPE_FIGURE,
+    NODE_CONTENT_TYPE_TABLE,
+)
 
 PAGE_BREAK = "<!-- PageBreak -->"
 
@@ -43,10 +49,12 @@ class DocumentIntelligenceLoader(BaseReader):
 
         metadata = {NUMBER_OF_PAGES: len(result.pages)}
 
+        text = reformat_tables(result.content)
+
         if not result.figures:
             return [
                 Document(
-                    text=result.content,
+                    text=text,
                     extra_info={**extra_info, **metadata} if extra_info else metadata,
                 )
             ]
@@ -68,7 +76,7 @@ class DocumentIntelligenceLoader(BaseReader):
             markdown_figure = f"![Figure {idx + 1}]({figure_str})"
             markdown_figures.append(markdown_figure)
 
-        soup = BeautifulSoup(result.content, "html.parser")
+        soup = BeautifulSoup(text, "html.parser")
         figure_tags = soup.find_all("figure")
 
         for i, (figure_tag, markdown_figure) in enumerate(zip(figure_tags, markdown_figures)):
@@ -76,7 +84,22 @@ class DocumentIntelligenceLoader(BaseReader):
 
         return [
             Document(
-                text=str(soup),
+                text=text,
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
+
+
+def reformat_tables(document_text: str) -> str:
+    """Convert HTML tables in the document to Markdown tables."""
+
+    soup = BeautifulSoup(document_text, "html.parser")
+
+    table_tags = soup.find_all("table")
+
+    for table in table_tags:
+        # TODO if table is very long split into smaller tables with copied headers
+        markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
+        table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
+
+    return str(soup)
