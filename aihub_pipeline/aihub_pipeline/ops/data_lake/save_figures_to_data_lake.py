@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from dagster import ResourceParam, op
 from fsspec import AbstractFileSystem
 
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
@@ -35,5 +36,8 @@ def save_figures_to_data_lake(
             f.write(figure_str.encode("utf-8"))
 
         figures_metadata.append(FigureMetadata(figure_path=blob_path))
+
+        markdown_figure = f"![Figure {idx + 1}](url)"
+        figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
 
     return figures_metadata
