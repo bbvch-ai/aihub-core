@@ -8,7 +8,6 @@ from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttribu
 from pydantic import Field
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.open_webui.sdk.models.chats import ChatResponse
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.llm.Message import Message
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
@@ -79,7 +78,9 @@ class LLMEvent(SemanticEvent):
         return {k: v for k, v in attributes.items() if v is not None}
 
     @classmethod
-    def from_chat_response(cls, input_messages: List[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: AgentConfig) -> 'LLMEvent':
+    def from_chat_response(
+        cls, input_messages: List[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: AgentConfig
+    ) -> "LLMEvent":
         handlers = llm.callback_manager.handlers
         token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)
         if token_count_handler:
