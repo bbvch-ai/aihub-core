@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "docling"
+name = "docling-ingestion"
 version = "0.1.0"
 description = "Pipelines for [customer] AI-Hub"
 authors = [
