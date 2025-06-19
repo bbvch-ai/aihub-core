@@ -1,41 +1,91 @@
 name: Auto Draft PR for New Branch
 
 on:
-  create:
-    branches: [ '*' ]
-    tags: [ ]
+  create
 
 jobs:
-  create-draft-pr:
+  create_draft_pr:
+    # This job only runs for branch creation events, not tags.
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
-    if: startsWith(github.ref_type, 'branch')
-    steps:
-      - name: Determine base branch from new branch name
-        id: prepare
-        run: |
-          BRANCH_NAME="${GITHUB_REF_NAME}"
 
-          if [[ "$BRANCH_NAME" == *"/"* ]]; then
-            BASE_BRANCH="${BRANCH_NAME%%/*}"   # everything before the first '/'
-          else
-            BASE_BRANCH="main"
+    steps:
+      # Step 1: Generate a temporary GitHub token.
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.REGISTRY_AUTH_APP_ID }}
+          private-key: ${{ secrets.REGISTRY_AUTH_APP_PRIVATE_KEY }}
+
+      # Step 2: Validate branch name and parse the scope based on an allowed list.
+      - name: Validate branch name and parse scope
+        id: branch_parser
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          if [[ ! "$BRANCH_NAME" =~ ^([^/]+)/([^/]+)$ ]]; then
+            echo "Error: Branch name '${BRANCH_NAME}' does not follow the required 'base/scope' format."
+            exit 1
           fi
 
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_OUTPUT
+          BASE_PART="${BRANCH_NAME%/*}"
+          FULL_SCOPE_PART="${BRANCH_NAME#*/}"
 
-      - name: Install GitHub CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
+          ALLOWED_SCOPES=(
+            "agent-custom"
+            "chat-backend"
+            "confidence"
+            "workflows"
+            "agent-xp"
+            "chat-xp"
+            "dagster"
+            "tracing"
+            "avatar"
+            "deploy"
+            "guards"
+            "aihub"
+            "ci-cd"
+            "local"
+            "micro"
+            "bots"
+            "debt"
+            "rag"
+            "iac"
+            "ui"
+          )
 
-      - name: Create draft PR with GitHub CLI
+          FOUND_SCOPE="..."
+          for scope in "${ALLOWED_SCOPES[@]}"; do
+              if [[ "$FULL_SCOPE_PART" == "$scope"* ]]; then
+                  FOUND_SCOPE="$scope"
+                  break
+              fi
+          done
+
+          echo "base=${BASE_PART}" >> $GITHUB_OUTPUT
+          echo "scope=${FOUND_SCOPE}" >> $GITHUB_OUTPUT
+
+          echo "Branch validated: base='${BASE_PART}', scope='${FOUND_SCOPE}' (from full scope '${FULL_SCOPE_PART}')"
+
+      # Step 3: Create the draft Pull Request using the GitHub CLI.
+      - name: Create Draft PR
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+          BASE_BRANCH: main
+          TITLE: "[WIP] ${{ steps.branch_parser.outputs.base }}(${{ steps.branch_parser.outputs.scope }}): Work in progress by ${{ github.actor }}"
         run: |
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          if gh pr view "${HEAD_BRANCH}" --repo "${REPO}" &>/dev/null; then
+            echo "A pull request for branch '${HEAD_BRANCH}' already exists."
+            exit 0
+          fi
+
+          echo "Creating draft PR with title: ${TITLE}"
           gh pr create \
-            --repo ${{ github.repository }} \
-            --base ${{ steps.prepare.outputs.BASE_BRANCH }} \
-            --head ${{ steps.prepare.outputs.BRANCH_NAME }} \
-            --title "[WIP] ${{ github.ref_name }}" \
-            --body "This draft PR was automatically created from branch ${{ steps.prepare.outputs.BRANCH_NAME }}.\nBase branch: ${{ steps.prepare.outputs.BASE_BRANCH }}" \
+            --repo "${REPO}" \
+            --base "${BASE_BRANCH}" \
+            --head "${HEAD_BRANCH}" \
+            --title "${TITLE}" \
             --draft
