@@ -169,7 +169,6 @@ summarizer:
     Riassunto TL;DR:
 figure_description_generator:
   stringa_contesto: |
-    
     {% chat role="system" %}
     Siete esperti nella creazione di descrizioni di immagini di alta qualità per l'accessibilità dei documenti.
     Il vostro compito è generare un testo alt dettagliato per le figure nei documenti che:
@@ -191,9 +190,4 @@ figure_description_generator:
     
     {% chat role="user" %}
     Si prega di fornire una descrizione dettagliata e accurata di questa immagine che possa servire come testo alternativo efficace.
-    {% for block in context_blocks %}
-    {% if block.block_type == 'image' %}
-    {{ block.image | image }}
-    {% endif %}
-    {% endfor %}
     {% endchat %}

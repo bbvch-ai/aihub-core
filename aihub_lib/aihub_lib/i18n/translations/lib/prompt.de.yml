@@ -192,9 +192,4 @@ figure_description_generator:
     
     {% chat role="user" %}
     Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann.
-    {% for block in context_blocks %}
-    {% if block.block_type == 'image' %}
-    {{ block.image | image }}
-    {% endif %}
-    {% endfor %}
     {% endchat %}

@@ -189,9 +189,4 @@ figure_description_generator:
 
     {% chat role="user" %}
     Please provide a detailed, accurate description of this image that would serve as effective alt text.
-    {% for block in context_blocks %}
-    {% if block.block_type == 'image' %}
-    {{ block.image | image }}
-    {% endif %}
-    {% endfor %}
     {% endchat %}

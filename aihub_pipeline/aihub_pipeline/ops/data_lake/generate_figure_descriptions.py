@@ -61,7 +61,9 @@ def generate_description(
     t = LocaleHandler(locale="en")
     context_prompt_locale = t("lib.prompt.figure_description_generator.context_string")
 
-    messages = RichPromptTemplate(template_str=context_prompt_locale).format_messages(context_blocks=context_blocks)
+    messages = RichPromptTemplate(template_str=context_prompt_locale).format_messages()
+    # RichPromptTemplate doesn't support bytes from ImageBlock
+    messages[-1].blocks = context_blocks
     response = language_model.chat(messages=messages)
     description = response.message.content.replace("\n", " ")
 
