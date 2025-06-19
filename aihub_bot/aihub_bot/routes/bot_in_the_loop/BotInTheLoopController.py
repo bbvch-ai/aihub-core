@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Callable
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString

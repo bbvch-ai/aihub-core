@@ -2,7 +2,7 @@ from typing import ClassVar, Union
 
 from pydantic import Field
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -23,7 +23,7 @@ class BotInTheLoopRequestEvent(ControlEvent):
         "lib.events.bitl_request_event.description"
     )
 
-    user: AuthenticatedUser = Field(
+    user: UserIdentity = Field(
         ...,
         description="The authenticated user who is requesting the human-in-the-loop interaction.",
     )

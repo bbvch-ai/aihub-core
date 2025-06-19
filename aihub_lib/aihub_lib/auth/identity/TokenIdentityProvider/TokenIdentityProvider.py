@@ -1,9 +1,8 @@
 from typing import List, Optional
 
-from aihub_lib.persistence.user.UserEntity import UserEntity
-
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 
 class TokenIdentityProvider(IdentityProvider):
@@ -16,6 +15,7 @@ class TokenIdentityProvider(IdentityProvider):
 
     Raises an exception if no matching user is found.
     """
+
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         user = UserEntity.by_oid(user_oid)
         if user is None:

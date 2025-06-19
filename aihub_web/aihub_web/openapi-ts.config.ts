@@ -9,18 +9,18 @@ export default defineConfig({
     lint: 'eslint',
   },
   plugins: [
-    '@hey-token/client-nuxt',
-    '@hey-token/schemas',
+    '@hey-api/client-nuxt',
+    '@hey-api/schemas',
     {
       dates: true,
-      name: '@hey-token/transformers',
+      name: '@hey-api/transformers',
     },
     {
       enums: 'javascript',
-      name: '@hey-token/typescript',
+      name: '@hey-api/typescript',
     },
     {
-      name: '@hey-token/sdk',
+      name: '@hey-api/sdk',
       transformer: true,
     },
   ],

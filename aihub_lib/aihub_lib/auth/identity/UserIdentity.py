@@ -1,16 +1,16 @@
-from dataclasses import dataclass
-from typing import List, Optional
+from typing import Annotated, List, Optional
+
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class UserIdentity:
-    """
-    Object that identifies a user. Holds private information like the users roles, hence, it is NOT
-    a domain transfer object (dto) and should only be used internally to identify a user.
-    """
+class UserIdentity(BaseModel):
+    id: Annotated[str, Field(description="The unique identifier for the user.")]
+    name: Annotated[str, Field(description="The name of the user.")]
+    email: Annotated[str, Field(description="The email address of the user.")]
+    roles: Annotated[List[str], Field(description="The roles assigned to the user.")]
+    profile_image: Annotated[Optional[str], Field(description="Data URL (base64) representation of profile image")] = (
+        None
+    )
 
-    id: str
-    name: str
-    email: str
-    roles: List[str]
-    profile_image: Optional[str] = None
+    def has_access_to_agent(self, agent_class: str, agent_id: str) -> bool:
+        return f"{agent_class}.{agent_id}" in self.roles or "AllAgents" in self.roles

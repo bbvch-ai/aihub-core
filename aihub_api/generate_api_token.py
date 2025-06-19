@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from mongoengine import connect, disconnect
 
 from aihub_api.routes.token.TokenService import TokenService
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -70,21 +70,21 @@ token_name = f"{cli_user_name} Token"
 expiry = datetime.now(timezone.utc) + timedelta(days=365)
 roles = ["AllAgents"]
 
-user = AuthenticatedUser(
-    oid=cli_user_oid,
+user = UserIdentity(
+    id=cli_user_oid,
     name=cli_user_name,
-    preferred_username=cli_user_preferred_username,
+    email=cli_user_preferred_username,
     roles=roles,
 )
 UserEntity.ensure_user_exists(
-    oid=user.oid,
+    oid=user.id,
     name=user.name,
-    email=user.preferred_username,
+    email=user.email,
     roles=user.roles,
 )
 
 token = TokenService.create_token(token_name, expiry, user)
-print(f"Generated token for user {user.name} ({user.preferred_username}):")
+print(f"Generated token for user {user.name} ({user.email}):")
 print(token.token)
 
 disconnect()

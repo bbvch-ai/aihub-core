@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Annotated, List
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -43,7 +43,7 @@ class KnowledgeController(Controller):
     def get_databases(self, route: str = "/databases") -> "KnowledgeController":
         @self.router.get(route, tags=self.tags)
         async def get_databases(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> List[DatabaseDTO]:
             """
             Returns all available knowledge namespaces with the number of documents in each.
@@ -59,7 +59,7 @@ class KnowledgeController(Controller):
         async def get_documents_for_namespace(
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedDocumentsResponse:
@@ -88,7 +88,7 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> IngestedDocument:
             """
             Returns a single document by its ID.
@@ -107,7 +107,7 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> List[IngestedNode]:
             """
             Returns nodes for a given document.
@@ -131,7 +131,7 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> List[NodeSummaryDTO]:
             """
             Returns nodes for a given document.

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 import httpx
 import pandas as pd
 import phoenix as px
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import PhoenixExperimentEvaluator
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -381,7 +381,7 @@ class EvaluationService:
         nats_client: NATS,
         external_event_distributor: ExternalEventDistributor,
         judge: ChatLLMConfig,
-        authenticated_user: AuthenticatedUser,
+        authenticated_user: UserIdentity,
         t: LocaleHandler,
     ) -> Experiment:
         """Runs a new evaluation experiment using the PhoenixExperimentEvaluator."""

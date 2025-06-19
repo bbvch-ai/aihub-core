@@ -19,7 +19,7 @@ class TokenAuthHandler(BearerAuthHandler):
       1. Extracts the token from the header.
       2. Validates the token by performing a database lookup via `AccessToken.verify_token`.
       3. Checks that the token is correctly formatted, exists in the database, and is not expired.
-      4. Maps the token's stored API user data onto an `AuthenticatedUser` instance.
+      4. Maps the token's stored API user data onto an `UserIdentity` instance.
 
     If any of these checks fail (e.g., if the token is missing, malformed, not found, or expired),
     an `HTTPException` with a 401 Unauthorized status is raised.

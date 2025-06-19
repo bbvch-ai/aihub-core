@@ -2,7 +2,12 @@ import pytest
 from fastapi import Request
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Scenario Declaration ---
@@ -47,7 +52,7 @@ def setup_no_auth_config(monkeypatch, name, email, oid, roles):
 @async_test
 async def invoke_no_auth_handler(dummy_request: Request, result_user: dict) -> None:
     """Invoke the DangerousDevelopmentOnlyAuthHandler and store the returned user."""
-    handler = DangerousDevelopmentOnlyAuthHandler()
+    handler = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     user = await handler(dummy_request)
     result_user["user"] = user
 
@@ -68,9 +73,7 @@ def check_preferred_username(result_user: dict, expected_email: str) -> None:
     """Check that the returned user has the expected preferred username."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
-    assert (
-        user.preferred_username == expected_email
-    ), f'Expected preferred username "{expected_email}", got "{user.preferred_username}"'
+    assert user.email == expected_email, f'Expected preferred username "{expected_email}", got "{user.email}"'
 
 
 @then(parsers.parse('the returned user should have oid "{expected_oid}"'))
@@ -78,7 +81,7 @@ def check_oid(result_user: dict, expected_oid: str) -> None:
     """Check that the returned user has the expected oid."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
-    assert user.oid == expected_oid, f'Expected oid "{expected_oid}", got "{user.oid}"'
+    assert user.id == expected_oid, f'Expected oid "{expected_oid}", got "{user.id}"'
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))

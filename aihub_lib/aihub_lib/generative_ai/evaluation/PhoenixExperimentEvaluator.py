@@ -14,7 +14,7 @@ from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResul
 from phoenix.experiments.types import Example as PhoenixExample
 from phoenix.experiments.types import RanExperiment
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -45,7 +45,7 @@ class PhoenixExperimentEvaluator:
         nats_client: NATS,
         external_event_distributor: ExternalEventDistributor,
         judge: ChatLLMConfig,
-        authenticated_user: AuthenticatedUser,
+        authenticated_user: UserIdentity,
         t: LocaleHandler,
     ):
         """

@@ -30,7 +30,7 @@ class BaseClient:
     Example:
         ```python
         client = BaseClient(token="my-bearer-token")
-        response = await client.get("/token/v1/users/")
+        response = await client.get("/api/v1/users/")
         ```
     """
 

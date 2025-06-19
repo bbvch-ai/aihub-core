@@ -38,7 +38,7 @@ class Runner(abc.ABC):
     ### Usage
     ```python
     # Typically you'd use a concrete implementation like ApiRunner or BotRunner
-    runner = ConcreteRunner(api_path="/token/v1", title="My API", debug=True)
+    runner = ConcreteRunner(api_path="/api/v1", title="My API", debug=True)
     runner.mount(MyController())  # Mounting a controller
     runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
     app = runner.get_app()  # This is the main FastAPI instance to run
@@ -49,7 +49,7 @@ class Runner(abc.ABC):
 
     def __init__(
         self,
-        api_path: str = "/token/v1",
+        api_path: str = "/api/v1",
         title: str = "AI Hub Service",
         description: str = "AI Hub",
         origins: Optional[List[str]] = None,

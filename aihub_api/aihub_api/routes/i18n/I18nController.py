@@ -1,5 +1,5 @@
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -61,7 +61,7 @@ class I18nController(Controller):
             tags=self.tags,
         )
         async def get_locale(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> LocaleResponse:
             """

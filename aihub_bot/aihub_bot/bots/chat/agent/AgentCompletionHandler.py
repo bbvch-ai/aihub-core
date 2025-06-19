@@ -1,7 +1,7 @@
 import asyncio
 from typing import AsyncGenerator, List, Optional
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
@@ -136,10 +136,10 @@ class AgentCompletionHandler(CompletionHandler):
         chat_messages: List[ChatMessage] = [
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
-        user = AuthenticatedUser(
+        user = UserIdentity(
             name=turn_context.activity.from_property.name,
-            preferred_username=turn_context.activity.from_property.name,
-            oid=turn_context.activity.from_property.id,
+            email=turn_context.activity.from_property.name,
+            id=turn_context.activity.from_property.id,
             roles=[],
         )
         if stream:

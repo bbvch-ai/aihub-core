@@ -1,9 +1,8 @@
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
-from aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService import AzureGraphService
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
-
+from aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService import AzureGraphService
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 

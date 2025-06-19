@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -28,7 +28,7 @@ class SuiteController(Controller):
     def get_suite(self, route: str = "/") -> "SuiteController":
         @self.router.get(route, tags=self.tags)
         async def get_suite(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> SuiteDTO:
             return SuiteService.get_suite(user, self._runner, t)

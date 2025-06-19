@@ -1,7 +1,7 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -62,7 +62,7 @@ class EvaluationController(Controller):
         )
         async def create_dataset(
             create_dto: Annotated[DatasetCreate, Body()],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> Dataset:
             return await EvaluationService.create_dataset(create_dto)
 
@@ -76,7 +76,7 @@ class EvaluationController(Controller):
             description="Retrieves a list of all evaluation datasets.",
         )
         async def get_datasets(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> List[MinimalDataset]:
             return await EvaluationService.get_datasets()
 
@@ -91,7 +91,7 @@ class EvaluationController(Controller):
         )
         async def get_dataset(
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to retrieve.")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> Dataset:
             return await EvaluationService.get_dataset(dataset_id)
 
@@ -107,7 +107,7 @@ class EvaluationController(Controller):
         async def update_dataset(
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to update.")],
             update_dto: Annotated[DatasetUpdate, Body()],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> Dataset:
             return await EvaluationService.update_dataset(dataset_id, update_dto)
 
@@ -121,7 +121,7 @@ class EvaluationController(Controller):
             description="Retrieves a list of all evaluation experiments.",
         )
         async def get_experiments(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[MinimalExperiment]:
             return await EvaluationService.get_experiments(t)
@@ -137,7 +137,7 @@ class EvaluationController(Controller):
         )
         async def get_experiment(
             experiment_id: Annotated[str, Path(description="The unique identifier of the experiment to retrieve.")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> Experiment:
             return await EvaluationService.get_experiment(experiment_id, t)
@@ -153,7 +153,7 @@ class EvaluationController(Controller):
         )
         async def run_experiment(
             create_dto: Annotated[ExperimentCreate, Body()],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             nats_client: NATS = Depends(use_nats),
             external_event_distributor: ExternalEventDistributor = Depends(use_external_event_distributor),
             t: LocaleHandler = Depends(use_locale),

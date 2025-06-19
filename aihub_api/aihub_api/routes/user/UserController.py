@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Security
@@ -47,12 +47,12 @@ class UserController(Controller):
     def get_my_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route, tags=self.tags)
         async def get_my_user(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> MyUserDTO:
             """
             Returns a `UserDTO` representing the currently logged-in user.
             """
-            return await UserService.get_logged_in_user(user)
+            return await UserService.get_logged_in_user(user, identity_provider=self.auth.identity_provider)
 
         return self
 
@@ -63,7 +63,7 @@ class UserController(Controller):
 
         @self.router.get(route, tags=self.tags)
         async def get_my_dashboard(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> Optional[DashboardDTO]:
             """
             Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
@@ -80,13 +80,13 @@ class UserController(Controller):
         @self.router.put(route, tags=self.tags, status_code=204)
         async def update_my_dashboard(
             dashboard_dto: Annotated[DashboardDTO, Body],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> None:
             """
             Updates the user's dashboard settings.
             Accepts a `DashboardDTO` in the request body.
             """
-            await UserService.update_user_dashboard(user, dashboard_dto)
+            await UserService.update_user_dashboard(user, dashboard_dto, identity_provider=self.auth.identity_provider)
             return None
 
         return self

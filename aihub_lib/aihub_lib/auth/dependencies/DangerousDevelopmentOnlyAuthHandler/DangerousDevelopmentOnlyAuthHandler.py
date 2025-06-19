@@ -2,11 +2,14 @@ import logging
 
 from fastapi import Request
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import DangerousDevelopmentOnlyAuthConfig
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
-    DangerousDevelopmentOnlyIdentityProvider
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
+    DangerousDevelopmentOnlyAuthConfig,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +19,9 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
         super().__init__(identity_provider=identity_provider)
         self.config = DangerousDevelopmentOnlyAuthConfig()
 
-    async def __call__(self, request: Request) -> AuthenticatedUser:
+    async def __call__(self, request: Request) -> UserIdentity:
         return await self.authenticate_token("")
 
-    async def authenticate_token(self, token_str: str) -> AuthenticatedUser:
+    async def authenticate_token(self, token_str: str) -> UserIdentity:
         logger.warning("DangerousDevelopmentOnlyAuthHandler is active. This is not recommended for production use.")
-        return AuthenticatedUser(
-            name=self.config.NAME,
-            preferred_username=self.config.EMAIL,
-            oid=str(self.config.OID),
-            roles=self.config.ROLES,
-        )
+        return await self._identity_provider.get_user_identity_by_oid(self.config.OID)

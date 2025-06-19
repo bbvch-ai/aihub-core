@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
@@ -70,7 +70,7 @@ class ChatService:
 
     @staticmethod
     def _initialize_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -91,7 +91,7 @@ class ChatService:
                 thread = ThreadEntity.get_thread_by_id(str(thread_id))
                 if not thread:
                     raise mongoengine.errors.DoesNotExist()
-                if user.oid not in [u.user_id for u in thread.users]:
+                if user.id not in [u.user_id for u in thread.users]:
                     raise HTTPException(status_code=403, detail="User not part of the thread")
             except mongoengine.errors.DoesNotExist:
                 pass
@@ -99,7 +99,7 @@ class ChatService:
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",
-                users=[User(user_id=user.oid)],
+                users=[User(user_id=user.id)],
                 agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
                 thread_id=ObjectId(thread_id) or ObjectId(),
             )
@@ -155,7 +155,7 @@ class ChatService:
 
     @staticmethod
     async def start_stream_chat_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -228,7 +228,7 @@ class ChatService:
 
     @staticmethod
     async def start_json_chat_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -259,7 +259,7 @@ class ChatService:
 
     @staticmethod
     async def start_json_event_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         external_event: ExternalEvent,

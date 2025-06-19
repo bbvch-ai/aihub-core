@@ -8,6 +8,7 @@ import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     DummyResponse,
@@ -46,6 +47,29 @@ def monkeypatch_httpx(monkeypatch, fake_jwks_response: dict) -> None:
         return DummyResponse(fake_jwks_response, status_code=200)
 
     monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
+
+
+class MockTokenResponse:
+    def __init__(self):
+        self.token = "mock-access-token"
+
+
+class MockCredential:
+    def __init__(self):
+        self._token = MockTokenResponse()
+
+    def get_token(self, scope):
+        # Return a token object that has a token attribute, not a coroutine
+        return self._token
+
+
+@pytest.fixture(autouse=True)
+def mock_azure_credential(monkeypatch):
+    """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
+    monkeypatch.setattr(
+        "aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService.AsyncDefaultAzureCredential",
+        lambda: MockCredential(),
+    )
 
 
 @pytest.fixture
@@ -168,7 +192,7 @@ async def invoke_oauth2_handler(oauth2_context: dict) -> None:
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler()
+    handler = OAuth2AuthHandler(identity_provider=AzureIdentityProvider())
     user = await handler(token_bytes)
     oauth2_context["user"] = user
 
@@ -183,7 +207,7 @@ async def invoke_oauth2_handler_expect_error(oauth2_context: dict) -> None:
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler()
+    handler = OAuth2AuthHandler(identity_provider=AzureIdentityProvider())
     try:
         await handler(token_bytes)
         pytest.fail("OAuth2AuthHandler did not raise an exception")
@@ -207,9 +231,7 @@ def check_oauth2_user_email(oauth2_context: dict, expected_email: str) -> None:
     """Check that the authenticated user has the expected preferred username."""
     user = oauth2_context.get("user")
     assert user is not None, "No user was returned by OAuth2AuthHandler"
-    assert (
-        user.preferred_username == expected_email
-    ), f'Expected email "{expected_email}", got "{user.preferred_username}"'
+    assert user.email == expected_email, f'Expected email "{expected_email}", got "{user.email}"'
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))

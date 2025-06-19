@@ -5,14 +5,19 @@ from httpx import AsyncClient, ASGITransport
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
 
 BASE_URL = "http://test"
-MODELS_ENDPOINT = "/token/v1/openai/models"
+MODELS_ENDPOINT = "/api/v1/openai/models"
 CHAT_MODEL = "unsloth/Llama-3.2-1B-Instruct"
 EMBEDDING_MODEL = "Alibaba-NLP/gte-base-en-v1.5"
 
@@ -20,7 +25,7 @@ EMBEDDING_MODEL = "Alibaba-NLP/gte-base-en-v1.5"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
     """Create an API client with OpenaiController endpoints mounted."""
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = (
         OpenaiController(
             auth=auth,
@@ -85,7 +90,7 @@ async def test_get_embeddings(api_client):
         "model": EMBEDDING_MODEL,
         "encoding_format": "float",
     }
-    response = await api_client.post("/token/v1/openai/embeddings", json=payload)
+    response = await api_client.post("/api/v1/openai/embeddings", json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
     assert data.get("object") == "list"
@@ -114,7 +119,7 @@ async def test_chat_completion(api_client):
         "temperature": 0,
         "stream": False,
     }
-    response = await api_client.post("/token/v1/openai/chat/completions", json=payload)
+    response = await api_client.post("/api/v1/openai/chat/completions", json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
     assert "id" in data

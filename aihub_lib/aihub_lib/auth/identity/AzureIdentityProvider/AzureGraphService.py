@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class GraphAPIError(Exception):
     """Custom exception for errors during Microsoft Graph API calls."""
+
     def __init__(self, message: str, status_code: Optional[int] = None, response_text: Optional[str] = None):
         super().__init__(message)
         self.status_code = status_code
@@ -30,6 +31,7 @@ class AzureGraphService:
     roles, and profile information from Azure Active Directory. It follows a
     fail-fast philosophy, raising GraphAPIError for unexpected API failures.
     """
+
     MS_GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
 
     def __init__(self, client_id: str, default_ttl: int = 3600):
@@ -39,9 +41,9 @@ class AzureGraphService:
 
         # Consolidated and configurable caching
         self.user_profile_cache = TTLCache(maxsize=128, ttl=default_ttl)
-        self.profile_image_cache = TTLCache(maxsize=128, ttl=default_ttl * 5) # Images change less often
+        self.profile_image_cache = TTLCache(maxsize=128, ttl=default_ttl * 5)  # Images change less often
         self.service_principal_cache = TTLCache(maxsize=64, ttl=default_ttl)
-        self.app_role_assignments_cache = TTLCache(maxsize=128, ttl=600) # Assignments can change more frequently
+        self.app_role_assignments_cache = TTLCache(maxsize=128, ttl=600)  # Assignments can change more frequently
 
     async def _get_token(self) -> str:
         """Acquires an OAuth2 token for the Microsoft Graph API."""
@@ -55,11 +57,11 @@ class AzureGraphService:
             raise GraphAPIError("Failed to acquire Graph API token.") from e
 
     async def _make_graph_request(
-            self,
-            method: str,
-            url: str,
-            access_token: Optional[str] = None,
-            **kwargs,
+        self,
+        method: str,
+        url: str,
+        access_token: Optional[str] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         """
         A centralized helper for making authorized requests to the Graph API.
@@ -68,7 +70,7 @@ class AzureGraphService:
         token = access_token or await self._get_token()
         headers = {
             "Authorization": f"Bearer {token}",
-            "ConsistencyLevel": "eventual", # Needed for some filter queries
+            "ConsistencyLevel": "eventual",  # Needed for some filter queries
             **kwargs.pop("headers", {}),
         }
 
@@ -80,7 +82,7 @@ class AzureGraphService:
             if response.status_code == 200:
                 return {"content": response.content, "headers": response.headers}
             if response.status_code == 404:
-                return {} # Return empty dict for not found, lets caller decide if its an error
+                return {}  # Return empty dict for not found, lets caller decide if its an error
 
         # For JSON responses, check status and raise on failure
         if response.status_code not in {200, 201, 204}:
@@ -119,7 +121,9 @@ class AzureGraphService:
         """Finds a user's OID by email and fetches their profile."""
         logger.debug(f"Fetching user by email {email}.")
         # Use a filter that works for both mail and UPN
-        search_url = f"{self.MS_GRAPH_BASE_URL}/users?$filter=mail eq '{email}' or userPrincipalName eq '{email}'&$select=id"
+        search_url = (
+            f"{self.MS_GRAPH_BASE_URL}/users?$filter=mail eq '{email}' or userPrincipalName eq '{email}'&$select=id"
+        )
 
         response_data = await self._make_graph_request("GET", search_url)
         users = response_data.get("value", [])
@@ -149,7 +153,7 @@ class AzureGraphService:
         image_response = await self._make_graph_request("GET", image_url)
 
         image_data_url = None
-        if image_response: # Response is empty dict on 404
+        if image_response:  # Response is empty dict on 404
             content_type = image_response["headers"].get("Content-Type", "image/jpeg")
             base64_data = base64.b64encode(image_response["content"]).decode("utf-8")
             image_data_url = f"data:{content_type};base64,{base64_data}"
@@ -175,7 +179,9 @@ class AzureGraphService:
             self.service_principal_cache[sp_cache_key] = app_sp_data
 
         if not app_sp_data or not app_sp_data.get("id"):
-            logger.warning(f"Could not find Service Principal for app client_id {self.client_id}. Cannot determine roles.")
+            logger.warning(
+                f"Could not find Service Principal for app client_id {self.client_id}. Cannot determine roles."
+            )
             return []
 
         # 2. Map role definitions from the Service Principal
@@ -187,7 +193,7 @@ class AzureGraphService:
         }
 
         if not app_role_definitions:
-            logger.info(f"No enabled app roles are defined on the application SP.")
+            logger.info("No enabled app roles are defined on the application SP.")
             return []
 
         # 3. Get the user's role assignments for our application's SP
@@ -202,9 +208,7 @@ class AzureGraphService:
 
         # 4. Map the assigned IDs back to role names
         effective_roles = [
-            app_role_definitions[role_id]
-            for role_id in assigned_role_ids
-            if role_id in app_role_definitions
+            app_role_definitions[role_id] for role_id in assigned_role_ids if role_id in app_role_definitions
         ]
 
         return sorted(list(set(effective_roles)))
@@ -224,9 +228,8 @@ class AzureGraphService:
 
         # Await all results
         import asyncio
-        user_profile, user_roles, profile_image = await asyncio.gather(
-            profile_task, roles_task, image_task
-        )
+
+        user_profile, user_roles, profile_image = await asyncio.gather(profile_task, roles_task, image_task)
 
         if not user_profile:
             raise ValueError(f"Could not construct UserIdentity, profile not found for OID {user_oid}.")

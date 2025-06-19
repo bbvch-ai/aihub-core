@@ -9,8 +9,9 @@ from fastapi.security import HTTPBearer
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
+from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
@@ -53,7 +54,7 @@ class MockCredential:
 def mock_azure_credential(monkeypatch):
     """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
     monkeypatch.setattr(
-        "aihub_lib.auth.azure_graph.AzureGraphService.AsyncDefaultAzureCredential",
+        "aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService.AsyncDefaultAzureCredential",
         lambda: MockCredential(),
     )
 
@@ -167,10 +168,10 @@ def insert_token_document(
     # Don't rely on the Microsoft Graph API - use fallback authentication
     # The handler should use the token's user information directly
     async def mock_handler_call(self, request, bearer_token):
-        return AuthenticatedUser(
+        return UserIdentity(
             name=name,
-            preferred_username=email,
-            oid=user_oid,
+            email=email,
+            id=user_oid,
             roles=roles_list,
         )
 
@@ -259,7 +260,7 @@ async def invoke_openwebui_auth_handler(token_context: dict, token_context_resul
     }
     request = create_dummy_request(headers)
 
-    handler = OpenWebuiAuthHandler()
+    handler = OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider())
     try:
         security = await HTTPBearer()(request)
         user = await handler(request, security)
@@ -282,7 +283,7 @@ async def invoke_openwebui_auth_handler_expect_error(token_context: dict, error_
     }
     request = create_dummy_request(headers)
 
-    handler = OpenWebuiAuthHandler()
+    handler = OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider())
     try:
         security = await HTTPBearer()(request)
         await handler(request, security)
@@ -306,9 +307,7 @@ def check_name(token_context_result: dict, expected_name: str) -> None:
 def check_preferred_username(token_context_result: dict, expected_email: str) -> None:
     """Check that the authenticated user has the expected preferred username."""
     user = token_context_result.get("user")
-    assert (
-        user.preferred_username == expected_email
-    ), f"Expected email '{expected_email}', got '{user.preferred_username}'"
+    assert user.email == expected_email, f"Expected email '{expected_email}', got '{user.email}'"
 
 
 @then("the returned user should have oid matching the token's user id")
@@ -316,7 +315,7 @@ def check_user_oid(token_context_result: dict, token_context: dict) -> None:
     """Check that the authenticated user's oid matches the expected user id from the token."""
     user = token_context_result.get("user")
     expected_oid = token_context.get("expected_user_oid")
-    assert user.oid == expected_oid, f"Expected user oid '{expected_oid}', got '{user.oid}'"
+    assert user.id == expected_oid, f"Expected user oid '{expected_oid}', got '{user.id}'"
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))

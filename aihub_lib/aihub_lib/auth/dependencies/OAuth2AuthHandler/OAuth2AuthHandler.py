@@ -126,7 +126,7 @@ class OAuth2AuthHandler(AuthHandler):
                 issuer=f"{OAuth2Config().AUTHORITY}/v2.0",
             )
 
-            # Parse token claims into AuthenticatedUser
+            # Parse token claims into UserIdentity
             try:
                 oid = decoded_token.get("oid")
                 return await self._identity_provider.get_user_identity_by_oid(oid)
@@ -143,6 +143,7 @@ class OAuth2AuthHandler(AuthHandler):
         except httpx.HTTPError:
             logger.exception("HTTP error during token validation")
             raise HTTPException(status_code=500, detail="Authentication service unavailable")
-        except Exception:
+        except Exception as e:
+            logger.exception("Unexpected error during token validation: %s", str(e))
             logger.exception("Unexpected error validating token")
             raise HTTPException(status_code=500, detail="Authentication error")

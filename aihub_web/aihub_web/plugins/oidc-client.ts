@@ -10,13 +10,13 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   Log.setLevel(Log.INFO)
 
   const auth = new UserManager({
-    authority: `https://login.microsoftonline.com/${config.public.oidc.tenantId}/v2.0`,
-    client_id: config.public.oidc.clientId,
+    authority: `https://login.microsoftonline.com/${config.public.idc.tenantId}/v2.0`,
+    client_id: config.public.idc.clientId,
     redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/callback`,
     silent_redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/renew`,
     post_logout_redirect_uri: window.location.origin,
     response_type: 'code',
-    scope: `openid profile email api://${config.public.oidc.clientId}/access`,
+    scope: `openid profile email api://${config.public.idc.clientId}/access`,
     filterProtocolClaims: true,
     automaticSilentRenew: true,
     silentRequestTimeoutInSeconds: 30, // Increase timeout

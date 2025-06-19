@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any, Callable, List
+from typing import Annotated, List
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig

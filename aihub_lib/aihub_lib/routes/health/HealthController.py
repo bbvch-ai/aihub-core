@@ -1,6 +1,4 @@
-from fastapi import Security
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -41,9 +39,7 @@ class HealthController(Controller):
 
     def get_health(self, route: str = "/") -> "HealthController":
         @self.router.get(route, tags=self.tags)
-        async def get_health(
-            user: AuthenticatedUser = Security(self.auth),
-        ) -> HealthResponse:
+        async def get_health() -> HealthResponse:
             """
             A simple health check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.

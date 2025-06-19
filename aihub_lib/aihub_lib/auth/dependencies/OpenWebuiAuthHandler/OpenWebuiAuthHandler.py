@@ -5,13 +5,11 @@ from typing import Optional
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService import AzureGraphService
-from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ def hash_string_sha1(input_string):
 class OpenWebuiAuthHandler(TokenAuthHandler):
     def __init__(self, identity_provider: AzureIdentityProvider):
         super().__init__(identity_provider)
-        self.graph_service = AzureGraphService()
+        self.graph_service = AzureGraphService(OAuth2Config().CLIENT_ID)
         self.config = OAuth2Config()
         self.app_client_id_for_roles: Optional[str] = self.config.CLIENT_ID
 
@@ -63,8 +61,6 @@ class OpenWebuiAuthHandler(TokenAuthHandler):
             raise HTTPException(status_code=401, detail="User name and email hash validation failed.")
 
         return await self._identity_provider.get_user_identity_by_email(open_webui_user_email)
-
-
 
     async def authenticate_token(self, token_str: str) -> UserIdentity:
         """
