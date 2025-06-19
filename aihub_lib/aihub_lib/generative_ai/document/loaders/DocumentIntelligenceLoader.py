@@ -66,6 +66,12 @@ class DocumentIntelligenceLoader(BaseReader):
         soup = BeautifulSoup(text, "html.parser")
         figure_tags = soup.find_all("figure")
 
+        if len(result.figures) != len(figure_tags):
+            raise ValueError(
+                f"Mismatch between number of figures returned by the API ({len(result.figures)}) "
+                f"and number of <figure> tags in the document ({len(figure_tags)})."
+            )
+
         figures_dir = create_data_lake_figures_folder_name(file, figures_directory_name)
         for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
             response = self.document_intelligence_client.get_analyze_result_figure(

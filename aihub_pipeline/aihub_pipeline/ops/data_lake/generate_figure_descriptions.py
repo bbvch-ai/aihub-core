@@ -1,8 +1,6 @@
 import html
 from typing import List
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
@@ -10,6 +8,8 @@ from llama_index.core.base.llms.types import ImageBlock, TextBlock
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 
 
@@ -28,7 +28,6 @@ def generate_figure_descriptions(
         # 3000 characters of surrounding text, 1500 before and 1500 after the figure tag
         text_before = figure_tag.previous_sibling[-1500:] if figure_tag.previous_sibling else ""
         text_after = figure_tag.next_sibling[:1500] if figure_tag.next_sibling else ""
-        context.log.info(f"Found figure tag: {figure_tag.text}")
         figure_path = figure_tag.text.split("](")[1][:-1]
         with data_lake_file_system.open(figure_path) as f:
             figure_bytes = f.read()
