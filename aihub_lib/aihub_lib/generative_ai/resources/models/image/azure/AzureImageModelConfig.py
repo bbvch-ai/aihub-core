@@ -49,15 +49,3 @@ class AzureOpenaiImageModelConfig(ImageModelConfig, AzureOpenaiResourceConfig):
         ),
     ] = AzureImageModelParameter()
 
-    def get_openai_client(self) -> AsyncAzureOpenAI:
-        token_provider = get_bearer_token_provider(
-            DefaultAzureCredential(),
-            "https://cognitiveservices.azure.com/.default",
-        )
-
-        return AsyncAzureOpenAI(
-            azure_endpoint=self.base_url,
-            azure_deployment=self.name,
-            azure_ad_token_provider=token_provider,
-            api_version=self.api_version,
-        )

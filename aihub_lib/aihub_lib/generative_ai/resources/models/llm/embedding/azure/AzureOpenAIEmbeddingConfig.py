@@ -64,7 +64,7 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
         """
         Instantiate an AzureOpenAIEmbedding and a LLMCostTracker for embedding operations.
 
-        Uses Azure AD credentials and merges parameters from `default_parameter` and `model_parameter`.
+        Uses either API key or Azure AD credentials based on configuration.
         """
         tokenizer = tiktoken.encoding_for_model(self.name).encode
         token_counter = TokenCountingHandler(tokenizer=tokenizer)
@@ -74,21 +74,32 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
             embedding_tokens_costs_per_thousand=self.embedding_tokens_costs_per_thousand,
         )
 
-        token_provider = get_bearer_token_provider(
-            DefaultAzureCredential(),
-            "https://cognitiveservices.azure.com/.default",
-        )
-
         additional_kwargs = self.merge_model_params(model_parameter)
 
-        azure_open_ai_embedding = AzureOpenAIEmbedding(
-            model=self.name,
-            azure_endpoint=self.base_url,
-            azure_ad_token_provider=token_provider,
-            use_azure_ad=True,
-            api_version=self.api_version,
-            additional_kwargs=additional_kwargs,
-            callback_manager=CallbackManager([token_counter]),
-        )
+        if self.api_key:
+            azure_open_ai_embedding = AzureOpenAIEmbedding(
+                model=self.name,
+                azure_endpoint=self.base_url,
+                use_azure_ad=False,
+                api_key=self.api_key,
+                api_version=self.api_version,
+                additional_kwargs=additional_kwargs,
+                callback_manager=CallbackManager([token_counter]),
+            )
+        else:
+            token_provider = get_bearer_token_provider(
+                DefaultAzureCredential(),
+                "https://cognitiveservices.azure.com/.default",
+            )
+
+            azure_open_ai_embedding = AzureOpenAIEmbedding(
+                model=self.name,
+                azure_endpoint=self.base_url,
+                azure_ad_token_provider=token_provider,
+                use_azure_ad=True,
+                api_version=self.api_version,
+                additional_kwargs=additional_kwargs,
+                callback_manager=CallbackManager([token_counter]),
+            )
 
         return azure_open_ai_embedding, cost_tracker
