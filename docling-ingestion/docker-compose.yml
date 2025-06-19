@@ -1,6 +1,6 @@
 services:
   docling:
-    image: my-docling-serve-cpu:latest
+    image: my-docling-serve-gpu:latest
     container_name: docling-serve
     ports:
       - 5001:5001
