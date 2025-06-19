@@ -32,7 +32,7 @@ def documents_factory(
         data_lake_file: DataLakeFile,
     ) -> Output[RefDocDocument]:
         doc_with_figures = parse_document_from_data_lake(data_lake_file)
-        doc_with_injected_figures = generate_figure_descriptions(doc_with_figures=doc_with_figures)
+        doc_with_injected_figures = generate_figure_descriptions(ref_doc=doc_with_figures)
 
         return insert_ref_doc_into_docstore(
             ensure_refdoc_default_metadata(doc_with_figures_to_ref_doc(data_lake_file, doc_with_injected_figures))

@@ -5,6 +5,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 from bs4 import BeautifulSoup
+from docling_core.types import DoclingDocument
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
@@ -37,8 +38,12 @@ class DoclingLoader(BaseReader):
         file_name = os.path.basename(file)
 
         answer = self.docling_client.convert_document(encoded_string, file_name)
-        markdown_content = answer["document"]["md_content"]
-        markdown_content = extract_base64_images_from_tables(extract_base64_images(markdown_content))
+        doc = DoclingDocument(**answer["document"]["json_content"])
+        img_strs = [
+            f"![Image](data:image/png;base64,{picture._image_to_base64(picture.get_image(doc, idx))})"
+            for idx, picture in enumerate(doc.pictures)
+        ]
+        markdown_content = extract_base64_images_from_tables(extract_base64_images(doc.export_to_markdown(), img_strs))
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
@@ -66,18 +71,18 @@ class DoclingLoader(BaseReader):
         ]
 
 
-def extract_base64_images(markdown_text):
+def extract_base64_images(markdown_text: str, img_strs: List[str] = None):
     """
     Extract base64 encoded images from Markdown text.
     """
-    pattern = r"(!\[.*?\]\(data:image/[^;]+;base64,[^\)]+\))"
-    markdown_text = re.sub(pattern, f"<{NODE_CONTENT_TYPE_FIGURE}>\\1</{NODE_CONTENT_TYPE_FIGURE}>", markdown_text)
-
+    for image_str in img_strs:
+        # Replace the base64 image string with a placeholder
+        markdown_text = markdown_text.replace(image_str, f"<figure>{image_str}</figure>")
     return markdown_text
 
 
 # Do the same for tables
-def extract_base64_images_from_tables(markdown_text):
+def extract_base64_images_from_tables(markdown_text: str):
     """
     Extract base64 encoded images from Markdown tables.
     """

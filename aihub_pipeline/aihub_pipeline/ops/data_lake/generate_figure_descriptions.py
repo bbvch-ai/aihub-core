@@ -10,19 +10,19 @@ from llama_index.core.prompts import RichPromptTemplate
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
-from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
+from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 
 @op(code_version="v1")
 def generate_figure_descriptions(
     context: OpExecutionContext,
-    doc_with_figures: DocumentWithFigureInfo,
+    ref_doc: RefDocDocument,
     language_model: ResourceParam[LLM],
     data_lake_file_system: ResourceParam[AbstractFileSystem],
-) -> DocumentWithFigureInfo:
+) -> RefDocDocument:
     """Injects image Markdown tags into the document content by replacing HTML figure tags."""
 
-    soup = BeautifulSoup(doc_with_figures.text_resource.text, "html.parser")
+    soup = BeautifulSoup(ref_doc.text_resource.text, "html.parser")
     figure_tags = soup.find_all(NODE_CONTENT_TYPE_FIGURE)
     for i, figure_tag in enumerate(figure_tags):
         # 3000 characters of surrounding text, 1500 before and 1500 after the figure tag
@@ -44,9 +44,9 @@ def generate_figure_descriptions(
         markdown_figure = f"![{figure_description}]({figure_path})"
         figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
 
-    doc_with_figures.text_resource.text = html.unescape(str(soup))
+    ref_doc.text_resource.text = html.unescape(str(soup))
 
-    return doc_with_figures
+    return ref_doc
 
 
 def generate_description(
