@@ -85,7 +85,6 @@ jobs:
           HEAD_BRANCH: ${{ github.ref_name }}
           BASE_BRANCH: main
           TITLE: "[WIP] ${{ steps.branch_parser.outputs.base }}(${{ steps.branch_parser.outputs.scope }}): Work in progress by ${{ github.actor }}"
-          BODY: "This draft PR was automatically created from branch **${{ github.ref_name }}**."
         run: |
           if gh pr view "${HEAD_BRANCH}" --repo "${REPO}" &>/dev/null; then
             echo "A pull request for branch '${HEAD_BRANCH}' already exists."
@@ -98,5 +97,4 @@ jobs:
             --base "${BASE_BRANCH}" \
             --head "${HEAD_BRANCH}" \
             --title "${TITLE}" \
-            --body "${BODY}" \
             --draft
