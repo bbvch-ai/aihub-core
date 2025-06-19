@@ -1,9 +1,13 @@
 import json
 from typing import Any, ClassVar, Dict, List, Optional
 
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.callbacks import TokenCountingHandler
+from llama_index.core.llms import LLM
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.llm.Message import Message
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
@@ -72,3 +76,27 @@ class LLMEvent(SemanticEvent):
                 }
 
         return {k: v for k, v in attributes.items() if v is not None}
+
+    @classmethod
+    def from_chat_response(
+        cls, input_messages: List[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: AgentConfig
+    ) -> "LLMEvent":
+        handlers = llm.callback_manager.handlers
+        token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)
+        if token_count_handler:
+            token_count_prompt = token_count_handler.prompt_llm_token_count
+            token_count_completion = token_count_handler.completion_llm_token_count
+        else:
+            token_count_prompt = 0
+            token_count_completion = 0
+
+        return LLMEvent(
+            input_messages=[Message.from_llama_index(msg) for msg in input_messages],
+            output_messages=[Message.from_llama_index(output_message)],
+            invocation_parameters=agent_config.llm.model_dump(),
+            chat_model_name=agent_config.llm.name,
+            provider=agent_config.llm.__class__.__name__,
+            token_count_prompt=token_count_prompt,
+            token_count_completion=token_count_completion,
+            token_count_total=token_count_prompt + token_count_completion,
+        )
