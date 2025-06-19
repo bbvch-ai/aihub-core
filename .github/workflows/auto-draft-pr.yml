@@ -1,12 +1,13 @@
 name: Auto Draft PR for New Branch
+
 on:
-  create:
-    branches: [ '*' ]
-    tags: [ ]
+  create
+
 jobs:
-  create-draft-pr:
+  create_draft_pr:
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
-    if: startsWith(github.ref_type, 'branch')
+
     steps:
       - name: Generate GitHub App Token
         id: generate_token
@@ -15,17 +16,48 @@ jobs:
           app-id: ${{ secrets.REGISTRY_AUTH_APP_ID }}
           private-key: ${{ secrets.REGISTRY_AUTH_APP_PRIVATE_KEY }}
 
-      - name: Create draft PR with GitHub CLI
+      - name: Validate branch name and extract parts
+        id: branch_parser
         run: |
-          gh auth login --with-token <<< "${{ steps.generate_token.outputs.token }}"
-          if gh pr view ${{ github.ref_name }} --repo ${{ github.repository }} > /dev/null 2>&1; then
-            echo "PR already exists for this branch"
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          # Regex to ensure the branch name is in the 'base/scope' format.
+          # It must contain exactly one '/' and have non-empty parts.
+          if [[ ! "$BRANCH_NAME" =~ ^([^/]+)/([^/]+)$ ]]; then
+            echo "Error: Branch name '${BRANCH_NAME}' does not follow the required 'base/scope' format."
+            exit 1
+          fi
+
+          # Use shell parameter expansion to extract the parts. It's efficient and safe.
+          BASE_PART="${BRANCH_NAME%/*}"
+          SCOPE_PART="${BRANCH_NAME#*/}"
+
+          # Set the extracted parts as outputs for the next step.
+          echo "base=${BASE_PART}" >> $GITHUB_OUTPUT
+          echo "scope=${SCOPE_PART}" >> $GITHUB_OUTPUT
+
+          echo "Branch validated: base='${BASE_PART}', scope='${SCOPE_PART}'"
+
+      - name: Create Draft PR
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+          BASE_BRANCH: main
+          TITLE: "[WIP] ${{ steps.branch_parser.outputs.base }}(${{ steps.branch_parser.outputs.scope }}): Work in progress by ${{ github.actor }}"
+          BODY: "This draft PR was automatically created from branch **${{ github.ref_name }}**."
+        run: |
+          # First, check if a pull request for this branch already exists.
+          if gh pr view "${HEAD_BRANCH}" --repo "${REPO}" &>/dev/null; then
+            echo "A pull request for branch '${HEAD_BRANCH}' already exists."
             exit 0
           fi
+
+          echo "Creating draft PR with title: ${TITLE}"
           gh pr create \
-            --repo ${{ github.repository }} \
-            --base main \
-            --head ${{ github.ref_name }} \
-            --title "[WIP] ${{ github.ref_name }}" \
-            --body "This draft PR was automatically created from branch ${{ github.ref_name }}." \
+            --repo "${REPO}" \
+            --base "${BASE_BRANCH}" \
+            --head "${HEAD_BRANCH}" \
+            --title "${TITLE}" \
+            --body "${BODY}" \
             --draft
