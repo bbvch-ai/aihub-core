@@ -5,9 +5,6 @@ from os.path import join, dirname, abspath, isdir
 import nest_asyncio
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
@@ -41,6 +38,9 @@ from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
+
+
+load_dotenv()
 
 enable_logging()
 nest_asyncio.apply()

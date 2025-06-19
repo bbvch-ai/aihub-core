@@ -1,6 +1,7 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
-from typing import Optional
 
 
 class ResourceParameter(BaseModel):

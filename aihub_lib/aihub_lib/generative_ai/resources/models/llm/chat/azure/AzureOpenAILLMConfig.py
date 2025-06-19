@@ -46,7 +46,6 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
 
     completion_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand completion tokens.")]
 
-
     # Keeping Field() explicitly for default_factory
     default_parameter: Annotated[
         AzureOpenAIParameter,

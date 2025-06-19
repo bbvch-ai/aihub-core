@@ -1,7 +1,5 @@
 from typing import Literal, Optional
 
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AsyncAzureOpenAI
 from pydantic import Field
 from typing_extensions import Annotated
 
@@ -48,4 +46,3 @@ class AzureOpenaiImageModelConfig(ImageModelConfig, AzureOpenaiResourceConfig):
             description="Default parameters for the Azure image model.",
         ),
     ] = AzureImageModelParameter()
-
