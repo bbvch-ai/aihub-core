@@ -5,10 +5,12 @@ on:
 
 jobs:
   create_draft_pr:
+    # This job only runs for branch creation events, not tags.
     if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Generate a temporary GitHub token.
       - name: Generate GitHub App Token
         id: generate_token
         uses: actions/create-github-app-token@v1
@@ -16,28 +18,66 @@ jobs:
           app-id: ${{ secrets.REGISTRY_AUTH_APP_ID }}
           private-key: ${{ secrets.REGISTRY_AUTH_APP_PRIVATE_KEY }}
 
-      - name: Validate branch name and extract parts
+      # Step 2: Validate branch name and parse the scope based on an allowed list.
+      - name: Validate branch name and parse scope
         id: branch_parser
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
           
-          # Regex to ensure the branch name is in the 'base/scope' format.
-          # It must contain exactly one '/' and have non-empty parts.
+          # First, validate the basic 'base/scope' structure.
           if [[ ! "$BRANCH_NAME" =~ ^([^/]+)/([^/]+)$ ]]; then
             echo "Error: Branch name '${BRANCH_NAME}' does not follow the required 'base/scope' format."
             exit 1
           fi
 
-          # Use shell parameter expansion to extract the parts. It's efficient and safe.
+          # Extract the base part (e.g., 'feat') and the full scope part (e.g., 'ci-cd-auto-release').
           BASE_PART="${BRANCH_NAME%/*}"
-          SCOPE_PART="${BRANCH_NAME#*/}"
+          FULL_SCOPE_PART="${BRANCH_NAME#*/}"
 
-          # Set the extracted parts as outputs for the next step.
+          # Define the list of allowed scopes.
+          # The script will check if the full scope part *starts with* any of these values.
+          ALLOWED_SCOPES=(
+              "aihub"
+              "iac"
+              "ci-cd"
+              "agent-custom"
+              "agent-xp"
+              "avatar"
+              "bots"
+              "chat-xp"
+              "chat-backend"
+              "debt"
+              "dagster"
+              "confidence"
+              "deploy"
+              "ui"
+              "guards"
+              "rag"
+              "local"
+              "tracing"
+              "workflows"
+              "micro"
+          )
+
+          # Default to '...' if no match is found.
+          FOUND_SCOPE="..."
+          # Loop through the allowed scopes to find a match.
+          # Note: If any scopes were prefixes of others (e.g., 'agent' and 'agent-xp'),
+          # you would sort this list by length, descending, to find the most specific match first.
+          for scope in "${ALLOWED_SCOPES[@]}"; do
+              if [[ "$FULL_SCOPE_PART" == "$scope"* ]]; then
+                  FOUND_SCOPE="$scope"
+                  break # Match found, no need to check further.
+              fi
+          done
+
+          # Set the final base and scope as outputs for the next step.
           echo "base=${BASE_PART}" >> $GITHUB_OUTPUT
-          echo "scope=${SCOPE_PART}" >> $GITHUB_OUTPUT
+          echo "scope=${FOUND_SCOPE}" >> $GITHUB_OUTPUT
 
-          echo "Branch validated: base='${BASE_PART}', scope='${SCOPE_PART}'"
+          echo "Branch validated: base='${BASE_PART}', scope='${FOUND_SCOPE}' (from full scope '${FULL_SCOPE_PART}')"
 
+      # Step 3: Create the draft Pull Request using the GitHub CLI.
       - name: Create Draft PR
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -47,7 +87,6 @@ jobs:
           TITLE: "[WIP] ${{ steps.branch_parser.outputs.base }}(${{ steps.branch_parser.outputs.scope }}): Work in progress by ${{ github.actor }}"
           BODY: "This draft PR was automatically created from branch **${{ github.ref_name }}**."
         run: |
-          # First, check if a pull request for this branch already exists.
           if gh pr view "${HEAD_BRANCH}" --repo "${REPO}" &>/dev/null; then
             echo "A pull request for branch '${HEAD_BRANCH}' already exists."
             exit 0
