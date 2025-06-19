@@ -24,54 +24,45 @@ jobs:
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
           
-          # First, validate the basic 'base/scope' structure.
           if [[ ! "$BRANCH_NAME" =~ ^([^/]+)/([^/]+)$ ]]; then
             echo "Error: Branch name '${BRANCH_NAME}' does not follow the required 'base/scope' format."
             exit 1
           fi
 
-          # Extract the base part (e.g., 'feat') and the full scope part (e.g., 'ci-cd-auto-release').
           BASE_PART="${BRANCH_NAME%/*}"
           FULL_SCOPE_PART="${BRANCH_NAME#*/}"
 
-          # Define the list of allowed scopes.
-          # The script will check if the full scope part *starts with* any of these values.
           ALLOWED_SCOPES=(
-              "aihub"
-              "iac"
-              "ci-cd"
-              "agent-custom"
-              "agent-xp"
-              "avatar"
-              "bots"
-              "chat-xp"
-              "chat-backend"
-              "debt"
-              "dagster"
-              "confidence"
-              "deploy"
-              "ui"
-              "guards"
-              "rag"
-              "local"
-              "tracing"
-              "workflows"
-              "micro"
+            "agent-custom"
+            "chat-backend"
+            "confidence"
+            "workflows"
+            "agent-xp"
+            "chat-xp"
+            "dagster"
+            "tracing"
+            "avatar"
+            "deploy"
+            "guards"
+            "aihub"
+            "ci-cd"
+            "local"
+            "micro"
+            "bots"
+            "debt"
+            "rag"
+            "iac"
+            "ui"
           )
 
-          # Default to '...' if no match is found.
           FOUND_SCOPE="..."
-          # Loop through the allowed scopes to find a match.
-          # Note: If any scopes were prefixes of others (e.g., 'agent' and 'agent-xp'),
-          # you would sort this list by length, descending, to find the most specific match first.
           for scope in "${ALLOWED_SCOPES[@]}"; do
               if [[ "$FULL_SCOPE_PART" == "$scope"* ]]; then
                   FOUND_SCOPE="$scope"
-                  break # Match found, no need to check further.
+                  break
               fi
           done
 
-          # Set the final base and scope as outputs for the next step.
           echo "base=${BASE_PART}" >> $GITHUB_OUTPUT
           echo "scope=${FOUND_SCOPE}" >> $GITHUB_OUTPUT
 
