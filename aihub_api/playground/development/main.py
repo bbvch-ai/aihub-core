@@ -3,6 +3,10 @@ import os
 from os.path import join, dirname, abspath, isdir
 
 import nest_asyncio
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
