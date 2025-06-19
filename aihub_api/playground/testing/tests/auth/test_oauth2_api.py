@@ -19,7 +19,7 @@ from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
 )
 
 # Constants for the tests
-USER_ENDPOINT = "/api/v1/users/me"
+USER_ENDPOINT = "/token/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
 

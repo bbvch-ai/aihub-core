@@ -5,12 +5,12 @@ from mongoengine import connect, disconnect
 
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
-TOKEN_BASE = "/api/v1/tokens"
+TOKEN_BASE = "/token/v1/tokens"
 DEFAULT_USER_ID = "1234567890"
 
 
@@ -27,7 +27,7 @@ def mongodb():
 def api_client(mongodb):
     """Create test client with ApiTokenController mounted."""
     runner = ApiTestRunner()
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
     with TestClient(runner.get_app(), raise_server_exceptions=True) as client:
         yield client

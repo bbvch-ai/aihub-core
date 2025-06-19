@@ -18,8 +18,8 @@ class TokenController(Controller):
     description = LocaleString(en="Manage API Tokens")
     icon = "solar:password-bold"
 
-    def __init__(self, route: str = "/tokens", auth: AuthHandler | None = None, is_admin_only=False):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, auth: AuthHandler, route: str = "/tokens", is_admin_only=False):
+        super().__init__(auth, route, is_admin_only=is_admin_only)
 
     def create_token(self, route: str = "/") -> "TokenController":
         @self.router.post(

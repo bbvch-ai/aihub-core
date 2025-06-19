@@ -2,13 +2,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
 from mongoengine import DoesNotExist
 
-from aihub_api.auth.identity.api.ApiTokenUserInformationProvider import ApiTokenUserInformationProvider
-from aihub_api.auth.identity.azure.AzureUserInformationProvider import AzureUserInformationProvider
-from aihub_api.auth.identity.development.DevUserInformationProvider import DevUserInformationProvider
-from aihub_api.auth.identity.MultiStrategyUserInformationProvider import MultiStrategyUserInformationProvider
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
@@ -23,7 +20,7 @@ class UserService:
     ### Why UserService?
     By separating user logic from controllers, the code remains organized and testable.
     `UserService`:
-    - Uses `AzureUserInformationProvider` to fetch user details by OID.
+    - Uses `AzureIdentityProvider` to fetch user details by OID.
     - Converts `AuthenticatedUser` objects into `UserDTO`s for consistent responses.
 
     ### Methods
@@ -31,19 +28,13 @@ class UserService:
     - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID), useful for building responses that include user details.
     """
 
-    user_information_provider = MultiStrategyUserInformationProvider(
-        DevUserInformationProvider(),
-        AzureUserInformationProvider(),
-        ApiTokenUserInformationProvider(),
-    )
-
     @staticmethod
-    async def get_logged_in_user(user: AuthenticatedUser) -> MyUserDTO:
+    async def get_logged_in_user(user: AuthenticatedUser, identity_provider: IdentityProvider) -> MyUserDTO:
         """
         Convert the `AuthenticatedUser` (provided by the auth layer) into a MyUserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
-        await UserService.get_user_by_oid(user.oid)  # Ensures that the UserEntity exists and is up to date.
+        await UserService.get_user_by_oid(user.oid, identity_provider)  # Ensures that the UserEntity exists and is up to date.
         user_entity = UserEntity.by_oid(user.oid)
 
         dashboard_data = user_entity.dashboard.to_mongo()
@@ -60,7 +51,7 @@ class UserService:
         )
 
     @staticmethod
-    async def get_user_by_oid(user_oid: str) -> UserDTO:
+    async def get_user_by_oid(user_oid: str, identity_provider: IdentityProvider) -> UserDTO:
         """
         Retrieve user info by OID (id, name, email, profile_image) as a UserDTO.
         It first checks a db (UserEntity). If recent and essential data is present,
@@ -82,7 +73,7 @@ class UserService:
         except DoesNotExist:
             pass
 
-        user_identity = await UserService.user_information_provider.get_user_info_by_oid(user_oid)
+        user_identity = await identity_provider.get_user_identity_by_oid(user_oid)
         UserEntity.ensure_user_exists(
             oid=user_oid,
             name=user_identity.name,
@@ -109,14 +100,14 @@ class UserService:
         return None
 
     @staticmethod
-    async def update_user_dashboard(user: AuthenticatedUser, dashboard_dto: DashboardDTO) -> None:
+    async def update_user_dashboard(user: AuthenticatedUser, dashboard_dto: DashboardDTO, identity_provider: IdentityProvider) -> None:
         """
         Updates or creates the dashboard settings for the given authenticated user.
         """
         try:
             user_entity = UserEntity.by_oid(user.oid)
         except DoesNotExist:
-            user_identity = await UserService.user_information_provider.get_user_info_by_oid(user.oid)
+            user_identity = await identity_provider.get_user_identity_by_oid(user.oid)
             user_entity = UserEntity.ensure_user_exists(
                 oid=user.oid,
                 name=user_identity.name,

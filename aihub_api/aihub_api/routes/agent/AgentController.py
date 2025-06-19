@@ -63,8 +63,8 @@ class AgentController(Controller):
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
 
-    def __init__(self, route: str = "/agents", auth: AuthHandler | None = None, is_admin_only=True):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, auth: AuthHandler, route: str = "/agents", is_admin_only=True):
+        super().__init__(auth, route, is_admin_only=is_admin_only)
 
     def get_agents(self, route: str = "/") -> "AgentController":
         @self.router.get(route, tags=self.tags)

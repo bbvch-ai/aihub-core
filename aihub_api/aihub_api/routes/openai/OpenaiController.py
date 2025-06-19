@@ -62,8 +62,8 @@ class OpenaiController(Controller):
 
     def __init__(
         self,
+        auth: AuthHandler,
         route: str = "/openai",
-        auth: AuthHandler | None = None,
         is_admin_only=False,
         embedding_models: List[EmbeddingLLMConfig] = None,
         chat_models: List[ChatLLMConfig] = None,
@@ -71,7 +71,7 @@ class OpenaiController(Controller):
         stt_models: List[AzureOpenaiSTTConfig] = None,
         tts_models: List[AzureOpenaiTTSConfig] = None,
     ):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+        super().__init__(auth, route, is_admin_only=is_admin_only)
         self.embedding_models = embedding_models or []
         self.chat_models = chat_models or []
         self.image_models = image_models or []

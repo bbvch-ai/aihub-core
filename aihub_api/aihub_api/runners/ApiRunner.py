@@ -35,7 +35,7 @@ class ApiRunner(Runner):
 
     ### Usage
     ```python
-    runner = ApiRunner(api_path="/api/v1", title="My API", debug=True)
+    runner = ApiRunner(api_path="/token/v1", title="My API", debug=True)
     runner.mount(UserController(), ProductController())  # Mount controllers
     runner.mount_frontend("path/to/frontend/dist")  # Optional: serve frontend
     app = runner.get_app()  # Get the FastAPI instance
@@ -46,7 +46,7 @@ class ApiRunner(Runner):
 
     def __init__(
         self,
-        api_path: str = "/api/v1",
+        api_path: str = "/token/v1",
         title: str = "AI Hub",
         description: str = "AI Hub Backend",
         origins: Optional[List[str]] = None,

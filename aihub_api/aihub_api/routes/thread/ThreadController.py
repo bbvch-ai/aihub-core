@@ -69,8 +69,8 @@ class ThreadController(Controller):
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
-    def __init__(self, route: str = "/threads", auth: AuthHandler | None = None, is_admin_only=True):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, auth: AuthHandler, route: str = "/threads", is_admin_only=True):
+        super().__init__(auth, route, is_admin_only=is_admin_only)
 
     def get_user_threads(self, route: str = "/") -> "ThreadController":
         @self.router.get(route, tags=self.tags)

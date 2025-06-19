@@ -3,10 +3,9 @@ import logging
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
-from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +27,11 @@ class TokenAuthHandler(BearerAuthHandler):
 
     async def __call__(
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
-    ) -> AuthenticatedUser:
+    ) -> UserIdentity:
         token_str = bearer_token.credentials
         return await self.authenticate_token(token_str)
 
-    async def authenticate_token(self, token_str: str) -> AuthenticatedUser:
+    async def authenticate_token(self, token_str: str) -> UserIdentity:
         """
         Authenticates a user using a bearer token string directly.
         Used for WebSocket authentication.
@@ -46,10 +45,4 @@ class TokenAuthHandler(BearerAuthHandler):
             logger.warning(f"Token authentication failed: {e}")
             raise HTTPException(status_code=401, detail=str(e))
 
-        user = UserEntity.by_oid(access_token.user_oid)
-        return AuthenticatedUser(
-            name=user.name,
-            preferred_username=user.email,
-            oid=user.id,
-            roles=user.roles,
-        )
+        return await self._identity_provider.get_user_identity_by_oid(access_token.user_oid)

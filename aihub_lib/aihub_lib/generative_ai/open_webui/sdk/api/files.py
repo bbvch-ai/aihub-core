@@ -45,7 +45,7 @@ class FilesClient(BaseClient):
         process: bool = True,
     ) -> FileModelResponse:
         """Upload a file to OpenWebUI storage"""
-        url = self._get_url("/api/v1/files/")
+        url = self._get_url("/token/v1/files/")
         headers = self._get_headers()
         # Remove Content-Type from headers as it will be set by the form
         if "Content-Type" in headers:
@@ -85,28 +85,28 @@ class FilesClient(BaseClient):
     async def list_files(self, include_content: bool = True) -> List[FileModelResponse]:
         """List all files accessible to the authenticated user"""
         params = {"content": "true" if include_content else "false"}
-        response = await self.get("/api/v1/files/", params=params)
+        response = await self.get("/token/v1/files/", params=params)
         return [FileModelResponse.model_validate(file) for file in response.json()]
 
     async def delete_all_files(self) -> Dict[str, Any]:
         """Delete all files (admin only)"""
-        response = await self.delete("/api/v1/files/all")
+        response = await self.delete("/token/v1/files/all")
         return response.json()
 
     async def get_file(self, file_id: str) -> FileModel:
         """Get file metadata and information by ID"""
-        response = await self.get(f"/api/v1/files/{file_id}")
+        response = await self.get(f"/token/v1/files/{file_id}")
         return FileModel.model_validate(response.json())
 
     async def get_file_data_content(self, file_id: str) -> str:
         """Get the text content of a file by ID"""
-        response = await self.get(f"/api/v1/files/{file_id}/data/content")
+        response = await self.get(f"/token/v1/files/{file_id}/data/content")
         return response.json().get("content", "")
 
     async def update_file_content(self, file_id: str, content: str) -> Dict[str, Any]:
         """Update the text content of a file by ID"""
         form_data = ContentForm(content=content)
-        response = await self.post(f"/api/v1/files/{file_id}/data/content/update", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/files/{file_id}/data/content/update", json_data=form_data.model_dump())
         return response.json()
 
     async def get_file_content(
@@ -118,7 +118,7 @@ class FilesClient(BaseClient):
         Returns bytes if output_path is None, otherwise saves to file and returns None
         """
         params = {"attachment": "true" if as_attachment else "false"}
-        url = self._get_url(f"/api/v1/files/{file_id}/content")
+        url = self._get_url(f"/token/v1/files/{file_id}/content")
         headers = self._get_headers()
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -135,7 +135,7 @@ class FilesClient(BaseClient):
 
     async def get_html_content(self, file_id: str) -> bytes:
         """Get HTML content of a file by ID"""
-        url = self._get_url(f"/api/v1/files/{file_id}/content/html")
+        url = self._get_url(f"/token/v1/files/{file_id}/content/html")
         headers = self._get_headers()
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -147,10 +147,10 @@ class FilesClient(BaseClient):
         """Process a file with optional content override"""
         form_data = ProcessFileForm(file_id=file_id, content=content)
         # This endpoint is not directly exposed in the router, but is used internally
-        response = await self.post("/api/v1/retrieval/process", json_data=form_data.model_dump())
+        response = await self.post("/token/v1/retrieval/process", json_data=form_data.model_dump())
         return response.json()
 
     async def delete_file(self, file_id: str) -> Dict[str, Any]:
         """Delete a file by ID"""
-        response = await self.delete(f"/api/v1/files/{file_id}")
+        response = await self.delete(f"/token/v1/files/{file_id}")
         return response.json()

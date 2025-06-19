@@ -5,14 +5,14 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class NoAuthConfig(BaseSettings):
+class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
     """
     Configuration for the no-auth scenario, which provides a static user profile
     without requiring any actual authentication.
 
     ### Why This Config?
     In development or testing environments, you might not have a fully configured
-    authentication system. `NoAuthConfig` allows you to proceed without authentication
+    authentication system. `DangerousDevelopmentOnlyAuthConfig` allows you to proceed without authentication
     by supplying a fake user identity, ensuring your code can run and be tested even
     before the authentication integration is complete.
     """

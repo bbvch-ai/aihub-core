@@ -41,8 +41,8 @@ class UserController(Controller):
     description = LocaleString(en="Manage own user")
     icon = "solar:password-bold"
 
-    def __init__(self, route: str = "/users", auth: AuthHandler | None = None, is_admin_only=False):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, auth: AuthHandler, route: str = "/users", is_admin_only=False):
+        super().__init__(auth, route, is_admin_only=is_admin_only)
 
     def get_my_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route, tags=self.tags)

@@ -29,7 +29,7 @@ class BotRunner(Runner):
 
     ### Usage
     ```python
-    runner = BotRunner(api_path="/api/v1", title="My Bot Service", debug=True, conversation_ttl_days=30)
+    runner = BotRunner(api_path="/token/v1", title="My Bot Service", debug=True, conversation_ttl_days=30)
     runner.mount(BotController())  # Mount bot controllers
     app = runner.get_app()  # Get the FastAPI instance
     ```
@@ -39,7 +39,7 @@ class BotRunner(Runner):
 
     def __init__(
         self,
-        api_path: str = "/api/v1",
+        api_path: str = "/token/v1",
         title: str = "AI Hub Bot Service",
         description: str = "AI Hub Bots",
         origins: Optional[List[str]] = None,

@@ -6,7 +6,7 @@ from httpx import AsyncClient, ASGITransport
 
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
@@ -17,7 +17,7 @@ COMPLETIONS_ENDPOINT = "/openai/chat/completions"
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler()
     controller = (
         OpenaiController(auth=auth)
         .get_models_with_assistants()

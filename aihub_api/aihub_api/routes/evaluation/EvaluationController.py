@@ -45,12 +45,12 @@ class EvaluationController(Controller):
 
     def __init__(
         self,
+        auth: AuthHandler,
         judge: ChatLLMConfig,
         route: str = "/evaluations",
-        auth: Optional[AuthHandler] = None,
         is_admin_only: bool = True,
     ):
-        super().__init__(route, auth=auth, is_admin_only=is_admin_only)
+        super().__init__(auth, route, is_admin_only=is_admin_only)
         self.judge = judge
 
     def create_dataset(self, route: str = "/datasets") -> "EvaluationController":

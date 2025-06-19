@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.routes.health.HealthController import HealthController
 
-BASE_ENDPOINT = "/api/v1/health"
+BASE_ENDPOINT = "/token/v1/health"
 EXPECTED_STATUS = "ok"
 
 

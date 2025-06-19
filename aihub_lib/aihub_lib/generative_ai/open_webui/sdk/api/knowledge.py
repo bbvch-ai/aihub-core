@@ -50,12 +50,12 @@ class KnowledgeClient(BaseClient):
 
     async def get_knowledge_bases(self) -> List[KnowledgeUserResponse]:
         """Get all knowledge bases the user has read access to"""
-        response = await self.get("/api/v1/knowledge/")
+        response = await self.get("/token/v1/knowledge/")
         return [KnowledgeUserResponse.model_validate(kb) for kb in response.json()]
 
     async def get_writable_knowledge_bases(self) -> List[KnowledgeUserResponse]:
         """Get all knowledge bases the user has write access to"""
-        response = await self.get("/api/v1/knowledge/list")
+        response = await self.get("/token/v1/knowledge/list")
         return [KnowledgeUserResponse.model_validate(kb) for kb in response.json()]
 
     async def create_knowledge(
@@ -79,12 +79,12 @@ class KnowledgeClient(BaseClient):
             access_control=access_control.model_dump() if hasattr(access_control, "model_dump") else access_control,
         )
 
-        response = await self.post("/api/v1/knowledge/create", json_data=form_data.model_dump())
+        response = await self.post("/token/v1/knowledge/create", json_data=form_data.model_dump())
         return KnowledgeResponse.model_validate(response.json())
 
     async def get_knowledge(self, knowledge_id: str) -> KnowledgeFilesResponse:
         """Get detailed information about a knowledge base by ID"""
-        response = await self.get(f"/api/v1/knowledge/{knowledge_id}")
+        response = await self.get(f"/token/v1/knowledge/{knowledge_id}")
         return KnowledgeFilesResponse.model_validate(response.json())
 
     async def update_knowledge(
@@ -118,42 +118,42 @@ class KnowledgeClient(BaseClient):
             access_control=access_control.model_dump() if hasattr(access_control, "model_dump") else access_control,
         )
 
-        response = await self.post(f"/api/v1/knowledge/{knowledge_id}/update", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/knowledge/{knowledge_id}/update", json_data=form_data.model_dump())
         return KnowledgeFilesResponse.model_validate(response.json())
 
     async def add_file_to_knowledge(self, knowledge_id: str, file_id: str) -> KnowledgeFilesResponse:
         """Add a file to a knowledge base"""
         form_data = KnowledgeFileIdForm(file_id=file_id)
-        response = await self.post(f"/api/v1/knowledge/{knowledge_id}/file/add", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/knowledge/{knowledge_id}/file/add", json_data=form_data.model_dump())
         return KnowledgeFilesResponse.model_validate(response.json())
 
     async def update_file_in_knowledge(self, knowledge_id: str, file_id: str) -> KnowledgeFilesResponse:
         """Update a file in a knowledge base (reprocess the file)"""
         form_data = KnowledgeFileIdForm(file_id=file_id)
-        response = await self.post(f"/api/v1/knowledge/{knowledge_id}/file/update", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/knowledge/{knowledge_id}/file/update", json_data=form_data.model_dump())
         return KnowledgeFilesResponse.model_validate(response.json())
 
     async def remove_file_from_knowledge(self, knowledge_id: str, file_id: str) -> KnowledgeFilesResponse:
         """Remove a file from a knowledge base"""
         form_data = KnowledgeFileIdForm(file_id=file_id)
-        response = await self.post(f"/api/v1/knowledge/{knowledge_id}/file/remove", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/knowledge/{knowledge_id}/file/remove", json_data=form_data.model_dump())
         return KnowledgeFilesResponse.model_validate(response.json())
 
     async def delete_knowledge(self, knowledge_id: str) -> bool:
         """Delete a knowledge base by ID"""
-        response = await self.delete(f"/api/v1/knowledge/{knowledge_id}/delete")
+        response = await self.delete(f"/token/v1/knowledge/{knowledge_id}/delete")
         return response.json()
 
     async def reset_knowledge(self, knowledge_id: str) -> KnowledgeResponse:
         """Reset a knowledge base (removes all files from the knowledge base)"""
-        response = await self.post(f"/api/v1/knowledge/{knowledge_id}/reset")
+        response = await self.post(f"/token/v1/knowledge/{knowledge_id}/reset")
         return KnowledgeResponse.model_validate(response.json())
 
     async def add_files_batch(self, knowledge_id: str, file_ids: List[str]) -> KnowledgeFilesResponse:
         """Add multiple files to a knowledge base in a single operation"""
         form_data = [KnowledgeFileIdForm(file_id=file_id) for file_id in file_ids]
         response = await self.post(
-            f"/api/v1/knowledge/{knowledge_id}/files/batch/add", json_data=[form.model_dump() for form in form_data]
+            f"/token/v1/knowledge/{knowledge_id}/files/batch/add", json_data=[form.model_dump() for form in form_data]
         )
         return KnowledgeFilesResponse.model_validate(response.json())
 

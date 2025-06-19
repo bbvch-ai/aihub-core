@@ -15,7 +15,6 @@ def get_azure_cli_user_info():
     try:
         oid_process = subprocess.run(
             ["az", "ad", "signed-in-user", "show", "--query", "id", "-o", "tsv"],
-            shell=True,
             capture_output=True,
             text=True,
             check=True,
@@ -24,7 +23,6 @@ def get_azure_cli_user_info():
 
         name_process = subprocess.run(
             ["az", "ad", "signed-in-user", "show", "--query", "displayName", "-o", "tsv"],
-            shell=True,
             capture_output=True,
             text=True,
             check=True,
@@ -33,7 +31,6 @@ def get_azure_cli_user_info():
 
         preferred_username_process = subprocess.run(
             ["az", "ad", "signed-in-user", "show", "--query", "userPrincipalName", "-o", "tsv"],
-            shell=True,
             capture_output=True,
             text=True,
             check=True,

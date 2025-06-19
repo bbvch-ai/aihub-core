@@ -4,11 +4,11 @@ from typing import List
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class TokenAndOauth2Handler(AuthHandler):
         request: Request,
         bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
         oauth_token: str | None = Security(OAuth2Config().OPTIONAL_SCHEMA),
-    ) -> AuthenticatedUser:
+    ) -> UserIdentity:
         errors = []
 
         for oauth2_handler in self.oauth2_handlers:
@@ -46,7 +46,7 @@ class TokenAndOauth2Handler(AuthHandler):
         logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
         raise HTTPException(status_code=401, detail=" | ".join(errors))
 
-    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+    async def authenticate_token(self, token: str) -> UserIdentity:
         """
         Attempts to authenticate with the provided token using both OAuth2 and Bearer strategies.
         """

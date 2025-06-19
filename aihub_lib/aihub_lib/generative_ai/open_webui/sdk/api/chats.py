@@ -60,12 +60,12 @@ class ChatsClient(BaseClient):
     async def get_chats_list(self, page: Optional[int] = None) -> List[ChatTitleIdResponse]:
         """Get list of all user's chats with basic information"""
         params = {"page": page} if page is not None else None
-        response = await self.get("/api/v1/chats/", params=params)
+        response = await self.get("/token/v1/chats/", params=params)
         return [ChatTitleIdResponse.model_validate(chat) for chat in response.json()]
 
     async def delete_all_chats(self) -> bool:
         """Delete all user's chats"""
-        response = await self.delete("/api/v1/chats/")
+        response = await self.delete("/token/v1/chats/")
         return response.json()
 
     async def create_chat(
@@ -82,7 +82,7 @@ class ChatsClient(BaseClient):
         form_data = ChatForm(chat=chat_data)
 
         # Send the request
-        response = await self.post("/api/v1/chats/new", json_data=form_data.model_dump())
+        response = await self.post("/token/v1/chats/new", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
     async def import_chat(
@@ -95,7 +95,7 @@ class ChatsClient(BaseClient):
         """Import an existing chat with full data structure"""
         form_data = ChatImportForm(chat=chat_data, meta=meta, pinned=pinned, folder_id=folder_id)
 
-        response = await self.post("/api/v1/chats/import", json_data=form_data.model_dump())
+        response = await self.post("/token/v1/chats/import", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
     async def search_chats(self, query: str, page: Optional[int] = None) -> List[ChatTitleIdResponse]:
@@ -104,71 +104,71 @@ class ChatsClient(BaseClient):
         if page is not None:
             params["page"] = page
 
-        response = await self.get("/api/v1/chats/search", params=params)
+        response = await self.get("/token/v1/chats/search", params=params)
         return [ChatTitleIdResponse.model_validate(chat) for chat in response.json()]
 
     async def get_chats_by_folder(self, folder_id: str) -> List[ChatResponse]:
         """Get all chats in a specific folder"""
-        response = await self.get(f"/api/v1/chats/folder/{folder_id}")
+        response = await self.get(f"/token/v1/chats/folder/{folder_id}")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
     async def get_pinned_chats(self) -> List[ChatResponse]:
         """Get all pinned chats"""
-        response = await self.get("/api/v1/chats/pinned")
+        response = await self.get("/token/v1/chats/pinned")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
     async def get_all_chats(self) -> List[ChatResponse]:
         """Get all chats with full details"""
-        response = await self.get("/api/v1/chats/all")
+        response = await self.get("/token/v1/chats/all")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
     async def get_archived_chats(self) -> List[ChatResponse]:
         """Get all archived chats"""
-        response = await self.get("/api/v1/chats/all/archived")
+        response = await self.get("/token/v1/chats/all/archived")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
     async def get_all_tags(self) -> List[TagModel]:
         """Get all tags created by the user"""
-        response = await self.get("/api/v1/chats/all/tags")
+        response = await self.get("/token/v1/chats/all/tags")
         return [TagModel.model_validate(tag) for tag in response.json()]
 
     async def get_archived_chat_list(self, skip: int = 0, limit: int = 50) -> List[ChatTitleIdResponse]:
         """Get list of archived chats with pagination"""
         params = {"skip": skip, "limit": limit}
-        response = await self.get("/api/v1/chats/archived", params=params)
+        response = await self.get("/token/v1/chats/archived", params=params)
         return [ChatTitleIdResponse.model_validate(chat) for chat in response.json()]
 
     async def archive_all_chats(self) -> bool:
         """Archive all chats"""
-        response = await self.post("/api/v1/chats/archive/all")
+        response = await self.post("/token/v1/chats/archive/all")
         return response.json()
 
     async def get_shared_chat(self, share_id: str) -> ChatResponse:
         """Get a shared chat by its share ID"""
-        response = await self.get(f"/api/v1/chats/share/{share_id}")
+        response = await self.get(f"/token/v1/chats/share/{share_id}")
         return ChatResponse.model_validate(response.json())
 
     async def get_chats_by_tag(self, tag_name: str, skip: int = 0, limit: int = 50) -> List[ChatTitleIdResponse]:
         """Get chats filtered by tag name"""
         form_data = TagFilterForm(name=tag_name, skip=skip, limit=limit)
-        response = await self.post("/api/v1/chats/tags", json_data=form_data.model_dump())
+        response = await self.post("/token/v1/chats/tags", json_data=form_data.model_dump())
         return [ChatTitleIdResponse.model_validate(chat) for chat in response.json()]
 
     async def get_chat(self, chat_id: str) -> ChatResponse:
         """Get a chat by its ID"""
-        response = await self.get(f"/api/v1/chats/{chat_id}")
+        response = await self.get(f"/token/v1/chats/{chat_id}")
         return ChatResponse.model_validate(response.json())
 
     async def update_chat(self, chat_id: str, chat_data: ChatData) -> ChatResponse:
         """Update a chat's data"""
         form_data = ChatForm(chat=chat_data)
-        response = await self.post(f"/api/v1/chats/{chat_id}", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/chats/{chat_id}", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
     async def update_message(self, chat_id: str, message_id: str, content: str) -> ChatResponse:
         """Update a specific message in a chat"""
         form_data = MessageForm(content=content)
-        response = await self.post(f"/api/v1/chats/{chat_id}/messages/{message_id}", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/chats/{chat_id}/messages/{message_id}", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
     async def send_message_event(
@@ -177,77 +177,77 @@ class ChatsClient(BaseClient):
         """Send an event for a specific message"""
         form_data = EventForm(type=event_type, data=event_data)
         response = await self.post(
-            f"/api/v1/chats/{chat_id}/messages/{message_id}/event", json_data=form_data.model_dump()
+            f"/token/v1/chats/{chat_id}/messages/{message_id}/event", json_data=form_data.model_dump()
         )
         return response.json()
 
     async def delete_chat(self, chat_id: str) -> bool:
         """Delete a chat by its ID"""
-        response = await self.delete(f"/api/v1/chats/{chat_id}")
+        response = await self.delete(f"/token/v1/chats/{chat_id}")
         return response.json()
 
     async def get_pinned_status(self, chat_id: str) -> bool:
         """Check if a chat is pinned"""
-        response = await self.get(f"/api/v1/chats/{chat_id}/pinned")
+        response = await self.get(f"/token/v1/chats/{chat_id}/pinned")
         return response.json()
 
     async def toggle_pin(self, chat_id: str) -> ChatResponse:
         """Toggle the pinned status of a chat"""
-        response = await self.post(f"/api/v1/chats/{chat_id}/pin")
+        response = await self.post(f"/token/v1/chats/{chat_id}/pin")
         return ChatResponse.model_validate(response.json())
 
     async def clone_chat(self, chat_id: str, title: Optional[str] = None) -> ChatResponse:
         """Clone an existing chat with optional new title"""
         form_data = CloneForm(title=title)
-        response = await self.post(f"/api/v1/chats/{chat_id}/clone", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/chats/{chat_id}/clone", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
     async def clone_shared_chat(self, share_id: str) -> ChatResponse:
         """Clone a shared chat into the user's account"""
-        response = await self.post(f"/api/v1/chats/{share_id}/clone/shared")
+        response = await self.post(f"/token/v1/chats/{share_id}/clone/shared")
         return ChatResponse.model_validate(response.json())
 
     async def toggle_archive(self, chat_id: str) -> ChatResponse:
         """Toggle the archived status of a chat"""
-        response = await self.post(f"/api/v1/chats/{chat_id}/archive")
+        response = await self.post(f"/token/v1/chats/{chat_id}/archive")
         return ChatResponse.model_validate(response.json())
 
     async def share_chat(self, chat_id: str) -> ChatResponse:
         """Create or update a shareable version of a chat"""
-        response = await self.post(f"/api/v1/chats/{chat_id}/share")
+        response = await self.post(f"/token/v1/chats/{chat_id}/share")
         return ChatResponse.model_validate(response.json())
 
     async def unshare_chat(self, chat_id: str) -> bool:
         """Stop sharing a previously shared chat"""
-        response = await self.delete(f"/api/v1/chats/{chat_id}/share")
+        response = await self.delete(f"/token/v1/chats/{chat_id}/share")
         return response.json()
 
     async def update_chat_folder(self, chat_id: str, folder_id: Optional[str] = None) -> ChatResponse:
         """Move a chat to a different folder"""
         form_data = ChatFolderIdForm(folder_id=folder_id)
-        response = await self.post(f"/api/v1/chats/{chat_id}/folder", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/chats/{chat_id}/folder", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
     async def get_chat_tags(self, chat_id: str) -> List[TagModel]:
         """Get all tags associated with a chat"""
-        response = await self.get(f"/api/v1/chats/{chat_id}/tags")
+        response = await self.get(f"/token/v1/chats/{chat_id}/tags")
         return [TagModel.model_validate(tag) for tag in response.json()]
 
     async def add_tag(self, chat_id: str, tag_name: str) -> List[TagModel]:
         """Add a tag to a chat"""
         form_data = TagForm(name=tag_name)
-        response = await self.post(f"/api/v1/chats/{chat_id}/tags", json_data=form_data.model_dump())
+        response = await self.post(f"/token/v1/chats/{chat_id}/tags", json_data=form_data.model_dump())
         return [TagModel.model_validate(tag) for tag in response.json()]
 
     async def remove_tag(self, chat_id: str, tag_name: str) -> List[TagModel]:
         """Remove a tag from a chat"""
         form_data = TagForm(name=tag_name)
-        response = await self.delete(f"/api/v1/chats/{chat_id}/tags", json_data=form_data.model_dump())
+        response = await self.delete(f"/token/v1/chats/{chat_id}/tags", json_data=form_data.model_dump())
         return [TagModel.model_validate(tag) for tag in response.json()]
 
     async def remove_all_tags(self, chat_id: str) -> bool:
         """Remove all tags from a chat"""
-        response = await self.delete(f"/api/v1/chats/{chat_id}/tags/all")
+        response = await self.delete(f"/token/v1/chats/{chat_id}/tags/all")
         return response.json()
 
     def create_chat_data(

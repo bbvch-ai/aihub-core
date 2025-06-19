@@ -4,7 +4,7 @@ from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from pydantic import BaseModel, Field
 
-from aihub_api.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 
 class UserDTO(BaseModel):

@@ -5,11 +5,11 @@ from mongoengine import connect, disconnect
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 
-USER_ENDPOINT = "/api/v1/users/me"
+USER_ENDPOINT = "/token/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 
@@ -25,7 +25,7 @@ def mongo_db():
 def api_client():
     """Create a test client for the API with UserController mounted."""
     runner = ApiTestRunner()
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(UserController(auth=auth).get_my_user())
     return TestClient(runner.get_app())
 

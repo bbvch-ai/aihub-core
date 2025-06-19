@@ -2,7 +2,7 @@ import pytest
 from fastapi import Request
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Scenario Declaration ---
@@ -43,11 +43,11 @@ def setup_no_auth_config(monkeypatch, name, email, oid, roles):
 # --- When Steps ---
 
 
-@when("I invoke the NoAuthHandler with a dummy request")
+@when("I invoke the DangerousDevelopmentOnlyAuthHandler with a dummy request")
 @async_test
 async def invoke_no_auth_handler(dummy_request: Request, result_user: dict) -> None:
-    """Invoke the NoAuthHandler and store the returned user."""
-    handler = NoAuthHandler()
+    """Invoke the DangerousDevelopmentOnlyAuthHandler and store the returned user."""
+    handler = DangerousDevelopmentOnlyAuthHandler()
     user = await handler(dummy_request)
     result_user["user"] = user
 
@@ -59,7 +59,7 @@ async def invoke_no_auth_handler(dummy_request: Request, result_user: dict) -> N
 def check_name(result_user: dict, expected_name: str) -> None:
     """Check that the returned user has the expected name."""
     user = result_user.get("user")
-    assert user is not None, "No user returned by NoAuthHandler"
+    assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
     assert user.name == expected_name, f'Expected user name "{expected_name}", got "{user.name}"'
 
 
@@ -67,7 +67,7 @@ def check_name(result_user: dict, expected_name: str) -> None:
 def check_preferred_username(result_user: dict, expected_email: str) -> None:
     """Check that the returned user has the expected preferred username."""
     user = result_user.get("user")
-    assert user is not None, "No user returned by NoAuthHandler"
+    assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
     assert (
         user.preferred_username == expected_email
     ), f'Expected preferred username "{expected_email}", got "{user.preferred_username}"'
@@ -77,7 +77,7 @@ def check_preferred_username(result_user: dict, expected_email: str) -> None:
 def check_oid(result_user: dict, expected_oid: str) -> None:
     """Check that the returned user has the expected oid."""
     user = result_user.get("user")
-    assert user is not None, "No user returned by NoAuthHandler"
+    assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
     assert user.oid == expected_oid, f'Expected oid "{expected_oid}", got "{user.oid}"'
 
 
@@ -85,5 +85,5 @@ def check_oid(result_user: dict, expected_oid: str) -> None:
 def check_roles(result_user: dict, role1: str, role2: str) -> None:
     """Check that the returned user has the expected roles."""
     user = result_user.get("user")
-    assert user is not None, "No user returned by NoAuthHandler"
+    assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
     assert set(user.roles) == {role1, role2}, f"Expected roles {role1}, {role2}, got {user.roles}"

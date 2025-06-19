@@ -44,8 +44,8 @@ class EventController(Controller):
     description = LocaleString(en="Inspect events in the system")
     icon = "mdi:apache-kafka"
 
-    def __init__(self, route: str = "/events", auth: AuthHandler | None = None, is_admin_only=True):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, auth: AuthHandler, route: str = "/events", is_admin_only=True):
+        super().__init__(auth, route, is_admin_only=is_admin_only)
 
     def get_events(self, path: str = "/") -> "EventController":
         @self.router.get(path, tags=self.tags)
