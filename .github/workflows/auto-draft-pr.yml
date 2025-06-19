@@ -15,29 +15,17 @@ jobs:
           app-id: ${{ secrets.REGISTRY_AUTH_APP_ID }}
           private-key: ${{ secrets.REGISTRY_AUTH_APP_PRIVATE_KEY }}
 
-      - name: Determine base branch from new branch name
-        id: prepare
-        run: |
-          BRANCH_NAME="${GITHUB_REF_NAME}"
-          if [[ "$BRANCH_NAME" == *"/"* ]]; then
-            BASE_BRANCH="${BRANCH_NAME%%/*}"   # everything before the first '/'
-          else
-            BASE_BRANCH="main"
-          fi
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_OUTPUT
-
       - name: Create draft PR with GitHub CLI
         run: |
           gh auth login --with-token <<< "${{ steps.generate_token.outputs.token }}"
-          if gh pr view ${{ steps.prepare.outputs.BRANCH_NAME }} --repo ${{ github.repository }} > /dev/null 2>&1; then
+          if gh pr view ${{ github.ref_name }} --repo ${{ github.repository }} > /dev/null 2>&1; then
             echo "PR already exists for this branch"
             exit 0
           fi
           gh pr create \
             --repo ${{ github.repository }} \
-            --base ${{ steps.prepare.outputs.BASE_BRANCH }} \
-            --head ${{ steps.prepare.outputs.BRANCH_NAME }} \
+            --base main \
+            --head ${{ github.ref_name }} \
             --title "[WIP] ${{ github.ref_name }}" \
-            --body "This draft PR was automatically created from branch ${{ steps.prepare.outputs.BRANCH_NAME }}.\nBase branch: ${{ steps.prepare.outputs.BASE_BRANCH }}" \
+            --body "This draft PR was automatically created from branch ${{ github.ref_name }}." \
             --draft
