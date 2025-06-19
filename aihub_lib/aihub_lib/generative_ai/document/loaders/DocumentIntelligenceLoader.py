@@ -62,11 +62,11 @@ class DocumentIntelligenceLoader(BaseReader):
             ]
 
         operation_id = poller.details["operation_id"]
-        figures_dir = create_data_lake_figures_folder_name(file, figures_directory_name)
 
         soup = BeautifulSoup(text, "html.parser")
         figure_tags = soup.find_all("figure")
 
+        figures_dir = create_data_lake_figures_folder_name(file, figures_directory_name)
         for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
             response = self.document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",

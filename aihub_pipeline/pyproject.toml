@@ -19,6 +19,8 @@ llama-index-readers-file = "^0.4.1"
 matplotlib = "^3.9.2"
 adlfs = "^2024.12.0"
 lxml = "^5.4.0"
+notebook = "^7.4.3"
+docling = "^2.37.0"
 
 [tool.poetry.dependencies.aihub_lib]
 path = "../aihub_lib"
