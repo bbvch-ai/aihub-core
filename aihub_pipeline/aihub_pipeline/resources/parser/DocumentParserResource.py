@@ -1,10 +1,9 @@
-from dagster import ConfigurableResource
-from llama_index.core.readers.base import BaseReader
-from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
-
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
+from dagster import ConfigurableResource
+from llama_index.core.readers.base import BaseReader
+from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 
 
 class DocumentParserResource(ConfigurableResource):
@@ -44,7 +43,7 @@ class DocumentParserResource(ConfigurableResource):
     """
 
     _readers_map = {
-        DoclingLoader: ["pdf"],
+        DoclingLoader: ["asciidoc"],
         DocumentIntelligenceLoader: [
             "jpg",
             "jpeg",
@@ -52,6 +51,7 @@ class DocumentParserResource(ConfigurableResource):
             "bmp",
             "tiff",
             "heif",
+            "pdf",
             "docx",
             "xlsx",
             "pptx",

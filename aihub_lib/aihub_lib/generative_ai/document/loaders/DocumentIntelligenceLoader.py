@@ -16,9 +16,9 @@ from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.Doc
     DocumentIntelligenceAccess,
 )
 from aihub_lib.persistence.rag.vectors.node_metadata import (
-    NUMBER_OF_PAGES,
-    NODE_CONTENT_TYPE_TABLE,
     NODE_CONTENT_TYPE_FIGURE,
+    NODE_CONTENT_TYPE_TABLE,
+    NUMBER_OF_PAGES,
 )
 
 PAGE_BREAK = "<!-- PageBreak -->"
