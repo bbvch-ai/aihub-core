@@ -26,5 +26,6 @@ def parse_document_from_data_lake(
     document = documents[0]
 
     ref_doc = RefDocDocument(**document.model_dump())
+    ref_doc.add_metadata_from_data_lake_file(data_lake_file)
     ref_doc.metadata.update({"document_parser": reader_name})
     return ref_doc
