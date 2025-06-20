@@ -8,6 +8,9 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
+from aihub_lib.auth.identity.MultiStrategyIdentityProvider.MultiStrategyIdentityProvider import \
+    MultiStrategyTokenIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 logger = logging.getLogger(__name__)
@@ -19,6 +22,17 @@ class TokenAndOauth2Handler(AuthHandler):
     def __init__(self, bearer_handlers: List[BearerAuthHandler], oauth2_handlers: List[OAuth2AuthHandler]):
         self.bearer_handlers = bearer_handlers
         self.oauth2_handlers = oauth2_handlers
+
+    @property
+    def identity_provider(self) -> IdentityProvider:
+        identity_providers = []
+        for oauth2_handler in self.oauth2_handlers:
+            identity_providers.append(oauth2_handler.identity_provider)
+        for bearer_handler in self.bearer_handlers:
+            identity_providers.append(bearer_handler.identity_provider)
+        return MultiStrategyTokenIdentityProvider(
+            *identity_providers
+        )
 
     async def __call__(
         self,
