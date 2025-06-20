@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_iac"
-version = "v0.191.0"
+version = "v0.196.0"
 description = "iac core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
