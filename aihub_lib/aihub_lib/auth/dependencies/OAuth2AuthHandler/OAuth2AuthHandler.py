@@ -64,7 +64,7 @@ class OAuth2AuthHandler(AuthHandler):
 
         try:
             logger.debug("JWKS cache miss, fetching from %s", OAuth2Config().JWKS_URL)
-            async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=10.0)) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0, read=10.0)) as client:
                 jwks_response = await client.get(OAuth2Config().JWKS_URL)
                 jwks_response.raise_for_status()
                 jwks = jwks_response.json()
@@ -139,10 +139,13 @@ class OAuth2AuthHandler(AuthHandler):
             raise HTTPException(status_code=401, detail="Token expired")
         except jwt.InvalidTokenError as e:
             logger.warning("Invalid token: %s", str(e))
-            raise HTTPException(status_code=401, detail="Token verification failed")
+            raise HTTPException(status_code=401, detail="Token verification failed: Invalid token")
         except httpx.HTTPError:
             logger.exception("HTTP error during token validation")
             raise HTTPException(status_code=500, detail="Authentication service unavailable")
+        except ValueError as e:
+            logger.exception("Unexpected error during token validation: %s", str(e))
+            raise HTTPException(status_code=500, detail="User identity error")
         except Exception as e:
             logger.exception("Unexpected error during token validation: %s", str(e))
             logger.exception("Unexpected error validating token")

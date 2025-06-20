@@ -1,17 +1,17 @@
 import base64
 import json
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock
 
-import httpx
 import jwt
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
-from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
+    DangerousDevelopmentOnlyIdentityProvider
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
-    DummyResponse,
     base64url_encode,
     generate_rsa_keypair,
     public_key_to_jwk,
@@ -37,39 +37,6 @@ def rsa_keys() -> dict:
 def fake_jwks_response(rsa_keys: dict) -> dict:
     """Return a fake JWKS response using the generated public key."""
     return {"keys": [rsa_keys["jwk"]]}
-
-
-@pytest.fixture(autouse=True)
-def monkeypatch_httpx(monkeypatch, fake_jwks_response: dict) -> None:
-    """Monkeypatch httpx.AsyncClient.get to return a fake JWKS response."""
-
-    async def fake_get(self, url, **kwargs):
-        return DummyResponse(fake_jwks_response, status_code=200)
-
-    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
-
-
-class MockTokenResponse:
-    def __init__(self):
-        self.token = "mock-access-token"
-
-
-class MockCredential:
-    def __init__(self):
-        self._token = MockTokenResponse()
-
-    def get_token(self, scope):
-        # Return a token object that has a token attribute, not a coroutine
-        return self._token
-
-
-@pytest.fixture(autouse=True)
-def mock_azure_credential(monkeypatch):
-    """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
-    monkeypatch.setattr(
-        "aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService.AsyncDefaultAzureCredential",
-        lambda: MockCredential(),
-    )
 
 
 @pytest.fixture
@@ -99,10 +66,17 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
     parsers.parse('a valid OAuth2 token is generated with name "{name}", email "{email}", and roles "{roles}"'),
     target_fixture="generated_token",
 )
-def generated_token(oauth2_config: OAuth2Config, rsa_keys: dict, name: str, email: str, roles: str) -> str:
+def generated_token(monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, name: str, email: str, roles: str) -> str:
     """Generate a valid OAuth2 JWT with the specified claims."""
     now = datetime.now(timezone.utc)
     exp = now + timedelta(minutes=10)
+
+    monkeypatch.setenv("NAME", name)
+    monkeypatch.setenv("EMAIL", email)
+    monkeypatch.setenv("OID", "test-oid")
+    monkeypatch.setenv("ROLES", roles)
+
+
     payload = {
         "name": name,
         "preferred_username": email,
@@ -128,11 +102,17 @@ def given_invalid_token(oauth2_context: dict, token: str) -> None:
     target_fixture="generated_token",
 )
 def generated_expired_token(
-    oauth2_config: OAuth2Config, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
+    monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
 ) -> str:
     """Generate an expired OAuth2 JWT and store it in the context."""
     now = datetime.now(timezone.utc)
     exp = now - timedelta(minutes=10)
+
+    monkeypatch.setenv("NAME", name)
+    monkeypatch.setenv("EMAIL", email)
+    monkeypatch.setenv("OID", "test-oid")
+    monkeypatch.setenv("ROLES", roles)
+
     payload = {
         "name": name,
         "preferred_username": email,
@@ -184,30 +164,45 @@ def store_generated_token(oauth2_context: dict, generated_token: str) -> None:
 
 @when("I invoke the OAuth2AuthHandler with the token")
 @async_test
-async def invoke_oauth2_handler(oauth2_context: dict) -> None:
+async def invoke_oauth2_handler(monkeypatch, oauth2_context: dict, fake_jwks_response: dict) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and store the authenticated user."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+
+    # Mock the method responsible for the external call
+    monkeypatch.setattr(
+        OAuth2AuthHandler,
+        "_get_jwks",
+        AsyncMock(return_value=fake_jwks_response)
+    )
+
 
     token = oauth2_context.get("token")
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler(identity_provider=AzureIdentityProvider())
+    handler = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     user = await handler(token_bytes)
     oauth2_context["user"] = user
 
 
 @when("I invoke the OAuth2AuthHandler with the token expecting error")
 @async_test
-async def invoke_oauth2_handler_expect_error(oauth2_context: dict) -> None:
+async def invoke_oauth2_handler_expect_error(monkeypatch, oauth2_context: dict, fake_jwks_response: dict) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and capture the error."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+
+    # Mock the method responsible for the external call
+    monkeypatch.setattr(
+        OAuth2AuthHandler,
+        "_get_jwks",
+        AsyncMock(return_value=fake_jwks_response)
+    )
 
     token = oauth2_context.get("token")
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler(identity_provider=AzureIdentityProvider())
+    handler = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     try:
         await handler(token_bytes)
         pytest.fail("OAuth2AuthHandler did not raise an exception")

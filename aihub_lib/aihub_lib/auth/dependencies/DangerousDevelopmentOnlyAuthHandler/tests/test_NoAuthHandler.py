@@ -38,11 +38,10 @@ def result_user() -> dict:
 @given(parsers.parse('a NoAuth configuration with name "{name}", email "{email}", oid "{oid}", and roles "{roles}"'))
 def setup_no_auth_config(monkeypatch, name, email, oid, roles):
     """Set up the NoAuth configuration using environment variables."""
-    roles_list = [role.strip() for role in roles.split(",")]
     monkeypatch.setenv("NAME", name)
     monkeypatch.setenv("EMAIL", email)
     monkeypatch.setenv("OID", oid)
-    monkeypatch.setenv("ROLES", f"{roles_list}".replace("'", '"'))
+    monkeypatch.setenv("ROLES", roles)
 
 
 # --- When Steps ---
@@ -89,4 +88,5 @@ def check_roles(result_user: dict, role1: str, role2: str) -> None:
     """Check that the returned user has the expected roles."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
+    print("Got roles", user.roles)
     assert set(user.roles) == {role1, role2}, f"Expected roles {role1}, {role2}, got {user.roles}"

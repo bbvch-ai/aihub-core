@@ -1,8 +1,7 @@
-import uuid
-from typing import List
+from typing import List, Annotated
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
 
 class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
@@ -23,14 +22,20 @@ class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
         description="The user's email (often used as a login or unique identifier).",
     )
     OID: str = Field(
-        ...,
+        "e07b0ebf-fd9f-485a-aa17-c1385d202f5b",
         description="A unique OID (Object ID) for the user. Defaults to a UUID.",
-        default_factory=lambda: str(uuid.uuid4()),
     )
-    ROLES: List[str] = Field(["AllAgents"], description="A list of roles this user possesses.")
+    ROLES: Annotated[List[str], NoDecode] = Field("AllAgents", description="A list of roles this user possesses.")
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @field_validator('ROLES', mode='before')
+    @classmethod
+    def decode_roles(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, list):
+            return v
+        return v.split(',')
