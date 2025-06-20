@@ -90,5 +90,5 @@ jobs:
             --base "${BASE_BRANCH}" \
             --head "${HEAD_BRANCH}" \
             --title "${TITLE}" \
-            --fill
+            --fill \
             --draft
