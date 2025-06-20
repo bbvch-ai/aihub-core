@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Annotated, Callable, Dict, List, Type
 
-from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
+from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import (
     AgentWorkRequestEvent,
     BaseEvent,
@@ -99,7 +99,6 @@ class ProcessDispatcher(BaseDispatcher):
 
         It verifies:
         - The run hasn't crashed.
-        - The step hasn't exceeded its max execution count.
         - All required input events are available in the needed quantities.
 
         Returns True if the step can execute, False otherwise.
@@ -114,23 +113,23 @@ class ProcessDispatcher(BaseDispatcher):
         events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[ProcessTopic, "Topic info for the current process."],
     ):
-        all_input_events, kwargs = await self._build_event_kwargs(trigger_event, step_method, events)
+        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, step_method, events)
 
         duplicated_run = await self.step_store.was_called_with_events(
-            topic.execution_context_id, step_method.__name__, all_input_events
+            topic.execution_context_id, step_name=step_method.__name__, events=events_and_kwargs.events
         )
         if duplicated_run:
             logger.debug(f"Skipping step '{step_method.__name__}' as it has already been called with the same events.")
             return
 
         await self.step_store.report_execution_context_with_events(
-            topic.execution_context_id, step_method.__name__, all_input_events
+            topic.execution_context_id, step_method.__name__, events_and_kwargs.events
         )
 
         process_instance = self.process()
 
         try:
-            result = await step_method(process_instance, **kwargs)
+            result = await step_method(process_instance, **events_and_kwargs.kwargs)
         except Exception as e:
             event = ProcessExceptionEvent(message=str(e))
             await self.publish_event(event, topic)
@@ -197,7 +196,7 @@ class ProcessDispatcher(BaseDispatcher):
     ):
         """
         Publishes a given event to the correct subject.
-        Uses the per-thread topic manager to form the right event subject and publishes via JSPublisher.
+        Uses the per-walkthrough topic manager to form the right event subject and publishes via JSPublish.
         """
         topic_manager = self.get_topic_manager_for_process_walkthrough(topic)
         subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)

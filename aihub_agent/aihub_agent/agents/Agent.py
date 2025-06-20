@@ -34,7 +34,7 @@ class Agent(DispatchableWorkflow):
     makes the agent inflexible to participate in other types of interactions.
     """
 
-    STEP_ANNOTATION = "_is_step"
+    STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
     STOP_ON_ERROR_ANNOTATION = "_stop_on_error"

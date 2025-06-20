@@ -7,6 +7,6 @@ Feature: Configured Agent
     When a the start event is sent
     Then a StartEvent is present
     Then "3" BeginEvent are present
-    Then "3" ProcessAEvent are present
+    Then "3" BoundedLoopAEvent are present
     Then a DecisionEvent is present
     Then a StopEvent is present

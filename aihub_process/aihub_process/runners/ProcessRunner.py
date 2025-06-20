@@ -157,7 +157,6 @@ class ProcessRunner:
         )
         await self.discovery_event_subscriber.start()
 
-        # Subscribe to control events
         self.work_event_subscriber = ProcessJSSubscriber.for_process_instance_work_events(
             self.nc,
             self.topic_manager,

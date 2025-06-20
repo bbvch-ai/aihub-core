@@ -8,7 +8,7 @@ class ProcessExceptionEvent(ProcessEvent):
     An event signaling that an exception or error has occurred during a process walkthrough.
 
     ### Why ProcessExceptionEvent?
-    In a complex process, errors might ocur either in event transformation or reported by participating entities.
+    In a complex process, errors might occur either in event transformation or reported by participating entities.
     The `ProcessExceptionEvent` provides a unified way to:
     - Halt or adjust the workflow’s control flow.
     - Communicate the error details to end-users or logging systems.

@@ -1,12 +1,12 @@
 import asyncio
 import inspect
 import logging
-from typing import Annotated, Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type
+from typing import Annotated, Awaitable, Callable, Dict, List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher
+from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -142,11 +142,11 @@ class AgentDispatcher(BaseDispatcher):
 
         It verifies:
         - The run hasn't crashed.
-        - The step hasn't exceeded its max execution count.
         - All required input events are available in the needed quantities.
 
         Returns True if the step can execute, False otherwise.
         """
+        # Must be first thing to be checked, as it ensures execution has not crashed
         if not await self._step_meets_basic_execution_requirements(step_method, events, topic):
             return False
 
@@ -166,10 +166,10 @@ class AgentDispatcher(BaseDispatcher):
         )
 
         if precondition_fn:
-            _, precondition_args = await self._build_method_kwargs(
+            precondition_events_and_kwargs = await self._build_method_kwargs(
                 trigger_event, precondition_fn, events, run_context, thread_context, topic
             )
-            is_ready = await precondition_fn(**precondition_args)
+            is_ready = await precondition_fn(**precondition_events_and_kwargs.kwargs)
             if not is_ready:
                 logger.debug(f"[{step_method.__name__}] Ready function returned False, skipping.")
                 return False
@@ -203,7 +203,7 @@ class AgentDispatcher(BaseDispatcher):
         if max_executions is not None:
             await self.step_store.increment_execution_count(topic.execution_context_id, step_method.__name__)
 
-        all_input_events, kwargs = await self._build_method_kwargs(
+        events_and_kwargs: EventsAndKwargs = await self._build_method_kwargs(
             trigger_event,
             step_method,
             events,
@@ -214,14 +214,14 @@ class AgentDispatcher(BaseDispatcher):
 
         # Ensure step is not executed twice with the exact same input events
         duplicated_run = await self.step_store.was_called_with_events(
-            topic.execution_context_id, step_method.__name__, all_input_events
+            topic.execution_context_id, step_method.__name__, events_and_kwargs.events
         )
         if duplicated_run:
             logger.debug(f"Skipping step '{step_method.__name__}' as it has already been called with the same events.")
             return
 
         await self.step_store.report_execution_context_with_events(
-            topic.execution_context_id, step_method.__name__, all_input_events
+            topic.execution_context_id, step_method.__name__, events_and_kwargs.events
         )
 
         # Instantiate the agent and run the step
@@ -232,9 +232,11 @@ class AgentDispatcher(BaseDispatcher):
         else:
             telemetry_headers = self._telemetry_header_cache[topic.run_id]
 
-        async with self.tracer.trace_step_start(telemetry_headers, topic, step_method, kwargs) as step_span:
+        async with self.tracer.trace_step_start(
+            telemetry_headers, topic, step_method, events_and_kwargs.kwargs
+        ) as step_span:
             try:
-                result = await step_method(agent_instance, **kwargs)
+                result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
                 await self.tracer.trace_step_error(step_span, e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
@@ -310,33 +312,33 @@ class AgentDispatcher(BaseDispatcher):
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
-    ) -> Tuple[List[ControlEvent], Dict[str, Any]]:
+    ) -> EventsAndKwargs:
         step_signature = inspect.signature(method)
-        all_input_events, kwargs = await self._build_event_kwargs(trigger_event, method, events)
+        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
 
         # Prepare arguments
         for param in step_signature.parameters.values():
             # Handle special configurations injected by agent_config.get_step_configs()
             if self.step_configs.get(param.annotation):
-                kwargs[param.name] = self.step_configs[param.annotation]
+                events_and_kwargs.kwargs[param.name] = self.step_configs[param.annotation]
                 continue
 
             # Handle AgentConfig if requested
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-                kwargs[param.name] = self.agent_config
+                events_and_kwargs.kwargs[param.name] = self.agent_config
                 continue
 
             # Handle RunContext / ThreadContext
             if param.annotation == RunContext:
-                kwargs[param.name] = run_context
+                events_and_kwargs.kwargs[param.name] = run_context
                 continue
             if param.annotation == ThreadContext:
-                kwargs[param.name] = thread_context
+                events_and_kwargs.kwargs[param.name] = thread_context
                 continue
 
             # Handle EventDisplayer
             if param.annotation == EventDisplayer:
-                kwargs[param.name] = EventDisplayer(
+                events_and_kwargs.kwargs[param.name] = EventDisplayer(
                     self.js_publisher,
                     topic_manager=self.get_topic_manager_for_thread(topic),
                 )
@@ -345,9 +347,9 @@ class AgentDispatcher(BaseDispatcher):
             # Handle LocaleHandler
             if param.annotation in [LocaleHandler, AgentLocaleHandler]:
                 locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
-                kwargs[param.name] = self.locale_handler.in_locale(locale)
+                events_and_kwargs.kwargs[param.name] = self.locale_handler.in_locale(locale)
 
-        return all_input_events, kwargs
+        return events_and_kwargs
 
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]

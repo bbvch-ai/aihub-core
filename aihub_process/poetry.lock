@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-agent"
-version = "v0.190.0"
+version = "v0.191.0"
 description = "agents core"
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -80,7 +80,7 @@ url = "../aihub_agent"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.190.0"
+version = "v0.191.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"

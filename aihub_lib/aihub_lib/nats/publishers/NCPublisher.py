@@ -34,7 +34,7 @@ class NCPublisher(AbstractPublisher):
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
         """
-        self._ensure_event_type_matches_subject(event, subject)
+        self._detect_and_log_subject_mismatch(event, subject)
 
         logger.debug(f"Publishing event {event.event_name} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)

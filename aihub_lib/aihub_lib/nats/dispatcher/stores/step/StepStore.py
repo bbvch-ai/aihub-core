@@ -42,8 +42,8 @@ class StepStore(StoreBase):
     - Default TTL and storage settings inherited from `StoreBase`.
 
     ### Example
-    If a step `my_step` can only execution 2 times, after executing once we call `increment_execution_count`.
-    If we try again, we first `get_execution_count` to ensure we're not over the limit.
+    If a step `my_step` can only execute 2 times, after executing once we call `increment_execution_count`.
+    If we try again, we first call `get_execution_count` to ensure we're not over the limit.
     """
 
     def __init__(self, redis: Redis):
@@ -60,9 +60,12 @@ class StepStore(StoreBase):
         def transform_to_bool(value):
             return value is not None and value.decode() == "true"
 
-        return await self.get_value(
+        is_crashed = await self.get_value(
             execution_context_id, "crashed", default_value=False, transform_func=transform_to_bool
         )
+        if is_crashed:
+            logger.debug(f"Execution context {execution_context_id} is crashed")
+        return is_crashed
 
     async def get_execution_count(self, execution_context_id: str, step_name: str) -> int:
         """Retrieves how many times a given step has executed."""

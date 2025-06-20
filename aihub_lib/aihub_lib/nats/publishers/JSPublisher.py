@@ -36,7 +36,7 @@ class JSPublisher(AbstractPublisher):
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
         """
-        self._ensure_event_type_matches_subject(event, subject)
+        self._detect_and_log_subject_mismatch(event, subject)
 
         logger.debug(f"Publishing event {event.event_name} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)

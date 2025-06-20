@@ -18,6 +18,6 @@ class Process(BaseProcessEntity):
         process_id: str
 
     class Out(BaseProcessEntity.Out):
-        """Does NOT further delegate the work, instead, acts like a sink, terinating the process."""
+        """Does NOT further delegate the work, instead, acts like a sink, terminating the process."""
 
         pass

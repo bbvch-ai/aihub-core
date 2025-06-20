@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from aihub_lib.nats.topics import ProcessTopic
 
 
-class PersistedAgentEventEntity(Document):
+class PersistedProcessEventEntity(Document):
     meta = {
         "collection": "process_events",
         "strict": False,

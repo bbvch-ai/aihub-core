@@ -30,7 +30,7 @@ class AgenticProcess(DispatchableWorkflow):
     different entities. Your main goal is simple:
     - Define what the inputs and outputs of your process are.
     - Divide your process into a series of work that must be done
-    - Decide for ech work what entity should do the work: An agent, a human or a program.
+    - Decide for each work what entity should do the work: An agent, a human or a program.
     - Delegate the work to the right entity
     - Wait for the delegated work to be completed, take the result, transform it, and delegate to the next entity.
     - Hence, through a series of work delegations, the process input (start) is transformed into the process output (end).

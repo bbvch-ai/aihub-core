@@ -6,7 +6,7 @@ from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 class ProcessDiscoveryResponseEvent(BaseEvent):
     """
-    A response event sent after an process discovery request, detailing an process's class, ID, configuration,
+    A response event sent after a process discovery request, detailing a process's class, ID, configuration,
     and work events that it expects to receive through API calls.
 
     ### Why ProcessDiscoveryResponseEvent?

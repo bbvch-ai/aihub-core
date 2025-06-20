@@ -236,7 +236,7 @@ class ThreadService:
         for run_data in aggregated_runs:
             display_id = run_data.get("display_id")
             if not display_id:
-                logger.warning(f"Skipping run with missing display_id: {run_data.get('execution_context_id')}")
+                logger.warning(f"Skipping run with missing display_id: {run_data.get('run_id')}")
                 continue
 
             # Get or create the intermediate aggregator for the display
@@ -259,12 +259,10 @@ class ThreadService:
                     display_agg.add_run_dto(run_stat_dto)
                 except Exception as e:
                     # Log validation or other errors during DTO creation
-                    logger.exception(
-                        f"Error creating RunStatistics DTO for run {run_data.get('execution_context_id')}: {e}"
-                    )
+                    logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
             else:
                 logger.warning(
-                    f"RunStatistics DTO skipped for run {run_data.get('execution_context_id')} because starting agent {start_agent_class}/{start_agent_id} could not be fetched."
+                    f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent {start_agent_class}/{start_agent_id} could not be fetched."
                 )
 
             # Collect unique identifiers of all agents participating in the run

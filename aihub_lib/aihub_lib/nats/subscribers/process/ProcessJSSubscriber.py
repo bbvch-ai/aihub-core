@@ -43,7 +43,7 @@ class ProcessJSSubscriber(JSSubscriber):
         queue_group: str,
         js: Optional[JetStreamContext] = None,
     ):
-        """Subscribe to all work events within a specific process instance."""
+        """Subscribe to all work request events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_request_events_within_process_instance()
         stream_name, stream_subject = topic_manager.get_stream()
 
@@ -67,7 +67,7 @@ class ProcessJSSubscriber(JSSubscriber):
         queue_group: str,
         js: Optional[JetStreamContext] = None,
     ):
-        """Subscribe to all control events within a specific process instance."""
+        """Subscribe to all events within a specific process instance."""
         subject = topic_manager.get_subject_for_everything_within_process_instance()
         stream_name, stream_subject = topic_manager.get_stream()
 

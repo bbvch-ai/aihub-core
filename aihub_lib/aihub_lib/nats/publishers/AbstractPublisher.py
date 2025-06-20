@@ -12,7 +12,7 @@ TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class AbstractPublisher(Generic[TEvent], abc.ABC):
-    def _ensure_event_type_matches_subject(self, event: TEvent, subject: str):
+    def _detect_and_log_subject_mismatch(self, event: TEvent, subject: str):
         if f".{AgentTopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
             logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
 

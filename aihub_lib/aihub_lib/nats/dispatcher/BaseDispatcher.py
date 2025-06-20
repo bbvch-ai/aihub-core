@@ -2,7 +2,8 @@ import abc
 import asyncio
 import inspect
 import logging
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_origin
+from dataclasses import dataclass
+from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -19,6 +20,16 @@ from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSi
 from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EventsAndKwargs:
+    """
+    Holds the step method input keyword arguments and the events mentioned in said kwargs
+    """
+
+    events: List[BaseEvent]
+    kwargs: Dict[str, Any]
 
 
 class BaseDispatcher(abc.ABC):
@@ -41,7 +52,7 @@ class BaseDispatcher(abc.ABC):
 
     Note that a dispatcher works in a completely distributed manner. Hence, the class itself does NOT hold any state.
     Why?
-    Well, event for the exact same workflow class and workflow instance, multiple dispatchers can exist.
+    Well, even for the exact same workflow class and workflow instance, multiple dispatchers can exist.
     JetStream will do load balancing and send each event to exactly one dispatcher. Hence, the dispatchers need
     to share state, even when they are hosted on different servers in different countries. This is why we always
     rely on JetStream or Redis for state and never on class or instance variables on the dispatcher itself.
@@ -83,7 +94,7 @@ class BaseDispatcher(abc.ABC):
     ):
         """
         This method is called each time an event is received by this workflow instance. Hence, this method
-        is potentially called A LOT, like, for some agents, hunderts of times per second.
+        is potentially called A LOT, like, for some agents, hundreds of times per second.
         The primary responsibility of this method is to handle special kinds of events, like StartEvent or StopEvent
         that mark setup or teardown of a run, and looping through all workflow methods, checking for each of them
         whether they can be executed given the current state of the run. If so, it triggers the execution of this
@@ -162,7 +173,6 @@ class BaseDispatcher(abc.ABC):
 
         It verifies:
         - The run hasn't crashed.
-        - The step hasn't exceeded its max execution count.
         - All required input events are available in the needed quantities.
 
         Returns True if the step can execute, False otherwise.
@@ -217,7 +227,7 @@ class BaseDispatcher(abc.ABC):
         trigger_event: Annotated[BaseEvent, "The event that caused this step to trigger."],
         method: Annotated[Callable, "The method to prepare the args for."],
         events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
-    ) -> Tuple[List[BaseEvent], Dict[str, Any]]:
+    ) -> EventsAndKwargs:
         kwargs: Dict[str, Any] = {}
         step_signature = inspect.signature(method)
         parameter_optional_map = getattr(method, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION, {})
@@ -243,7 +253,10 @@ class BaseDispatcher(abc.ABC):
             elif isinstance(event_value, BaseEvent) and event_value.is_control_event:
                 all_input_events.append(event_value)
 
-        return all_input_events, kwargs
+        return EventsAndKwargs(
+            events=all_input_events,
+            kwargs=kwargs,
+        )
 
     @staticmethod
     def _get_event_value(
@@ -264,7 +277,7 @@ class BaseDispatcher(abc.ABC):
         - If a list is required (but not fixed-size), returns all matching events.
         - If a single event is expected, returns the trigger event if it matches, else the latest matching event.
 
-        Returns None if no suitable event is found and the parameter is optional.
+        Returns None if no suitable event is found.
         """
         event_classes = getattr(step_method, DispatchableWorkflow.INPUT_EVENT_MAPPING_ANNOTATION, {}).get(
             param.name, set()

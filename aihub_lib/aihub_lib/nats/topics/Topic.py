@@ -39,7 +39,7 @@ class Topic(BaseModel, abc.ABC):
     def execution_context_id(self) -> str:
         """
         The execution context ID of a topic is usually the most narrow ID that groups events logically together.
-        For example, in Agents, the most narrow grouping is the execution_context_id. For Processes, it is the walkthrough_id.
+        For example, in Agents, the most narrow grouping is the run_id. For Processes, it is the walkthrough_id.
         """
         pass
 

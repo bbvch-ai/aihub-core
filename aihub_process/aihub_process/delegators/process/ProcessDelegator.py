@@ -21,12 +21,12 @@ class ProcessDelegator(AbstractEntityDelegator):
     empty.
     However, process can very well be triggered by the termination of another process, hence, the delegator
     finds all Process.In annotations and creates a nats subscription to these processes and their respective
-    ProcessStopEvent, translating them into AgentWorkEvents and publishing them into their own process topic.
+    ProcessStopEvent, translating them into ProcessWorkEvents and publishing them into their own process topic.
     Hence, the process delegator acts as a bridge between processes.
     Note that Process.In is only valid for a process start.
     Why?
     Because processes never explicitly delegate to another process, hence, there is never a specific
-    association between two different process walkthrough's. Hence, it is only valid that the complted
+    association between two different process walkthrough's. Hence, it is only valid that the completed
     walkthrough of one process triggers a fresh walkthrough of another, but never that one walkthrough
     is like a 'sub walkthrough' of another.
     """

@@ -43,7 +43,7 @@ class AgentJSSubscriber(JSSubscriber):
         queue_group: str,
         js: Optional[JetStreamContext] = None,
     ):
-        """Subscribe to all control events within a specific agent instance."""
+        """Subscribe to all events within a specific agent instance."""
         subject = topic_manager.get_subject_for_everything_within_agent_instance()
         stream_name, stream_subject = topic_manager.get_stream()
 

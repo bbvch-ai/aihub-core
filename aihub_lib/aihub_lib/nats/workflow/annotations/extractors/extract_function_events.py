@@ -2,7 +2,7 @@ import inspect
 from typing import Annotated, Callable, Dict, Optional, Set, Tuple, Type
 
 from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.workflow.annotations.extractors.extract_event_names import extract_event_classes
+from aihub_lib.nats.workflow.annotations.extractors.extract_event_classes import extract_event_classes
 from aihub_lib.nats.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 

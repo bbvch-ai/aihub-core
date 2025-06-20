@@ -16,7 +16,7 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
     As this work event is generated automatically by the agent delegator, you can't really add attributes to this
     class.
     The delegator will add the stop event type to the `agent_stop_event` field, making the information
-    from the agents stop event accessible for you to use in your agent.
+    from the agents stop event accessible for you to use in your process step.
     """
 
     agent_stop_event: Annotated[TEvent, Field(description="The stop event of the agent that completed the work.")]

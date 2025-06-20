@@ -6,7 +6,7 @@ from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig
 from playground.minimal_workflow.bounded_loop.events.BeginEvent import BeginEvent
 from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
-from playground.minimal_workflow.bounded_loop.events.ProcessAEvent import ProcessAEvent
+from playground.minimal_workflow.bounded_loop.events.BoundedLoopAEvent import BoundedLoopAEvent
 
 
 class BoundedLoopAgent(Agent):
@@ -17,16 +17,16 @@ class BoundedLoopAgent(Agent):
         return BeginEvent(count=0)
 
     @step()
-    async def process_a_step(self, event: BeginEvent) -> ProcessAEvent:
-        print("[SimpleAgent.process_a_step]")
-        return ProcessAEvent()
+    async def process_a_step(self, event: BeginEvent) -> BoundedLoopAEvent:
+        print("[BoundedLoopAgent.process_a_step]")
+        return BoundedLoopAEvent()
 
     @step()
     async def decision_step(
-        self, event: ProcessAEvent, agent_config: BoundedLoopAgentConfig, run_context: RunContext
+        self, event: BoundedLoopAEvent, agent_config: BoundedLoopAgentConfig, run_context: RunContext
     ) -> DecisionEvent | BeginEvent:
         loop_count = await run_context.get("loop_count")
-        print("[SimpleAgent.decision_step]", loop_count)
+        print("[BoundedLoopAgent.decision_step]", loop_count)
         if loop_count < agent_config.loop_max:
             await run_context.set("loop_count", loop_count + 1)
             return BeginEvent(count=loop_count + 1)

@@ -45,7 +45,7 @@ class DispatchableWorkflow(abc.ABC):
     def get_steps(cls) -> List[Callable]:
         """
         Returns all methods on this dispatchable workflow that are marked as steps.
-        A step is identified by the `_is_step` attribute set by the `@step` decorator.
+        A step is identified by the `STEP_ANNOTATION` attribute set by the `@step` or `@process_step` decorator.
         """
         return [
             method

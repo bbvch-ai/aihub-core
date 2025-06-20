@@ -1,8 +1,7 @@
-
 work_request_event:
-  name: "Work Request Event"
-  description: "Requests a piece of work from someone within the process"
+  name: "Evento di richiesta di lavoro"
+  description: "Richiede un lavoro a qualcuno all'interno del processo"
 
 work_event:
-  name: "Work Event"
-  description: "Reports work done by an entity involved in process"
+  name: "Evento di lavoro"
+  description: "Segnala il lavoro svolto da un'entità coinvolta nel processo"
