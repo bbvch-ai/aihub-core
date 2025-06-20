@@ -19,18 +19,6 @@ class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
     def __init__(self):
         self.config = DangerousDevelopmentOnlyAuthConfig()
 
-    async def get_user_info_by_oid(self, oid: str) -> UserIdentity:
-        if oid == self.config.OID:
-            return UserIdentity(
-                id=self.config.OID,
-                name=self.config.NAME,
-                email=self.config.EMAIL,
-                roles=self.config.ROLES,
-            )
-        raise ValueError(
-            f"DangerousDevelopmentOnlyIdentityProvider: oid '{oid}' does not match the configured dev oid '{self.config.OID}'."
-        )
-
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         if user_oid == self.config.OID:
             return UserIdentity(
