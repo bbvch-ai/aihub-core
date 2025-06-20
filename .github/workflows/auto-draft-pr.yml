@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Generate a temporary GitHub token.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Generate GitHub App Token
         id: generate_token
         uses: actions/create-github-app-token@v1
@@ -18,7 +22,6 @@ jobs:
           app-id: ${{ secrets.REGISTRY_AUTH_APP_ID }}
           private-key: ${{ secrets.REGISTRY_AUTH_APP_PRIVATE_KEY }}
 
-      # Step 2: Validate branch name and parse the scope based on an allowed list.
       - name: Validate branch name and parse scope
         id: branch_parser
         run: |
@@ -68,7 +71,6 @@ jobs:
 
           echo "Branch validated: base='${BASE_PART}', scope='${FOUND_SCOPE}' (from full scope '${FULL_SCOPE_PART}')"
 
-      # Step 3: Create the draft Pull Request using the GitHub CLI.
       - name: Create Draft PR
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -88,4 +90,5 @@ jobs:
             --base "${BASE_BRANCH}" \
             --head "${HEAD_BRANCH}" \
             --title "${TITLE}" \
+            --fill \
             --draft
