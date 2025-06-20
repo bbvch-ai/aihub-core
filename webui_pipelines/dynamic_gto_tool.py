@@ -132,7 +132,6 @@ class Tools:
                     )
                 return f"Validation Error: {error_msg}"
 
-            # Step 4: Transform to LCDM Hub format
             if __event_emitter__:
                 await __event_emitter__(
                     {
@@ -278,7 +277,7 @@ class Tools:
                     "keyId": field_name,
                     "sourceValue": str(source_value) if source_value is not None else "",
                     "targetValue": "",
-                    "manualValue": str(source_value) if source_value is not None else "",
+                    "manualValue": "",
                     "gtoId": gto_id,
                     "manuallyModified": False,
                     "released": False,
