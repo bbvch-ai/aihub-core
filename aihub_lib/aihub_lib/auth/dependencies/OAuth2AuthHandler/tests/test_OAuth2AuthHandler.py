@@ -8,8 +8,9 @@ import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
-    DangerousDevelopmentOnlyIdentityProvider
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     base64url_encode,
@@ -75,7 +76,6 @@ def generated_token(monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, na
     monkeypatch.setenv("EMAIL", email)
     monkeypatch.setenv("OID", "test-oid")
     monkeypatch.setenv("ROLES", roles)
-
 
     payload = {
         "name": name,
@@ -169,12 +169,7 @@ async def invoke_oauth2_handler(monkeypatch, oauth2_context: dict, fake_jwks_res
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 
     # Mock the method responsible for the external call
-    monkeypatch.setattr(
-        OAuth2AuthHandler,
-        "_get_jwks",
-        AsyncMock(return_value=fake_jwks_response)
-    )
-
+    monkeypatch.setattr(OAuth2AuthHandler, "_get_jwks", AsyncMock(return_value=fake_jwks_response))
 
     token = oauth2_context.get("token")
     if token is None:
@@ -192,11 +187,7 @@ async def invoke_oauth2_handler_expect_error(monkeypatch, oauth2_context: dict, 
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 
     # Mock the method responsible for the external call
-    monkeypatch.setattr(
-        OAuth2AuthHandler,
-        "_get_jwks",
-        AsyncMock(return_value=fake_jwks_response)
-    )
+    monkeypatch.setattr(OAuth2AuthHandler, "_get_jwks", AsyncMock(return_value=fake_jwks_response))
 
     token = oauth2_context.get("token")
     if token is None:

@@ -1,7 +1,7 @@
-from typing import List, Annotated
+from typing import Annotated, List
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
@@ -33,9 +33,9 @@ class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator('ROLES', mode='before')
+    @field_validator("ROLES", mode="before")
     @classmethod
     def decode_roles(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, list):
             return v
-        return v.split(',')
+        return v.split(",")
