@@ -69,13 +69,16 @@ class UserAssignedIdentity:
         self,
         account_name: str | None = None,
         resource_group: str | None = None,
-        role: ROLES = ROLES.STORAGE_BLOB_DATA_CONTRIBUTOR,
     ):
+        """
+        Roles needed for generating SAS tokens for Data Lake Storage, needed for giving temporary access to data.
+        """
         data_lake_account = storage.get_storage_account(
             account_name=account_name or DataLakeStorage.name(self.project_name, self.location_short_name),
             resource_group_name=resource_group or self.resource_group,
         )
-        self.assign_role_to_identity(role, data_lake_account.id, data_lake_account.name)
+        self.assign_role_to_identity(ROLES.STORAGE_BLOB_DATA_READER, data_lake_account.id, data_lake_account.name)
+        self.assign_role_to_identity(ROLES.STORAGE_BLOB_DELEGATOR, data_lake_account.id, data_lake_account.name)
 
     @property
     def client_id(self):
