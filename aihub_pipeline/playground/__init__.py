@@ -1,3 +1,5 @@
+from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
+
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -6,8 +8,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
     AzureOpenAIEmbeddingConfig,
     AzureOpenAIEmbeddingParameter,
 )
-from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
-
 from aihub_pipeline.assets.factories.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.observable_data_lake_factory import observable_data_lake_factory
@@ -21,7 +21,7 @@ from aihub_pipeline.resources.factory import (
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
+from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -58,7 +58,7 @@ defs = Definitions(
         **default_io_manager_azure_datalake_resources(
             container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
         ),
-        "document_parser": DocumentParserResource(),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(

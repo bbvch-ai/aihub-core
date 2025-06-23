@@ -19,7 +19,6 @@ class DoclingConfig(BaseSettings):
                 "image",
                 "pdf",
                 "asciidoc",
-                "md",
                 "csv",
                 "xlsx",
                 "xml_uspto",
