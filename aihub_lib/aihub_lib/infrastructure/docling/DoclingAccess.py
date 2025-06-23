@@ -18,12 +18,6 @@ class DoclingAccess:
 
     @classmethod
     def update_config_from_resource(cls, resource):
-        """
-        Update the configuration with values from a DoclingResource.
-
-        Args:
-            resource: A DoclingResource instance
-        """
         if cls._instance is None:
             cls._instance = cls()
 
@@ -39,17 +33,7 @@ class DoclingAccess:
         if resource.table_mode:
             cls._instance.config.DOCLING_TABLE_MODE = resource.table_mode
 
-    def convert_document(self, file_content, filename):
-        """
-        Convert a document using the Docling API
-
-        Args:
-            file_content: Base64 encoded file content
-            filename: Name of the file
-
-        Returns:
-            The API response JSON
-        """
+    def convert_document(self, file_content: str, filename: str):
         request_body = {
             "options": {
                 "from_formats": self.config.DOCLING_FROM_FORMATS,

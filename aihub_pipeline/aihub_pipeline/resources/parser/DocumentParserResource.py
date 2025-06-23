@@ -1,6 +1,10 @@
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
+from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceConfig import (
+    DocumentIntelligenceConfig,
+)
+from aihub_lib.infrastructure.docling.DoclingConfig import DoclingConfig
 from dagster import ConfigurableResource
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
@@ -12,6 +16,9 @@ class DocumentParserResource(ConfigurableResource):
 
     Note that this resource specifies a list of commonly used document parsers. If you have different requirements,
     either make this resource configurable or create a new resource with your specific parsers and decision logic.
+
+    The document parsers for DoclingLoader and DocumentIntelligenceLoader can be configured through environment
+    variables in their configs.
 
     Example usage:
 
@@ -43,19 +50,8 @@ class DocumentParserResource(ConfigurableResource):
     """
 
     _readers_map = {
-        DoclingLoader: ["pdf"],
-        DocumentIntelligenceLoader: [
-            "jpg",
-            "jpeg",
-            "png",
-            "bmp",
-            "tiff",
-            "heif",
-            "docx",
-            "xlsx",
-            "pptx",
-            "html",
-        ],
+        DoclingLoader: DoclingConfig().DOCLING_EXTENSIONS,
+        DocumentIntelligenceLoader: DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_EXTENSIONS,
         EpubReader: ["epub"],
         IPYNBReader: ["ipynb"],
         RawLoader: ["txt", "md"],

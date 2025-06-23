@@ -11,7 +11,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from aihub_lib.generative_ai.utils.path_utils import create_data_lake_figures_folder_name
+from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
@@ -72,7 +72,7 @@ class DocumentIntelligenceLoader(BaseReader):
                 f"and number of <figure> tags in the document ({len(figure_tags)})."
             )
 
-        figures_dir = create_data_lake_figures_folder_name(file, figures_directory_name)
+        figures_dir = create_figures_folder_name(file, figures_directory_name)
         for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
             response = self.document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",

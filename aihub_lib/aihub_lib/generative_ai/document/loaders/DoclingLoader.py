@@ -12,7 +12,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from aihub_lib.generative_ai.utils.path_utils import create_data_lake_figures_folder_name
+from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingAccess import DoclingAccess
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
@@ -46,16 +46,16 @@ class DoclingLoader(BaseReader):
                 f"![Image](data:image/png;base64,{picture._image_to_base64(picture.get_image(doc, idx))})"
                 for idx, picture in enumerate(doc.pictures)
             ]
-            markdown_content = extract_tables(extract_base64_images(markdown_content, img_strs))
+            markdown_content = inject_table_tags(inject_figure_tags(markdown_content, img_strs))
         else:
-            markdown_content = extract_tables(markdown_content)
+            markdown_content = inject_table_tags(markdown_content)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
         soup = BeautifulSoup(markdown_content, "html.parser")
         figure_tags = soup.find_all("figure")
 
-        figures_dir = create_data_lake_figures_folder_name(file, figures_directory_name)
+        figures_dir = create_figures_folder_name(file, figures_directory_name)
         for idx, figure_tag in enumerate(figure_tags):
             encoded_figure = figure_tag.text.split("](")[1][:-1]
             encoded_figure = encoded_figure.replace("data:image/png;base64,", "")
@@ -76,23 +76,17 @@ class DoclingLoader(BaseReader):
         ]
 
 
-def extract_base64_images(markdown_text: str, img_strs: List[str]):
-    """
-    Extract base64 encoded images from Markdown text.
-    """
+def inject_figure_tags(markdown_text: str, img_strs: List[str]):
+    """Inject html <figure> tags around base64 encoded images."""
     for image_str in img_strs:
-        # Replace the base64 image string with a placeholder
         markdown_text = markdown_text.replace(
             image_str, f"<{NODE_CONTENT_TYPE_FIGURE}>{image_str}</{NODE_CONTENT_TYPE_FIGURE}>"
         )
     return markdown_text
 
 
-# Do the same for tables
-def extract_tables(markdown_text: str):
-    """
-    Extract base64 encoded images from Markdown tables.
-    """
+def inject_table_tags(markdown_text: str):
+    """Inject html <table> tags around Markdown tables."""
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     markdown_text = re.sub(pattern, f"<{NODE_CONTENT_TYPE_TABLE}>\\1</{NODE_CONTENT_TYPE_TABLE}>", markdown_text)
 

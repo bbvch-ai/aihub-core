@@ -1,6 +1,6 @@
 from typing import List
 
-from aihub_lib.generative_ai.utils.path_utils import create_data_lake_figures_folder_name
+from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
 
@@ -17,7 +17,7 @@ def delete_figures_for_many_ref_doc(
 ) -> List[RefDocDocument]:
     """Deletes figures associated with each RefDocDocument from the data lake."""
     for ref_doc in ref_docs:
-        figures_folder = create_data_lake_figures_folder_name(ref_doc.uri, data_lake_resource.figures_directory_name)
+        figures_folder = create_figures_folder_name(ref_doc.uri, data_lake_resource.figures_directory_name)
         paths = data_lake_client.get_paths(figures_folder + "/")
 
         for blob in paths:

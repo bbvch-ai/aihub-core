@@ -57,7 +57,8 @@ def generate_description(
     Generate a detailed description of an image using a vision model,
     taking into account the surrounding text context from the document.
     """
-    t = LocaleHandler(locale="en")
+    # TODO detect language of the document
+    t = LocaleHandler()
     context_prompt_locale = t("lib.prompt.figure_description_generator.context_string")
 
     messages = RichPromptTemplate(template_str=context_prompt_locale).format_messages()

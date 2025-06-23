@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Annotated, List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,7 +12,23 @@ class DocumentIntelligenceConfig(BaseSettings):
         None, description="Resource Group Name of the Document Intelligence"
     )
     DOCUMENTINTELLIGENCE_NAME: Optional[str] = Field(None, description="RName of the Document Intelligence Resource")
-
+    DOCUMENTINTELLIGENCE_EXTENSIONS: Annotated[
+        List[str],
+        Field(
+            default_factory=lambda: [
+                "jpg",
+                "jpeg",
+                "png",
+                "bmp",
+                "tiff",
+                "heif",
+                "docx",
+                "xlsx",
+                "pptx",
+                "html",
+            ]
+        ),
+    ]
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
