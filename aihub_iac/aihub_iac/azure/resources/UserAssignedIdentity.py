@@ -1,9 +1,10 @@
-from pulumi_azure_native import cognitiveservices, cosmosdb, managedidentity, search
+from pulumi_azure_native import cognitiveservices, cosmosdb, managedidentity, search, storage
 
 from aihub_iac.azure.constants.roles import ROLES
 from aihub_iac.azure.providers.RoleProvider import RoleProvider
 from aihub_iac.azure.resources.AISearch import AISearch
 from aihub_iac.azure.resources.CosmosDocstore import CosmosDocstore
+from aihub_iac.azure.resources.DataLakeStorage import DataLakeStorage
 from aihub_iac.azure.resources.OpenAI import OpenAI
 
 
@@ -63,6 +64,18 @@ class UserAssignedIdentity:
         )
         self.assign_role_to_identity(ROLES.CONTRIBUTOR_ROLE_ID, docstore_account.id, docstore_account.name)
         self.assign_role_to_identity(ROLES.DB_ACCOUNT_CONTRIBUTOR_ROLE_ID, docstore_account.id, docstore_account.name)
+
+    def assign_datalake_roles(
+        self,
+        account_name: str | None = None,
+        resource_group: str | None = None,
+        role: ROLES = ROLES.STORAGE_BLOB_DATA_CONTRIBUTOR,
+    ):
+        data_lake_account = storage.get_storage_account(
+            account_name=account_name or DataLakeStorage.name(self.project_name, self.location_short_name),
+            resource_group_name=resource_group or self.resource_group,
+        )
+        self.assign_role_to_identity(role, data_lake_account.id, data_lake_account.name)
 
     @property
     def client_id(self):
