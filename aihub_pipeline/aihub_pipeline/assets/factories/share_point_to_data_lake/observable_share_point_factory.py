@@ -9,7 +9,7 @@ from dagster import (
     observable_source_asset,
 )
 
-from aihub_pipeline.ops.sharepoint.data_version_by_partition_for_share_point_files_no_op import (
+from aihub_pipeline.ops.share_point.data_version_by_partition_for_share_point_files_no_op import (
     data_version_by_partition_for_share_point_files_no_op,
 )
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
@@ -18,9 +18,10 @@ from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 
 def observable_share_point_factory(key: AssetKey, partitions: DynamicPartitionsDefinition) -> observable_source_asset:
-    """Creates an observable source asset representing a sharepoint site containing files that should be processed
-    by the pipeline. The asset generates a partition for each file in the data lake as well as a DataVersion
-    key based on the file content hash.
+    """
+    Creates an observable source asset representing a sharepoint site containing files that should be processed
+    by the pipeline. The asset generates a partition for each file in SharePoint as well as a DataVersion
+    key based on the file content (etag and last modified date).
     """
 
     @observable_source_asset(
@@ -28,7 +29,7 @@ def observable_share_point_factory(key: AssetKey, partitions: DynamicPartitionsD
         group_name=group_name_from_asset_key(key),
         partitions_def=partitions,
         io_manager_key="data_lake_io_manager",
-        description="Observes the data lake for any changes with respect to the Document Store",
+        description="Observes the SharePoint site for any changes with respect to the DataLake.",
     )
     def observable_share_point(
         context: OpExecutionContext,
