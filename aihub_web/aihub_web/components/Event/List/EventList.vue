@@ -3,7 +3,6 @@
     <Panel
       :header="t('event.list.chat')"
       toggleable
-      collapsed
     >
       <div class="flex flex-col gap-8">
         <ChatThread

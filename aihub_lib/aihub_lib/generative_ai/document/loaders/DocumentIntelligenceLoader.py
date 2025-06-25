@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from azure.ai.documentintelligence.models import AnalyzeResult, DocumentContentFormat
+from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
@@ -9,6 +9,9 @@ from llama_index.core.schema import Document
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
+from aihub_lib.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
+
+PAGE_BREAK = "<!-- PageBreak -->"
 
 
 class DocumentIntelligenceLoader(BaseReader):
@@ -30,9 +33,21 @@ class DocumentIntelligenceLoader(BaseReader):
                 body=pdf_file,
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
+                output=[AnalyzeOutputOption.FIGURES],
             )
+
         result: AnalyzeResult = poller.result()
-        metadata = {"number_of_pages": len(result.pages)}
+        operation_id = poller.details["operation_id"]
+        metadata = {
+            NUMBER_OF_PAGES: len(result.pages),
+            "operation_id": operation_id,
+        }
+
+        if result.figures:
+            figure_ids = [figure.id for figure in result.figures]
+
+            metadata.update({"figure_ids": figure_ids})
+
         return [
             Document(
                 text=result.content,

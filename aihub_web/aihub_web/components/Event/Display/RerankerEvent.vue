@@ -16,10 +16,8 @@
       <p class="pt-5 font-bold">
         Top: {{ event.event.top_k }} relevanteste Dokumente:
       </p>
-      <ChatSourceDocument
-        v-for="document in event.event.output_documents"
-        :key="document.id"
-        :document="document"
+      <ChatSourceNodes
+        :nodes="event.event.output_nodes ?? []"
       />
     </div>
   </EventDisplayBase>

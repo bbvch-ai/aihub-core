@@ -1,14 +1,54 @@
 test: "Ceci est un test"
 welcome: "Bienvenue sur bbv ai-hub"
 
+languages:
+  en: "Anglais"
+  de: "Allemand"
+  it: "Italien"
+  fr: "Français"
+
 user:
   logout: "Déconnexion"
   language: "Langue"
-  languages:
-    en: "Anglais"
-    de: "Allemand"
-    it: "Italien"
-    fr: "Français"
+
+thread:
+  title: "Interactions"
+  users: "Utilisateurs"
+  assistants: "Assistants"
+  navigation:
+    basic: "De base"
+    hierarchy: "Hiérarchie"
+    chat: "Chat"
+    display: "Tours"
+  list:
+    name: "Nom"
+    agents: "Agents"
+    created: "Créé"
+    numTurns: "Nombre de tours"
+    numEvents: "Nombre d'événements"
+    status: "Statut"
+    pending: "En attente"
+  utils:
+    pendingTypes:
+      hitl: "Humain dans la boucle"
+      aitl: "Agent dans la boucle"
+      bitl: "Bot dans la boucle"
+      unknown: "Raison inconnue"
+  display:
+    title: "Tours d'interaction"
+    list:
+      started: "Démarré"
+      duration: "Durée"
+      events: "Événements"
+      status: "Statut"
+      pending: "En attente"
+      dateFormat: "DD.MM.YYYY HH:mm:ss"
+  events:
+    title: "Vue de traçage des tours"
+  hierarchy:
+    title: "Vue hiérarchique des tours"
+  chat:
+    title: "Vue Chat"
 
 chat:
   assistant: "Assistant"
@@ -16,8 +56,8 @@ chat:
 
 event:
   list:
-    firstInteraction: "Première Interaction:"
-    lastInteraction: "Dernière Interaction:"
+    firstInteraction: "Première interaction:"
+    lastInteraction: "Dernière interaction:"
     costs: "Coûts:"
     duration: "Durée:"
     pending: "En attente:"
@@ -29,47 +69,20 @@ event:
     agents: "Agents:"
   statistics:
     charts:
-      agentInvocations: "Invocations d'Agent"
-      agentStart: "Démarrage d'Agent"
-      endEvents: "Événements de Fin"
+      agentInvocations: "Invocations d'agents"
+      agentStart: "Démarrage de l'agent"
+      endEvents: "Événements de fin"
       success: "Succès"
-      openHumanInTheLoop: "Ouvert (Humain dans la Boucle)"
-      openBotInTheLoop: "Ouvert (Bot dans la Boucle)"
+      openHumanInTheLoop: "Ouvert (Humain dans la boucle)"
+      openBotInTheLoop: "Ouvert (Bot dans la boucle)"
       error: "Erreur"
       delegations: "Délégations"
-      delegatedTaskAgentInTheLoop: "Tâche Déléguée (Agent dans la Boucle)"
-      allEvents: "Tous les Événements"
-
-thread:
-  users: "Utilisateurs"
-  assistants: "Assistants"
-  list:
-    name: "Nom"
-    agents: "Agents"
-    created: "Créé"
-    numTurns: "Nombre de Tours"
-    numEvents: "Nombre d'Événements"
-    status: "Statut"
-    pending: "En attente"
-  title: "Fils de discussion"
-  utils:
-    pendingTypes:
-      hitl: "Humain dans la Boucle"
-      aitl: "Agent dans la Boucle"
-      bitl: "Bot dans la Boucle"
-      unknown: "Raison inconnue"
-  display:
-    list:
-      started: "Démarré"
-      duration: "Durée"
-      events: "Événements"
-      status: "Statut"
-      pending: "En attente"
-      dateFormat: "DD.MM.YYYY HH:mm:ss"
+      delegatedTaskAgentInTheLoop: "Tâche déléguée (Agent dans la boucle)"
+      allEvents: "Tous les événements"
 
 costs:
   table:
-    count: "Comptage"
+    count: "Nombre"
     cost: "Coût"
     input: "Entrée"
     output: "Sortie"
@@ -80,30 +93,33 @@ costs:
 service:
   selection:
     title: "Services"
-    description: "Voici tous les services listés que vous avez activés"
+    description: "Voici tous les services que vous avez activés"
     search: "Rechercher"
 
 agent:
+  title: "Agents"
+  can_chat: "Peut chatter"
   overview:
-    startEvents: "Événements de Démarrage"
-    stopEvents: "Événements d'Arrêt"
+    startEvents: "Événements de démarrage"
+    stopEvents: "Événements d'arrêt"
     config: "Configuration"
     name: "Nom:"
     class: "Classe:"
-    agentId: "ID d'Agent:"
+    agentId: "ID de l'agent:"
     status: "Statut:"
     online: "En ligne"
     offline: "Hors ligne"
   chat:
-    title: "Chat"
-    createThreadAndSend: "Créer un Fil et Envoyer"
-    manuallyCreatedThread: "Fil créé manuellement"
+    title: "Démarrer un nouveau chat"
+    placeholder: "Tapez le message que vous souhaitez envoyer à l'agent"
+    createThreadAndSend: "Créer un fil de discussion et envoyer"
+    manuallyCreatedThread: "Fil de discussion créé manuellement"
   navigation:
-    basic: "Base"
+    basic: "De base"
     workflow: "Flux de travail"
-    threads: "Fils"
+    threads: "Fils de discussion"
     chat: "Chat"
-  availableAgents: "Agents Disponibles"
+  availableAgents: "Agents disponibles"
   list:
     name: "Nom"
     description: "Description"
@@ -114,6 +130,39 @@ agent:
     status: "Statut"
     online: "En ligne"
     offline: "Hors ligne"
+  workflow:
+    title: "Flux de travail agentique"
+  threads:
+    title: "Fils de discussion de l'agent"
+
+document:
+  list:
+    title: "Titre du document"
+    created: "Créé"
+    updated_at: "Dernière mise à jour"
+    language: "Langue"
+    document_type: "Type de document"
+    number_of_pages: "Nombre de pages"
+    download: "Download"
+
+knowledge:
+  title: "Bases de connaissances"
+  created_at: "Créé le:"
+  updated_at: "Dernière mise à jour:"
+  navigation:
+    document:
+      basic: "Aperçu"
+      content: "Contenu"
+      nodes: "Morceaux"
+      summary: "Résumés"
+  documents:
+    title: "Documents"
+  nodes:
+    title: "Morceaux de document"
+  summary:
+    title: "Résumés de document"
+    level: "Niveau"
+    no_summaries_at_level: "Aucun résumé à ce niveau"
 
 auth:
   renew:
@@ -121,17 +170,17 @@ auth:
   callback:
     processing: "Traitement du rappel d'authentification..."
     loggingIn: "Connexion en cours..."
-    loginError: "Erreur de Connexion"
+    loginError: "Erreur de connexion"
     redirectingToLogin: "Redirection vers la page de connexion..."
     genericError: "Une erreur s'est produite lors de la connexion. Veuillez réessayer."
   login:
     title: "Connexion"
     description: "Veuillez vous connecter pour accéder à l'application"
-    tagline: "Découvrez le futur de l'intelligence artificielle"
-    welcome: "Bienvenue sur l'AI Hub de {companyName}"
+    tagline: "Découvrez l'avenir de l'intelligence artificielle"
+    welcome: "Bienvenue sur le AI Hub de {companyName}"
     pleaseLogin: "Veuillez vous connecter"
-    loginWithMicrosoft: "Connexion avec Microsoft"
-    customSolutions: "Solutions IA personnalisées pour votre entreprise"
+    loginWithMicrosoft: "Se connecter avec Microsoft"
+    customSolutions: "Solutions d'IA personnalisées pour votre entreprise"
     logoAlt: "Logo de l'entreprise"
 
 timerange:
@@ -146,26 +195,82 @@ chart:
   trending_down: "Tendance à la baisse"
 
 dashboard:
-  all_agents: "Tous les Agents"
+  all_agents: "Tous les agents"
   users: "Utilisateurs AI-Hub"
-  unknown_agent: "Agent Inconnu"
-  add_widget: "Ajouter un Widget"
+  unknown_agent: "Agent inconnu"
+  add_widget: "Ajouter un widget"
   select_data_type: "Sélectionner le type de données"
-  select_agent: "Sélectionner un Agent (Optionnel)"
+  select_agent: "Sélectionner un agent (Facultatif)"
   create: "Créer"
-  create_widget: "Créer un nouveau Widget"
+  create_widget: "Créer un nouveau widget"
   events:
     StartEvent:
-      label: 'Exécutions d''Agent Démarrées'
+      label: 'Exécutions d''agents démarrées'
     StopEvent:
-      label: 'Exécutions Réussies'
+      label: 'Exécutions réussies'
     UserMessageEvent:
-      label: 'Messages de Chat Utilisateur'
+      label: 'Messages de chat utilisateur'
     ExceptionEvent:
       label: 'Erreurs'
     HumanInTheLoopRequestEvent:
-      label: 'Humain dans la Boucle'
+      label: 'Humain dans la boucle'
     BotInTheLoopRequestEvent:
       label: 'Demander dans Slack/Teams'
     AgentInTheLoopRequestEvent:
-      label: 'Tâches Déléguées'
+      label: 'Tâches déléguées'
+
+evaluation:
+  dataset:
+    title: "Jeux de données"
+    created_at: "Créé le:"
+    updated_at: "Mis à jour le:"
+    create_description: "Créez un nouveau jeu de données que vous pouvez utiliser pour évaluer les performances de vos Assistants!"
+    name: "Nom"
+    description: "Description"
+    cancel: "Annuler"
+    save: "Enregistrer"
+    create_new: "Créer un nouveau jeu de données"
+    add_at_least_one: "Ajoutez au moins 1 point de données"
+    question_header: "Question"
+    answer_header: "Réponse"
+    status: "Statut"
+    new: "Nouveau"
+    question_placeholder: "Question"
+    answer_placeholder: "Réponse"
+    add_button: "Ajouter"
+    save_button: "Enregistrer le jeu de données"
+    save_confirmation: "Enregistrer le jeu de données ? Une fois ajoutés, vous ne pourrez plus supprimer les éléments."
+    cancel_button: "Annuler"
+    save_action: "Enregistrer"
+    saved_summary: "Enregistré"
+    saved_detail: "Jeu de données enregistré"
+  experiment:
+    title: "Expériences"
+    created_at: "Exécuté le:"
+    dataset: "Jeu de données"
+    language_and_dataset: "Langue & Jeu de données"
+    language: "Langue de l'expérience:"
+    create_description: "Créez une nouvelle expérience avec un jeu de données et un Assistant!"
+    name: "Nom"
+    description: "Description"
+    agent: "Agent"
+    select_dataset: "Sélectionner un jeu de données"
+    select_assistant: "Sélectionner un Assistant"
+    cancel: "Annuler"
+    save: "Enregistrer"
+    running: "L'expérience est en cours d'exécution!"
+    running_description: "Cela peut prendre plusieurs minutes. Vous pouvez également quitter cette page et revenir plus tard."
+    failed: "L'expérience a échoué!"
+    failed_description: "Veuillez contacter l'équipe de développement AI-Hub pour savoir ce qui s'est mal passé."
+    filter_by_assistant: "Filtrer par Assistant"
+    filter_by_dataset: "Filtrer par jeu de données"
+    run_experiment: "Exécuter l'expérience"
+    create_new: "Créer une nouvelle expérience"
+    result:
+      question: "Question"
+      reference_answer: "Réponse de référence"
+      assistant_answer: "Réponse de l'assistant"
+      latency_ms: "Latence"
+      conciseness: "Concision"
+      correctness: "Exactitude"
+      completeness: "Complétude"

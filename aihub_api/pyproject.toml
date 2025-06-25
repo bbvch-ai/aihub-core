@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.166.0"
+version = "v0.198.0"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -28,6 +28,7 @@ llama-index-embeddings-text-embeddings-inference = "^0.3.2"
 python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
+arize-phoenix = "^10.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
@@ -43,7 +44,7 @@ asgi-lifespan = "^2.1.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.166.0"
+tag = "v0.198.0"
 subdirectory = "aihub_lib"
 
 [build-system]

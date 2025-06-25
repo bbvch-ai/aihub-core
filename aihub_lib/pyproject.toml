@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.166.0"
+version = "v0.198.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -56,6 +56,7 @@ openai = "^1.76.2"
 cachetools = "^5.5.2"
 llama-index-llms-google-genai = "^0.1.7"
 google-genai = "^1.10.0"
+arize-phoenix = "^10.0.2"
 
 
 [tool.poetry.group.dev.dependencies]

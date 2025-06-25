@@ -16,7 +16,7 @@ from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
 
-THREAD_BASE = "/api/v1/thread"
+THREAD_BASE = "/api/v1/threads"
 DEFAULT_USER_ID = "1234567890"
 
 
@@ -24,7 +24,7 @@ DEFAULT_USER_ID = "1234567890"
 def mongodb():
     """Setup MongoDB connection and clear data after tests."""
     yield
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string(), alias="default")
+    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
     ThreadEntity.objects.delete()
     disconnect()
 

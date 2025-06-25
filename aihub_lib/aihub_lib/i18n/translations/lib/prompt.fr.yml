@@ -15,8 +15,9 @@ condenser:
 
 rag:
   context_prompt: |
+    {% chat role="system" %}
     Des informations contextuelles supplémentaires vous sont fournies sous la forme de documents structurés. Chaque document suit 
-    un format cohérent, commençant par `<DOCUMENT [metadata]>` et se terminant par `</DOCUMENT>`. Ces documents contiennent des 
+    un format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant par `</REFERENCE_DOCUMENT>`. Ces documents contiennent des 
     détails essentiels qui doivent être utilisés pour comprendre et répondre avec précision à la requête de l’utilisateur.
 
     Chaque document comprend des métadonnées telles que la source, l’espace de noms, le type, la langue, la version et les 
@@ -25,11 +26,19 @@ rag:
     Voici les documents pertinents :
 
     <context_documents>
-    {context_str}
+    {% for block in context_blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url.__str__() | image}}
+    {% endif %}
+    {% endfor %}
     </context_documents>
 
     Instruction : Utilisez les informations des documents fournis pour générer une réponse détaillée et bien structurée 
     à la question de l'utilisateur.
+    {% endchat %}
 
 router:
   selection_option_index: Index of the selected option (0-based)
@@ -143,12 +152,40 @@ router:
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
 summarizer:
   summarize: |
-    Veuillez fournir un résumé concis du texte suivant.
-    Capturez les idées principales et les points clés, en veillant à ce que le résumé soit cohérent et maintienne le contexte original ainsi que les relations entre les idées.
-    Texte pour le résumé:
+    Tâche : Résume le texte suivant sous forme de TL;DR :
+    
+    Directives :
+      - Commence directement par les points ou idées essentiels, sans phrases introductives comme « Le texte explique… ».
+      - Utilise des phrases courtes, claires et directes.
+      - Concentre-toi uniquement sur les informations essentielles, en évitant les détails superflus ou les commentaires.
+      - Énonce les idées principales directement, sans décrire le texte.
+      - Veillez à rédiger votre résumé dans la MÊME langue que le <Texte>.
+    
+    Texte d’entrée : 
+    <Text> 
+      {text} 
+    </Text>
+    
+    Résumé TL;DR :
+figure_description_generator:
+  system_prompt: |
+    Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
+    Votre tâche consiste à générer un texte alt détaillé pour les figures dans les documents qui :
 
-    <Texte>
-    {text}
-    </Texte>
+    1. Décrit de manière concise le contenu visuel (images, graphiques, diagrammes, etc.)
+    2. Capture l'information clé transmise par la figure
+    3. Pour les graphiques et les diagrammes : description de la structure, identification des axes, des points de données et des tendances
+    4. Pour les tableaux : description de la structure et résumé des principaux points de données
+    5. Extraction de tout texte visible dans l'image, le cas échéant
+    6. Utilise un langage technique approprié tout en restant accessible
+    7. relie la description de l'image au contexte du document qui l'entoure
+    8. Évite toute verbosité ou spéculation inutile
 
-    Résumé:
+    Formulez vos descriptions sous forme de paragraphes concis et factuels qui pourraient être utilisés directement comme texte alternatif.
+    Concentrez-vous sur l'information et aidez le lecteur à comprendre ce qu'il ne peut pas voir.
+    N'inventez PAS d'informations, ne faites référence qu'à ce que vous pouvez voir dans l'image.
+    Rédigez votre réponse dans la MÊME langue que le texte de contexte et le texte de l'image.
+  user_text_instruction: |
+    Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace.
+  surrounding_text_instruction: |
+    Contexte du document entourant cette image:

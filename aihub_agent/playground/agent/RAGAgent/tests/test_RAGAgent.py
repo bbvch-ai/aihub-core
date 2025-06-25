@@ -39,11 +39,15 @@ from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
+
+enable_logging()
 
 
 # Set up an event loop for the test session
@@ -91,7 +95,7 @@ def build_rag_agent_config(
                 mode=ModeOptions.BOTH,
             ),
         ),
-        number_of_input_tokens=2048,
+        number_of_input_tokens=8192,
         check_context_sufficiency=False,
     )
 
@@ -142,7 +146,7 @@ def self_hosted_agent_config(event_loop):
         name="unsloth/Llama-3.2-1B-Instruct",
         base_url="http://localhost:8182/v1",
         api_key=None,
-        context_size=8192,
+        context_size=16384,
         is_chat_model=True,
         is_function_calling_model=False,
         default_parameter=OpenaiLikeLLMParameter(
@@ -167,10 +171,12 @@ def self_hosted_agent_config(event_loop):
         collection_name="development",
         embedding_vector_dimension=768,
     )
+    doc_store = create_mongo_document_store(document_store_name="development")
 
     fill_collection(
         embedding_config,
         vector_store,
+        doc_store,
     )
 
     yield build_rag_agent_config(
@@ -241,10 +247,10 @@ def _(agent_runner: AgentTestRunner):
     assert condenser_event.condensed_chat_message.content, "No condensed question found"
 
 
-@then("a RetrieverEvent is present with retrieved documents")
+@then("a RetrieverEvent is present with retrieved nodes")
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
-    assert retriever_event.documents, "RetrieverEvent did not produce documents"
+    assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
 
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))

@@ -13,12 +13,13 @@ from aihub_pipeline.util.connection_utils import connect_to_mongo_db
 def fetch_ref_docs_to_remove(
     context: OpExecutionContext, data_lake_files: List[DataLakeFile], doc_store_resource: DocStoreResource
 ) -> List[RefDocDocument]:
-    """Fetches all RefDocs that are int he DocumentStore but no longer in the DataLake"""
+    """Fetches all RefDocs that are in the DocumentStore but no longer in the DataLake."""
     context.log.info(f"Reported {len(data_lake_files)} data lake files")
     ids = [data_lake_file.id_ for data_lake_file in data_lake_files]
 
     connect_to_mongo_db(doc_store_resource.document_store_name)
     ref_docs = RefDoc.by_namespace(
+        db_alias="default",  # While in the pipeline, we only have a connection to the doc-store mongodb
         namespace=doc_store_resource.namespace_name,
         exclude_ids=ids,
     )

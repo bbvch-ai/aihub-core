@@ -13,7 +13,7 @@ export default defineNuxtConfig({
         url: 'http://localhost:8080',
       },
       ws: {
-        endpoint: 'ws://localhost:8000/api/v1/event/ws',
+        endpoint: 'ws://localhost:8000/api/v1/events/ws',
       },
     },
   },

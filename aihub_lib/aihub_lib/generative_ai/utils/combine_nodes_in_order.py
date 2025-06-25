@@ -1,13 +1,15 @@
 import html
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
+from llama_index.core.prompts import RichPromptTemplate
 
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.semantic.retriever import Document
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -19,7 +21,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
-    SECTION_START_LINE,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_FIGURE,
     SOURCE,
     TYPE,
     UPDATED_AT,
@@ -48,57 +51,61 @@ def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
 
 
 def combine_nodes_in_order(
-    context_nodes: List[Document],
-    locale_handler: LocaleHandler,
+    context_nodes: List[IngestedNode],
+    t: LocaleHandler,
     context_prompt: LocaleString = None,
 ) -> ChatMessage:
-    nodes_per_document = defaultdict(list)
+    nodes_per_document: Dict[str, List[IngestedNode]] = defaultdict(list)
 
     for context_node in context_nodes:
-        if not context_node.metadata or SOURCE not in context_node.metadata:
-            raise ValueError(f"Context node must contain metadata {SOURCE}")
-        key = context_node.metadata.get(SOURCE)
+        key = context_node.source
         nodes_per_document[key].append(context_node)
 
-    documents = []
-
+    context_blocks: List[ImageBlock | TextBlock] = []
     for key, nodes in nodes_per_document.items():
-        metadata = nodes[0].metadata
+        node: IngestedNode = nodes[0]
 
         metadata_fields = {
-            "source": key,
-            "namespace": metadata.get(NAMESPACE),
-            "type": metadata.get(TYPE),
-            "language": metadata.get(LANGUAGE),
-            "version": metadata.get(VERSION),
-            "created_at": format_unix_timestamp(metadata.get(CREATED_AT)),
-            "updated_at": format_unix_timestamp(metadata.get(UPDATED_AT)),
-            "inserted_at": format_unix_timestamp(metadata.get(INSERTED_AT)),
+            SOURCE: key,
+            NAMESPACE: node.namespace,
+            TYPE: node.type,
+            NODE_CONTENT_TYPE: node.content_type,
+            LANGUAGE: node.language,
+            VERSION: node.version,
+            CREATED_AT: node.created_at,
+            UPDATED_AT: node.updated_at,
+            INSERTED_AT: node.inserted_at,
         }
 
         metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
 
         metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
 
-        doc_header = f"<DOCUMENT {metadata_string}>\n\n"
+        doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
 
-        text_parts = [doc_header]
-        sorted_nodes = sorted(nodes, key=lambda x: x.metadata.get(SECTION_START_LINE, 0))
+        context_blocks.append(TextBlock(text=doc_header))
+        sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
 
         for n in sorted_nodes:
-            text_parts.append(f"{n.content}\n\n")
+            content = n.content
 
-        text_parts.append("</DOCUMENT>\n")
-        text_parts.append("\n---\n")
+            if n.content_type == NODE_CONTENT_TYPE_FIGURE:
+                image_path = content.split("](")[-1][:-1]
+                container, blob_path = image_path.split("/", 1)
+                image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
+                context_blocks.append(ImageBlock(url=image_url))
+            else:
+                context_blocks.append(TextBlock(text=(f"{content}\n\n")))
 
-        documents.append("".join(text_parts))
+        context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n\n---\n"))
 
     if context_prompt:
-        context_prompt_locale = LocaleHandler(locale_handler.locale).extract(context_prompt, locale_handler.locale)
+        context_prompt_locale = t.extract(context_prompt, t.locale)
     else:
-        context_prompt_locale = locale_handler("lib.prompt.rag.context_prompt")
+        context_prompt_locale = t("lib.prompt.rag.context_prompt")
 
-    return ChatMessage(
-        role=MessageRole.SYSTEM,
-        content=context_prompt_locale.format(context_str="".join(documents)),
-    )
+    messages = RichPromptTemplate(
+        template_str=context_prompt_locale,
+    ).format_messages(context_blocks=context_blocks)
+
+    return messages[0]

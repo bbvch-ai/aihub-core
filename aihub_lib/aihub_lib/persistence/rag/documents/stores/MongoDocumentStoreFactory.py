@@ -2,18 +2,18 @@ from functools import cache
 
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
 
 
 @cache
 def create_mongo_document_store(document_store_name: str) -> MongoDocumentStore:
-    cosmos_conn_singleton = CosmosAccess()
+    cosmos_conn_singleton = CosmosDocstoreAccess()
     docstore = MongoDocumentStore.from_uri(
         uri=cosmos_conn_singleton.get_connection_string(),
         db_name=document_store_name,
-        namespace="documents",  # Note: This is not "our" namespace, this is the collection name.
+        namespace="documents",
+        node_collection_suffix="-data",
+        ref_doc_collection_suffix="-ref-doc-info",
+        metadata_collection_suffix="-metadata",
     )
-    docstore._node_collection = docstore._node_collection.replace("/", "-")
-    docstore._ref_doc_collection = docstore._ref_doc_collection.replace("/", "-")
-    docstore._metadata_collection = docstore._metadata_collection.replace("/", "-")
     return docstore

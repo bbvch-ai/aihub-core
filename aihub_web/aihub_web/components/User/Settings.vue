@@ -60,12 +60,10 @@ const selectedLocale = computed({
     return localeOptions.value.find(l => l.code === locale.value) || localeOptions.value[0]
   },
   set: (newValue) => {
-    console.log('Handle locale change', newValue)
     if (newValue?.code && newValue.code !== locale.value) {
       op.value.hide()
       router.push(switchLocalePath(newValue.code))
         .then(() => {
-          console.log('Invalidating queries')
           queryCache.invalidateQueries()
         })
     }

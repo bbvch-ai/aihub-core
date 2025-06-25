@@ -6,6 +6,7 @@ from mongoengine import connect, disconnect
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 
@@ -17,7 +18,7 @@ DEFAULT_USER_ID = "1234567890"
 def mongodb():
     """Setup a test MongoDB connection and clear data after each test."""
     yield
-    connect(db="aihub", host=CosmosAccess().get_connection_string())
+    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
     BearerToken.objects.delete()
     disconnect()
 

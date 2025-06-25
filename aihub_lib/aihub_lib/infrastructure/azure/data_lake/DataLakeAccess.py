@@ -10,8 +10,8 @@ from aihub_lib.infrastructure.azure.data_lake.DataLakeConfig import DataLakeConf
 
 class DataLakeAccess:
     _instance = None
-    _env = None
     _app = None
+    _region = None
     _storage_service_name = None
     _service_endpoint = None
     _credential = None
