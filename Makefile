@@ -52,7 +52,7 @@ use-local-core:
 	@echo "Switching to local cores..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.196.0
+TAG ?= v0.198.0
 
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"

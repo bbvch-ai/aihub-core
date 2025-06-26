@@ -103,7 +103,7 @@ transformers = "^4.48.1"
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
 reference = "v0.198.0"
-resolved_reference = "006c5b100858ccb9a7c7ce4d22af35c0eed8edf7"
+resolved_reference = "7c0e443beedde662f6b988de796e8f119f8e7bf4"
 subdirectory = "aihub_lib"
 
 [[package]]
