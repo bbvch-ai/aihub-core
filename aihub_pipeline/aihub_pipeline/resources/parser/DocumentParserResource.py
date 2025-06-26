@@ -1,10 +1,5 @@
 from enum import Enum
-from typing import Dict, Type, List, Annotated
-
-from dagster import ConfigurableResource
-from llama_index.core.readers.base import BaseReader
-from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
-from pydantic import Field
+from typing import Annotated, Dict, List, Type
 
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
@@ -13,6 +8,10 @@ from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.Doc
     DocumentIntelligenceConfig,
 )
 from aihub_lib.infrastructure.docling.DoclingConfig import DoclingConfig
+from dagster import ConfigurableResource
+from llama_index.core.readers.base import BaseReader
+from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
+from pydantic import Field
 
 
 class LoaderType(Enum):
@@ -89,10 +88,10 @@ class DocumentParserResource(ConfigurableResource):
         """
         readers_map = self._base_readers.copy()
 
-        if self.loader_type == LoaderType.DOCLING:
+        if self.loader_type == LoaderType.DOCLING or self.loader_type == LoaderType.BOTH:
             readers_map[DoclingLoader] = DoclingConfig().DOCLING_EXTENSIONS
 
-        if self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE:
+        if self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE or self.loader_type == LoaderType.BOTH:
             readers_map[DocumentIntelligenceLoader] = DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_EXTENSIONS
 
         return readers_map

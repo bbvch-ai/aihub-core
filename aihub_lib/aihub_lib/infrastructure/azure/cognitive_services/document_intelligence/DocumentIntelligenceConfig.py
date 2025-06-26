@@ -21,6 +21,7 @@ class DocumentIntelligenceConfig(BaseSettings):
                 "png",
                 "bmp",
                 "tiff",
+                "pdf",
                 "heif",
                 "docx",
                 "xlsx",
