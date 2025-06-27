@@ -59,7 +59,7 @@ Feature: Parent Summary Node Retrieval
       | summary1 |
       | summary2 |
 
-  Scenario: Summary Nodes Should Not Fetch Additional Parents
+  Scenario: Summary Nodes Should Also Fetch Additional Parents
     Given starting nodes are:
       | node_id  |
       | summary1 |
@@ -67,3 +67,4 @@ Feature: Parent Summary Node Retrieval
     Then the resulting nodes should include:
       | node_id  |
       | summary1 |
+      | summary2 |
