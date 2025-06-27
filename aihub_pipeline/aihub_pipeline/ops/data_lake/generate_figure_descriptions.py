@@ -1,6 +1,8 @@
 import html
 import json
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
@@ -9,8 +11,6 @@ from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 from openai import BadRequestError
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 
