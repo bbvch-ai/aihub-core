@@ -57,6 +57,7 @@ cachetools = "^5.5.2"
 llama-index-llms-google-genai = "^0.1.7"
 google-genai = "^1.10.0"
 arize-phoenix = "^10.0.2"
+docling-core = "^2.38.0"
 
 
 [tool.poetry.group.dev.dependencies]
