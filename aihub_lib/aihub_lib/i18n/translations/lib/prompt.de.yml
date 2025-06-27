@@ -170,11 +170,12 @@ summarizer:
     
     TL;DR-Zusammenfassung:
 figure_description_generator:
-  system_prompt: |
+  context_string: |
+    {% chat role="system" %}
     Sie sind Experte für die Erstellung hochwertiger Bildbeschreibungen für barrierefreie Dokumente.
     Ihre Aufgabe ist es, detaillierte Alt-Texte für Abbildungen in Dokumenten zu erstellen, die:
     
-    1. den visuellen Inhalt (Bilder, Tabellen, Diagramme, etc.) kurz und bündig beschreibt
+    1. den visuellen Inhalt (Bilder, Tabellen, Diagramme, etc.) präzise beschreibt
     2. die wichtigsten Informationen, die durch die Abbildung vermittelt werden, aufgreift
     3. Bei Schaubildern und Diagrammen: Beschreibung der Struktur, Identifizierung von Achsen, Datenpunkten und Trends
     4. Für Tabellen: beschreibt die Struktur und fasst die wichtigsten Datenpunkte zusammen
@@ -187,7 +188,8 @@ figure_description_generator:
     Konzentrieren Sie sich darauf, informativ zu sein und dem Leser zu helfen, zu verstehen, was er nicht sehen kann.
     Geben Sie **NICHT** Informationen an, sondern verweisen Sie nur auf das, was Sie auf dem Bild sehen können.
     Schreiben Sie Ihre Antwort in der GLEICHEN Sprache wie der Kontexttext und der Bildtext.
-  user_text_instruction: |
+    {% endchat %}
+    
+    {% chat role="user" %}
     Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann.
-  surrounding_text_instruction: |
-    Kontext aus dem Dokument, der dieses Bild umgibt:
+    {% endchat %}

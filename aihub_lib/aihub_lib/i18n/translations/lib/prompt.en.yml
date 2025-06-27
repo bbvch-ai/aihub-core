@@ -167,7 +167,8 @@ summarizer:
     
     TL;DR Summary:
 figure_description_generator:
-  system_prompt: |
+  context_string: |
+    {% chat role="system" %}
     You are an expert at creating high-quality image descriptions for document accessibility.
     Your task is to generate detailed alt text for figures in documents that:
     
@@ -184,7 +185,8 @@ figure_description_generator:
     Focus on being informative and helping the reader understand what they can't see.
     Do **NOT** come up with information, only reference what you can see in the image.
     Write your reply in the SAME language as the context text and image text.
-  user_text_instruction: |
+    {% endchat %}
+
+    {% chat role="user" %}
     Please provide a detailed, accurate description of this image that would serve as effective alt text.
-  surrounding_text_instruction: |
-    Context from the document surrounding this image:
+    {% endchat %}
