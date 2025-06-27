@@ -13,7 +13,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
+from aihub_lib.testing.milvus_vector_store_content import fill_collection
 
 
 # Set up an event loop for the test session
@@ -44,7 +44,6 @@ def _(nodes, datatable):
         node_id = row[0]
         parent_id = row[1]
 
-        # Find the node and set the parent relationship
         target_node = next((node for node in nodes if node.id_ == node_id), None)
         if target_node:
             target_node.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=parent_id)
@@ -52,8 +51,18 @@ def _(nodes, datatable):
     return nodes
 
 
+@pytest.fixture(scope="session")
+def session_milvus_vector_store():
+    vector_store = create_milvus_vector_store(
+        uri="http://localhost",
+        collection_name="parent_summary_test",
+        embedding_vector_dimension=768,
+    )
+    yield vector_store
+
+
 @pytest.fixture()
-def milvus_vector_store(nodes_with_relationships, event_loop):
+def milvus_vector_store(session_milvus_vector_store, nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
@@ -69,13 +78,9 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
             truncate_text=False,
         ),
     )
-    vector_store = create_milvus_vector_store(
-        uri="http://localhost",
-        collection_name="parent_summary_test",
-        embedding_vector_dimension=768,
-    )
 
-    doc_store = create_mongo_document_store(document_store_name="parent_summary_test")
+    vector_store = session_milvus_vector_store
+    doc_store = create_mongo_document_store(document_store_name="development")
 
     fill_collection(
         embedding_config,
@@ -85,7 +90,6 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     )
     sleep(1)
     yield vector_store
-    drop_collection(collection_name="parent_summary_test")
 
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
@@ -112,7 +116,7 @@ def context():
 @when(parsers.parse("I postprocess nodes using the ParentSummaryPostProcessor with max_levels set to {max_levels:d}"))
 def postprocess_nodes(starting_nodes, vector_store, context, max_levels):
     processor = ParentSummaryPostProcessor(vectorstore=vector_store, max_levels=max_levels)
-    result = processor._postprocess_nodes(starting_nodes)
+    result = processor.postprocess_nodes(nodes=starting_nodes)
     context["result"] = result
 
 

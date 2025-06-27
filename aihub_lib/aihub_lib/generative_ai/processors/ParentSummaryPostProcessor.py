@@ -12,7 +12,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
     Post-processor to fetch parent summary nodes based on hierarchical relationships.
     """
 
-    vectorstore: BasePydanticVectorStore
+    vectorstore: Annotated[BasePydanticVectorStore, "Vector store to retrieve parent nodes."]
     max_levels: Annotated[int, "Maximum levels to traverse for parent summaries."] = 3
 
     @classmethod
@@ -22,37 +22,29 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
     def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None
     ) -> List[NodeWithScore]:
-        all_nodes: Dict[str, NodeWithScore] = {}
+        all_nodes: Dict[str, NodeWithScore] = {n.node.node_id: n for n in nodes}
 
         for node in nodes:
-            all_nodes[node.node.node_id] = node
+            visited_ids = set(all_nodes.keys())
 
-        visited_ids = set(all_nodes.keys())
-
-        for node in nodes:
-            parent_summaries = self._retrieve_nodes(node, visited_ids=visited_ids)
+            parent_summaries = self._retrieve_parents_for_node(node, visited_ids)
 
             for parent in parent_summaries:
-                if parent.node.node_id not in all_nodes:
-                    all_nodes[parent.node.node_id] = parent
-                    visited_ids.add(parent.node.node_id)
+                all_nodes[parent.node.node_id] = parent
 
         return list(all_nodes.values())
 
-    def _retrieve_nodes(
+    def _retrieve_parents_for_node(
         self,
         content_node: NodeWithScore,
-        visited_ids: Optional[Set[str]] = None,
+        visited_ids: Set[str],
     ) -> List[NodeWithScore]:
-        if visited_ids is None:
-            visited_ids = set()
-
         parents = []
-        current = content_node
+        current_node = content_node
         level = 0
 
-        while level < self.max_levels and NodeRelationship.PARENT in current.node.relationships:
-            parent_info = current.node.relationships[NodeRelationship.PARENT]
+        while level < self.max_levels and NodeRelationship.PARENT in current_node.node.relationships:
+            parent_info = current_node.node.relationships[NodeRelationship.PARENT]
             if not isinstance(parent_info, RelatedNodeInfo):
                 break
 
@@ -61,17 +53,15 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
                 break
 
             visited_ids.add(parent_id)
-            parent_nodes = self.vector_store.get_nodes([parent_id])
+            parent_nodes = self.vectorstore.get_nodes([parent_id])
             if not parent_nodes:
                 break
 
-            parent_node = parent_nodes[0]
-            parent = NodeWithScore(node=parent_node, score=0)
+            parent_node = NodeWithScore(node=parent_nodes[0], score=0.0)
+            if parent_node.node.metadata.get(TYPE) == NODE_TYPE_SUMMARY:
+                parents.append(parent_node)
 
-            if parent.node.metadata.get(TYPE) == NODE_TYPE_SUMMARY:
-                parents.append(parent)
-
-            current = parent
+            current_node = parent_node
             level += 1
 
         return parents
