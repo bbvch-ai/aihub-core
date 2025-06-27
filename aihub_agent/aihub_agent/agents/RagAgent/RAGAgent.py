@@ -5,8 +5,8 @@ from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_i
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
-from aihub_lib.generative_ai.utils.process_retrieved_nodes import process_retrieved_nodes
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
+from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -160,14 +160,10 @@ class RAGAgent(Agent):
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
             )
         if retrieve_step_config.retrieve_summaries:
-            nodes = process_retrieved_nodes(
-                nodes=nodes,
+            nodes = retrieve_parent_summary_nodes(
                 vector_store=retrieve_step_config.vector_store,
-                max_tokens=retrieve_step_config.retrieve_summaries.max_tokens,
-                summary_allocation=retrieve_step_config.retrieve_summaries.summary_allocation,
-                content_allocation=retrieve_step_config.retrieve_summaries.content_allocation,
-                parent_allocation=retrieve_step_config.retrieve_summaries.parent_allocation,
-                max_parent_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
+                nodes=nodes,
+                max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
             )
         return RetrieverEvent.from_nodes(nodes)
 

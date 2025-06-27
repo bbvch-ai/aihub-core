@@ -1,10 +1,9 @@
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Optional, Set
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle, RelatedNodeInfo
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
 
 
@@ -31,12 +30,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
         visited_ids = set(all_nodes.keys())
 
         for node in nodes:
-            if node.node.metadata.get(TYPE) == NODE_TYPE_SUMMARY:
-                continue
-
-            parent_summaries = retrieve_parent_summary_nodes(
-                node, self.vectorstore, self.max_levels, visited_ids.copy()
-            )
+            parent_summaries = self._retrieve_nodes(node, visited_ids=visited_ids)
 
             for parent in parent_summaries:
                 if parent.node.node_id not in all_nodes:
@@ -44,3 +38,40 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
                     visited_ids.add(parent.node.node_id)
 
         return list(all_nodes.values())
+
+    def _retrieve_nodes(
+        self,
+        content_node: NodeWithScore,
+        visited_ids: Optional[Set[str]] = None,
+    ) -> List[NodeWithScore]:
+        if visited_ids is None:
+            visited_ids = set()
+
+        parents = []
+        current = content_node
+        level = 0
+
+        while level < self.max_levels and NodeRelationship.PARENT in current.node.relationships:
+            parent_info = current.node.relationships[NodeRelationship.PARENT]
+            if not isinstance(parent_info, RelatedNodeInfo):
+                break
+
+            parent_id = parent_info.node_id
+            if parent_id in visited_ids:
+                break
+
+            visited_ids.add(parent_id)
+            parent_nodes = self.vector_store.get_nodes([parent_id])
+            if not parent_nodes:
+                break
+
+            parent_node = parent_nodes[0]
+            parent = NodeWithScore(node=parent_node, score=0)
+
+            if parent.node.metadata.get(TYPE) == NODE_TYPE_SUMMARY:
+                parents.append(parent)
+
+            current = parent
+            level += 1
+
+        return parents
