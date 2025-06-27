@@ -38,7 +38,6 @@ class RecursiveNodeSummarizer:
         self._llm = llm
         self.min_summarization_length = min_summarization_length
         self.node_id_to_node = {}
-        self.level_counters = {}
 
     def summarize_nodes(self, nodes: List[TextNode]) -> List[TextNode]:
         if not nodes:
@@ -49,7 +48,6 @@ class RecursiveNodeSummarizer:
         llm_summarizer: LLMSummarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
 
         self.node_id_to_node = {node.node_id: node for node in nodes}
-        self.level_counters = {}
         grouped_nodes = self._group_nodes_by_level(nodes)
         for level_nodes_list in grouped_nodes.values():
             level_nodes_list.sort(key=lambda n: n.metadata.get(SECTION_START_LINE, float("inf")))
