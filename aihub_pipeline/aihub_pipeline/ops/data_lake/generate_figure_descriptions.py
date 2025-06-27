@@ -73,13 +73,11 @@ def generate_description(
 
         return description
     except BadRequestError as e:
-        """
-        Handle the Azure OpenAI content safety filter issue.
-        We do not want to fail the entire document processing if this happens.
-        We try to generate the description again without the surrounding text.
-        If this fails, we use an empty string as a fallback.
-        However, we should monitor this issue.
-        """
+        # Handle the Azure OpenAI content safety filter issue.
+        # We do not want to fail the entire document processing if this happens.
+        # We try to generate the description again without the surrounding text.
+        # If this fails, we use an empty string as a fallback.
+        # However, we should monitor this issue.
         if context:
             context.log.warning(f"BadRequestError caught. It might be a content filter issue. Error: {e}")
             try:
