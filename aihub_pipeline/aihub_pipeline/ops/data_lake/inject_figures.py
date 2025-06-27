@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -7,6 +8,7 @@ from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 from llama_index.core.llms import LLM
+from openai import BadRequestError
 
 from aihub_pipeline.types.DocumentWithFigureInfo import DocumentWithFigureInfo
 from aihub_pipeline.types.FigureMetadata import FigureMetadata
@@ -46,6 +48,7 @@ def inject_figures(
         figure_description = generate_description(
             language_model=language_model,
             image_bytes=image_bytes,
+            context=context,
             surrounding_text=surrounding_text,
         )
         markdown_figure = f"![{figure_description}]({figure_metadata.figure_path})"
@@ -59,6 +62,7 @@ def inject_figures(
 def generate_description(
     language_model: LLM,
     image_bytes: bytes,
+    context: Optional[OpExecutionContext] = None,
     surrounding_text: Optional[str] = None,
 ) -> str:
     """
@@ -86,7 +90,36 @@ def generate_description(
         ),
     ]
 
-    response = language_model.chat(messages=messages)
-    description = response.message.content.replace("\n", " ")
+    try:
+        response = language_model.chat(messages=messages)
+        description = response.message.content.replace("\n", " ")
+        return description
+    except BadRequestError as e:
+        """
+        Handle the Azure OpenAI content safety filter issue.
+        We do not want to fail the entire document processing if this happens.
+        We try to generate the description again without the surrounding text.
+        If this fails, we use an empty string as a fallback.
+        However, we should monitor this issue.
+        """
+        if context:
+            context.log.warning(f"BadRequestError caught. It might be a content filter issue. Error: {e}")
+            try:
+                error_details = e.response.json()
+                inner_error = error_details.get("error", {}).get("inner_error", {})
+                if filter_results := inner_error.get("content_filter_results"):
+                    context.log.warning(f"Azure content filter results: {json.dumps(filter_results, indent=2)}")
+            except (json.JSONDecodeError, AttributeError):
+                context.log.warning("Could not parse detailed error response from BadRequestError.")
 
-    return description
+        if surrounding_text:
+            context.log.info("Attempting to generate description again without surrounding text.")
+            try:
+                return generate_description(
+                    language_model=language_model, image_bytes=image_bytes, context=context, surrounding_text=None
+                )
+            except Exception as retry_e:
+                context.log.error(f"Retry attempt also failed: {retry_e}", exc_info=True)
+                return ""  # If retry fails, return empty string.
+
+        return ""  # If there was no surrounding text to remove, we can't retry.

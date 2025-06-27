@@ -178,7 +178,7 @@ figure_description_generator:
     4. Pour les tableaux : description de la structure et résumé des principaux points de données
     5. Extraction de tout texte visible dans l'image, le cas échéant
     6. Utilise un langage technique approprié tout en restant accessible
-    7. relie la description de l'image au contexte du document qui l'entoure
+    7. Utilise le texte environnant fourni pour comprendre le rôle de l'image, sans laisser le contexte modifier la description factuelle et visuelle.
     8. Évite toute verbosité ou spéculation inutile
 
     Formulez vos descriptions sous forme de paragraphes concis et factuels qui pourraient être utilisés directement comme texte alternatif.
