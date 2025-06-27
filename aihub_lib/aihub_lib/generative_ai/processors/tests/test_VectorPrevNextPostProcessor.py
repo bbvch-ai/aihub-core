@@ -12,7 +12,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
+from aihub_lib.testing.milvus_vector_store_content import fill_collection
 
 
 # Set up an event loop for the test session
@@ -54,6 +54,7 @@ def _(nodes, node_id, datatable):
     return nodes
 
 
+
 @pytest.fixture()
 def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
@@ -86,7 +87,6 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     )
     sleep(1)
     yield vector_store
-    drop_collection(collection_name="prev_next_test")
 
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
@@ -112,7 +112,7 @@ def test_context():
 )
 def postprocess_nodes(starting_node, vector_store, test_context, mode, num_nodes):
     processor = VectorPrevNextPostProcessor(vectorstore=vector_store, num_nodes=num_nodes, mode=mode)
-    result = processor._postprocess_nodes([starting_node])
+    result = processor.postprocess_nodes([starting_node])
     test_context["result"] = result
 
 

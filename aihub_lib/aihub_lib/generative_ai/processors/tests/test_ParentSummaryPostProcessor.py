@@ -50,19 +50,8 @@ def _(nodes, datatable):
 
     return nodes
 
-
-@pytest.fixture(scope="session")
-def session_milvus_vector_store():
-    vector_store = create_milvus_vector_store(
-        uri="http://localhost",
-        collection_name="parent_summary_test",
-        embedding_vector_dimension=768,
-    )
-    yield vector_store
-
-
 @pytest.fixture()
-def milvus_vector_store(session_milvus_vector_store, nodes_with_relationships, event_loop):
+def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
@@ -79,7 +68,11 @@ def milvus_vector_store(session_milvus_vector_store, nodes_with_relationships, e
         ),
     )
 
-    vector_store = session_milvus_vector_store
+    vector_store = create_milvus_vector_store(
+        uri="http://localhost",
+        collection_name="parent_summary_test",
+        embedding_vector_dimension=768,
+    )
     doc_store = create_mongo_document_store(document_store_name="development")
 
     fill_collection(
