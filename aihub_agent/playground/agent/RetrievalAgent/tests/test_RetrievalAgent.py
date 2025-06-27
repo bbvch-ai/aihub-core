@@ -79,7 +79,6 @@ def build_retrieval_agent_config(
     )
 
 
-
 @pytest.fixture(scope="function")
 def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
@@ -99,10 +98,10 @@ def self_hosted_agent_config(event_loop):
     )
     vector_store = create_milvus_vector_store(
         uri="http://localhost",
-        collection_name="development",
+        collection_name="retrieval_agent_development",
         embedding_vector_dimension=768,
     )
-    doc_store = create_mongo_document_store(document_store_name="development")
+    doc_store = create_mongo_document_store(document_store_name="retrieval_agent_development")
 
     fill_collection(
         embedding_config,
@@ -116,8 +115,7 @@ def self_hosted_agent_config(event_loop):
         query_mode=VectorStoreQueryMode.DEFAULT,
     )
 
-    drop_collection()
-
+    drop_collection(collection_name="retrieval_agent_development")
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")
@@ -138,9 +136,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=40) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=QuestionStartEvent(
-                question=query, locale="en"
-            ),
+            start_event=QuestionStartEvent(question=query, locale="en"),
         )
 
 
@@ -157,11 +153,8 @@ def _(agent_runner: AgentTestRunner):
     assert combiner_event.context_message, "InOrderNodeCombinerEvent did not produce context message"
 
 
-
 @then("the agent returns an event with this context message and stops")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
     retrieval_response_event = agent_runner.get_event_of_class(RetrievalResponseEvent)
     assert retrieval_response_event.context_message, "context message is not present in RetrievalResponseEvent"
-
-

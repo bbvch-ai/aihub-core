@@ -1,9 +1,3 @@
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
-from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
@@ -11,6 +5,13 @@ from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+
+from aihub_agent.agents.Agent import Agent
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
+from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
+from aihub_agent.workflow.decorators.step import step
 
 
 class RetrievalAgent(Agent):
