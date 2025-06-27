@@ -12,6 +12,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
+    DOCUMENT_TITLE,
     H1,
     H2,
     H3,
@@ -20,11 +21,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     H6,
     INSERTED_AT,
     LANGUAGE,
-    NAMESPACE,
-    NODE_CONTENT_TYPE,
     NODE_CONTENT_TYPE_FIGURE,
     SOURCE,
-    TYPE,
     UPDATED_AT,
     VERSION,
 )
@@ -67,9 +65,7 @@ def combine_nodes_in_order(
 
         metadata_fields = {
             SOURCE: key,
-            NAMESPACE: node.namespace,
-            TYPE: node.type,
-            NODE_CONTENT_TYPE: node.content_type,
+            DOCUMENT_TITLE: node.document_title,
             LANGUAGE: node.language,
             VERSION: node.version,
             CREATED_AT: node.created_at,
