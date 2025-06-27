@@ -1,8 +1,6 @@
 import html
 import json
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from bs4 import BeautifulSoup
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
@@ -11,6 +9,8 @@ from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 from openai import BadRequestError
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 
@@ -38,6 +38,7 @@ def generate_figure_descriptions(
             image_block=ImageBlock(image=figure_bytes),
             before_text_block=TextBlock(text=text_before),
             after_text_block=TextBlock(text=text_after),
+            context=context,
         )
         markdown_figure = f"![{figure_description}]({figure_path})"
         figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
@@ -65,12 +66,7 @@ def generate_description(
     try:
         messages = RichPromptTemplate(template_str=context_prompt_locale).format_messages()
         # RichPromptTemplate doesn't support bytes from ImageBlock
-        context_blocks = []
-        if before_text_block:
-            context_blocks.append(before_text_block)
-        context_blocks.append(image_block)
-        if after_text_block:
-            context_blocks.append(after_text_block)
+        context_blocks = [block for block in [before_text_block, image_block, after_text_block] if block]
         messages[-1].blocks.extend(context_blocks)
         response = language_model.chat(messages=messages)
         description = response.message.content.replace("\n", " ")
