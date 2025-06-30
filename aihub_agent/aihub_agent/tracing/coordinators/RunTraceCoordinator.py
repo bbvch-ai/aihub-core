@@ -6,11 +6,11 @@ from typing import Annotated, Any, AsyncIterator, Callable, Dict, List, Optional
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
-from aihub_lib.nats.context.BaseContext import BaseContext
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from nats.aio.client import Client as NATS
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from openinference.semconv.resource import ResourceAttributes
@@ -24,7 +24,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_agent.workflow.annotations.custom_types.ListOfSize import ListOfSize
+from aihub_agent.context.BaseContext import BaseContext
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ class RunTraceCoordinator:
                 self.trace_run_stop(span, event, content=response_aggregate)
                 await subscriber.stop()
 
-        subscriber = NCSubscriber.for_all_thread_events(
+        subscriber = AgentNCSubscriber.for_all_thread_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_topic(topic),
             handler=handler,

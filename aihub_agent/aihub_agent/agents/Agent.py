@@ -1,87 +1,44 @@
-import abc
 import functools
-import inspect
 from typing import Set, Type
 
-from aihub_lib.nats.events.control import ControlEvent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
+from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
 
 
-class Agent(abc.ABC):
+class Agent(DispatchableWorkflow):
     """
-    Base class for agents that execute workflow steps in response to events.
+    An agent is a dispatchable workflow that tries to get some work done by defining a series of
+    operations that is performed on the input data to achieve a pre-defined goal - the agents output.
 
-    ### Why This Class?
-    An `Agent` defines a collection of steps—annotated functions—that process certain events.
-    These steps form a workflow: when an event arrives, the dispatcher checks which steps can
-    fire based on their declared input events. By centralizing step inspection and event-to-step
-    mapping, the `Agent` class provides a consistent interface for discovery and orchestration.
+    In an agentic workflow, steps define a series of 'operations' that need to be performed in order
+    to bring the agents input (StartEvent) one step closer to the desired output (StopEvent).
 
-    ### Key Features
-    - **Step Discovery:**
-      Steps are functions decorated with `@step`. The agent inspects its class members to find these
-      methods, enabling automated wiring of events to step invocations.
-    - **Event Mapping:**
-      Each step declares which events it consumes. The agent can then quickly identify which steps
-      should run when a given event type arrives.
-    - **Start Events:**
-      A subset of input events may be start events (subclasses of `StartEvent`), indicating how a run
-      or workflow can be initiated.
+    You main goal is simple:
+    - Define the input and output of your agent: What data should it receive, what should it return
+    - Divide your agentic workflow into a series of steps that must be executed to achieve the goal.
+    - For each step, decide what outputs from previous steps it requires and what it produces.
+    - Hence, through a series of operations, the agent input (start) it processed to achieve the agent output (stop).
 
-    ### Typical Workflow
-    1. The agent defines multiple step methods using `@step`, each expecting certain event types.
-    2. When a `ControlEvent` arrives, the dispatcher queries `get_steps_waiting_for_event` to find
-       all steps that can trigger from that event.
-    3. The dispatcher then executes these steps, passing in the required events and contexts.
+    Your agent should always do one thing and do it well. It should emit in-between results to the user
+    through display events, but it should also always define a clear final output in the form of a
+    StopEvent (or a subclass of it) that defines all relevant attributes.
 
-    ### Example
-    Suppose an agent has `my_step` decorated with `@step` expecting `SomeEvent`. When `SomeEvent`
-    arrives, the dispatcher references `Agent.get_steps_waiting_for_event(SomeEvent)` to locate and run `my_step`.
+    Many agents can be used in three different settings, which you must keep in mind while designing your agent:
+    - As an assistant, in which case some user sends a message to the agent and the agent responds.
+    - As an agent within an agentic process, in which the agent performs one piece of work as part of a process.
+    - As an agent that is called from another agent to deliver a result which the other agent can use to fulfil ITS goal.
+
+    Usually, marking the agent as an assistant is as simply as accepting the UserMessageEvent as a StartEvent,
+    as it makes the agent 'conversational'. However, try not to limit your agents to conversations only, as it
+    makes the agent inflexible to participate in other types of interactions.
     """
 
-    @classmethod
-    @functools.cache
-    def get_steps(cls):
-        """
-        Returns all methods on this agent class that are marked as steps.
-        A step is identified by the `_is_step` attribute set by the `@step` decorator.
-        """
-        return [
-            method
-            for name, method in inspect.getmembers(cls, predicate=inspect.isfunction)
-            if getattr(method, "_is_step", False)
-        ]
+    STEP_ANNOTATION = "_is_agent_step"
 
-    @classmethod
-    @functools.cache
-    def get_steps_waiting_for_event(cls, event_class: Type[ControlEvent]):
-        """
-        Given an event type, returns the steps that can handle it.
-        This helps the dispatcher decide which steps to execute when a certain event arrives.
-        """
-        steps = cls.get_steps()
-        return [method for method in steps if event_class in method._input_events]
-
-    @classmethod
-    @functools.cache
-    def get_input_events(cls) -> Set[Type[ControlEvent]]:
-        """
-        Aggregates all input event types required by all steps.
-        This provides a global view of which events can drive the agent’s workflow.
-        """
-        steps = cls.get_steps()
-        return set(event_class for method in steps for event_class in method._input_events)
-
-    @classmethod
-    @functools.cache
-    def get_output_events(cls) -> Set[Type[ControlEvent]]:
-        """
-        Aggregates all output event types produced by all steps.
-        This provides a global view of which events the agent can emit.
-        """
-        steps = cls.get_steps()
-        return set(event_class for method in steps for event_class in method._output_events)
+    PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
+    STOP_ON_ERROR_ANNOTATION = "_stop_on_error"
+    MAX_EXECUTION_PER_RUN_ANNOTATION = "_max_executions_per_run"
 
     @classmethod
     @functools.cache

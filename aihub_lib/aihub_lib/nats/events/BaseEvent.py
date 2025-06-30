@@ -117,6 +117,30 @@ class BaseEvent(BaseModel):
         return "ControlEvent" in self._parent_event_names
 
     @property
+    def is_process_event(self) -> bool:
+        return "ProcessEvent" in self._parent_event_names
+
+    @property
+    def is_process_start_event(self) -> bool:
+        return "ProcessStartEvent" in self._parent_event_names
+
+    @property
+    def is_process_stop_event(self) -> bool:
+        return "ProcessStopEvent" in self._parent_event_names
+
+    @property
+    def is_process_exception_event(self) -> bool:
+        return "ProcessExceptionEvent" in self._parent_event_names
+
+    @property
+    def is_work_event(self) -> bool:
+        return "WorkEvent" in self._parent_event_names
+
+    @property
+    def is_work_request_event(self) -> bool:
+        return "WorkRequestEvent" in self._parent_event_names
+
+    @property
     def is_exception_event(self) -> bool:
         return "ExceptionEvent" in self._parent_event_names
 

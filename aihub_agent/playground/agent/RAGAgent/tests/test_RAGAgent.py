@@ -59,7 +59,7 @@ def event_loop():
     loop.close()
 
 
-scenarios("../tests/features/rag_agent.feature")
+scenarios("./features/rag_agent.feature")
 load_dotenv(Path(__file__).parent / ".env")
 
 

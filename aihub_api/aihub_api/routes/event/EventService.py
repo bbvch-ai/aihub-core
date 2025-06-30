@@ -3,12 +3,12 @@ from typing import List, Optional
 
 from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity, TimeRange
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity, TimeRange
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -31,12 +31,12 @@ class EventService:
     By isolating event logic in a service, the controller remains clean and easy to maintain.
     The service deals with:
     - Database retrieval of persisted events.
-    - Handling user commands/events and relaying them to the correct subsystem (via ExternalEventDistributor).
+    - Handling user commands/events and relaying them to the correct subsystem (via ExternalAgentEventDistributor).
     - Sending errors back to the user if something goes wrong.
 
     ### Key Operations
     - `get_user_events`: Returns all events relevant to a user’s threads.
-    - `handle_external_event`: Receives a `ExternalEvent`, processes it, and sends out responses or errors as needed.
+    - `handle_external_event`: Receives a `ExternalAgentEvent`, processes it, and sends out responses or errors as needed.
 
     ### Error Handling
     If an exception occurs while handling an external event, an `ExceptionEvent` is sent back through the WebSocket,
@@ -60,9 +60,9 @@ class EventService:
         if thread_id is None:
             user_threads = ThreadEntity.get_threads_by_user(user_oid)
             thread_ids = [str(thread.id) for thread in user_threads]
-            persisted_events = PersistedEventEntity.display_events_for_threads(thread_ids, event_name=event_class)
+            persisted_events = PersistedAgentEventEntity.display_events_for_threads(thread_ids, event_name=event_class)
         else:
-            persisted_events = PersistedEventEntity.display_events_for_thread(
+            persisted_events = PersistedAgentEventEntity.display_events_for_thread(
                 thread_id=str(thread_id),
                 display_id=str(display_id) if display_id is not None else None,
                 event_name=event_class,
@@ -70,17 +70,17 @@ class EventService:
         return [WSServerEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod
-    def get_all_thread_display_events(thread_id: str) -> List[PersistedEventEntity]:
+    def get_all_thread_display_events(thread_id: str) -> List[PersistedAgentEventEntity]:
         """
         Retrieves all display events for a thread.
         """
-        return PersistedEventEntity.display_events_for_thread(thread_id)
+        return PersistedAgentEventEntity.display_events_for_thread(thread_id)
 
     @staticmethod
     async def handle_external_event(
-        event: ExternalEvent,
+        event: ExternalAgentEvent,
         user: AuthenticatedUser,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         ws_sender: WebSocketSender,
     ):
         """
@@ -101,7 +101,7 @@ class EventService:
                     run_id=str(ObjectId()),
                     thread_id=event.thread_id,
                     display_id=event.display_id,
-                    event_type=TopicManager.DISPLAY_EVENT,
+                    event_type=AgentTopicManager.DISPLAY_EVENT,
                     event_name=ExceptionEvent.event_name_from_class(),
                     event_id=str(ObjectId()),
                 ),
@@ -112,7 +112,7 @@ class EventService:
         websocket: WebSocket,
         ws_sender: WebSocketSender,
         ws_manager: WebSocketManager,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         user: AuthenticatedUser,
         t: LocaleHandler,
     ):
@@ -125,7 +125,7 @@ class EventService:
             while True:
                 data = await websocket.receive_json()
                 logger.debug(f"Received data: {data}")
-                event = ExternalEvent.deserialize_event(data)
+                event = ExternalAgentEvent.deserialize_event(data)
 
                 # Handle the received event
                 await EventService.handle_external_event(event, user, external_event_distributor, ws_sender)
@@ -144,7 +144,7 @@ class EventService:
         event_name: Optional[str] = None,
     ) -> EventTimeseries:
         """Gets time-based statistics for a thread."""
-        buckets, start_time, end_time, resolution = PersistedEventEntity.get_event_timeseries(
+        buckets, start_time, end_time, resolution = PersistedAgentEventEntity.get_event_timeseries(
             time_range=time_range,
             agent_id=agent_id,
             agent_class=agent_class,

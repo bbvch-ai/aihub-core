@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.Topic import Topic
 
 
@@ -35,6 +35,10 @@ class PartialAgentTopic(Topic):
     event_name: Optional[str] = Field(None, description="Event name or None if unspecified.")
     event_id: Optional[str] = Field(None, description="Event ID or None if unspecified.")
 
+    @property
+    def execution_context_id(self) -> str:
+        return self.run_id
+
     @classmethod
     def from_subject(cls, subject: str) -> "PartialAgentTopic":
         """
@@ -55,7 +59,7 @@ class PartialAgentTopic(Topic):
             event_name,
             event_id,
         ) = subject.split(".")
-        assert topic_type == TopicManager.AGENT_TOPIC, f"Unexpected topic type in subject: {subject}"
+        assert topic_type == AgentTopicManager.AGENT_TOPIC, f"Unexpected topic type in subject: {subject}"
 
         def none_if_wildcard(value: str) -> Optional[str]:
             return value if value != "*" else None
@@ -73,7 +77,7 @@ class PartialAgentTopic(Topic):
 
     def to_subject(self):
         return (
-            f"{TopicManager.AGENT_TOPIC}."
+            f"{AgentTopicManager.AGENT_TOPIC}."
             f"{self.agent_class or '*'}."
             f"{self.agent_id or '*'}."
             f"{self.thread_id or '*'}."

@@ -1,15 +1,14 @@
 import asyncio
 import logging
-from typing import Awaitable, Callable, Generic, Optional, Type, TypeVar
+from typing import Awaitable, Callable, Optional, Type, TypeVar
 
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError, ConnectionDrainingError
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.events import BaseEvent
+from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber
 from aihub_lib.nats.topics import Topic
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
-class NCSubscriber(Generic[TEvent]):
+class NCSubscriber(AbstractSubscriber):
     """
     A generic NATS subscriber that reads messages from a given subject and delegates handling
     to a provided async callback. It deserializes event data into a specified event class (TEvent)
@@ -35,10 +34,6 @@ class NCSubscriber(Generic[TEvent]):
       structured Topic object, making it easy for handlers to understand the origin and scope of the event.
     - **Lifecycle Management:** `start()` and `stop()` methods manage the subscription lifecycle,
       including safe unsubscription.
-
-    ### Example
-    Create a subscriber that listens to all display events for a given agent, providing a handler
-    function that updates a UI or logs the events.
     """
 
     def __init__(
@@ -48,11 +43,8 @@ class NCSubscriber(Generic[TEvent]):
         event_cls: Type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
     ):
-        self.nc = nc
-        self.subject = subject
+        super().__init__(nc, subject, event_cls, handler)
         self.subscription: Optional[Subscription] = None
-        self.event_cls = event_cls
-        self.handler = handler
 
     async def start(self) -> None:
         """Subscribe to the configured subject and begin receiving messages."""
@@ -91,105 +83,3 @@ class NCSubscriber(Generic[TEvent]):
         except Exception as e:
             logger.exception(e)
             logger.exception(f"Error in async handler for subject '{subject}': {e}")
-
-    @classmethod
-    def all_for_agent_display_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
-    ):
-        """Subscribe to all display events from all agents."""
-        subject = topic_manager.get_subject_for_all_display_events_in_agent()
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=DisplayEvent,
-            handler=handler,
-        )
-
-    @classmethod
-    def for_thread_display_events(
-        cls,
-        nc: NATS,
-        topic_manager: AgentThreadTopicManager,
-        handler: Callable[[DisplayEvent, Topic], Awaitable[None]],
-    ):
-        """Subscribe to all display events within a specific thread."""
-        subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=DisplayEvent,
-            handler=handler,
-        )
-
-    @classmethod
-    def for_all_thread_events(
-        cls,
-        nc: NATS,
-        topic_manager: AgentThreadTopicManager,
-        handler: Callable[[ControlEvent, Topic], Awaitable[None]],
-    ):
-        """Subscribe to all events (display, control, etc.) within a specific thread."""
-        subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=BaseEvent,
-            handler=handler,
-        )
-
-    @classmethod
-    def for_agent_discovery_request_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, Topic], Awaitable[None]],
-        call_id: str = "*",
-    ):
-        """Subscribe to discovery request events for agents, optionally filtered by a specific call_id."""
-        subject = topic_manager.get_agent_discovery_subject_request(call_id)
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=BaseEvent,
-            handler=handler,
-        )
-
-    @classmethod
-    def for_agent_discovery_response_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, Topic], Awaitable[None]],
-        call_id: str = "*",
-    ):
-        """Subscribe to discovery response events for agents, optionally filtered by a specific call_id."""
-        subject = topic_manager.get_agent_discovery_subject_response(call_id)
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=BaseEvent,
-            handler=handler,
-        )
-
-    @classmethod
-    def for_all_agent_events(
-        cls,
-        nc: NATS,
-        topic_manager: TopicManager,
-        handler: Callable[[BaseEvent, Topic], Awaitable[None]],
-    ):
-        """
-        Creates a NCSubscriber for all agent events.
-        Use this when you want a single subscriber to handle every agent event in the system.
-        """
-        subject = topic_manager.get_subject_for_all_events_in_agent()
-
-        return cls(
-            nc=nc,
-            subject=subject,
-            event_cls=BaseEvent,
-            handler=handler,
-        )

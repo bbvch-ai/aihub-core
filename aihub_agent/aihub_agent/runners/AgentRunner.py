@@ -4,65 +4,35 @@ from typing import List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
+from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.dispatchers.Dispatcher import Dispatcher
+from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from aihub_agent.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 
 logger = logging.getLogger(__name__)
 
 
 class AgentRunner:
     """
-    Manages the lifecycle of an agent, connecting it to NATS/JetStream, subscribing to event streams,
-    and orchestrating the dispatch of events to the agent's steps via the Dispatcher.
-
-    ### Why AgentRunner?
-    In complex AI workflows, agents:
-    - Receive events (like StartEvent) from distributed sources.
-    - Respond to discovery requests (to expose their capabilities).
-    - Handle incoming ControlEvents that trigger steps.
-
-    The AgentRunner brings these elements together. It:
-    - Connects to NATS and JetStream.
-    - Sets up subscriptions for discovery and control events.
-    - Hooks into the Dispatcher to execute steps in response to events.
-    - Provides methods to start/stop the agent and send initial events (like StartEvent).
-
-    By encapsulating these concerns, AgentRunner simplifies the startup and operation of an agent in
-    a distributed environment.
-
-    ### Key Responsibilities
-    - **Discovery Handling:**
-      On receiving a `DiscoveryRequestEvent`, responds with an `AgentDiscoveryResponseEvent` describing
-      the agent’s start events and configuration.
-    - **Control Event Handling:**
-      Subscribes to control events and delegates them to the Dispatcher for step execution.
-    - **Lifecycle Management:**
-      Provides `start()`, `stop()`, and `run_forever()` methods to manage the agent’s runtime.
-    - **Sending Initial Events:**
-      `send_event()` can send a `StartEvent` or other events to kick off a run.
-
-    ### Example
-    ```python
-    runner = AgentRunner(servers=[NatsConfig().NATS_ENDPOINT], redis_url=RedisConfig().REDIS_URL, agent_type=MyAgent, agent_config=my_config)
-    await runner.run_forever()
-    ```
-    This code connects to NATS, listens for events, and processes them indefinitely until stopped.
+    An agent runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
+    as running the agent through an agent dispatcher.
+    The runner is also responsible for making the agent discoverable by responding to discovery requests.
     """
 
     def __init__(
@@ -91,7 +61,7 @@ class AgentRunner:
         self.nc: Optional[NATS] = None
         self.js: Optional[JetStreamContext] = None
 
-        self.dispatcher: Optional[Dispatcher] = None
+        self.dispatcher: Optional[AgentDispatcher] = None
 
         self.discovery_event_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
         self.control_event_subscriber: Optional[JSSubscriber] = None
@@ -99,14 +69,10 @@ class AgentRunner:
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
+    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: AgentDiscoveryTopic):
         """
-        Handles discovery requests by returning an `AgentDiscoveryResponseEvent` that includes:
-        - Agent class, ID
-        - Agent configuration
-        - Specs for start events (the events that can initiate a run)
-
-        If the discovery request doesn't match this agent (i.e., different agent_class/agent_id), it ignores it.
+        Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
+        agent configuration as well as some carefully crafted event specifications.
         """
         if topic.agent_class not in [self.agent_class, "*"] or topic.agent_id not in [
             self.agent_config.agent_id,
@@ -146,11 +112,7 @@ class AgentRunner:
 
     async def start(self):
         """
-        Connects to NATS, sets up JetStream, initializes the Dispatcher and subscribers,
-        and starts listening for events.
-
-        - Starts the discovery subscriber so other services can discover this agent's capabilities.
-        - Starts the control event subscriber to handle workflow execution.
+        Connects to all external services and starts the agent dispatcher with connecting it to a JetStream stream.
         """
         if self.running:
             logger.warning("AgentRunner is already running.")
@@ -167,7 +129,7 @@ class AgentRunner:
         self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
         # Initialize dispatcher
-        self.dispatcher = Dispatcher(
+        self.dispatcher = AgentDispatcher(
             self.agent_type,
             self.agent_config,
             self.nc,
@@ -179,13 +141,13 @@ class AgentRunner:
         await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+            self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
-        self.control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
+        self.control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,
@@ -248,7 +210,6 @@ class AgentRunner:
     ):
         """
         Sends an initial event (like a StartEvent) to initiate a run.
-
         This allows external code to trigger a new run by injecting a start event.
         """
         publisher = JSPublisher(self.js)

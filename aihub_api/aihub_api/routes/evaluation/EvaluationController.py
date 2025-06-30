@@ -7,7 +7,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Path, Security
 from nats.aio.client import Client as NATS
@@ -155,7 +155,7 @@ class EvaluationController(Controller):
             create_dto: Annotated[ExperimentCreate, Body()],
             user: AuthenticatedUser = Security(self.auth),
             nats_client: NATS = Depends(use_nats),
-            external_event_distributor: ExternalEventDistributor = Depends(use_external_event_distributor),
+            external_event_distributor: ExternalAgentEventDistributor = Depends(use_external_event_distributor),
             t: LocaleHandler = Depends(use_locale),
         ) -> Experiment:
             return await EvaluationService.run_experiment_evaluation(

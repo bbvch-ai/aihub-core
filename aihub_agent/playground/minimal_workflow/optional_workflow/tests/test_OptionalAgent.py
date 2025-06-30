@@ -18,7 +18,7 @@ from playground.minimal_workflow.optional_workflow.events.EventOptionalC import 
 from playground.minimal_workflow.optional_workflow.events.EventOptionalD import EventOptionalD
 
 # Load scenarios from your feature file
-scenarios("../tests/features/optional_agent.feature")
+scenarios("./features/optional_agent.feature")
 
 
 @given("an OptionalAgent runner", target_fixture="agent_runner")

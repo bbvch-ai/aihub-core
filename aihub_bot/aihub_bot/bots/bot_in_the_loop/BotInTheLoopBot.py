@@ -1,8 +1,8 @@
 import logging
 import re
 
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import SlackResponderInfo
 from botbuilder.core import ActivityHandler, TurnContext
@@ -19,7 +19,7 @@ class BotInTheLoopBot(ActivityHandler):
     def __init__(
         self,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         bot_in_the_loop_handler: BotInTheLoopHandler,
     ):
         super().__init__()
@@ -75,7 +75,7 @@ class BotInTheLoopBot(ActivityHandler):
 
         # Distribute the response event
         await self.external_event_distributor.distribute_event(
-            external_event=ExternalEvent(
+            external_event=ExternalAgentEvent(
                 event=BotInTheLoop.response(
                     response=turn_context.activity.text,
                     request_event=bot_in_the_loop_request,

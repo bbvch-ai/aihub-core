@@ -13,6 +13,7 @@ from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
+from .process import ProcessEvent, ProcessExceptionEvent, ProcessStartEvent, ProcessStopEvent
 from .semantic import (
     AgentEvent,
     ChainEvent,
@@ -25,6 +26,8 @@ from .semantic import (
     ToolEvent,
 )
 from .user import UserMessageEvent
+from .work import AgentWorkEvent, HumanWorkEvent, ProgramWorkEvent, WorkEvent
+from .work_request import AgentWorkRequestEvent, HumanWorkRequestEvent, ProgramWorkRequestEvent, WorkRequestEvent
 
 __all__ = [
     "BaseEvent",
@@ -60,4 +63,16 @@ __all__ = [
     "GuardRejectionEvent",
     "LimitChatHistoryEvent",
     "StandaloneQuestionCondenserEvent",
+    "WorkEvent",
+    "AgentWorkEvent",
+    "HumanWorkEvent",
+    "ProgramWorkEvent",
+    "WorkRequestEvent",
+    "AgentWorkRequestEvent",
+    "HumanWorkRequestEvent",
+    "ProgramWorkRequestEvent",
+    "ProcessEvent",
+    "ProcessExceptionEvent",
+    "ProcessStartEvent",
+    "ProcessStopEvent",
 ]

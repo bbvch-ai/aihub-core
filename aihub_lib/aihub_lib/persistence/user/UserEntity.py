@@ -40,6 +40,11 @@ class UserEntity(Document):
     meta = {
         "collection": "users",
         "strict": False,
+        "indexes": [
+            {"fields": ["email"], "unique": True},
+            {"fields": ["roles"]},
+            {"fields": ["last_updated"]},
+        ],
     }
     id = StringField(primary_key=True)
     name = StringField(required=True)
