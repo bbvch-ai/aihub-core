@@ -5,7 +5,12 @@ from httpx import AsyncClient, ASGITransport
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.i18n.I18nController import I18nController
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 
 BASE_URL = "http://test"
 API_ENDPOINT = "/api/v1/i18n/my-locale"
@@ -14,8 +19,8 @@ DEFAULT_LANG_KEY = "lang"
 
 @pytest_asyncio.fixture(scope="module")
 async def api_client():
-    """Create an API client with I18nController mounted using NoAuthHandler."""
-    auth = NoAuthHandler()
+    """Create an API client with I18nController mounted using DangerousDevelopmentOnlyAuthHandler."""
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = I18nController(auth=auth).get_my_locale()
     runner = ApiTestRunner()
     runner.mount(controller)

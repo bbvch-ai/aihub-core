@@ -1,5 +1,5 @@
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Query, Security
@@ -20,15 +20,15 @@ class FileController(Controller):
     description = LocaleString(en="Provides secure access to stored files")
     icon = "line-md:file"
 
-    def __init__(self, route: str = "/file", auth: AuthHandler | None = None, is_admin_only=False):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/file", is_admin_only=False):
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
 
     def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}"):
         @self.router.get(route, tags=self.tags, summary="Get signed file URL")
         async def get_file_url(
             container: str,
             file_path: str,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> SignedUrlDto:
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
@@ -42,7 +42,7 @@ class FileController(Controller):
         async def get_file_redirect(
             container: str,
             file_path: str,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ):
             """
             Generates a short-lived secure link to the blob resource, and redirects the user to it.

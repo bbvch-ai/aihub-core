@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -79,7 +79,7 @@ class EventService:
     @staticmethod
     async def handle_external_event(
         event: ExternalAgentEvent,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         external_event_distributor: ExternalAgentEventDistributor,
         ws_sender: WebSocketSender,
     ):
@@ -97,7 +97,7 @@ class EventService:
                 ExceptionEvent(message=str(e)),
                 topic=AgentTopic(
                     agent_class="ExceptionAgent",
-                    agent_id=user.oid,
+                    agent_id=user.id,
                     run_id=str(ObjectId()),
                     thread_id=event.thread_id,
                     display_id=event.display_id,
@@ -113,15 +113,15 @@ class EventService:
         ws_sender: WebSocketSender,
         ws_manager: WebSocketManager,
         external_event_distributor: ExternalAgentEventDistributor,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         t: LocaleHandler,
     ):
-        logger.debug(f"User {user.oid} connected to websocket")
-        await ws_manager.connect(websocket, user.oid, t.locale)
+        logger.debug(f"User {user.id} connected to websocket")
+        await ws_manager.connect(websocket, user.id, t.locale)
 
         # Process incoming messages
         try:
-            logger.debug(f"Receiving events for User {user.oid}")
+            logger.debug(f"Receiving events for User {user.id}")
             while True:
                 data = await websocket.receive_json()
                 logger.debug(f"Received data: {data}")
@@ -132,8 +132,8 @@ class EventService:
 
         except WebSocketDisconnect as e:
             logging.error(f"Websocket disconnected: {e}")
-            logger.debug(f"User {user.oid} disconnected from websocket")
-            await ws_manager.disconnect(websocket, user.oid)
+            logger.debug(f"User {user.id} disconnected from websocket")
+            await ws_manager.disconnect(websocket, user.id)
 
     @staticmethod
     def get_event_timeseries(

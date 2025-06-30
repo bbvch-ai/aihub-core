@@ -37,7 +37,7 @@ class BotInTheLoopHandler:
 
     def __init__(self):
         self.threads: Dict[str, BotInTheLoopThread] = {}
-        self.path: str = f"/api/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
+        self.path: str = f"/bearer_token/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
         # Use TTLCache with max size of 100 entries
         self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)
 

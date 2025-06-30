@@ -1,5 +1,6 @@
-from typing import Annotated, Any, Callable
+from typing import Annotated
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
@@ -21,11 +22,12 @@ class BotInTheLoopController(Controller):
 
     def __init__(
         self,
+        *,
+        auth: AuthHandler,
         route: str = BotInTheLoopHandler.CONTROLLER_PATH,
         is_admin_only=False,
-        auth: Callable[..., Any] = None,
     ):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
 
     def bot_in_the_loop_response(self, route: str = BotInTheLoopHandler.ENDPOINT_PATH) -> "BotInTheLoopController":
         @self.router.post(route, tags=self.tags)

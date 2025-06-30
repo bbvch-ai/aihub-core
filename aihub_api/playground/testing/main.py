@@ -8,7 +8,12 @@ from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
@@ -34,7 +39,7 @@ async def main():
 
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     OPENAI_URL = "https://aihub-dev-openai-swe-whisper.openai.azure.com"
 
@@ -50,8 +55,7 @@ async def main():
         .add_agent_to_thread()
         .remove_agent_from_thread()
         .add_user_to_thread()
-        .remove_user_from_thread()
-        .get_thread_event_timeseries(),
+        .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().discover_agents(),
         OpenaiController(
             auth=auth,

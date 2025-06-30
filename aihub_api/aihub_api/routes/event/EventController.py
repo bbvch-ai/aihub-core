@@ -1,8 +1,8 @@
 import logging
 from typing import Annotated, List
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
@@ -44,8 +44,8 @@ class EventController(Controller):
     description = LocaleString(en="Inspect events in the system")
     icon = "mdi:apache-kafka"
 
-    def __init__(self, route: str = "/events", auth: AuthHandler | None = None, is_admin_only=True):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/events", is_admin_only=True):
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
 
     def get_events(self, path: str = "/") -> "EventController":
         @self.router.get(path, tags=self.tags)
@@ -53,7 +53,7 @@ class EventController(Controller):
             thread_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
             event_class: Annotated[str, Query()] = None,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[WSServerEvent]:
             """
@@ -65,7 +65,7 @@ class EventController(Controller):
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
             return EventService.get_user_events(
-                user.oid,
+                user.id,
                 t.locale,
                 str_to_object_id(thread_id) if thread_id else None,
                 str_to_object_id(display_id) if display_id else None,
@@ -79,7 +79,7 @@ class EventController(Controller):
         async def get_events_in_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[WSServerEvent]:
             """
@@ -90,7 +90,7 @@ class EventController(Controller):
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
             return EventService.get_user_events(
-                user.oid,
+                user.id,
                 t.locale,
                 str_to_object_id(thread_id),
                 str_to_object_id(display_id) if display_id else None,
@@ -163,7 +163,7 @@ class EventController(Controller):
             agent_id: Annotated[str, Query(title="Agent ID")] = None,
             agent_class: Annotated[str, Query(title="Agent Class")] = None,
             event_name: Annotated[str, Query(title="Event Name")] = None,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> EventTimeseries:
             """
             Retrieves time-based statistics.

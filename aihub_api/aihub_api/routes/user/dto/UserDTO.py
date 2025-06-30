@@ -1,10 +1,8 @@
 from typing import Annotated, Optional
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from pydantic import BaseModel, Field
-
-from aihub_api.auth.identity.UserIdentity import UserIdentity
 
 
 class UserDTO(BaseModel):
@@ -14,11 +12,11 @@ class UserDTO(BaseModel):
     profile_image: Annotated[Optional[str], Field(description="User's profile image in base64.")] = None
 
     @classmethod
-    def from_authenticated_user(cls, user: AuthenticatedUser):
+    def from_authenticated_user(cls, user: UserIdentity):
         return cls(
-            id=user.oid,
+            id=user.id,
             name=user.name,
-            email=user.preferred_username,
+            email=user.email,
         )
 
     @classmethod

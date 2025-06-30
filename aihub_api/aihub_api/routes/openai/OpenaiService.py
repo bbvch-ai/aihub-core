@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Callable, Dict, List, Literal, Optional, Tuple
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
@@ -74,7 +74,7 @@ class OpenaiService:
     @staticmethod
     async def get_models_with_assistants(
         chat_models: List[ChatLLMConfig],
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         t: LocaleHandler,
         exclude_webui_agents: bool,
@@ -116,7 +116,7 @@ class OpenaiService:
     async def get_model_with_assistants(
         chat_models: List[ChatLLMConfig],
         model_name: str,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         t: LocaleHandler,
     ) -> ModelDetails:
@@ -206,7 +206,7 @@ class OpenaiService:
         chat_models: List[ChatLLMConfig],
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
@@ -249,7 +249,7 @@ class OpenaiService:
         agent_class: str,
         agent_id: str,
         chat_completion_request: ChatCompletionRequest,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
         locale: Optional[str] = None,
@@ -310,7 +310,7 @@ class OpenaiService:
         agent_class: str,
         agent_id: str,
         chat_completion_request: ChatCompletionRequest,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
         locale: Optional[str] = None,

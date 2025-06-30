@@ -751,51 +751,6 @@ export const AudioContentSchema = {
     title: 'AudioContent'
 } as const;
 
-export const AuthenticatedUserSchema = {
-    properties: {
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: "User's full name"
-        },
-        preferred_username: {
-            type: 'string',
-            title: 'Preferred Username',
-            description: "User's email address"
-        },
-        oid: {
-            type: 'string',
-            title: 'Oid',
-            description: "User's Object ID"
-        },
-        roles: {
-            anyOf: [
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Roles',
-            description: "User's roles"
-        }
-    },
-    type: 'object',
-    required: ['preferred_username', 'oid'],
-    title: 'AuthenticatedUser'
-} as const;
-
 export const Body_create_transcription_openai_audio_transcriptions_postSchema = {
     properties: {
         file: {
@@ -8540,6 +8495,49 @@ export const UserDTOSchema = {
     title: 'UserDTO'
 } as const;
 
+export const UserIdentitySchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier for the user.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the user.'
+        },
+        email: {
+            type: 'string',
+            title: 'Email',
+            description: 'The email address of the user.'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'The roles assigned to the user.'
+        },
+        profile_image: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Profile Image',
+            description: 'Data URL (base64) representation of profile image'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'email', 'roles'],
+    title: 'UserIdentity'
+} as const;
+
 export const UserMessageEventSchema = {
     properties: {
         event_id: {
@@ -8580,7 +8578,7 @@ export const UserMessageEventSchema = {
             default: 'de'
         },
         user: {
-            '$ref': '#/components/schemas/AuthenticatedUser',
+            '$ref': '#/components/schemas/UserIdentity',
             description: 'User who sent the message'
         },
         messages: {

@@ -5,7 +5,7 @@ from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -55,7 +55,7 @@ class ExternalAgentEventDistributor:
         self.nc_publisher = NCPublisher(nc)
         self.js_publisher = JSPublisher(js)
 
-    async def distribute_event(self, external_event: ExternalAgentEvent, user: Optional[AuthenticatedUser] = None):
+    async def distribute_event(self, external_event: ExternalAgentEvent, user: Optional[UserIdentity] = None):
         """
         Entry point for distributing an external event (ExternalAgentEvent) to agents or other systems through NATs.
 
@@ -65,7 +65,7 @@ class ExternalAgentEventDistributor:
         thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
 
         if user:
-            user_id = user.oid
+            user_id = user.id
             logger.debug(f"Received event {external_event.event.event_name} for thread {external_event.thread_id}")
             users_in_thread = [user.user_id for user in thread.users]
 
@@ -124,7 +124,7 @@ class ExternalAgentEventDistributor:
             )
             await self.js_publisher.publish_event(event, subject)
 
-    async def _handle_display_message(self, external_event: ExternalAgentEvent, run_id: str, user: AuthenticatedUser):
+    async def _handle_display_message(self, external_event: ExternalAgentEvent, run_id: str, user: UserIdentity):
         """
         Handle a DisplayEvent from the user.
 
@@ -135,7 +135,7 @@ class ExternalAgentEventDistributor:
         topic_manager = AgentTopicManager()
         subject = topic_manager.get_subject_for_specific_event_in_agent(
             agent_class="UserAgent",
-            agent_id=user.oid,
+            agent_id=user.id,
             thread_id=external_event.thread_id,
             display_id=external_event.display_id,
             run_id=run_id,

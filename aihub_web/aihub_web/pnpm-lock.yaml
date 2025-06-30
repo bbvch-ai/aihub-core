@@ -607,11 +607,13 @@ packages:
 
   '@hey-api/client-fetch@0.12.0':
     resolution: {integrity: sha512-/iZ6dhs39N0kjzCa9tlNeLNufVUd8zzv/wI1ewQt5AEHaVuDnAxvuQT+fRIPYkfIWKR3gVZKRp5mcCo29voYzQ==}
+    deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
     peerDependencies:
       '@hey-api/openapi-ts': < 2
 
   '@hey-api/client-nuxt@0.4.2':
     resolution: {integrity: sha512-xaTuAeOoLNGd21vZowG6/1Y7g8FKghbBhCksVg6KyN/HjMNwb53MNXM6Ir/HNIf61G1EtvRzfkLgudQsl+SpQQ==}
+    deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
     peerDependencies:
       '@hey-api/openapi-ts': < 2
       nuxt: '>= 3.0.0 < 4'

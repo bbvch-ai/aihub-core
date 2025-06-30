@@ -19,6 +19,8 @@ from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAut
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
+from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
@@ -49,13 +51,20 @@ async def main():
         runner.mount_frontend(frontend_dir)
 
     auth = TokenAndOauth2Handler(
-        bearer_handlers=[OpenWebuiAuthHandler(), TokenAuthHandler()],
-        oauth2_handlers=[OAuth2AuthHandler()],
+        bearer_handlers=[
+            OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
+            TokenAuthHandler(identity_provider=TokenIdentityProvider()),
+        ],
+        oauth2_handlers=[
+            OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
+        ],
     )
-    # auth = NoAuthHandler()
+    # auth = DangerousDevelopmentOnlyAuthHandler(
+    #     identity_provider=DangerousDevelopmentOnlyIdentityProvider()
+    # )
 
     runner.mount(
-        HealthController().get_health(),
+        HealthController(auth=auth).get_health(),
         SuiteController(auth=auth).get_suite(),
         UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
