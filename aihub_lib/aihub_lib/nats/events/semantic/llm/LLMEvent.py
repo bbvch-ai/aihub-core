@@ -1,5 +1,5 @@
 import json
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Annotated, Any, ClassVar, Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import TokenCountingHandler
@@ -19,31 +19,45 @@ class LLMEvent(SemanticEvent):
         "lib.events.semantic_llm_event.description"
     )
 
-    input_messages: Optional[List[Message]] = Field(None, description="List of messages sent to the LLM as input.")
-    output_messages: Optional[List[Message]] = Field(
-        None, description="List of messages received from the LLM as output."
+    input_messages: Annotated[
+        Optional[List[Message]], Field(description="List of messages sent to the LLM as input.")
+    ] = None
+    output_messages: Annotated[
+        Optional[List[Message]], Field(description="List of messages received from the LLM as output.")
+    ] = None
+    invocation_parameters: Annotated[
+        Optional[Dict[str, Any]], Field(description="Parameters used during the invocation of the LLM.")
+    ] = None
+    chat_model_name: Annotated[Optional[str], Field(description="The name of the language model being utilized.")] = (
+        None
     )
-    invocation_parameters: Optional[Dict[str, Any]] = Field(
-        None, description="Parameters used during the invocation of the LLM."
+    provider: Annotated[Optional[str], Field(description="The hosting provider of the LLM, e.g., OpenAI, Azure.")] = (
+        None
     )
-    chat_model_name: Optional[str] = Field(None, description="The name of the language model being utilized.")
-    provider: Optional[str] = Field(None, description="The hosting provider of the LLM, e.g., OpenAI, Azure.")
-    system: Optional[str] = Field(None, description="The AI product as identified by the client or server.")
-    prompt_template: Optional[str] = Field(None, description="The prompt template as a Python f-string.")
-    prompt_template_variables: Optional[Dict[str, str]] = Field(
-        None, description="A dictionary of input variables to the prompt template."
+    system: Annotated[Optional[str], Field(description="The AI product as identified by the client or server.")] = None
+    prompt_template: Annotated[Optional[str], Field(description="The prompt template as a Python f-string.")] = None
+    prompt_template_variables: Annotated[
+        Optional[Dict[str, str]], Field(description="A dictionary of input variables to the prompt template.")
+    ] = None
+    prompt_template_version: Annotated[
+        Optional[str], Field(description="The version of the prompt template being used.")
+    ] = None
+    token_count_prompt: Annotated[Optional[int], Field(description="The number of tokens in the prompt.")] = None
+    token_count_completion: Annotated[Optional[int], Field(description="The number of tokens in the completion.")] = (
+        None
     )
-    prompt_template_version: Optional[str] = Field(None, description="The version of the prompt template being used.")
-    token_count_prompt: Optional[int] = Field(None, description="The number of tokens in the prompt.")
-    token_count_completion: Optional[int] = Field(None, description="The number of tokens in the completion.")
-    token_count_total: Optional[int] = Field(
-        None,
-        description="The total number of tokens, including both prompt and completion.",
-    )
-    tools: Optional[List[Dict[str, Any]]] = Field(
-        None,
-        description="List of tools that are advertised to the LLM to be able to call.",
-    )
+    token_count_total: Annotated[
+        Optional[int],
+        Field(
+            description="The total number of tokens, including both prompt and completion.",
+        ),
+    ] = None
+    tools: Annotated[
+        Optional[List[Dict[str, Any]]],
+        Field(
+            description="List of tools that are advertised to the LLM to be able to call.",
+        ),
+    ] = None
 
     def to_semantic_convention(self) -> Dict[str, str]:
         attributes = {

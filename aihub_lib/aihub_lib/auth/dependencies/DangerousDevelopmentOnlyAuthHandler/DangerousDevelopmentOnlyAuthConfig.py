@@ -16,16 +16,20 @@ class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
     before the authentication integration is complete.
     """
 
-    NAME: str = Field("Melanie Musterfrau", description="The user's displayed name.")
-    EMAIL: str = Field(
-        "melanie.musterfrau@bbv.ch",
-        description="The user's email (often used as a login or unique identifier).",
-    )
-    OID: str = Field(
-        "e07b0ebf-fd9f-485a-aa17-c1385d202f5b",
-        description="A unique OID (Object ID) for the user. Defaults to a UUID.",
-    )
-    ROLES: Annotated[List[str], NoDecode] = Field("AllAgents", description="A list of roles this user possesses.")
+    NAME: Annotated[str, Field(description="The user's displayed name.")] = "Melanie Musterfrau"
+    EMAIL: Annotated[
+        str,
+        Field(
+            description="The user's email (often used as a login or unique identifier).",
+        ),
+    ] = "melanie.musterfrau@bbv.ch"
+    OID: Annotated[
+        str,
+        Field(
+            description="A unique OID (Object ID) for the user. Defaults to a UUID.",
+        ),
+    ] = "e07b0ebf-fd9f-485a-aa17-c1385d202f5b"
+    ROLES: Annotated[List[str], NoDecode, Field(description="A list of roles this user possesses.")] = "AllAgents"
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field
 
@@ -6,26 +6,26 @@ from pydantic import BaseModel, Field
 class OpenWebUIConfig(BaseModel):
     """Configuration class for Nats infrastructure"""
 
-    webui_name: str = Field(description="Name of web UI")
-    admin_email: str = Field(description="Admin email for web UI")
-    default_locale: str = Field(description="Default locale for web UI")
+    webui_name: Annotated[str, Field(description="Name of web UI")]
+    admin_email: Annotated[str, Field(description="Admin email for web UI")]
+    default_locale: Annotated[str, Field(description="Default locale for web UI")]
 
-    webui_secret_key: str = Field(description="Secret key for web UI")
+    webui_secret_key: Annotated[str, Field(description="Secret key for web UI")]
 
-    aihub_api_key: Optional[str] = Field(None, description="AIHub API key")
-    custom_openai_api_key: Optional[str] = Field(None, description="OpenAI API key")
-    custom_rag_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for RAG")
-    custom_audio_stt_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for audio STT")
-    custom_audio_tts_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for audio TTS")
-    custom_images_openai_api_key: Optional[str] = Field(None, description="OpenAI API key for images")
-    jina_api_key: str = Field(description="Jina API key")
+    aihub_api_key: Annotated[Optional[str], Field(description="AIHub API key")] = None
+    custom_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key")] = None
+    custom_rag_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for RAG")] = None
+    custom_audio_stt_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for audio STT")] = None
+    custom_audio_tts_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for audio TTS")] = None
+    custom_images_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for images")] = None
+    jina_api_key: Annotated[str, Field(description="Jina API key")]
 
-    oidc_client_id: str = Field(description="OIDC client ID")
-    oidc_client_secret: str = Field(description="OIDC client secret")
-    oidc_provider_url: str = Field(description="OIDC provider URL")
-    oidc_provider_name: str = Field(description="OIDC provider name")
+    oidc_client_id: Annotated[str, Field(description="OIDC client ID")]
+    oidc_client_secret: Annotated[str, Field(description="OIDC client secret")]
+    oidc_provider_url: Annotated[str, Field(description="OIDC provider URL")]
+    oidc_provider_name: Annotated[str, Field(description="OIDC provider name")]
 
-    additional_env_vars: dict = Field(default=dict(), description="Additional environment variables")
+    additional_env_vars: Annotated[dict, Field(description="Additional environment variables")] = {}
 
     @property
     def rag_openai_api_key(self) -> str:

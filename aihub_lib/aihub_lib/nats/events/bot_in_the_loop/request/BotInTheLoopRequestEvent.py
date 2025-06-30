@@ -1,4 +1,4 @@
-from typing import ClassVar, Union
+from typing import Annotated, ClassVar, Union
 
 from pydantic import Field
 
@@ -23,15 +23,19 @@ class BotInTheLoopRequestEvent(ControlEvent):
         "lib.events.bitl_request_event.description"
     )
 
-    user: UserIdentity = Field(
-        ...,
-        description="The authenticated user who is requesting the human-in-the-loop interaction.",
-    )
-    question: str = Field(..., description="The query or prompt presented to the human operator.")
-    slack_channel_id: str = Field(
-        ..., description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$"
-    )
-    topic: Union[PartialAgentTopic, AgentTopic] = Field(
-        ...,
-        description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
-    )
+    user: Annotated[
+        UserIdentity,
+        Field(
+            description="The authenticated user who is requesting the human-in-the-loop interaction.",
+        ),
+    ]
+    question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
+    slack_channel_id: Annotated[
+        str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
+    ]
+    topic: Annotated[
+        Union[PartialAgentTopic, AgentTopic],
+        Field(
+            description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+        ),
+    ]

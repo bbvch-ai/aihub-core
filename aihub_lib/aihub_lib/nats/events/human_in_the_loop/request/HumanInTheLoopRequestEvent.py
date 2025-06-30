@@ -1,4 +1,4 @@
-from typing import ClassVar, Union
+from typing import Annotated, ClassVar, Union
 
 from pydantic import Field
 
@@ -23,8 +23,10 @@ class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
         "lib.events.hitl_request_event.description"
     )
 
-    question: str = Field(..., description="The query or prompt presented to the human operator.")
-    topic: Union[PartialAgentTopic, AgentTopic] = Field(
-        ...,
-        description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
-    )
+    question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
+    topic: Annotated[
+        Union[PartialAgentTopic, AgentTopic],
+        Field(
+            description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+        ),
+    ]

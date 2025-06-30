@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
@@ -25,21 +27,27 @@ class LLMCosts(BaseModel):
     ```
     """
 
-    prompt_token_count: int = Field(..., description="Number of tokens used in the prompt")
-    completion_token_count: int = Field(
-        ...,
-        description="Number of tokens generated in the completion",
-    )
-    embedding_token_count: int = Field(..., description="Number of tokens used for embeddings")
-    prompt_tokens_costs: float = Field(..., description="Cost associated with the prompt tokens")
-    completion_tokens_costs: float = Field(
-        ...,
-        description="Cost associated with the completion tokens",
-    )
-    embedding_tokens_costs: float = Field(
-        ...,
-        description="Cost associated with the embedding tokens",
-    )
+    prompt_token_count: Annotated[int, Field(description="Number of tokens used in the prompt")]
+    completion_token_count: Annotated[
+        int,
+        Field(
+            description="Number of tokens generated in the completion",
+        ),
+    ]
+    embedding_token_count: Annotated[int, Field(description="Number of tokens used for embeddings")]
+    prompt_tokens_costs: Annotated[float, Field(description="Cost associated with the prompt tokens")]
+    completion_tokens_costs: Annotated[
+        float,
+        Field(
+            description="Cost associated with the completion tokens",
+        ),
+    ]
+    embedding_tokens_costs: Annotated[
+        float,
+        Field(
+            description="Cost associated with the embedding tokens",
+        ),
+    ]
 
     @classmethod
     def from_zero(cls) -> "LLMCosts":

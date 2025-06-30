@@ -1,6 +1,6 @@
 import html
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Annotated, Any, Callable, Dict, List, Optional, Sequence
 
 import bs4
 from llama_index.core.callbacks.base import CallbackManager
@@ -304,24 +304,28 @@ class MarkdownStructuralNodeParser(NodeParser):
     Node H (Prev: G, Next: None)
     """
 
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata to include in the nodes.")
-    chunk_size: int = Field(default=512, description="Maximum number of tokens in a chunk.")
-    chunk_overlap: int = Field(default=20, description="Number of overlapping tokens between chunks.")
-    include_prev_next_rel: bool = Field(default=False, description="Include prev/next node relationships.")
+    metadata: Annotated[Dict[str, Any], Field(description="Metadata to include in the nodes.")] = {}
+    chunk_size: Annotated[int, Field(description="Maximum number of tokens in a chunk.")] = 512
+    chunk_overlap: Annotated[int, Field(description="Number of overlapping tokens between chunks.")] = 20
+    include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
-    metadata_extractor: Optional[MetadataExtractor] = Field(
-        default=None, description="MetadataExtractor used to extract metadata."
-    )
+    metadata_extractor: Annotated[
+        Optional[MetadataExtractor], Field(description="MetadataExtractor used to extract metadata.")
+    ] = None
 
-    markdown_splitter: MarkdownContentSplitter = Field(
-        default_factory=MarkdownContentSplitter,
-        description="Markdown content splitter to use for splitting content into smaller nodes.",
-    )
+    markdown_splitter: Annotated[
+        MarkdownContentSplitter,
+        Field(
+            description="Markdown content splitter to use for splitting content into smaller nodes.",
+        ),
+    ] = MarkdownContentSplitter()
 
-    node_builder_from_splits: Optional[NodeCreatorFromSplits] = Field(
-        default=None,
-        description="Node creator from splits.",
-    )
+    node_builder_from_splits: Annotated[
+        Optional[NodeCreatorFromSplits],
+        Field(
+            description="Node creator from splits.",
+        ),
+    ] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

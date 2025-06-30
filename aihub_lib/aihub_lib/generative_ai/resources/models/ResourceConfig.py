@@ -27,7 +27,9 @@ class ResourceConfig(BaseModel):
     base_url: Annotated[str, Field(description="The base URL of the model.")]
 
     # Using default_factory, so keeping Field() explicitly
-    default_parameter: ResourceParameter = Field(
-        default_factory=lambda: ResourceParameter(),
-        description="The default parameters for the model.",
-    )
+    default_parameter: Annotated[
+        ResourceParameter,
+        Field(
+            description="The default parameters for the model.",
+        ),
+    ] = ResourceParameter()

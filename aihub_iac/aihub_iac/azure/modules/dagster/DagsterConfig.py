@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -20,64 +20,84 @@ class DagsterConfig(StorageConfig):
     DAGSTER_STORAGE_SUBNET_CIDR: ClassVar[str] = "10.0.35.0/24"
 
     # Docker Image settings
-    repo_image_url: str = Field(description="URL of the Docker repository")
-    docker_image_tag: str = Field(description="Tag of the Docker image")
+    repo_image_url: Annotated[str, Field(description="URL of the Docker repository")]
+    docker_image_tag: Annotated[str, Field(description="Tag of the Docker image")]
 
     # Registry settings
-    registry_user: str = Field(
-        default_factory=lambda: DagsterConfig._registry_settings.REGISTRY_USER,
-        description="Registry username for authentication",
-    )
-    registry_pat: str = Field(
-        default_factory=lambda: DagsterConfig._registry_settings.REGISTRY_PAT,
-        description="Registry personal access token for authentication",
-    )
-    registry_url: str = Field(
-        default_factory=lambda: DagsterConfig._registry_settings.REGISTRY_URL,
-        description="Registry URL for authentication",
-    )
+    registry_user: Annotated[
+        str,
+        Field(
+            default_factory=lambda: DagsterConfig._registry_settings.REGISTRY_USER,
+            description="Registry username for authentication",
+        ),
+    ]
+    registry_pat: Annotated[
+        str,
+        Field(
+            default_factory=lambda: DagsterConfig._registry_settings.REGISTRY_PAT,
+            description="Registry personal access token for authentication",
+        ),
+    ]
+    registry_url: Annotated[
+        str,
+        Field(
+            default_factory=lambda: DagsterConfig._registry_settings.REGISTRY_URL,
+            description="Registry URL for authentication",
+        ),
+    ]
 
-    version: str = Field(description="Version of the API service")
+    version: Annotated[str, Field(description="Version of the API service")]
 
     # OAuth2 settings
-    oauth2_proxy_client_id: str = Field(
-        default_factory=lambda: DagsterConfig._oauth_settings.CLIENT_ID, description="Client ID of OAuth2 proxy"
-    )
-    oauth2_proxy_azure_tenant: str = Field(
-        default_factory=lambda: DagsterConfig._oauth_settings.TENANT_ID, description="Azure tenant ID for OAuth2 proxy"
-    )
-    oauth2_proxy_provider: str = Field(description="OAuth2 provider for authentication")
-    oauth2_proxy_oidc_issuer_url: str = Field(description="OIDC issuer URL for OAuth2 proxy")
-    oauth2_proxy_cookie_secret: str = Field(description="Cookie secret for OAuth2 proxy")
-    oauth2_proxy_client_secret: str = Field(description="Client secret for OAuth2 proxy")
-    oauth2_proxy_email_domains: str = Field(description="Email domains for OAuth2 proxy")
-    oauth2_proxy_custom_sign_in_logo: str = Field(description="Custom sign-in logo for OAuth2 proxy")
-    oauth2_proxy_reverse_proxy: str = Field(description="Reverse proxy setting for OAuth2 proxy")
-    oauth2_proxy_allowed_groups: str = Field(description="Allowed groups for OAuth2 proxy")
-    oauth2_proxy_oidc_groups_claim: str = Field(description="OIDC groups claim for OAuth2 proxy")
-    oauth2_proxy_redirect_url: str = Field(description="Redirect URL for OAuth2 proxy")
+    oauth2_proxy_client_id: Annotated[
+        str,
+        Field(default_factory=lambda: DagsterConfig._oauth_settings.CLIENT_ID, description="Client ID of OAuth2 proxy"),
+    ]
+    oauth2_proxy_azure_tenant: Annotated[
+        str,
+        Field(
+            default_factory=lambda: DagsterConfig._oauth_settings.TENANT_ID,
+            description="Azure tenant ID for OAuth2 proxy",
+        ),
+    ]
+    oauth2_proxy_provider: Annotated[str, Field(description="OAuth2 provider for authentication")]
+    oauth2_proxy_oidc_issuer_url: Annotated[str, Field(description="OIDC issuer URL for OAuth2 proxy")]
+    oauth2_proxy_cookie_secret: Annotated[str, Field(description="Cookie secret for OAuth2 proxy")]
+    oauth2_proxy_client_secret: Annotated[str, Field(description="Client secret for OAuth2 proxy")]
+    oauth2_proxy_email_domains: Annotated[str, Field(description="Email domains for OAuth2 proxy")]
+    oauth2_proxy_custom_sign_in_logo: Annotated[str, Field(description="Custom sign-in logo for OAuth2 proxy")]
+    oauth2_proxy_reverse_proxy: Annotated[str, Field(description="Reverse proxy setting for OAuth2 proxy")]
+    oauth2_proxy_allowed_groups: Annotated[str, Field(description="Allowed groups for OAuth2 proxy")]
+    oauth2_proxy_oidc_groups_claim: Annotated[str, Field(description="OIDC groups claim for OAuth2 proxy")]
+    oauth2_proxy_redirect_url: Annotated[str, Field(description="Redirect URL for OAuth2 proxy")]
 
     # Database settings
-    postgres_username: str = Field(
-        default_factory=lambda: DagsterConfig._postgres_settings.POSTGRES_USERNAME,
-        description="Username for the PostgreSQL database",
-    )
-    postgres_password: str = Field(
-        default_factory=lambda: DagsterConfig._postgres_settings.POSTGRES_PASSWORD,
-        description="Password for the PostgreSQL database",
-    )
+    postgres_username: Annotated[
+        str,
+        Field(
+            default_factory=lambda: DagsterConfig._postgres_settings.POSTGRES_USERNAME,
+            description="Username for the PostgreSQL database",
+        ),
+    ]
+    postgres_password: Annotated[
+        str,
+        Field(
+            default_factory=lambda: DagsterConfig._postgres_settings.POSTGRES_PASSWORD,
+            description="Password for the PostgreSQL database",
+        ),
+    ]
 
     # scaling
-    webserver_min_replicas: int = Field(default=0, description="Minimum number of replicas for the webserver")
-    webserver_max_replicas: int = Field(default=2, description="Maximum number of replicas for the webserver")
+    webserver_min_replicas: Annotated[int, Field(description="Minimum number of replicas for the webserver")] = 0
+    webserver_max_replicas: Annotated[int, Field(description="Maximum number of replicas for the webserver")] = 2
 
     # resources
-    proxy_cpu: float = Field(default=0.5, description="CPU allocation in cores for the proxy container")
-    proxy_memory: str = Field(default="1Gi", description="Memory allocation in GB for the proxy container")
-    webserver_cpu: float = Field(default=1.5, description="CPU allocation in cores for the webserver container")
-    webserver_memory: str = Field(default="3Gi", description="Memory allocation in GB for the webserver container")
-    daemon_cpu: float = Field(default=2, description="CPU allocation in cores for the daemon container")
-    daemon_memory: str = Field(default="4Gi", description="Memory allocation in GB for the daemon container")
+    proxy_cpu: Annotated[float, Field(description="CPU allocation in cores for the proxy container")] = 0.5
+    proxy_memory: Annotated[str, Field(description="Memory allocation in GB for the proxy container")] = "1Gi"
+    webserver_cpu: Annotated[float, Field(description="CPU allocation in cores for the webserver container")] = 1.5
+    webserver_memory: Annotated[str, Field(description="Memory allocation in GB for the webserver container")] = "3Gi"
+    daemon_cpu: Annotated[float, Field(description="CPU allocation in cores for the daemon container")] = 2
+    daemon_memory: Annotated[str, Field(description="Memory allocation in GB for the daemon container")] = "4Gi"
 
     database_name: str = "dagster"
 

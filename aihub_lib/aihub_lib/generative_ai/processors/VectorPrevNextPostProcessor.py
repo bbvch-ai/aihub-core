@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Annotated, Dict, List, Optional
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
@@ -63,8 +63,8 @@ class VectorPrevNextPostProcessor(BaseNodePostprocessor):
     """
 
     vectorstore: BasePydanticVectorStore
-    num_nodes: int = Field(default=1)
-    mode: ModeOptions = Field(default=ModeOptions.NEXT)
+    num_nodes: Annotated[int, Field()] = 1
+    mode: Annotated[ModeOptions, Field()] = ModeOptions.NEXT
 
     @field_validator("mode")
     @classmethod
