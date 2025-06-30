@@ -12,6 +12,7 @@ CHANGELOG_FILE="changelog.md"
 SYSTEM_PROMPT_FILE="changelog-prompt.md"
 LLM_MODEL="gemini-2.5-flash"
 EXCLUDE_PATTERNS=(
+    ':(exclude)*.lock'
     ':(exclude)*lock.json'
     ':(exclude)*-lock.yaml'
     ':(exclude)pnpm-lock.yaml'
