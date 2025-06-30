@@ -63,3 +63,6 @@ use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
 	poetry run python switch_dependencies.py remote --tag "$(TAG)"
 
+changelog:
+	@echo "Generating changelog"
+	/bin/bash ./generate-changelog.sh
