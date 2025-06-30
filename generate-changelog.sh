@@ -83,11 +83,11 @@ for i in "${!sorted_tags[@]}"; do
     echo "---"
     echo "Generating entry for $current_tag (comparing with $prev_tag)..."
 
-    diff_command="git diff $prev_tag $current_tag -- ."
+    diff_args=(git diff "$prev_tag" "$current_tag" -- .)
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        diff_command+=" '$pattern'"
+        diff_args+=("$pattern")
     done
-    diff_output=$(eval "$diff_command")
+    diff_output=$(git "${diff_args[@]}")
 
     if [ -z "$diff_output" ]; then
         echo "No significant code changes found for $current_tag. Skipping."
