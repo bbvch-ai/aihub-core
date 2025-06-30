@@ -10,6 +10,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
+    DOCUMENT_TITLE,
     HEADING_LEVEL,
     INSERTED_AT,
     LANGUAGE,
@@ -19,7 +20,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     SOURCE,
     TYPE,
     UPDATED_AT,
-    VERSION, DOCUMENT_TITLE,
+    VERSION,
 )
 
 scenarios("./features/combine_nodes_in_order.feature")
