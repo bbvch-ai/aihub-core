@@ -6,8 +6,8 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import TimeRange
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import TimeRange
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
@@ -102,14 +102,16 @@ class EventController(Controller):
         @self.router.websocket(path)
         async def websocket_endpoint(
             websocket: WebSocket,
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor_ws)],
+            external_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_event_distributor_ws)
+            ],
             ws_sender: Annotated[WebSocketSender, Depends(use_ws_sender_ws)],
             ws_manager: Annotated[WebSocketManager, Depends(use_ws_manager_ws)],
             t: Annotated[LocaleHandler, Depends(use_locale_ws)],
         ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can send `ExternalEvent`s and receive responses (WSServerEvent or errors).
+            If the token is valid, the user can send `ExternalAgentEvent`s and receive responses (WSServerEvent or errors).
             """
             await websocket.accept()  # Accept the connection first
 

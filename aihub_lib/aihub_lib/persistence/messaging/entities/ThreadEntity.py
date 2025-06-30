@@ -18,10 +18,17 @@ class ThreadEntity(Document):
     meta = {
         "collection": "threads",
         "strict": False,
-        "indexes": [{"fields": ["users.user_id"]}, {"fields": ["created_at"]}],
+        "indexes": [
+            {"fields": ["users.user_id"]},
+            {"fields": ["created_at"]},
+            {"fields": ["process_walkthrough_id"]},
+        ],
     }
     name = StringField(required=True)
     created_at = DateTimeField(required=True)
+    process_class = StringField(required=False)
+    process_id = StringField(required=False)
+    process_walkthrough_id = StringField(required=False)
     users = ListField(EmbeddedDocumentField(User))
     agents = ListField(EmbeddedDocumentField(Agent))
 
@@ -30,6 +37,29 @@ class ThreadEntity(Document):
         cls, name: str, users: List[User], agents: List[Agent], thread_id: Optional[ObjectId] = None
     ) -> "ThreadEntity":
         thread = cls(id=thread_id or ObjectId(), name=name, users=users, agents=agents, created_at=datetime.now())
+        thread.save()
+        return thread
+
+    @classmethod
+    def create_process_thread(
+        cls,
+        name: str,
+        agent: Agent,
+        thread_id: ObjectId,
+        process_class: str,
+        process_id: str,
+        process_walkthrough_id: str,
+    ) -> "ThreadEntity":
+        thread = cls(
+            id=thread_id,
+            name=name,
+            users=[],
+            agents=[agent],
+            process_class=process_class,
+            process_id=process_id,
+            process_walkthrough_id=process_walkthrough_id,
+            created_at=datetime.now(),
+        )
         thread.save()
         return thread
 
@@ -106,6 +136,13 @@ class ThreadEntity(Document):
         ]
         thread.save()
         return thread
+
+    def claim_for_process(self, process_class: str, process_id: str, process_walkthrough_id: str) -> "ThreadEntity":
+        self.process_class = process_class
+        self.process_id = process_id
+        self.process_walkthrough_id = process_walkthrough_id
+        self.save()
+        return self
 
     @classmethod
     def delete_thread(cls, thread_id: str) -> "ThreadEntity":

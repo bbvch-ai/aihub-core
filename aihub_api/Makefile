@@ -10,7 +10,7 @@ format:
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks..."
-	poetry run mypy aihub_agent
+	poetry run mypy aihub_api
 
 # Sort imports with isort
 sort-imports:

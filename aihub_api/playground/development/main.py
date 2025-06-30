@@ -83,7 +83,7 @@ async def main():
         .get_agents()
         .discover_agents()
         .send_event_to(
-            "RAGAgent",
+            "LLMWrappingAgent",
             "dev_agent",
             start_event_class=UserMessageEvent,
             stop_event_class=LLMStopEvent,

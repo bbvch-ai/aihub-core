@@ -10,7 +10,7 @@ from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig impor
 from playground.minimal_workflow.configured_workflow.events.EventConfiguredA import EventConfiguredA
 from playground.minimal_workflow.configured_workflow.events.EventConfiguredB import EventConfiguredB
 
-scenarios("../tests/features/configured_agent.feature")
+scenarios("./features/configured_agent.feature")
 
 
 @given(

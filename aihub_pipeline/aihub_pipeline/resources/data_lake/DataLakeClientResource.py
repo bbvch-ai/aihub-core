@@ -37,7 +37,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
         from dagster import Definitions, asset
 
         @asset
-        def asset1(namespace: NamespaceResource, data_lake_client: ResourceParam[FileSystemClient]): # TODO how to do this
+        def asset1(namespace: NamespaceResource, data_lake_client: ResourceParam[FileSystemClient]):
             paths = data_lake_client.get_paths(path=f"{namespace.name}/", recursive=True)
 
         defs = Definitions(

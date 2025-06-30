@@ -1,0 +1,142 @@
+from typing import Awaitable, Callable, Type
+
+from nats.aio.client import Client as NATS
+
+from aihub_lib.nats.events import BaseEvent, ControlEvent, DiscoveryRequestEvent, DisplayEvent
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics import AgentTopic
+
+
+class AgentNCSubscriber(NCSubscriber):
+    @classmethod
+    def for_all_agents_display_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+    ):
+        """Subscribe to all display events from all agents."""
+        subject = topic_manager.get_subject_for_all_display_events_in_agent()
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=DisplayEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_thread_display_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentThreadTopicManager,
+        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+    ):
+        """Subscribe to all display events within a specific thread."""
+        subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=DisplayEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_all_thread_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentThreadTopicManager,
+        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+    ):
+        """Subscribe to all events (display, control, etc.) within a specific thread."""
+        subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_agent_discovery_request_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[DiscoveryRequestEvent, AgentTopic], Awaitable[None]],
+        call_id: str = "*",
+    ):
+        """Subscribe to discovery request events for agents, optionally filtered by a specific call_id."""
+        subject = topic_manager.get_agent_discovery_subject_request(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=DiscoveryRequestEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_agent_discovery_response_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        call_id: str = "*",
+    ):
+        """Subscribe to discovery response events for agents, optionally filtered by a specific call_id."""
+        subject = topic_manager.get_agent_discovery_subject_response(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_all_agent_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+    ):
+        """
+        Creates a NCSubscriber for all agent events.
+        Use this when you want a single subscriber to handle every agent event in the system.
+        """
+        subject = topic_manager.get_subject_for_all_events_in_agent()
+
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_specific_control_event_in_agent_instance(
+        cls,
+        nc: NATS,
+        topic_manager: AgentInstanceTopicManager,
+        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        event: Type[BaseEvent],
+    ):
+        """
+        Creates a NCSubscriber for all agent events.
+        Use this when you want a single subscriber to handle every agent event in the system.
+        """
+        subject = topic_manager.get_subject_for_specific_event_in_agent_instance(
+            thread_id="*",
+            display_id="*",
+            run_id="*",
+            event_type=AgentTopicManager.CONTROL_EVENT,
+            event_name=event.event_name_from_class(),
+            event_id="*",
+        )
+
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )

@@ -153,11 +153,25 @@ export const AgentEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         _event_name: {
@@ -195,11 +209,25 @@ export const AgentInTheLoopExceptionEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         exception_event: {
@@ -248,11 +276,25 @@ export const AgentInTheLoopRequestEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         start_event: {
@@ -340,11 +382,25 @@ export const AgentInTheLoopResponseEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         stop_event: {
@@ -415,7 +471,7 @@ export const AgentTopicSchema = {
         event_name: {
             type: 'string',
             title: 'Event Name',
-            description: "Name of the event (e.g., 'start', 'stop', 'error')."
+            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
         },
         event_id: {
             type: 'string',
@@ -792,11 +848,25 @@ export const ChainEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         metadata: {
@@ -2057,11 +2127,25 @@ export const ChunkEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         content: {
@@ -2676,11 +2760,25 @@ export const DisplayEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         _event_name: {
@@ -2930,11 +3028,25 @@ export const EmbeddingEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         text: {
@@ -3419,11 +3531,25 @@ export const ExceptionEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         message: {
@@ -3863,11 +3989,25 @@ export const GuardEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         _event_name: {
@@ -3905,11 +4045,25 @@ export const GuardRejectionEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         reason: {
@@ -3991,11 +4145,25 @@ export const HumanInTheLoopRequestEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         question: {
@@ -4056,11 +4224,25 @@ export const HumanInTheLoopResponseEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         response: {
@@ -4906,11 +5088,25 @@ export const LLMCostEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         llm_name: {
@@ -4961,11 +5157,25 @@ export const LLMEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         input_messages: {
@@ -5173,11 +5383,25 @@ export const LLMStopEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         input_messages: {
@@ -5376,11 +5600,25 @@ Used during deserialization to decide which subclass to instantiate.`,
 export const LLMStopEventOutputSchema = {
     properties: {
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         input_messages: {
@@ -5570,11 +5808,25 @@ export const LimitChatHistoryEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         limited_history: {
@@ -5641,7 +5893,8 @@ export const LocaleStringSchema = {
                     type: 'null'
                 }
             ],
-            title: 'De'
+            title: 'De',
+            description: 'German'
         },
         en: {
             anyOf: [
@@ -5652,7 +5905,8 @@ export const LocaleStringSchema = {
                     type: 'null'
                 }
             ],
-            title: 'En'
+            title: 'En',
+            description: 'English'
         },
         fr: {
             anyOf: [
@@ -5663,7 +5917,8 @@ export const LocaleStringSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Fr'
+            title: 'Fr',
+            description: 'French'
         },
         it: {
             anyOf: [
@@ -5674,7 +5929,8 @@ export const LocaleStringSchema = {
                     type: 'null'
                 }
             ],
-            title: 'It'
+            title: 'It',
+            description: 'Italian'
         }
     },
     type: 'object',
@@ -6552,11 +6808,25 @@ export const RerankerEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         input_nodes: {
@@ -6708,11 +6978,25 @@ export const RetrieverEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         nodes: {
@@ -6778,11 +7062,25 @@ export const RouteOptionsSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         name: {
@@ -6839,11 +7137,25 @@ export const RouterEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         routes: {
@@ -7007,11 +7319,25 @@ export const SemanticEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         _event_name: {
@@ -7116,11 +7442,25 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         condensed_chat_message: {
@@ -7163,11 +7503,25 @@ export const StartEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         _event_name: {
@@ -7214,11 +7568,25 @@ export const StopEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         _event_name: {
@@ -7384,11 +7752,25 @@ export const ThoughtEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         content: {
@@ -7673,11 +8055,25 @@ export const ToolEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         name: {
@@ -8154,11 +8550,25 @@ export const UserMessageEventSchema = {
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
         display_name: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display name for the event'
         },
         display_description: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Display description for the event'
         },
         locale: {
@@ -8521,7 +8931,7 @@ This consistency helps front-end clients parse and handle events uniformly, and 
 debugging or logging outbound messages.
 
 ### Conversion from Persisted Events
-The \`from_persisted_event\` method rebuilds a \`WSServerEvent\` from a \`PersistedEventEntity\`,
+The \`from_persisted_event\` method rebuilds a \`WSServerEvent\` from a \`PersistedAgentEventEntity\`,
 allowing previously stored events to be replayed or displayed to users.`
 } as const;
 

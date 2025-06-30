@@ -7,7 +7,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
 from bson import ObjectId
@@ -175,7 +175,9 @@ class AgentController(Controller):
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
+            external_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            ],
             user: UserIdentity = Security(self.auth),
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,

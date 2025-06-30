@@ -5,7 +5,7 @@ from bson import ObjectId
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import (
     DiscoverableAgent,
@@ -32,7 +32,7 @@ async def main():
     async with runner.test_run():
         await runner.nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),
-            subject=TopicManager().get_agent_discovery_subject_request(call_id=call_id),
+            subject=AgentTopicManager().get_agent_discovery_subject_request(call_id=call_id),
         )
 
 

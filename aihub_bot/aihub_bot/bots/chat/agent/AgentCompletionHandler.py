@@ -2,7 +2,7 @@ import asyncio
 from typing import AsyncGenerator, List, Optional
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from botbuilder.core import TurnContext
@@ -26,7 +26,7 @@ class AgentCompletionHandler(CompletionHandler):
         agent_class: str,
         agent_id: str,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         locale: Optional[str] = None,
@@ -62,7 +62,7 @@ class AgentCompletionHandler(CompletionHandler):
         agent_class: str,
         agent_id: str,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         locale: Optional[str] = None,
@@ -108,7 +108,7 @@ class AgentCompletionHandler(CompletionHandler):
         agent_class: str,
         agent_id: str,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         stream: bool = False,

@@ -7,10 +7,10 @@ from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
@@ -39,27 +39,6 @@ class AgentTestRunner(AgentRunner):
       event subscriptions and automatic cleanup after a delay.
     - Utilities to quickly check if certain event classes (Start/Stop/Exception) have been emitted,
       and to retrieve all events of a particular type.
-
-    ### Why AgentTestRunner?
-    In a test scenario, you may want to:
-    - Start an agent runner in a controlled environment.
-    - Send initial events (like StartEvent) to initiate a workflow.
-    - Observe what events the agent produces in response.
-    - After a delay (e.g., after the workflow finishes), stop the runner and inspect the observed events.
-
-    AgentTestRunner simplifies this by integrating the lifecycle of the runner and event observation into
-    a single context manager. This pattern makes writing tests more straightforward and ensures proper
-    cleanup after tests.
-
-    ### Usage
-    ```python
-    async with AgentTestRunner(...).test_run() as partial_topic:
-        # send events using partial_topic (which contains thread_id, display_id, run_id)
-        # await test_runner.send_event_from_topic(some_start_event, partial_topic)
-        # ... run your scenario ...
-
-    # After exiting the context block, test_runner.observed_events contains all captured events.
-    ```
     """
 
     def __init__(
@@ -78,6 +57,9 @@ class AgentTestRunner(AgentRunner):
         self.test_event_subscriber: Optional[JSSubscriber] = None
         self.observed_events: List[ObservedEvent] = []
         self.topic: Optional[PartialAgentTopic] = None
+
+        self.observe_discovery_event_subscriber: Optional[AgentNCSubscriber] = None
+        self.observe_discovery_response_event_subscriber: Optional[AgentNCSubscriber] = None
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -122,7 +104,7 @@ class AgentTestRunner(AgentRunner):
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
-        self.test_event_subscriber = NCSubscriber.for_all_thread_events(
+        self.test_event_subscriber = AgentNCSubscriber.for_all_thread_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
                 self.topic_manager,
@@ -134,16 +116,16 @@ class AgentTestRunner(AgentRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
-            topic_manager=TopicManager(),
+            topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc=self.nc,
-            topic_manager=TopicManager(),
+            topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_response_event_subscriber.start()

@@ -11,7 +11,7 @@ from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import M
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
 from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent
 
-scenarios("../tests/features/multi_locale_agent.feature")
+scenarios("./features/multi_locale_agent.feature")
 
 
 @given(parsers.parse('a MultiLocaleAgent runner with locale_path "{locale_path}"'), target_fixture="agent_runner")

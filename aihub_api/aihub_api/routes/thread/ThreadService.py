@@ -7,7 +7,7 @@ from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
 from cachetools import TTLCache, cached
@@ -395,7 +395,7 @@ class ThreadService:
 
         # 2. Get aggregated run statistics from the database
         try:
-            aggregated_runs: List[Dict] = PersistedEventEntity.get_aggregated_run_statistics(str(entity.id))
+            aggregated_runs: List[Dict] = PersistedAgentEventEntity.get_aggregated_run_statistics(str(entity.id))
         except Exception as e:
             logger.exception(f"Failed to get aggregated run statistics for thread {entity.id}: {e}")
             return response

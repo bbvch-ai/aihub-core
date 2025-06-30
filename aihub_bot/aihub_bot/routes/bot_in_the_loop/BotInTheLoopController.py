@@ -4,7 +4,7 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Request, Response
@@ -35,7 +35,9 @@ class BotInTheLoopController(Controller):
             request: Request,
             _: Annotated[ActivityModel, Body],  # openapi request body
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
+            external_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            ],
             bot_in_the_loop_handler: Annotated[
                 BotInTheLoopHandler, Depends(BotInTheLoopHandler.use_bot_in_the_loop_handler)
             ],

@@ -10,7 +10,7 @@ from playground.minimal_workflow.fan_out_workflow.FanOutAgentConfig import (
     FanOutAgentConfig,
 )
 
-scenarios("../tests/features/fan_out_agent.feature")
+scenarios("./features/fan_out_agent.feature")
 
 
 @given("a FanOutAgent runner", target_fixture="agent_runner")
