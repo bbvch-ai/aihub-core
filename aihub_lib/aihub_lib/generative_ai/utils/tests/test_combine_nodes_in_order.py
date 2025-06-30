@@ -19,7 +19,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     SOURCE,
     TYPE,
     UPDATED_AT,
-    VERSION,
+    VERSION, DOCUMENT_TITLE,
 )
 
 scenarios("./features/combine_nodes_in_order.feature")
@@ -77,6 +77,7 @@ def _(datatable):
     metadata_fields = [
         DOCUMENT_ID,
         SOURCE,
+        DOCUMENT_TITLE,
         NAMESPACE,
         TYPE,
         LANGUAGE,
