@@ -5,7 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class NatsConfig(BaseSettings):
-    NATS_ENDPOINT: Annotated[str, Field()] = "nats://localhost:4222"
+    NATS_ENDPOINT: Annotated[str, Field(description="Connection endpoint for NATS messaging system")] = (
+        "nats://localhost:4222"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -63,8 +63,10 @@ class VectorPrevNextPostProcessor(BaseNodePostprocessor):
     """
 
     vectorstore: BasePydanticVectorStore
-    num_nodes: Annotated[int, Field()] = 1
-    mode: Annotated[ModeOptions, Field()] = ModeOptions.NEXT
+    num_nodes: Annotated[int, Field(description="Number of additional nodes to fetch")] = 1
+    mode: Annotated[ModeOptions, Field(description="Direction to fetch nodes (NEXT, PREVIOUS, or BOTH)")] = (
+        ModeOptions.NEXT
+    )
 
     @field_validator("mode")
     @classmethod

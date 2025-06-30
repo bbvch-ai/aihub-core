@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class RedisConfig(BaseSettings):
-    REDIS_URL: Annotated[str, Field()] = "redis://localhost:6379"
+    REDIS_URL: Annotated[str, Field(description="Connection URL for Redis server")] = "redis://localhost:6379"
 
     model_config = SettingsConfigDict(
         env_file=".env",

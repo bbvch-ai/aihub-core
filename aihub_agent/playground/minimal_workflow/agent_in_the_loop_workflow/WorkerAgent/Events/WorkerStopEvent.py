@@ -5,4 +5,4 @@ from aihub_lib.nats.events import StopEvent
 
 
 class WorkerStopEvent(StopEvent):
-    result: Annotated[int, Field()]
+    result: Annotated[int, Field(description="The final result produced by the worker agent")]

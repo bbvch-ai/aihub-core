@@ -5,4 +5,4 @@ from aihub_lib.nats.events import ControlEvent
 
 
 class ExtractNumberEvent(ControlEvent):
-    number: Annotated[int, Field()]
+    number: Annotated[int, Field(description="The extracted number value from the input")]
