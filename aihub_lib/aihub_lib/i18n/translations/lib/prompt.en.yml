@@ -178,7 +178,7 @@ figure_description_generator:
     4. For tables: describes the structure and summarizes key data points
     5. Extracts any visible text in the image when relevant
     6. Uses appropriate technical language while remaining accessible
-    7. Connects the image description to the surrounding document context
+    7. Uses the provided surrounding text SOLELY to understand the image's role, without letting the context alter the factual, visual description.
     8. Avoids unnecessary verbosity or speculation
     
     Format your descriptions as concise, factual paragraphs that could be used directly as alt text.

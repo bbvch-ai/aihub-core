@@ -181,7 +181,7 @@ figure_description_generator:
     4. Für Tabellen: beschreibt die Struktur und fasst die wichtigsten Datenpunkte zusammen
     5. Extrahiert ggf. sichtbaren Text aus dem Bild
     6. Verwendet eine angemessene Fachsprache und bleibt dabei verständlich
-    7. Verknüpft die Bildbeschreibung mit dem umgebenden Dokumentenkontext
+    7. Verwendet den bereitgestellten Kontext des umgebenden Textes, um die Rolle des Bildes zu verstehen, ohne dass der Kontext die sachliche, visuelle Beschreibung verändert.
     8. Vermeidet unnötige Ausführlichkeit oder Spekulationen
     
     Formatieren Sie Ihre Beschreibungen als knappe, sachliche Absätze, die direkt als Alt-Text verwendet werden können.

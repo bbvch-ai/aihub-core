@@ -179,7 +179,7 @@ figure_description_generator:
     4. Per le tabelle: descrive la struttura e riassume i punti chiave dei dati.
     5. Estrae il testo visibile nell'immagine, se pertinente.
     6. Utilizza un linguaggio tecnico appropriato, pur rimanendo accessibile
-    7. Collega la descrizione dell'immagine al contesto documentale circostante.
+    7. Utilizza il testo circostante fornito per comprendere il ruolo dell'immagine, senza lasciare che il contesto alteri la descrizione fattuale e visiva.
     8. Evita inutili verbosità o speculazioni.
     
     Formattate le descrizioni come paragrafi concisi e fattuali che possano essere utilizzati direttamente come testo alt.
