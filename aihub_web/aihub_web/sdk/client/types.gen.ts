@@ -673,32 +673,6 @@ export type AudioContent = {
 };
 
 /**
- * AuthenticatedUser
- */
-export type AuthenticatedUser = {
-    /**
-     * Name
-     * User's full name
-     */
-    name?: string | null;
-    /**
-     * Preferred Username
-     * User's email address
-     */
-    preferred_username: string;
-    /**
-     * Oid
-     * User's Object ID
-     */
-    oid: string;
-    /**
-     * Roles
-     * User's roles
-     */
-    roles?: Array<string> | null;
-};
-
-/**
  * Body_create_transcription_openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
@@ -6609,6 +6583,37 @@ export type UserDto = {
 };
 
 /**
+ * UserIdentity
+ */
+export type UserIdentity = {
+    /**
+     * Id
+     * The unique identifier for the user.
+     */
+    id: string;
+    /**
+     * Name
+     * The name of the user.
+     */
+    name: string;
+    /**
+     * Email
+     * The email address of the user.
+     */
+    email: string;
+    /**
+     * Roles
+     * The roles assigned to the user.
+     */
+    roles: Array<string>;
+    /**
+     * Profile Image
+     * Data URL (base64) representation of profile image
+     */
+    profile_image?: string | null;
+};
+
+/**
  * UserMessageEvent
  * A start event triggered directly by a user's message, bridging both display and control functionalities.
  *
@@ -6659,7 +6664,7 @@ export type UserMessageEventReadable = {
     /**
      * User who sent the message
      */
-    user: AuthenticatedUser;
+    user: UserIdentity;
     /**
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
@@ -6681,7 +6686,7 @@ export type UserMessageEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | UserIdentity | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -6735,7 +6740,7 @@ export type UserMessageEventWritable = {
     /**
      * User who sent the message
      */
-    user: AuthenticatedUser;
+    user: UserIdentity;
     /**
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
@@ -6746,7 +6751,7 @@ export type UserMessageEventWritable = {
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | AuthenticatedUser | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFile> | null) | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | UserIdentity | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**

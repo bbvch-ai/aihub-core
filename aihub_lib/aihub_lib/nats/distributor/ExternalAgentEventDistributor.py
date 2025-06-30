@@ -55,7 +55,7 @@ class ExternalAgentEventDistributor:
         self.nc_publisher = NCPublisher(nc)
         self.js_publisher = JSPublisher(js)
 
-    async def distribute_event(self, external_event: ExternalEvent, user: Optional[UserIdentity] = None):
+    async def distribute_event(self, external_event: ExternalAgentEvent, user: Optional[UserIdentity] = None):
         """
         Entry point for distributing an external event (ExternalAgentEvent) to agents or other systems through NATs.
 

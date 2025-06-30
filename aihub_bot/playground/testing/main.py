@@ -4,10 +4,12 @@ from os.path import abspath, join, dirname
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import \
-    DangerousDevelopmentOnlyAuthHandler
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
-    DangerousDevelopmentOnlyIdentityProvider
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
 )
@@ -42,7 +44,7 @@ async def main():
                     is_function_calling_model=False,
                     context_size=512,
                 ),
-            ]
+            ],
         )
         .json_chat_completion()
         .stream_chat_completion(),
