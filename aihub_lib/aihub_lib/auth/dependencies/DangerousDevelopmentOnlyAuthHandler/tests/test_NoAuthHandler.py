@@ -88,5 +88,4 @@ def check_roles(result_user: dict, role1: str, role2: str) -> None:
     """Check that the returned user has the expected roles."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
-    print("Got roles", user.roles)
     assert set(user.roles) == {role1, role2}, f"Expected roles {role1}, {role2}, got {user.roles}"

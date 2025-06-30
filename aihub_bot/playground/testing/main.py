@@ -4,6 +4,10 @@ from os.path import abspath, join, dirname
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import \
+    DangerousDevelopmentOnlyAuthHandler
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
+    DangerousDevelopmentOnlyIdentityProvider
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
 )
@@ -17,11 +21,13 @@ enable_logging()
 async def main():
     runner = SimulatedAgentBotTestRunner(agent_class="my_agent_class", agent_id="my_agent_id")
     runner.with_simple_chunk_events()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     runner.mount(
-        HealthController().get_health(),
-        AgentChatController().completions_json().completions_stream(),
+        HealthController(auth=auth).get_health(),
+        AgentChatController(auth=auth).completions_json().completions_stream(),
         OpenaiChatController(
+            auth=auth,
             chat_models=[
                 AzureOpenAILLMConfig(
                     name="gpt-4o-mini",

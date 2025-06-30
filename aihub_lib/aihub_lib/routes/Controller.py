@@ -56,7 +56,7 @@ class Controller(abc.ABC):
     description = LocaleString(en="This controller has no description.")
     icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
 
-    def __init__(self, auth: AuthHandler, route: str, is_admin_only=False):
+    def __init__(self, *, auth: AuthHandler, route: str, is_admin_only=False):
         self.base_route: str = route
         self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler(
             identity_provider=DangerousDevelopmentOnlyIdentityProvider()

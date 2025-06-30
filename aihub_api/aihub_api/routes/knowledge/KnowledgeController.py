@@ -28,12 +28,13 @@ class KnowledgeController(Controller):
 
     def __init__(
         self,
+        *,
         auth: AuthHandler,
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
         is_admin_only=True,
     ):
-        super().__init__(auth, route, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
         self.docstore_client: MongoClient = connect(
             host=CosmosDocstoreAccess().get_connection_string(), alias="docstore"
         )

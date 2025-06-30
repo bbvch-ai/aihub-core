@@ -21,8 +21,8 @@ class SuiteController(Controller):
     description = LocaleString(en="Suite endpoints")
     icon = "material-symbols:token"
 
-    def __init__(self, auth: AuthHandler, route: str = "/suites", is_admin_only=True):
-        super().__init__(auth, route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/suites", is_admin_only=True):
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
         self._runner: "ApiRunner" | None = None
 
     def get_suite(self, route: str = "/") -> "SuiteController":

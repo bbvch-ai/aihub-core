@@ -35,8 +35,8 @@ class AgentChatController(Controller):
     description = LocaleString(en="Chat with agents")
     icon = "mage:we-chat"
 
-    def __init__(self, auth: AuthHandler, route: str = "/agent/chat", is_admin_only=False):
-        super().__init__(auth, route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/agent/chat", is_admin_only=False):
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
 
     def completions_json(
         self,
