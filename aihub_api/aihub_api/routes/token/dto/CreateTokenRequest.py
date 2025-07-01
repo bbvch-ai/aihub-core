@@ -1,15 +1,19 @@
 from datetime import datetime, timezone
+from typing import Annotated
 
-from pydantic import BaseModel, Field, constr, field_validator
+from pydantic import BaseModel, Field, field_validator
+from pydantic.types import StringConstraints
 
 
 class CreateTokenRequest(BaseModel):
-    name: constr(min_length=1, max_length=100, strip_whitespace=True) = Field(
-        ..., example="My API Token", description="Token name between 1 and 100 characters"
-    )
-    expiry_date: datetime = Field(
-        ..., description="Expiry date in ISO format (must be in the future)", example="2025-12-31T23:59:59Z"
-    )
+    name: Annotated[
+        str,
+        StringConstraints(min_length=1, max_length=100, strip_whitespace=True),
+        Field(example="My API Token", description="Token name between 1 and 100 characters"),
+    ]
+    expiry_date: Annotated[
+        datetime, Field(description="Expiry date in ISO format (must be in the future)", example="2025-12-31T23:59:59Z")
+    ]
 
     @field_validator("expiry_date")
     @classmethod

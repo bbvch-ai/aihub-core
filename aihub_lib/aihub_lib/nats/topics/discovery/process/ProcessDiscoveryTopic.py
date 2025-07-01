@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
@@ -5,8 +7,8 @@ from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
 
 
 class ProcessDiscoveryTopic(DiscoveryTopic):
-    process_class: str = Field(..., description="Process class targeted by the discovery.")
-    process_id: str = Field(..., description="Specific Process instance targeted by the discovery.")
+    process_class: Annotated[str, Field(description="Process class targeted by the discovery.")]
+    process_id: Annotated[str, Field(description="Specific Process instance targeted by the discovery.")]
 
     @classmethod
     def from_subject(cls, subject: str) -> "ProcessDiscoveryTopic":

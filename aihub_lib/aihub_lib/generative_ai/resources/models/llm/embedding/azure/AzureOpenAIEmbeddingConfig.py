@@ -51,10 +51,12 @@ class AzureOpenAIEmbeddingConfig(EmbeddingLLMConfig, AzureOpenaiResourceConfig):
         0.0
     )
 
-    default_parameter: AzureOpenAIEmbeddingParameter = Field(
-        default_factory=lambda: AzureOpenAIEmbeddingParameter(),
-        description="Default parameters for Azure OpenAI embeddings.",
-    )
+    default_parameter: Annotated[
+        AzureOpenAIEmbeddingParameter,
+        Field(
+            description="Default parameters for Azure OpenAI embeddings.",
+        ),
+    ] = AzureOpenAIEmbeddingParameter()
 
     def to_llama_index(
         self, model_parameter: Optional[AzureOpenAIEmbeddingParameter] = None

@@ -17,7 +17,6 @@ class DashboardDTO(BaseModel):
     children: Annotated[
         List[DashboardItemDTO],
         Field(
-            default_factory=list,
             description="List of widgets (dashboard items) within the grid.",
         ),
-    ]
+    ] = []

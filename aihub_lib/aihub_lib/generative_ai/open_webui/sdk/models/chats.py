@@ -8,7 +8,7 @@ class BaseMessage(BaseModel):
 
     id: Annotated[Optional[str], Field(default=None, description="Unique message identifier")] = None
     parentId: Annotated[Optional[str], Field(default=None, description="Parent message identifier")] = None
-    childrenIds: Annotated[List[str], Field(default_factory=list, description="Child message identifiers")] = []
+    childrenIds: Annotated[List[str], Field(description="Child message identifiers")] = []
     role: Annotated[str, Field(description="Role of the message sender")]
     content: Annotated[str, Field(description="Text content of the message")]
     timestamp: Annotated[Optional[int], Field(default=None, description="Message timestamp")] = None
@@ -64,7 +64,7 @@ class ChatMessageContent(BaseModel):
 
     id: Annotated[Optional[str], Field(default=None, description="Message identifier")] = None
     parentId: Annotated[Optional[str], Field(default=None, description="Parent message identifier")] = None
-    childrenIds: Annotated[List[str], Field(default_factory=list, description="Child message identifiers")] = []
+    childrenIds: Annotated[List[str], Field(description="Child message identifiers")] = []
     role: Annotated[str, Field(description="Role of the message sender")]
     content: Annotated[str, Field(description="Text content of the message")]
     timestamp: Annotated[Optional[int], Field(default=None, description="Message timestamp")] = None
@@ -104,15 +104,15 @@ class ChatData(BaseModel):
 
     id: Annotated[Optional[str], Field(default="", description="Chat identifier")] = ""
     title: Annotated[str, Field(description="Title of the chat")]
-    models: Annotated[List[str], Field(default_factory=list, description="Models available for this chat")] = []
-    params: Annotated[Dict[str, Any], Field(default_factory=dict, description="Additional parameters")] = {}
+    models: Annotated[List[str], Field(description="Models available for this chat")] = []
+    params: Annotated[Dict[str, Any], Field(description="Additional parameters")] = {}
     history: Annotated[ChatHistory, Field(description="Chat message history map")] = None
     messages: Annotated[
         Optional[List[ChatMessageContent]], Field(default=None, description="Messages in array format")
     ] = None
-    tags: Annotated[List[str], Field(default_factory=list, description="Tags associated with this chat")] = []
+    tags: Annotated[List[str], Field(description="Tags associated with this chat")] = []
     timestamp: Annotated[Optional[int], Field(default=None, description="Chat timestamp")] = None
-    files: Annotated[List[Dict[str, Any]], Field(default_factory=list, description="Files attached to the chat")] = []
+    files: Annotated[List[Dict[str, Any]], Field(description="Files attached to the chat")] = []
 
     # Allow additional fields for flexibility
     model_config = ConfigDict(extra="allow")
@@ -159,7 +159,7 @@ class ChatResponse(BaseModel):
     share_id: Annotated[Optional[str], Field(default=None, description="Share identifier")] = None
     archived: Annotated[bool, Field(description="Whether chat is archived")]
     pinned: Annotated[Optional[bool], Field(default=False, description="Whether chat is pinned")] = False
-    meta: Annotated[Dict[str, Any], Field(default_factory=dict, description="Additional metadata")] = {}
+    meta: Annotated[Dict[str, Any], Field(description="Additional metadata")] = {}
     folder_id: Annotated[Optional[str], Field(default=None, description="Folder identifier")] = None
 
 

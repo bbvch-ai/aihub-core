@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 
 from aihub_lib.nats.events import BaseEvent
@@ -19,8 +21,8 @@ class ProcessDiscoveryResponseEvent(BaseEvent):
     dynamically integrate with newly discovered processs without manual configuration or guesswork.
     """
 
-    process_class: str = Field(
-        ..., description="The class or category of the process (e.g., a specific type of process)."
-    )
-    process_id: str = Field(..., description="A unique identifier for the process instance.")
-    process_config: ProcessConfig = Field(..., description="Configuration for the process instance.")
+    process_class: Annotated[
+        str, Field(description="The class or category of the process (e.g., a specific type of process).")
+    ]
+    process_id: Annotated[str, Field(description="A unique identifier for the process instance.")]
+    process_config: Annotated[ProcessConfig, Field(description="Configuration for the process instance.")]

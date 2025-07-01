@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -14,8 +16,8 @@ class AgentDiscoveryTopic(DiscoveryTopic):
     queries or responses, allowing the system to quickly identify which agent (by class and ID) is involved.
     """
 
-    agent_class: str = Field(..., description="Agent class targeted by the discovery.")
-    agent_id: str = Field(..., description="Specific agent instance targeted by the discovery.")
+    agent_class: Annotated[str, Field(description="Agent class targeted by the discovery.")]
+    agent_id: Annotated[str, Field(description="Specific agent instance targeted by the discovery.")]
 
     @classmethod
     def from_subject(cls, subject: str) -> "AgentDiscoveryTopic":

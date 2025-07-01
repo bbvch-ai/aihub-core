@@ -6,7 +6,7 @@ required_open_webui_version: 0.6.0
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, Union, Generator, Iterator
+from typing import Optional, Union, Generator, Iterator, Annotated
 
 import json
 import os
@@ -28,10 +28,9 @@ def str_to_object_id(context_id: Optional[str]) -> ObjectId:
 
 class Action:
     class Valves(BaseModel):
-        AIHUB_FRONTEND_BASE_URL: str = Field(
-            default="http://localhost:3000",
+        AIHUB_FRONTEND_BASE_URL: Annotated[str, Field(
             description="Base URL for accessing AI-Hub Suite Frontend.",
-        )
+        )] = "http://localhost:3000"
 
     def __init__(self):
         self.valves = self.Valves()

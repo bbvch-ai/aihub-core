@@ -17,9 +17,9 @@ class IngestedBase(BaseModel):
     source: Annotated[str, Field(description="Source URI of original document.")]
     namespace: Annotated[str, Field(description="The namespace of the document within its metadata.")]
     version: Annotated[int, Field(description="Document version.")] = 1
-    content_hash: Optional[str] = Field(
-        None, description="Hash of the document/node, helpful to track whether file changed."
-    )
+    content_hash: Annotated[
+        Optional[str], Field(description="Hash of the document/node, helpful to track whether file changed.")
+    ] = None
 
     number_of_pages: Annotated[Optional[int], Field(description="Number of Pages in the Document.")] = None
     document_title: Annotated[Optional[str], Field(description="Document title.")] = None

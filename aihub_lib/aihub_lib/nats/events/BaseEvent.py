@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Type, Union
+from typing import Annotated, Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
@@ -50,11 +50,14 @@ class BaseEvent(BaseModel):
     """
 
     _event_registry: ClassVar[Dict[str, Type["BaseEvent"]]] = {}
-    event_id: str = Field(default_factory=lambda: str(ObjectId()))
-    created_at: int = Field(
-        default_factory=time.time_ns,
-        description="The time (in ns since epoch) the event was stored in the event store",
-    )
+    event_id: Annotated[str, Field(default_factory=lambda: str(ObjectId()))]
+    created_at: Annotated[
+        int,
+        Field(
+            default_factory=time.time_ns,
+            description="The time (in ns since epoch) the event was stored in the event store",
+        ),
+    ]
 
     # Private attributes to handle unknown event types
     _unknown_event_name: Optional[str] = PrivateAttr(None)

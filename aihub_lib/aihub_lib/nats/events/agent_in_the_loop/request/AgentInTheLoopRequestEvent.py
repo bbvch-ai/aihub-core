@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional, Type, Union
+from typing import Annotated, ClassVar, Optional, Type, Union
 
 from pydantic import Field, PrivateAttr
 
@@ -33,23 +33,28 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     _response: Optional[Type[AgentInTheLoopResponseEvent]] = PrivateAttr(None)
     _exception: Optional[Type[AgentInTheLoopExceptionEvent]] = PrivateAttr(None)
 
-    start_event: StartEvent | UserMessageEvent = Field(
-        ..., description="The event that will be sent to the other agent to initiate its task."
-    )
-    other_agent_topic: Union[PartialAgentTopic, AgentTopic] = Field(
-        ...,
-        description="A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.",
-    )
-    share_thread_id: bool = Field(
-        True, description="Whether to share the conversation thread context with the other agent."
-    )
-    share_display_id: bool = Field(
-        True, description="Whether to share the display context with the other agent for UI consistency."
-    )
-    share_run_id: bool = Field(
-        False,
-        description="Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
-    )
+    start_event: Annotated[
+        StartEvent | UserMessageEvent,
+        Field(description="The event that will be sent to the other agent to initiate its task."),
+    ]
+    other_agent_topic: Annotated[
+        Union[PartialAgentTopic, AgentTopic],
+        Field(
+            description="A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.",
+        ),
+    ]
+    share_thread_id: Annotated[
+        bool, Field(description="Whether to share the conversation thread context with the other agent.")
+    ] = True
+    share_display_id: Annotated[
+        bool, Field(description="Whether to share the display context with the other agent for UI consistency.")
+    ] = True
+    share_run_id: Annotated[
+        bool,
+        Field(
+            description="Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        ),
+    ] = False
 
     def __init__(
         self,

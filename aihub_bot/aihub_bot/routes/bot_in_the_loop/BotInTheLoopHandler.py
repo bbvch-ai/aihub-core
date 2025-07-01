@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Annotated, Callable, Dict, Optional
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
@@ -15,17 +15,22 @@ from aihub_bot.routes.RoutesService import RoutesService
 
 
 class BotInTheLoopThread(BaseModel):
-    thread_id: str = Field(..., description="The ID of the thread in which the bot-in-the-loop requests are sent.")
-    conversation_id: str = Field(
-        ..., description="The full Slack conversation ID (format: BotID:TeamID:ChannelID) where messages are sent to."
-    )
-    slack_thread_ts: Optional[str] = Field(
-        None,
-        description="The timestamp of the Slack thread that acts as an identifier for the Slack thread where the bot-in-the-loop request is sent to.",
-    )
-    last_request_event: BotInTheLoopRequestEvent = Field(
-        ..., description="The last bot-in-the-loop request event sent in this thread."
-    )
+    thread_id: Annotated[str, Field(description="The ID of the thread in which the bot-in-the-loop requests are sent.")]
+    conversation_id: Annotated[
+        str,
+        Field(
+            description="The full Slack conversation ID (format: BotID:TeamID:ChannelID) where messages are sent to."
+        ),
+    ]
+    slack_thread_ts: Annotated[
+        Optional[str],
+        Field(
+            description="The timestamp of the Slack thread that acts as an identifier for the Slack thread where the bot-in-the-loop request is sent to.",
+        ),
+    ] = None
+    last_request_event: Annotated[
+        BotInTheLoopRequestEvent, Field(description="The last bot-in-the-loop request event sent in this thread.")
+    ]
 
 
 class BotInTheLoopHandler:
