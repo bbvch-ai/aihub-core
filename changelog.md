@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.205.0] - 2025-07-01 - Core System Version Synchronization
+
+### Changed
+- 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.205.0`, ensuring a unified and consistent release across the entire platform.
+
+---
+
+
+
 ## [v0.204.0] - 2025-07-01 - Streamlined Release Automation and Core Service Alignment
 
 ### Changed
