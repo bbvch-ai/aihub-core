@@ -68,7 +68,7 @@ async def main():
         SuiteController(auth=auth).get_suite(),
         UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
-        EventController(auth=auth).ws().get_events().get_event_timeseries(),
+        EventController(auth=auth).ws().get_events_in_thread().get_event_timeseries(),
         ThreadController(auth=auth)
         .get_user_threads()
         .create_thread()

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -18,8 +18,8 @@ class TokenController(Controller):
     description = LocaleString(en="Manage API Tokens")
     icon = "solar:password-bold"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/tokens", is_admin_only=False):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/tokens"):
+        super().__init__(auth=auth, route=route)
 
     def create_token(self, route: str = "/") -> "TokenController":
         @self.router.post(
@@ -30,7 +30,8 @@ class TokenController(Controller):
             tags=self.tags,
         )
         async def create_token_endpoint(
-            token_data: CreateTokenRequest, user: UserIdentity = Security(self.auth)
+            token_data: CreateTokenRequest,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> CreateTokenResponse:
             try:
                 return TokenService.create_token(
@@ -50,7 +51,9 @@ class TokenController(Controller):
             description="Lists all API tokens for the authenticated user. The token value is not returned.",
             tags=self.tags,
         )
-        async def list_tokens_endpoint(user: UserIdentity = Security(self.auth)) -> List[TokenResponse]:
+        async def list_tokens_endpoint(
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+        ) -> List[TokenResponse]:
             return TokenService.list_tokens(user)
 
         return self
@@ -64,7 +67,7 @@ class TokenController(Controller):
         )
         async def revoke_token_endpoint(
             token_id: str,
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> RevokeTokenResponse:
             try:
                 TokenService.revoke_token(token_id, user)

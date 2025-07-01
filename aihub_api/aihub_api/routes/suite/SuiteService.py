@@ -19,7 +19,7 @@ class SuiteService:
                     name=t.extract(controller.name),
                     description=t.extract(controller.description),
                     icon=controller.icon,
-                    path=f"{'/admin' if controller.is_admin_only else '/service'}{controller.base_route}",
+                    path=f"/service{controller.base_route}",
                 )
                 for controller in runner.controllers
             ]

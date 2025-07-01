@@ -86,11 +86,6 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, identity_provider, t)
 
     @staticmethod
-    async def user_in_thread(thread_id: str, user: UserIdentity) -> bool:
-        thread = ThreadEntity.get_thread_by_id(thread_id)
-        return user.id in [u.user_id for u in thread.users]
-
-    @staticmethod
     async def get_paginated_threads_for_user(
         user_id: str,
         identity_provider: IdentityProvider,
@@ -115,13 +110,16 @@ class ThreadService:
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
+        user_id: Optional[str] = None,
     ) -> tuple[int, List[ThreadDTO]]:
         """
         Returns a paginated list of threads that a specific agent is part of.
         """
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
-        threads = ThreadEntity.get_paginated_threads_by_agent(agent_class, agent_id, skip=skip, limit=page_size)
+        threads = ThreadEntity.get_paginated_threads_by_agent(
+            agent_class, agent_id, skip=skip, limit=page_size, user_id=user_id
+        )
         thread_dtos = await asyncio.gather(
             *(ThreadService.thread_response_from_entity(thread, identity_provider, t) for thread in threads)
         )

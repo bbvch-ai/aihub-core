@@ -1,5 +1,8 @@
+from typing import Annotated
+
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Query, Security
@@ -20,20 +23,20 @@ class FileController(Controller):
     description = LocaleString(en="Provides secure access to stored files")
     icon = "line-md:file"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/file", is_admin_only=False):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/file"):
+        super().__init__(auth=auth, route=route)
 
     def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}"):
         @self.router.get(route, tags=self.tags, summary="Get signed file URL")
         async def get_file_url(
             container: str,
             file_path: str,
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> SignedUrlDto:
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
             """
-            return SignedUrlDto(url=FileService.generate_sas_url(container, file_path))
+            return SignedUrlDto(url=AnonymousFileAccessService.generate_sas_url(container, file_path))
 
         return self
 
@@ -42,7 +45,7 @@ class FileController(Controller):
         async def get_file_redirect(
             container: str,
             file_path: str,
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ):
             """
             Generates a short-lived secure link to the blob resource, and redirects the user to it.

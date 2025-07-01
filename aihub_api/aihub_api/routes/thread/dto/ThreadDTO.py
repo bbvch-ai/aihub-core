@@ -20,6 +20,12 @@ class ThreadDTO(BaseModel):
     agents: Annotated[List[MinimalAgentDTO], Field(description="List of agents initially associated with thread")]
     created_at: Annotated[str, Field(description="Date at which thread was created (ISO format string)")]
 
+    process_class: Annotated[Optional[str], Field(description="Class of the process that generated the thread")] = None
+    process_id: Annotated[Optional[str], Field(description="ID of the process that generated the thread")] = None
+    process_walkthrough_id: Annotated[
+        Optional[str], Field(description="ID of the walkthrough that generated the thread")
+    ] = None
+
     # Aggregated Event statistics for the whole thread
     num_events: Annotated[int, Field(description="Total number of events in the thread")] = 0
     num_turns: Annotated[int, Field(description="Number of turns (StartEvent count)")] = 0

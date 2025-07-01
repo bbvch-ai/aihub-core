@@ -2,6 +2,7 @@ import time
 from typing import Annotated, List, Type
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -64,21 +65,25 @@ class AgentController(Controller):
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/agents", is_admin_only=True):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/agents"):
+        super().__init__(auth=auth, route=route)
 
     def get_agents(self, route: str = "/") -> "AgentController":
         @self.router.get(route, tags=self.tags)
         async def get_agents(
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-            t: LocaleHandler = Depends(use_locale),
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all agents, both online (discoverable) and offline (not discoverable).
             """
             agents = await AgentService.get_agents(nc, t)
-            return [agent for agent in agents if AccessChecker(user).has_access_to_agent(agent.agent_class, agent.agent_id)]
+            return [
+                agent
+                for agent in agents
+                if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
+            ]
 
         return self
 
@@ -87,13 +92,17 @@ class AgentController(Controller):
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-            t: LocaleHandler = Depends(use_locale),
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
             agents = await AgentService.discover_agents(nc, t)
-            return [agent for agent in agents if AccessChecker(user).has_access_to_agent(agent.agent_class, agent.agent_id)]
+            return [
+                agent
+                for agent in agents
+                if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
+            ]
 
         return self
 
@@ -106,7 +115,7 @@ class AgentController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
             ],
-            t: LocaleHandler = Depends(use_locale),
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> AgentDTO:
             """
             Retrieve details for a specific agent. Raises 403 if the user lacks access.
@@ -120,16 +129,17 @@ class AgentController(Controller):
         async def get_agent_threads(
             agent_class: str,
             agent_id: str,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
             ],
-            t: LocaleHandler = Depends(use_locale),
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedThreadsResponse:
             """
             Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
             """
+            access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_paginated_agent_threads(
                 agent_class,
                 agent_id,
@@ -137,6 +147,7 @@ class AgentController(Controller):
                 t=t,
                 page=page,
                 page_size=page_size,
+                user_id=None if access_level == AccessLevel.ACCESS_ADMIN else user.id,
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -181,9 +192,9 @@ class AgentController(Controller):
             user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
             ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            t: LocaleHandler = Depends(use_locale),
         ) -> stop_event_output_type:
             """
             Send an event to a specific agent. Raises 403 if the user lacks access.

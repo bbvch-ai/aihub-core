@@ -273,12 +273,19 @@ class AgentService:
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
+        user_id: Optional[str] = None,
     ) -> tuple[int, List[ThreadDTO]]:
         """
         Retrieves a paginated list of threads that a specific agent is part of.
         """
         return await ThreadService.get_paginated_threads_for_agent(
-            agent_class, agent_id, identity_provider=identity_provider, t=t, page=page, page_size=page_size
+            agent_class,
+            agent_id,
+            identity_provider=identity_provider,
+            t=t,
+            page=page,
+            page_size=page_size,
+            user_id=user_id,
         )
 
     @staticmethod

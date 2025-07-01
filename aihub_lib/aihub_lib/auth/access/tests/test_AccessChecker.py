@@ -1,11 +1,9 @@
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
-# Assuming the refactored AccessChecker is in this path
-from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.AccessChecker import AccessChecker, AccessLevel
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
-# Point scenarios to the feature file
 scenarios("./features/access_checker.feature")
 
 
@@ -17,7 +15,7 @@ def context():
 
 @given('a user with the name "Test User" and email "test@example.com"', target_fixture="user_identity")
 def user_identity():
-    """Creates a base UserIdentity object with an empty list of roles."""
+    """Creates a base UserIdentity object."""
     return UserIdentity(id="test-user-id", name="Test User", email="test@example.com", roles=[])
 
 
@@ -35,13 +33,10 @@ def clear_user_roles(user_identity: UserIdentity):
 
 @when(parsers.parse('the access checker checks for the permission "{permission_template}"'))
 def check_permission(context, user_identity: UserIdentity, permission_template: str):
-    """
-    Initializes the AccessChecker and calls has_permission, storing the result
-    or any exception in the context.
-    """
+    """Initializes AccessChecker and stores the result or any exception."""
     try:
         checker = AccessChecker(user_identity)
-        result = checker.has_permission(permission_template)
+        result = checker.access_level(permission_template)
         context["result"] = result
         context["exception"] = None
     except Exception as e:
@@ -55,11 +50,15 @@ def check_user_level_permission(context, user_identity: UserIdentity, user_permi
     check_permission(context, user_identity, user_permission_template)
 
 
-@then(parsers.parse("the result should be {has_permission}"))
-def assert_result(context, has_permission: str):
-    """Asserts that the permission check returned the expected boolean value."""
-    expected = has_permission.lower() == "true"
+@then(parsers.parse("the result should be {expected_level}"))
+def assert_result(context, expected_level: str):
+    """Asserts that the permission check returned the expected AccessLevel."""
     assert context.get("exception") is None, f"Expected no exception, but got {context.get('exception')}"
+    try:
+        expected = AccessLevel[expected_level]
+    except KeyError:
+        pytest.fail(f"Invalid expected level '{expected_level}' in feature file.")
+
     assert context.get("result") is expected, f"Expected {expected}, but got {context.get('result')}"
 
 
@@ -69,4 +68,3 @@ def assert_value_error(context):
     exception = context.get("exception")
     assert exception is not None, "Expected a ValueError, but no exception was raised."
     assert isinstance(exception, ValueError), f"Expected ValueError, but got {type(exception).__name__}."
-

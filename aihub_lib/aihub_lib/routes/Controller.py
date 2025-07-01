@@ -1,7 +1,7 @@
 import abc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
-from fastapi import APIRouter, FastAPI, Security, HTTPException, Depends
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -58,27 +58,26 @@ class Controller(abc.ABC):
     description = LocaleString(en="This controller has no description.")
     icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
 
-    def __init__(self, *, auth: AuthHandler, route: str, is_admin_only=False):
+    def __init__(self, *, auth: AuthHandler, route: str):
         self.base_route: str = route
         self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler(
             identity_provider=DangerousDevelopmentOnlyIdentityProvider()
         )
         self.router: APIRouter = APIRouter()
 
-        self.is_admin_only = is_admin_only
-
     def user_with_permission(self, permission_template: str):
         def check_access(
-            user: UserIdentity = Depends(self.auth),
+            user: Annotated[UserIdentity, Depends(self.auth)],
             **kwargs,
         ) -> UserIdentity:
             required_permission = permission_template.format(**kwargs)
 
-            access_checker = AccessChecker(user)
+            access_checker = AccessChecker.from_user(user)
 
-            if not access_checker.has_permission(required_permission):
+            if not access_checker.has_access(required_permission):
                 raise HTTPException(
-                    status_code=403, detail=f"Forbidden: You do not have the required '{required_permission}' permission."
+                    status_code=403,
+                    detail=f"Forbidden: You do not have the required '{required_permission}' permission.",
                 )
             return user
 

@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -69,14 +70,14 @@ class ThreadController(Controller):
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/threads", is_admin_only=True):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/threads"):
+        super().__init__(auth=auth, route=route)
 
     def get_user_threads(self, route: str = "/") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def get_user_threads(
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedThreadsResponse:
@@ -98,23 +99,31 @@ class ThreadController(Controller):
     def create_thread(self, route: str = "/") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def create_thread(
-            req: CreateThreadRequest,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            create_request_dto: CreateThreadRequest,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
             """
             Creates a new thread with the specified name, users, and agents.
             Automatically adds the authenticated user if not already included.
             """
-            if user.id not in req.user_ids:
-                req.user_ids.append(user.id)
+            if user.id not in create_request_dto.user_ids:
+                create_request_dto.user_ids.append(user.id)
 
-            # Todo: Check if all users have access to all agents in thread
+            for user_id in create_request_dto.user_ids:
+                user_roles = await self.auth.identity_provider.get_user_roles(user_id)
+                access = AccessChecker(user_roles)
+                for agent in create_request_dto.agents:
+                    if not access.has_access_to_agent(agent.agent_class, agent.agent_id):
+                        raise HTTPException(
+                            status_code=403,
+                            detail=f"User {user_id} does not have access to agent {agent.agent_class}:{agent.agent_id}",
+                        )
 
             return await ThreadService.create_thread(
-                name=req.name,
-                user_ids=req.user_ids,
-                agent_dtos=req.agents,
+                name=create_request_dto.name,
+                user_ids=create_request_dto.user_ids,
+                agent_dtos=create_request_dto.agents,
                 identity_provider=self.auth.identity_provider,
                 t=t,
             )
@@ -125,16 +134,22 @@ class ThreadController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
             """
             Retrieves details of a specific thread.
             Raises 403 if the user is not a member of that thread.
             """
             thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
-            if not await ThreadService.user_in_thread(thread_id, user):
+
+            user_in_thread = user.id in [u.user_id for u in thread.users]
+            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread.process_class, thread.process_id
+            )
+            if not (user_in_thread or thread_belongs_to_users_process):
                 raise self.not_authorized_to_view_exception
+
             return thread
 
         return self
@@ -144,16 +159,28 @@ class ThreadController(Controller):
         async def add_agent_to_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             req: AddAgentRequest,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
-            if not await ThreadService.user_in_thread(thread_id, user):
+            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+
+            if thread.process_class or thread.process_id:
+                raise HTTPException(status_code=403, detail="Cannot add agent to process thread")
+
+            if user.id not in [u.user_id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            # TODO: Check if all users have access to new agent
+            for thread_user in thread.users:
+                user_roles = await self.auth.identity_provider.get_user_roles(thread_user.id)
+                access = AccessChecker(user_roles)
+                if not access.has_access_to_agent(req.agent_class, req.agent_id):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"User {thread_user.id} does not have access to agent {req.agent_class}:{req.agent_id}",
+                    )
 
             return await ThreadService.add_agent_to_thread(
                 thread_id, req.agent_id, req.agent_class, identity_provider=self.auth.identity_provider, t=t
@@ -165,10 +192,16 @@ class ThreadController(Controller):
         @self.router.get(route, tags=self.tags)
         async def thread_as_message_history(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> HistoryResponse:
-            if not await ThreadService.user_in_thread(thread_id, user):
-                raise self.not_authorized_to_modify_exception
+            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+
+            user_in_thread = user.id in [u.user_id for u in thread.users]
+            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread.process_class, thread.process_id
+            )
+            if not (user_in_thread or thread_belongs_to_users_process):
+                raise self.not_authorized_to_view_exception
 
             return await ThreadService.thread_as_message_history(thread_id)
 
@@ -180,13 +213,18 @@ class ThreadController(Controller):
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             agent_class: Annotated[str, Path(title="Agent Class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
-            if not await ThreadService.user_in_thread(thread_id, user):
+            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+
+            if thread.process_class or thread.process_id:
+                raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
+
+            if user.id not in [u.user_id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_agent_from_thread(
@@ -199,20 +237,31 @@ class ThreadController(Controller):
         @self.router.post(route, tags=self.tags)
         async def add_user_to_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            req: AddUserRequest,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            add_user_dto: AddUserRequest,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
-            if not await ThreadService.user_in_thread(thread_id, user):
+            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+
+            if thread.process_class or thread.process_id:
+                raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
+
+            if user.id not in [u.user_id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            # TODO: Check if new users has access to all agents in thread
+            user_to_add_roles = await self.auth.identity_provider.get_user_roles(add_user_dto.user_id)
+            for agent in thread.agents:
+                if not AccessChecker(user_to_add_roles).has_access_to_agent(agent.agent_class, agent.agent_id):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"User {add_user_dto.user_id} does not have access to agent {agent.agent_class}:{agent.agent_id}",
+                    )
 
             return await ThreadService.add_user_to_thread(
-                thread_id, req.user_id, identity_provider=self.auth.identity_provider, t=t
+                thread_id, add_user_dto.user_id, identity_provider=self.auth.identity_provider, t=t
             )
 
         return self
@@ -222,13 +271,18 @@ class ThreadController(Controller):
         async def remove_user_from_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             remove_user_id: Annotated[str, Path(title="User ID")],
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
-            if not await ThreadService.user_in_thread(thread_id, user):
+            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+
+            if thread.process_class or thread.process_id:
+                raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
+
+            if user.id not in [u.user_id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_user_from_thread(

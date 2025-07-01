@@ -1,4 +1,4 @@
-import { getEvents, type WsServerEvent } from '@core/sdk/client'
+import { getEventsInThread, type WsServerEvent } from '@core/sdk/client'
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import { useRoute } from 'vue-router'
@@ -15,9 +15,9 @@ export const useThreadEvents = defineQuery(() => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: true,
     query: async () => {
-      return await getEvents({
+      return await getEventsInThread({
         composable: '$fetch',
-        query: {
+        path: {
           thread_id: route.params.thread_id as string,
         },
       })

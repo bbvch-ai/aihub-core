@@ -41,13 +41,13 @@ class UserController(Controller):
     description = LocaleString(en="Manage own user")
     icon = "solar:password-bold"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/users", is_admin_only=False):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/users"):
+        super().__init__(auth=auth, route=route)
 
     def get_my_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route, tags=self.tags)
         async def get_my_user(
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> MyUserDTO:
             """
             Returns a `UserDTO` representing the currently logged-in user.
@@ -63,7 +63,7 @@ class UserController(Controller):
 
         @self.router.get(route, tags=self.tags)
         async def get_my_dashboard(
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> Optional[DashboardDTO]:
             """
             Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
@@ -80,7 +80,7 @@ class UserController(Controller):
         @self.router.put(route, tags=self.tags, status_code=204)
         async def update_my_dashboard(
             dashboard_dto: Annotated[DashboardDTO, Body],
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> None:
             """
             Updates the user's dashboard settings.

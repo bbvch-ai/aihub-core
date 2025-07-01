@@ -27,10 +27,9 @@ class OpenaiChatController(Controller):
         *,
         auth: AuthHandler,
         route: str = "/openai/chat",
-        is_admin_only=False,
         chat_models: List[ChatLLMConfig] = None,
     ):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route)
         self.chat_models = chat_models or []
 
         for chat_model in self.chat_models:
