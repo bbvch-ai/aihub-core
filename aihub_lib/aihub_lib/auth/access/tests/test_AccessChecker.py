@@ -27,6 +27,12 @@ def add_user_role(user_identity: UserIdentity, role: str):
     user_identity.roles.append(role)
 
 
+@given("the user has no other roles")
+def clear_user_roles(user_identity: UserIdentity):
+    """Clears all existing roles from the user to ensure a clean state."""
+    user_identity.roles.clear()
+
+
 @when(parsers.parse('the access checker checks for the permission "{permission_template}"'))
 def check_permission(context, user_identity: UserIdentity, permission_template: str):
     """

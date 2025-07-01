@@ -41,7 +41,7 @@ class AccessChecker:
         - Permission Template: `aihub.user.agent.class_a.id_123` -> Match!
 
     2.  Implicit Check: Verifies if a user has *any* role that fits a general pattern.
-        This uses the '?' wildcard in the permission template.
+        This uses the '?*' or '?>' wildcards in the permission template.
         - User Role: `aihub.user.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match!
         - Permission Template: `aihub.user.agent.?>` -> Match!
@@ -84,7 +84,7 @@ class AccessChecker:
         parts = template.split('.')
         for part in parts:
             is_valid_token = re.fullmatch(r"[a-z0-9\-\_]+", part, re.IGNORECASE)
-            is_special_wildcard = part in ['?', '?*', '?>']
+            is_special_wildcard = part in ['?*', '?>']
             if not (is_valid_token or is_special_wildcard):
                 raise ValueError(f"Invalid permission template: Contains invalid token '{part}' in '{template}'")
 
@@ -120,35 +120,46 @@ class AccessChecker:
 
     def _role_fulfills_implicit_template(self, user_role: str, implicit_template: str) -> bool:
         """
-        Checks if a user role fulfills a permission template containing '?' wildcards.
-        The '?' acts as a placeholder for *any* valid token/permission at that level.
+        Checks if a user role fulfills a permission template containing '?*' or '?>' wildcards.
+        This now correctly handles wildcards in both the role and the template.
         """
         role_parts = user_role.split('.')
         template_parts = implicit_template.split('.')
 
-        for i, t_part in enumerate(template_parts):
-            # If template ends in '?>', it's fulfilled if the role has any token(s) beyond this point.
+        ti = 0  # template index
+        ri = 0  # role index
+
+        while ti < len(template_parts) and ri < len(role_parts):
+            t_part = template_parts[ti]
+            r_part = role_parts[ri]
+
+            # Handle terminal wildcards first
+            if r_part == '>':
+                # Role's '>' matches the rest of the template, which must have at least one token.
+                return ti < len(template_parts)
             if t_part == '?>':
-                # The prefix of the role and template must match.
-                if role_parts[:i] != template_parts[:i]:
-                    return False
-                # The role must simply have tokens at or after this position.
-                return len(role_parts) > i
+                # Template's '?>' is fulfilled if the role has any tokens left.
+                return ri < len(role_parts)
 
-            if i >= len(role_parts):
-                return False
-
-            r_part = role_parts[i]
-
-            # '?' and '?*' are fulfilled by the existence of any valid token at this position.
-            if t_part in ['?', '?*']:
+            # Handle single-level wildcards
+            if r_part == '*' or t_part == '?*':
+                ti += 1
+                ri += 1
                 continue
-            # Otherwise, the tokens must be identical.
-            elif t_part != r_part:
+
+            # Handle direct match
+            if r_part != t_part:
                 return False
 
-        # If we finished the loop without '?>', lengths must match exactly.
-        return len(role_parts) == len(template_parts)
+            ti += 1
+            ri += 1
+
+        # If the role has a trailing '>' that wasn't consumed, it's a match.
+        if ri < len(role_parts) and role_parts[ri] == '>':
+            return True
+
+        # If we consumed all parts of both, it's a match.
+        return ri == len(role_parts) and ti == len(template_parts)
 
 
     def has_permission(self, permission_template: str) -> bool:
