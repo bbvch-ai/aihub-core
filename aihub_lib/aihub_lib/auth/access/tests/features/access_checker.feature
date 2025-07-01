@@ -12,17 +12,14 @@ Feature: User Access Control Checker
 
     Examples:
       | user_role                     | permission_template                   | has_permission |
-
       # Exact Matches
       | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.id-1         | True           |
       | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.id-2         | False          |
-
       # Single-Level Wildcard (*)
-      | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-1         | True           |
+      | aihub.user.agent.class-a.* | aihub.user.agent.class-a.id-1         | True           |
       | aihub.user.agent.*.id-1       | aihub.user.agent.class-a.id-1         | True           |
-      | aihub.user.agent.class-a.*    | aihub.user.agent.class-b.id-1         | False          |
-      | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-1.extra   | False          |
-
+      | aihub.user.agent.class-a.* | aihub.user.agent.class-b.id-1         | False          |
+      | aihub.user.agent.class-a.* | aihub.user.agent.class-a.id-1.extra   | False          |
       # Multi-Level Wildcard (>)
       | aihub.user.agent.>            | aihub.user.agent.class-a.id-1         | True           |
       | aihub.user.agent.class-a.>    | aihub.user.agent.class-a.id-1         | True           |
@@ -35,24 +32,21 @@ Feature: User Access Control Checker
     Then the result should be <has_permission>
 
     Examples:
-      | user_role                  | permission_template        | has_permission |
-
+      | user_role                     | permission_template         | has_permission |
       # Single Token Match (?)
-      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.? | True           |
-      | aihub.user.agent.class-a.id-1 | aihub.user.agent.?.id-1    | True           |
-      | aihub.user.agent.class-a.id-1 | aihub.user.agent.?.?       | True           |
-      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-b.? | False          |
-
-      # Wildcard Token Match (?*)
-      | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.?*| True           |
-      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.?*| False          |
-      | aihub.user.agent.*.id-1       | aihub.user.agent.?*.id-1   | True           |
-
-      # Multi-Level Wildcard Match (?>)
-      | aihub.user.agent.>            | aihub.user.agent.?>        | True           |
-      | aihub.user.agent.class-a.>    | aihub.user.agent.?>        | True           |
-      | aihub.user.agent.class-a.id-1 | aihub.user.agent.?>        | False          |
-      | aihub.user.agent.*            | aihub.user.agent.?>        | False          |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.?  | True           |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.?.id-1     | True           |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.?.?        | True           |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-b.?  | False          |
+      # Wildcard Token Match (?*) - This now checks for ANY permission at that level
+      | aihub.user.agent.class-a.* | aihub.user.agent.class-a.?* | True           |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.?* | True           |
+      | aihub.user.agent.*.id-1       | aihub.user.agent.?*.id-1    | True           |
+      # Multi-Level Wildcard Match (?>) - This now checks for ANY permission from that point on
+      | aihub.user.agent.>            | aihub.user.agent.?>         | True           |
+      | aihub.user.agent.class-a.>    | aihub.user.agent.?>         | True           |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.?>         | True           |
+      | aihub.user.agent.* | aihub.user.agent.?>         | True           |
 
 
   Scenario Outline: Admin Role Inheritance
@@ -66,7 +60,6 @@ Feature: User Access Control Checker
       | aihub.admin.agent.class-a.*| aihub.user.agent.class-a.id-1   | True           |
       | aihub.admin.agent.>        | aihub.user.agent.class-a.id-1   | True           |
       | aihub.admin.process.>      | aihub.user.agent.class-a.id-1   | False          |
-
       # Implicit Matching Inheritance
       | admin_role                 | user_permission_template        | has_permission |
       | aihub.admin.agent.class-a.*| aihub.user.agent.class-a.?* | True           |
@@ -96,4 +89,3 @@ Feature: User Access Control Checker
     And the user has the role "aihub.user.agent.class-a.*"
     When the access checker checks for the permission "aihub.user.agent.class-a.id-1"
     Then the result should be True
-

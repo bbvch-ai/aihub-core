@@ -62,7 +62,6 @@ class AccessChecker:
         if not role.startswith(("aihub.user.", "aihub.admin.")):
             return False
 
-        # Check for invalid characters
         if not re.fullmatch(r"[a-z0-9\.\-\_\*\>]+", role):
             return False
 
@@ -74,25 +73,24 @@ class AccessChecker:
         return True
 
     @staticmethod
-    def _validate_permission_template(template: str) -> bool:
+    def _validate_permission_template(template: str):
         """
         Ensures a permission template follows the strict format.
-        Allows: a-z, 0-9, -, _, ?, ?*, ?>
-        Format: aihub.(user|admin).(agent|process)(.[...])*
+        Raises ValueError if the format is invalid.
         """
         if not template.startswith(("aihub.user.", "aihub.admin.")):
-            return False
-
-        # Check for invalid characters
-        if not re.fullmatch(r"[a-z0-9\.\-\_\?\{\}\*]+", template, re.IGNORECASE):
-            return False
+            raise ValueError(f"Invalid permission template: Must start with 'aihub.user.' or 'aihub.admin.'. Got: {template}")
 
         parts = template.split('.')
-        # '?>' must be the last token if it exists
-        if any('?>' in p for p in parts) and not parts[-1].endswith('?>'):
-            return False
+        for part in parts:
+            is_valid_token = re.fullmatch(r"[a-z0-9\-\_]+", part, re.IGNORECASE)
+            is_special_wildcard = part in ['?', '?*', '?>']
+            if not (is_valid_token or is_special_wildcard):
+                raise ValueError(f"Invalid permission template: Contains invalid token '{part}' in '{template}'")
 
-        return True
+        if '?>' in parts and parts[-1] != '?>':
+            raise ValueError(f"Invalid permission template: '?>' must be the last token. Got: {template}")
+
 
     def _get_validated_roles(self, roles: List[str]) -> Set[str]:
         """Filters and validates the user's roles."""
@@ -123,31 +121,33 @@ class AccessChecker:
     def _role_fulfills_implicit_template(self, user_role: str, implicit_template: str) -> bool:
         """
         Checks if a user role fulfills a permission template containing '?' wildcards.
+        The '?' acts as a placeholder for *any* valid token/permission at that level.
         """
         role_parts = user_role.split('.')
         template_parts = implicit_template.split('.')
 
-        if len(role_parts) != len(template_parts):
-            # A multi-level wildcard in the template could change this, but for now we keep it simple
-            if '?>' not in template_parts and '>' not in role_parts:
-                return False
-
         for i, t_part in enumerate(template_parts):
+            # If template ends in '?>', it's fulfilled if the role has any token(s) beyond this point.
+            if t_part == '?>':
+                # The prefix of the role and template must match.
+                if role_parts[:i] != template_parts[:i]:
+                    return False
+                # The role must simply have tokens at or after this position.
+                return len(role_parts) > i
+
             if i >= len(role_parts):
-                return t_part == '?>'
+                return False
 
             r_part = role_parts[i]
 
-            if t_part == '?': # Matches any single token
+            # '?' and '?*' are fulfilled by the existence of any valid token at this position.
+            if t_part in ['?', '?*']:
                 continue
-            if t_part == '?*': # Matches a '*' token
-                if r_part != '*':
-                    return False
-            elif t_part == '?>': # Matches a '>' token at the end
-                return r_part == '>' and i == len(role_parts) - 1
-            elif t_part != r_part: # Tokens must otherwise be identical
+            # Otherwise, the tokens must be identical.
+            elif t_part != r_part:
                 return False
 
+        # If we finished the loop without '?>', lengths must match exactly.
         return len(role_parts) == len(template_parts)
 
 
@@ -156,8 +156,7 @@ class AccessChecker:
         The main public method to check for permission.
         Orchestrates validation and direct/implicit matching.
         """
-        if not self._validate_permission_template(permission_template):
-            raise ValueError(f"Invalid permission template format: {permission_template}")
+        self._validate_permission_template(permission_template)
 
         templates_to_check = {permission_template}
         if permission_template.startswith("aihub.user."):
@@ -168,12 +167,11 @@ class AccessChecker:
 
         for user_role in self.valid_roles:
             for template in templates_to_check:
+                # Route to the correct matching logic
                 if is_implicit_check:
-                    # Check if the user's role fits the general template
                     if self._role_fulfills_implicit_template(user_role, template):
                         return True
                 else:
-                    # Check if the user's role grants access to the concrete resource
                     if self._role_matches_concrete_permission(user_role, template):
                         return True
         return False
