@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.204.0] - 2025-07-01 - Streamlined Release Automation and Core Service Alignment
+
+### Changed
+- 🔄 **Core Service Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to version `v0.204.0`, ensuring consistent and current builds across the platform.
+- ⚡️ **Robust Changelog Generation**: The automated changelog generation process in the CI/CD pipeline is now more resilient; the workflow will continue even if changelog generation encounters an error, and the changelog file will only be committed if its generation was successful.
+- 📝 **Updated `llm` CLI Syntax**: The `llm keys set` command used in the release workflow now explicitly requires the `--value` flag (e.g., `llm keys set gemini --value "$API_KEY"`), aligning with recent updates to the `llm` tool.
+
+### Refactor
+- 🧹 **Optimized CI/CD Workflow**: Removed redundant Poetry caching from the Python setup step in the GitHub Actions workflow, streamlining environment setup.
+- ⚙️ **Script Robustness**: Improved the internal logic of the changelog generation script by adding specific error handling for LLM calls, preventing a complete script failure if the language model service is unreachable or returns an error.
+
+---
+
+
+
 ## [v0.201.0] - 2025-06-30 - Next-Gen Identity: A Core Authentication Rearchitecture
 
 ### Refactor
