@@ -316,9 +316,10 @@ class MarkdownStructuralNodeParser(NodeParser):
     markdown_splitter: Annotated[
         MarkdownContentSplitter,
         Field(
+            default_factory=MarkdownContentSplitter,
             description="Markdown content splitter to use for splitting content into smaller nodes.",
         ),
-    ] = MarkdownContentSplitter()
+    ]
 
     node_builder_from_splits: Annotated[
         Optional[NodeCreatorFromSplits],
