@@ -1,6 +1,6 @@
 from typing import ClassVar, Optional
 
-from pydantic import Field
+from pydantic import Field, validator
 
 from aihub_iac.azure.constants.suffix import DEFAULT_API_SUFFIX, DEFAULT_WEBUI_SUFFIX
 from aihub_iac.azure.modules.webui.OpenWebUIConfig import OpenWebUIConfig
@@ -10,7 +10,7 @@ from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
 
 
 class WebUIConfig(StorageConfig):
-    """Configuration class for Nats infrastructure"""
+    """Configuration class for WebUI infrastructure"""
 
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
@@ -37,25 +37,45 @@ class WebUIConfig(StorageConfig):
     repo_image_url: str = Field(description="URL of the Docker repository")
     docker_image_tag: str = Field(description="Tag of the Docker image")
 
-    # resources
+    # Resources
     cpu: float = Field(default=2, description="CPU cores for the container")
     memory: str = Field(default="4Gi", description="Memory for the container")
     min_replicas: int = Field(default=1, description="Minimum number of replicas for the container")
     max_replicas: Optional[int] = Field(default=None, description="Maximum number of replicas for the container")
 
-    # Registry settings
+    # Registry settings - Direct authentication
     registry_user: str = Field(
         default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_USER,
         description="Registry username for authentication",
     )
-    registry_pat: str = Field(
+    registry_pat: Optional[str] = Field(
         default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_PAT,
-        description="Registry personal access token for authentication",
+        description="Registry personal access token for authentication (optional if using Key Vault)",
     )
     registry_url: str = Field(
         default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_URL or "https://ghcr.io",
         description="Registry URL for authentication",
     )
+
+    # Key Vault settings - Alternative authentication
+    key_vault_name: Optional[str] = Field(
+        default=None,
+        description="Azure Key Vault name for retrieving GitHub App token (optional, alternative to registry_pat)"
+    )
+
+
+    @property
+    def uses_keyvault_auth(self) -> bool:
+        """Check if Key Vault authentication is configured and should be used"""
+        return (
+                self.key_vault_name is not None and
+                self.key_vault_name.strip() != ""
+        )
+
+    @property
+    def registry_auth_method(self) -> str:
+        """Get a string describing the authentication method being used"""
+        return "keyvault" if self.uses_keyvault_auth else "direct"
 
     @property
     def log_analytics_name(self) -> str:
@@ -90,3 +110,22 @@ class WebUIConfig(StorageConfig):
     def effective_docker_image(self) -> str:
         """Generate the full docker image string"""
         return f"{self.repo_image_url}:{self.docker_image_tag}"
+
+    def get_registry_secret_name(self) -> str:
+        """Get the secret name to use for registry authentication"""
+        return "github-app-token" if self.uses_keyvault_auth else "registry-password"
+
+    def requires_managed_identity(self) -> bool:
+        """Check if managed identity is required for this configuration"""
+        return self.uses_keyvault_auth
+
+    def get_keyvault_secret_url(self) -> Optional[str]:
+        """Get the Key Vault secret URL for GitHub App token"""
+        if not self.uses_keyvault_auth:
+            return None
+        return f"https://{self.key_vault_name}.vault.azure.net/secrets/github-app-access-token"
+
+    def __str__(self) -> str:
+        """String representation showing auth method"""
+        auth_method = "Key Vault" if self.uses_keyvault_auth else "Direct PAT"
+        return f"WebUIConfig(auth_method={auth_method}, registry_url={self.registry_url})"
