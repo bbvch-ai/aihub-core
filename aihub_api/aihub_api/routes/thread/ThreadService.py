@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity

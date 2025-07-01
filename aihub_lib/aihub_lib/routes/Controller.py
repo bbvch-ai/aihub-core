@@ -1,7 +1,8 @@
 import abc
+import logging
 from typing import TYPE_CHECKING, Annotated
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -17,6 +18,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 
 if TYPE_CHECKING:
     from aihub_lib.runners.Runner import Runner
+
+logger = logging.getLogger(__name__)
 
 
 class Controller(abc.ABC):
@@ -67,14 +70,15 @@ class Controller(abc.ABC):
 
     def user_with_permission(self, permission_template: str):
         def check_access(
+            request: Request,
             user: Annotated[UserIdentity, Depends(self.auth)],
-            **kwargs,
         ) -> UserIdentity:
-            required_permission = permission_template.format(**kwargs)
+            required_permission = permission_template.format(**request.path_params)
 
             access_checker = AccessChecker.from_user(user)
 
             if not access_checker.has_access(required_permission):
+                logger.warning(f"User {user.id} does not have permission {required_permission}")
                 raise HTTPException(
                     status_code=403,
                     detail=f"Forbidden: You do not have the required '{required_permission}' permission.",

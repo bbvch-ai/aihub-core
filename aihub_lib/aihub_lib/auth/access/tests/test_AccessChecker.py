@@ -35,7 +35,7 @@ def clear_user_roles(user_identity: UserIdentity):
 def check_permission(context, user_identity: UserIdentity, permission_template: str):
     """Initializes AccessChecker and stores the result or any exception."""
     try:
-        checker = AccessChecker(user_identity)
+        checker = AccessChecker.from_user(user_identity)
         result = checker.access_level(permission_template)
         context["result"] = result
         context["exception"] = None

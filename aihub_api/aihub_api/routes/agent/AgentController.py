@@ -190,7 +190,7 @@ class AgentController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_event_distributor)
             ],
             user: Annotated[
-                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+                UserIdentity, Security(self.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,

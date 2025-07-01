@@ -15,13 +15,13 @@ from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Path, Query
 
 from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
-from ..thread.ThreadService import ThreadService
 
 from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
 from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
 from ...sockets.sender.WebSocketSender import WebSocketSender
+from ..thread.ThreadService import ThreadService
 from .dto.EventTimeseries import EventTimeseries
 from .EventService import EventService
 
@@ -65,8 +65,10 @@ class EventController(Controller):
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
 
-            thread = await ThreadService.get_thread_by_id(thread_id=thread_id, identity_provider=self.auth.identity_provider, t=t)
-            user_in_thread = user.id in [u.user_id for u in thread.users]
+            thread = await ThreadService.get_thread_by_id(
+                thread_id=thread_id, identity_provider=self.auth.identity_provider, t=t
+            )
+            user_in_thread = user.id in [u.id for u in thread.users]
             thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
                 thread.process_class, thread.process_id
             )
@@ -139,6 +141,7 @@ class EventController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_event_timeseries(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             time_range: Annotated[
                 TimeRange,
                 Path(
@@ -181,8 +184,10 @@ class EventController(Controller):
                     )
 
             if thread_id:
-                thread = await ThreadService.get_thread_by_id(thread_id=thread_id, identity_provider=self.auth.identity_provider, t=t)
-                user_in_thread = user.id in [u.user_id for u in thread.users]
+                thread = await ThreadService.get_thread_by_id(
+                    thread_id=thread_id, identity_provider=self.auth.identity_provider, t=t
+                )
+                user_in_thread = user.id in [u.id for u in thread.users]
                 thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
                     thread.process_class, thread.process_id
                 )

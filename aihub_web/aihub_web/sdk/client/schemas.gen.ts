@@ -6318,6 +6318,30 @@ export const ModelDetailsSchema = {
             title: 'Owned By',
             description: 'The user ID of the owner.',
             default: 'aihub'
+        },
+        agent_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Class',
+            description: 'The agent class of the model.'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'The agent ID of the model.'
         }
     },
     type: 'object',
@@ -7876,6 +7900,42 @@ export const ThreadDTOSchema = {
             type: 'string',
             title: 'Created At',
             description: 'Date at which thread was created (ISO format string)'
+        },
+        process_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Process Class',
+            description: 'Class of the process that generated the thread'
+        },
+        process_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Process Id',
+            description: 'ID of the process that generated the thread'
+        },
+        process_walkthrough_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Process Walkthrough Id',
+            description: 'ID of the walkthrough that generated the thread'
         },
         num_events: {
             type: 'integer',

@@ -56,7 +56,7 @@ class FileController(Controller):
 
     def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}") -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Access file url via shared link")
-        async def get_anonymous_file_redirect(
+        async def get_anonymous_file_url(
             container: str,
             file_path: str,
             expires: int = Query(..., description="The UNIX timestamp when the link expires."),
