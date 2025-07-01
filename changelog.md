@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.203.0] - 2025-06-30 - AI-Powered Release Automation
+
+### Added
+- ✨ **Automated Changelog Generation:** Introduced a new CI/CD workflow and accompanying scripts (`generate-changelog.sh`, `changelog-prompt.md`) to automatically generate changelog entries using an LLM based on git diffs between tags.
+- 🚀 **AI-Powered Release Notes:** Integrated `llm` and `llm-gemini` into the release workflow, enabling the use of Large Language Models to summarize code changes into human-readable changelog entries.
+- 📄 **Changelog Prompt Template:** Added a dedicated Markdown file (`changelog-prompt.md`) to define the instructions and format for LLM-generated changelog entries, ensuring consistent output.
+- ⚙️ **Makefile Integration for Changelog:** A new `changelog` target has been added to the `Makefile` to simplify the execution of the changelog generation process.
+
+### Changed
+- 🔄 **Enhanced Release Workflow:** The `add-tag.yml` GitHub Actions workflow has been significantly restructured and renamed to "Auto Tag, Gen-Changelog & Release," encompassing version bumping, changelog generation, and final tag/commit operations for a more robust release pipeline.
+- ⚡️ **Refined Versioning and Tagging Logic:** Updated the CI/CD's commit and tagging process to amend the version update commit with the newly generated changelog entry, ensuring that release tags accurately reflect the complete changes.
+- 🧹 **Streamlined Python/Poetry Setup in CI:** Optimized the Python and Poetry installation and caching steps in GitHub Actions for improved efficiency and dependency management during the build process.
+
+---
+
+
+
+## [v0.202.0] - 2025-06-30 - Revamped User Identity and API Authentication
+
+### Added
+- ✨ **Introduced `IdentityProvider` Abstraction**: A new, flexible `IdentityProvider` interface and its concrete implementations (`AzureIdentityProvider`, `TokenIdentityProvider`, `DangerousDevelopmentOnlyIdentityProvider`) have been added to centralize and standardize user information retrieval across the platform. This allows for easier integration of various authentication sources.
+- ⚡️ **Unauthenticated Health Endpoint**: The `/health` endpoint no longer requires authentication, making it easier to monitor service availability in secure environments.
+- 📄 **User Entity Email Lookup**: Added a new `by_email` class method to `UserEntity` for direct retrieval of user entities by their email address, improving data access efficiency.
+
+### Changed
+- 🔄 **Refined Image Description Prompts**: Updated prompts for figure description generation to ensure that descriptions are solely based on visual content and are not influenced by surrounding document context, leading to more factual and accurate alt-text.
+- 🔌 **Explicit Authentication Handler Injection**: All API and Bot controllers now explicitly require an `AuthHandler` instance in their constructors, enforcing clearer dependency management and configuration.
+- 🤖 **Azure Bot API Path**: The API path for the Azure Bot's bot-in-the-loop functionality has been updated to `/bearer_token/v1/bot-in-the-loop/response` for better alignment with the token-based authentication scheme.
+- 🚀 **Azure Bot Setup Parameters**: Renamed `--api-path` and `--api-url` to `--token-path` and `--token-url` respectively in the Azure Bot setup script for clearer naming conventions.
+
+### Fixed
+- 🐛 **Robust Figure Description Generation**: Implemented enhanced error handling for the figure description generation process in the data pipeline, specifically addressing `BadRequestError` (e.g., content safety filter issues) by retrying without surrounding text to ensure documents are processed successfully.
+
+### Refactor
+- 🧹 **Centralized User Identity Model**: The `AuthenticatedUser` model has been deprecated and replaced across the codebase with the new `UserIdentity` model, which now handles user attributes like `id` (formerly `oid`) and `email` (formerly `preferred_username`).
+- ⚙️ **Streamlined Auth Handlers**: Authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) have been refactored to leverage the new `IdentityProvider` abstraction, simplifying their internal logic and promoting modularity.
+- 🚨 **Renamed Development-Only Auth Components**: The `NoAuthHandler` and `NoAuthConfig` have been renamed to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyAuthConfig` respectively, providing a clearer warning about their intended use for development and testing only.
+- 🗑️ **Removed Redundant Identity Providers (API)**: The previously internal user information providers (`BaseUserInformationProvider`, `MultiStrategyUserInformationProvider`, `ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) from the `aihub_api` module have been removed, as their functionality is now centralized and provided by the new `IdentityProvider` layer in `aihub_lib`.
+- 📄 **Consolidated Frontend User Properties**: Frontend components (`Chat/Message.vue`, `Chat/Thread.vue`, `Event/Display/UserMessageEvent.vue`) have been updated to use the `email` property instead of `preferredUsername` for user display, aligning with the backend `UserIdentity` model.
+
+---
+
+
+
 ## [v0.200.0] - 2025-06-30 - Introducing Process Orchestration and Core Workflow Refinements
 
 ### Added
