@@ -87,7 +87,7 @@ for i in "${!sorted_tags[@]}"; do
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
         diff_args+=("$pattern")
     done
-    diff_output=$(git "${diff_args[@]}")
+    diff_output=$("${diff_args[@]}")
 
     if [ -z "$diff_output" ]; then
         echo "No significant code changes found for $current_tag. Skipping."
@@ -107,7 +107,7 @@ EOF
     # Replace placeholders with actual values
     processed_output=$(echo "$llm_output" | sed "s/%%VERSION%%/$current_tag/g")
 
-    # *** FIX: Get the actual date of the tag commit ***
+    # Get the actual date of the tag commit
     tag_date=$(git log -1 --format=%as "$current_tag")
     processed_output=$(echo "$processed_output" | sed "s/%%DATE%%/$tag_date/g")
 
