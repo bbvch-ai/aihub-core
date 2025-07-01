@@ -1,7 +1,7 @@
 import time
 from typing import Annotated, List, Type
 
-from aihub_lib.auth.access.AccessChecker import user_with_permission, AccessChecker
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -71,7 +71,7 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: Annotated[UserIdentity, Depends(self.user_with_permission("aihub.user.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
@@ -86,7 +86,7 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: Annotated[UserIdentity, Depends(self.user_with_permission("aihub.user.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
@@ -104,7 +104,7 @@ class AgentController(Controller):
             agent_class: str,
             agent_id: str,
             _: Annotated[
-                UserIdentity, Depends(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
             ],
             t: LocaleHandler = Depends(use_locale),
         ) -> AgentDTO:
@@ -120,7 +120,9 @@ class AgentController(Controller):
         async def get_agent_threads(
             agent_class: str,
             agent_id: str,
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
             t: LocaleHandler = Depends(use_locale),
             page: PageNumber = 1,
             page_size: PageSize = 20,
@@ -128,9 +130,6 @@ class AgentController(Controller):
             """
             Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
             """
-            if not AccessChecker(user).has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-
             total, threads = await AgentService.get_paginated_agent_threads(
                 agent_class,
                 agent_id,
@@ -179,7 +178,9 @@ class AgentController(Controller):
             external_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_event_distributor)
             ],
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             t: LocaleHandler = Depends(use_locale),
@@ -187,8 +188,6 @@ class AgentController(Controller):
             """
             Send an event to a specific agent. Raises 403 if the user lacks access.
             """
-            if not AccessChecker(user).has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             start_event = start_event_class(
                 event_id=str(ObjectId()),
                 created_at=time.time_ns(),

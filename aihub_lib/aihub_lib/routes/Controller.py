@@ -1,7 +1,7 @@
 import abc
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, FastAPI, Security, HTTPException
+from fastapi import APIRouter, FastAPI, Security, HTTPException, Depends
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -69,7 +69,7 @@ class Controller(abc.ABC):
 
     def user_with_permission(self, permission_template: str):
         def check_access(
-            user: UserIdentity = Security(self.auth),
+            user: UserIdentity = Depends(self.auth),
             **kwargs,
         ) -> UserIdentity:
             required_permission = permission_template.format(**kwargs)
