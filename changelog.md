@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.207.0] - 2025-07-01 - Streamlined Release Tagging
+
+### Removed
+- 🗑️ **Streamlined Release Tagging**: Removed the redundant step of deleting existing Git tags in the CI/CD workflow, simplifying the release automation process.
+
+---
+
+
+
+## [v0.206.0] - 2025-07-01 - Core System Refinement: Pydantic V2 and Type Clarity
+
+### Refactor
+- 🧹 **Pydantic Model Modernization**: Migrated numerous Pydantic models across `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, and `aihub_pipeline` to leverage Pydantic V2's `Annotated` type hinting. This significantly improves type safety, explicit default value handling, and prepares the codebase for future Pydantic enhancements.
+- ⚙️ **Explicit Default Values**: Updated all `Optional` fields and collections (lists, dictionaries, sets) in Pydantic models to use explicit default values (e.g., `= None`, `= []`, `= {}`, `= set()`) instead of `default_factory`. This enhances code readability and consistency.
+
+### Changed
+- 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.206.0`, ensuring a unified and consistent release across the entire platform.
+- ⚠️ **Deprecated AgentConfig Fields**: Marked `color`, `voice`, and `system_prompt` fields in `AgentConfig` as deprecated, encouraging subclasses to define these properties directly for better customization and reduced coupling.
+- 📄 **Streamlined Docling and OpenWebUI Configurations**: Refined default value assignments for `DOCLING_FROM_FORMATS`, `DOCLING_TO_FORMATS` in `DoclingConfig` and various `Pipe.Valves`/`Action.Valves` settings in `webui_pipelines` for clearer and more direct configuration.
+
+---
+
+
+
 ## [v0.205.0] - 2025-07-01 - Core System Version Synchronization
 
 ### Changed
