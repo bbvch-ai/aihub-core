@@ -162,7 +162,7 @@ jobs:
           pipx inject llm llm-gemini
           
           echo "Setting Gemini API key..."
-          llm keys set gemini "$GEMINI_API_KEY"
+          llm keys set gemini --value "$GEMINI_API_KEY"
           
           echo "Ensuring changelog script is executable..."
           chmod +x ./generate-changelog.sh
