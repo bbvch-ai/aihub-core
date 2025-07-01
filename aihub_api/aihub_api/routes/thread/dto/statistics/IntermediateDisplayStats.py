@@ -14,7 +14,7 @@ class IntermediateDisplayStats(BaseModel):
 
     display_id: Annotated[str, Field(..., description="Unique identifier for the display")]
     runs: Annotated[
-        List[RunStatistics], Field(default_factory=list, description="List of run statistics for this display")
+        List[RunStatistics], Field(description="List of run statistics for this display")
     ] = []
 
     # Raw counts
