@@ -1,2 +1,2 @@
-ALL_ACCESS = "AllAgents"
+ALL_ACCESS = "aihub.user.agent.>"
 COMMAND_EXECUTION = "CommandExecution"

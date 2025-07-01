@@ -25,7 +25,7 @@ class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
         "e07b0ebf-fd9f-485a-aa17-c1385d202f5b",
         description="A unique OID (Object ID) for the user. Defaults to a UUID.",
     )
-    ROLES: Annotated[List[str], NoDecode] = Field("AllAgents", description="A list of roles this user possesses.")
+    ROLES: Annotated[List[str], NoDecode] = Field("aihub.user.agent.>", description="A list of roles this user possesses.")
 
     model_config = SettingsConfigDict(
         env_file=".env",

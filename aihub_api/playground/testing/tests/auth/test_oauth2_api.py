@@ -93,7 +93,7 @@ def expected_user_data():
         "name": "Melanie Musterfrau",
         "email": "melanie.musterfrau@bbv.ch",
         "profile_image": None,
-        "roles": ["AllAgents"],
+        "roles": ["aihub.user.agent.>"],
         "favorite_modules": [],
     }
 
