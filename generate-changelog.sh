@@ -98,11 +98,17 @@ for i in "${!sorted_tags[@]}"; do
 
     prompt_content=$(cat "$SYSTEM_PROMPT_FILE")
 
-    llm_output=$(llm --no-stream -m "$LLM_MODEL" --system - "$prompt_content" <<EOF
+    # Attempt to generate the changelog entry using the LLM.
+    # The `if ! ...` construct prevents the script from exiting due to `set -e`
+    # if the llm command fails.
+    if ! llm_output=$(llm --no-stream -m "$LLM_MODEL" --system - "$prompt_content" <<EOF
 Here is the git diff from version $prev_tag to $current_tag. Please generate the changelog entry based on these changes.
 $diff_output
 EOF
-)
+); then
+        echo "Warning: Failed to generate changelog for $current_tag. The LLM command failed. Skipping." >&2
+        continue
+    fi
 
     # Replace placeholders with actual values
     processed_output=$(echo "$llm_output" | sed "s/%%VERSION%%/$current_tag/g")

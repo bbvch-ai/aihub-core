@@ -168,7 +168,11 @@ jobs:
           chmod +x ./generate-changelog.sh
 
       - name: Generate Changelog
+        id: changelog_generator
         run: make changelog
+        # This step is allowed to fail. If changelog generation has an error,
+        # we still want to proceed to publish the final tag.
+        continue-on-error: true
 
       - name: Commit Changelog and Finalize Tag
         run: |
@@ -176,12 +180,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [[ -n $(git status --porcelain changelog.md) ]]; then
+          # Only amend the commit if the changelog step was successful and the file has changed.
+          if [[ "${{ steps.changelog_generator.outcome }}" == "success" && -n $(git status --porcelain changelog.md) ]]; then
             echo "Changelog updated, amending previous commit."
             git add changelog.md
             git commit --amend --no-edit
           else
-            echo "No new changelog entries were generated."
+            echo "No new changelog entries were generated, or the step failed. Proceeding without changelog update."
           fi
           
           echo "Creating final tag ${VERSION} and pushing..."
