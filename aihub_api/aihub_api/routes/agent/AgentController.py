@@ -1,6 +1,7 @@
 import time
 from typing import Annotated, List, Type
 
+from aihub_lib.auth.access.AccessChecker import user_with_permission, AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -70,14 +71,14 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Depends(self.user_with_permission("aihub.user.agent.?>"))],
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all agents, both online (discoverable) and offline (not discoverable).
             """
             agents = await AgentService.get_agents(nc, t)
-            return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
+            return [agent for agent in agents if AccessChecker(user).has_access_to_agent(agent.agent_class, agent.agent_id)]
 
         return self
 
@@ -85,14 +86,14 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[UserIdentity, Depends(self.user_with_permission("aihub.user.agent.?>"))],
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
             agents = await AgentService.discover_agents(nc, t)
-            return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
+            return [agent for agent in agents if AccessChecker(user).has_access_to_agent(agent.agent_class, agent.agent_id)]
 
         return self
 
@@ -102,14 +103,14 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             agent_class: str,
             agent_id: str,
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[
+                UserIdentity, Depends(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
             t: LocaleHandler = Depends(use_locale),
         ) -> AgentDTO:
             """
             Retrieve details for a specific agent. Raises 403 if the user lacks access.
             """
-            if not user.has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             return await AgentService.get_agent(nc, agent_class, agent_id, t)
 
         return self
@@ -127,7 +128,7 @@ class AgentController(Controller):
             """
             Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
             """
-            if not user.has_access_to_agent(agent_class, agent_id):
+            if not AccessChecker(user).has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
             total, threads = await AgentService.get_paginated_agent_threads(
@@ -186,7 +187,7 @@ class AgentController(Controller):
             """
             Send an event to a specific agent. Raises 403 if the user lacks access.
             """
-            if not user.has_access_to_agent(agent_class, agent_id):
+            if not AccessChecker(user).has_access_to_agent(agent_class, agent_id):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             start_event = start_event_class(
                 event_id=str(ObjectId()),

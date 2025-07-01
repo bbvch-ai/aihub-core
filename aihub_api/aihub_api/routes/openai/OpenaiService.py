@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Callable, Dict, List, Literal, Optional, Tuple
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -88,7 +89,7 @@ class OpenaiService:
         agent_dtos = [
             agent_dto
             for agent_dto in agent_dtos
-            if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))
+            if (agent_dto.is_conversational and AccessChecker(user).has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))
         ]
 
         # Ensures we have no recursive webui agent discovery
@@ -132,7 +133,7 @@ class OpenaiService:
         agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
-        if not user.has_access_to_agent(agent_class, agent_id):
+        if not AccessChecker(user).has_access_to_agent(agent_class, agent_id):
             raise HTTPException(status_code=403, detail="User does not have access to this agent.")
         return ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
 
@@ -221,7 +222,7 @@ class OpenaiService:
 
         agent_class, agent_id = model_name.split("/")
 
-        if not user.has_access_to_agent(agent_class, agent_id):
+        if not AccessChecker(user).has_access_to_agent(agent_class, agent_id):
             raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
         agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)

@@ -1,8 +1,9 @@
 import abc
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Security, HTTPException
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
@@ -10,6 +11,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 
@@ -64,6 +66,23 @@ class Controller(abc.ABC):
         self.router: APIRouter = APIRouter()
 
         self.is_admin_only = is_admin_only
+
+    def user_with_permission(self, permission_template: str):
+        def check_access(
+            user: UserIdentity = Security(self.auth),
+            **kwargs,
+        ) -> UserIdentity:
+            required_permission = permission_template.format(**kwargs)
+
+            access_checker = AccessChecker(user)
+
+            if not access_checker.has_permission(required_permission):
+                raise HTTPException(
+                    status_code=403, detail=f"Forbidden: You do not have the required '{required_permission}' permission."
+                )
+            return user
+
+        return check_access
 
     @property
     def tags(self):

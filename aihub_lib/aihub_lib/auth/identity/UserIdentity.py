@@ -11,6 +11,3 @@ class UserIdentity(BaseModel):
     profile_image: Annotated[Optional[str], Field(description="Data URL (base64) representation of profile image")] = (
         None
     )
-
-    def has_access_to_agent(self, agent_class: str, agent_id: str) -> bool:
-        return f"{agent_class}.{agent_id}" in self.roles or "AllAgents" in self.roles
