@@ -137,11 +137,6 @@ jobs:
               update_version_tag "$dir/poetry.lock"
           done
 
-      - name: Delete existing tag (in case we re-tag)
-        run: |
-          git tag -d ${{ steps.create-tag.outputs.version }} || true
-          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
-
       - name: Commit version updates
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
