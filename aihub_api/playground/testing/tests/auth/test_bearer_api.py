@@ -33,7 +33,7 @@ def valid_token(mongo_db):
         oid=os.getenv("OID", "1234567890"),
         name=os.getenv("NAME", "Melanie Musterfrau"),
         email=os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
-        roles=["aihub.user.agent.>"],
+        roles=["AllAgents"],
     )
     expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
@@ -50,7 +50,7 @@ def expected_user_data():
         "name": os.getenv("NAME", "Melanie Musterfrau"),
         "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         "profile_image": None,
-        "roles": ["aihub.user.agent.>"],
+        "roles": ["AllAgents"],
         "favorite_modules": [],
     }
 

@@ -44,7 +44,7 @@ def expected_user_data():
         "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         "profile_image": None,
         "favorite_modules": [],
-        "roles": ["aihub.user.agent.>"],
+        "roles": ["AllAgents"],
         "dashboard": {
             "cellHeight": 350,
             "children": [

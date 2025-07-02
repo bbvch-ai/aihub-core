@@ -27,6 +27,10 @@ class AccessChecker:
         self.admin_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.admin.")}
         self.user_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.user.")}
 
+    @property
+    def access_rules(self):
+        return self.valid_access_rules
+
     @classmethod
     def from_user(cls, user: UserIdentity):
         user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles)
@@ -155,3 +159,11 @@ class AccessChecker:
     def has_access_to_process_class(self, process_class: str) -> bool:
         """Convenience method to check access level for a specific process."""
         return self.access_level(f"aihub.user.process.{process_class}.?*") != AccessLevel.ACCESS_DENIED
+
+    def access_level_for_service(self, service_name) -> AccessLevel:
+        """Convenience method to check access level for a specific service."""
+        return self.access_level(f"aihub.user.service.{service_name}")
+
+    def has_access_to_service(self, service_name) -> bool:
+        """Convenience method to check access level for a specific service."""
+        return self.access_level_for_service(service_name) != AccessLevel.ACCESS_DENIED

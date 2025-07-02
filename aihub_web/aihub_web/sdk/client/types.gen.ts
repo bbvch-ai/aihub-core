@@ -1587,6 +1587,28 @@ export type ControlEventWritable = {
 };
 
 /**
+ * CreateRoleRequest
+ * Request model for creating a new role.
+ */
+export type CreateRoleRequest = {
+    /**
+     * Name
+     * The unique name of the role.
+     */
+    name: string;
+    /**
+     * Description
+     * A short description of the role's purpose.
+     */
+    description: string;
+    /**
+     * Access Rules
+     * A list of access rules granted by this role.
+     */
+    access_rules?: Array<string>;
+};
+
+/**
  * CreateThreadRequest
  */
 export type CreateThreadRequest = {
@@ -1841,6 +1863,18 @@ export type DatasetUpdate = {
      * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
      */
     items: Array<DatasetItemCreate>;
+};
+
+/**
+ * DeleteRoleResponse
+ * Confirmation response for a successful deletion.
+ */
+export type DeleteRoleResponse = {
+    /**
+     * Detail
+     * A confirmation message for the deletion.
+     */
+    detail?: string;
 };
 
 /**
@@ -5245,6 +5279,33 @@ export type RevokeTokenResponse = {
 };
 
 /**
+ * RoleResponse
+ * Response model representing a role.
+ */
+export type RoleResponse = {
+    /**
+     * Id
+     * The unique identifier of the role.
+     */
+    id: string;
+    /**
+     * Name
+     * The name of the role.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the role.
+     */
+    description: string;
+    /**
+     * Access Rules
+     * The list of access rules for the role.
+     */
+    access_rules: Array<string>;
+};
+
+/**
  * RouteOptions
  */
 export type RouteOptionsReadable = {
@@ -5641,6 +5702,11 @@ export type ServiceDto = {
      * The path under which the service is callable in the frontend.
      */
     path: string;
+    /**
+     * User Is Admin
+     * Whether the user is an admin of the service.
+     */
+    user_is_admin?: boolean;
 };
 
 /**
@@ -6492,6 +6558,28 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateRoleRequest
+ * Request model for updating an existing role. All fields are optional.
+ */
+export type UpdateRoleRequest = {
+    /**
+     * Name
+     * The new unique name of the role.
+     */
+    name?: string | null;
+    /**
+     * Description
+     * The new description for the role.
+     */
+    description?: string | null;
+    /**
+     * Access Rules
+     * The new list of access rules.
+     */
+    access_rules?: Array<string> | null;
 };
 
 /**
@@ -7707,6 +7795,138 @@ export type RevokeTokenEndpointResponses = {
 };
 
 export type RevokeTokenEndpointResponse = RevokeTokenEndpointResponses[keyof RevokeTokenEndpointResponses];
+
+export type DeleteRoleEndpointData = {
+    body?: never;
+    path: {
+        /**
+         * Role Id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/roles/{role_id}';
+};
+
+export type DeleteRoleEndpointErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteRoleEndpointError = DeleteRoleEndpointErrors[keyof DeleteRoleEndpointErrors];
+
+export type DeleteRoleEndpointResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeleteRoleResponse;
+};
+
+export type DeleteRoleEndpointResponse = DeleteRoleEndpointResponses[keyof DeleteRoleEndpointResponses];
+
+export type GetRoleEndpointData = {
+    body?: never;
+    path: {
+        /**
+         * Role Id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/roles/{role_id}';
+};
+
+export type GetRoleEndpointErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetRoleEndpointError = GetRoleEndpointErrors[keyof GetRoleEndpointErrors];
+
+export type GetRoleEndpointResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoleResponse;
+};
+
+export type GetRoleEndpointResponse = GetRoleEndpointResponses[keyof GetRoleEndpointResponses];
+
+export type UpdateRoleEndpointData = {
+    body: UpdateRoleRequest;
+    path: {
+        /**
+         * Role Id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/roles/{role_id}';
+};
+
+export type UpdateRoleEndpointErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateRoleEndpointError = UpdateRoleEndpointErrors[keyof UpdateRoleEndpointErrors];
+
+export type UpdateRoleEndpointResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoleResponse;
+};
+
+export type UpdateRoleEndpointResponse = UpdateRoleEndpointResponses[keyof UpdateRoleEndpointResponses];
+
+export type ListRolesEndpointData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/roles/';
+};
+
+export type ListRolesEndpointResponses = {
+    /**
+     * Response List Roles Endpoint Roles  Get
+     * Successful Response
+     */
+    200: Array<RoleResponse>;
+};
+
+export type ListRolesEndpointResponse = ListRolesEndpointResponses[keyof ListRolesEndpointResponses];
+
+export type CreateRoleEndpointData = {
+    body: CreateRoleRequest;
+    path?: never;
+    query?: never;
+    url: '/roles/';
+};
+
+export type CreateRoleEndpointErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateRoleEndpointError = CreateRoleEndpointErrors[keyof CreateRoleEndpointErrors];
+
+export type CreateRoleEndpointResponses = {
+    /**
+     * Successful Response
+     */
+    201: RoleResponse;
+};
+
+export type CreateRoleEndpointResponse = CreateRoleEndpointResponses[keyof CreateRoleEndpointResponses];
 
 export type GetModelsWithAssistantsData = {
     body?: never;

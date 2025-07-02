@@ -43,7 +43,7 @@
         />
       </IconField>
     </div>
-    <div class="relative flex max-w-[460px] flex-wrap gap-3 p-5">
+    <div class="relative flex w-[500px] grow flex-wrap justify-between gap-3 p-5">
       <template v-if="appsLoading">
         <skeleton
           v-for="i in 6"
@@ -65,7 +65,7 @@
             class="flex h-[50px] items-center justify-center"
             @click="toggle"
           >
-            <div class="flex h-[60px]  w-[80px] flex-col items-center justify-center gap-2 ">
+            <div class="flex h-[60px] min-w-[80px] flex-col items-center justify-center gap-2 ">
               <Icon
                 :name="app.icon"
                 style="color: #9c9c9c"
@@ -76,6 +76,13 @@
               </p>
             </div>
           </nuxt-link-locale>
+        </div>
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="px-3"
+        >
+          <div class="h-0 min-w-[80px]" />
         </div>
       </template>
     </div>

@@ -26,7 +26,7 @@ class BotConfig(BaseConfig):
     # Anonymization settings
     anonym_name: str = Field(default="Aihub BOT", description="Anonymized name for the API service")
     anonym_email: str = Field(default="bot@ai-agents.ch", description="Anonymized email for the API service")
-    anonym_roles: str = Field(default='["aihub.user.agent.>"]', description="Anonymized roles for the API service")
+    anonym_roles: str = Field(default='["AllAgents"]', description="Anonymized roles for the API service")
     anonym_oid: str = Field(default="0123456789", description="Anonymized OID for the API service")
 
     # Registry settings

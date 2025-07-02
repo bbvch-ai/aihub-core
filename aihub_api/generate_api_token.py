@@ -68,7 +68,7 @@ connect(db=ApiConfig().DB_NAME, host=host)
 user_name = cli_user_name
 token_name = f"{cli_user_name} Token"
 expiry = datetime.now(timezone.utc) + timedelta(days=365)
-roles = ["aihub.user.agent.>"]
+roles = ["AllAgents"]
 
 user = UserIdentity(
     id=cli_user_oid,

@@ -78,7 +78,7 @@ class Controller(abc.ABC):
             access_checker = AccessChecker.from_user(user)
 
             if not access_checker.has_access(required_permission):
-                logger.warning(f"User {user.id} does not have permission {required_permission}")
+                logger.warning(f"User {user.email} does not have permission {required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}")
                 raise HTTPException(
                     status_code=403,
                     detail=f"Forbidden: You do not have the required '{required_permission}' permission.",

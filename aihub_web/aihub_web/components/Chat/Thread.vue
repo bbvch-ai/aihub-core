@@ -25,11 +25,11 @@ import type {
   MinimalAgentDto,
   ThreadDto,
   UserDto,
-  WsServerEvent,
+  WsServerEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: WsServerEvent[]
+  events: WsServerEventReadable[]
   thread: ThreadDto
 }>()
 
@@ -55,13 +55,13 @@ const getAgentDto = (agent_class: string, agent_id: string) =>
   )
 
 const toDisplay = (msg: ExtendedChatMessage) => {
-  router.push(localeRoute(`/admin/threads/${props.thread.id}/display/${msg.displayId}`))
+  router.push(localeRoute(`/threads/${props.thread.id}/display/${msg.displayId}`))
 }
 
 const createUserMessage = (
   blocks: ChatMessageInput['blocks'],
   timestamp: number,
-  event: WsServerEvent,
+  event: WsServerEventReadable,
 ): ExtendedChatMessage => ({
   role: 'user',
   blocks,
@@ -74,7 +74,7 @@ const createUserMessage = (
 
 const createAssistantMessage = (
   text: string,
-  event: WsServerEvent,
+  event: WsServerEventReadable,
   timestamp: number,
 ): ExtendedChatMessage => {
   const agentDto = getAgentDto(event.agent_class, event.agent_id)

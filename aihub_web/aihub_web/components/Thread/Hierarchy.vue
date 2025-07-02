@@ -77,10 +77,10 @@ const toNode = (node: OrganizationChartNode) => {
     displayId = display?.display_id
   }
   if (displayId) {
-    router.push(localeRoute(`/admin/threads/${props.thread.id}/display/${displayId}`))
+    router.push(localeRoute(`/threads/${props.thread.id}/display/${displayId}`))
   }
   else {
-    router.push(localeRoute(`/admin/threads/${props.thread.id}/display`))
+    router.push(localeRoute(`/threads/${props.thread.id}/display`))
   }
 }
 

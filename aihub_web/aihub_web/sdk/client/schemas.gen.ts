@@ -2342,6 +2342,34 @@ By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type regi
 serialization, ensuring that control signals are as easy to produce and consume as any other event.`
 } as const;
 
+export const CreateRoleRequestSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The unique name of the role.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: "A short description of the role's purpose."
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'A list of access rules granted by this role.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name', 'description'],
+    title: 'CreateRoleRequest',
+    description: 'Request model for creating a new role.'
+} as const;
+
 export const CreateThreadRequestSchema = {
     properties: {
         name: {
@@ -2746,6 +2774,20 @@ export const DatasetUpdateSchema = {
     type: 'object',
     required: ['items'],
     title: 'DatasetUpdate'
+} as const;
+
+export const DeleteRoleResponseSchema = {
+    properties: {
+        detail: {
+            type: 'string',
+            title: 'Detail',
+            description: 'A confirmation message for the deletion.',
+            default: 'Role deleted successfully.'
+        }
+    },
+    type: 'object',
+    title: 'DeleteRoleResponse',
+    description: 'Confirmation response for a successful deletion.'
 } as const;
 
 export const DisplayEventSchema = {
@@ -7074,6 +7116,38 @@ export const RevokeTokenResponseSchema = {
     title: 'RevokeTokenResponse'
 } as const;
 
+export const RoleResponseSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the role.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the role.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'The description of the role.'
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'The list of access rules for the role.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'description', 'access_rules'],
+    title: 'RoleResponse',
+    description: 'Response model representing a role.'
+} as const;
+
 export const RouteOptionsSchema = {
     properties: {
         event_id: {
@@ -7434,6 +7508,12 @@ export const ServiceDTOSchema = {
             type: 'string',
             title: 'Path',
             description: 'The path under which the service is callable in the frontend.'
+        },
+        user_is_admin: {
+            type: 'boolean',
+            title: 'User Is Admin',
+            description: 'Whether the user is an admin of the service.',
+            default: false
         }
     },
     type: 'object',
@@ -8387,6 +8467,53 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateRoleRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The new unique name of the role.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The new description for the role.'
+        },
+        access_rules: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Access Rules',
+            description: 'The new list of access rules.'
+        }
+    },
+    type: 'object',
+    title: 'UpdateRoleRequest',
+    description: 'Request model for updating an existing role. All fields are optional.'
 } as const;
 
 export const UsageSchema = {
