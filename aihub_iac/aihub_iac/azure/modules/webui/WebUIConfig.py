@@ -1,6 +1,6 @@
 from typing import ClassVar, Optional
 
-from pydantic import Field, validator
+from pydantic import Field, validator, computed_field
 
 from aihub_iac.azure.constants.suffix import DEFAULT_API_SUFFIX, DEFAULT_WEBUI_SUFFIX
 from aihub_iac.azure.modules.webui.OpenWebUIConfig import OpenWebUIConfig
@@ -64,7 +64,6 @@ class WebUIConfig(StorageConfig):
     )
 
 
-    @property
     def uses_keyvault_auth(self) -> bool:
         """Check if Key Vault authentication is configured and should be used"""
         return (
@@ -72,10 +71,9 @@ class WebUIConfig(StorageConfig):
                 self.key_vault_name.strip() != ""
         )
 
-    @property
     def registry_auth_method(self) -> str:
         """Get a string describing the authentication method being used"""
-        return "keyvault" if self.uses_keyvault_auth else "direct"
+        return "keyvault" if self.uses_keyvault_auth() else "direct"
 
     @property
     def log_analytics_name(self) -> str:
@@ -113,19 +111,14 @@ class WebUIConfig(StorageConfig):
 
     def get_registry_secret_name(self) -> str:
         """Get the secret name to use for registry authentication"""
-        return "github-app-token" if self.uses_keyvault_auth else "registry-password"
+        return "github-app-token" if self.uses_keyvault_auth() else "registry-password"
 
     def requires_managed_identity(self) -> bool:
         """Check if managed identity is required for this configuration"""
-        return self.uses_keyvault_auth
+        return self.uses_keyvault_auth()
 
     def get_keyvault_secret_url(self) -> Optional[str]:
         """Get the Key Vault secret URL for GitHub App token"""
-        if not self.uses_keyvault_auth:
+        if not self.uses_keyvault_auth():
             return None
         return f"https://{self.key_vault_name}.vault.azure.net/secrets/github-app-access-token"
-
-    def __str__(self) -> str:
-        """String representation showing auth method"""
-        auth_method = "Key Vault" if self.uses_keyvault_auth else "Direct PAT"
-        return f"WebUIConfig(auth_method={auth_method}, registry_url={self.registry_url})"

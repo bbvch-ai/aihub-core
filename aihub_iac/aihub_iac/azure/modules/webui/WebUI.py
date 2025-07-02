@@ -1,8 +1,7 @@
 from typing import List, Optional
 
 import pulumi
-from pulumi_azure_native import app, containerinstance, dbforpostgresql, network, privatedns, managedidentity
-from pulumi_azure_native.authorization import RoleAssignment
+from pulumi_azure_native import app, containerinstance, dbforpostgresql, network, privatedns
 
 from aihub_iac.azure.constants.resources import (
     CONTAINER_APP,
@@ -69,11 +68,6 @@ class WebUI(pulumi.ComponentResource):
         self._create_resources()
 
     @property
-    def use_keyvault_for_registry(self) -> bool:
-        """Determine if Key Vault should be used for registry authentication"""
-        return self.config.uses_keyvault_auth
-
-    @property
     def webui_subnet_name(self):
         return f"{self.config.project_name}-{SUB_NET}-{self.config.location_short}-{CONTAINER_APP}-webui"
 
@@ -124,27 +118,24 @@ class WebUI(pulumi.ComponentResource):
         return subnet
 
     def _create_identity(self):
-        """Create and configure the managed identity (only if using Key Vault)"""
-        if not self.use_keyvault_for_registry:
-            return None
-
+        """Create and configure the managed identity"""
         identity = self.identity_provider.create_identity(self.name, self.stack)
-
-        identity.assign_role_to_identity(
-            role=ROLES.KEY_VAULT_SECRETS_USER,
-            scope_id=f"/subscriptions/{self.config.subscription_id}/resourceGroups/{self.config.resource_group}/providers/Microsoft.KeyVault/vaults/{self.config.key_vault_name}",
-            scope_name=self.config.key_vault_name,
-        )
+        if self.config.uses_keyvault_auth():
+            identity.assign_role_to_identity(
+                role=ROLES.KEY_VAULT_SECRETS_USER,
+                scope_id=f"/subscriptions/{self.config.subscription_id}/resourceGroups/{self.config.resource_group}/providers/Microsoft.KeyVault/vaults/{self.config.key_vault_name}",
+                scope_name=self.config.key_vault_name,
+            )
 
         return identity
 
     def _get_registry_secret_config(self) -> app.SecretArgs:
         """Get registry secret configuration based on authentication method"""
-        if self.use_keyvault_for_registry:
+        if self.config.uses_keyvault_auth():
             return app.SecretArgs(
                 name="github-app-token",
                 key_vault_url=self.config.get_keyvault_secret_url(),
-                identity=self.identity.user_assigned_identity.id,
+                identity=self.identity.user_identity.id,
             )
         else:
             return app.SecretArgs(
@@ -152,33 +143,14 @@ class WebUI(pulumi.ComponentResource):
                 value=self.config.registry_pat
             )
 
-    def _get_registry_password_secret_ref(self) -> str:
-        """Get the secret reference name for registry password"""
-        return self.config.get_registry_secret_name()
-
     def _get_container_app_identity(self) -> Optional[app.ManagedServiceIdentityArgs]:
         """Get managed identity configuration for Container App"""
-        if self.use_keyvault_for_registry and self.identity:
-            return app.ManagedServiceIdentityArgs(
-                type=app.ManagedServiceIdentityType.USER_ASSIGNED,
-                user_assigned_identities={
-                    self.identity.user_assigned_identity.id: {}
-                }
-            )
-        return None
-
-    def _get_container_app_dependencies(self) -> List:
-        """Get dependencies for Container App creation"""
-        dependencies = list(self.env_storages.values())
-
-        # Add identity dependency if using Key Vault
-        if self.use_keyvault_for_registry and self.identity:
-            dependencies.extend([
-                self.identity.user_assigned_identity,
-                self.identity.role_assignment
-            ])
-
-        return dependencies
+        return app.ManagedServiceIdentityArgs(
+            type=app.ManagedServiceIdentityType.USER_ASSIGNED,
+            user_assigned_identities={
+                self.identity.user_identity.id: {}
+            }
+        )
 
     def _create_resources(self):
         """Create all container app resources in the correct order"""
@@ -246,20 +218,6 @@ class WebUI(pulumi.ComponentResource):
         self.pg_db = self._create_postgres_db()
         self.pg_vector_db = self._create_pgvector_db()
 
-        # Export outputs
-        outputs = {
-            "container_app_name": self.container_app.name,
-            "container_app_url": self.container_app.latest_revision_fqdn.apply(
-                lambda fqdn: f"https://{fqdn}" if fqdn else None
-            ),
-            "registry_auth_method": self.config.registry_auth_method,
-        }
-
-        # Add managed identity client ID if using Key Vault
-        if self.use_keyvault_for_registry and self.identity:
-            outputs["managed_identity_client_id"] = self.identity.user_assigned_identity.client_id
-
-        self.register_outputs(outputs)
 
     def _get_postgres_server(self):
         return dbforpostgresql.get_server(
@@ -444,33 +402,36 @@ class WebUI(pulumi.ComponentResource):
         """Create the container app with the configured containers and volumes"""
         container_list = list(self.containers.values())
 
-        secrets = [
-            app.SecretArgs(
-                name="storage-account-key",
-                value=self.storage_account_key,
-            ),
-            self._get_registry_secret_config(),
-            app.SecretArgs(name="postgres-password", value=self.config.postgres_password),
-            *self._additional_secrets_from_additional_env_vars(),
-        ]
-
         return app.ContainerApp(
             container_app_name=self.config.webui_container_app,
             resource_name=self.config.webui_container_app,
             resource_group_name=self.config.resource_group,
             location=self.config.location,
             managed_environment_id=self.managed_environment.id,
-            identity=self._get_container_app_identity(),
+            identity=app.ManagedServiceIdentityArgs(
+                type=app.ManagedServiceIdentityType.USER_ASSIGNED,
+                user_assigned_identities={
+                    self.identity.user_identity.id: {}
+                }
+            ),
             configuration=app.ConfigurationArgs(
                 ingress=app.IngressArgs(external=True, target_port=8080, transport="auto"),
                 registries=[
                     app.RegistryCredentialsArgs(
                         server=self.config.registry_url,
                         username=self.config.registry_user,
-                        password_secret_ref=self._get_registry_password_secret_ref(),
+                        password_secret_ref=self.config.get_registry_secret_name(),
                     )
                 ],
-                secrets=secrets,
+                secrets=[
+                    app.SecretArgs(
+                        name="storage-account-key",
+                        value=self.storage_account_key,
+                    ),
+                    self._get_registry_secret_config(),
+                    app.SecretArgs(name="postgres-password", value=self.config.postgres_password),
+                    *self._additional_secrets_from_additional_env_vars(),
+                ],
             ),
             template=app.TemplateArgs(
                 containers=container_list,
@@ -482,11 +443,10 @@ class WebUI(pulumi.ComponentResource):
             ),
             tags={
                 "Stack": self.stack,
-                "RegistryAuth": self.config.registry_auth_method,
+                "RegistryAuth": self.config.registry_auth_method(),
             },
             opts=pulumi.ResourceOptions(
-                parent=self,
-                depends_on=self._get_container_app_dependencies()
+                parent=self
             ),
         )
 
