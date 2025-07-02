@@ -253,7 +253,10 @@ class Stores(pulumi.ComponentResource):
             database_account_offer_type=cosmosdb.DatabaseAccountOfferType.STANDARD,
             api_properties=cosmosdb.ApiPropertiesArgs(server_version="4.2"),
             locations=[cosmosdb.LocationArgs(location_name=self.config.location, failover_priority=0)],
-            capabilities=[cosmosdb.CapabilityArgs(name="EnableServerless")],
+            capabilities=[
+                cosmosdb.CapabilityArgs(name="EnableServerless"),
+                cosmosdb.CapabilityArgs(name="EnableMongo16MBDocumentSupport"),
+            ],
             public_network_access=cosmosdb.PublicNetworkAccess.DISABLED,
             tags={
                 "Stack": self.stack,
