@@ -143,15 +143,6 @@ class WebUI(pulumi.ComponentResource):
                 value=self.config.registry_pat
             )
 
-    def _get_container_app_identity(self) -> Optional[app.ManagedServiceIdentityArgs]:
-        """Get managed identity configuration for Container App"""
-        return app.ManagedServiceIdentityArgs(
-            type=app.ManagedServiceIdentityType.USER_ASSIGNED,
-            user_assigned_identities={
-                self.identity.user_identity.id: {}
-            }
-        )
-
     def _create_resources(self):
         """Create all container app resources in the correct order"""
         # Step 0: Create managed identity for Key Vault access (if needed)
