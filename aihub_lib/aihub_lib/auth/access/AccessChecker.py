@@ -3,41 +3,43 @@ from typing import List, Set
 
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
 
 class AccessChecker:
     """
-    Performs authorization checks based on a user's hierarchical roles.
+    Performs authorization checks based on a user's hierarchical access rules.
 
     This class supports two types of checks:
     1.  Direct Check: Verifies if a user can access a specific, concrete resource.
-        - User Role: `aihub.user.agent.class_a.*`
+        - User Access Rule: `aihub.user.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.id_123` -> Match!
 
-    2.  Implicit Check: Verifies if a user has *any* role that fits a general pattern.
+    2.  Implicit Check: Verifies if a user has *any* access rule that fits a general pattern.
         This uses the '?*' or '?>' wildcards in the permission template.
-        - User Role: `aihub.user.agent.class_a.*`
+        - User Access Rule: `aihub.user.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match!
         - Permission Template: `aihub.user.agent.?>` -> Match!
     """
 
-    def __init__(self, user_roles: List[str]):
-        self.valid_roles = self._get_validated_roles(user_roles)
-        self.admin_roles = {r for r in self.valid_roles if r.startswith("aihub.admin.")}
-        self.user_roles = {r for r in self.valid_roles if r.startswith("aihub.user.")}
+    def __init__(self, user_access_rules: List[str]):
+        self.valid_access_rules = self._get_validated_access_rules(user_access_rules)
+        self.admin_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.admin.")}
+        self.user_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.user.")}
 
     @classmethod
     def from_user(cls, user: UserIdentity):
-        return cls(user_roles=user.roles)
+        user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles)
+        return cls(user_access_rules=list(user_access_rules))
 
     @staticmethod
-    def _validate_user_role(role: str) -> bool:
-        """Ensures a user role follows the strict format."""
-        if not role.startswith(("aihub.user.", "aihub.admin.")):
+    def _validate_user_access_rule(access_rule: str) -> bool:
+        """Ensures a users access_rules follows the strict format."""
+        if not access_rule.startswith(("aihub.user.", "aihub.admin.")):
             return False
-        if not re.fullmatch(r"[a-z0-9\.\-\_\*\>]+", role):
+        if not re.fullmatch(r"[a-z0-9\.\-\_\*\>]+", access_rule):
             return False
-        parts = role.split(".")
+        parts = access_rule.split(".")
         if ">" in parts and parts[-1] != ">":
             return False
         return True
@@ -58,47 +60,47 @@ class AccessChecker:
         if "?>" in parts and parts[-1] != "?>":
             raise ValueError(f"Invalid permission template: '?>' must be the last token. Got: {template}")
 
-    def _get_validated_roles(self, roles: List[str]) -> Set[str]:
-        """Filters and validates the user's roles."""
+    def _get_validated_access_rules(self, access_rules: List[str]) -> Set[str]:
+        """Filters and validates the user's access_rules."""
         validated = set()
-        for role in roles:
-            if self._validate_user_role(role):
-                validated.add(role)
+        for access_rule in access_rules:
+            if self._validate_user_access_rule(access_rule):
+                validated.add(access_rule)
         return validated
 
-    def _role_matches_concrete_permission(self, user_role: str, concrete_permission: str) -> bool:
-        """Checks if a user role (with * or >) matches a specific permission string."""
-        role_parts = user_role.split(".")
+    def _access_rule_matches_concrete_permission(self, user_access_rule: str, concrete_permission: str) -> bool:
+        """Checks if a users access rule (with * or >) matches a specific permission string."""
+        access_rule_parts = user_access_rule.split(".")
         permission_parts = concrete_permission.split(".")
-        for i, part in enumerate(role_parts):
+        for i, part in enumerate(access_rule_parts):
             if part == ">":
                 return i < len(permission_parts)
             if i >= len(permission_parts):
                 return False
             if part != "*" and part != permission_parts[i]:
                 return False
-        return len(role_parts) == len(permission_parts)
+        return len(access_rule_parts) == len(permission_parts)
 
-    def _role_fulfills_implicit_template(self, user_role: str, implicit_template: str) -> bool:
-        """Checks if a user role fulfills a permission template with '?*' or '?>'."""
-        role_parts = user_role.split(".")
+    def _access_rule_fulfills_implicit_template(self, access_rule: str, implicit_template: str) -> bool:
+        """Checks if a users access rule fulfills a permission template with '?*' or '?>'."""
+        access_rule_parts = access_rule.split(".")
         template_parts = implicit_template.split(".")
         ti, ri = 0, 0
-        while ti < len(template_parts) and ri < len(role_parts):
-            t_part, r_part = template_parts[ti], role_parts[ri]
+        while ti < len(template_parts) and ri < len(access_rule_parts):
+            t_part, r_part = template_parts[ti], access_rule_parts[ri]
             if r_part == ">":
                 return ti < len(template_parts)
             if t_part == "?>":
-                return ri < len(role_parts)
+                return ri < len(access_rule_parts)
             if r_part == "*" or t_part == "?*":
                 ti, ri = ti + 1, ri + 1
                 continue
             if r_part != t_part:
                 return False
             ti, ri = ti + 1, ri + 1
-        if ri < len(role_parts) and role_parts[ri] == ">":
+        if ri < len(access_rule_parts) and access_rule_parts[ri] == ">":
             return True
-        return ri == len(role_parts) and ti == len(template_parts)
+        return ri == len(access_rule_parts) and ti == len(template_parts)
 
     def access_level(self, permission_template: str) -> AccessLevel:
         """
@@ -108,19 +110,19 @@ class AccessChecker:
         self._validate_permission_template(permission_template)
         is_implicit_check = "?" in permission_template
         match_func = (
-            self._role_fulfills_implicit_template if is_implicit_check else self._role_matches_concrete_permission
+            self._access_rule_fulfills_implicit_template if is_implicit_check else self._access_rule_matches_concrete_permission
         )
 
         # 1. Check for Admin access
         admin_perm_to_check = permission_template.replace("aihub.user.", "aihub.admin.", 1)
-        for role in self.admin_roles:
-            if match_func(role, admin_perm_to_check):
+        for access_rule in self.admin_access_rules:
+            if match_func(access_rule, admin_perm_to_check):
                 return AccessLevel.ACCESS_ADMIN
 
         # 2. Check for User access (only if permission is user-level)
         if permission_template.startswith("aihub.user."):
-            for role in self.user_roles:
-                if match_func(role, permission_template):
+            for access_rule in self.user_access_rules:
+                if match_func(access_rule, permission_template):
                     return AccessLevel.ACCESS_USER
 
         # 3. Default to Denied

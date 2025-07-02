@@ -7095,23 +7095,9 @@ export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 export type GetSuiteData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/suites/';
 };
-
-export type GetSuiteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetSuiteError = GetSuiteErrors[keyof GetSuiteErrors];
 
 export type GetSuiteResponses = {
     /**
@@ -7125,23 +7111,9 @@ export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
 export type GetMyUserData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/users/me';
 };
-
-export type GetMyUserErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetMyUserError = GetMyUserErrors[keyof GetMyUserErrors];
 
 export type GetMyUserResponses = {
     /**
@@ -7155,23 +7127,9 @@ export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
 export type GetMyDashboardData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/users/dashboard';
 };
-
-export type GetMyDashboardErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetMyDashboardError = GetMyDashboardErrors[keyof GetMyDashboardErrors];
 
 export type GetMyDashboardResponses = {
     /**
@@ -7186,12 +7144,7 @@ export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboar
 export type UpdateMyDashboardData = {
     body: DashboardDto;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/users/dashboard';
 };
 
@@ -7216,23 +7169,9 @@ export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateM
 export type GetLocaleData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/i18n/my-locale';
 };
-
-export type GetLocaleErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetLocaleError = GetLocaleErrors[keyof GetLocaleErrors];
 
 export type GetLocaleResponses = {
     /**
@@ -7251,15 +7190,11 @@ export type GetEventsInThreadData = {
          */
         thread_id: string;
     };
-    query: {
+    query?: {
         /**
          * Display Id
          */
         display_id?: string;
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
     };
     url: '/events/threads/{thread_id}';
 };
@@ -7292,7 +7227,7 @@ export type GetEventTimeseriesData = {
          */
         time_range: TimeRange;
     };
-    query: {
+    query?: {
         /**
          * Thread Id
          */
@@ -7309,10 +7244,6 @@ export type GetEventTimeseriesData = {
          * Event Name
          */
         event_name?: string;
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
     };
     url: '/events/timeseries/{time_range}';
 };
@@ -7338,7 +7269,7 @@ export type GetEventTimeseriesResponse = GetEventTimeseriesResponses[keyof GetEv
 export type GetUserThreadsData = {
     body?: never;
     path?: never;
-    query: {
+    query?: {
         /**
          * Page Number
          * Page number to retrieve (starting from 1)
@@ -7349,10 +7280,6 @@ export type GetUserThreadsData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
     };
     url: '/threads/';
 };
@@ -7378,12 +7305,7 @@ export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThread
 export type CreateThreadData = {
     body: CreateThreadRequest;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/threads/';
 };
 
@@ -7413,12 +7335,7 @@ export type GetThreadData = {
          */
         thread_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/threads/{thread_id}';
 };
 
@@ -7448,12 +7365,7 @@ export type AddAgentToThreadData = {
          */
         thread_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/threads/{thread_id}/agents';
 };
 
@@ -7491,12 +7403,7 @@ export type RemoveAgentFromThreadData = {
          */
         agent_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}';
 };
 
@@ -7526,12 +7433,7 @@ export type AddUserToThreadData = {
          */
         thread_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/threads/{thread_id}/users';
 };
 
@@ -7565,12 +7467,7 @@ export type RemoveUserFromThreadData = {
          */
         remove_user_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/threads/{thread_id}/users/{remove_user_id}';
 };
 
@@ -7604,12 +7501,7 @@ export type GetAgentData = {
          */
         agent_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/agents/{agent_class}/{agent_id}';
 };
 
@@ -7643,7 +7535,7 @@ export type GetAgentThreadsData = {
          */
         agent_id: string;
     };
-    query: {
+    query?: {
         /**
          * Page Number
          * Page number to retrieve (starting from 1)
@@ -7654,10 +7546,6 @@ export type GetAgentThreadsData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
     };
     url: '/agents/{agent_class}/{agent_id}/threads';
 };
@@ -7683,23 +7571,9 @@ export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThr
 export type GetAgentsData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/agents/';
 };
-
-export type GetAgentsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetAgentsError = GetAgentsErrors[keyof GetAgentsErrors];
 
 export type GetAgentsResponses = {
     /**
@@ -7714,23 +7588,9 @@ export type GetAgentsResponse = GetAgentsResponses[keyof GetAgentsResponses];
 export type DiscoverAgentsData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/agents/discover';
 };
-
-export type DiscoverAgentsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DiscoverAgentsError = DiscoverAgentsErrors[keyof DiscoverAgentsErrors];
 
 export type DiscoverAgentsResponses = {
     /**
@@ -7745,7 +7605,7 @@ export type DiscoverAgentsResponse = DiscoverAgentsResponses[keyof DiscoverAgent
 export type SendEventToLlmWrappingAgentDevAgentSendEventData = {
     body: UserMessageEventInput;
     path?: never;
-    query: {
+    query?: {
         /**
          * Thread Id
          */
@@ -7754,10 +7614,6 @@ export type SendEventToLlmWrappingAgentDevAgentSendEventData = {
          * Display Id
          */
         display_id?: string;
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
     };
     url: '/agents/l_l_m_wrapping_agent/dev_agent/send_event';
 };
@@ -7783,23 +7639,9 @@ export type SendEventToLlmWrappingAgentDevAgentSendEventResponse = SendEventToLl
 export type ListTokensEndpointData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/tokens/';
 };
-
-export type ListTokensEndpointErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type ListTokensEndpointError = ListTokensEndpointErrors[keyof ListTokensEndpointErrors];
 
 export type ListTokensEndpointResponses = {
     /**
@@ -7814,12 +7656,7 @@ export type ListTokensEndpointResponse = ListTokensEndpointResponses[keyof ListT
 export type CreateTokenEndpointData = {
     body: CreateTokenRequest;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/tokens/';
 };
 
@@ -7849,12 +7686,7 @@ export type RevokeTokenEndpointData = {
          */
         token_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/tokens/{token_id}';
 };
 
@@ -7879,23 +7711,9 @@ export type RevokeTokenEndpointResponse = RevokeTokenEndpointResponses[keyof Rev
 export type GetModelsWithAssistantsData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/models';
 };
-
-export type GetModelsWithAssistantsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetModelsWithAssistantsError = GetModelsWithAssistantsErrors[keyof GetModelsWithAssistantsErrors];
 
 export type GetModelsWithAssistantsResponses = {
     /**
@@ -7914,12 +7732,7 @@ export type GetModelWithAssistantsData = {
          */
         full_path: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/models/{full_path}';
 };
 
@@ -7944,12 +7757,7 @@ export type GetModelWithAssistantsResponse = GetModelWithAssistantsResponses[key
 export type GetEmbeddingsData = {
     body: EmbeddingsRequest;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/embeddings';
 };
 
@@ -7974,12 +7782,7 @@ export type GetEmbeddingsResponse = GetEmbeddingsResponses[keyof GetEmbeddingsRe
 export type ChatCompletionWithAssistantsData = {
     body: ChatCompletionRequest;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/chat/completions';
 };
 
@@ -8004,12 +7807,7 @@ export type ChatCompletionWithAssistantsResponse = ChatCompletionWithAssistantsR
 export type GenerateImageData = {
     body: ImageGenerationRequest;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/images/generations';
 };
 
@@ -8034,12 +7832,7 @@ export type GenerateImageResponse = GenerateImageResponses[keyof GenerateImageRe
 export type CreateTranscriptionData = {
     body: BodyCreateTranscriptionOpenaiAudioTranscriptionsPost;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/audio/transcriptions';
 };
 
@@ -8065,12 +7858,7 @@ export type CreateTranscriptionResponse = CreateTranscriptionResponses[keyof Cre
 export type CreateSpeechData = {
     body: TextToSpeechRequest;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/openai/audio/speech';
 };
 
@@ -8093,23 +7881,9 @@ export type CreateSpeechResponses = {
 export type GetDatasetsData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/datasets';
 };
-
-export type GetDatasetsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetDatasetsError = GetDatasetsErrors[keyof GetDatasetsErrors];
 
 export type GetDatasetsResponses = {
     /**
@@ -8124,12 +7898,7 @@ export type GetDatasetsResponse = GetDatasetsResponses[keyof GetDatasetsResponse
 export type CreateDatasetData = {
     body: DatasetCreate;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/datasets';
 };
 
@@ -8160,12 +7929,7 @@ export type GetDatasetData = {
          */
         dataset_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/datasets/{dataset_id}';
 };
 
@@ -8196,12 +7960,7 @@ export type UpdateDatasetData = {
          */
         dataset_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/datasets/{dataset_id}';
 };
 
@@ -8232,12 +7991,7 @@ export type GetExperimentData = {
          */
         experiment_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/experiments/{experiment_id}';
 };
 
@@ -8262,23 +8016,9 @@ export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentRe
 export type GetExperimentsData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/experiments';
 };
-
-export type GetExperimentsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetExperimentsError = GetExperimentsErrors[keyof GetExperimentsErrors];
 
 export type GetExperimentsResponses = {
     /**
@@ -8293,12 +8033,7 @@ export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperiment
 export type RunExperimentData = {
     body: ExperimentCreate;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/evaluations/experiments';
 };
 
@@ -8323,23 +8058,9 @@ export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentRe
 export type GetDatabasesData = {
     body?: never;
     path?: never;
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/knowledge/databases';
 };
-
-export type GetDatabasesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetDatabasesError = GetDatabasesErrors[keyof GetDatabasesErrors];
 
 export type GetDatabasesResponses = {
     /**
@@ -8363,7 +8084,7 @@ export type GetDocumentsForNamespaceData = {
          */
         namespace: string;
     };
-    query: {
+    query?: {
         /**
          * Page Number
          * Page number to retrieve (starting from 1)
@@ -8374,10 +8095,6 @@ export type GetDocumentsForNamespaceData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
     };
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
@@ -8416,12 +8133,7 @@ export type GetDocumentByIdData = {
          */
         document_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
 };
 
@@ -8459,12 +8171,7 @@ export type GetNodesForDocumentData = {
          */
         document_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes';
 };
 
@@ -8503,12 +8210,7 @@ export type GetSummaryNodesForDocumentData = {
          */
         document_id: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries';
 };
 
@@ -8543,12 +8245,7 @@ export type GetFileUrlData = {
          */
         file_path: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/file/logged-in/url/{container}/{file_path}';
 };
 
@@ -8582,12 +8279,7 @@ export type GetFileRedirectData = {
          */
         file_path: string;
     };
-    query: {
-        /**
-         * Kwargs
-         */
-        kwargs: unknown;
-    };
+    query?: never;
     url: '/file/logged-in/redirect/{container}/{file_path}';
 };
 

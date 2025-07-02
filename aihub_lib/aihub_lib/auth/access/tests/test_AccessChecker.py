@@ -1,8 +1,9 @@
+from typing import List
+
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker, AccessLevel
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 scenarios("./features/access_checker.feature")
 
@@ -12,30 +13,27 @@ def context():
     """A dictionary to hold state between BDD steps."""
     return {}
 
+@pytest.fixture
+def access_rules():
+    """A dictionary to hold state between BDD steps."""
+    return []
 
-@given('a user with the name "Test User" and email "test@example.com"', target_fixture="user_identity")
-def user_identity():
-    """Creates a base UserIdentity object."""
-    return UserIdentity(id="test-user-id", name="Test User", email="test@example.com", roles=[])
+@given(parsers.parse('no access rules'))
+def given_no_access_rules(access_rule: str, access_rules: List[str]):
+    """Adds an access rule to the user's list of access roles."""
+    access_rules.clear()
 
-
-@given(parsers.parse('the user has the role "{role}"'))
-def add_user_role(user_identity: UserIdentity, role: str):
-    """Adds a role to the user's list of roles."""
-    user_identity.roles.append(role)
-
-
-@given("the user has no other roles")
-def clear_user_roles(user_identity: UserIdentity):
-    """Clears all existing roles from the user to ensure a clean state."""
-    user_identity.roles.clear()
+@given(parsers.parse('the access rule "{access_rule}"'))
+def given_access_rules(access_rule: str, access_rules: List[str]):
+    """Adds an access rule to the user's list of access roles."""
+    access_rules.append(access_rule)
 
 
 @when(parsers.parse('the access checker checks for the permission "{permission_template}"'))
-def check_permission(context, user_identity: UserIdentity, permission_template: str):
+def check_permission(context, access_rules: List[str], permission_template: str):
     """Initializes AccessChecker and stores the result or any exception."""
     try:
-        checker = AccessChecker.from_user(user_identity)
+        checker = AccessChecker(access_rules)
         result = checker.access_level(permission_template)
         context["result"] = result
         context["exception"] = None
@@ -44,10 +42,10 @@ def check_permission(context, user_identity: UserIdentity, permission_template: 
         context["exception"] = e
 
 
-@when(parsers.parse('the access checker checks for the user-level permission "{user_permission_template}"'))
-def check_user_level_permission(context, user_identity: UserIdentity, user_permission_template: str):
+@when(parsers.parse('the access checker checks for the permission "{user_permission_template}"'))
+def check_user_level_permission(context, access_rules: List[str], user_permission_template: str):
     """Alias for the main 'when' step for clarity in admin scenarios."""
-    check_permission(context, user_identity, user_permission_template)
+    check_permission(context, access_rules, user_permission_template)
 
 
 @then(parsers.parse("the result should be {expected_level}"))
