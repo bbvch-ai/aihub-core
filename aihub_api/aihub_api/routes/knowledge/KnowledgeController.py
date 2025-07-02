@@ -33,7 +33,7 @@ class KnowledgeController(Controller):
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
     ):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(
             host=CosmosDocstoreAccess().get_connection_string(), alias="docstore"
         )

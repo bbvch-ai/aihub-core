@@ -71,7 +71,7 @@ class ThreadController(Controller):
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
     def __init__(self, *, auth: AuthHandler, route: str = "/threads"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_user_threads(self, route: str = "/") -> "ThreadController":
         @self.router.get(route, tags=self.tags)

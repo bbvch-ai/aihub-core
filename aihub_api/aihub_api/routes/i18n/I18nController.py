@@ -28,7 +28,7 @@ class I18nController(Controller):
     icon = "mdi:language"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/i18n"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_my_locale(self, route: str = "/my-locale") -> "I18nController":
         @self.router.get(route, tags=self.tags)

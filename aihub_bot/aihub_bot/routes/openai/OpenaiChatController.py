@@ -29,7 +29,7 @@ class OpenaiChatController(Controller):
         route: str = "/openai/chat",
         chat_models: List[ChatLLMConfig] = None,
     ):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.chat_models = chat_models or []
 
         for chat_model in self.chat_models:

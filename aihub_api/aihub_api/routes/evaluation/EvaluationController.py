@@ -51,7 +51,7 @@ class EvaluationController(Controller):
         judge: ChatLLMConfig,
         route: str = "/evaluations",
     ):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.judge = judge
 
     def create_dataset(self, route: str = "/datasets") -> "EvaluationController":

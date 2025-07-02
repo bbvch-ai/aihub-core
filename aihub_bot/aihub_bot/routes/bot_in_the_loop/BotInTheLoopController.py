@@ -26,7 +26,7 @@ class BotInTheLoopController(Controller):
         auth: AuthHandler,
         route: str = BotInTheLoopHandler.CONTROLLER_PATH,
     ):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def bot_in_the_loop_response(self, route: str = BotInTheLoopHandler.ENDPOINT_PATH) -> "BotInTheLoopController":
         @self.router.post(route, tags=self.tags)

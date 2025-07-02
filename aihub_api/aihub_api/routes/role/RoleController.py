@@ -20,7 +20,7 @@ class RoleController(Controller):
     icon = "solar:users-group-rounded-bold"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/roles"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def create_role(self, route: str = "/") -> "RoleController":
         @self.router.post(

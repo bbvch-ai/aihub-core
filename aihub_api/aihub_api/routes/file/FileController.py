@@ -24,7 +24,7 @@ class FileController(Controller):
     icon = "line-md:file"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/file"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}"):
         @self.router.get(route, tags=self.tags, summary="Get signed file URL")

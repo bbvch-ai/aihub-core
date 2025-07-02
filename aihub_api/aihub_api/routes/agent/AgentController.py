@@ -66,7 +66,7 @@ class AgentController(Controller):
     icon = "meteor-icons:robot"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/agents"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_agents(self, route: str = "/") -> "AgentController":
         @self.router.get(route, tags=self.tags)

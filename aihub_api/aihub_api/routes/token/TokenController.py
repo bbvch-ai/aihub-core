@@ -19,7 +19,7 @@ class TokenController(Controller):
     icon = "solar:password-bold"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/tokens"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def create_token(self, route: str = "/") -> "TokenController":
         @self.router.post(

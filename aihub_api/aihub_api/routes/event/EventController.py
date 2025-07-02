@@ -47,7 +47,7 @@ class EventController(Controller):
     icon = "mdi:apache-kafka"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/events"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_events_in_thread(self, path: str = "/threads/{thread_id}") -> "EventController":
         @self.router.get(path, tags=self.tags)

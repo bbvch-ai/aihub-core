@@ -18,18 +18,22 @@ class SuiteService:
         services: List[ServiceDTO] = []
         access_checker = AccessChecker.from_user(user)
         for controller in runner.controllers:
-            service_name = controller.__class__.__name__.lower().replace("controller", "")
-            user_access = access_checker.access_level_for_service(service_name)
-            print("service", service_name, user_access)
-            if user_access == AccessLevel.ACCESS_DENIED:
+            user_service_access = access_checker.access_level_for_service(controller.service_name)
+            if user_service_access == AccessLevel.ACCESS_DENIED:
                 continue
+
+            if controller.additionally_required_permission:
+                user_special_access = access_checker.access_level(controller.additionally_required_permission)
+                if user_special_access == AccessLevel.ACCESS_DENIED:
+                    continue
+
             services.append(
                 ServiceDTO(
                     name=t.extract(controller.name),
                     description=t.extract(controller.description),
                     icon=controller.icon,
                     path=f"/service{controller.base_route}",
-                    user_is_admin=user_access == AccessLevel.ACCESS_ADMIN
+                    user_is_admin=user_service_access == AccessLevel.ACCESS_ADMIN,
                 )
             )
         return SuiteDTO(

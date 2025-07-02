@@ -72,7 +72,7 @@ class OpenaiController(Controller):
         stt_models: List[AzureOpenaiSTTConfig] = None,
         tts_models: List[AzureOpenaiTTSConfig] = None,
     ):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.embedding_models = embedding_models or []
         self.chat_models = chat_models or []
         self.image_models = image_models or []

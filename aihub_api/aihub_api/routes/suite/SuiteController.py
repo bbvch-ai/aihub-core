@@ -22,7 +22,7 @@ class SuiteController(Controller):
     icon = "material-symbols:token"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/suites"):
-        super().__init__(auth=auth, route=route)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self._runner: Optional["ApiRunner"] = None
 
     def get_suite(self, route: str = "/") -> "SuiteController":
