@@ -6337,6 +6337,41 @@ export const MinimalExperimentSchema = {
     title: 'MinimalExperiment'
 } as const;
 
+export const MinimalUserDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: "The user's unique identifier (OID)."
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: "The user's name."
+        },
+        email: {
+            type: 'string',
+            title: 'Email',
+            description: "The user's email address."
+        },
+        profile_image: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Profile Image',
+            description: "User's profile image in base64."
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'email'],
+    title: 'MinimalUserDTO'
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -6411,68 +6446,6 @@ export const ModelResponseSchema = {
     type: 'object',
     required: ['data'],
     title: 'ModelResponse'
-} as const;
-
-export const MyUserDTOSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: "The user's unique identifier (OID)."
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: "The user's name."
-        },
-        email: {
-            type: 'string',
-            title: 'Email',
-            description: "The user's email address."
-        },
-        profile_image: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Profile Image',
-            description: "User's profile image in base64."
-        },
-        dashboard: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/DashboardDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'User dashboard configuration for index page'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite'
-        },
-        roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Roles',
-            description: 'List of roles assigned to the user'
-        }
-    },
-    type: 'object',
-    required: ['id', 'name', 'email'],
-    title: 'MyUserDTO'
 } as const;
 
 export const NamespaceSchema = {
@@ -6711,6 +6684,43 @@ export const PaginatedThreadsResponseSchema = {
     type: 'object',
     required: ['total', 'page', 'page_size', 'total_pages', 'threads'],
     title: 'PaginatedThreadsResponse'
+} as const;
+
+export const PaginatedUsersResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        users: {
+            items: {
+                '$ref': '#/components/schemas/UserDTO'
+            },
+            type: 'array',
+            title: 'Users',
+            description: 'List of MinimalUserDTO objects for the current page.'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'users'],
+    title: 'PaginatedUsersResponse',
+    description: 'Represents a paginated response containing a list of users.'
 } as const;
 
 export const PartialAgentTopicSchema = {
@@ -7962,7 +7972,7 @@ export const ThreadDTOSchema = {
         },
         users: {
             items: {
-                '$ref': '#/components/schemas/UserDTO'
+                '$ref': '#/components/schemas/MinimalUserDTO'
             },
             type: 'array',
             title: 'Users',
@@ -8675,10 +8685,43 @@ export const UserDTOSchema = {
             ],
             title: 'Profile Image',
             description: "User's profile image in base64."
+        },
+        last_accessed: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Last Accessed',
+            description: 'Last time the user was updated'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'List of roles assigned to the user'
+        },
+        favorite_modules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Favorite Modules',
+            description: 'List of favorite modules from aihub suite'
+        },
+        dashboard: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/DashboardDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'User dashboard configuration for index page'
         }
     },
     type: 'object',
-    required: ['id', 'name', 'email'],
+    required: ['id', 'name', 'email', 'last_accessed'],
     title: 'UserDTO'
 } as const;
 

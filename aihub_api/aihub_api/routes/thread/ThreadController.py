@@ -87,7 +87,7 @@ class ThreadController(Controller):
             Returns all threads that the authenticated user is a member of.
             """
             total, threads = await ThreadService.get_paginated_threads_for_user(
-                user.id, identity_provider=self.auth.identity_provider, t=t, page=page, page_size=page_size
+                user.id, t=t, page=page, page_size=page_size
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -126,7 +126,6 @@ class ThreadController(Controller):
                 name=create_request_dto.name,
                 user_ids=create_request_dto.user_ids,
                 agent_dtos=create_request_dto.agents,
-                identity_provider=self.auth.identity_provider,
                 t=t,
             )
 
@@ -143,7 +142,7 @@ class ThreadController(Controller):
             Retrieves details of a specific thread.
             Raises 403 if the user is not a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
             user_in_thread = user.id in [u.id for u in thread.users]
             thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
@@ -167,7 +166,7 @@ class ThreadController(Controller):
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot add agent to process thread")
@@ -185,7 +184,7 @@ class ThreadController(Controller):
                     )
 
             return await ThreadService.add_agent_to_thread(
-                thread_id, req.agent_id, req.agent_class, identity_provider=self.auth.identity_provider, t=t
+                thread_id, req.agent_id, req.agent_class, t=t
             )
 
         return self
@@ -197,7 +196,7 @@ class ThreadController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> HistoryResponse:
-            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
             user_in_thread = user.id in [u.id for u in thread.users]
             thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
@@ -222,7 +221,7 @@ class ThreadController(Controller):
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
@@ -231,7 +230,7 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_agent_from_thread(
-                thread_id, agent_class, agent_id, identity_provider=self.auth.identity_provider, t=t
+                thread_id, agent_class, agent_id, t=t
             )
 
         return self
@@ -247,7 +246,7 @@ class ThreadController(Controller):
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
@@ -264,7 +263,7 @@ class ThreadController(Controller):
                     )
 
             return await ThreadService.add_user_to_thread(
-                thread_id, add_user_dto.user_id, identity_provider=self.auth.identity_provider, t=t
+                thread_id, add_user_dto.user_id, t=t
             )
 
         return self
@@ -280,7 +279,7 @@ class ThreadController(Controller):
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
@@ -289,7 +288,7 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_user_from_thread(
-                thread_id, remove_user_id, identity_provider=self.auth.identity_provider, t=t
+                thread_id, remove_user_id, t=t
             )
 
         return self

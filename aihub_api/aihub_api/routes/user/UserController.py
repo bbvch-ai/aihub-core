@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Annotated, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -6,8 +7,11 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Security
 
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
-from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
+from aihub_api.routes.user.dto.PaginatedUsersResponse import PaginatedUsersResponse
+from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.UserService import UserService
 
 
@@ -17,24 +21,7 @@ class UserController(Controller):
 
     ### Why UserController?
     In many applications, authenticated users may want to retrieve their own profile or check who they are
-    logged in as. The `UserController` provides a simple endpoint that returns a `UserDTO` for the authenticated user.
-
-    ### Endpoint
-    - `GET /user/me`: Returns information about the currently authenticated user.
-
-    ### Authentication
-    This endpoint relies on the configured `auth` dependency to ensure that the user is authenticated.
-    If no auth dependency is provided, no authentication is applied.
-
-    ### Usage
-    ```python
-    app = FastAPI()
-    UserController(auth=some_auth_dependency)
-        .get_my_user()
-        .mount(app)
-    ```
-
-    Once mounted, calling `GET /user/me` returns user data like name, email, etc., depending on `UserDTO`.
+    logged in as. The `UserController` provides a simple endpoint that returns a `MinimalUserDTO` for the authenticated user.
     """
 
     name = LocaleString(en="User")
@@ -46,19 +33,64 @@ class UserController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
+    def get_users(self, route: str = "/") -> "UserController":
+        """
+        Registers an endpoint to retrieve a paginated list of users.
+        Requires 'aihub.users.list' permission.
+        """
+
+        @self.router.get(route, tags=self.tags)
+        async def get_users(
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            page: PageNumber = 1,
+            page_size: PageSize = 20,
+        ) -> PaginatedUsersResponse:
+            """
+            Returns a paginated list of all users.
+            """
+            total, user_dtos = await UserService.get_paginated_users(page=page, page_size=page_size)
+            total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
+            return PaginatedUsersResponse(
+                users=user_dtos,
+                total=total,
+                page=page,
+                page_size=page_size,
+                total_pages=total_pages,
+            )
+
+        return self
+
     def get_my_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route, tags=self.tags)
         async def get_my_user(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> MyUserDTO:
+        ) -> UserDTO:
             """
-            Returns a `UserDTO` representing the currently logged-in user.
+            Returns a `MinimalUserDTO` representing the currently logged-in user.
             """
-            return await UserService.get_logged_in_user(user, identity_provider=self.auth.identity_provider)
+            return await UserService.get_logged_in_user(user)
 
         return self
 
-    def get_my_dashboard(self, route: str = "/dashboard") -> "UserController":
+    def get_user(self, route: str = "/{user_oid}") -> "UserController":
+        """
+        Registers an endpoint to retrieve a specific user by their OID.
+        Requires 'aihub.users.read' permission.
+        """
+
+        @self.router.get(route, tags=self.tags)
+        async def get_user(
+            user_oid: Annotated[str, Path(description="The user's unique identifier (OID).")],
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+        ) -> UserDTO:
+            """
+            Retrieve user info by their OID.
+            """
+            return await UserService.get_user_by_oid(user_oid)
+
+        return self
+
+    def get_my_dashboard(self, route: str = "/me/dashboard") -> "UserController":
         """
         Registers an endpoint to retrieve the currently logged-in user's dashboard settings.
         """
@@ -74,7 +106,7 @@ class UserController(Controller):
 
         return self
 
-    def update_my_dashboard(self, route: str = "/dashboard") -> "UserController":
+    def update_my_dashboard(self, route: str = "/me/dashboard") -> "UserController":
         """
         Registers an endpoint to update the currently logged-in user's dashboard settings.
         """
@@ -88,7 +120,7 @@ class UserController(Controller):
             Updates the user's dashboard settings.
             Accepts a `DashboardDTO` in the request body.
             """
-            await UserService.update_user_dashboard(user, dashboard_dto, identity_provider=self.auth.identity_provider)
+            await UserService.update_user_dashboard(user, dashboard_dto)
             return None
 
         return self

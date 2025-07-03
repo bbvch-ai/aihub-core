@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -7,7 +7,6 @@ from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, User
 from mongoengine import DoesNotExist
 
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
-from aihub_api.routes.user.dto.MyUserDTO import MyUserDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 
 
@@ -29,31 +28,15 @@ class UserService:
     """
 
     @staticmethod
-    async def get_logged_in_user(user: UserIdentity, identity_provider: IdentityProvider) -> MyUserDTO:
+    async def get_logged_in_user(user: UserIdentity) -> UserDTO:
         """
-        Convert the `UserIdentity` (provided by the auth layer) into a MyUserDTO,
+        Convert the `UserIdentity` (provided by the auth layer) into a UserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
-        await UserService.get_user_by_oid(
-            user.id, identity_provider
-        )  # Ensures that the UserEntity exists and is up to date.
-        user_entity = UserEntity.by_oid(user.id)
-
-        dashboard_data = user_entity.dashboard.to_mongo()
-        dashboard_dto = DashboardDTO(**dashboard_data)
-
-        return MyUserDTO(
-            id=user_entity.id,
-            name=user_entity.name,
-            email=user_entity.email,
-            profile_image=user_entity.profile_image,
-            dashboard=dashboard_dto,
-            favorite_modules=user_entity.favorite_modules,
-            roles=user_entity.roles,
-        )
+        return await UserService.get_user_by_oid(user.id)
 
     @staticmethod
-    async def get_user_by_oid(user_oid: str, identity_provider: IdentityProvider) -> UserDTO:
+    async def get_user_by_oid(user_oid: str) -> UserDTO:
         """
         Retrieve user info by OID (id, name, email, profile_image) as a UserDTO.
         It first checks a db (UserEntity). If recent and essential data is present,
@@ -61,30 +44,21 @@ class UserService:
         ensures the UserEntity is created/updated (including roles and defaults for new users),
         and then returns basic info as a UserDTO.
         """
-        try:
-            user_entity = UserEntity.by_oid(user_oid)
-            last_updated_from_db = user_entity.last_updated
+        user_entity = UserEntity.by_oid(user_oid)
+        return UserDTO.from_user_entity(user_entity)
 
-            if last_updated_from_db.tzinfo is None:
-                last_updated_aware = last_updated_from_db.replace(tzinfo=timezone.utc)
-            else:
-                last_updated_aware = last_updated_from_db
+    @staticmethod
+    async def get_paginated_users(page: int = 1, page_size: int = 20) -> Tuple[int, List[UserDTO]]:
+        """
+        Retrieves a paginated list of users from the local database.
+        """
+        skip = (page - 1) * page_size
+        total = UserEntity.count_users()
+        user_entities = UserEntity.get_paginated_users(skip=skip, limit=page_size)
 
-            if (datetime.now(timezone.utc) - last_updated_aware) < timedelta(hours=24):
-                return UserDTO.from_user_entity(user_entity)
-        except DoesNotExist:
-            pass
+        user_dtos = [UserDTO.from_user_entity(user) for user in user_entities]
 
-        user_identity = await identity_provider.get_user_identity_by_oid(user_oid)
-        UserEntity.ensure_user_exists(
-            oid=user_oid,
-            name=user_identity.name,
-            email=user_identity.email,
-            roles=user_identity.roles,
-            profile_image=user_identity.profile_image,
-        )
-
-        return UserDTO.from_user_identity(user_identity)
+        return total, user_dtos
 
     @staticmethod
     def get_user_dashboard(user: UserIdentity) -> Optional[DashboardDTO]:
@@ -103,23 +77,12 @@ class UserService:
 
     @staticmethod
     async def update_user_dashboard(
-        user: UserIdentity, dashboard_dto: DashboardDTO, identity_provider: IdentityProvider
+        user: UserIdentity, dashboard_dto: DashboardDTO
     ) -> None:
         """
         Updates or creates the dashboard settings for the given authenticated user.
         """
-        try:
-            user_entity = UserEntity.by_oid(user.id)
-        except DoesNotExist:
-            user_identity = await identity_provider.get_user_identity_by_oid(user.id)
-            user_entity = UserEntity.ensure_user_exists(
-                oid=user.id,
-                name=user_identity.name,
-                email=user_identity.email,
-                roles=user_identity.roles,
-                profile_image=user_identity.profile_image,
-            )
-
+        user_entity = UserEntity.by_oid(user.id)
         dashboard_data_dict = dashboard_dto.model_dump()
 
         children_data = dashboard_data_dict.pop("children", [])

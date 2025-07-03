@@ -22,7 +22,11 @@ class RoleController(Controller):
     def __init__(
         self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: Optional[str] = None
     ):
-        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
+        super().__init__(
+            auth=auth,
+            route=route,
+            additionally_required_permission=additionally_required_permission,
+        )
 
     def create_role(self, route: str = "/") -> "RoleController":
         @self.router.post(
@@ -34,7 +38,7 @@ class RoleController(Controller):
         )
         async def create_role_endpoint(
             role_data: CreateRoleRequest,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.role.create"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
             try:
                 return RoleService.create_role(role_data)
@@ -53,7 +57,7 @@ class RoleController(Controller):
             tags=self.tags,
         )
         async def list_roles_endpoint(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.role.read"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> List[RoleResponse]:
             return RoleService.list_roles()
 
@@ -68,7 +72,7 @@ class RoleController(Controller):
         )
         async def get_role_endpoint(
             role_id: str,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.role.read"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
             try:
                 return RoleService.get_role_by_id(role_id)
@@ -87,7 +91,7 @@ class RoleController(Controller):
         async def update_role_endpoint(
             role_id: str,
             role_data: UpdateRoleRequest,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.role.update"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
             try:
                 return RoleService.update_role(role_id, role_data)
@@ -109,7 +113,7 @@ class RoleController(Controller):
         )
         async def delete_role_endpoint(
             role_id: str,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.role.delete"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> DeleteRoleResponse:
             try:
                 RoleService.delete_role(role_id)

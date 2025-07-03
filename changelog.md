@@ -536,7 +536,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚡️ **Asynchronous API Operations**: Migrated numerous core API services and endpoints (including Thread management, OpenAI interactions, and User information retrieval) to asynchronous operations, significantly improving application responsiveness and scalability under load.
 - 🔄 **API Token Role Resolution**: Updated API token authentication such that roles are no longer stored directly within the token. Instead, user roles are dynamically resolved at authentication time from the newly introduced `UserEntity`, ensuring permissions are always up-to-date.
 - 🔑 **Enhanced OpenWebUI Integration**: Strengthened the authentication flow for OpenWebUI by adding hash validation for user identification headers and leveraging Azure Graph for authoritative resolution of user roles, improving security and data consistency.
-- 📄 **Improved User Profile Management**: Refactored the internal handling of user information, introducing a distinct `UserIdentity` for internal system use and updating `UserDTO` for data transfer. User data is now consistently retrieved and updated in the `UserEntity`.
+- 📄 **Improved User Profile Management**: Refactored the internal handling of user information, introducing a distinct `UserIdentity` for internal system use and updating `MinimalUserDTO` for data transfer. User data is now consistently retrieved and updated in the `UserEntity`.
 - 🌐 **Expanded Internationalization**: Added new localization keys for time ranges, chart messages, and various dashboard elements across supported languages.
 
 ### Refactor
@@ -1111,7 +1111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔑 **Robust Authentication Flow**: The OIDC authentication middleware has been improved to handle silent token renewal more robustly, enhancing session management and reducing unexpected logouts.
 - 💅 **Updated Web UI Theming**: The default primary color scheme of the Web UI theme has been updated for a fresh visual appearance.
 - ⚡️ **Dynamic Web UI Navigation**: The main layout and navigation of the Web UI have been refactored to dynamically load and display services based on the new `/suite` API endpoint.
-- 👤 **Simplified User Data Access**: The `UserController.get_user` endpoint has been renamed to `get_my_user` and now returns a dedicated `MyUserDTO` for the authenticated user, streamlining user profile handling.
+- 👤 **Simplified User Data Access**: The `UserController.get_user` endpoint has been renamed to `get_my_user` and now returns a dedicated `UserDTO` for the authenticated user, streamlining user profile handling.
 
 ### Fixed
 - 🐛 **Reliable Function Signature Extraction**: Improved the extraction of return event types from function signatures within the agent workflow system for increased accuracy and stability.

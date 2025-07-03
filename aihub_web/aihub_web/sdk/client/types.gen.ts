@@ -4703,6 +4703,32 @@ export type MinimalExperiment = {
 };
 
 /**
+ * MinimalUserDTO
+ */
+export type MinimalUserDto = {
+    /**
+     * Id
+     * The user's unique identifier (OID).
+     */
+    id: string;
+    /**
+     * Name
+     * The user's name.
+     */
+    name: string;
+    /**
+     * Email
+     * The user's email address.
+     */
+    email: string;
+    /**
+     * Profile Image
+     * User's profile image in base64.
+     */
+    profile_image?: string | null;
+};
+
+/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -4752,46 +4778,6 @@ export type ModelResponse = {
      * The list of models.
      */
     data: Array<ModelDetails>;
-};
-
-/**
- * MyUserDTO
- */
-export type MyUserDto = {
-    /**
-     * Id
-     * The user's unique identifier (OID).
-     */
-    id: string;
-    /**
-     * Name
-     * The user's name.
-     */
-    name: string;
-    /**
-     * Email
-     * The user's email address.
-     */
-    email: string;
-    /**
-     * Profile Image
-     * User's profile image in base64.
-     */
-    profile_image?: string | null;
-    /**
-     * User dashboard configuration for index page
-     */
-    dashboard?: DashboardDto | null;
-    /**
-     * Favorite Modules
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
-     * Roles
-     * List of roles assigned to the user
-     */
-    roles?: Array<string>;
 };
 
 /**
@@ -4965,6 +4951,38 @@ export type PaginatedThreadsResponse = {
      * List of ThreadDTO objects for the current page
      */
     threads: Array<ThreadDto>;
+};
+
+/**
+ * PaginatedUsersResponse
+ * Represents a paginated response containing a list of users.
+ */
+export type PaginatedUsersResponse = {
+    /**
+     * Total
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Page
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Page Size
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * Users
+     * List of MinimalUserDTO objects for the current page.
+     */
+    users: Array<UserDto>;
 };
 
 /**
@@ -6170,7 +6188,7 @@ export type ThreadDto = {
      * Users
      * List of users in thread
      */
-    users: Array<UserDto>;
+    users: Array<MinimalUserDto>;
     /**
      * Agents
      * List of agents initially associated with thread
@@ -6693,6 +6711,25 @@ export type UserDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
+    /**
+     * Last Accessed
+     * Last time the user was updated
+     */
+    last_accessed: Date;
+    /**
+     * Roles
+     * List of roles assigned to the user
+     */
+    roles?: Array<string>;
+    /**
+     * Favorite Modules
+     * List of favorite modules from aihub suite
+     */
+    favorite_modules?: Array<string>;
+    /**
+     * User dashboard configuration for index page
+     */
+    dashboard?: DashboardDto | null;
 };
 
 /**
@@ -7196,6 +7233,72 @@ export type GetSuiteResponses = {
 
 export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
 
+export type GetUserData = {
+    body?: never;
+    path: {
+        /**
+         * User Oid
+         */
+        user_oid: string;
+    };
+    query?: never;
+    url: '/users/{user_oid}';
+};
+
+export type GetUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
+
+export type GetUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserDto;
+};
+
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+
+export type GetUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Page Number
+         * Page number to retrieve (starting from 1)
+         */
+        page?: number;
+        /**
+         * Page Size
+         * Number of items per page (maximum 100)
+         */
+        page_size?: number;
+    };
+    url: '/users/';
+};
+
+export type GetUsersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
+
+export type GetUsersResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedUsersResponse;
+};
+
+export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
+
 export type GetMyUserData = {
     body?: never;
     path?: never;
@@ -7207,7 +7310,7 @@ export type GetMyUserResponses = {
     /**
      * Successful Response
      */
-    200: MyUserDto;
+    200: UserDto;
 };
 
 export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
@@ -7216,12 +7319,12 @@ export type GetMyDashboardData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/users/dashboard';
+    url: '/users/me/dashboard';
 };
 
 export type GetMyDashboardResponses = {
     /**
-     * Response Get My Dashboard Users Dashboard Get
+     * Response Get My Dashboard Users Me Dashboard Get
      * Successful Response
      */
     200: DashboardDto | null;
@@ -7233,7 +7336,7 @@ export type UpdateMyDashboardData = {
     body: DashboardDto;
     path?: never;
     query?: never;
-    url: '/users/dashboard';
+    url: '/users/me/dashboard';
 };
 
 export type UpdateMyDashboardErrors = {

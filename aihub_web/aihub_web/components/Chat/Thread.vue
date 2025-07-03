@@ -24,7 +24,7 @@ import type {
   ChatMessageInput,
   MinimalAgentDto,
   ThreadDto,
-  UserDto,
+  MinimalUserDto,
   WsServerEventReadable,
 } from '@core/sdk/client'
 
@@ -46,7 +46,7 @@ type ExtendedChatMessage = ChatMessageInput & {
   displayId: string
 }
 
-const user = computed<UserDto>(() => props.thread.users.at(-1)!)
+const user = computed<MinimalUserDto>(() => props.thread.users.at(-1)!)
 
 const getAgentDto = (agent_class: string, agent_id: string) =>
   props.thread.participating_agents.find(

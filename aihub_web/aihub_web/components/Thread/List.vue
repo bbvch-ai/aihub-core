@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ThreadDto, UserDto } from '@core/sdk/client'
+import type { ThreadDto, MinimalUserDto } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -123,7 +123,7 @@ const emit = defineEmits<{
   selected: [thread: ThreadDto]
 }>()
 
-const initials = (user: UserDto) => user.name?.split(' ').map(n => n[0]).join('')
+const initials = (user: MinimalUserDto) => user.name?.split(' ').map(n => n[0]).join('')
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
 const { pendingType } = useThreadUtils()
 
