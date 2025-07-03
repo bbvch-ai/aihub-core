@@ -1,5 +1,4 @@
 import asyncio
-import os
 from os.path import join, dirname, abspath, isdir
 
 import nest_asyncio
