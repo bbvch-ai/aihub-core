@@ -63,7 +63,6 @@
               v-tooltip.top="service.level === 2 ? 'Admin' : 'User'"
               :value="service.name"
               :icon="service.level === 2 ? 'pi pi-crown' : undefined"
-              :severity="service.level === 2 ? 'contrast' : 'primary'"
             />
           </div>
         </div>
@@ -78,7 +77,6 @@
               v-tooltip.top="agent.level === 2 ? 'Admin' : 'User'"
               :value="agent.name"
               :icon="agent.level === 2 ? 'pi pi-crown' : undefined"
-              :severity="agent.level === 2 ? 'contrast' : 'primary'"
             />
           </div>
         </div>
@@ -93,7 +91,6 @@
               v-tooltip.top="process.level === 2 ? 'Admin' : 'User'"
               :value="process.name"
               :icon="process.level === 2 ? 'pi pi-crown' : undefined"
-              :severity="process.level === 2 ? 'contrast' : 'primary'"
             />
           </div>
         </div>

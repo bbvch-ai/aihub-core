@@ -2,6 +2,7 @@
   <NuxtLayout>
     <NuxtPage />
     <Toast />
+    <ConfirmDialog />
   </NuxtLayout>
 </template>
 
