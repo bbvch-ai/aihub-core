@@ -50,6 +50,7 @@ def _(nodes, datatable):
 
     return nodes
 
+
 @pytest.fixture()
 def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
