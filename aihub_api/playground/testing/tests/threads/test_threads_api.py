@@ -8,7 +8,12 @@ from mongoengine import connect, disconnect
 
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.routes.thread.ThreadController import ThreadController
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
@@ -46,7 +51,7 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
     """Create an API client with ThreadController endpoints mounted."""
     runner = SimulatedAgentApiTestRunner(agent_class=agent_class, agent_id=agent_id)
     runner.with_simple_chunk_events()
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = (
         ThreadController(auth=auth)
         .get_user_threads()

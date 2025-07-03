@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import Annotated, ClassVar, Optional
 
 from pydantic import Field
 
@@ -20,42 +20,57 @@ class WebUIConfig(StorageConfig):
 
     openwebui_config: OpenWebUIConfig
 
-    volume_name: str = Field(default="webuivolume", description="Volume name for the container")
-    db_name: str = Field(default="webui", description="Database name for the PostgreSQL database")
-    pg_vector_db_name: str = Field(default="pgvector", description="Database name for the pgvector database")
+    volume_name: Annotated[str, Field(description="Volume name for the container")] = "webuivolume"
+    db_name: Annotated[str, Field(description="Database name for the PostgreSQL database")] = "webui"
+    pg_vector_db_name: Annotated[str, Field(description="Database name for the pgvector database")] = "pgvector"
 
-    postgres_username: str = Field(
-        default_factory=lambda: WebUIConfig._postgres_settings.POSTGRES_USERNAME,
-        description="Username for the PostgreSQL database",
-    )
-    postgres_password: str = Field(
-        default_factory=lambda: WebUIConfig._postgres_settings.POSTGRES_PASSWORD,
-        description="Password for the PostgreSQL database",
-    )
+    postgres_username: Annotated[
+        str,
+        Field(
+            default_factory=lambda: WebUIConfig._postgres_settings.POSTGRES_USERNAME,
+            description="Username for the PostgreSQL database",
+        ),
+    ]
+    postgres_password: Annotated[
+        str,
+        Field(
+            default_factory=lambda: WebUIConfig._postgres_settings.POSTGRES_PASSWORD,
+            description="Password for the PostgreSQL database",
+        ),
+    ]
 
     # Docker Image settings
-    repo_image_url: str = Field(description="URL of the Docker repository")
-    docker_image_tag: str = Field(description="Tag of the Docker image")
+    repo_image_url: Annotated[str, Field(description="URL of the Docker repository")]
+    docker_image_tag: Annotated[str, Field(description="Tag of the Docker image")]
 
     # resources
-    cpu: float = Field(default=2, description="CPU cores for the container")
-    memory: str = Field(default="4Gi", description="Memory for the container")
-    min_replicas: int = Field(default=1, description="Minimum number of replicas for the container")
-    max_replicas: Optional[int] = Field(default=None, description="Maximum number of replicas for the container")
+    cpu: Annotated[float, Field(description="CPU cores for the container")] = 2
+    memory: Annotated[str, Field(description="Memory for the container")] = "4Gi"
+    min_replicas: Annotated[int, Field(description="Minimum number of replicas for the container")] = 1
+    max_replicas: Annotated[Optional[int], Field(description="Maximum number of replicas for the container")] = None
 
     # Registry settings
-    registry_user: str = Field(
-        default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_USER,
-        description="Registry username for authentication",
-    )
-    registry_pat: str = Field(
-        default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_PAT,
-        description="Registry personal access token for authentication",
-    )
-    registry_url: str = Field(
-        default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_URL or "https://ghcr.io",
-        description="Registry URL for authentication",
-    )
+    registry_user: Annotated[
+        str,
+        Field(
+            default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_USER,
+            description="Registry username for authentication",
+        ),
+    ]
+    registry_pat: Annotated[
+        str,
+        Field(
+            default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_PAT,
+            description="Registry personal access token for authentication",
+        ),
+    ]
+    registry_url: Annotated[
+        str,
+        Field(
+            default_factory=lambda: WebUIConfig._registry_settings.REGISTRY_URL or "https://ghcr.io",
+            description="Registry URL for authentication",
+        ),
+    ]
 
     @property
     def log_analytics_name(self) -> str:

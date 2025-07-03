@@ -60,7 +60,7 @@ runs:
 
     - name: Install Global Dependencies
       shell: bash
-      run: poetry install --no-interaction --no-root
+      run: poetry install --no-interaction --with dev --no-root
 
     - name: Use Local Core
       if: inputs.use_local_core == 'true'

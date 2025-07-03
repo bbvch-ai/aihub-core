@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import Annotated, ClassVar, Optional
 
 from pydantic import Field
 
@@ -15,43 +15,59 @@ class BotConfig(BaseConfig):
     _oauth_settings: ClassVar[OAuthSettings] = OAuthSettings()
 
     # Docker Image settings
-    repo_image_url: str = Field(description="URL of the Docker repository")
-    docker_image_tag: str = Field(description="Tag of the Docker image")
+    repo_image_url: Annotated[str, Field(description="URL of the Docker repository")]
+    docker_image_tag: Annotated[str, Field(description="Tag of the Docker image")]
 
     # Azure settings
-    app_service_plan_name: str = Field(description="Name of the Azure App Service Plan")
-    cosmos_account_name: Optional[str] = Field(description="Name of the Azure Cosmos DB account")
-    cosmos_resource_group: Optional[str] = Field(description="Name of the Azure Cosmos DB resource group")
+    app_service_plan_name: Annotated[str, Field(description="Name of the Azure App Service Plan")]
+    cosmos_account_name: Annotated[Optional[str], Field(description="Name of the Azure Cosmos DB account")]
+    cosmos_resource_group: Annotated[Optional[str], Field(description="Name of the Azure Cosmos DB resource group")]
 
     # Anonymization settings
-    anonym_name: str = Field(default="Aihub BOT", description="Anonymized name for the API service")
-    anonym_email: str = Field(default="bot@ai-agents.ch", description="Anonymized email for the API service")
-    anonym_roles: str = Field(default='["AllAgents"]', description="Anonymized roles for the API service")
-    anonym_oid: str = Field(default="0123456789", description="Anonymized OID for the API service")
+    anonym_name: Annotated[str, Field(description="Anonymized name for the API service")] = "Aihub BOT"
+    anonym_email: Annotated[str, Field(description="Anonymized email for the API service")] = "bot@ai-agents.ch"
+    anonym_roles: Annotated[str, Field(description="Anonymized roles for the API service")] = '["AllAgents"]'
+    anonym_oid: Annotated[str, Field(description="Anonymized OID for the API service")] = "0123456789"
 
     # Registry settings
-    registry_user: str = Field(
-        default_factory=lambda: BotConfig._registry_settings.REGISTRY_USER,
-        description="Registry username for authentication",
-    )
-    registry_pat: str = Field(
-        default_factory=lambda: BotConfig._registry_settings.REGISTRY_PAT,
-        description="Registry personal access token for authentication",
-    )
-    registry_url: str = Field(
-        default_factory=lambda: BotConfig._registry_settings.REGISTRY_URL,
-        description="Registry URL for authentication",
-    )
+    registry_user: Annotated[
+        str,
+        Field(
+            default_factory=lambda: BotConfig._registry_settings.REGISTRY_USER,
+            description="Registry username for authentication",
+        ),
+    ]
+    registry_pat: Annotated[
+        str,
+        Field(
+            default_factory=lambda: BotConfig._registry_settings.REGISTRY_PAT,
+            description="Registry personal access token for authentication",
+        ),
+    ]
+    registry_url: Annotated[
+        str,
+        Field(
+            default_factory=lambda: BotConfig._registry_settings.REGISTRY_URL,
+            description="Registry URL for authentication",
+        ),
+    ]
 
     # OAuth2 settings
-    client_id: str = Field(default_factory=lambda: BotConfig._oauth_settings.CLIENT_ID, description="Client ID")
-    tenant_id: str = Field(default_factory=lambda: BotConfig._oauth_settings.TENANT_ID, description="Tenant ID")
-    authority_url: str = Field(
-        default_factory=lambda: BotConfig._oauth_settings.AUTHORITY_URL,
-        description="Authority URL for OAuth2 authentication",
-    )
+    client_id: Annotated[
+        str, Field(default_factory=lambda: BotConfig._oauth_settings.CLIENT_ID, description="Client ID")
+    ]
+    tenant_id: Annotated[
+        str, Field(default_factory=lambda: BotConfig._oauth_settings.TENENT_ID, description="Tenant ID")
+    ]
+    authority_url: Annotated[
+        str,
+        Field(
+            default_factory=lambda: BotConfig._oauth_settings.AUTHORITY_URL,
+            description="Authority URL for OAuth2 authentication",
+        ),
+    ]
 
-    version: str = Field(description="Version of the Bot service")
+    version: Annotated[str, Field(description="Version of the Bot service")]
 
     @property
     def service_name(self) -> str:

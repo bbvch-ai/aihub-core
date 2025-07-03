@@ -7,7 +7,12 @@ from llama_index.core.base.llms.types import ChatMessage
 from aihub_api.events.create_input_model import create_input_model
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
 
 AGENT_CLASS = "test_agent"
@@ -16,7 +21,7 @@ AGENT_ID = "test_agent_1"
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def agent_api_client():
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = (
         AgentController(auth=auth)
         .discover_agents()

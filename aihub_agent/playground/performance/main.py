@@ -21,7 +21,7 @@ from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events import BaseEvent, StopEvent, StartEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
@@ -196,7 +196,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
                 _stop_signal.set()
 
         # Subscribe to events
-        event_subscriber = NCSubscriber.for_all_thread_events(
+        event_subscriber = AgentNCSubscriber.for_all_thread_events(
             nc=nc,
             topic_manager=thread_topic_manager,
             handler=observe_event,

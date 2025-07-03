@@ -13,24 +13,24 @@ Feature: OAuth2AuthHandler
     Given an OAuth2 configuration with tenant_id "test-tenant", client_id "test-client", and authority_url "https://login.microsoftonline.com"
     And an invalid OAuth2 token "not_a_jwt"
     When I invoke the OAuth2AuthHandler with the token expecting error
-    Then I should receive an HTTP error with detail "Invalid token: Not enough segments"
+    Then I should receive an HTTP error with detail "Token verification failed: Invalid token"
 
   Scenario: Expired OAuth2 token is rejected
     Given an OAuth2 configuration with tenant_id "test-tenant", client_id "test-client", and authority_url "https://login.microsoftonline.com"
     And an expired OAuth2 token is generated with name "Expired User", email "expired@example.com", and roles "user"
     When I invoke the OAuth2AuthHandler with the token expecting error
-    Then I should receive an HTTP error with detail "Token expired"
+    Then I should receive an HTTP error with detail "Token verification failed"
 
   Scenario: Token with unknown key id is rejected
     Given an OAuth2 configuration with tenant_id "test-tenant", client_id "test-client", and authority_url "https://login.microsoftonline.com"
     And a valid OAuth2 token is generated with name "Unknown Kid", email "unknownkid@example.com", and roles "user,admin"
     And I modify the token's header to use kid "unknown-key-id"
     When I invoke the OAuth2AuthHandler with the token expecting error
-    Then I should receive an HTTP error with detail "Token key ID not found"
+    Then I should receive an HTTP error with detail "500: Authentication error"
 
   Scenario: Token with invalid signature is rejected
     Given an OAuth2 configuration with tenant_id "test-tenant", client_id "test-client", and authority_url "https://login.microsoftonline.com"
     And a valid OAuth2 token is generated with name "Invalid Signature", email "invalidsig@example.com", and roles "user"
     And I re-sign the token with a different private key
     When I invoke the OAuth2AuthHandler with the token expecting error
-    Then I should receive an HTTP error with detail "Invalid token:"
+    Then I should receive an HTTP error with detail "Token verification failed: Invalid token"

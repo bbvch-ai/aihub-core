@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Type, Union
+from typing import Annotated, Any, ClassVar, Dict, List, Optional, Type, Union
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
@@ -50,11 +50,14 @@ class BaseEvent(BaseModel):
     """
 
     _event_registry: ClassVar[Dict[str, Type["BaseEvent"]]] = {}
-    event_id: str = Field(default_factory=lambda: str(ObjectId()))
-    created_at: int = Field(
-        default_factory=time.time_ns,
-        description="The time (in ns since epoch) the event was stored in the event store",
-    )
+    event_id: Annotated[str, Field(default_factory=lambda: str(ObjectId()))]
+    created_at: Annotated[
+        int,
+        Field(
+            default_factory=time.time_ns,
+            description="The time (in ns since epoch) the event was stored in the event store",
+        ),
+    ]
 
     # Private attributes to handle unknown event types
     _unknown_event_name: Optional[str] = PrivateAttr(None)
@@ -115,6 +118,30 @@ class BaseEvent(BaseModel):
     @property
     def is_control_event(self) -> bool:
         return "ControlEvent" in self._parent_event_names
+
+    @property
+    def is_process_event(self) -> bool:
+        return "ProcessEvent" in self._parent_event_names
+
+    @property
+    def is_process_start_event(self) -> bool:
+        return "ProcessStartEvent" in self._parent_event_names
+
+    @property
+    def is_process_stop_event(self) -> bool:
+        return "ProcessStopEvent" in self._parent_event_names
+
+    @property
+    def is_process_exception_event(self) -> bool:
+        return "ProcessExceptionEvent" in self._parent_event_names
+
+    @property
+    def is_work_event(self) -> bool:
+        return "WorkEvent" in self._parent_event_names
+
+    @property
+    def is_work_request_event(self) -> bool:
+        return "WorkRequestEvent" in self._parent_event_names
 
     @property
     def is_exception_event(self) -> bool:

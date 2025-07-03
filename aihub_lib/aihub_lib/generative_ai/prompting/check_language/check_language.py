@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Annotated
 
 from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
@@ -22,7 +23,7 @@ class LanguageEnum(str, Enum):
 
 
 class Language(BaseModel):
-    language: LanguageEnum = Field(description="Language shortname of user query.")
+    language: Annotated[LanguageEnum, Field(description="Language shortname of user query.")]
 
 
 def check_language(

@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import Annotated, List, Type
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -17,8 +17,8 @@ class GuardResult(BaseModel):
 
 def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
     class LocalizedGuardResult(GuardResult):
-        reasoning: str = Field(description=t("lib.guards.agent_description_guard.reason"))
-        success: bool = Field(description=t("lib.guards.agent_description_guard.success"))
+        reasoning: Annotated[str, Field(description=t("lib.guards.agent_description_guard.reason"))]
+        success: Annotated[bool, Field(description=t("lib.guards.agent_description_guard.success"))]
 
     LocalizedGuardResult.__doc__ = t("lib.guards.agent_description_guard.docstring")
     return LocalizedGuardResult

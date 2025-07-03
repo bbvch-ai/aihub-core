@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -69,13 +69,13 @@ class ThreadController(Controller):
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
-    def __init__(self, route: str = "/threads", auth: AuthHandler | None = None, is_admin_only=True):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/threads", is_admin_only=True):
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
 
     def get_user_threads(self, route: str = "/") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def get_user_threads(
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
             page: PageNumber = 1,
             page_size: PageSize = 20,
@@ -84,7 +84,7 @@ class ThreadController(Controller):
             Returns all threads that the authenticated user is a member of.
             """
             total, threads = await ThreadService.get_paginated_threads_for_user(
-                user.oid, t, page=page, page_size=page_size
+                user.id, identity_provider=self.auth.identity_provider, t=t, page=page, page_size=page_size
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -99,19 +99,25 @@ class ThreadController(Controller):
         @self.router.post(route, tags=self.tags)
         async def create_thread(
             req: CreateThreadRequest,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
             """
             Creates a new thread with the specified name, users, and agents.
             Automatically adds the authenticated user if not already included.
             """
-            if user.oid not in req.user_ids:
-                req.user_ids.append(user.oid)
+            if user.id not in req.user_ids:
+                req.user_ids.append(user.id)
 
             # Todo: Check if all users have access to all agents in thread
 
-            return await ThreadService.create_thread(name=req.name, user_ids=req.user_ids, agent_dtos=req.agents, t=t)
+            return await ThreadService.create_thread(
+                name=req.name,
+                user_ids=req.user_ids,
+                agent_dtos=req.agents,
+                identity_provider=self.auth.identity_provider,
+                t=t,
+            )
 
         return self
 
@@ -119,14 +125,14 @@ class ThreadController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
             """
             Retrieves details of a specific thread.
             Raises 403 if the user is not a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, t)
+            thread = await ThreadService.get_thread_by_id(thread_id, identity_provider=self.auth.identity_provider, t=t)
             if not await ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_view_exception
             return thread
@@ -138,7 +144,7 @@ class ThreadController(Controller):
         async def add_agent_to_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             req: AddAgentRequest,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
             """
@@ -149,7 +155,9 @@ class ThreadController(Controller):
 
             # TODO: Check if all users have access to new agent
 
-            return await ThreadService.add_agent_to_thread(thread_id, req.agent_id, req.agent_class, t)
+            return await ThreadService.add_agent_to_thread(
+                thread_id, req.agent_id, req.agent_class, identity_provider=self.auth.identity_provider, t=t
+            )
 
         return self
 
@@ -157,7 +165,7 @@ class ThreadController(Controller):
         @self.router.get(route, tags=self.tags)
         async def thread_as_message_history(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
         ) -> HistoryResponse:
             if not await ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
@@ -172,7 +180,7 @@ class ThreadController(Controller):
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             agent_class: Annotated[str, Path(title="Agent Class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
             """
@@ -181,7 +189,9 @@ class ThreadController(Controller):
             if not await ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
-            return await ThreadService.remove_agent_from_thread(thread_id, agent_class, agent_id, t)
+            return await ThreadService.remove_agent_from_thread(
+                thread_id, agent_class, agent_id, identity_provider=self.auth.identity_provider, t=t
+            )
 
         return self
 
@@ -190,7 +200,7 @@ class ThreadController(Controller):
         async def add_user_to_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             req: AddUserRequest,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
             """
@@ -201,7 +211,9 @@ class ThreadController(Controller):
 
             # TODO: Check if new users has access to all agents in thread
 
-            return await ThreadService.add_user_to_thread(thread_id, req.user_id, t)
+            return await ThreadService.add_user_to_thread(
+                thread_id, req.user_id, identity_provider=self.auth.identity_provider, t=t
+            )
 
         return self
 
@@ -210,7 +222,7 @@ class ThreadController(Controller):
         async def remove_user_from_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             remove_user_id: Annotated[str, Path(title="User ID")],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> ThreadDTO:
             """
@@ -219,6 +231,8 @@ class ThreadController(Controller):
             if not await ThreadService.user_in_thread(thread_id, user):
                 raise self.not_authorized_to_modify_exception
 
-            return await ThreadService.remove_user_from_thread(thread_id, remove_user_id, t)
+            return await ThreadService.remove_user_from_thread(
+                thread_id, remove_user_id, identity_provider=self.auth.identity_provider, t=t
+            )
 
         return self

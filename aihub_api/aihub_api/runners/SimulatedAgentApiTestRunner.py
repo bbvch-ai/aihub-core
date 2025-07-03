@@ -14,19 +14,21 @@ from aihub_lib.nats.events import (
     UserMessageEvent,
 )
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -107,7 +109,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             if not any(e.is_stop_event for e in self.simulated_events):
                 await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
+    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: AgentDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
@@ -190,13 +192,13 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+            self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_events(
+        self.agent_control_event_subscriber = AgentJSSubscriber.for_agent_instance_events(
             self.nc,
             self.topic_manager,
             js=self.js,

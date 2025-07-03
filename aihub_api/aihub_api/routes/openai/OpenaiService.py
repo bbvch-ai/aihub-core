@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Callable, Dict, List, Literal, Optional, Tuple
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
@@ -17,7 +17,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig i
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
@@ -74,7 +74,7 @@ class OpenaiService:
     @staticmethod
     async def get_models_with_assistants(
         chat_models: List[ChatLLMConfig],
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         t: LocaleHandler,
         exclude_webui_agents: bool,
@@ -116,7 +116,7 @@ class OpenaiService:
     async def get_model_with_assistants(
         chat_models: List[ChatLLMConfig],
         model_name: str,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
         t: LocaleHandler,
     ) -> ModelDetails:
@@ -206,9 +206,9 @@ class OpenaiService:
         chat_models: List[ChatLLMConfig],
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
     ) -> ChatCompletion | StreamingResponse:
         """
@@ -249,9 +249,9 @@ class OpenaiService:
         agent_class: str,
         agent_id: str,
         chat_completion_request: ChatCompletionRequest,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         locale: Optional[str] = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
@@ -310,9 +310,9 @@ class OpenaiService:
         agent_class: str,
         agent_id: str,
         chat_completion_request: ChatCompletionRequest,
-        user: AuthenticatedUser,
+        user: UserIdentity,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         locale: Optional[str] = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)

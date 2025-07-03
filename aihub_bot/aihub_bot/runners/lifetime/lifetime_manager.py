@@ -4,10 +4,10 @@ from typing import AsyncGenerator
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
@@ -39,18 +39,18 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
 
-        topic_manager = TopicManager()
+        topic_manager = AgentTopicManager()
 
         # Setup Bot In The Loop subscriber
         bot_in_the_loop_handler = BotInTheLoopHandler()
-        bot_in_the_loop_subscriber = NCSubscriber.for_all_agent_events(
+        bot_in_the_loop_subscriber = AgentNCSubscriber.for_all_agent_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=bot_in_the_loop_handler.handle_event,
         )
         await bot_in_the_loop_subscriber.start()
 
-        external_event_distributor = ExternalEventDistributor(nc=nc, js=js)
+        external_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc

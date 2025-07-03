@@ -10,7 +10,7 @@ from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
 from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
 from playground.minimal_workflow.simple_workflow.events.SimpleEventA import SimpleEventA
 
-scenarios("../tests/features/simple_agent.feature")
+scenarios("./features/simple_agent.feature")
 
 
 @given("a SimpleAgent runner", target_fixture="agent_runner")

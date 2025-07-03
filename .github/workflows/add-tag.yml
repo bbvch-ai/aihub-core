@@ -1,4 +1,4 @@
-name: Auto Tag on Push
+name: Auto Tag, Gen-Changelog & Release
 
 on:
   push:
@@ -10,26 +10,15 @@ permissions:
 
 jobs:
   version-and-tag:
-    name: Bump Version & Push Tag
+    name: Bump Version, Tag & Gen-Changelog
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Important: fetch all history for git diff to work
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '2.1.1'
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'poetry'
-
-      - name: Create new version number & tag for aihub_lib
+      - name: Create new version number & tag
         id: create-tag
         run: |
           # List all tags that match the pattern 'v*' and check if the list is empty
@@ -70,9 +59,14 @@ jobs:
       - name: Define directories
         id: define-directories
         run: |
-          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac" >> $GITHUB_OUTPUT
+          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac aihub_process" >> $GITHUB_OUTPUT
 
-      - name: Increment version-tag in pyproject.toml
+      - name: Set up Python 3.11 and Poetry
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Increment version-tag in project files
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
           update_version() {
@@ -97,20 +91,18 @@ jobs:
           update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
 
+      - name: Install Make
+        run: sudo apt-get update && sudo apt-get install -y make
 
-      - name: Install Make & tomlkit
+      - name: Install Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y make
+          # Use pip to install pipx as it's not on the runner by default
+          python -m pip install --user pipx
+          python -m pipx ensurepath
+          pipx install poetry
+          poetry install --no-interaction --no-root
 
-      - name: Validate Global Poetry Lock
-        shell: bash
-        run: poetry lock
-
-      - name: Install Global Dependencies
-        shell: bash
-        run: poetry install --no-interaction --no-root
-
-      - name: Set up SSH for GitHub
+      - name: Set up SSH for GitHub private dependencies
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
@@ -119,16 +111,14 @@ jobs:
           git config --global url."git@github.com:".insteadOf "https://github.com/"
 
       - name: Use Remote Core
-        run: |
-          make use-remote-core
+        run: make use-remote-core
 
-      - name: Install Poetry in different directories
+      - name: Install dependencies in sub-directories
         run: |
           directories="${{ steps.define-directories.outputs.directories }}"
           IFS=' ' read -r -a dir_array <<< "$directories"
           for dir in "${dir_array[@]}"; do
             cd "$dir"
-            pip install poetry
             poetry lock
             poetry install --with dev
             cd -
@@ -137,56 +127,67 @@ jobs:
       - name: Update lib version tag in poetry.lock
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
-            update_version_tag() {
-                echo "Update version tag in $1"
-                sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
-            }
-          
+          update_version_tag() {
+              echo "Update version tag in $1"
+              sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' "$1"
+          }
           directories="${{ steps.define-directories.outputs.directories }}"
-            IFS=' ' read -r -a dir_array <<< "$directories"
-            for dir in "${dir_array[@]}"; do
-                update_version_tag "$dir/poetry.lock"
-            done
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+              update_version_tag "$dir/poetry.lock"
+          done
 
-      - name: Delete existing tag (in case we re-tag)
-        run: |
-          # Remove local tag if exists
-          git tag -d ${{ steps.create-tag.outputs.version }} || true
-          # Remove remote tag
-          git push origin --delete ${{ steps.create-tag.outputs.version }} || true
-
-      - name: Commit and push changes
+      - name: Commit version updates
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
-            git add "$dir/pyproject.toml"
-            git add "$dir/poetry.lock"
-          done
-          git add aihub_lib/pyproject.toml
-          git add Makefile
-          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || true
+          git add -u
+          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || echo "No file changes to commit."
           git push origin --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Tag
+      - name: Setup LLM for Changelog Generation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "Installing llm and llm-gemini plugin..."
+          pipx install llm
+          pipx inject llm llm-gemini
+          
+          echo "Setting Gemini API key..."
+          llm keys set gemini --value "$GEMINI_API_KEY"
+          
+          echo "Ensuring changelog script is executable..."
+          chmod +x ./generate-changelog.sh
+
+      - name: Generate Changelog
+        id: changelog_generator
+        run: make changelog
+        # This step is allowed to fail. If changelog generation has an error,
+        # we still want to proceed to publish the final tag.
+        continue-on-error: true
+
+      - name: Commit Changelog and Finalize Tag
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
-          # Tag the commit
-          git tag ${VERSION}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Only amend the commit if the changelog step was successful and the file has changed.
+          if [[ "${{ steps.changelog_generator.outcome }}" == "success" && -n $(git status --porcelain changelog.md) ]]; then
+            echo "Changelog updated, amending previous commit."
+            git add changelog.md
+            git commit --amend --no-edit
+          else
+            echo "No new changelog entries were generated, or the step failed. Proceeding without changelog update."
+          fi
           
-          # Push the tags
-          git push origin ${VERSION}
-        env:
-          GIT_COMMITTER_NAME: ${{ github.actor }}
-          GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.github.com
-          GIT_AUTHOR_NAME: ${{ github.actor }}
-          GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          echo "Creating final tag ${VERSION} and pushing..."
+          git tag -f ${VERSION}
+          git push origin --force
+          git push origin --tags --force
 
       - name: Clean up SSH keys
         run: |

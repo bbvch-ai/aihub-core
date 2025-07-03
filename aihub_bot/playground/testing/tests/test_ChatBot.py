@@ -11,6 +11,12 @@ import pytest
 
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 
@@ -48,7 +54,10 @@ def patch_requests_adapter(monkeypatch, test_runner):
 async def test_runner():
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     runner.with_simple_chunk_events()
-    runner.mount(HealthController().get_health(), AgentChatController().completions_json().completions_stream())
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    runner.mount(
+        HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json().completions_stream()
+    )
     await runner.start_simulation()
     return runner
 

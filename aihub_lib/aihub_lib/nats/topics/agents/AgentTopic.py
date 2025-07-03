@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import Field
 
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
@@ -24,19 +24,25 @@ class AgentTopic(PartialAgentTopic):
     then this AgentTopic can represent it, providing quick field-level access and serialization.
     """
 
-    agent_class: str = Field(..., description="The agent's class identifier.")
-    agent_id: str = Field(..., description="Unique identifier for the specific agent instance.")
-    run_id: str = Field(..., description="The run ID within the thread.")
-    thread_id: str = Field(..., description="Unique identifier for the conversation or workflow thread.")
-    display_id: str = Field(..., description="UI-facing grouping ID, used to distinguish or group related runs.")
-    event_type: str = Field(..., description="Type of event (e.g., 'display_event', 'control_event').")
-    event_name: str = Field(..., description="Name of the event (e.g., 'start', 'stop', 'error').")
-    event_id: str = Field(..., description="Unique identifier for this particular event instance.")
+    agent_class: Annotated[str, Field(description="The agent's class identifier.")]
+    agent_id: Annotated[str, Field(description="Unique identifier for the specific agent instance.")]
+    run_id: Annotated[str, Field(description="The run ID within the thread.")]
+    thread_id: Annotated[str, Field(description="Unique identifier for the conversation or workflow thread.")]
+    display_id: Annotated[str, Field(description="UI-facing grouping ID, used to distinguish or group related runs.")]
+    event_type: Annotated[str, Field(description="Type of event (e.g., 'display_event', 'control_event').")]
+    event_name: Annotated[
+        str, Field(description="Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').")
+    ]
+    event_id: Annotated[str, Field(description="Unique identifier for this particular event instance.")]
+
+    @property
+    def execution_context_id(self) -> str:
+        return self.run_id
 
     def __str__(self) -> str:
         """Returns the full subject string for this agent topic."""
         return (
-            f"{TopicManager.AGENT_TOPIC}."
+            f"{AgentTopicManager.AGENT_TOPIC}."
             f"{self.agent_class}."
             f"{self.agent_id}."
             f"{self.thread_id}."
