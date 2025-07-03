@@ -5,12 +5,12 @@ from pydantic import BaseModel
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
-from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel, Level2Model, Level3Model
+from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel
 
 
 class TestDataProvider:
     """Shared test data for all test scenarios"""
-    
+
     @staticmethod
     def get_complete_instance_data():
         return {
@@ -18,16 +18,13 @@ class TestDataProvider:
             "nested_model": {
                 "nested_field": "nested_value",
                 "nested_optional": 123,
-                "level2": {
-                    "level2_data": "level2_value", 
-                    "level3": {"deep_value": "deep_test", "deep_number": 777}
-                },
+                "level2": {"level2_data": "level2_value", "level3": {"deep_value": "deep_test", "deep_number": 777}},
             },
             "union_field": "string_value",
             "complex_union": "complex_string",
             "list_of_nested": [{"nested_field": "item1"}, {"nested_field": "item2"}],
         }
-    
+
     @staticmethod
     def get_minimal_instance_data():
         return {
@@ -96,7 +93,7 @@ def output_instance_minimal(output_model) -> BaseModel:
 
 class TestModelCreation:
     """Tests for basic model creation and naming"""
-    
+
     def test_input_model_creation(self, input_model):
         assert input_model is not None
         assert issubclass(input_model, BaseModel)
@@ -114,10 +111,10 @@ class TestModelCreation:
 
 class TestFieldExclusion:
     """Tests for proper field exclusion in input and output models"""
-    
+
     INPUT_EXCLUDED = {"event_id", "created_at", "user", "locale", "display_name", "display_description"}
     OUTPUT_EXCLUDED = {"event_id", "created_at", "_event_name", "_parent_event_names"}
-    
+
     def test_input_model_excluded_fields(self, input_model):
         for field in self.INPUT_EXCLUDED:
             assert field not in input_model.model_fields, f"Field {field} should be excluded from input model"
@@ -128,16 +125,28 @@ class TestFieldExclusion:
 
     def test_input_model_included_fields(self, input_model):
         expected_fields = {
-            "test_field", "test_field_with_default", "nested_model", "optional_nested", 
-            "union_field", "complex_union", "list_of_nested", "optional_union"
+            "test_field",
+            "test_field_with_default",
+            "nested_model",
+            "optional_nested",
+            "union_field",
+            "complex_union",
+            "list_of_nested",
+            "optional_union",
         }
         for field in expected_fields:
             assert field in input_model.model_fields, f"Field {field} should be included in input model"
 
     def test_output_model_included_fields(self, output_model):
         expected_fields = {
-            "test_field", "test_field_with_default", "nested_model", "optional_nested", 
-            "union_field", "complex_union", "list_of_nested", "optional_union"
+            "test_field",
+            "test_field_with_default",
+            "nested_model",
+            "optional_nested",
+            "union_field",
+            "complex_union",
+            "list_of_nested",
+            "optional_union",
         }
         for field in expected_fields:
             assert field in output_model.model_fields, f"Field {field} should be included in output model"
@@ -145,7 +154,7 @@ class TestFieldExclusion:
 
 class TestInstanceCreation:
     """Tests for creating instances of generated models"""
-    
+
     def test_input_instance_creation(self, input_instance_complete):
         assert isinstance(input_instance_complete, BaseModel)
         assert input_instance_complete.test_field == "test_value"
@@ -168,19 +177,19 @@ class TestInstanceCreation:
 
 class TestNestedModels:
     """Tests for nested model handling"""
-    
+
     def test_nested_model_structure(self, input_instance_complete, input_model_factory):
         _, creation_method = input_model_factory
         nested_model = input_instance_complete.nested_model
-        
+
         if creation_method == "class":
             # When created from class, we get the actual NestedTestModel type
             assert isinstance(nested_model, NestedTestModel)
         else:
             # When created from specs, we get dynamically created models
-            assert hasattr(nested_model, 'nested_field')
-            assert hasattr(nested_model, 'nested_optional')
-        
+            assert hasattr(nested_model, "nested_field")
+            assert hasattr(nested_model, "nested_optional")
+
         assert nested_model.nested_field == "nested_value"
         assert nested_model.nested_optional == 123
 
@@ -188,7 +197,7 @@ class TestNestedModels:
         for instance in [input_instance_complete, output_instance_complete]:
             level2 = instance.nested_model.level2
             assert level2.level2_data == "level2_value"
-            
+
             level3 = level2.level3
             assert level3.deep_value == "deep_test"
             assert level3.deep_number == 777
@@ -196,7 +205,7 @@ class TestNestedModels:
     def test_nested_model_field_types(self, input_model, input_model_factory):
         _, creation_method = input_model_factory
         nested_field = input_model.model_fields["nested_model"]
-        
+
         if creation_method == "class":
             assert nested_field.annotation == NestedTestModel
         else:
@@ -207,7 +216,7 @@ class TestNestedModels:
 
 class TestUnionTypes:
     """Tests for union type handling"""
-    
+
     def test_string_union(self, input_instance_complete, output_instance_complete):
         for instance in [input_instance_complete, output_instance_complete]:
             assert instance.union_field == "string_value"
@@ -222,13 +231,13 @@ class TestUnionTypes:
 
     def test_complex_union_nested(self, input_instance_minimal, output_instance_minimal):
         for instance in [input_instance_minimal, output_instance_minimal]:
-            assert hasattr(instance.complex_union, 'nested_field')
+            assert hasattr(instance.complex_union, "nested_field")
             assert instance.complex_union.nested_field == "complex_nested"
 
 
 class TestListHandling:
     """Tests for list of nested models"""
-    
+
     def test_list_of_nested(self, input_instance_complete, output_instance_complete):
         for instance in [input_instance_complete, output_instance_complete]:
             assert len(instance.list_of_nested) == 2
@@ -242,12 +251,12 @@ class TestListHandling:
 
 class TestSchemaValidation:
     """Tests specific to schema-based model creation"""
-    
+
     def test_schema_structure(self, event_specs):
         schema = event_specs.event_schema
         assert "properties" in schema
         assert "$defs" in schema
-        
+
         # Check nested model reference
         nested_prop = schema["properties"]["nested_model"]
         assert "$ref" in nested_prop
@@ -255,7 +264,7 @@ class TestSchemaValidation:
 
     def test_nested_definitions(self, event_specs):
         defs = event_specs.event_schema["$defs"]
-        
+
         # Check NestedTestModel definition
         nested_def = defs["NestedTestModel"]
         assert nested_def["type"] == "object"
@@ -264,12 +273,12 @@ class TestSchemaValidation:
 
     def test_deep_nesting_definitions(self, event_specs):
         defs = event_specs.event_schema["$defs"]
-        
+
         # Check Level2Model
         level2_def = defs["Level2Model"]
         assert "level3" in level2_def["properties"]
         assert level2_def["properties"]["level3"]["$ref"] == "#/$defs/Level3Model"
-        
+
         # Check Level3Model
         level3_def = defs["Level3Model"]
         assert "deep_value" in level3_def["properties"]
@@ -278,27 +287,8 @@ class TestSchemaValidation:
     def test_union_schema(self, event_specs):
         schema = event_specs.event_schema
         union_prop = schema["properties"]["union_field"]
-        
+
         assert "anyOf" in union_prop
         types = [item.get("type") for item in union_prop["anyOf"]]
         assert "string" in types
         assert "integer" in types
-
-
-class TestBackwardCompatibility:
-    """Tests for standalone convenience functions"""
-    
-    def test_convenience_functions_exist(self):
-        from aihub_api.events.EventModelCreationService import (
-            create_input_model, create_output_model, 
-            create_input_model_from_specs, create_output_model_from_specs
-        )
-        
-        # Test they return the same results as the service methods
-        input_from_class = create_input_model(TestEvent)
-        input_from_service = EventModelCreationService.create_input_model(TestEvent)
-        assert input_from_class.__name__ == input_from_service.__name__
-        
-        output_from_class = create_output_model(TestEvent)
-        output_from_service = EventModelCreationService.create_output_model(TestEvent)
-        assert output_from_class.__name__ == output_from_service.__name__

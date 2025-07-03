@@ -13,35 +13,30 @@ class EventModelCreationService:
 
     @staticmethod
     def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
-        """Creates an input model for an event class by removing fields with generated values."""
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._input_excluded_fields, "Input"
         )
 
     @staticmethod
     def create_output_model(event_class: Type[T]) -> Type[BaseModel]:
-        """Creates an output model for an event class by removing fields with secret values."""
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._output_excluded_fields, "Output"
         )
 
     @staticmethod
     def create_input_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
-        """Creates an input model from EventSpecs by removing fields with generated values."""
         return EventModelCreationService._create_model_from_specs(
             event_specs, EventModelCreationService._input_excluded_fields, "Input"
         )
 
     @staticmethod
     def create_output_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
-        """Creates an output model from EventSpecs by removing fields with secret values."""
         return EventModelCreationService._create_model_from_specs(
             event_specs, EventModelCreationService._output_excluded_fields, "Output"
         )
 
     @staticmethod
     def _create_model_from_class(event_class: Type[T], excluded_fields: set, suffix: str) -> Type[BaseModel]:
-        """Create a model from an event class with specified exclusions."""
         fields = {}
         for name, field_info in event_class.model_fields.items():
             if name not in excluded_fields:
@@ -59,7 +54,6 @@ class EventModelCreationService:
 
     @staticmethod
     def _create_model_from_specs(event_specs: EventSpecs, excluded_fields: set, suffix: str) -> Type[BaseModel]:
-        """Create a model from EventSpecs with specified exclusions."""
         schema = event_specs.event_schema
         properties = schema.get("properties", {})
         required = set(schema.get("required", []))
@@ -84,7 +78,6 @@ class EventModelCreationService:
 
     @staticmethod
     def _json_schema_to_python_type(field_schema: Dict[str, Any], definitions: Dict[str, Any] = None) -> Type:
-        """Convert JSON schema type to Python type."""
         if definitions is None:
             definitions = {}
 
@@ -127,7 +120,6 @@ class EventModelCreationService:
 
     @staticmethod
     def _create_field_info(field_schema: Dict[str, Any], is_required: bool):
-        """Create Pydantic Field info from JSON schema."""
         kwargs = {}
 
         if "description" in field_schema:
@@ -144,7 +136,6 @@ class EventModelCreationService:
     def _create_nested_model_from_schema(
         object_schema: Dict[str, Any], definitions: Dict[str, Any] = None
     ) -> Type[BaseModel]:
-        """Create a dynamic Pydantic model from a JSON object schema."""
         if definitions is None:
             definitions = {}
 
@@ -171,7 +162,6 @@ class EventModelCreationService:
 
     @staticmethod
     def _handle_union_type(any_of_schemas: List[Dict[str, Any]], definitions: Dict[str, Any] = None) -> Type:
-        """Handle anyOf/Union types from JSON schema."""
         if definitions is None:
             definitions = {}
 
@@ -193,20 +183,3 @@ class EventModelCreationService:
                 return Union[tuple(types)]
         else:
             return Any
-
-
-# Convenience functions for backward compatibility
-def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
-    return EventModelCreationService.create_input_model(event_class)
-
-
-def create_output_model(event_class: Type[T]) -> Type[BaseModel]:
-    return EventModelCreationService.create_output_model(event_class)
-
-
-def create_input_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
-    return EventModelCreationService.create_input_model_from_specs(event_specs)
-
-
-def create_output_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
-    return EventModelCreationService.create_output_model_from_specs(event_specs)
