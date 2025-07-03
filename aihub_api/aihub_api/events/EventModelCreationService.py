@@ -8,6 +8,8 @@ T = TypeVar("T", bound=BaseEvent)
 
 
 class EventModelCreationService:
+    _input_suffix = "Input"
+    _output_suffix = "Output"
     _input_excluded_fields = {"event_id", "created_at", "user", "locale", "display_name", "display_description"}
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(
@@ -19,25 +21,25 @@ class EventModelCreationService:
     @staticmethod
     def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
         return EventModelCreationService._create_model_from_class(
-            event_class, EventModelCreationService._input_excluded_fields, "Input"
+            event_class, EventModelCreationService._input_excluded_fields, EventModelCreationService._input_suffix
         )
 
     @staticmethod
     def create_output_model(event_class: Type[T]) -> Type[BaseModel]:
         return EventModelCreationService._create_model_from_class(
-            event_class, EventModelCreationService._output_excluded_fields, "Output"
+            event_class, EventModelCreationService._output_excluded_fields, EventModelCreationService._output_suffix
         )
 
     @staticmethod
     def create_input_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
         return EventModelCreationService._create_model_from_specs(
-            event_specs, EventModelCreationService._input_excluded_fields, "Input"
+            event_specs, EventModelCreationService._input_excluded_fields, EventModelCreationService._input_suffix
         )
 
     @staticmethod
     def create_output_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
         return EventModelCreationService._create_model_from_specs(
-            event_specs, EventModelCreationService._output_excluded_fields, "Output"
+            event_specs, EventModelCreationService._output_excluded_fields, EventModelCreationService._output_suffix
         )
 
     @staticmethod
