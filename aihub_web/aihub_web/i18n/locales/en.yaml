@@ -7,6 +7,23 @@ languages:
   it: "Italian"
   fr: "French"
 
+http_error:
+  code:
+    # 4xx Client Errors
+    400: "Invalid request. Please check the address and try again."
+    401: "Please sign in to access this page."
+    403: "You don't have permission to view this."
+    404: "Sorry, we couldn't find that page."
+    405: "That action is not allowed here."
+    408: "The request timed out. Please try again."
+    429: "Too many requests. Please wait a moment."
+
+    # 5xx Server Errors
+    500: "Something went wrong on our servers."
+    502: "A server error occurred. Please try again."
+    503: "Our service is temporarily unavailable."
+    504: "A server is not responding. Please try again."
+
 user:
   title: "Benutzer"
   logout: "Logout"

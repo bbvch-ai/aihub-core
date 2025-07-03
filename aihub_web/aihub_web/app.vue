@@ -1,6 +1,7 @@
 <template>
   <NuxtLayout>
     <NuxtPage />
+    <Toast />
   </NuxtLayout>
 </template>
 
@@ -10,7 +11,8 @@ import 'gridstack/dist/gridstack.min.css'
 import { client } from './sdk/client/client.gen'
 
 const { getToken } = useAuth()
-const { locale } = useI18n()
+const { t, locale } = useI18n()
+const toast = useToast()
 
 client.setConfig({
   baseURL: '/api/v1',
@@ -19,6 +21,10 @@ client.setConfig({
   },
   onRequest: ({ options }) => {
     options.headers.set('lang', locale.value)
+  },
+  onResponseError: async ({ response }) => {
+    console.error('This is the options on error', response)
+    toast.add({ severity: 'error', summary: t(`http_error.code.${response.status}`), detail: response._data.detail, life: 10_000 })
   },
 })
 </script>

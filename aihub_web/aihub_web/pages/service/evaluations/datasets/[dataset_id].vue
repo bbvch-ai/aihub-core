@@ -15,7 +15,6 @@
         @click="safeDataset($event)"
       />
     </div>
-    <Toast />
   </StructuralColumn>
 </template>
 
