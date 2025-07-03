@@ -10,6 +10,11 @@ T = TypeVar("T", bound=BaseEvent)
 class EventModelCreationService:
     _input_excluded_fields = {"event_id", "created_at", "user", "locale", "display_name", "display_description"}
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
+    _model_config_dict = ConfigDict(
+        arbitrary_types_allowed=False,
+        populate_by_name=True,
+        use_enum_values=True,
+    )
 
     @staticmethod
     def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
@@ -45,11 +50,7 @@ class EventModelCreationService:
         return create_model(
             f"{event_class.event_name_from_class()}{suffix}",
             **fields,
-            __config__=ConfigDict(
-                arbitrary_types_allowed=False,
-                populate_by_name=True,
-                use_enum_values=True,
-            ),
+            __config__=EventModelCreationService._model_config_dict,
         )
 
     @staticmethod
@@ -67,13 +68,7 @@ class EventModelCreationService:
                 fields[field_name] = (field_type, field_info)
 
         return create_model(
-            f"{event_specs.event_name}{suffix}",
-            **fields,
-            __config__=ConfigDict(
-                arbitrary_types_allowed=False,
-                populate_by_name=True,
-                use_enum_values=True,
-            ),
+            f"{event_specs.event_name}{suffix}", **fields, __config__=EventModelCreationService._model_config_dict
         )
 
     @staticmethod
@@ -150,15 +145,7 @@ class EventModelCreationService:
 
         model_name = object_schema.get("title", "DynamicNestedModel")
 
-        return create_model(
-            model_name,
-            **fields,
-            __config__=ConfigDict(
-                arbitrary_types_allowed=False,
-                populate_by_name=True,
-                use_enum_values=True,
-            ),
-        )
+        return create_model(model_name, **fields, __config__=EventModelCreationService._model_config_dict)
 
     @staticmethod
     def _handle_union_type(any_of_schemas: List[Dict[str, Any]], definitions: Dict[str, Any] = None) -> Type:
