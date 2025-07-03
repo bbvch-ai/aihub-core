@@ -174,8 +174,11 @@ class EventModelCreationService:
             else:
                 types.append(EventModelCreationService._json_schema_to_python_type(schema, definitions))
 
-        if len(types) == 1 and has_null:
-            return Optional[types[0]]
+        if len(types) == 1:
+            if has_null:
+                return Optional[types[0]]
+            else:
+                return types[0]
         elif len(types) > 1:
             if has_null:
                 return Optional[Union[tuple(types)]]
