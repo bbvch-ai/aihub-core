@@ -28,9 +28,7 @@ class DoclingConfig(BaseSettings):
         "json_docling",
         "audio",
     ]
-    DOCLING_TO_FORMATS: Annotated[
-        List[str], Field(description="Output formats")
-    ] = ["md", "json"]
+    DOCLING_TO_FORMATS: Annotated[List[str], Field(description="Output formats")] = ["md", "json"]
     DOCLING_IMAGE_EXPORT_MODE: Annotated[
         str,
         Field(

@@ -30,6 +30,7 @@ from llama_index.core.schema import TextNode
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
 
 
 def readable_date(timestamp: int):
@@ -179,5 +180,30 @@ def ref_doc_metadata_table(ref_docs: List[RefDocDocument]):
         TableColumn(INSERTED_AT, "int"),
     ]
     records = [TableRecord(ref_doc_table_row(ref_doc)) for ref_doc in ref_docs]
+    table_schema = TableSchema(columns=columns)
+    return MetadataValue.table(records=records, schema=table_schema)
+
+
+def sharepoint_file_table_row(sharepoint_file: MinimalSharePointFile) -> dict:
+    return {
+        "name": sharepoint_file.name,
+        "modified": sharepoint_file.modified,
+        "size": str(sharepoint_file.size),
+        "id": sharepoint_file.id,
+        "etag": sharepoint_file.etag or "",
+        "content_type": sharepoint_file.content_type or "",
+    }
+
+
+def sharepoint_metadata_table(sharepoint_files: List[MinimalSharePointFile]):
+    columns = [
+        TableColumn("name", "string"),
+        TableColumn("modified", "string"),
+        TableColumn("size", "string"),
+        TableColumn("id", "string"),
+        TableColumn("etag", "string"),
+        TableColumn("content_type", "string"),
+    ]
+    records = [TableRecord(sharepoint_file_table_row(sharepoint_file)) for sharepoint_file in sharepoint_files]
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=records, schema=table_schema)
