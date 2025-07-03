@@ -1,7 +1,13 @@
-from aihub_lib.nats.events import StopEvent
+from typing import Annotated
+
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
+from aihub_lib.nats.events import StopEvent
+
 
 class RetrievalResponseEvent(StopEvent):
-    context_message: ChatMessage = Field(..., description="The context message retrieved from the vector store.")
+    """
+    Event for returning a response from the retrieval agent containing the context message.
+    """
+    context_message: Annotated[ChatMessage, Field(description="The ordered modes as a context message.")]
