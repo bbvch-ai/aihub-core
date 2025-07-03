@@ -1,11 +1,11 @@
-from typing import Type
+from typing import Type, get_origin, get_args, Union, List
 
 import pytest
 from pydantic import BaseModel
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
-from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel
+from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel, Level2Model, Level3Model
 
 
 class TestDataProvider:
@@ -150,6 +150,264 @@ class TestFieldExclusion:
         }
         for field in expected_fields:
             assert field in output_model.model_fields, f"Field {field} should be included in output model"
+
+
+class TestFieldTyping:
+    """Tests to ensure all field types and annotations are correctly preserved"""
+
+    def test_basic_field_types(self, input_model, output_model):
+        """Test basic string and int field types"""
+        for model in [input_model, output_model]:
+            # Test required string field
+            test_field = model.model_fields["test_field"]
+            assert test_field.annotation == str
+            assert test_field.is_required()
+
+            # Test int field with default
+            test_field_default = model.model_fields["test_field_with_default"]
+            assert test_field_default.annotation == int
+            assert not test_field_default.is_required()
+            assert test_field_default.default == 42
+
+    def test_nested_model_types(self, input_model, output_model, input_model_factory):
+        """Test nested model field types"""
+        _, creation_method = input_model_factory
+
+        for model in [input_model, output_model]:
+            # Required nested model
+            nested_field = model.model_fields["nested_model"]
+            # Both class and specs-based creation result in BaseModel subclasses
+            assert isinstance(nested_field.annotation, type)
+            assert issubclass(nested_field.annotation, BaseModel)
+            # For class-based, verify the name matches
+            if creation_method == "class":
+                assert nested_field.annotation.__name__ == "NestedTestModel"
+            assert nested_field.is_required()
+
+            # Optional nested model
+            optional_nested_field = model.model_fields["optional_nested"]
+            assert not optional_nested_field.is_required()
+            assert optional_nested_field.default is None
+
+            # Check union structure for optional field
+            origin = get_origin(optional_nested_field.annotation)
+            if origin is Union:
+                args = get_args(optional_nested_field.annotation)
+                assert len(args) == 2
+                assert type(None) in args
+                # Other arg should be a BaseModel subclass
+                non_none_args = [arg for arg in args if arg is not type(None)]
+                assert len(non_none_args) == 1
+                assert isinstance(non_none_args[0], type)
+                assert issubclass(non_none_args[0], BaseModel)
+
+    def test_union_field_types(self, input_model, output_model):
+        """Test union type fields"""
+        for model in [input_model, output_model]:
+            # Simple union: Union[str, int]
+            union_field = model.model_fields["union_field"]
+            origin = get_origin(union_field.annotation)
+            args = get_args(union_field.annotation)
+            assert origin is Union
+            assert str in args
+            assert int in args
+            assert union_field.is_required()
+
+            # Optional union: Optional[Union[str, int]]
+            optional_union_field = model.model_fields["optional_union"]
+            assert not optional_union_field.is_required()
+            assert optional_union_field.default is None
+
+            # Check the inner union type
+            if get_origin(optional_union_field.annotation) is Union:
+                args = get_args(optional_union_field.annotation)
+                # Should be Union[str, int, None] or similar
+                assert type(None) in args
+
+    def test_complex_union_types(self, input_model, output_model, input_model_factory):
+        """Test union types with nested models"""
+        _, creation_method = input_model_factory
+
+        for model in [input_model, output_model]:
+            complex_union_field = model.model_fields["complex_union"]
+            origin = get_origin(complex_union_field.annotation)
+            args = get_args(complex_union_field.annotation)
+
+            assert origin is Union
+            assert str in args
+            # One of the args should be a BaseModel subclass (dynamically created)
+            nested_types = [arg for arg in args if isinstance(arg, type) and issubclass(arg, BaseModel)]
+            assert len(nested_types) >= 1
+            # For class-based, verify the nested type name
+            if creation_method == "class":
+                assert any(arg.__name__ == "NestedTestModel" for arg in nested_types)
+            assert complex_union_field.is_required()
+
+    def test_list_field_types(self, input_model, output_model, input_model_factory):
+        """Test list type fields"""
+        _, creation_method = input_model_factory
+
+        for model in [input_model, output_model]:
+            list_field = model.model_fields["list_of_nested"]
+            origin = get_origin(list_field.annotation)
+            args = get_args(list_field.annotation)
+
+            assert origin is list or origin is List
+            assert len(args) == 1
+
+            # The list element should be a BaseModel subclass (dynamically created)
+            assert isinstance(args[0], type)
+            assert issubclass(args[0], BaseModel)
+            # For class-based, verify the element type name
+            if creation_method == "class":
+                assert args[0].__name__ == "NestedTestModel"
+            assert list_field.is_required()
+
+    def test_nested_model_field_types(self, input_model_factory):
+        """Test field types within nested models"""
+        input_model, creation_method = input_model_factory
+
+        if creation_method == "class":
+            # Test NestedTestModel field types
+            assert NestedTestModel.model_fields["nested_field"].annotation == str
+            assert NestedTestModel.model_fields["nested_field"].is_required()
+
+            nested_optional = NestedTestModel.model_fields["nested_optional"]
+            origin = get_origin(nested_optional.annotation)
+            args = get_args(nested_optional.annotation)
+            assert origin is Union
+            assert int in args
+            assert type(None) in args
+            assert not nested_optional.is_required()
+            assert nested_optional.default is None
+
+            # Test Level2Model field types
+            assert Level2Model.model_fields["level2_data"].annotation == str
+            assert Level2Model.model_fields["level2_data"].is_required()
+            assert Level2Model.model_fields["level3"].annotation == Level3Model
+            assert Level2Model.model_fields["level3"].is_required()
+
+            # Test Level3Model field types
+            assert Level3Model.model_fields["deep_value"].annotation == str
+            assert Level3Model.model_fields["deep_value"].is_required()
+            assert Level3Model.model_fields["deep_number"].annotation == int
+            assert not Level3Model.model_fields["deep_number"].is_required()
+            assert Level3Model.model_fields["deep_number"].default == 999
+
+    def test_field_defaults_preservation(self, input_model, output_model):
+        """Test that default values are correctly preserved"""
+        for model in [input_model, output_model]:
+            # Field with explicit default
+            default_field = model.model_fields["test_field_with_default"]
+            assert default_field.default == 42
+
+            # Optional fields with None default
+            optional_nested = model.model_fields["optional_nested"]
+            assert optional_nested.default is None
+
+            optional_union = model.model_fields["optional_union"]
+            assert optional_union.default is None
+
+    def test_required_vs_optional_fields(self, input_model, output_model):
+        """Test that required/optional status is correctly preserved"""
+        for model in [input_model, output_model]:
+            # Required fields
+            required_fields = ["test_field", "nested_model", "union_field", "complex_union", "list_of_nested"]
+            for field_name in required_fields:
+                field = model.model_fields[field_name]
+                assert field.is_required(), f"Field {field_name} should be required"
+
+            # Optional fields
+            optional_fields = ["test_field_with_default", "optional_nested", "optional_union"]
+            for field_name in optional_fields:
+                field = model.model_fields[field_name]
+                assert not field.is_required(), f"Field {field_name} should be optional"
+
+    def test_type_annotation_consistency(self, input_model, output_model):
+        """Test that input and output models have consistent type annotations"""
+        input_fields = input_model.model_fields
+        output_fields = output_model.model_fields
+
+        # All fields present in both models should have the same type annotations
+        common_fields = set(input_fields.keys()) & set(output_fields.keys())
+
+        for field_name in common_fields:
+            input_field = input_fields[field_name]
+            output_field = output_fields[field_name]
+
+            # For basic types, annotations should be identical
+            if input_field.annotation in (str, int, float, bool):
+                assert (
+                    input_field.annotation == output_field.annotation
+                ), f"Field {field_name} has inconsistent basic type annotations"
+
+            # For complex types, check structural equivalence
+            else:
+                input_origin = get_origin(input_field.annotation)
+                output_origin = get_origin(output_field.annotation)
+
+                if input_origin is not None or output_origin is not None:
+                    # Both should have the same origin (Union, List, etc.)
+                    assert input_origin == output_origin, f"Field {field_name} has different generic origins"
+
+                    # For nested models and complex types, verify structural compatibility
+                    input_args = get_args(input_field.annotation)
+                    output_args = get_args(output_field.annotation)
+                    assert len(input_args) == len(
+                        output_args
+                    ), f"Field {field_name} has different number of type arguments"
+
+                else:
+                    # Both should be BaseModel subclasses with same name
+                    if isinstance(input_field.annotation, type) and issubclass(input_field.annotation, BaseModel):
+                        assert isinstance(
+                            output_field.annotation, type
+                        ), f"Field {field_name} type mismatch: input is BaseModel, output is not"
+                        assert issubclass(
+                            output_field.annotation, BaseModel
+                        ), f"Field {field_name} output type is not BaseModel subclass"
+                        assert (
+                            input_field.annotation.__name__ == output_field.annotation.__name__
+                        ), f"Field {field_name} BaseModel names don't match"
+
+            # Compare required status
+            assert (
+                input_field.is_required() == output_field.is_required()
+            ), f"Field {field_name} has inconsistent required status between input and output models"
+
+            # Compare defaults
+            assert (
+                input_field.default == output_field.default
+            ), f"Field {field_name} has inconsistent defaults between input and output models"
+
+    def test_python_version_compatibility(self, input_model, output_model):
+        """Test that type annotations work correctly across Python versions"""
+        for model in [input_model, output_model]:
+            for field_name, field in model.model_fields.items():
+                # Ensure annotation is not None and is a valid type
+                assert field.annotation is not None, f"Field {field_name} has None annotation"
+
+                # Test that we can get origin and args without errors
+                try:
+                    origin = get_origin(field.annotation)
+                    args = get_args(field.annotation)
+                    # These should not raise exceptions
+                except Exception as e:
+                    pytest.fail(f"Failed to get origin/args for field {field_name}: {e}")
+
+    def test_generic_type_preservation(self, input_model, output_model):
+        """Test that generic types (List, Union, Optional) are correctly preserved"""
+        for model in [input_model, output_model]:
+            # Test List type
+            list_field = model.model_fields["list_of_nested"]
+            assert get_origin(list_field.annotation) in [list, List]
+
+            # Test Union types
+            union_field = model.model_fields["union_field"]
+            assert get_origin(union_field.annotation) is Union
+
+            complex_union_field = model.model_fields["complex_union"]
+            assert get_origin(complex_union_field.annotation) is Union
 
 
 class TestInstanceCreation:
