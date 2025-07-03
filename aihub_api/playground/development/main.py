@@ -38,7 +38,7 @@ from aihub_lib.nats.events import UserMessageEvent, LLMStopEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
-
+from playground.development.DevelopmentOpenaiResourceSettings import DevelopmentOpenaiResourceSettings
 
 load_dotenv()
 
@@ -67,6 +67,8 @@ async def main():
     # auth = DangerousDevelopmentOnlyAuthHandler(
     #     identity_provider=DangerousDevelopmentOnlyIdentityProvider()
     # )
+
+    azure_openai_settings = DevelopmentOpenaiResourceSettings()
 
     runner.mount(
         HealthController(auth=auth).get_health(),
@@ -106,7 +108,7 @@ async def main():
                     base_url="https://bbvaihub-openai-sui.openai.azure.com",
                     api_version="2024-12-01-preview",
                     embedding_tokens_costs_per_thousand=0.0,
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY_SWISS"),
+                    api_key=azure_openai_settings.OPENAI_API_KEY,
                 ),
             ],
             chat_models=[
@@ -122,7 +124,7 @@ async def main():
                     api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY_SWISS"),
+                    api_key=azure_openai_settings.OPENAI_API_KEY,
                 ),
                 AzureOpenAILLMConfig(
                     name="gpt-4o-mini",
@@ -130,7 +132,7 @@ async def main():
                     api_version="2025-01-01-preview",
                     prompt_tokens_costs_per_thousand=0.0045,
                     completion_tokens_costs_per_thousand=0.0133,
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY_SWISS"),
+                    api_key=azure_openai_settings.OPENAI_API_KEY,
                 ),
             ],
             image_models=[
@@ -138,7 +140,7 @@ async def main():
                     name="dall-e-3",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2024-02-01",
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY_SWEDEN"),
+                    api_key=azure_openai_settings.AZURE_OPENAI_API_KEY_SWEDEN_WHISPER,
                 )
             ],
             stt_models=[
@@ -146,7 +148,7 @@ async def main():
                     name="whisper-1",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2024-06-01",
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY_SWEDEN"),
+                    api_key=azure_openai_settings.AZURE_OPENAI_API_KEY_SWEDEN_WHISPER,
                 )
             ],
             tts_models=[
@@ -154,7 +156,7 @@ async def main():
                     name="tts-1-hd",
                     base_url="https://aihub-dev-openai-swe-whisper.openai.azure.com",
                     api_version="2024-05-01-preview",
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY_SWEDEN"),
+                    api_key=azure_openai_settings.AZURE_OPENAI_API_KEY_SWEDEN_WHISPER,
                 )
             ],
         )
@@ -173,7 +175,7 @@ async def main():
                 api_version="2025-01-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,
-                api_key=os.getenv("AZURE_OPENAI_API_KEY_SWISS"),
+                api_key=azure_openai_settings.OPENAI_API_KEY,
             ),
         )
         .create_dataset()
