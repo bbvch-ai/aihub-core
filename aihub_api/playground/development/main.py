@@ -2,7 +2,6 @@ import asyncio
 from os.path import join, dirname, abspath, isdir
 
 import nest_asyncio
-from dotenv import load_dotenv
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
