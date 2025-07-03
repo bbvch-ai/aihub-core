@@ -28,7 +28,7 @@ runs:
   using: "composite"
   steps:
     - name: PR Agent action step
-      uses: Codium-ai/pr-agent@main
+      uses: qodo-ai/pr-agent@main
       env:
         GITHUB_ACTION.AUTO_REVIEW: true
         GITHUB_ACTION.AUTO_DESCRIBE: true

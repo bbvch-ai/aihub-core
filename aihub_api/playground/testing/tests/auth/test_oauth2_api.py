@@ -10,6 +10,9 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
@@ -99,7 +102,7 @@ def expected_user_data():
 def oauth2_api_client():
     """Return a TestClient with OAuth2AuthHandler and UserController mounted."""
     runner = ApiTestRunner()
-    auth = OAuth2AuthHandler()
+    auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(UserController(auth=auth).get_my_user())
     return TestClient(runner.get_app())
 

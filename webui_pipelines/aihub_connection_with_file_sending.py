@@ -10,7 +10,7 @@ import requests
 import hashlib
 import uuid
 import json
-from typing import Optional, List, Dict, Any, Generator, AsyncGenerator, Union
+from typing import Optional, List, Dict, Any, Generator, AsyncGenerator, Union, Annotated
 from bson import ObjectId
 import asyncio
 import logging
@@ -143,22 +143,18 @@ def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
 
 class Pipe:
     class Valves(BaseModel):
-        NAME_PREFIX: str = Field(
-            default="aihub/",
+        NAME_PREFIX: Annotated[str, Field(
             description="Prefix to be added before model names.",
-        )
-        AIHUB_API_BASE_URL: str = Field(
-            default="http://localhost:8000/api/v1/openai",
+        )] = "aihub/"
+        AIHUB_API_BASE_URL: Annotated[str, Field(
             description="Base URL for accessing OpenAI API compatible AI-Hub endpoints.",
-        )
-        AIHUB_API_KEY: str = Field(
-            default="",
+        )] = "http://localhost:8000/api/v1/openai"
+        AIHUB_API_KEY: Annotated[str, Field(
             description="API key for authenticating requests to the OpenAI API.",
-        )
-        EVENT_API_BASE_URL: str = Field(
-            default="http://localhost:8000/api/v1/event",
+        )] = ""
+        EVENT_API_BASE_URL: Annotated[str, Field(
             description="Base URL for accessing event API endpoints.",
-        )
+        )] = "http://localhost:8000/api/v1/event"
 
     def __init__(self):
         self.valves = self.Valves()

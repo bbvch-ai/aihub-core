@@ -3,7 +3,7 @@ import hashlib
 import mimetypes
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Annotated, Dict, Optional
 
 from azure.storage.filedatalake import FileSystemClient
 from pydantic import BaseModel, Field, computed_field
@@ -16,21 +16,21 @@ class DataLakeFile(BaseModel):
     A Pydantic model representing a file in Azure Data Lake, including its metadata and optional content.
     """
 
-    name: str = Field(..., description="The name of the file.")
-    namespace: str = Field(..., description="The namespace to which the file belongs.")
-    filetype: str = Field(..., description="The type of the file, derived from its extension.")
-    uri: str = Field(..., description="The URI of the file in the data lake.")
-    size: int = Field(..., description="The size of the file in bytes.")
-    content_type: str = Field(..., description="The MIME type of the file content.")
-    owner: str = Field(..., description="The owner of the file.")
-    hash: str = Field(..., description="The MD5 hash of the file content, base64-encoded.")
+    name: Annotated[str, Field(description="The name of the file.")]
+    namespace: Annotated[str, Field(description="The namespace to which the file belongs.")]
+    filetype: Annotated[str, Field(description="The type of the file, derived from its extension.")]
+    uri: Annotated[str, Field(description="The URI of the file in the data lake.")]
+    size: Annotated[int, Field(description="The size of the file in bytes.")]
+    content_type: Annotated[str, Field(description="The MIME type of the file content.")]
+    owner: Annotated[str, Field(description="The owner of the file.")]
+    hash: Annotated[str, Field(description="The MD5 hash of the file content, base64-encoded.")]
 
-    created: int = Field(..., description="The UNIX timestamp when the file was created.")
-    updated: int = Field(..., description="The UNIX timestamp when the file was last updated.")
+    created: Annotated[int, Field(description="The UNIX timestamp when the file was created.")]
+    updated: Annotated[int, Field(description="The UNIX timestamp when the file was last updated.")]
 
-    metadata: Dict = Field(..., description="A dictionary of metadata associated with the file.")
+    metadata: Annotated[Dict, Field(description="A dictionary of metadata associated with the file.")]
 
-    content: Optional[bytes] = Field(default=None, description="The binary content of the file.")
+    content: Annotated[Optional[bytes], Field(description="The binary content of the file.")] = None
 
     @computed_field
     @property

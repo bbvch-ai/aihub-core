@@ -29,7 +29,7 @@
             {{ name }}
           </p>
           <p class="text-xs">
-            {{ preferredUsername }}
+            {{ email }}
           </p>
         </div>
         <div
@@ -74,7 +74,7 @@ import type { AssistantChatMessageOutput, ChatMessageOutput, UserChatMessageOutp
 const props = defineProps<{
   message: ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput
   name: string
-  preferredUsername?: string
+  email?: string
   date?: Date
   image?: string
   icon?: string

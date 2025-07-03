@@ -40,6 +40,11 @@ class UserEntity(Document):
     meta = {
         "collection": "users",
         "strict": False,
+        "indexes": [
+            {"fields": ["email"], "unique": True},
+            {"fields": ["roles"]},
+            {"fields": ["last_updated"]},
+        ],
     }
     id = StringField(primary_key=True)
     name = StringField(required=True)
@@ -129,3 +134,7 @@ class UserEntity(Document):
     @classmethod
     def by_oid(cls, user_oid: str) -> "UserEntity":
         return cls.objects.get(id=user_oid)
+
+    @classmethod
+    def by_email(cls, email: str) -> "UserEntity":
+        return cls.objects.get(email=email)

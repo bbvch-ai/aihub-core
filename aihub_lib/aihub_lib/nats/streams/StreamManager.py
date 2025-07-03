@@ -20,10 +20,6 @@ class StreamManager:
     If a consumer or publisher expects events to be written to or read from a particular stream,
     `StreamManager` can verify that the stream and its configuration exist, creating them if they
     do not. This makes your infrastructure more self-healing and reduces operational overhead.
-
-    ### Example
-    The `ensure_agent_stream_exists` method is commonly called before subscribing to agent events,
-    ensuring that the underlying stream is ready.
     """
 
     def __init__(self, js: JetStreamContext, stream_name: str, stream_subject: str):
@@ -31,7 +27,7 @@ class StreamManager:
         self.stream_name = stream_name
         self.stream_subject = stream_subject
 
-    async def ensure_stream_exists(self, stream_name: str, subject: str):
+    async def ensure_stream_exists(self):
         """
         Checks if a JetStream stream with the given name exists.
         If not found, it creates it with the specified subject, file storage,
@@ -41,15 +37,15 @@ class StreamManager:
         or consumers can safely interact with the stream without prior manual setup.
         """
         try:
-            await self.js.stream_info(stream_name)
+            await self.js.stream_info(self.stream_name)
             # Stream already exists
         except NotFoundError:
             # Stream does not exist; create it
-            logger.debug(f"Creating stream '{stream_name}' with subject '{subject}'")
+            logger.debug(f"Creating stream '{self.stream_name}' with subject '{self.stream_subject}'")
             await self.js.add_stream(
                 config=api.StreamConfig(
-                    name=stream_name,
-                    subjects=[subject],
+                    name=self.stream_name,
+                    subjects=[self.stream_subject],
                     storage=api.StorageType.FILE,
                     retention=api.RetentionPolicy.LIMITS,
                     max_msgs=10_000_000,
@@ -58,13 +54,6 @@ class StreamManager:
                     duplicate_window=60 * 1,
                 )
             )
-
-    async def ensure_agent_stream_exists(self):
-        """
-        Ensures that the agent-specific stream—identified by this manager's
-        stream_name and stream_subject—is created and ready for use.
-        """
-        return await self.ensure_stream_exists(stream_name=self.stream_name, subject=self.stream_subject)
 
     def __repr__(self):
         return f"JSManager(stream_name={self.stream_name}, stream_subject={self.stream_subject})"

@@ -1,13 +1,13 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field
 
 
 class LocaleString(BaseModel):
-    de: Optional[str] = Field(None)
-    en: Optional[str] = Field(None)
-    fr: Optional[str] = Field(None)
-    it: Optional[str] = Field(None)
+    de: Annotated[Optional[str], Field(description="German")] = None
+    en: Annotated[Optional[str], Field(description="English")] = None
+    fr: Annotated[Optional[str], Field(description="French")] = None
+    it: Annotated[Optional[str], Field(description="Italian")] = None
 
     def in_locale(self, locale: str) -> Optional[str]:
         return getattr(self, locale)

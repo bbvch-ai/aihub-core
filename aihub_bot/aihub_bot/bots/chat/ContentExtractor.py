@@ -1,7 +1,7 @@
 import base64
 import logging
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Annotated, Dict, List, Optional
 
 import httpx
 from botbuilder.schema import Activity, Attachment
@@ -23,12 +23,14 @@ class FileSource(Enum):
 class FileInfo(BaseModel):
     """Normalized file information across different platforms."""
 
-    name: str = Field(..., description="Name of the file")
-    content_type: Optional[str] = Field(None, description="MIME type of the file")
-    url: str = Field(..., description="URL of the file")
-    content_bytes: Optional[bytes] = Field(None, description="Content of the file in bytes")
-    headers: Dict[str, str] = Field(default_factory=dict, description="HTTP headers for the file")
-    source: FileSource = Field(FileSource.GENERIC, description="Source of the file (e.g., Slack, Teams, etc.)")
+    name: Annotated[str, Field(description="Name of the file")]
+    content_type: Annotated[Optional[str], Field(description="MIME type of the file")] = None
+    url: Annotated[str, Field(description="URL of the file")]
+    content_bytes: Annotated[Optional[bytes], Field(description="Content of the file in bytes")] = None
+    headers: Annotated[Dict[str, str], Field(description="HTTP headers for the file")] = {}
+    source: Annotated[FileSource, Field(description="Source of the file (e.g., Slack, Teams, etc.)")] = (
+        FileSource.GENERIC
+    )
 
 
 class ContentExtractor:

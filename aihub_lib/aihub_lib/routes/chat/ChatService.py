@@ -9,11 +9,11 @@ from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import (
     BaseEvent,
     ChunkEvent,
@@ -26,10 +26,11 @@ from aihub_lib.nats.events import (
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from aihub_lib.nats.events.utils import get_parent_classes_until_base
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import PersistedEventEntity
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class ChatService:
 
     @staticmethod
     def _initialize_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
@@ -81,7 +82,7 @@ class ChatService:
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
         locale: Optional[str] = None,
-    ) -> Tuple[ExternalEvent, AgentThreadTopicManager]:
+    ) -> Tuple[ExternalAgentEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
@@ -91,7 +92,7 @@ class ChatService:
                 thread = ThreadEntity.get_thread_by_id(str(thread_id))
                 if not thread:
                     raise mongoengine.errors.DoesNotExist()
-                if user.oid not in [u.user_id for u in thread.users]:
+                if user.id not in [u.user_id for u in thread.users]:
                     raise HTTPException(status_code=403, detail="User not part of the thread")
             except mongoengine.errors.DoesNotExist:
                 pass
@@ -99,16 +100,16 @@ class ChatService:
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",
-                users=[User(user_id=user.oid)],
+                users=[User(user_id=user.id)],
                 agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
                 thread_id=ObjectId(thread_id) or ObjectId(),
             )
         logger.debug(f"Created thread: {thread.id}")
 
-        hitl_requests = PersistedEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
+        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
         logger.debug(f"hitl_requests: {hitl_requests}")
 
-        hitl_responses = PersistedEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
+        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
         logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
@@ -137,7 +138,7 @@ class ChatService:
                 files=files,
             )
 
-        event = ExternalEvent(
+        event = ExternalAgentEvent(
             thread_id=str(thread_id),
             display_id=str(display_id),
             event=event,
@@ -155,12 +156,12 @@ class ChatService:
 
     @staticmethod
     async def start_stream_chat_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         files: Optional[List[UserUploadedFile]] = None,
@@ -212,7 +213,7 @@ class ChatService:
                 await subscriber.stop()
                 stop_signal.set()
 
-        subscriber = NCSubscriber.for_thread_display_events(
+        subscriber = AgentNCSubscriber.for_thread_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
@@ -228,12 +229,12 @@ class ChatService:
 
     @staticmethod
     async def start_json_chat_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
         messages: List[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
         thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         files: Optional[List[UserUploadedFile]] = None,
@@ -259,13 +260,13 @@ class ChatService:
 
     @staticmethod
     async def start_json_event_interaction(
-        user: AuthenticatedUser,
+        user: UserIdentity,
         agent_class: str,
         agent_id: str,
-        external_event: ExternalEvent,
+        external_event: ExternalAgentEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_event_distributor: ExternalAgentEventDistributor,
     ):
         stop_signal = asyncio.Event()
         chunk_events: List[ChunkEvent] = []
@@ -304,7 +305,7 @@ class ChatService:
                 await resources.subscriber.stop()
                 resources.stop_signal.set()
 
-        subscriber = NCSubscriber.for_thread_display_events(
+        subscriber = AgentNCSubscriber.for_thread_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,

@@ -9,7 +9,7 @@
         is-clickable
         :message="message"
         :name="message.name"
-        :preferred-username="message.preferredUsername"
+        :preferred-username="message.email"
         :date="message.date"
         :image="message.userImage"
         :icon="message.icon"
@@ -39,7 +39,7 @@ const { t } = useI18n()
 
 type ExtendedChatMessage = ChatMessageInput & {
   name: string
-  preferredUsername: string
+  email: string
   date: Date
   userImage?: string
   icon?: string
@@ -67,7 +67,7 @@ const createUserMessage = (
   blocks,
   displayId: event.display_id,
   name: user.value.name,
-  preferredUsername: user.value.email,
+  email: user.value.email,
   userImage: user.value.profile_image,
   date: new Date(timestamp / 1_000_000),
 })
@@ -83,7 +83,7 @@ const createAssistantMessage = (
     blocks: [{ block_type: 'text', text }],
     displayId: event.display_id,
     name: agentDto?.agent_config?.name ?? t('chat.assistant'),
-    preferredUsername: `${event.agent_class}/${event.agent_id}`,
+    email: `${event.agent_class}/${event.agent_id}`,
     icon: agentDto?.agent_config?.icon,
     date: new Date(timestamp / 1_000_000),
   }
@@ -110,7 +110,7 @@ const messages = computed<ExtendedChatMessage[]>(() => {
 
     else if (types.includes('ChunkEvent') && event.event.content) {
       const lastMsg = msgs.at(-1)
-      const isSameAgent = lastMsg?.preferredUsername === `${event.agent_class}/${event.agent_id}`
+      const isSameAgent = lastMsg?.email === `${event.agent_class}/${event.agent_id}`
 
       if (isSameAgent && lastMsg?.role === 'assistant') {
         lastMsg.blocks.push({ block_type: 'text', text: event.event.content })

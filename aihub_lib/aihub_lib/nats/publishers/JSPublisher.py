@@ -1,19 +1,15 @@
 import asyncio
 import logging
 import uuid
-from typing import Generic, TypeVar
 
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
 
 logger = logging.getLogger(__name__)
 
-TEvent = TypeVar("TEvent", bound=BaseEvent)
 
-
-class JSPublisher(Generic[TEvent]):
+class JSPublisher(AbstractPublisher):
     """
     A publisher that integrates with NATS JetStream, ensuring events are stored in streams
     for durability, replay, and at-least-once delivery semantics.
@@ -40,15 +36,11 @@ class JSPublisher(Generic[TEvent]):
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
         """
+        self._detect_and_log_subject_mismatch(event, subject)
+
         logger.debug(f"Publishing event {event.event_name} to {subject}")
         serialized_event = event.model_dump_json(serialize_as_any=True)
         logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
-
-        if f".{TopicManager.CONTROL_EVENT}." in subject and not event.is_control_event:
-            logger.warning(f"Control event {event.event_name} is being published to a non-control subject: {subject}")
-
-        if f".{TopicManager.DISPLAY_EVENT}." in subject and not event.is_display_event:
-            logger.warning(f"Display event {event.event_name} is being published to a non-display subject: {subject}")
 
         message_id = str(uuid.uuid4())
         headers = {"Nats-Msg-Id": message_id}  # Deduplication
@@ -64,8 +56,8 @@ class JSPublisher(Generic[TEvent]):
             except asyncio.TimeoutError:
                 logger.warning(f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}")
             except Exception as e:
-                logger.exception(f"NATS error while publishing event: {e}")
+                logger.exception(f"NATS error while publishing event {event.event_name} to subject {subject}: {e}")
 
             await asyncio.sleep(1)  # Wait before retrying
 
-        logger.exception(f"Failed to publish event {event.event_name} after {retries} attempts")
+        logger.exception(f"Failed to publish event {event.event_name} to subject {subject} after {retries} attempts")

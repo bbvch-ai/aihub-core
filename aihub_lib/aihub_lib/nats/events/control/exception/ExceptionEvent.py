@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict
+from typing import Annotated, ClassVar, Dict
 
 from pydantic import Field
 
@@ -25,11 +25,13 @@ class ExceptionEvent(SemanticEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.exception_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.exception_event.description")
 
-    message: str = Field(..., description="A human-readable description of the exception or error that occurred.")
-    http_status_code: int = Field(
-        500,
-        description="HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).",
-    )
+    message: Annotated[str, Field(description="A human-readable description of the exception or error that occurred.")]
+    http_status_code: Annotated[
+        int,
+        Field(
+            description="HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).",
+        ),
+    ] = 500
 
     def to_semantic_convention(self) -> Dict[str, str]:
         return {

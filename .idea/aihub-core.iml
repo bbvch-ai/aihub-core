@@ -10,6 +10,7 @@
     <orderEntry type="module" module-name="aihub_pipeline" />
     <orderEntry type="module" module-name="aihub_bot" />
     <orderEntry type="module" module-name="aihub_iac" />
+    <orderEntry type="module" module-name="aihub_process" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />

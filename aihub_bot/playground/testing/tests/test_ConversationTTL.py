@@ -14,6 +14,12 @@ from mongoengine import connect, disconnect
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, ConversationTracker, Message, Content
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
@@ -61,7 +67,8 @@ async def test_runner():
     """Create a test runner with a very short TTL"""
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID, conversation_ttl_days=TTL_DAYS)
     runner.with_simple_chunk_events()
-    runner.mount(HealthController().get_health(), AgentChatController().completions_json())
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    runner.mount(HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json())
     await runner.start_simulation()
     return runner
 

@@ -1,5 +1,7 @@
 from functools import cache
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Annotated, List, Tuple, Type, Union, get_args, get_origin
+
+from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events.BaseEvent import BaseEvent
@@ -51,3 +53,32 @@ def get_inheritance_depth(event_class: Type, base_class: Type = None) -> int:
             max_depth = max(max_depth, parent_depth + 1)
 
     return max_depth
+
+
+def get_base_type(annotation: Type) -> Tuple[Type, ...]:
+    """
+    Recursively unwraps a type hint to find the core, non-wrapper type(s).
+    """
+    origin = get_origin(annotation)
+
+    # Case 1: Annotated[T, ...]
+    if origin is Annotated:
+        return get_base_type(get_args(annotation)[0])
+
+    # Case 2: Union[A, B, ...] or Optional[A]
+    if origin is Union:
+        base_types: List[Type] = []
+        for arg in get_args(annotation):
+            if arg is not type(None):
+                base_types.extend(get_base_type(arg))
+        return tuple(base_types)
+
+    # Case 3: list[T] or a custom generic like ListOfSize[T, ...]
+    is_list_like = isinstance(origin, type) and issubclass(origin, list)
+    if origin is list or origin is ListOfSize or is_list_like:
+        return get_base_type(get_args(annotation)[0])
+
+    if isinstance(annotation, type):
+        return (annotation,)
+
+    return (annotation,)

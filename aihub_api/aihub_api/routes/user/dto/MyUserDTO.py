@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from pydantic import Field
 
@@ -7,6 +7,8 @@ from aihub_api.routes.user.dto.UserDTO import UserDTO
 
 
 class MyUserDTO(UserDTO):
-    dashboard: Optional[DashboardDTO] = Field(None, description="User dashboard configuration for index page")
-    favorite_modules: List[str] = Field(default_factory=list, description="List of favorite modules from aihub suite")
-    roles: List[str] = Field(default_factory=list, description="List of roles assigned to the user")
+    dashboard: Annotated[Optional[DashboardDTO], Field(description="User dashboard configuration for index page")] = (
+        None
+    )
+    favorite_modules: Annotated[List[str], Field(description="List of favorite modules from aihub suite")] = []
+    roles: Annotated[List[str], Field(description="List of roles assigned to the user")] = []

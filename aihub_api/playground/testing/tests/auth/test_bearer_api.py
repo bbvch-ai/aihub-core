@@ -8,6 +8,7 @@ from mongoengine import connect, disconnect
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
@@ -58,7 +59,7 @@ def expected_user_data():
 def token_api_client():
     """Create a TestClient with UserController mounted using TokenAuthHandler."""
     runner = ApiTestRunner()
-    auth = TokenAuthHandler()
+    auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
     runner.mount(UserController(auth=auth).get_my_user())
     return TestClient(runner.get_app())
 

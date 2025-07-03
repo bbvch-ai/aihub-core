@@ -3,25 +3,28 @@ from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Dummy authentication handler implementations ---
 
 
 class DummySuccessAuth(AuthHandler):
-    async def __call__(self, *args, **kwargs) -> AuthenticatedUser:
+    async def __call__(self, *args, **kwargs) -> UserIdentity:
         """Return a successful authenticated user."""
         return await self.authenticate_token("dummy_token")
 
-    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+    async def authenticate_token(self, token: str) -> UserIdentity:
         """Return a successful authenticated user."""
-        return AuthenticatedUser(
+        return UserIdentity(
             name="Dummy Success",
-            preferred_username="dummy@success.com",
-            oid="1",
+            email="dummy@success.com",
+            id="1",
             roles=["user"],
         )
 
@@ -31,11 +34,11 @@ class DummyFailureAuth(AuthHandler):
         self.detail = detail
         self.status_code = status_code
 
-    async def __call__(self, *args, **kwargs) -> AuthenticatedUser:
+    async def __call__(self, *args, **kwargs) -> UserIdentity:
         """Raise HTTPException with a 401 error."""
         raise HTTPException(status_code=self.status_code, detail=self.detail)
 
-    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+    async def authenticate_token(self, token: str) -> UserIdentity:
         """Raise HTTPException with a 401 error."""
         raise HTTPException(status_code=self.status_code, detail=self.detail)
 
@@ -44,11 +47,11 @@ class DummyFailureNon401(AuthHandler):
     def __init__(self, detail: str):
         self.detail = detail
 
-    async def __call__(self, *args, **kwargs) -> AuthenticatedUser:
+    async def __call__(self, *args, **kwargs) -> UserIdentity:
         """Raise HTTPException with a non-401 error."""
         raise HTTPException(status_code=500, detail=self.detail)
 
-    async def authenticate_token(self, token: str) -> AuthenticatedUser:
+    async def authenticate_token(self, token: str) -> UserIdentity:
         """Raise HTTPException with a non-401 error."""
         raise HTTPException(status_code=500, detail=self.detail)
 
@@ -110,7 +113,7 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
         behavior = row_data["behavior"].strip().lower()
         detail = row_data["detail"].strip() if row_data["detail"] else ""
         if behavior == "success":
-            handlers.append(DummySuccessAuth())
+            handlers.append(DummySuccessAuth(identity_provider=DangerousDevelopmentOnlyIdentityProvider()))
         elif behavior == "failure_401":
             handlers.append(DummyFailureAuth(detail=detail, status_code=401))
         elif behavior == "failure_non_401":

@@ -18,10 +18,10 @@ class KnowledgeAccessControlPermissions(BaseModel):
     """Access control permissions for a specific operation (read or write)."""
 
     user_ids: Annotated[
-        List[str], Field(default_factory=list, description="List of user IDs with this permission")
+        List[str], Field(description="List of user IDs with this permission")
     ] = []
     group_ids: Annotated[
-        List[str], Field(default_factory=list, description="List of group IDs with this permission")
+        List[str], Field(description="List of group IDs with this permission")
     ] = []
 
 
@@ -52,9 +52,9 @@ class KnowledgeData(BaseModel):
     """
 
     file_ids: Annotated[
-        List[str], Field(default_factory=list, description="List of file IDs in this knowledge base")
+        List[str], Field(description="List of file IDs in this knowledge base")
     ] = []
-    extra_data: Annotated[Dict[str, Any], Field(default_factory=dict, description="Any additional custom data")] = {}
+    extra_data: Annotated[Dict[str, Any], Field(description="Any additional custom data")] = {}
 
     def model_dump(self) -> Dict[str, Any]:
         """Convert to a flat dictionary for API consumption"""

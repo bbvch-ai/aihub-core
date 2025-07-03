@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import Annotated, ClassVar, Optional
 
 from pydantic import Field
 
@@ -22,8 +22,11 @@ class ChunkEvent(DisplayEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.chunk_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.chunk_event.description")
 
-    content: str = Field("", description="The actual chunk of text or data produced at this stage.")
-    model_name: str = Field("aihub", description="The name of the AI model generating the chunks.")
-    reasoning_content: Optional[str] = Field(
-        None, description="The textual representation of the agent’s internal reasoning at a particular point in time."
-    )
+    content: Annotated[str, Field(description="The actual chunk of text or data produced at this stage.")] = ""
+    model_name: Annotated[str, Field(description="The name of the AI model generating the chunks.")] = "aihub"
+    reasoning_content: Annotated[
+        Optional[str],
+        Field(
+            description="The textual representation of the agent’s internal reasoning at a particular point in time."
+        ),
+    ] = None

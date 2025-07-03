@@ -11,9 +11,9 @@ class ProcessedRunResults(BaseModel):
 
     display_aggregates: Annotated[
         Dict[str, IntermediateDisplayStats],
-        Field(default_factory=dict, description="Aggregated statistics for each display, keyed by display ID"),
-    ]
+        Field(description="Aggregated statistics for each display, keyed by display ID"),
+    ] = {}
     participating_agent_ids: Annotated[
         Set[AgentIdentifier],
-        Field(default_factory=set, description="Set of agent identifiers that participated in the thread"),
-    ]
+        Field(description="Set of agent identifiers that participated in the thread"),
+    ] = set()

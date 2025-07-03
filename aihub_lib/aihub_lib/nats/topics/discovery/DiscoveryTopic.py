@@ -7,6 +7,10 @@ class DiscoveryTopic(Topic):
     request_response: str
     call_id: str
 
+    @property
+    def execution_context_id(self) -> str:
+        return self.call_id
+
     @classmethod
     def from_subject(cls, subject: str) -> "DiscoveryTopic":
         topic_type, discovery_topic, request_response, call_id = subject.split(".")
