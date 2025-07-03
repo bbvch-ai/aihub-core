@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.212.0] - 2025-07-03 - Flexible OpenAI Authentication & Resource Management
+
+### Added
+- ✨ **Flexible OpenAI Resource Authentication**: Introduced the ability to authenticate with Azure OpenAI resources using either an API Key or Azure AD credentials, providing greater flexibility in deployment environments.
+- 🔑 **Centralized OpenAI API Key Configuration**: Added a new base `OpenaiResourceSettings` class for consistent management of OpenAI API keys across different services and environments.
+
+### Changed
+- 🔄 **Generalized Resource Configuration**: Extended the base `ResourceConfig` to include an optional `api_key` field, enabling API key authentication for all derived generative AI resource configurations.
+- 🚀 **Improved Azure OpenAI Client Initialization**: Updated the Azure OpenAI client instantiation logic to intelligently use either an API key or Azure AD token provider based on the provided configuration, simplifying setup.
+- 📄 **Updated Development Playground Models**: Renamed the `o1-mini` model to `gpt-4o-mini` in the development environment configuration for improved clarity and alignment with current model names.
+
+### Refactor
+- 🧹 **Streamlined API Key Definitions**: Removed redundant `api_key` fields from specific model configurations (e.g., chat LLMs, embedding LLMs, image models) as they are now managed centrally by the generalized `ResourceConfig`.
+
+---
+
+
+
 ## [v0.211.0] - 2025-07-03 - Enhanced RAG Context and Workflow Streamlining
 
 ### Added
