@@ -1,32 +1,25 @@
 #!/bin/bash
 
-# Exit if any command fails or a variable is unset.
-set -eu
+# Exit immediately if a command fails.
+set -e
 
-# Check if a file path was provided as an argument.
-if [ -z "$1" ]; then
-    echo "Error: No file path provided." >&2
-    exit 1
-fi
-
-# Start searching from the directory containing the edited file.
+# Start searching from the directory of the edited file, provided as the first argument.
 CURRENT_DIR=$(dirname "$1")
 
-# Loop upwards through the directory tree.
-while [ "$CURRENT_DIR" != "/" ]; do
-    # Check if a Makefile exists in the current directory.
-    # This file indicates the root of a subproject.
+# Loop upwards as long as the current path is inside 'aihub-core'.
+# The glob pattern *"/"aihub-core* checks if the string contains the project directory.
+while [[ "$CURRENT_DIR" == *"/"aihub-core* ]]; do
+    # If a Makefile exists in the current directory, we've found our subproject.
     if [ -f "$CURRENT_DIR/Makefile" ]; then
-        echo "Found Makefile in $CURRENT_DIR. Running command..."
-        # Use a subshell to run the command in the target directory.
+        echo "Found Makefile in $CURRENT_DIR. Running 'poetry run make pr-ready'..."
+        # Run the command in a subshell and exit successfully.
         (cd "$CURRENT_DIR" && poetry run make pr-ready)
-        # Exit successfully after running the command.
         exit 0
     fi
-    # If no Makefile is found, move one directory up.
+    # Move up to the parent directory for the next iteration.
     CURRENT_DIR=$(dirname "$CURRENT_DIR")
 done
 
-# If the loop completes, no Makefile was found.
-echo "No Makefile found in any parent directory of '$1'." >&2
-exit 1
+# If the loop finishes, no Makefile was found within the project boundary.
+echo "No Makefile found for '$1'. No action taken."
+exit 0
