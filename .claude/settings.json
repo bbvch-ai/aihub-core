@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "FILE_PATH=$(jq -r '.tool_input.file_path'); .claude/run-pr-ready.sh $FILE_PATH"
+            "command": "FILE_PATH=$(jq -r '.tool_input.file_path'); .claude/run-pr-ready.sh \"$FILE_PATH\""
           }
         ]
       }
