@@ -15,7 +15,7 @@ class SharePointIoManager(ConfigurableIOManager):
         Currently we do not support writing outputs to SharePoint. We do not have access to any SharePoint API that allows writing files.
         Our pipelines should not require writing outputs to SharePoint.
         """
-        pass
+        raise NotImplementedError("Writing outputs to SharePoint is not supported.")
 
     def load_input(self, context: InputContext) -> SharePointFile | List[MinimalSharePointFile]:
         """
