@@ -55,7 +55,7 @@ const getAgentDto = (agent_class: string, agent_id: string) =>
   )
 
 const toDisplay = (msg: ExtendedChatMessage) => {
-  router.push(localeRoute(`/threads/${props.thread.id}/display/${msg.displayId}`))
+  router.push(localeRoute(`/service/threads/${props.thread.id}/display/${msg.displayId}`))
 }
 
 const createUserMessage = (

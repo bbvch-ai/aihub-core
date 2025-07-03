@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('agent.workflow.title')"
-    close-route="/agents"
+    close-route="/service/agents"
     :loading="agentIsLoading"
   >
     <div class="h-[900px] w-full">

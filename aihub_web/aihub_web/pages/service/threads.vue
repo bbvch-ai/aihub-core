@@ -43,7 +43,7 @@ const {
 } = useThreads()
 
 const toThread = (thread: ThreadDto) => {
-  router.push(localePath(`/threads/${thread.id}/overview`))
+  router.push(localePath(`/service/threads/${thread.id}/overview`))
 }
 
 const onPageChange = (event) => {

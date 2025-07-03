@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('thread.events.title')"
-    :close-route="`/threads/${route.params.thread_id}/display`"
+    :close-route="`/service/threads/${route.params.thread_id}/display`"
     :loading="threadIsLoading || threadEventsAreLoading"
   >
     <EventList

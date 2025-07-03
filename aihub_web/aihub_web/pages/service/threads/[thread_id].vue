@@ -26,7 +26,7 @@ const localePath = useLocalePath()
 const { t } = useI18n()
 
 const subPath = (path: string) => {
-  return `/threads/${route.params.thread_id}/${path}`
+  return `/service/threads/${route.params.thread_id}/${path}`
 }
 
 const isActive = (path: string) => {

@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('agent.chat.title')"
-    close-route="/agents"
+    close-route="/service/agents"
   >
     <div class="relative flex flex-col gap-2 p-3">
       <div>
@@ -38,7 +38,7 @@ const router = useRouter()
 const localeRoute = useLocaleRoute()
 const { t } = useI18n()
 
-const { user } = useUser()
+const { myUser } = useMyUser()
 
 const { sendMessages } = useChatCompletions()
 const { createNewThread } = useThreadUtils()
@@ -46,7 +46,7 @@ const { createNewThread } = useThreadUtils()
 const submitMessage = async () => {
   const thread = await createNewThread.mutateAsync({
     name: t('agent.chat.manuallyCreatedThread'),
-    user_ids: [user.value.id],
+    user_ids: [myUser.value.id],
     agents: [{
       agent_id: route.params.agent_id as string,
       agent_class: route.params.agent_class as string,
@@ -59,6 +59,6 @@ const submitMessage = async () => {
     threadId: thread.id,
   })
   userInput.value = ''
-  router.push(localeRoute(`/threads/${thread.id}/chat`))
+  router.push(localeRoute(`/service/threads/${thread.id}/chat`))
 }
 </script>

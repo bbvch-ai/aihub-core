@@ -28,11 +28,11 @@ const localePath = useLocalePath()
 const { t } = useI18n()
 
 const subPath = (path: string) => {
-  return `/evaluations/${path}`
+  return `/service/evaluations/${path}`
 }
 
 onMounted(() => {
-  if (route.path === localePath('/evaluations')) {
+  if (route.path === localePath('service/evaluations')) {
     router.push(localePath(subPath('experiments')))
   }
 })

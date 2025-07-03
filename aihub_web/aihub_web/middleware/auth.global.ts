@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     `/${$i18n.locale.value}/auth/login`,
     `/${$i18n.locale.value}/auth/callback`,
     `/${$i18n.locale.value}/auth/renew`,
-    `/${$i18n.locale.value}/health`,
+    `/service/${$i18n.locale.value}/health`,
   ]
 
   // No auth check for public paths

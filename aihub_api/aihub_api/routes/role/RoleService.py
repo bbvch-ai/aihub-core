@@ -16,13 +16,13 @@ class RoleService:
         """
         role = RoleEntity(name=data.name, description=data.description, access_rules=data.access_rules)
         role.save()
-        return RoleResponse.model_validate(role)
+        return RoleResponse.from_role_entity(role)
 
     @staticmethod
     def list_roles() -> List[RoleResponse]:
         """Lists all roles in the database."""
         roles = RoleEntity.objects()
-        return [RoleResponse.model_validate(role) for role in roles]
+        return [RoleResponse.from_role_entity(role) for role in roles]
 
     @staticmethod
     def get_role_by_id(role_id: str) -> RoleResponse:
@@ -31,7 +31,7 @@ class RoleService:
         Raises DoesNotExist if the role is not found.
         """
         role = RoleEntity.objects.get(id=role_id)
-        return RoleResponse.model_validate(role)
+        return RoleResponse.from_role_entity(role)
 
     @staticmethod
     def update_role(role_id: str, data: UpdateRoleRequest) -> RoleResponse:
@@ -43,12 +43,11 @@ class RoleService:
         role = RoleEntity.objects.get(id=role_id)
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
-            # Nothing to update
-            return RoleResponse.model_validate(role)
+            return RoleResponse.from_role_entity(role)
 
         role.modify(**update_data)
         role.reload()
-        return RoleResponse.model_validate(role)
+        return RoleResponse.from_role_entity(role)
 
     @staticmethod
     def delete_role(role_id: str) -> None:

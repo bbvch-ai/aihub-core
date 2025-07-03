@@ -90,7 +90,7 @@ async def main():
             stop_event_class=LLMStopEvent,
         ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
-        RoleController(auth=auth).get_role().list_roles().create_role().update_role().delete_role(),
+        RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(
             auth=auth,
             embedding_models=[

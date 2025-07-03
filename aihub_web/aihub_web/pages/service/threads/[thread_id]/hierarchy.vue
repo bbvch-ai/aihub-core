@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('thread.hierarchy.title')"
-    close-route="/threads"
+    close-route="/service/threads"
     :loading="threadIsLoading"
   >
     <ThreadHierarchy :thread="thread" />

@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('agent.threads.title')"
-    close-route="/agents"
+    close-route="/service/agents"
     :loading="isLoading"
   >
     <div class="p-3">
@@ -43,7 +43,7 @@ const {
 } = useAgentThreads()
 
 const toThread = (thread: ThreadDto) => {
-  router.push(localePath(`/threads/${thread.id}/overview`))
+  router.push(localePath(`/service/threads/${thread.id}/overview`))
 }
 
 const onPageChange = (event) => {

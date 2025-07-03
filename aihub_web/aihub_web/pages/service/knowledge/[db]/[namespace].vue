@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('knowledge.documents.title')"
-    close-route="/knowledge"
+    close-route="/service/knowledge"
     :loading="isLoading"
   >
     <KnowledgeDocumentList
@@ -43,7 +43,7 @@ const {
 } = useDocuments()
 
 const toDocument = (document: IngestedDocument) => {
-  router.push(localePath(`/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
+  router.push(localePath(`/service/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
 }
 
 const onPageChange = (event) => {

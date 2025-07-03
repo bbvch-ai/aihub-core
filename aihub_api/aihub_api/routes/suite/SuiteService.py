@@ -9,12 +9,12 @@ from aihub_api.routes.suite.dto.ServiceDTO import ServiceDTO
 from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
 
 if TYPE_CHECKING:
-    from aihub_api.runners.ApiRunner import ApiRunner
+    from aihub_lib.runners.Runner import Runner
 
 
 class SuiteService:
     @staticmethod
-    def get_suite(user: UserIdentity, runner: "ApiRunner", t: LocaleHandler) -> SuiteDTO:
+    def get_suite(user: UserIdentity, runner: "Runner", t: LocaleHandler) -> SuiteDTO:
         services: List[ServiceDTO] = []
         access_checker = AccessChecker.from_user(user)
         for controller in runner.controllers:

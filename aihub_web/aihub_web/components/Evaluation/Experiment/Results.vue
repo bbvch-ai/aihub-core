@@ -174,7 +174,7 @@ const latencySeverity = (latency_ms: number) => {
 }
 
 const toTrace = (data: ExperimentRunRecord) => {
-  router.push(localeRoute(`/threads/${data.thread_id}/display/${data.display_id}`))
+  router.push(localeRoute(`/service/threads/${data.thread_id}/display/${data.display_id}`))
 }
 </script>
 

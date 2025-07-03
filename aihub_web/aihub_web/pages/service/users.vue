@@ -40,10 +40,10 @@ const {
   pageSize,
   setPage,
   setPageSize,
-} = useUser()
+} = useUsers()
 
 const toUser = (user: UserDto) => {
-  router.push(localePath(`/user/${user.id}/overview`))
+  router.push(localePath(`/service/users/${user.id}`))
 }
 
 const onPageChange = (event) => {

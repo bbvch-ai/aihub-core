@@ -68,6 +68,7 @@ class Controller(abc.ABC):
         )
         self.router: APIRouter = APIRouter()
         self.additionally_required_permission = additionally_required_permission
+        self._runner: Optional["Runner"] = None
 
     @property
     def service_name(self):
@@ -124,3 +125,4 @@ class Controller(abc.ABC):
         This final step exposes all endpoints defined in this controller to incoming requests.
         """
         app.include_router(self.router, prefix=self.base_route)
+        self._runner = runner

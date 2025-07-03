@@ -45,6 +45,6 @@ const { t } = useI18n()
 const { databases, databasesAreLoading } = useDatabases()
 
 const toNamespace = (namespace: Namespace) => {
-  router.push(localePath(`/knowledge/${namespace.database}/${namespace.name}`))
+  router.push(localePath(`/service/knowledge/${namespace.database}/${namespace.name}`))
 }
 </script>

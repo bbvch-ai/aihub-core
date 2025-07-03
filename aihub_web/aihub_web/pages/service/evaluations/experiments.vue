@@ -103,7 +103,7 @@ const selectedAgents = useRouteQuery<string[]>('assistants', [], { route, router
 const selectedDatasets = useRouteQuery<string[]>('datasets', [], { route, router })
 
 const toExperiment = (experiment: MinimalExperiment) => {
-  router.push(localePath(`/evaluations/experiments/${experiment.id}`))
+  router.push(localePath(`/service/evaluations/experiments/${experiment.id}`))
 }
 
 const filterableAgents = computed<MinimalAgentDto[]>(() => {

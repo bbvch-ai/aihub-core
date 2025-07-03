@@ -36,7 +36,7 @@ class RoleController(Controller):
             status_code=status.HTTP_201_CREATED,
             tags=self.tags,
         )
-        async def create_role_endpoint(
+        async def create_role(
             role_data: CreateRoleRequest,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
@@ -49,14 +49,14 @@ class RoleController(Controller):
 
         return self
 
-    def list_roles(self, route: str = "/") -> "RoleController":
+    def get_roles(self, route: str = "/") -> "RoleController":
         @self.router.get(
             route,
             summary="List Roles",
             description="Retrieves a list of all available roles.",
             tags=self.tags,
         )
-        async def list_roles_endpoint(
+        async def get_roles(
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> List[RoleResponse]:
             return RoleService.list_roles()
@@ -70,7 +70,7 @@ class RoleController(Controller):
             description="Retrieves a single role by its unique ID.",
             tags=self.tags,
         )
-        async def get_role_endpoint(
+        async def get_role(
             role_id: str,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
@@ -88,7 +88,7 @@ class RoleController(Controller):
             description="Updates a role's name, description, or access rules.",
             tags=self.tags,
         )
-        async def update_role_endpoint(
+        async def update_role(
             role_id: str,
             role_data: UpdateRoleRequest,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
@@ -111,7 +111,7 @@ class RoleController(Controller):
             description="Permanently deletes a role.",
             tags=self.tags,
         )
-        async def delete_role_endpoint(
+        async def delete_role(
             role_id: str,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> DeleteRoleResponse:

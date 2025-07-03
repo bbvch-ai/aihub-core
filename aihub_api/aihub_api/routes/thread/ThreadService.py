@@ -67,7 +67,7 @@ class ThreadService:
         t: LocaleHandler,
         agent_dtos: Optional[List[ThreadAgentDTO]] = None,
     ) -> ThreadDTO:
-        users = [User(user_id=uid) for uid in user_ids]
+        users = [User(user_id=user_id) for user_id in user_ids]
         agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
         created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
         return await ThreadService.thread_response_from_entity(created_thread, t)

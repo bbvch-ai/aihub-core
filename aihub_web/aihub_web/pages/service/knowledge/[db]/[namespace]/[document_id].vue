@@ -22,7 +22,7 @@ const localePath = useLocalePath()
 const { t } = useI18n()
 
 const subPath = (path: string) => {
-  return `/knowledge/${route.params.db}/${route.params.namespace}/${route.params.document_id}/${path}`
+  return `/service/knowledge/${route.params.db}/${route.params.namespace}/${route.params.document_id}/${path}`
 }
 
 const isActive = (path: string) => {

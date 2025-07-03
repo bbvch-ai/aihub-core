@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="experiment?.name"
-    close-route="/evaluations/experiments"
+    close-route="/service/evaluations/experiments"
     :loading="experimentIsLoading"
     size="large"
   >

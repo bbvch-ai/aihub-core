@@ -269,7 +269,6 @@ class AgentService:
     async def get_paginated_agent_threads(
         agent_class: str,
         agent_id: str,
-        identity_provider: IdentityProvider,
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
@@ -281,7 +280,6 @@ class AgentService:
         return await ThreadService.get_paginated_threads_for_agent(
             agent_class,
             agent_id,
-            identity_provider=identity_provider,
             t=t,
             page=page,
             page_size=page_size,

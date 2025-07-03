@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Annotated, List, Optional
 
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from pydantic import Field
 
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
+
 
 
 class UserDTO(MinimalUserDTO):
@@ -19,6 +21,8 @@ class UserDTO(MinimalUserDTO):
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
 
+        valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
+
         return cls(
             id=user_entity.id,
             name=user_entity.name,
@@ -26,6 +30,6 @@ class UserDTO(MinimalUserDTO):
             profile_image=user_entity.profile_image,
             dashboard=dashboard_dto,
             favorite_modules=user_entity.favorite_modules,
-            roles=user_entity.roles,
+            roles=valid_roles,
             last_accessed=user_entity.last_updated,
         )

@@ -68,7 +68,7 @@ class EventController(Controller):
                 )
 
             thread = await ThreadService.get_thread_by_id(
-                thread_id=thread_id, identity_provider=self.auth.identity_provider, t=t
+                thread_id=thread_id, t=t
             )
             user_in_thread = user.id in [u.id for u in thread.users]
             thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
@@ -187,7 +187,7 @@ class EventController(Controller):
 
             if thread_id:
                 thread = await ThreadService.get_thread_by_id(
-                    thread_id=thread_id, identity_provider=self.auth.identity_provider, t=t
+                    thread_id=thread_id, t=t
                 )
                 user_in_thread = user.id in [u.id for u in thread.users]
                 thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(

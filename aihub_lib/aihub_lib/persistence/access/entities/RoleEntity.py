@@ -33,3 +33,12 @@ class RoleEntity(Document):
             all_rules.update(role.access_rules)
 
         return all_rules
+
+    @staticmethod
+    def filter_existing_roles(role_names: List[str]) -> List[str]:
+        """
+        Filters a list of potential role names, returning only those that
+        exist in the database.
+        """
+        existing_roles_query = RoleEntity.objects(name__in=role_names).only("name")
+        return [role.name for role in existing_roles_query]

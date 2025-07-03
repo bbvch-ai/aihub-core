@@ -48,6 +48,6 @@ const { datasets, datasetsAreLoading } = useDatasets()
 const createModalOpen = ref(false)
 
 const toDataset = (dataset: MinimalDataset) => {
-  router.push(localePath(`/evaluations/datasets/${dataset.id}`))
+  router.push(localePath(`/service/evaluations/datasets/${dataset.id}`))
 }
 </script>

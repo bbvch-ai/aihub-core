@@ -5,6 +5,7 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Path, Security
 
@@ -114,7 +115,8 @@ class ThreadController(Controller):
 
             for user_id in create_request_dto.user_ids:
                 user_roles = await self.auth.identity_provider.get_user_roles(user_id)
-                access = AccessChecker(user_roles)
+                access_rules = RoleEntity.get_access_rules_for_roles(user_roles)
+                access = AccessChecker(list(access_rules))
                 for agent in create_request_dto.agents:
                     if not access.has_access_to_agent(agent.agent_class, agent.agent_id):
                         raise HTTPException(
@@ -176,7 +178,8 @@ class ThreadController(Controller):
 
             for thread_user in thread.users:
                 user_roles = await self.auth.identity_provider.get_user_roles(thread_user.id)
-                access = AccessChecker(user_roles)
+                access_rules = RoleEntity.get_access_rules_for_roles(user_roles)
+                access = AccessChecker(list(access_rules))
                 if not access.has_access_to_agent(req.agent_class, req.agent_id):
                     raise HTTPException(
                         status_code=403,
@@ -255,8 +258,9 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             user_to_add_roles = await self.auth.identity_provider.get_user_roles(add_user_dto.user_id)
+            access_rules = RoleEntity.get_access_rules_for_roles(user_to_add_roles)
             for agent in thread.agents:
-                if not AccessChecker(user_to_add_roles).has_access_to_agent(agent.agent_class, agent.agent_id):
+                if not AccessChecker(list(access_rules)).has_access_to_agent(agent.agent_class, agent.agent_id):
                     raise HTTPException(
                         status_code=403,
                         detail=f"User {add_user_dto.user_id} does not have access to agent {agent.agent_class}:{agent.agent_id}",

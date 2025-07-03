@@ -1,17 +1,21 @@
 from pathlib import Path
 from typing import Annotated, Optional
 
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Security
+from fastapi import Body, Security, Depends
+from nats.aio.client import Client as NATS
 
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.PaginatedUsersResponse import PaginatedUsersResponse
-from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.UserService import UserService
 
 
@@ -26,7 +30,7 @@ class UserController(Controller):
 
     name = LocaleString(en="User")
     description = LocaleString(en="Manage own user")
-    icon = "solar:password-bold"
+    icon = "mdi:user"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/users", additionally_required_permission: Optional[str] = None
@@ -63,16 +67,18 @@ class UserController(Controller):
     def get_my_user(self, route: str = "/me") -> "UserController":
         @self.router.get(route, tags=self.tags)
         async def get_my_user(
+            nc: Annotated[NATS, Depends(use_nats)],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> UserDTO:
+        ) -> UserWithAccessDTO:
             """
             Returns a `MinimalUserDTO` representing the currently logged-in user.
             """
-            return await UserService.get_logged_in_user(user)
+            return await UserService.get_logged_in_user(user, runner=self._runner, nc=nc, t=t)
 
         return self
 
-    def get_user(self, route: str = "/{user_oid}") -> "UserController":
+    def get_user(self, route: str = "/{user_id}") -> "UserController":
         """
         Registers an endpoint to retrieve a specific user by their OID.
         Requires 'aihub.users.read' permission.
@@ -80,13 +86,15 @@ class UserController(Controller):
 
         @self.router.get(route, tags=self.tags)
         async def get_user(
-            user_oid: Annotated[str, Path(description="The user's unique identifier (OID).")],
+            user_id: Annotated[str, Path(description="The user's unique identifier (OID).")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
-        ) -> UserDTO:
+        ) -> UserWithAccessDTO:
             """
             Retrieve user info by their OID.
             """
-            return await UserService.get_user_by_oid(user_oid)
+            return await UserService.get_user_with_access_by_oid(user_id, runner=self._runner, nc=nc, t=t)
 
         return self
 

@@ -92,7 +92,7 @@ class ChatService:
                 thread = ThreadEntity.get_thread_by_id(str(thread_id))
                 if not thread:
                     raise mongoengine.errors.DoesNotExist()
-                if user.id not in [u.id for u in thread.users]:
+                if user.id not in [u.user_id for u in thread.users]:
                     raise HTTPException(status_code=403, detail="User not part of the thread")
             except mongoengine.errors.DoesNotExist:
                 pass

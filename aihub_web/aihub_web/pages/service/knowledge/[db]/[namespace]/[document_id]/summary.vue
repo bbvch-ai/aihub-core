@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="t('knowledge.summary.title')"
-    :close-route="`/knowledge/${route.params.db}/${route.params.namespace}`"
+    :close-route="`/service/knowledge/${route.params.db}/${route.params.namespace}`"
     :loading="summaryNodesAreLoading"
   >
     <div class="flex flex-col gap-16">

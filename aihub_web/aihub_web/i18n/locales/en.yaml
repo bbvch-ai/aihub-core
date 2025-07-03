@@ -8,8 +8,23 @@ languages:
   fr: "French"
 
 user:
+  title: "Benutzer"
   logout: "Logout"
   language: "Language"
+  list:
+    name: "Name"
+    email: "E-Mail"
+    avatar: "Profilbild"
+    roles: "Rollen"
+    last_accessed: "Zuletzt aktiv"
+
+time_ago:
+  last_hour: 'Last hour'
+  last_day: 'Last day'
+  last_week: 'Last week'
+  last_month: 'Last month'
+  last_year: 'Last year'
+  long_time_ago: 'Long time ago'
 
 
 thread:

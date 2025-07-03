@@ -145,7 +145,6 @@ class AgentController(Controller):
             total, threads = await AgentService.get_paginated_agent_threads(
                 agent_class,
                 agent_id,
-                identity_provider=self.auth.identity_provider,
                 t=t,
                 page=page,
                 page_size=page_size,

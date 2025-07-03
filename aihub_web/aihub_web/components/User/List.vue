@@ -8,7 +8,7 @@
   >
     <Column
       field="profile_image"
-      :header="t('user.avatar')"
+      :header="t('user.list.avatar')"
     >
       <template #body="{ data }">
         <Avatar
@@ -32,7 +32,11 @@
       :header="t('user.list.last_accessed')"
     >
       <template #body="{ data }">
-        <p>{{ formatted(data.last_accessed) }}</p>
+        <Tag
+          v-if="data.last_accessed"
+          :value="getTimeAgo(data.last_accessed).text"
+          :severity="getTimeAgo(data.last_accessed).severity"
+        />
       </template>
     </Column>
     <Column
@@ -57,6 +61,7 @@ import type { UserDto } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
+const { getTimeAgo } = useTimeAgo()
 
 const props = defineProps<{
   users: UserDto[]
@@ -67,7 +72,6 @@ const emit = defineEmits<{
 }>()
 
 const initials = (user: UserDto) => user.name?.split(' ').map(n => n[0]).join('')
-const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')
 
 const selectedUser = computed(() => {
   return props.users.filter((user: UserDto) => {
