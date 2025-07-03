@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.208.0] - 2025-07-03 - Refined Context Metadata for Generative AI
+
+### Changed
+- 📄 **Streamlined RAG Context Metadata**: The **`document_title`** is now explicitly included in the metadata when combining nodes for Retrieval Augmented Generation (RAG) contexts, providing more direct document identification within prompts.
+- 🗑️ **Consolidated Node Metadata Fields**: To simplify and optimize the context provided to generative AI models, the `namespace`, `type`, and `content_type` fields are no longer emitted as part of the combined node metadata.
+
+---
+
+
+
 ## [v0.207.0] - 2025-07-01 - Streamlined Release Tagging
 
 ### Removed
