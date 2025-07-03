@@ -3,13 +3,13 @@ from typing import Type
 import pytest
 from pydantic import BaseModel
 
-from aihub_api.events.create_input_model import create_input_model
+from aihub_api.events.EventModelCreationService import EventModelCreationService
 from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel, Level2Model, Level3Model
 
 
 @pytest.fixture
 def pydantic_model() -> Type[BaseModel]:
-    return create_input_model(TestEvent)
+    return EventModelCreationService.create_input_model(TestEvent)
 
 
 @pytest.fixture

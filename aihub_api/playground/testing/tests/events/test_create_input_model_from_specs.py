@@ -3,7 +3,7 @@ from typing import Type
 import pytest
 from pydantic import BaseModel
 
-from aihub_api.events.create_input_model import create_input_model_from_specs
+from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel, Level2Model, Level3Model
 
@@ -15,7 +15,7 @@ def event_specs() -> EventSpecs:
 
 @pytest.fixture
 def pydantic_model(event_specs) -> Type[BaseModel]:
-    return create_input_model_from_specs(event_specs)
+    return EventModelCreationService.create_input_model_from_specs(event_specs)
 
 
 @pytest.fixture
@@ -25,14 +25,11 @@ def pydantic_instance(pydantic_model) -> BaseModel:
         nested_model={
             "nested_field": "nested_value",
             "nested_optional": 123,
-            "level2": {
-                "level2_data": "level2_value",
-                "level3": {"deep_value": "deep_test", "deep_number": 777}
-            }
+            "level2": {"level2_data": "level2_value", "level3": {"deep_value": "deep_test", "deep_number": 777}},
         },
         union_field="string_value",
         complex_union="complex_string",
-        list_of_nested=[{"nested_field": "item1"}, {"nested_field": "item2"}]
+        list_of_nested=[{"nested_field": "item1"}, {"nested_field": "item2"}],
     )
 
 
@@ -43,7 +40,7 @@ def pydantic_instance_minimal(pydantic_model) -> BaseModel:
         nested_model={"nested_field": "nested_value"},
         union_field=42,
         complex_union={"nested_field": "complex_nested"},
-        list_of_nested=[]
+        list_of_nested=[],
     )
 
 
