@@ -160,12 +160,12 @@ class TestFieldTyping:
         for model in [input_model, output_model]:
             # Test required string field
             test_field = model.model_fields["test_field"]
-            assert test_field.annotation == str
+            assert test_field.annotation is str
             assert test_field.is_required()
 
             # Test int field with default
             test_field_default = model.model_fields["test_field_with_default"]
-            assert test_field_default.annotation == int
+            assert test_field_default.annotation is int
             assert not test_field_default.is_required()
             assert test_field_default.default == 42
 
@@ -269,7 +269,7 @@ class TestFieldTyping:
 
         if creation_method == "class":
             # Test NestedTestModel field types
-            assert NestedTestModel.model_fields["nested_field"].annotation == str
+            assert NestedTestModel.model_fields["nested_field"].annotation is str
             assert NestedTestModel.model_fields["nested_field"].is_required()
 
             nested_optional = NestedTestModel.model_fields["nested_optional"]
@@ -282,15 +282,15 @@ class TestFieldTyping:
             assert nested_optional.default is None
 
             # Test Level2Model field types
-            assert Level2Model.model_fields["level2_data"].annotation == str
+            assert Level2Model.model_fields["level2_data"].annotation is str
             assert Level2Model.model_fields["level2_data"].is_required()
-            assert Level2Model.model_fields["level3"].annotation == Level3Model
+            assert Level2Model.model_fields["level3"].annotation is Level3Model
             assert Level2Model.model_fields["level3"].is_required()
 
             # Test Level3Model field types
-            assert Level3Model.model_fields["deep_value"].annotation == str
+            assert Level3Model.model_fields["deep_value"].annotation is str
             assert Level3Model.model_fields["deep_value"].is_required()
-            assert Level3Model.model_fields["deep_number"].annotation == int
+            assert Level3Model.model_fields["deep_number"].annotation is int
             assert not Level3Model.model_fields["deep_number"].is_required()
             assert Level3Model.model_fields["deep_number"].default == 999
 
@@ -389,8 +389,8 @@ class TestFieldTyping:
 
                 # Test that we can get origin and args without errors
                 try:
-                    origin = get_origin(field.annotation)
-                    args = get_args(field.annotation)
+                    get_origin(field.annotation)
+                    get_args(field.annotation)
                     # These should not raise exceptions
                 except Exception as e:
                     pytest.fail(f"Failed to get origin/args for field {field_name}: {e}")
