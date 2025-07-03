@@ -1,6 +1,8 @@
 import time
 from typing import Annotated
 
+from pydantic import BaseModel
+
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -162,8 +164,8 @@ class AgentController(Controller):
         self,
         agent_class,
         agent_id,
-        start_event_class: type[StartEvent],
-        stop_event_class: type[StopEvent],
+        start_event_input_types: List[Type[BaseModel]],
+        stop_event_output_types: List[Type[BaseModel]],
         route_postfix="/send_event",
     ) -> "AgentController":
         """
@@ -174,8 +176,6 @@ class AgentController(Controller):
         agent_id = snakecase(agent_id)
         postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
         name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
-        start_event_input_type = EventModelCreationService.create_input_model(start_event_class)
-        stop_event_output_type = EventModelCreationService.create_output_model(stop_event_class)
 
         if route_postfix.startswith("/"):
             route_postfix = route_postfix[1:]
