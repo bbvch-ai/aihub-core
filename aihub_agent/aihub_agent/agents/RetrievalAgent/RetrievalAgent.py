@@ -16,7 +16,8 @@ from aihub_agent.workflow.decorators.step import step
 
 class RetrievalAgent(Agent):
     """
-    The agent is  a simplified Retrieval-Augmented Generation agent that focuses on retrieving relevant information from a knowledge base.
+    The agent is a simplified Retrieval-Augmented Generation agent that focuses on retrieving relevant information from a knowledge base without any additional steps.
+    This can be useful if we want to separate the retrieval process from the generation process, when we have for example different data sources and each source has its own retrieval agent.
     """
 
     @step(
