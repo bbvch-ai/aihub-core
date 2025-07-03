@@ -39,7 +39,6 @@ from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.development.DevelopmentOpenaiResourceSettings import DevelopmentOpenaiResourceSettings
 
-load_dotenv()
 
 enable_logging()
 nest_asyncio.apply()
