@@ -75,7 +75,7 @@ async def test_send_event_to_agent(agent_api_client):
     user_message = EventModelCreationService.create_input_model(UserMessageEvent)(
         messages=[ChatMessage(role="user", content="Hey!")]
     )
-    # Debugging output removed to keep test output clean
+    print(user_message.model_dump_json())
     response = await agent_api_client.post(
         f"/agents/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
     )
