@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.210.0] - 2025-07-03 - SharePoint Ingestion and Pipeline Structure Enhancements
+
+### Added
+- ✨ **Introduced SharePoint Integration**: A comprehensive new set of assets, operations, and resources for ingesting documents directly from SharePoint into the data lake. This includes robust capabilities for fetching, transforming, and managing files, ensuring your knowledge base is kept up-to-date with SharePoint content.
+- 🚀 **New Azure OpenAI Model Configurations**: Added dedicated configuration classes (`EmbeddingModelConfig` and `LanguageModelConfig`) to simplify the setup and management of Azure OpenAI embedding and language models, enabling clearer model definitions.
+- ⚙️ **Flexible Pipeline Scheduling**: Enhanced scheduling utilities to allow for more granular control over pipeline execution times, including a new `daily_schedule_at` function for precise timing.
+- 📄 **SharePoint IO Manager**: Implemented a new I/O manager specifically for SharePoint, streamlining the process of loading files from SharePoint into pipeline assets.
+- 📊 **SharePoint Metadata Utilities**: Introduced helper functions to generate rich metadata tables for SharePoint files, improving observability and insights into ingested data.
+
+### Refactor
+- 🧹 **Pipeline Asset Reorganization**: Restructured the pipeline's asset factories into more logical subdirectories (`data_lake_to_vector_store` and `share_point_to_data_lake`) to improve modularity, readability, and maintainability.
+- 🔄 **Centralized SharePoint Utilities**: Consolidated SharePoint-related operations, resources, and data types into dedicated modules for better code organization and clarity, preparing for future expansions.
+
+---
+
+
+
 ## [v0.209.0] - 2025-07-03 - Automated PR Readiness Checks with Claude Integration
 
 ### Added
