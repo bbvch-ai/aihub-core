@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,18 +10,14 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
 
 
 class LanguageModelConfig(BaseSettings):
-    LANGUAGE_MODEL_NAME: str = Field(default="gpt-4o-mini", description="Name of the language model")
-    LANGUAGE_MODEL_BASE_URL: str = Field(description="Base URL for the language model")
-    LANGUAGE_MODEL_API_VERSION: str = Field(
-        default="2025-01-01-preview", description="API version for the language model"
-    )
-    LANGUAGE_MODEL_COMPLETION_TOKEN_COST: float = Field(
-        default=0.0004958, description="Completion token cost per thousands"
-    )
-    LANGUAGE_MODEL_PROMPT_TOKEN_COST: float = Field(default=0.00012393, description="Prompt token cost per thousands")
-    LANGUAGE_MODEL_TEMPERATURE: float = Field(
-        default=0.0, description="Temperature for the language model, 0.0 means deterministic output"
-    )
+    LANGUAGE_MODEL_NAME: Annotated[str, Field(description="Name of the language model")]
+    LANGUAGE_MODEL_BASE_URL: Annotated[str, Field(description="Base URL for the language model")]
+    LANGUAGE_MODEL_API_VERSION: Annotated[str, Field(description="API version for the language model")]
+    LANGUAGE_MODEL_COMPLETION_TOKEN_COST: Annotated[float, Field(description="Completion token cost per thousands")]
+    LANGUAGE_MODEL_PROMPT_TOKEN_COST: Annotated[float, Field(description="Prompt token cost per thousands")]
+    LANGUAGE_MODEL_TEMPERATURE: Annotated[
+        float, Field(description="Temperature for the language model, 0.0 means deterministic output")
+    ] = 0.0
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
