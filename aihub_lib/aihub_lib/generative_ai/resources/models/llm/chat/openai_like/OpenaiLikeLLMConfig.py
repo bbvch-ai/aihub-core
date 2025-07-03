@@ -38,7 +38,6 @@ class OpenaiLikeLLMConfig(ChatLLMConfig):
     This config ensures we can integrate a locally hosted LLM into llama_index with cost tracking and parameter merging.
     """
 
-    api_key: Annotated[Optional[str], Field(None, description="API key if required by the local endpoint.")]
     context_size: Annotated[int, Field(..., description="Context window size (max tokens) supported by the model.")]
     is_function_calling_model: Annotated[bool, Field(..., description="True if the model supports function calling.")]
     is_chat_model: Annotated[bool, Field(True, description="True if the model uses a chat-based interface.")]

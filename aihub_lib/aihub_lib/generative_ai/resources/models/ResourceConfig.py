@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
 
@@ -25,6 +27,10 @@ class ResourceConfig(BaseModel):
 
     name: Annotated[str, Field(description="The name of the model.")]
     base_url: Annotated[str, Field(description="The base URL of the model.")]
+    api_key: Annotated[
+        Optional[str],
+        Field(description="API key for authentication. If not provided, other authentication methods will be used."),
+    ] = None
 
     # Using default_factory, so keeping Field() explicitly
     default_parameter: Annotated[
