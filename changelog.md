@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.209.0] - 2025-07-03 - Automated PR Readiness Checks with Claude Integration
+
+### Added
+- 🦾 **Automated Subproject PR Readiness:** Introduced a new intelligent script that automatically identifies the root of a subproject based on edited files and executes `make pr-ready`, standardizing pre-PR checks and ensuring code quality.
+- ⚡️ **Claude Post-Edit Automation:** Configured Claude to automatically trigger the new PR readiness script immediately after any file modifications (Write, Edit, MultiEdit), providing instant feedback on code quality and readiness within the development workflow.
+
+---
+
+
+
 ## [v0.208.0] - 2025-07-03 - Refined Context Metadata for Generative AI
 
 ### Changed
