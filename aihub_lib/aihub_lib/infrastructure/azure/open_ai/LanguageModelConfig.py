@@ -9,9 +9,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
 
 class LanguageModelConfig(BaseSettings):
     LANGUAGE_MODEL_NAME: str = Field(default="gpt-4o-mini", description="Name of the language model")
-    LANGUAGE_MODEL_BASE_URL: str = Field(
-        default="https://bbvihub-openai-sui.openai.azure.com/", description="Base URL for the language model"
-    )
+    LANGUAGE_MODEL_BASE_URL: str = Field(description="Base URL for the language model")
     LANGUAGE_MODEL_API_VERSION: str = Field(
         default="2025-01-01-preview", description="API version for the language model"
     )

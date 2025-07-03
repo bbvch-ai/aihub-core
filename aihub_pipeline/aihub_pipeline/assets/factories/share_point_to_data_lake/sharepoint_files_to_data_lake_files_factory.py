@@ -9,7 +9,7 @@ from aihub_pipeline.types.SharePointFile import SharePointFile
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 
-def data_lake_files_factory(
+def sharepoint_files_to_data_lake_files_factory(
     key: AssetKey,
     share_point_key: str | AssetKey,
     partitions: DynamicPartitionsDefinition,

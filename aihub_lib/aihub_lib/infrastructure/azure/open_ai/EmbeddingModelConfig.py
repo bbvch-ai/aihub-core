@@ -9,9 +9,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 
 class EmbeddingModelConfig(BaseSettings):
     EMBEDDING_MODEL_NAME: str = Field(default="text-embedding-3-large", description="Name of the embedding model")
-    EMBEDDING_MODEL_BASE_URL: str = Field(
-        default="https://bbvaihub-openai-sui.openai.azure.com/", description="Base URL for the embedding model"
-    )
+    EMBEDDING_MODEL_BASE_URL: str = Field(description="Base URL for the embedding model")
     EMBEDDING_MODEL_API_VERSION: str = Field(default="2023-05-15", description="API version for the embedding model")
     EMBEDDING_MODEL_TOKEN_COST: float = Field(default=0.000019, description="Token cost per thousands")
 
