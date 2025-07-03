@@ -1,12 +1,12 @@
 from typing import Annotated, List, Literal, Optional
 
-from aihub_lib.agents.AgentConfig import StepConfig
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryMode
 from pydantic import Field
 
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
+from aihub_lib.agents.AgentConfig import StepConfig
+from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
 
 
 class RetrieveStepConfig(StepConfig):
@@ -33,6 +33,5 @@ class RetrieveStepConfig(StepConfig):
         ),
     ] = None
     retrieve_summaries: Annotated[RetrieveSummariesConfig, Field(
-        default=None,
-        description="Whether to retrieve summaries based on the retrieved nodes from the vector store.",
-    )]
+        description="Configurations for retrieving the parent summaries, max number of summary levels",
+    )] = None

@@ -39,7 +39,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
         content_node: NodeWithScore,
         visited_ids: Set[str],
     ) -> List[NodeWithScore]:
-        parents = []
+        parents: List[NodeWithScore] = []
         current_node = content_node
         level = 0
 
