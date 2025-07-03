@@ -1,10 +1,13 @@
 from typing import List, Set
-from mongoengine import Document, StringField, ListField
+
+from mongoengine import Document, ListField, StringField
+
 
 class RoleEntity(Document):
     """
     Represents a role in the system, which contains a set of access rules.
     """
+
     meta = {
         "collection": "roles",
         "strict": False,

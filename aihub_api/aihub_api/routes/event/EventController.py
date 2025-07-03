@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -46,7 +46,9 @@ class EventController(Controller):
     description = LocaleString(en="Inspect events in the system")
     icon = "mdi:apache-kafka"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/events"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/events", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_events_in_thread(self, path: str = "/threads/{thread_id}") -> "EventController":

@@ -114,7 +114,9 @@ class AccessChecker:
         self._validate_permission_template(permission_template)
         is_implicit_check = "?" in permission_template
         match_func = (
-            self._access_rule_fulfills_implicit_template if is_implicit_check else self._access_rule_matches_concrete_permission
+            self._access_rule_fulfills_implicit_template
+            if is_implicit_check
+            else self._access_rule_matches_concrete_permission
         )
 
         # 1. Check for Admin access

@@ -66,11 +66,12 @@ class OpenaiController(Controller):
         *,
         auth: AuthHandler,
         route: str = "/openai",
-        embedding_models: List[EmbeddingLLMConfig] = None,
-        chat_models: List[ChatLLMConfig] = None,
-        image_models: List[AzureOpenaiImageModelConfig] = None,
-        stt_models: List[AzureOpenaiSTTConfig] = None,
-        tts_models: List[AzureOpenaiTTSConfig] = None,
+        additionally_required_permission: Optional[str] = None,
+        embedding_models: Optional[List[EmbeddingLLMConfig]] = None,
+        chat_models: Optional[List[ChatLLMConfig]] = None,
+        image_models: Optional[List[AzureOpenaiImageModelConfig]] = None,
+        stt_models: Optional[List[AzureOpenaiSTTConfig]] = None,
+        tts_models: Optional[List[AzureOpenaiTTSConfig]] = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.embedding_models = embedding_models or []

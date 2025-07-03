@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -25,6 +25,7 @@ class BotInTheLoopController(Controller):
         *,
         auth: AuthHandler,
         route: str = BotInTheLoopHandler.CONTROLLER_PATH,
+        additionally_required_permission: Optional[str] = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 

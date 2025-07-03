@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -23,7 +23,9 @@ class FileController(Controller):
     description = LocaleString(en="Provides secure access to stored files")
     icon = "line-md:file"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/file"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/file", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}"):

@@ -83,21 +83,29 @@ class Controller(abc.ABC):
             access_checker = AccessChecker.from_user(user)
 
             if not access_checker.has_access_to_service(self.service_name):
-                logger.warning(f"User {user.email} does not have access to service {self.service_name}. Got roles {user.roles} with access rules {access_checker.access_rules}")
+                logger.warning(
+                    f"User {user.email} does not have access to service {self.service_name}. Got roles {user.roles} with access rules {access_checker.access_rules}"
+                )
                 raise HTTPException(
                     status_code=403,
                     detail=f"Forbidden: You do not have the permission to access the {self.service_name}-service.",
                 )
 
-            if self.additionally_required_permission and not access_checker.has_access(self.additionally_required_permission):
-                logger.warning(f"User {user.email} does not have special permission {self.additionally_required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}")
+            if self.additionally_required_permission and not access_checker.has_access(
+                self.additionally_required_permission
+            ):
+                logger.warning(
+                    f"User {user.email} does not have special permission {self.additionally_required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}"
+                )
                 raise HTTPException(
                     status_code=403,
                     detail=f"Forbidden: You do not have the required additional '{self.additionally_required_permission}' permission to access this service.",
                 )
 
             if not access_checker.has_access(required_permission):
-                logger.warning(f"User {user.email} does not have permission {required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}")
+                logger.warning(
+                    f"User {user.email} does not have permission {required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}"
+                )
                 raise HTTPException(
                     status_code=403,
                     detail=f"Forbidden: You do not have the required '{required_permission}' permission.",

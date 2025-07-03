@@ -1,17 +1,17 @@
-from typing import Annotated, List
-from fastapi import HTTPException, Security, status
-from mongoengine.errors import DoesNotExist, NotUniqueError
+from typing import Annotated, List, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import HTTPException, Security, status
+from mongoengine.errors import DoesNotExist, NotUniqueError
 
-from .RoleService import RoleService
 from .dto.CreateRoleRequest import CreateRoleRequest
 from .dto.DeleteRoleResponse import DeleteRoleResponse
 from .dto.RoleResponse import RoleResponse
 from .dto.UpdateRoleRequest import UpdateRoleRequest
+from .RoleService import RoleService
 
 
 class RoleController(Controller):
@@ -19,7 +19,9 @@ class RoleController(Controller):
     description = LocaleString(en="Manage user roles and permissions")
     icon = "solar:users-group-rounded-bold"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/roles"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def create_role(self, route: str = "/") -> "RoleController":
@@ -40,6 +42,7 @@ class RoleController(Controller):
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
+
         return self
 
     def list_roles(self, route: str = "/") -> "RoleController":
@@ -53,6 +56,7 @@ class RoleController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.role.read"))],
         ) -> List[RoleResponse]:
             return RoleService.list_roles()
+
         return self
 
     def get_role(self, route: str = "/{role_id}") -> "RoleController":
@@ -70,6 +74,7 @@ class RoleController(Controller):
                 return RoleService.get_role_by_id(role_id)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")
+
         return self
 
     def update_role(self, route: str = "/{role_id}") -> "RoleController":
@@ -92,6 +97,7 @@ class RoleController(Controller):
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
+
         return self
 
     def delete_role(self, route: str = "/{role_id}") -> "RoleController":
@@ -110,4 +116,5 @@ class RoleController(Controller):
                 return DeleteRoleResponse()
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")
+
         return self

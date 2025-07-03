@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -18,7 +18,9 @@ class TokenController(Controller):
     description = LocaleString(en="Manage API Tokens")
     icon = "solar:password-bold"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/tokens"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/tokens", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def create_token(self, route: str = "/") -> "TokenController":

@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, List, Type
+from typing import Annotated, List, Optional, Type
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -65,7 +65,9 @@ class AgentController(Controller):
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/agents"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_agents(self, route: str = "/") -> "AgentController":

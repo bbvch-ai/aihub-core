@@ -13,15 +13,18 @@ def context():
     """A dictionary to hold state between BDD steps."""
     return {}
 
+
 @pytest.fixture
 def access_rules():
     """A dictionary to hold state between BDD steps."""
     return []
 
-@given(parsers.parse('no access rules'))
+
+@given(parsers.parse("no access rules"))
 def given_no_access_rules(access_rule: str, access_rules: List[str]):
     """Adds an access rule to the user's list of access roles."""
     access_rules.clear()
+
 
 @given(parsers.parse('the access rule "{access_rule}"'))
 def given_access_rules(access_rule: str, access_rules: List[str]):

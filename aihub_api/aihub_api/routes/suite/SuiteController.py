@@ -21,7 +21,9 @@ class SuiteController(Controller):
     description = LocaleString(en="Suite endpoints")
     icon = "material-symbols:token"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/suites"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/suites", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self._runner: Optional["ApiRunner"] = None
 

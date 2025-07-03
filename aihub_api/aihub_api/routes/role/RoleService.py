@@ -1,9 +1,11 @@
 from typing import List
 
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+
 from aihub_api.routes.role.dto.CreateRoleRequest import CreateRoleRequest
 from aihub_api.routes.role.dto.RoleResponse import RoleResponse
 from aihub_api.routes.role.dto.UpdateRoleRequest import UpdateRoleRequest
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+
 
 class RoleService:
     @staticmethod
@@ -12,11 +14,7 @@ class RoleService:
         Creates a new role.
         Raises NotUniqueError if a role with the same name already exists.
         """
-        role = RoleEntity(
-            name=data.name,
-            description=data.description,
-            access_rules=data.access_rules
-        )
+        role = RoleEntity(name=data.name, description=data.description, access_rules=data.access_rules)
         role.save()
         return RoleResponse.model_validate(role)
 

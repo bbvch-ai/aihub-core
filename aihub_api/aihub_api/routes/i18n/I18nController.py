@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -27,7 +27,9 @@ class I18nController(Controller):
     description = LocaleString(en="Localization service")
     icon = "mdi:language"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/i18n"):
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/i18n", additionally_required_permission: Optional[str] = None
+    ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_my_locale(self, route: str = "/my-locale") -> "I18nController":

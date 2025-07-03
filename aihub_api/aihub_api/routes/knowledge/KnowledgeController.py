@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -32,6 +32,7 @@ class KnowledgeController(Controller):
         auth: AuthHandler,
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
+        additionally_required_permission: Optional[str] = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(

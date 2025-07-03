@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -50,6 +50,7 @@ class EvaluationController(Controller):
         auth: AuthHandler,
         judge: ChatLLMConfig,
         route: str = "/evaluations",
+        additionally_required_permission: Optional[str] = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.judge = judge

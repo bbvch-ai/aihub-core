@@ -36,6 +36,4 @@ class SuiteService:
                     user_is_admin=user_service_access == AccessLevel.ACCESS_ADMIN,
                 )
             )
-        return SuiteDTO(
-            services=services
-        )
+        return SuiteDTO(services=services)

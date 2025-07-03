@@ -1,9 +1,11 @@
-from typing import List, Optional, Annotated
+from typing import Annotated, List
+
 from pydantic import BaseModel, Field
 
 
 class RoleResponse(BaseModel):
     """Response model representing a role."""
+
     model_config = {"from_attributes": True}
 
     id: Annotated[str, Field(description="The unique identifier of the role.")]
