@@ -181,5 +181,8 @@ class EventModelCreationService:
                 return Optional[Union[tuple(types)]]
             else:
                 return Union[tuple(types)]
+        elif has_null:
+            # len(types) == 0
+            return type(None)
         else:
             return Any
