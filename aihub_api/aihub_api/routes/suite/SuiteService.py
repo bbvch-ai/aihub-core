@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 from aihub_api.routes.suite.dto.ServiceDTO import ServiceDTO
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class SuiteService:
     @staticmethod
-    def get_suite(user: AuthenticatedUser, runner: "ApiRunner", t: LocaleHandler) -> SuiteDTO:
+    def get_suite(user: UserIdentity, runner: "ApiRunner", t: LocaleHandler) -> SuiteDTO:
         return SuiteDTO(
             services=[
                 ServiceDTO(

@@ -4,10 +4,10 @@ from typing import AsyncGenerator
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
@@ -38,7 +38,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     3. **Event Persistence Subscriber:**
        Sets up a `JSSubscriber` that listens to all agent events, using `EventPersister` to store them.
     4. **WebSocket Setup:**
-       Initializes a `WebSocketManager`, `WebSocketSender`, and `ExternalEventDistributor`.
+       Initializes a `WebSocketManager`, `WebSocketSender`, and `ExternalAgentEventDistributor`.
        Then subscribes to display events via `NCSubscriber` and sends them to connected websockets.
     5. **App State Initialization:**
        Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_event_distributor`) in `app.state`,
@@ -72,11 +72,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
 
-        topic_manager = TopicManager()
+        topic_manager = AgentTopicManager()
 
         # Persist all agent events
         persister = EventPersister("default")
-        persist_subscriber = NCSubscriber.for_all_agent_events(
+        persist_subscriber = AgentNCSubscriber.for_all_agent_events(
             nc=nc, topic_manager=topic_manager, handler=persister.persist_event
         )
         await persist_subscriber.start()
@@ -84,14 +84,14 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Setup WebSocket event flow
         ws_manager = WebSocketManager()
         ws_sender = WebSocketSender(ws_manager=ws_manager)
-        ws_subscriber = NCSubscriber.all_for_agent_display_events(
+        ws_subscriber = AgentNCSubscriber.for_all_agents_display_events(
             nc=nc,
             topic_manager=topic_manager,
             handler=ws_sender.send_event,
         )
         await ws_subscriber.start()
 
-        external_event_distributor = ExternalEventDistributor(nc=nc, js=js)
+        external_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc

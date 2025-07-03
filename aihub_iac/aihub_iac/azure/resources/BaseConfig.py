@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -11,21 +11,25 @@ class BaseConfig(BaseModel):
     _project_settings: ClassVar[ProjectSettings] = ProjectSettings()
 
     # Project and environment settings
-    project_name: str = Field(
-        default_factory=lambda: BaseConfig._project_settings.APP_NAME, description="Name of the project"
-    )
-    location: str = Field(
-        default_factory=lambda: BaseConfig._project_settings.LOCATION, description="Location of the resources"
-    )
-    location_short: str = Field(
-        default_factory=lambda: BaseConfig._project_settings.LOCATION_SHORT, description="Short location code"
-    )
-    resource_group: str = Field(
-        default_factory=lambda: BaseConfig._project_settings.RESOURCE_GROUP, description="Resource group name"
-    )
-    subscription_id: str = Field(
-        default_factory=lambda: BaseConfig._project_settings.ARM_SUBSCRIPTION_ID, description="Subscription ID"
-    )
+    project_name: Annotated[
+        str, Field(default_factory=lambda: BaseConfig._project_settings.APP_NAME, description="Name of the project")
+    ]
+    location: Annotated[
+        str,
+        Field(default_factory=lambda: BaseConfig._project_settings.LOCATION, description="Location of the resources"),
+    ]
+    location_short: Annotated[
+        str,
+        Field(default_factory=lambda: BaseConfig._project_settings.LOCATION_SHORT, description="Short location code"),
+    ]
+    resource_group: Annotated[
+        str,
+        Field(default_factory=lambda: BaseConfig._project_settings.RESOURCE_GROUP, description="Resource group name"),
+    ]
+    subscription_id: Annotated[
+        str,
+        Field(default_factory=lambda: BaseConfig._project_settings.ARM_SUBSCRIPTION_ID, description="Subscription ID"),
+    ]
 
     @cached_property
     def resource_namer(self) -> ResourceNamer:

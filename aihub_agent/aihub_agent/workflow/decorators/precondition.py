@@ -1,6 +1,6 @@
 import inspect
 
-from aihub_agent.workflow.annotations.extractors.extract_function_events import extract_function_events
+from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
 
 
 def precondition():
@@ -11,7 +11,7 @@ def precondition():
     A workflow step might have complex preconditions that must be fulfilled before it can run.
     By decorating a function with `@precondition`, you:
     1. Flag it as a precondition for a step in the workflow engine.
-    2. Allow the Dispatcher to resolve the function arguments you need in order to resolve the condition.
+    2. Allow the AgentDispatcher to resolve the function arguments you need in order to resolve the condition.
 
     ### Example
     ```python

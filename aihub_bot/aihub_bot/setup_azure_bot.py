@@ -221,9 +221,9 @@ def main():
     parser.add_argument("--resource-group", "-rg", required=True, help="Name of the Azure resource group.")
     parser.add_argument("--bot-name", "-bot", required=True, help="Name for the Azure Bot.")
     parser.add_argument(
-        "--api-path", "-path", required=True, help="API endpoint path for the bot (e.g. '/api/messages')."
+        "--token-path", "-path", required=True, help="API endpoint path for the bot (e.g. '/token/messages')."
     )
-    parser.add_argument("--api-url", "-url", required=True, help="API URL for the bot (e.g. 'https://example.com').")
+    parser.add_argument("--token-url", "-url", required=True, help="API URL for the bot (e.g. 'https://example.com').")
     parser.add_argument(
         "--location", "-loc", default="westeurope", help="Azure location for the bot (default: 'westeurope')."
     )

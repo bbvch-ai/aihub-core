@@ -1,16 +1,22 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AISearchConfig(BaseSettings):
-    COGNITIVE_SEARCH_RESOURCE_GROUP_NAME: Optional[str] = Field(
-        None, description="Overwrite the cognitive search resource group"
+    COGNITIVE_SEARCH_RESOURCE_GROUP_NAME: Annotated[
+        Optional[str], Field(description="Overwrite the cognitive search resource group")
+    ] = None
+    COGNITIVE_SEARCH_NAME: Annotated[
+        Optional[str], Field(description="Overwrite the cognitive search service name")
+    ] = None
+    COGNITIVE_SEARCH_ENDPOINT: Annotated[
+        Optional[str], Field(description="Overwrite the cognitive search API endpoint")
+    ] = None
+    COGNITIVE_SEARCH_API_KEY: Annotated[Optional[str], Field(description="Overwrite the cognitive search API key")] = (
+        None
     )
-    COGNITIVE_SEARCH_NAME: Optional[str] = Field(None, description="Overwrite the cognitive search service name")
-    COGNITIVE_SEARCH_ENDPOINT: Optional[str] = Field(None, description="Overwrite the cognitive search API endpoint")
-    COGNITIVE_SEARCH_API_KEY: Optional[str] = Field(None, description="Overwrite the cognitive search API key")
 
     model_config = SettingsConfigDict(
         env_file=".env",

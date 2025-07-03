@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,9 +28,9 @@ class OAuth2Config(BaseSettings):
     ```
     """
 
-    TENANT_ID: str = Field(..., description="The tenant ID of the Azure AD tenant.")
-    CLIENT_ID: str = Field(..., description="The client ID of the application.")
-    AUTHORITY_URL: str = Field(..., description="The authority URL of the Azure AD tenant.")
+    TENANT_ID: Annotated[str, Field(description="The tenant ID of the Azure AD tenant.")]
+    CLIENT_ID: Annotated[str, Field(description="The client ID of the application.")]
+    AUTHORITY_URL: Annotated[str, Field(description="The authority URL of the Azure AD tenant.")]
 
     model_config = SettingsConfigDict(
         env_file=".env",

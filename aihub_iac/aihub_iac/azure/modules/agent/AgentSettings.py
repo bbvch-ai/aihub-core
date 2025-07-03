@@ -1,10 +1,12 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class AgentSettings(BaseSettings):
-    AGENT_REPO_IMAGE_URL: Optional[str] = Field(default=None, description="URL where the image for the agent is stored")
-    AGENT_IMAGE_TAG: Optional[str] = Field(default=None, description="image tag for the agent")
-    AGENT_PHOENIX_API_TOKEN: Optional[str] = Field(default=None, description="API Token for Phoenix")
+    AGENT_REPO_IMAGE_URL: Annotated[Optional[str], Field(description="URL where the image for the agent is stored")] = (
+        None
+    )
+    AGENT_IMAGE_TAG: Annotated[Optional[str], Field(description="image tag for the agent")] = None
+    AGENT_PHOENIX_API_TOKEN: Annotated[Optional[str], Field(description="API Token for Phoenix")] = None

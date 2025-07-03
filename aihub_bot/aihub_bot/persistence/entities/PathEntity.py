@@ -26,6 +26,9 @@ class PathEntity(Document):
     meta = {
         "collection": "bot_paths",
         "strict": True,
+        "indexes": [
+            {"fields": ["path"], "unique": True},
+        ],
     }
     path = StringField(required=True)
     credentials = EmbeddedDocumentField(Credentials, required=True)

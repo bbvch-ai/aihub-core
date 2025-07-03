@@ -8,7 +8,7 @@ class UserUISettings(BaseModel):
     Settings for the user interface with optional parameters and notifications.
     """
 
-    params: Annotated[Dict[str, Any], Field(default_factory=dict, description="UI parameters")]
+    params: Annotated[Dict[str, Any], Field(description="UI parameters")] = {}
     version: Annotated[Optional[str], Field(default=None, description="UI version")] = None
     notifications: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Notification settings")] = None
 

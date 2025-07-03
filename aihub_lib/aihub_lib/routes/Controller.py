@@ -4,7 +4,12 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, FastAPI
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 
@@ -51,9 +56,11 @@ class Controller(abc.ABC):
     description = LocaleString(en="This controller has no description.")
     icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
 
-    def __init__(self, route: str, auth: AuthHandler | None = None, is_admin_only=False):
+    def __init__(self, *, auth: AuthHandler, route: str, is_admin_only=False):
         self.base_route: str = route
-        self.auth: AuthHandler = auth or NoAuthHandler()
+        self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler(
+            identity_provider=DangerousDevelopmentOnlyIdentityProvider()
+        )
         self.router: APIRouter = APIRouter()
 
         self.is_admin_only = is_admin_only

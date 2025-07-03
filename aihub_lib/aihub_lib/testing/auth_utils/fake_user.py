@@ -1,12 +1,12 @@
 import uuid
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 
-def fake_user() -> AuthenticatedUser:
-    return AuthenticatedUser(
+def fake_user() -> UserIdentity:
+    return UserIdentity(
         name="Fake User",
-        preferred_username="fake@user.com",
-        oid=str(uuid.uuid4()),
+        email="fake@user.com",
+        id=str(uuid.uuid4()),
         roles=["AllAgents"],
     )

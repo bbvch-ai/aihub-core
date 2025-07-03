@@ -42,10 +42,12 @@ class AzureOpenaiImageModelConfig(ImageModelConfig, AzureOpenaiResourceConfig):
     """
 
     # Keeping Field() explicitly for default_factory
-    default_parameter: AzureImageModelParameter = Field(
-        default_factory=lambda: AzureImageModelParameter(),
-        description="Default parameters for the Azure image model.",
-    )
+    default_parameter: Annotated[
+        AzureImageModelParameter,
+        Field(
+            description="Default parameters for the Azure image model.",
+        ),
+    ] = AzureImageModelParameter()
 
     def get_openai_client(self) -> AsyncAzureOpenAI:
         token_provider = get_bearer_token_provider(

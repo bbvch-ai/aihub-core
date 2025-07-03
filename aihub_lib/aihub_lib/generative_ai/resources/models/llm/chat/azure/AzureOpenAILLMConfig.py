@@ -49,10 +49,12 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
     api_key: Annotated[str, Field(description="Use Azure OpenAI API Key instead of Azure AD.")] = None
 
     # Keeping Field() explicitly for default_factory
-    default_parameter: AzureOpenAIParameter = Field(
-        default_factory=lambda: AzureOpenAIParameter(),
-        description="Default parameters for Azure OpenAI LLM.",
-    )
+    default_parameter: Annotated[
+        AzureOpenAIParameter,
+        Field(
+            description="Default parameters for Azure OpenAI LLM.",
+        ),
+    ] = AzureOpenAIParameter()
 
     @property
     def tokenizer(self) -> Callable[[str], List[int]]:

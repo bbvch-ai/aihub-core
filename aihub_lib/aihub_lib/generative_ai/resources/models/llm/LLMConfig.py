@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, Optional, Tuple, Union
+from typing import Annotated, Dict, Optional, Tuple, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms import LLM
@@ -26,7 +26,7 @@ class LLMModelParameter(ResourceParameter):
 
 
 class LLMConfig(ResourceConfig):
-    default_parameter: LLMModelParameter = Field(..., description="The default parameters for the model.")
+    default_parameter: Annotated[LLMModelParameter, Field(description="The default parameters for the model.")]
 
     @abstractmethod
     def to_llama_index(

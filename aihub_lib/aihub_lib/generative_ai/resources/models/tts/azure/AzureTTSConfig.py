@@ -31,7 +31,9 @@ class AzureOpenaiTTSConfig(TTSConfig, AzureOpenaiResourceConfig):
     """
 
     # Keeping Field() explicitly for default_factory
-    default_parameter: AzureTTSParameter = Field(
-        default_factory=lambda: AzureTTSParameter(),
-        description="Default parameters for the Azure text-to-speech model.",
-    )
+    default_parameter: Annotated[
+        AzureTTSParameter,
+        Field(
+            description="Default parameters for the Azure text-to-speech model.",
+        ),
+    ] = AzureTTSParameter()

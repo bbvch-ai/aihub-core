@@ -10,7 +10,7 @@ from playground.minimal_workflow.displaying_workflow.DisplayingAgentConfig impor
     DisplayingAgentConfig,
 )
 
-scenarios("../tests/features/displaying_agent.feature")
+scenarios("./features/displaying_agent.feature")
 
 
 @given("a DisplayingAgent runner", target_fixture="agent_runner")

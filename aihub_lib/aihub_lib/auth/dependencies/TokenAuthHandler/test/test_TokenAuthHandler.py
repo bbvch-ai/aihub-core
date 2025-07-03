@@ -10,6 +10,7 @@ from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
@@ -160,7 +161,7 @@ async def invoke_token_auth_handler(token_context: dict, token_context_result: d
     token_str = token_context["token_str"]
     headers = {"Authorization": f"Bearer {token_str}"}
     request = create_dummy_request(headers)
-    handler = TokenAuthHandler()
+    handler = TokenAuthHandler(identity_provider=TokenIdentityProvider())
     try:
         security = await HTTPBearer()(request)
         user = await handler(request, security)
@@ -176,7 +177,7 @@ async def invoke_token_auth_handler_expect_error(token_context: dict, error_cont
     token_str = token_context["token_str"]
     headers = {"Authorization": f"Bearer {token_str}"}
     request = create_dummy_request(headers)
-    handler = TokenAuthHandler()
+    handler = TokenAuthHandler(identity_provider=TokenIdentityProvider())
     try:
         security = await HTTPBearer()(request)
         await handler(request, security)
@@ -200,9 +201,7 @@ def check_name(token_context_result: dict, expected_name: str) -> None:
 def check_preferred_username(token_context_result: dict, expected_email: str) -> None:
     """Check that the authenticated user has the expected preferred username."""
     user = token_context_result.get("user")
-    assert (
-        user.preferred_username == expected_email
-    ), f"Expected email '{expected_email}', got '{user.preferred_username}'"
+    assert user.email == expected_email, f"Expected email '{expected_email}', got '{user.email}'"
 
 
 @then("the returned user should have oid matching the token's user id")
@@ -210,7 +209,7 @@ def check_user_oid(token_context_result: dict, token_context: dict) -> None:
     """Check that the authenticated user's oid matches the expected user id."""
     user = token_context_result.get("user")
     expected_oid = token_context.get("expected_user_oid")
-    assert user.oid == expected_oid, f"Expected user oid '{expected_oid}', got '{user.oid}'"
+    assert user.id == expected_oid, f"Expected user oid '{expected_oid}', got '{user.id}'"
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))

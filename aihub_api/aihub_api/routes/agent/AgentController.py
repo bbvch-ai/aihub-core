@@ -1,13 +1,13 @@
 import time
 from typing import Annotated, List, Type
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
 from bson import ObjectId
@@ -63,14 +63,14 @@ class AgentController(Controller):
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
 
-    def __init__(self, route: str = "/agents", auth: AuthHandler | None = None, is_admin_only=True):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+    def __init__(self, *, auth: AuthHandler, route: str = "/agents", is_admin_only=True):
+        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
 
     def get_agents(self, route: str = "/") -> "AgentController":
         @self.router.get(route, tags=self.tags)
         async def get_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
@@ -85,7 +85,7 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> List[AgentDTO]:
             """
@@ -102,7 +102,7 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             agent_class: str,
             agent_id: str,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
         ) -> AgentDTO:
             """
@@ -119,7 +119,7 @@ class AgentController(Controller):
         async def get_agent_threads(
             agent_class: str,
             agent_id: str,
-            user: AuthenticatedUser = Security(self.auth),
+            user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
             page: PageNumber = 1,
             page_size: PageSize = 20,
@@ -131,7 +131,12 @@ class AgentController(Controller):
                 raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
             total, threads = await AgentService.get_paginated_agent_threads(
-                agent_class, agent_id, t, page=page, page_size=page_size
+                agent_class,
+                agent_id,
+                identity_provider=self.auth.identity_provider,
+                t=t,
+                page=page,
+                page_size=page_size,
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -170,8 +175,10 @@ class AgentController(Controller):
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[start_event_input_type, Body],
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
-            user: AuthenticatedUser = Security(self.auth),
+            external_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            ],
+            user: UserIdentity = Security(self.auth),
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             t: LocaleHandler = Depends(use_locale),

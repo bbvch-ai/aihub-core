@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -15,10 +15,10 @@ async def route_to_event_using_llm(
     class RouteSelectionModel(BaseModel):
         """Model for selecting a routing option."""
 
-        selected_option_index: int = Field(
-            ..., description=t("lib.prompt.router.selected_option_index"), ge=0, lt=len(routes)
-        )
-        reason: str = Field(..., description=t("lib.prompt.router.reason"))
+        selected_option_index: Annotated[
+            int, Field(description=t("lib.prompt.router.selected_option_index"), ge=0, lt=len(routes))
+        ]
+        reason: Annotated[str, Field(description=t("lib.prompt.router.reason"))]
 
     # Load the prompt template from the YAML file
     prompt_text = t("lib.prompt.router.routing_prompt")

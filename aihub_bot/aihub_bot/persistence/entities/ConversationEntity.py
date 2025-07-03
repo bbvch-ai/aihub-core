@@ -97,6 +97,9 @@ class ConversationEntity(Document):
     meta = {
         "collection": "bot_conversations",
         "strict": True,
+        "indexes": [
+            {"fields": ["conversation_id"], "unique": True},
+        ],
     }
     is_mentioned = BooleanField(default=False)
     conversation_id = StringField(required=True)

@@ -18,7 +18,7 @@ from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentC
 )
 
 # Link this test file to your .feature file:
-scenarios("../tests/features/human_in_the_loop_agent.feature")
+scenarios("./features/human_in_the_loop_agent.feature")
 
 
 @given("a HumanInTheLoopAgent runner", target_fixture="agent_runner")

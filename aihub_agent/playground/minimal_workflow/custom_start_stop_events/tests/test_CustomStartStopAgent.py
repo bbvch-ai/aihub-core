@@ -13,7 +13,7 @@ from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStartEv
 )
 from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStopEvent import MyCustomStopEvent
 
-scenarios("../tests/features/custom_start_stop_agent.feature")
+scenarios("./features/custom_start_stop_agent.feature")
 
 
 @given("a CustomStartStopEventAgent runner", target_fixture="agent_runner")

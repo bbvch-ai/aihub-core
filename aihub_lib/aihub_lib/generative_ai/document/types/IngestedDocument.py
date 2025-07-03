@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Annotated, Optional
 
 from llama_index.core import Document
 from pydantic import Field
@@ -26,8 +26,8 @@ class IngestedDocument(IngestedBase):
     we also have an ID and content that was parsed from the original file.
     """
 
-    id: str = Field(..., description="Unique identifier for the document.")
-    content: str = Field(None, description="Content of the document.")
+    id: Annotated[str, Field(description="Unique identifier for the document.")]
+    content: Annotated[str, Field(description="Content of the document.")] = None
 
     @classmethod
     def from_ref_doc(

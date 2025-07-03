@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -21,7 +21,9 @@ class LLMCostEvent(CostEvent, LLMCosts):
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.llm_cost_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.llm_cost_event.description")
-    llm_name: str = Field(..., description="The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.")
+    llm_name: Annotated[
+        str, Field(description="The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.")
+    ]
 
     def get_total_costs(self) -> float:
         """Computes the sum of prompt, completion, and embedding costs, providing

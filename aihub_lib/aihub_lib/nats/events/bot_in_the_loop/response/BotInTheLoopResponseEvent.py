@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict, Optional
+from typing import Annotated, ClassVar, Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,9 +12,9 @@ class SlackResponderInfo(BaseModel):
     Information about a Slack user who responded to a BITL request.
     """
 
-    user_id: str = Field(..., description="The Slack user ID.")
-    user_name: Optional[str] = Field(None, description="The Slack user name.")
-    additional_info: Optional[Dict] = Field(None, description="Additional Slack-specific user information.")
+    user_id: Annotated[str, Field(description="The Slack user ID.")]
+    user_name: Annotated[Optional[str], Field(description="The Slack user name.")] = None
+    additional_info: Annotated[Optional[Dict], Field(description="Additional Slack-specific user information.")] = None
 
 
 class BotInTheLoopResponseEvent(ControlEvent):
@@ -31,12 +31,16 @@ class BotInTheLoopResponseEvent(ControlEvent):
         "lib.events.bitl_response_event.description"
     )
 
-    response: str = Field(..., description="The bot operator's answer or decision.")
-    request_event: BotInTheLoopRequestEvent = Field(
-        ...,
-        description="The original `BotInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
-    )
-    responder: Optional[SlackResponderInfo] = Field(
-        None,
-        description="Information about the Slack user who responded to the request, enabling tracking of who provided the input.",
-    )
+    response: Annotated[str, Field(description="The bot operator's answer or decision.")]
+    request_event: Annotated[
+        BotInTheLoopRequestEvent,
+        Field(
+            description="The original `BotInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+        ),
+    ]
+    responder: Annotated[
+        Optional[SlackResponderInfo],
+        Field(
+            description="Information about the Slack user who responded to the request, enabling tracking of who provided the input.",
+        ),
+    ] = None

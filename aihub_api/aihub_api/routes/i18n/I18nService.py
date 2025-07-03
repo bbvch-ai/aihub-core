@@ -21,7 +21,7 @@ class I18nService:
         """
         Returns a LocaleResponse for the given user and locale_handler.
 
-        The `locale_handler("api.common.test")` call retrieves a localized string for a test message,
+        The `locale_handler("token.common.test")` call retrieves a localized string for a test message,
         validating that the i18n mechanism is working as expected.
         """
-        return LocaleResponse(lang=locale_handler.locale, test=locale_handler("api.common.test"))
+        return LocaleResponse(lang=locale_handler.locale, test=locale_handler("token.common.test"))

@@ -1,6 +1,6 @@
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import DiscoveryRequestEvent
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from bson import ObjectId
 from pytest_bdd import scenarios, given, when, then, parsers
@@ -11,7 +11,7 @@ from playground.minimal_workflow.discoverable_workflow.DiscoverableAgentConfig i
     DiscoverableAgentConfig,
 )
 
-scenarios("../tests/features/discoverable_agent.feature")
+scenarios("./features/discoverable_agent.feature")
 
 
 @given("a DiscoverableAgent runner", target_fixture="agent_runner")
@@ -34,7 +34,7 @@ async def _(agent_runner: AgentTestRunner):
         call_id = str(ObjectId())
         await agent_runner.nc_publisher.publish_event(
             event=DiscoveryRequestEvent(),
-            subject=TopicManager().get_agent_discovery_subject_request(call_id=call_id),
+            subject=AgentTopicManager().get_agent_discovery_subject_request(call_id=call_id),
         )
 
 

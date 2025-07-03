@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, List, Optional
 
-from aihub_lib.persistence.messaging.entities.PersistedEventEntity import Resolution, TimeRange
+from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import Resolution, TimeRange
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 from pydantic import BaseModel, Field
 

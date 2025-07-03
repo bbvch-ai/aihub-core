@@ -9,7 +9,6 @@ from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.events.semantic.llm import LLMEvent
@@ -28,6 +27,7 @@ from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptE
 from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.workflow.decorators.step import step
 
 
