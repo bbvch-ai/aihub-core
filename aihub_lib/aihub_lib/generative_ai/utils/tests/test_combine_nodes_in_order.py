@@ -10,6 +10,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
+    DOCUMENT_TITLE,
     HEADING_LEVEL,
     INSERTED_AT,
     LANGUAGE,
@@ -77,6 +78,7 @@ def _(datatable):
     metadata_fields = [
         DOCUMENT_ID,
         SOURCE,
+        DOCUMENT_TITLE,
         NAMESPACE,
         TYPE,
         LANGUAGE,
