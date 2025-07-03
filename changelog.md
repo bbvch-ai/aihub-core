@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.211.0] - 2025-07-03 - Enhanced RAG Context and Workflow Streamlining
+
+### Added
+- ✨ **Introduced Parent Summary Node Retrieval:** The RAG Agent can now retrieve relevant parent summary nodes from the knowledge base, providing richer context and improving the quality of generated answers.
+- ⚙️ **Configurable Parent Summary Retrieval:** Added a new `retrieve_summaries` configuration option to the `RetrieveStepConfig` for RAG agents, allowing users to specify the maximum hierarchical levels for parent summary retrieval.
+- 🚀 **Improved Agent Step Metadata:** Enhanced the `@step()` decorator in the RAG Agent to include explicit `name` and `description` fields, improving clarity and introspection for agent workflows.
+
+### Changed
+- ⚡️ **Streamlined LLM Response Workflow:** The RAG Agent's LLM response step now directly signals the completion of the workflow, simplifying internal event handling and removing the need for a separate `StopEvent`.
+
+---
+
+
+
 ## [v0.210.0] - 2025-07-03 - SharePoint Ingestion and Pipeline Structure Enhancements
 
 ### Added
