@@ -37,7 +37,7 @@ user:
 
 time_ago:
   last_hour: "Ultima ora"
-  last_day: "Ultimo giorno"'"
+  last_day: "Ultimo giorno"
   last_week: "La settimana scorsa"
   last_month: "Lo scorso mese"
   last_year: "L''anno scorso"
@@ -243,7 +243,7 @@ dashboard:
     UserMessageEvent:
       label: "Messaggi chat utente"
     ExceptionEvent:
-      label: "Errori"'"
+
     HumanInTheLoopRequestEvent:
       label: "Umano nel loop"
     BotInTheLoopRequestEvent:
