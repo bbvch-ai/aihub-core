@@ -193,6 +193,7 @@ class AgentController(Controller):
             endpoint_route = f"/{agent_class_name}/{agent_id_snake}/{start_event_name}"
 
             start_event_input_type = EventModelCreationService.create_input_model_from_specs(start_event_specs)
+            start_event_type = EventModelCreationService.create_model_from_specs(start_event_specs)
 
             def create_endpoint(input_type: Type[BaseModel]):
                 @self.router.post(endpoint_route, name=endpoint_name, tags=[agent_class])
@@ -217,8 +218,7 @@ class AgentController(Controller):
 
                     # Create the start event - you'll need to adapt this based on your EventModelCreationService
                     # Option 1: If you have a way to map input types back to event classes
-                    start_event_class = EventModelCreationService.get_start_event_class_for_input_type(input_type)
-                    start_event = start_event_specs(
+                    start_event = start_event_type(
                         event_id=str(ObjectId()),
                         created_at=time.time_ns(),
                         user=user,
@@ -226,8 +226,17 @@ class AgentController(Controller):
                         locale=t.locale,
                     )
 
+                    start_event_typed = StartEvent.model_validate(start_event)
+
                     stop_event = await AgentService.send_event(
-                        nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
+                        nc,
+                        external_event_distributor,
+                        user,
+                        start_event_typed,
+                        agent_class,
+                        agent_id,
+                        thread_id,
+                        display_id,
                     )
 
                     if isinstance(stop_event, ExceptionEvent):
