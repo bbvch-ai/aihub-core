@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
@@ -16,13 +14,8 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
-from aihub_lib.persistence.user.UserEntity import UserEntity, Dashboard, DashboardItem
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
-)
-from datetime import datetime, timezone
-from uuid import uuid4
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity, get_expected_user_data  # noqa: F401
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/users/me"
@@ -49,152 +42,17 @@ async def api_client():
             yield client
 
 
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """
-    Mock RoleEntity methods to ensure the 'TestOnlyFullAdminAccess' role is recognized during tests.
-    """
-    original_filter_existing_roles = RoleEntity.filter_existing_roles
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_filter_existing_roles(role_names):
-        filtered_roles = original_filter_existing_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names and "TestOnlyFullAdminAccess" not in filtered_roles:
-            filtered_roles.append("TestOnlyFullAdminAccess")
-        return filtered_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "filter_existing_roles", side_effect=mock_filter_existing_roles):
-        with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-            yield
+# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
 
 
-@pytest.fixture(autouse=True)
-def mock_user_entity():
-    """Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig."""
-    config = DangerousDevelopmentOnlyAuthConfig()
-
-    def create_dashboard():
-        return Dashboard(
-            minRow=1,
-            margin=24,
-            column=4,
-            cellHeight=350,
-            children=[
-                DashboardItem(
-                    id=str(uuid4()),
-                    component="DashboardComponentNumber",
-                    noResize=True,
-                    timeRange="30d",
-                    event="StartEvent",
-                    x=0,
-                    y=0,
-                    w=1,
-                ),
-                DashboardItem(
-                    id=str(uuid4()),
-                    component="DashboardComponentLineChart",
-                    noResize=True,
-                    timeRange="30d",
-                    event="StartEvent",
-                    x=1,
-                    y=0,
-                    w=2,
-                ),
-                DashboardItem(
-                    id=str(uuid4()),
-                    component="DashboardComponentNumber",
-                    noResize=True,
-                    timeRange="30d",
-                    event="ExceptionEvent",
-                    x=3,
-                    y=0,
-                    w=1,
-                ),
-            ],
-        )
-
-    def mock_by_oid(user_oid):
-        # Create a dummy user with properties from DangerousDevelopmentOnlyAuthConfig
-        # Use the provided user_oid instead of config.OID
-        user = UserEntity(
-            id=user_oid,
-            name=config.NAME,
-            email=config.EMAIL,
-            roles=config.ROLES,
-            profile_image=None,
-            favorite_modules=[],
-            dashboard=create_dashboard(),
-            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=timezone.utc),
-        )
-        return user
-
-    with patch.object(UserEntity, "by_oid", side_effect=mock_by_oid):
-        yield
+# Using the shared mock_user_entity fixture from aihub_lib.testing.auth_utils.user_mocks
 
 
-@pytest.fixture
-def expected_user_data():
-    """Expected user data from DangerousDevelopmentOnlyAuthConfig."""
-    config = DangerousDevelopmentOnlyAuthConfig()
-    return {
-        "id": config.OID,
-        "name": config.NAME,
-        "email": config.EMAIL,
-        "profile_image": None,
-        "favorite_modules": [],
-        "roles": config.ROLES,
-        "access": {
-            "agents": [],
-            "processes": [],
-            "services": [{"level": 2, "name": "User"}],
-        },
-        "last_accessed": "2025-07-04T12:14:45.185140Z",
-        "dashboard": {
-            "cellHeight": 350,
-            "children": [
-                {
-                    "component": "DashboardComponentNumber",
-                    "event": "StartEvent",
-                    "noResize": True,
-                    "timeRange": "30d",
-                    "w": 1,
-                    "x": 0,
-                    "y": 0,
-                },
-                {
-                    "component": "DashboardComponentLineChart",
-                    "event": "StartEvent",
-                    "noResize": True,
-                    "timeRange": "30d",
-                    "w": 2,
-                    "x": 1,
-                    "y": 0,
-                },
-                {
-                    "component": "DashboardComponentNumber",
-                    "event": "ExceptionEvent",
-                    "noResize": True,
-                    "timeRange": "30d",
-                    "w": 1,
-                    "x": 3,
-                    "y": 0,
-                },
-            ],
-            "column": 4,
-            "margin": 24,
-            "minRow": 1,
-        },
-    }
+# Using the shared get_expected_user_data function from aihub_lib.testing.auth_utils.user_mocks
 
 
 @pytest.mark.asyncio
-async def test_get_user_endpoint(api_client, expected_user_data):
+async def test_get_user_endpoint(api_client, mock_user_entity):
     """Test GET /user/me returns expected user data."""
     headers = {"Content-Type": "application/json"}
     response = await api_client.get(USER_ENDPOINT, headers=headers)
@@ -206,11 +64,14 @@ async def test_get_user_endpoint(api_client, expected_user_data):
         del child["id"]
     assert isinstance(user_data, dict)
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
-    assert user_data == expected_user_data
+
+    # Get expected user data from the shared function
+    expected_data = get_expected_user_data()
+    assert user_data == expected_data
 
 
 @pytest.mark.asyncio
-async def test_user_dto_structure(api_client):
+async def test_user_dto_structure(api_client, mock_user_entity):
     """Test that user DTO has the expected structure."""
     response = await api_client.get(USER_ENDPOINT)
     user_data = response.json()
@@ -229,7 +90,7 @@ async def test_user_dto_structure(api_client):
         {},
     ],
 )
-async def test_user_endpoint_different_headers(api_client, headers):
+async def test_user_endpoint_different_headers(api_client, headers, mock_user_entity):
     """Test GET /user/me with various headers."""
     response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200

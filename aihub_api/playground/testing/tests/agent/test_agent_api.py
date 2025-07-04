@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
@@ -16,7 +14,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
@@ -47,19 +45,7 @@ async def agent_api_client():
             yield client
 
 
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """Mock UserRoleEntity methods to return a full admin role."""
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-        yield
+# Using the shared mock_role_entity_admin_only fixture from aihub_lib.testing.auth_utils.role_mocks
 
 
 @pytest.mark.asyncio(loop_scope="module")

@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 from datetime import datetime, timezone, timedelta
 from fastapi.testclient import TestClient
@@ -16,7 +14,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 
 TOKEN_BASE = "/api/v1/tokens"
 DEFAULT_USER_ID = "1234567890"
@@ -41,19 +39,7 @@ def api_client(mongodb):
         yield client
 
 
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """Mock UserRoleEntity methods to return a full admin role."""
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-        yield
+# Using the shared mock_role_entity_admin_only fixture from aihub_lib.testing.auth_utils.role_mocks
 
 
 @pytest.fixture
@@ -63,7 +49,7 @@ def valid_token_request():
     return {"name": "Test Token", "expiry_date": expiry_date.isoformat()}
 
 
-def test_create_token(api_client, valid_token_request):
+def test_create_token(api_client, valid_token_request, mock_role_entity_admin_only):
     """Test creating a new API token returns valid data."""
     response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     if response.status_code != 201:
@@ -75,7 +61,7 @@ def test_create_token(api_client, valid_token_request):
     assert data["name"] == valid_token_request["name"]
 
 
-def test_create_token_with_past_date(api_client, valid_token_request):
+def test_create_token_with_past_date(api_client, valid_token_request, mock_role_entity_admin_only):
     """Test creating a token with past expiry date returns validation error."""
     valid_token_request["expiry_date"] = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
@@ -85,7 +71,7 @@ def test_create_token_with_past_date(api_client, valid_token_request):
     assert any("Expiry date must be in the future" in error for error in error_details)
 
 
-def test_list_tokens(api_client, valid_token_request):
+def test_list_tokens(api_client, valid_token_request, mock_role_entity_admin_only):
     """Test listing API tokens returns created token without token value."""
     create_response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     assert create_response.status_code == 201
@@ -97,7 +83,7 @@ def test_list_tokens(api_client, valid_token_request):
     assert tokens[0]["name"] == valid_token_request["name"]
 
 
-def test_revoke_token(api_client, valid_token_request):
+def test_revoke_token(api_client, valid_token_request, mock_role_entity_admin_only):
     """Test revoking an API token removes it from the list."""
     create_response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     assert create_response.status_code == 201
@@ -110,7 +96,7 @@ def test_revoke_token(api_client, valid_token_request):
     assert token_id not in token_ids
 
 
-def test_revoke_nonexistent_token(api_client):
+def test_revoke_nonexistent_token(api_client, mock_role_entity_admin_only):
     """Test revoking a non-existent token returns error."""
     response = api_client.delete(f"{TOKEN_BASE}/123456789012345678901234")
     assert response.status_code == 400
@@ -158,7 +144,7 @@ def test_revoke_nonexistent_token(api_client):
         ),
     ],
 )
-def test_create_token_validation(api_client, invalid_request, expected_error, expected_status):
+def test_create_token_validation(api_client, invalid_request, expected_error, expected_status, mock_role_entity_admin_only):
     """Test token creation with invalid payload returns proper validation errors."""
     response = api_client.post(f"{TOKEN_BASE}/", json=invalid_request)
     assert response.status_code == expected_status
