@@ -2258,7 +2258,7 @@ colors = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "jambo"
-version = "0.1.dev116+g06a5ef7"
+version = "0.1.dev117+gcd28a3b"
 description = "Jambo - JSON Schema to Pydantic Converter"
 optional = false
 python-versions = "<4.0,>=3.10"
@@ -2274,8 +2274,8 @@ pydantic = ">=2.10.6"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/jambo.git"
-reference = "HEAD"
-resolved_reference = "06a5ef71ca1a4b1f66f0eed4db9104a23743834d"
+reference = "prod"
+resolved_reference = "cd28a3bf932ee69ee216dedb06eb820256e732b1"
 
 [[package]]
 name = "jedi"
@@ -6544,4 +6544,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "407ffce1db6d33c2d7fae24d67050c8571a396d626b91fe260d51b8eec134586"
+content-hash = "be2c437cb1018dd24620649abbc9e723f3ef15486b621699a13fdda19245af33"

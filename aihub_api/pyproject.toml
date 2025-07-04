@@ -29,7 +29,6 @@ python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
 arize-phoenix = "^10.0.0"
-jambo = {git = "https://github.com/bbvch-ai/jambo.git"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
@@ -42,6 +41,10 @@ black = { extras = ["jupyter"], version = "^25.1.0" }
 pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
+
+[tool.poetry.dependencies.jambo]
+git = "https://github.com/bbvch-ai/jambo.git"
+tag = "prod"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
