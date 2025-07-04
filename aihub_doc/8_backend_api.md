@@ -43,15 +43,15 @@ The backend of the AI-Hub serves as the crucial bridge between users, agents, an
 **Role-Based Access Control:**
 - **Roles and Permissions:**  
   The backend enforces a sophisticated role-based access control system. Roles are defined both in Azure AD and within the application:
-  - **Azure AD Roles**: Predefined roles like OPENAI_USER, CONTRIBUTOR, DB_ACCOUNT_CONTRIBUTOR, etc., each with a unique GUID.
+  - **Azure AD Roles**: Predefined roles like AllAgents, HubAdmin, ServiceAdmin, etc..
   - **Application Roles**: Custom roles defined in the application database, each with a name, description, and a set of access rules.
 
 - **Hierarchical Access Rules:**  
   Access rules follow a hierarchical structure that enables fine-grained control over resources:
-  - Format: `aihub.[user|admin].<resource_type>.<resource_subtype>.<resource_id>`
+  - Format: `aihub.[user|admin].<resource_type>.<resource_subtype>.<resource_id>.[...]`
   - Examples:
     - `aihub.user.agent.class_a.*` (access to all agents of class_a)
-    - `aihub.admin.service.roles` (admin access to the roles service)
+    - `aihub.admin.service.thread` (admin access to the thread service)
   - Wildcards in Access Rules:
     - `*`: Matches any single segment in the hierarchy
       - Example: `aihub.user.agent.class_a.*` matches `aihub.user.agent.class_a.id_123` but not `aihub.user.agent.class_a.id_123.property`
@@ -66,9 +66,9 @@ The backend of the AI-Hub serves as the crucial bridge between users, agents, an
   - Implicit Check: Verifies if a user has *any* access rule that fits a general pattern
     - Uses special wildcards in the permission template:
       - `?*`: Matches any single segment in the hierarchy (in the permission template)
-        - Example: Permission template `aihub.user.agent.class_a.?*` matches user access rule `aihub.user.agent.class_a.*`
+        - Example: Permission template `aihub.user.agent.class_a.?*` matches user access rule `aihub.user.agent.class_a.id_123`
       - `?>`: Matches all remaining segments (must be the last segment in the permission template)
-        - Example: Permission template `aihub.user.agent.?>` matches user access rules like `aihub.user.agent.class_a.*` or `aihub.user.agent.>`
+        - Example: Permission template `aihub.user.agent.?>` matches user access rules like `aihub.user.agent.class_a.id_123`, `aihub.user.agent.class_a.*` or `aihub.user.agent.>`
 
 - **Access Levels:**  
   The system supports three access levels:
@@ -77,7 +77,7 @@ The backend of the AI-Hub serves as the crucial bridge between users, agents, an
   - ACCESS_ADMIN (2): Admin-level access granted
 
 - **Token Validation & Claims:**  
-  The backend extracts claims from the user's JWT tokens (provided via OAuth2/OIDC flow) to determine user identity, roles, and permissions. These roles are then mapped to access rules stored in the database, ensuring fine-grained control over who can perform which actions.
+  The backend extracts claims from the user's JWT tokens (provided via OAuth2/OIDC flow) to determine user identity and roles. These roles are then mapped to access rules stored in the database, ensuring fine-grained control over who can perform which actions.
 
 **Protecting Endpoints:**
 - Endpoints are protected using FastAPI's Security dependency with a method that checks if a user has the required permission.
@@ -103,12 +103,12 @@ The backend of the AI-Hub serves as the crucial bridge between users, agents, an
   - Result: ✅ Access granted (hierarchical wildcard matches all agent resources)
 
   **Example 4: Implicit Check with ?* Wildcard**
-  - User Access Rule: `aihub.user.agent.class_a.*`
+  - User Access Rule: `aihub.user.agent.>`
   - Permission Template: `aihub.user.agent.class_a.?*`
-  - Result: ✅ Access granted (user has access to any agent in class_a)
+  - Result: ✅ Access granted (user has access to any agent)
 
   **Example 5: Implicit Check with ?> Wildcard**
-  - User Access Rule: `aihub.user.agent.class_a.id_123`
+  - User Access Rule: `aihub.user.agent.*.id_123`
   - Permission Template: `aihub.user.agent.?>`
   - Result: ✅ Access granted (user has access to some agent resource)
 
