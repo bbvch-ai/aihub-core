@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from datetime import datetime, timezone, timedelta
 from fastapi.testclient import TestClient
@@ -14,6 +16,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
 TOKEN_BASE = "/api/v1/tokens"
 DEFAULT_USER_ID = "1234567890"
@@ -36,6 +39,21 @@ def api_client(mongodb):
     runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
     with TestClient(runner.get_app(), raise_server_exceptions=True) as client:
         yield client
+
+
+@pytest.fixture(autouse=True)
+def mock_role_entity_methods():
+    """Mock UserRoleEntity methods to return a full admin role."""
+    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
+
+    def mock_get_access_rules_for_roles(role_names):
+        access_rules = original_get_access_rules_for_roles(role_names)
+        if "TestOnlyFullAdminAccess" in role_names:
+            access_rules.add("aihub.admin.>")
+        return access_rules
+
+    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
+        yield
 
 
 @pytest.fixture

@@ -13,7 +13,9 @@ class UserDTO(MinimalUserDTO):
     last_accessed: Annotated[datetime, Field(description="Last time the user was updated")]
     roles: Annotated[List[str], Field(description="List of roles assigned to the user")] = []
     favorite_modules: Annotated[List[str], Field(description="List of favorite modules from aihub suite")] = []
-    dashboard: Annotated[Optional[DashboardDTO], Field(description="User dashboard configuration for index page")] = None
+    dashboard: Annotated[Optional[DashboardDTO], Field(description="User dashboard configuration for index page")] = (
+        None
+    )
 
     @classmethod
     def from_user_entity(cls, user_entity: UserEntity):

@@ -43,7 +43,7 @@ The backend of the AI-Hub serves as the crucial bridge between users, agents, an
 **Role-Based Access Control:**
 - **Roles and Permissions:**  
   The backend enforces a sophisticated role-based access control system. Roles are defined both in Azure AD and within the application:
-  - **Azure AD Roles**: Predefined roles like AllAgents, HubAdmin, ServiceAdmin, etc..
+  - **Azure AD Roles**: Predefined roles like TestOnlyFullAdminAccess, HubAdmin, ServiceAdmin, etc..
   - **Application Roles**: Custom roles defined in the application database, each with a name, description, and a set of access rules.
 
 - **Hierarchical Access Rules:**  

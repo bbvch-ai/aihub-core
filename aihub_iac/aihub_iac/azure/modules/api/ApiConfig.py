@@ -24,7 +24,9 @@ class ApiConfig(BaseConfig):
     # Anonymization settings
     anonym_name: Annotated[str, Field(description="Anonymized name for the API service")] = "Aihub API"
     anonym_email: Annotated[str, Field(description="Anonymized email for the API service")] = "api@ai-agents.ch"
-    anonym_roles: Annotated[str, Field(description="Anonymized roles for the API service")] = '["AllAgents"]'
+    anonym_roles: Annotated[str, Field(description="Anonymized roles for the API service")] = (
+        '["TestOnlyFullAdminAccess"]'
+    )
     anonym_oid: Annotated[str, Field(description="Anonymized OID for the API service")] = "1234567890"
 
     # Registry settings

@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
@@ -8,6 +11,9 @@ from mongoengine import connect, disconnect
 
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.routes.thread.ThreadController import ThreadController
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
+    DangerousDevelopmentOnlyAuthConfig,
+)
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -16,13 +22,15 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity, Dashboard
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
 
 THREAD_BASE = "/api/v1/threads"
-DEFAULT_USER_ID = "1234567890"
+DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthConfig().OID
 
 
 @pytest.fixture(scope="module")
@@ -44,6 +52,43 @@ def agent_class() -> str:
 def agent_id() -> str:
     """Return test agent ID."""
     return "test_agent_1"
+
+
+@pytest.fixture(autouse=True)
+def mock_role_entity_methods():
+    """Mock UserRoleEntity methods to return a full admin role."""
+    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
+
+    def mock_get_access_rules_for_roles(role_names):
+        access_rules = original_get_access_rules_for_roles(role_names)
+        if "TestOnlyFullAdminAccess" in role_names:
+            access_rules.add("aihub.admin.>")
+        return access_rules
+
+    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_user_entity():
+    """Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig."""
+    config = DangerousDevelopmentOnlyAuthConfig()
+
+    def mock_by_oid(user_oid):
+        user = UserEntity(
+            id=user_oid,
+            name=config.NAME,
+            email=config.EMAIL,
+            roles=config.ROLES,
+            profile_image=None,
+            favorite_modules=[],
+            dashboard=Dashboard(minRow=1, margin=24, column=4, cellHeight=350, children=[]),
+            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=timezone.utc),
+        )
+        return user
+
+    with patch.object(UserEntity, "by_oid", side_effect=mock_by_oid):
+        yield
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
@@ -15,6 +17,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLM
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
@@ -56,6 +59,21 @@ async def api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def mock_role_entity_methods():
+    """Mock UserRoleEntity methods to return a full admin role."""
+    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
+
+    def mock_get_access_rules_for_roles(role_names):
+        access_rules = original_get_access_rules_for_roles(role_names)
+        if "TestOnlyFullAdminAccess" in role_names:
+            access_rules.add("aihub.admin.>")
+        return access_rules
+
+    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
+        yield
 
 
 @pytest.mark.asyncio(loop_scope="module")
