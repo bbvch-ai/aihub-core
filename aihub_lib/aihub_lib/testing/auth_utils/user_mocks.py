@@ -2,61 +2,13 @@
 
 from datetime import datetime, timezone
 from unittest.mock import patch
-from uuid import uuid4
 
 import pytest
 
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
     DangerousDevelopmentOnlyAuthConfig,
 )
-from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
-
-
-def create_dashboard_with_items():
-    """
-    Create a dashboard with predefined items for testing.
-
-    Returns a Dashboard object with three dashboard items: two DashboardComponentNumber
-    and one DashboardComponentLineChart.
-    """
-    return Dashboard(
-        minRow=1,
-        margin=24,
-        column=4,
-        cellHeight=350,
-        children=[
-            DashboardItem(
-                id=str(uuid4()),
-                component="DashboardComponentNumber",
-                noResize=True,
-                timeRange="30d",
-                event="StartEvent",
-                x=0,
-                y=0,
-                w=1,
-            ),
-            DashboardItem(
-                id=str(uuid4()),
-                component="DashboardComponentLineChart",
-                noResize=True,
-                timeRange="30d",
-                event="StartEvent",
-                x=1,
-                y=0,
-                w=2,
-            ),
-            DashboardItem(
-                id=str(uuid4()),
-                component="DashboardComponentNumber",
-                noResize=True,
-                timeRange="30d",
-                event="ExceptionEvent",
-                x=3,
-                y=0,
-                w=1,
-            ),
-        ],
-    )
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 
 def _create_mock_user_entity_function():
@@ -73,7 +25,7 @@ def _create_mock_user_entity_function():
             roles=config.ROLES,
             profile_image=None,
             favorite_modules=[],
-            dashboard=create_dashboard_with_items(),
+            dashboard=UserEntity.create_default_dashboard(),
             last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=timezone.utc),
         )
         return user
@@ -130,7 +82,7 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
 
     if include_dashboard:
         # Create a version of the dashboard data without the random IDs
-        dashboard = create_dashboard_with_items()
+        dashboard = UserEntity.create_default_dashboard()
         dashboard_dict = {
             "minRow": dashboard.minRow,
             "margin": dashboard.margin,
