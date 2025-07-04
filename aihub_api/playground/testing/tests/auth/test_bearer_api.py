@@ -15,8 +15,8 @@ from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/users/me"
@@ -47,32 +47,7 @@ def valid_token(mongo_db):
     token_obj.delete()
 
 
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """
-    Mock RoleEntity methods to ensure the 'TestOnlyFullAdminAccess' role is recognized during tests.
-
-    This fixture addresses the issue where tests fail because the 'TestOnlyFullAdminAccess' role
-    (used by DangerousDevelopmentOnlyIdentityProvider) is not in the RoleEntity database.
-    """
-    original_filter_existing_roles = RoleEntity.filter_existing_roles
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_filter_existing_roles(role_names):
-        filtered_roles = original_filter_existing_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names and "TestOnlyFullAdminAccess" not in filtered_roles:
-            filtered_roles.append("TestOnlyFullAdminAccess")
-        return filtered_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "filter_existing_roles", side_effect=mock_filter_existing_roles):
-        with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-            yield
+# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
 
 
 @pytest.fixture

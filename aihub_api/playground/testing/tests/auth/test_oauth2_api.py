@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
 
 import pytest
 import jwt
@@ -21,8 +20,9 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
-from aihub_lib.persistence.user.UserEntity import UserEntity, Dashboard
+from aihub_lib.persistence.user.UserEntity import UserEntity
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity  # noqa: F401
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     generate_rsa_keypair,
     public_key_to_jwk,
@@ -50,51 +50,10 @@ def oauth2_config(monkeypatch):
     return OAuth2Config()
 
 
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """
-    Mock RoleEntity methods to ensure the 'TestOnlyFullAdminAccess' role is recognized during tests.
-    """
-    original_filter_existing_roles = RoleEntity.filter_existing_roles
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_filter_existing_roles(role_names):
-        filtered_roles = original_filter_existing_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names and "TestOnlyFullAdminAccess" not in filtered_roles:
-            filtered_roles.append("TestOnlyFullAdminAccess")
-        return filtered_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "filter_existing_roles", side_effect=mock_filter_existing_roles):
-        with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-            yield
+# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
 
 
-@pytest.fixture(autouse=True)
-def mock_user_entity():
-    """Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig."""
-    config = DangerousDevelopmentOnlyAuthConfig()
-
-    def mock_by_oid(user_oid):
-        user = UserEntity(
-            id=user_oid,
-            name=config.NAME,
-            email=config.EMAIL,
-            roles=config.ROLES,
-            profile_image=None,
-            favorite_modules=[],
-            dashboard=Dashboard(minRow=1, margin=24, column=4, cellHeight=350, children=[]),
-            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=timezone.utc),
-        )
-        return user
-
-    with patch.object(UserEntity, "by_oid", side_effect=mock_by_oid):
-        yield
+# Using the shared mock_user_entity fixture from aihub_lib.testing.auth_utils.user_mocks
 
 
 @pytest.fixture
@@ -173,7 +132,7 @@ async def oauth2_api_client():
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_token, expected_user_data):
+async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_token, expected_user_data, mock_user_entity):
     """Test GET /user/me returns expected user data with a valid OAuth2 token."""
     headers = {
         "Authorization": f"Bearer {valid_oauth2_token}",
@@ -194,7 +153,7 @@ async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_invalid_oauth2_token(oauth2_api_client):
+async def test_get_user_with_invalid_oauth2_token(oauth2_api_client, mock_user_entity):
     """Test GET /user/me returns an error for an invalid OAuth2 token."""
     headers = {
         "Authorization": "Bearer invalid.token.value",
