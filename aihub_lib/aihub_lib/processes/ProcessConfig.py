@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -25,9 +27,9 @@ class ProcessConfig(BaseModel):
     injected into each agent step at-runtime.
     """
 
-    process_id: str = Field(
-        ..., description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$"
-    )
-    name: LocaleString = Field(..., description="The name of the process.")
-    description: LocaleString = Field(..., description="The description of the process.")
-    icon: str = Field("meteor-icons:robot", description="The icon representing the agent.")
+    process_id: Annotated[
+        str, Field(description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$")
+    ]
+    name: Annotated[LocaleString, Field(description="The name of the process.")]
+    description: Annotated[LocaleString, Field(description="The description of the process.")]
+    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"

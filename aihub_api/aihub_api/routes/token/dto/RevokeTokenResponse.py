@@ -1,5 +1,9 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
 class RevokeTokenResponse(BaseModel):
-    detail: str = Field(..., example="Token revoked successfully.")
+    detail: Annotated[
+        str, Field(description="Status message about the token revocation", example="Token revoked successfully.")
+    ]

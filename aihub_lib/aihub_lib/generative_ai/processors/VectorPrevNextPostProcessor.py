@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Annotated, Dict, List, Optional
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
@@ -55,16 +55,13 @@ def get_backward_nodes(
 class VectorPrevNextPostProcessor(BaseNodePostprocessor):
     """
     Post-processor to fetch additional nodes from the vector store based on node relationships.
-
-    Attributes:
-        vectorstore (BasePydanticVectorStore): The vector store.
-        num_nodes (int): Number of additional nodes to fetch (default is 1).
-        mode (ModeOptions): Direction to fetch nodes. Options are NEXT, PREVIOUS, or BOTH.
     """
 
     vectorstore: BasePydanticVectorStore
-    num_nodes: int = Field(default=1)
-    mode: ModeOptions = Field(default=ModeOptions.NEXT)
+    num_nodes: Annotated[int, Field(description="Number of additional nodes to fetch")] = 1
+    mode: Annotated[ModeOptions, Field(description="Direction to fetch nodes (NEXT, PREVIOUS, or BOTH)")] = (
+        ModeOptions.NEXT
+    )
 
     @field_validator("mode")
     @classmethod

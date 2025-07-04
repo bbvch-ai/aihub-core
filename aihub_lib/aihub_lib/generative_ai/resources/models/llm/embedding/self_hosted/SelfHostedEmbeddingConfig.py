@@ -37,7 +37,6 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
     - Integrating with llama_index embeddings via the TextEmbeddingsInference wrapper.
     """
 
-    api_key: Annotated[Optional[str], Field(None, description="API key if required by the local embedding endpoint.")]
     timeout: Annotated[int, Field(60, description="HTTP request timeout in seconds.")]
     embed_batch_size: Annotated[int, Field(32, description="Number of texts to embed in one batch.")]
 

@@ -1,7 +1,5 @@
 from typing import Literal, Optional
 
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AsyncAzureOpenAI
 from pydantic import Field
 from typing_extensions import Annotated
 
@@ -42,20 +40,9 @@ class AzureOpenaiImageModelConfig(ImageModelConfig, AzureOpenaiResourceConfig):
     """
 
     # Keeping Field() explicitly for default_factory
-    default_parameter: AzureImageModelParameter = Field(
-        default_factory=lambda: AzureImageModelParameter(),
-        description="Default parameters for the Azure image model.",
-    )
-
-    def get_openai_client(self) -> AsyncAzureOpenAI:
-        token_provider = get_bearer_token_provider(
-            DefaultAzureCredential(),
-            "https://cognitiveservices.azure.com/.default",
-        )
-
-        return AsyncAzureOpenAI(
-            azure_endpoint=self.base_url,
-            azure_deployment=self.name,
-            azure_ad_token_provider=token_provider,
-            api_version=self.api_version,
-        )
+    default_parameter: Annotated[
+        AzureImageModelParameter,
+        Field(
+            description="Default parameters for the Azure image model.",
+        ),
+    ] = AzureImageModelParameter()

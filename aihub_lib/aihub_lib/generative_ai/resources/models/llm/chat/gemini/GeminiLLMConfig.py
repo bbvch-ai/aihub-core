@@ -31,7 +31,6 @@ class GeminiLLMConfig(ChatLLMConfig):
 
     prompt_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand prompt tokens.")]
     completion_tokens_costs_per_thousand: Annotated[float, Field(description="Cost per thousand completion tokens.")]
-    api_key: Annotated[Optional[str], Field(None, description="API key if required by the local endpoint.")]
     context_size: Annotated[int, Field(..., description="Context window size (max tokens) supported by the model.")]
 
     default_parameter: Annotated[

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -15,12 +15,15 @@ class MinimalAgentDTO(BaseModel):
     Only contains minimal information about the agent.
     """
 
-    agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
-    agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
-    agent_config: AgentConfigDTO = Field(
-        ..., description="Configuration details of the agent, including name, description, and prompts."
-    )
-    is_conversational: bool = Field(..., description="Whether the agent can participate in a chat-based conversation")
+    agent_class: Annotated[str, Field(description="The agent's class identifier (e.g., 'my_agent_class').")]
+    agent_id: Annotated[str, Field(description="Unique identifier for the agent instance (e.g., 'agent_123').")]
+    agent_config: Annotated[
+        AgentConfigDTO,
+        Field(description="Configuration details of the agent, including name, description, and prompts."),
+    ]
+    is_conversational: Annotated[
+        bool, Field(description="Whether the agent can participate in a chat-based conversation")
+    ]
 
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler) -> "MinimalAgentDTO":
@@ -46,17 +49,23 @@ class AgentDTO(MinimalAgentDTO):
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
 
-    start_events: List[EventSpecs] = Field(
-        ..., description="A list of `EventSpecs` representing events that can start this agent's workflow."
+    start_events: Annotated[
+        List[EventSpecs],
+        Field(description="A list of `EventSpecs` representing events that can start this agent's workflow."),
+    ]
+    stop_events: Annotated[
+        List[EventSpecs],
+        Field(description="A list of `EventSpecs` representing events that can stop this agent's workflow."),
+    ]
+    network_graph: Annotated[
+        WorkflowGraph,
+        Field(
+            description="A network graph of the agent, showing how different components are connected and interact.",
+        ),
+    ]
+    is_online: Annotated[Optional[bool], Field(description="Indicates whether the agent is online and reachable.")] = (
+        None
     )
-    stop_events: List[EventSpecs] = Field(
-        ..., description="A list of `EventSpecs` representing events that can stop this agent's workflow."
-    )
-    network_graph: WorkflowGraph = Field(
-        ...,
-        description="A network graph of the agent, showing how different components are connected and interact.",
-    )
-    is_online: Optional[bool] = Field(..., description="Indicates whether the agent is online and reachable.")
 
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: Optional[bool] = None) -> "AgentDTO":

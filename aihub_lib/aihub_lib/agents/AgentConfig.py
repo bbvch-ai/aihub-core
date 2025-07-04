@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type
+from typing import Annotated, Dict, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -48,26 +48,32 @@ class AgentConfig(BaseModel):
     ```
     """
 
-    agent_id: str = Field(..., description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")
-    name: LocaleString = Field(..., description="The name of the agent.")
-    description: LocaleString = Field(..., description="The description of the agent.")
-    icon: str = Field("meteor-icons:robot", description="The icon representing the agent.")
+    agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
+    name: Annotated[LocaleString, Field(description="The name of the agent.")]
+    description: Annotated[LocaleString, Field(description="The description of the agent.")]
+    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
 
-    color: Optional[str] = Field(
-        "#10A37F",
-        description="The color of the agent UI theme.",
-        deprecated="This field is deprecated. It will be removed in a future release. If you need a color, please define it yourself in a subclass of AgentConfig.",
-    )
-    voice: Optional[str] = Field(
-        "de-DE-ChristophNeural",
-        description="The TTS voice ID the agent uses.",
-        deprecated="This field is deprecated. It will be removed in a future release. If you need a voice, please define it yourself in a subclass of AgentConfig.",
-    )
-    system_prompt: LocaleString = Field(
-        ...,
-        description="The system prompt of the agent.",
-        deprecated="This field is deprecated. It will be removed in a future release. If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
-    )
+    color: Annotated[
+        Optional[str],
+        Field(
+            description="The color of the agent UI theme.",
+            deprecated="This field is deprecated. It will be removed in a future release. If you need a color, please define it yourself in a subclass of AgentConfig.",
+        ),
+    ] = "#10A37F"
+    voice: Annotated[
+        Optional[str],
+        Field(
+            description="The TTS voice ID the agent uses.",
+            deprecated="This field is deprecated. It will be removed in a future release. If you need a voice, please define it yourself in a subclass of AgentConfig.",
+        ),
+    ] = "de-DE-ChristophNeural"
+    system_prompt: Annotated[
+        LocaleString,
+        Field(
+            description="The system prompt of the agent.",
+            deprecated="This field is deprecated. It will be removed in a future release. If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
+        ),
+    ]
 
     def get_step_configs(self) -> Dict[Type[StepConfig], StepConfig]:
         """

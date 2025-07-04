@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -23,4 +23,4 @@ class GuardRejectionEvent(StopEvent):
         "lib.events.guard_rejection_event.description"
     )
 
-    reason: str = Field(..., description="Reason why the Guard rejected the request.")
+    reason: Annotated[str, Field(description="Reason why the Guard rejected the request.")]

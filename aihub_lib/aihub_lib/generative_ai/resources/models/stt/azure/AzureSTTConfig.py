@@ -50,7 +50,9 @@ class AzureOpenaiSTTConfig(STTConfig, AzureOpenaiResourceConfig):
     Resource representing the parameters for the Azure speech-to-text model.
     """
 
-    default_parameter: AzureSTTParameter = Field(
-        default_factory=lambda: AzureSTTParameter(),
-        description="Default parameters for the Azure speech-to-text model.",
-    )
+    default_parameter: Annotated[
+        AzureSTTParameter,
+        Field(
+            description="Default parameters for the Azure speech-to-text model.",
+        ),
+    ] = AzureSTTParameter()

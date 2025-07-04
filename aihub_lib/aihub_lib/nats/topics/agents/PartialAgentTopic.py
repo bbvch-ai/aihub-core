@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import Field
 
@@ -26,14 +26,14 @@ class PartialAgentTopic(Topic):
       unknowns as flexible conditions.
     """
 
-    agent_class: Optional[str] = Field(None, description="Agent class or None if unspecified.")
-    agent_id: Optional[str] = Field(None, description="Agent ID or None if unspecified.")
-    run_id: Optional[str] = Field(None, description="Run ID or None if unspecified.")
-    thread_id: Optional[str] = Field(None, description="Thread ID or None if unspecified.")
-    display_id: Optional[str] = Field(None, description="Display ID or None if unspecified.")
-    event_type: Optional[str] = Field(None, description="Event type or None if unspecified.")
-    event_name: Optional[str] = Field(None, description="Event name or None if unspecified.")
-    event_id: Optional[str] = Field(None, description="Event ID or None if unspecified.")
+    agent_class: Annotated[Optional[str], Field(description="Agent class or None if unspecified.")] = None
+    agent_id: Annotated[Optional[str], Field(description="Agent ID or None if unspecified.")] = None
+    run_id: Annotated[Optional[str], Field(description="Run ID or None if unspecified.")] = None
+    thread_id: Annotated[Optional[str], Field(description="Thread ID or None if unspecified.")] = None
+    display_id: Annotated[Optional[str], Field(description="Display ID or None if unspecified.")] = None
+    event_type: Annotated[Optional[str], Field(description="Event type or None if unspecified.")] = None
+    event_name: Annotated[Optional[str], Field(description="Event name or None if unspecified.")] = None
+    event_id: Annotated[Optional[str], Field(description="Event ID or None if unspecified.")] = None
 
     @property
     def execution_context_id(self) -> str:

@@ -1,4 +1,5 @@
 import json
+from typing import Annotated
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -39,9 +40,9 @@ class ExternalAgentEvent(BaseModel):
     After `ExternalAgentEvent.deserialize_event(...)`, you get a `ExternalAgentEvent` with a `UserMessageEvent` as `event`.
     """
 
-    thread_id: str = Field(..., description="ID of the thread this event is related to.")
-    display_id: str = Field(..., description="Display session ID, grouping events in the UI.")
-    event: ControlEvent = Field(..., description="The user-originated event.")
+    thread_id: Annotated[str, Field(description="ID of the thread this event is related to.")]
+    display_id: Annotated[str, Field(description="Display session ID, grouping events in the UI.")]
+    event: Annotated[ControlEvent, Field(description="The user-originated event.")]
 
     @classmethod
     def deserialize_event(cls, data: bytes | str | dict) -> "ExternalAgentEvent":

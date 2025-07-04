@@ -111,7 +111,7 @@ def test_context():
 )
 def postprocess_nodes(starting_node, vector_store, test_context, mode, num_nodes):
     processor = VectorPrevNextPostProcessor(vectorstore=vector_store, num_nodes=num_nodes, mode=mode)
-    result = processor._postprocess_nodes([starting_node])
+    result = processor.postprocess_nodes([starting_node])
     test_context["result"] = result
 
 

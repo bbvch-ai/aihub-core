@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
@@ -5,16 +7,18 @@ from aihub_lib.nats.topics.Topic import Topic
 
 
 class ProcessTopic(Topic):
-    process_class: str = Field(..., description="The processes class identifier.")
-    process_id: str = Field(..., description="Unique identifier for the specific process instance.")
+    process_class: Annotated[str, Field(description="The processes class identifier.")]
+    process_id: Annotated[str, Field(description="Unique identifier for the specific process instance.")]
 
-    process_walkthrough_id: str = Field(..., description="Unique identifier for this specific process walk through.")
+    process_walkthrough_id: Annotated[
+        str, Field(description="Unique identifier for this specific process walk through.")
+    ]
 
-    event_type: str = Field(..., description="Type of event (e.g., 'display_event', 'control_event').")
-    event_name: str = Field(
-        ..., description="Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
-    )
-    event_id: str = Field(..., description="Unique identifier for this particular event instance.")
+    event_type: Annotated[str, Field(description="Type of event (e.g., 'display_event', 'control_event').")]
+    event_name: Annotated[
+        str, Field(description="Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').")
+    ]
+    event_id: Annotated[str, Field(description="Unique identifier for this particular event instance.")]
 
     @property
     def execution_context_id(self) -> str:

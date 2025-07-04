@@ -73,8 +73,8 @@ class FileForm(BaseModel):
     hash: Annotated[Optional[str], Field(default=None, description="File content hash")] = None
     filename: Annotated[str, Field(description="Original filename")]
     path: Annotated[str, Field(description="Storage path")]
-    data: Annotated[Dict[str, Any], Field(default_factory=dict, description="File content data")] = {}
-    meta: Annotated[Dict[str, Any], Field(default_factory=dict, description="File metadata")] = {}
+    data: Annotated[Dict[str, Any], Field(description="File content data")] = {}
+    meta: Annotated[Dict[str, Any], Field(description="File metadata")] = {}
     access_control: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Access control settings")] = (
         None
     )

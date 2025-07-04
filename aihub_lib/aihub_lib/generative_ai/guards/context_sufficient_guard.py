@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import Annotated, List, Optional, Type
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -18,17 +18,17 @@ def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) ->
     if more_hops_available:
 
         class LocalizedContextGuardResult(ContextGuardResult):
-            reasoning: str = Field(description=t("lib.guards.context_sufficient_guard.reason"))
-            success: bool = Field(description=t("lib.guards.context_sufficient_guard.success"))
-            new_query: str = Field(description=t("lib.guards.context_sufficient_guard.new_query"))
+            reasoning: Annotated[str, Field(description=t("lib.guards.context_sufficient_guard.reason"))]
+            success: Annotated[bool, Field(description=t("lib.guards.context_sufficient_guard.success"))]
+            new_query: Annotated[str, Field(description=t("lib.guards.context_sufficient_guard.new_query"))]
 
         LocalizedContextGuardResult.__doc__ = t("lib.guards.context_sufficient_guard.docstring")
         return LocalizedContextGuardResult
     else:
 
         class LocalizedContextGuardResult(ContextGuardResult):
-            reasoning: str = Field(description=t("lib.guards.context_sufficient_guard.reason_no_hops"))
-            success: bool = Field(description=t("lib.guards.context_sufficient_guard.success_no_hops"))
+            reasoning: Annotated[str, Field(description=t("lib.guards.context_sufficient_guard.reason_no_hops"))]
+            success: Annotated[bool, Field(description=t("lib.guards.context_sufficient_guard.success_no_hops"))]
 
         LocalizedContextGuardResult.__doc__ = t("lib.guards.context_sufficient_guard.docstring_no_hops")
         return LocalizedContextGuardResult
