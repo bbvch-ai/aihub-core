@@ -1,6 +1,5 @@
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
@@ -9,9 +8,11 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 
 if TYPE_CHECKING:
     from aihub_lib.runners.Runner import Runner
+
 
 class UserService:
     """
@@ -51,7 +52,9 @@ class UserService:
         return UserDTO.from_user_entity(user_entity)
 
     @staticmethod
-    async def get_user_with_access_by_oid(user_oid: str, runner: "Runner", nc: NATS, t: LocaleHandler) -> UserWithAccessDTO:
+    async def get_user_with_access_by_oid(
+        user_oid: str, runner: "Runner", nc: NATS, t: LocaleHandler
+    ) -> UserWithAccessDTO:
         """
         Retrieve a user with their access rules (which services, agents, and processes they can access)
         """
@@ -87,9 +90,7 @@ class UserService:
         return None
 
     @staticmethod
-    async def update_user_dashboard(
-        user: UserIdentity, dashboard_dto: DashboardDTO
-    ) -> None:
+    async def update_user_dashboard(user: UserIdentity, dashboard_dto: DashboardDTO) -> None:
         """
         Updates or creates the dashboard settings for the given authenticated user.
         """

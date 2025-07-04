@@ -186,9 +186,7 @@ class ThreadController(Controller):
                         detail=f"User {thread_user.id} does not have access to agent {req.agent_class}:{req.agent_id}",
                     )
 
-            return await ThreadService.add_agent_to_thread(
-                thread_id, req.agent_id, req.agent_class, t=t
-            )
+            return await ThreadService.add_agent_to_thread(thread_id, req.agent_id, req.agent_class, t=t)
 
         return self
 
@@ -232,9 +230,7 @@ class ThreadController(Controller):
             if user.id not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            return await ThreadService.remove_agent_from_thread(
-                thread_id, agent_class, agent_id, t=t
-            )
+            return await ThreadService.remove_agent_from_thread(thread_id, agent_class, agent_id, t=t)
 
         return self
 
@@ -266,9 +262,7 @@ class ThreadController(Controller):
                         detail=f"User {add_user_dto.user_id} does not have access to agent {agent.agent_class}:{agent.agent_id}",
                     )
 
-            return await ThreadService.add_user_to_thread(
-                thread_id, add_user_dto.user_id, t=t
-            )
+            return await ThreadService.add_user_to_thread(thread_id, add_user_dto.user_id, t=t)
 
         return self
 
@@ -291,8 +285,6 @@ class ThreadController(Controller):
             if user.id not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            return await ThreadService.remove_user_from_thread(
-                thread_id, remove_user_id, t=t
-            )
+            return await ThreadService.remove_user_from_thread(thread_id, remove_user_id, t=t)
 
         return self

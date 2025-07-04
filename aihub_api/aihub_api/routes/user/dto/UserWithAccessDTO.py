@@ -1,15 +1,15 @@
-from typing import Annotated, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, List
 
-from pydantic import BaseModel, Field
-from nats.aio.client import Client as NATS
-
-from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
-from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
+from nats.aio.client import Client as NATS
+from pydantic import BaseModel, Field
+
+from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
+from aihub_api.routes.user.dto.UserDTO import UserDTO
 
 if TYPE_CHECKING:
     from aihub_lib.runners.Runner import Runner
@@ -19,11 +19,11 @@ class UserAccess(BaseModel):
     name: Annotated[str, Field(description="Name of the service")]
     level: Annotated[AccessLevel, Field(description="Name of the service")]
 
+
 class Access(BaseModel):
     services: Annotated[List[UserAccess], Field(description="List of services and access levels")] = []
     agents: Annotated[List[UserAccess], Field(description="List of agents and access levels")] = []
     processes: Annotated[List[UserAccess], Field(description="List of processes and access levels")] = []
-
 
 
 class UserWithAccessDTO(UserDTO):

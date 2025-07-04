@@ -3,7 +3,6 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
@@ -223,9 +222,7 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    async def remove_user_from_thread(
-        thread_id: str, user_id: str, t: LocaleHandler
-    ) -> ThreadDTO:
+    async def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.remove_user_from_thread(thread_id, user_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
@@ -345,9 +342,7 @@ class ThreadService:
         return stats
 
     @staticmethod
-    async def thread_response_from_entity(
-        entity: ThreadEntity, t: "LocaleHandler"
-    ) -> ThreadDTO:
+    async def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
         """
         Constructs the comprehensive ThreadDTO from a ThreadEntity, including
         aggregated event statistics and participating agent/user information.

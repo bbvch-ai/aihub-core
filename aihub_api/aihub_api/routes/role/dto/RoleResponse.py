@@ -1,8 +1,7 @@
 from typing import Annotated, List
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from pydantic import BaseModel, Field
 
 
 class RoleResponse(BaseModel):

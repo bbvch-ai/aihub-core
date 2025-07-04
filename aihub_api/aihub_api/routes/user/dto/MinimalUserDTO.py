@@ -1,6 +1,5 @@
 from typing import Annotated, Optional
 
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from pydantic import BaseModel, Field
 
@@ -16,4 +15,3 @@ class MinimalUserDTO(BaseModel):
         return cls(
             id=user_entity.id, name=user_entity.name, email=user_entity.email, profile_image=user_entity.profile_image
         )
-

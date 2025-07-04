@@ -1,21 +1,21 @@
 from pathlib import Path
 from typing import Annotated, Optional
 
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Security, Depends
+from fastapi import Body, Depends, Security
 from nats.aio.client import Client as NATS
 
+from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.PaginatedUsersResponse import PaginatedUsersResponse
+from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 from aihub_api.routes.user.UserService import UserService
 
 

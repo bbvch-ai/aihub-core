@@ -67,9 +67,7 @@ class EventController(Controller):
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
 
-            thread = await ThreadService.get_thread_by_id(
-                thread_id=thread_id, t=t
-            )
+            thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
             user_in_thread = user.id in [u.id for u in thread.users]
             thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
                 thread.process_class, thread.process_id
@@ -186,9 +184,7 @@ class EventController(Controller):
                     )
 
             if thread_id:
-                thread = await ThreadService.get_thread_by_id(
-                    thread_id=thread_id, t=t
-                )
+                thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
                 user_in_thread = user.id in [u.id for u in thread.users]
                 thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
                     thread.process_class, thread.process_id

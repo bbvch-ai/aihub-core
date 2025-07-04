@@ -9,7 +9,6 @@ from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
 
-
 class UserDTO(MinimalUserDTO):
     last_accessed: Annotated[datetime, Field(description="Last time the user was updated")]
     roles: List[str] = Field(default_factory=list, description="List of roles assigned to the user")
