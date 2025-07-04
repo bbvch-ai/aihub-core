@@ -14,6 +14,7 @@ from aihub_lib.nats.distributor.dependencies.use_external_event_distributor impo
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from bson import ObjectId
 from fastapi import Body, Depends, HTTPException, Security
 from fastapi.params import Query
@@ -164,55 +165,79 @@ class AgentController(Controller):
         self,
         agent_class,
         agent_id,
-        start_event_input_types: List[Type[BaseModel]],
-        stop_event_output_types: List[Type[BaseModel]],
-        route_postfix="/send_event",
+        start_events: List[EventSpecs],
+        stop_events: List[EventSpecs],
     ) -> "AgentController":
         """
-        Generates an endpoint to which an StartEvent can be send and the endpoint answers with the agents
-        StopEvent.
+        Generates separate endpoints for each StartEvent input type, where each endpoint
+        can return any of the possible StopEvent output types.
         """
+        from typing import Union
+
         agent_class_name = snakecase(agent_class)
-        agent_id = snakecase(agent_id)
-        postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
-        name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
+        agent_id_snake = snakecase(agent_id)
 
-        if route_postfix.startswith("/"):
-            route_postfix = route_postfix[1:]
-        if route_postfix.endswith("/"):
-            route_postfix = route_postfix[:-1]
+        stop_event_output_types = [
+            EventModelCreationService.create_output_model_from_specs(stop_event) for stop_event in stop_events
+        ]
 
-        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name, tags=[agent_class])
-        async def send_event(
-            nc: Annotated[NATS, Depends(use_nats)],
-            start_event_input: Annotated[start_event_input_type, Body],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
-            ],
-            user: Annotated[
+        if len(stop_event_output_types) == 1:
+            stop_event_union_type = stop_event_output_types[0]
+        else:
+            stop_event_union_type = Union[tuple(stop_event_output_types)]
+
+        for start_event_specs in start_events:
+            start_event_name = snakecase(start_event_specs.event_name)
+
+            endpoint_name = f"send_{start_event_name}_to_{agent_class_name}_{agent_id_snake}"
+            endpoint_route = f"/{agent_class_name}/{agent_id_snake}/{start_event_name}"
+
+            start_event_input_type = EventModelCreationService.create_input_model_from_specs(start_event_specs)
+
+            def create_endpoint(input_type: Type[BaseModel]):
+                @self.router.post(endpoint_route, name=endpoint_name, tags=[agent_class])
+                async def send_event(
+                    nc: Annotated[NATS, Depends(use_nats)],
+                    start_event_input: Annotated[input_type, Body],
+                    external_event_distributor: Annotated[
+                        ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+                    ],
+                    user: Annotated[
                 UserIdentity, Security(self.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-        ) -> stop_event_output_type:
-            """
-            Send an event to a specific agent. Raises 403 if the user lacks access.
-            """
-            start_event = start_event_class(
-                event_id=str(ObjectId()),
-                created_at=time.time_ns(),
-                user=user,
-                **start_event_input.model_dump(),
-                locale=t.locale,
-            )
-            stop_event = await AgentService.send_event(
-                nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
-            )
+                    thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+                    display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
 
-            if isinstance(stop_event, ExceptionEvent):
-                raise HTTPException(status_code=stop_event.http_status_code, detail=stop_event.message)
+                ) -> stop_event_union_type:
+                    """
+                    Send a specific event type to a specific agent. Returns any possible stop event type.
+                    """
 
-            return stop_event
+
+                    # Create the start event - you'll need to adapt this based on your EventModelCreationService
+                    # Option 1: If you have a way to map input types back to event classes
+                    start_event_class = EventModelCreationService.get_start_event_class_for_input_type(input_type)
+                    start_event = start_event_specs(
+                        event_id=str(ObjectId()),
+                        created_at=time.time_ns(),
+                        user=user,
+                        **start_event_input.model_dump(),
+                        locale=t.locale,
+                    )
+
+                    stop_event = await AgentService.send_event(
+                        nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
+                    )
+
+                    if isinstance(stop_event, ExceptionEvent):
+                        raise HTTPException(status_code=stop_event.http_status_code, detail=stop_event.message)
+
+                    return stop_event
+
+                return send_event
+
+            # Create the endpoint
+            create_endpoint(start_event_input_type)
 
         return self

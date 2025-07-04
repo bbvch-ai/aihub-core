@@ -80,17 +80,10 @@ class AgentDiscoveryService:
     def _register_agent_endpoints(
         self, agent_class: str, agent_id: str, start_events: List[EventSpecs], stop_events: List[EventSpecs]
     ):
-
-        start_event_input_types = [
-            EventModelCreationService.create_input_model_from_specs(event) for event in start_events
-        ]
-        stop_event_output_types = [
-            EventModelCreationService.create_output_model_from_specs(event) for event in stop_events
-        ]
         # Create an endpoint for this event type
         self.agent_controller.send_event_to(
             agent_class=agent_class,
             agent_id=agent_id,
-            start_event_input_types=start_event_input_types,
-            stop_event_output_types=stop_event_output_types,
+            start_events=start_events,
+            stop_events=stop_events,
         )
