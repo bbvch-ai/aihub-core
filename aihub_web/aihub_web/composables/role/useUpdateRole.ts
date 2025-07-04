@@ -13,6 +13,7 @@ export const useUpdateRole = defineMutation(() => {
         body: updatedRole,
       })
       queryCache.invalidateQueries({ key: ['roles'] })
+      queryCache.invalidateQueries({ key: ['suite'] })
     },
   })
   return {

@@ -37,6 +37,8 @@
         <template #body="{ data }">
           <Badge
             :value="data.accessRule"
+            severity="secondary"
+            class="border border-gray-400/30"
           />
         </template>
       </Column>

@@ -40,6 +40,8 @@
           v-for="access_rule in role.access_rules"
           :key="access_rule"
           :value="access_rule"
+          severity="secondary"
+          class="border border-gray-400/30"
         />
       </div>
     </div>

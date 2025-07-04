@@ -36,12 +36,12 @@ user:
     last_accessed: "Zuletzt aktiv"
 
 time_ago:
-  last_hour: 'Last hour'
-  last_day: 'Last day'
-  last_week: 'Last week'
-  last_month: 'Last month'
-  last_year: 'Last year'
-  long_time_ago: 'Long time ago'
+  last_hour: "Last hour"
+  last_day: "Last day"
+  last_week: "Last week"
+  last_month: "Last month"
+  last_year: "Last year"
+  long_time_ago: "Long time ago"
 
 
 thread:
@@ -238,19 +238,19 @@ dashboard:
   create_widget: "Create new Widget"
   events:
     StartEvent:
-      label: 'Started Agent Runs'
+      label: "Started Agent Runs"
     StopEvent:
-      label: 'Successful Runs'
+      label: "Successful Runs"
     UserMessageEvent:
-      label: 'User Chat Messages'
+      label: "User Chat Messages"
     ExceptionEvent:
-      label: 'Errors'
+      label: "Errors"
     HumanInTheLoopRequestEvent:
-      label: 'Human in the Loop'
+      label: "Human in the Loop"
     BotInTheLoopRequestEvent:
-      label: 'Ask in Slack/Teams'
+      label: "Ask in Slack/Teams"
     AgentInTheLoopRequestEvent:
-      label: 'Tasks Delegated'
+      label: "Tasks Delegated"
 
 evaluation:
   dataset:
@@ -320,7 +320,7 @@ role:
   save_button: "Save"
   access_rules: "Access Rules"
   create_dialog:
-    description: 'Create a new role with access rules. To assigne the new role to users, please use your AD.'
+    description: "Create a new role with access rules. To assigne the new role to users, please use your AD."
   remove_dialog:
     confirm: "Are you sure?"
     explanation: "If you remove this role, users might loose access to certain features of the ai-hub."
