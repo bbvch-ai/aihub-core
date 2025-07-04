@@ -59,15 +59,9 @@ def create_dashboard_with_items():
     )
 
 
-@pytest.fixture
-def mock_user_entity():
+def _create_mock_user_entity_function():
     """
-    Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig.
-
-    This fixture is useful for tests that need a consistent user object without database dependencies.
-
-    This mock will return a user with the provided user_oid, regardless of what it is.
-    This ensures that tests can use any user ID they want, not just the one from the config.
+    Create a mock function for UserEntity.by_oid that returns a dummy user.
     """
     config = DangerousDevelopmentOnlyAuthConfig()
 
@@ -84,7 +78,20 @@ def mock_user_entity():
         )
         return user
 
-    with patch.object(UserEntity, "by_oid", side_effect=mock_by_oid):
+    return mock_by_oid
+
+
+@pytest.fixture
+def mock_user_entity():
+    """
+    Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig.
+
+    This fixture is useful for tests that need a consistent user object without database dependencies.
+
+    This mock will return a user with the provided user_oid, regardless of what it is.
+    This ensures that tests can use any user ID they want, not just the one from the config.
+    """
+    with patch.object(UserEntity, "by_oid", side_effect=_create_mock_user_entity_function()):
         yield
 
 
@@ -97,22 +104,7 @@ def mock_user_entity_autouse():
     This mock will return a user with the provided user_oid, regardless of what it is.
     This ensures that tests can use any user ID they want, not just the one from the config.
     """
-    config = DangerousDevelopmentOnlyAuthConfig()
-
-    def mock_by_oid(user_oid):
-        user = UserEntity(
-            id=user_oid,
-            name=config.NAME,
-            email=config.EMAIL,
-            roles=config.ROLES,
-            profile_image=None,
-            favorite_modules=[],
-            dashboard=create_dashboard_with_items(),
-            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=timezone.utc),
-        )
-        return user
-
-    with patch.object(UserEntity, "by_oid", side_effect=mock_by_oid):
+    with patch.object(UserEntity, "by_oid", side_effect=_create_mock_user_entity_function()):
         yield
 
 
