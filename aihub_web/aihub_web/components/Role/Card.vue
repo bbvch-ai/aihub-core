@@ -58,6 +58,7 @@ const props = defineProps<{
 const route = useRoute()
 const confirm = useConfirm()
 const toast = useToast()
+const { t } = useI18n()
 
 const { deleteRole } = useDeleteRole()
 
@@ -65,24 +66,24 @@ const isActive = computed(() => {
   return route.params.role_id === props.role.id
 })
 
-const confirmDelete = (event) => {
+const confirmDelete = () => {
   confirm.require({
-    message: 'Are you sure you want to proceed?',
-    header: 'Confirmation',
+    message: t('role.remove_dialog.explanation'),
+    header: t('role.remove_dialog.confirm'),
     icon: 'pi pi-exclamation-triangle',
     position: 'bottom',
     rejectProps: {
-      label: 'Cancel',
+      label: t('role.remove_dialog.cancel'),
       severity: 'secondary',
       outlined: true,
     },
     acceptProps: {
-      label: 'Delete',
+      label: t('role.remove_dialog.proceed'),
       severity: 'danger',
     },
     accept: async () => {
       await deleteRole({ roleId: props.role.id })
-      toast.add({ severity: 'success', summary: 'Confirmed', detail: 'Record deleted', life: 3000 })
+      toast.add({ severity: 'success', summary: t('role.role_deleted.summary'), detail: t('role.role_deleted.detail'), life: 3000 })
     },
     reject: () => {
     },

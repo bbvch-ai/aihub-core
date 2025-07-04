@@ -307,3 +307,24 @@ evaluation:
       conciseness: "Conciseness"
       correctness: "Correctness"
       completeness: "Completeness"
+
+role:
+  title: "Access Roles"
+  edit: "Edit Role"
+  create_new: "New Role"
+  create_dialog:
+    description: 'Create a new role with access rules. To assigne the new role to users, please use your AD.'
+  remove_dialog:
+    confirm: "Are you sure?"
+    explanation: "If you remove this role, users might loose access to certain features of the ai-hub."
+    cancel: "Cancel"
+    proceed: "Delete anyways"
+  list:
+    name: "Name"
+    description: "Description"
+  role_deleted:
+    summary: "Role deleted"
+    detail: "Role was deleted. Users with this role might have lost access to certain features."
+  role_saved:
+    summary: "Role saved"
+    detail: "Role saved successfully, the new access rules take effect immediately."
