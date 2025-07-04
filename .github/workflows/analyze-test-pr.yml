@@ -58,7 +58,7 @@ jobs:
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         with:
-          github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.module }}
           docker_compose_paths: ${{ matrix.docker_compose_files }}
           use_local_core: "true"
