@@ -4,7 +4,7 @@ export const useUpdateDataset = () => {
   const queryCache = useQueryCache()
   const route = useRoute()
 
-  const { mutate: updateDataset } = useMutation({
+  const { mutateAsync: updateDataset } = useMutation({
     mutation: async ({ dataset }: { dataset: DatasetUpdate }) => {
       await updateDatasetCall({
         composable: '$fetch',

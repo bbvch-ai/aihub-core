@@ -5,8 +5,7 @@
     </span>
     <div class="mb-4 flex flex-col gap-4">
       <RoleEdit
-        :input-role="role"
-        @update:role="save"
+        v-model="role"
       />
       <div class="flex justify-end gap-2">
         <Button
@@ -48,8 +47,8 @@ const { createRole } = useCreateRole()
 const close = () => {
   emit('close')
 }
-const save = () => {
-  createRole({ createdRole: role.value })
+const save = async () => {
+  await createRole({ createdRole: role.value })
   emit('close')
 }
 </script>

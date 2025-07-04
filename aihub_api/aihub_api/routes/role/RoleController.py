@@ -1,5 +1,6 @@
 from typing import Annotated, List, Optional
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -41,6 +42,12 @@ class RoleController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
             try:
+                for rule in role_data.access_rules:
+                    if not AccessChecker.validate_user_access_rule(rule):
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Invalid access rule: {rule}. Access rules must be in the format <resource>.<action>.",
+                        )
                 return RoleService.create_role(role_data)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
@@ -94,6 +101,12 @@ class RoleController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
             try:
+                for rule in role_data.access_rules:
+                    if not AccessChecker.validate_user_access_rule(rule):
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Invalid access rule: {rule}.",
+                        )
                 return RoleService.update_role(role_id, role_data)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")

@@ -12,7 +12,7 @@
         <div class="grid grid-cols-2 gap-2 xl:grid-cols-2">
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ t('role.list.name') }}
+              {{ t('role.name') }}
             </span>
             <Tag
               :value="role.name"
@@ -21,7 +21,7 @@
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="text-xs">
-              {{ t('role.list.description') }}
+              {{ t('role.description') }}
             </span>
             <Tag
               :value="role.description"
@@ -40,7 +40,7 @@
         <Button
           type="button"
           :label="t('role.save_button')"
-          icon="pi pi-search"
+          icon="pi pi-save"
           :disabled="!clonedRole.name || !clonedRole.description || !clonedRole.access_rules?.length "
           @click="saveRole"
         />
@@ -53,7 +53,7 @@
 import { useUpdateRole } from '@core/composables/role/useUpdateRole'
 import cloneDeep from 'lodash.clonedeep'
 
-import type { CreateRoleRequest } from '@core/sdk/client'
+import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
 
 const { role, roleIsLoading } = useRole()
 const { t } = useI18n()
@@ -66,7 +66,7 @@ const clonedRole = ref<CreateRoleRequest>({
   description: '',
   access_rules: [],
 })
-watch(role, (newRole) => {
+watch(role, (newRole: RoleResponse) => {
   if (!newRole) {
     return
   }

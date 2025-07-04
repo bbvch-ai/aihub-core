@@ -9,7 +9,9 @@
           cols="30"
           class="w-full"
         />
-        <label for="in_label_name">In Label</label>
+        <label for="in_label_name">
+          {{ t('role.name') }}
+        </label>
       </FloatLabel>
       <FloatLabel variant="in">
         <Textarea
@@ -19,7 +21,9 @@
           cols="30"
           class="w-full"
         />
-        <label for="in_label_description">In Label</label>
+        <label for="in_label_description">
+          {{ t('role.description') }}
+        </label>
       </FloatLabel>
     </div>
     <DataTable
@@ -28,7 +32,7 @@
     >
       <Column
         field="accessRule"
-        :header="t('role.access_rule_header')"
+        :header="t('role.access_rules')"
       >
         <template #body="{ data }">
           <Badge
@@ -65,11 +69,11 @@
     <div class="flex gap-2">
       <InputGroup>
         <InputGroupAddon>
-          <i class="pi pi-question" />
+          <i class="pi pi-lock-open" />
         </InputGroupAddon>
         <InputText
           v-model="newRule"
-          :placeholder="t('role.new_access_role')"
+          :placeholder="t('role.add_access_role')"
           @click.enter="addRule"
         />
       </InputGroup>
@@ -77,7 +81,7 @@
         <Button
           type="button"
           :label="t('role.add_button')"
-          icon="pi pi-search"
+          icon="pi pi-plus"
           :disabled="!newRule"
           @click="addRule"
         />
@@ -101,10 +105,12 @@ const emit = defineEmits<{
   'update:modelValue': [RoleResponse | CreateRoleRequest]
 }>()
 
-const { cloned: role } = useCloned<RoleResponse | CreateRoleRequest>(
-  () => props.modelValue,
-  { deep: true },
-)
+const initialAccessRules = ref<string[]>([...(props.modelValue.access_rules ?? [])])
+const role = ref<RoleResponse | CreateRoleRequest>(props.modelValue)
+
+watch(() => props.modelValue, (newValue) => {
+  role.value = newValue
+}, { deep: true })
 
 const accessRules = computed(() => {
   return role.value.access_rules?.map((accessRule: string) => {
@@ -117,12 +123,12 @@ const accessRules = computed(() => {
 
 const newRule = ref<string>('')
 
-watch(() => [role.value.name, role.value.description, role.value.access_rules], () => {
+watch(() => [role.value.name, role.value.description, JSON.stringify(role.value.access_rules)], () => {
   emit('update:modelValue', role.value)
 })
 
 const isNewAccessRule = (accessRule: string) => {
-  return !props.modelValue.access_rules?.includes(accessRule)
+  return !initialAccessRules.value?.includes(accessRule)
 }
 
 const addRule = () => {

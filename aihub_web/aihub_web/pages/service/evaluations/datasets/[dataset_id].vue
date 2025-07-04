@@ -68,10 +68,10 @@ const safeDataset = (event) => {
     acceptProps: {
       label: t('evaluation.dataset.save_action'),
     },
-    accept: () => {
+    accept: async () => {
       const items = changedItems.value
       if (items.length > 0) {
-        updateDataset({ dataset: { items } })
+        await updateDataset({ dataset: { items } })
         toast.add({ severity: 'success', summary: t('evaluation.dataset.saved_summary'), detail: t('evaluation.dataset.saved_detail'), life: 3000 })
       }
     },

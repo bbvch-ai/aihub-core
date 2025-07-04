@@ -37,7 +37,7 @@ class AccessChecker:
         return cls(user_access_rules=list(user_access_rules))
 
     @staticmethod
-    def _validate_user_access_rule(access_rule: str) -> bool:
+    def validate_user_access_rule(access_rule: str) -> bool:
         """Ensures a users access_rules follows the strict format."""
         if not access_rule.startswith(("aihub.user.", "aihub.admin.")):
             return False
@@ -49,7 +49,7 @@ class AccessChecker:
         return True
 
     @staticmethod
-    def _validate_permission_template(template: str):
+    def validate_permission_template(template: str):
         """Ensures a permission template follows the strict format."""
         if not template.startswith(("aihub.user.", "aihub.admin.")):
             raise ValueError(
@@ -68,7 +68,7 @@ class AccessChecker:
         """Filters and validates the user's access_rules."""
         validated = set()
         for access_rule in access_rules:
-            if self._validate_user_access_rule(access_rule):
+            if self.validate_user_access_rule(access_rule):
                 validated.add(access_rule)
         return validated
 
@@ -111,7 +111,7 @@ class AccessChecker:
         Checks for the highest level of permission (Admin, User, or Denied).
         It orchestrates validation and matching, prioritizing admin access.
         """
-        self._validate_permission_template(permission_template)
+        self.validate_permission_template(permission_template)
         is_implicit_check = "?" in permission_template
         match_func = (
             self._access_rule_fulfills_implicit_template

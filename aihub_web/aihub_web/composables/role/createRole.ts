@@ -3,7 +3,7 @@ import { createRole, type CreateRoleRequest } from '@core/sdk/client'
 export const useCreateRole = defineMutation(() => {
   const queryCache = useQueryCache()
 
-  const { mutate: createRoleMutation } = useMutation({
+  const { mutateAsync: createRoleMutation } = useMutation({
     mutation: async ({ createdRole }: { createdRole: CreateRoleRequest }) => {
       await createRole({
         composable: '$fetch',

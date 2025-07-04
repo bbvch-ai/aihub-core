@@ -310,8 +310,15 @@ evaluation:
 
 role:
   title: "Access Roles"
+  name: "Name"
+  description: "Description"
   edit: "Edit Role"
   create_new: "New Role"
+  add_access_role: "Add access role"
+  add_button: "Add"
+  is_new: "New"
+  save_button: "Save"
+  access_rules: "Access Rules"
   create_dialog:
     description: 'Create a new role with access rules. To assigne the new role to users, please use your AD.'
   remove_dialog:
@@ -319,9 +326,6 @@ role:
     explanation: "If you remove this role, users might loose access to certain features of the ai-hub."
     cancel: "Cancel"
     proceed: "Delete anyways"
-  list:
-    name: "Name"
-    description: "Description"
   role_deleted:
     summary: "Role deleted"
     detail: "Role was deleted. Users with this role might have lost access to certain features."

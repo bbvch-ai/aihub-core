@@ -3,7 +3,7 @@ import { updateRole, type UpdateRoleRequest } from '@core/sdk/client'
 export const useUpdateRole = defineMutation(() => {
   const queryCache = useQueryCache()
 
-  const { mutate: updateRoleMutation } = useMutation({
+  const { mutateAsync: updateRoleMutation } = useMutation({
     mutation: async ({ roleId, updatedRole }: { roleId: string, updatedRole: UpdateRoleRequest }) => {
       await updateRole({
         composable: '$fetch',
