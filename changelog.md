@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.213.0] - 2025-07-07 - New Retrieval Agent for Focused Data Access
+
+### Added
+- ✨ **Introduced `RetrievalAgent`**: A new, specialized agent designed to streamline information retrieval from knowledge bases. This agent focuses solely on fetching and organizing relevant context, enabling more flexible and modular Retrieval-Augmented Generation (RAG) workflows.
+- 📄 **Dedicated Configuration for Retrieval Agent**: Added `RetrievalAgentConfig` to provide comprehensive configuration options for customizing retrieval behavior, including specifying embedding models, vector stores, and various node retrieval strategies.
+- ⚡️ **New Event Types for Retrieval Workflows**: Implemented `QuestionStartEvent` for clear initiation of retrieval queries and `RetrievalResponseEvent` to encapsulate the retrieved and ordered context, facilitating seamless integration with subsequent processing steps.
+- 🧪 **Comprehensive Test Coverage for `RetrievalAgent`**: Included a full suite of BDD (Behavior-Driven Development) tests to ensure the robust and reliable operation of the new `RetrievalAgent`, validating its ability to accurately retrieve and combine relevant documents.
+
+---
+
+
+
 ## [v0.212.0] - 2025-07-03 - Flexible OpenAI Authentication & Resource Management
 
 ### Added
