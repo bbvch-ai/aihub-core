@@ -79,5 +79,7 @@ class RetrievalAgent(Agent):
         name=LocaleString(en="Stop step"),
         description=LocaleString(en="Stops the agent and returns the ordered nodes as context messages."),
     )
-    async def stop_step(self, event: InOrderNodeCombinerEvent) -> RetrievalResponseEvent:
-        return RetrievalResponseEvent(context_message=event.context_message)
+    async def stop_step(
+        self, event: InOrderNodeCombinerEvent, retriever_event: RetrieverEvent
+    ) -> RetrievalResponseEvent:
+        return RetrievalResponseEvent(context_message=event.context_message, nodes=retriever_event.nodes)
