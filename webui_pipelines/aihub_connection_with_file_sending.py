@@ -10,7 +10,8 @@ import requests
 import hashlib
 import uuid
 import json
-from typing import Optional, List, Dict, Any, Generator, AsyncGenerator, Union, Annotated
+from typing import Optional, Any, Generator, AsyncGenerator, Union, Annotated
+
 from bson import ObjectId
 import asyncio
 import logging
@@ -68,7 +69,7 @@ def user_header(__user__: dict):
     }
 
 
-def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
+def transform_events_to_sources(events: list[dict]) -> dict[str, Any]:
     """Transform retriever events into the sources format expected by the UI."""
     result = {"type": "chat:completion", "data": {"sources": []}}
 
@@ -185,7 +186,7 @@ class Pipe:
             logger.exception(f"Error fetching models: {e}")
             return [{"id": "error", "name": f"Error fetching models: {e}"}]
 
-    async def get_retriever_events(self, thread_id: str, display_id: str, headers: dict) -> List[Dict]:
+    async def get_retriever_events(self, thread_id: str, display_id: str, headers: dict) -> list[dict]:
         """Query the event API for RetrieverEvents asynchronously"""
         params = {
             "thread_id": thread_id,

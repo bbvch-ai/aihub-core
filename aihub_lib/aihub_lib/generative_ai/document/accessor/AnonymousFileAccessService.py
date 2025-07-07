@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 
@@ -14,7 +14,7 @@ class AnonymousFileAccessService:
         service_endpoint = access.get_service_endpoint()
         blob_service_client = access.get_blob_service_client()
 
-        delegation_key_start_time = datetime.now(timezone.utc)
+        delegation_key_start_time = datetime.now(UTC)
         delegation_key_expiry_time = delegation_key_start_time + timedelta(hours=lifetime_hours)
 
         user_delegation_key = blob_service_client.get_user_delegation_key(
@@ -27,7 +27,7 @@ class AnonymousFileAccessService:
             blob_name=file_path,
             user_delegation_key=user_delegation_key,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.now(timezone.utc) + timedelta(hours=lifetime_hours),
+            expiry=datetime.now(UTC) + timedelta(hours=lifetime_hours),
         )
 
         return f"{service_endpoint}/{container}/{file_path}?{sas_token}"

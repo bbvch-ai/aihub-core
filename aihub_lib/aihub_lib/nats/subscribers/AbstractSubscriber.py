@@ -1,5 +1,6 @@
 import abc
-from typing import Awaitable, Callable, Generic, Type, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import Generic, TypeVar
 
 from nats.aio.client import Client as NATS
 
@@ -14,7 +15,7 @@ class AbstractSubscriber(Generic[TEvent], abc.ABC):
         self,
         nc: NATS,
         subject: str,
-        event_cls: Type[TEvent],
+        event_cls: type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
     ):
         self.nc = nc

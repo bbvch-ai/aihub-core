@@ -1,5 +1,6 @@
 import inspect
-from typing import Annotated, Callable, Dict, Optional, Set, Tuple, Type
+from collections.abc import Callable
+from typing import Annotated
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_classes import extract_event_classes
@@ -11,12 +12,12 @@ def extract_function_events(
         Callable,
         "A function or method whose parameters are to be analyzed for event types.",
     ],
-) -> Tuple[
-    Set[Type[BaseEvent]],
-    Set[Type[BaseEvent]],
-    Dict[str, Set[Type[BaseEvent]]],
-    Dict[str, bool],
-    Dict[str, Optional[int]],
+) -> tuple[
+    set[type[BaseEvent]],
+    set[type[BaseEvent]],
+    dict[str, set[type[BaseEvent]]],
+    dict[str, bool],
+    dict[str, int | None],
 ]:
     """
     Analyze a function’s parameters to determine which event types it consumes, as well as optionality
@@ -34,17 +35,19 @@ def extract_function_events(
     1. `input_events`: A set of all input event types referenced by the function.
     2. `input_event_mapping`: A dict mapping parameter names to the set of event types they accept.
     3. `parameter_optional_map`: A dict mapping parameter names to a boolean indicating if `None` is allowed.
-    4. `size_requirements`: A dict mapping parameter names to an integer size if a fixed-size collection is required, or None otherwise.
+    4. `size_requirements`: A dict mapping parameter names to an integer size if a fixed-size collection is required,
+      or None otherwise.
 
     ### Details
     - Parameters named `self` are ignored (common in instance methods).
     - Parameters annotated as `RunContext` or `ThreadContext` are not event parameters and thus skipped.
-    - Uses `extract_event_classes` internally to handle complex union types, optional parameters, and fixed-size collections.
+    - Uses `extract_event_classes` internally to handle complex union types, optional parameters,
+      and fixed-size collections.
 
     ### Example
     Consider a step method:
     ```python
-    def my_step(event: SomeEvent | None, events: List[AnotherEvent], fixed: FixedList[YetAnotherEvent, 3]) -> StopEvent:
+    def my_step(event: SomeEvent | None, events: list[AnotherEvent], fixed: Fixedlist[YetAnotherEvent, 3]) -> StopEvent:
         ...
     ```
     This might produce:
@@ -56,12 +59,12 @@ def extract_function_events(
     """
 
     signature = inspect.signature(func)
-    input_events: Set[Type[BaseEvent]] = set()
-    input_event_mapping: Dict[str, Set[Type[BaseEvent]]] = {}
-    parameter_optional_map: Dict[str, bool] = {}
-    size_requirements: Dict[str, Optional[int]] = {}
+    input_events: set[type[BaseEvent]] = set()
+    input_event_mapping: dict[str, set[type[BaseEvent]]] = {}
+    parameter_optional_map: dict[str, bool] = {}
+    size_requirements: dict[str, int | None] = {}
 
-    output_events: Set[Type[BaseEvent]] = extract_return_events(func)
+    output_events: set[type[BaseEvent]] = extract_return_events(func)
 
     for param in signature.parameters.values():
         if param.name == "self":

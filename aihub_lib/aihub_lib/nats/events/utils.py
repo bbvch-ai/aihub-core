@@ -1,5 +1,5 @@
 from functools import cache
-from typing import TYPE_CHECKING, Annotated, List, Tuple, Type, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, Union, get_args, get_origin
 
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from aihub_lib.nats.events.BaseEvent import BaseEvent
 
 
-def get_parent_classes_until_base(cls: Type, base_class: Type):
+def get_parent_classes_until_base(cls: type, base_class: type):
     """Returns a set of parent class names up until the given base class (excluding the base itself)."""
     if cls is base_class:
         return set()
@@ -27,7 +27,7 @@ def get_parent_classes_until_base(cls: Type, base_class: Type):
 
 
 @cache
-def get_inheritance_depth(event_class: Type, base_class: Type = None) -> int:
+def get_inheritance_depth(event_class: type, base_class: type = None) -> int:
     """
     Calculate the maximum inheritance depth from a class to a base class.
     Returns the longest path in case of multiple inheritance paths.
@@ -55,7 +55,7 @@ def get_inheritance_depth(event_class: Type, base_class: Type = None) -> int:
     return max_depth
 
 
-def get_base_type(annotation: Type) -> Tuple[Type, ...]:
+def get_base_type(annotation: type) -> tuple[type, ...]:
     """
     Recursively unwraps a type hint to find the core, non-wrapper type(s).
     """
@@ -67,7 +67,7 @@ def get_base_type(annotation: Type) -> Tuple[Type, ...]:
 
     # Case 2: Union[A, B, ...] or Optional[A]
     if origin is Union:
-        base_types: List[Type] = []
+        base_types: list[type] = []
         for arg in get_args(annotation):
             if arg is not type(None):
                 base_types.extend(get_base_type(arg))

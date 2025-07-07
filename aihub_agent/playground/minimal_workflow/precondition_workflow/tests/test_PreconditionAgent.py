@@ -1,11 +1,12 @@
-from pytest_bdd import scenarios, given, when, then, parsers
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from playground.minimal_workflow.precondition_workflow.events.ParallelEvent import ParallelEvent
 from playground.minimal_workflow.precondition_workflow.PreconditionAgent import PreconditionAgent
 from playground.minimal_workflow.precondition_workflow.PreconditionAgentConfig import PreconditionAgentConfig
-from playground.minimal_workflow.precondition_workflow.events.ParallelEvent import ParallelEvent
 
 scenarios("./features/precondition_agent.feature")
 

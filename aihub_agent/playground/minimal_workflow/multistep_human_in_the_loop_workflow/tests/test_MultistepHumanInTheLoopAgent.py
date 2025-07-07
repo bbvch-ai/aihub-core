@@ -1,15 +1,9 @@
 import pytest
 import pytest_asyncio
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, StopEvent
-from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgent import (
-    MultistepHumanInTheLoopAgent,
-)
-from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgentConfig import (
-    MultistepHumanInTheLoopAgentConfig,
-)
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
     FirstStepHumanInTheLoopRequestEvent,
     FirstStepHumanInTheLoopResponseEvent,
@@ -17,6 +11,12 @@ from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.Fir
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
     SecondStepHumanInTheLoopRequestEvent,
     SecondStepHumanInTheLoopResponseEvent,
+)
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgent import (
+    MultistepHumanInTheLoopAgent,
+)
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgentConfig import (
+    MultistepHumanInTheLoopAgentConfig,
 )
 
 

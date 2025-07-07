@@ -2,8 +2,9 @@ import abc
 import asyncio
 import inspect
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable, Dict, List, Optional, Set, Type, get_origin
+from typing import Annotated, Any, get_origin
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -28,8 +29,8 @@ class EventsAndKwargs:
     Holds the step method input keyword arguments and the events mentioned in said kwargs
     """
 
-    events: List[BaseEvent]
-    kwargs: Dict[str, Any]
+    events: list[BaseEvent]
+    kwargs: dict[str, Any]
 
 
 class BaseDispatcher(abc.ABC):
@@ -67,7 +68,7 @@ class BaseDispatcher(abc.ABC):
         ],
         redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AbstractStreamTopicManager, "Manages event subjects."],
-        topic: Annotated[Type[Topic], "Topic under which these events were published"],
+        topic: Annotated[type[Topic], "Topic under which these events were published"],
     ):
         self.nc = nc
         self.js = js
@@ -114,7 +115,7 @@ class BaseDispatcher(abc.ABC):
     async def is_step_ready(
         self,
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[BaseEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[Topic, "Topic info for the current process."],
     ) -> bool:
         """
@@ -128,7 +129,7 @@ class BaseDispatcher(abc.ABC):
         self,
         trigger_event: Annotated[BaseEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
-        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[BaseEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[Topic, "Topic info for the current process."],
     ):
         """
@@ -165,7 +166,7 @@ class BaseDispatcher(abc.ABC):
     async def _step_meets_basic_execution_requirements(
         self,
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[BaseEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[Topic, "Topic info for the current execution context."],
     ) -> bool:
         """
@@ -181,13 +182,13 @@ class BaseDispatcher(abc.ABC):
             logger.warning(f"Run {topic.execution_context_id} is crashed; skipping step.")
             return False
 
-        input_event_mapping: Dict[str, Set[Type[BaseEvent]]] = getattr(
+        input_event_mapping: dict[str, set[type[BaseEvent]]] = getattr(
             step_method, DispatchableWorkflow.INPUT_EVENT_MAPPING_ANNOTATION, {}
         )
-        parameter_optional_map: Dict[str, bool] = getattr(
+        parameter_optional_map: dict[str, bool] = getattr(
             step_method, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION, {}
         )
-        size_requirements: Dict[str, Optional[int]] = getattr(
+        size_requirements: dict[str, int | None] = getattr(
             step_method, DispatchableWorkflow.SIZE_REQUIREMENT_ANNOTATION, {}
         )
 
@@ -226,12 +227,12 @@ class BaseDispatcher(abc.ABC):
         self,
         trigger_event: Annotated[BaseEvent, "The event that caused this step to trigger."],
         method: Annotated[Callable, "The method to prepare the args for."],
-        events: Annotated[Dict[str, List[BaseEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[BaseEvent]], "All events for this run, keyed by event name."],
     ) -> EventsAndKwargs:
-        kwargs: Dict[str, Any] = {}
+        kwargs: dict[str, Any] = {}
         step_signature = inspect.signature(method)
         parameter_optional_map = getattr(method, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION, {})
-        all_input_events: List[BaseEvent] = []
+        all_input_events: list[BaseEvent] = []
 
         for param in step_signature.parameters.values():
             if param.name == "self":
@@ -248,7 +249,7 @@ class BaseDispatcher(abc.ABC):
 
             kwargs[param.name] = event_value
 
-            if isinstance(event_value, (list, tuple, ListOfSize)):
+            if isinstance(event_value, list | tuple | ListOfSize):
                 all_input_events.extend([event for event in event_value if event.is_control_event])
             elif isinstance(event_value, BaseEvent) and event_value.is_control_event:
                 all_input_events.append(event_value)
@@ -263,11 +264,11 @@ class BaseDispatcher(abc.ABC):
         param: Annotated[inspect.Parameter, "A parameter of the step method."],
         step_method: Annotated[Callable, "The step method we're preparing arguments for."],
         events: Annotated[
-            Dict[str, List[BaseEvent]],
+            dict[str, list[BaseEvent]],
             "All events for this run, keyed by event name.",
         ],
         trigger_event: Annotated[BaseEvent, "The event that triggered this step execution."],
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Finds the appropriate value for a given step parameter.
 
@@ -286,7 +287,7 @@ class BaseDispatcher(abc.ABC):
         required_size = size_requirements.get(param.name)
 
         # Gather all matching events
-        all_matching_events: List[BaseEvent] = []
+        all_matching_events: list[BaseEvent] = []
         for event_class in event_classes:
             event_list = events.get(event_class.event_name_from_class(), [])
             all_matching_events.extend(event_list)
@@ -304,7 +305,7 @@ class BaseDispatcher(abc.ABC):
             return None
 
         # Handle lists
-        elif get_origin(param.annotation) in (list, List):
+        elif get_origin(param.annotation) in (list, list):
             return all_matching_events
 
         # Handle single event

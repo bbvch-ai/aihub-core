@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Dict
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -33,7 +33,7 @@ class ExceptionEvent(SemanticEvent):
         ),
     ] = 500
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         return {
             "exception.type": self.http_status_code,
             "exception.message": self.message,

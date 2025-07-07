@@ -3,7 +3,7 @@ import logging
 import re
 import unicodedata
 from asyncio import Event, Task
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
@@ -96,7 +96,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         - The messages must be converted to the correct format to send them to the OpenAI API.
         - The context is needed to generate the completion.
         """
-        persisted_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(
+        persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
         system_message: Message = CompletionHandler.get_system_message(
@@ -105,7 +105,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         )
         if system_message is not None:
             persisted_messages.insert(0, system_message)
-        chat_messages: List[ChatCompletionMessageParam] = [
+        chat_messages: list[ChatCompletionMessageParam] = [
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
         return await client.chat.completions.create(

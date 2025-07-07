@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional, Type
+from typing import Annotated
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -11,10 +11,10 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 class ContextGuardResult(BaseModel):
     reasoning: str
     success: bool
-    new_query: Optional[str] = None
+    new_query: str | None = None
 
 
-def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) -> Type[ContextGuardResult]:
+def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) -> type[ContextGuardResult]:
     if more_hops_available:
 
         class LocalizedContextGuardResult(ContextGuardResult):
@@ -39,7 +39,7 @@ async def context_sufficient_guard(
     t: LocaleHandler,
     user_query: str,
     context: str,
-    prev_queries: List[str],
+    prev_queries: list[str],
     more_hops_available: bool,
 ) -> ContextGuardResult:
     sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))

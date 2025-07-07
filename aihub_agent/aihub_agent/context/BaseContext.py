@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from redis.asyncio import Redis
 
@@ -57,7 +57,7 @@ class BaseContext:
         logger.debug(f"Storing key '{redis_key}' with value: {serialized_value}")
         await self.redis.set(redis_key, serialized_value, ex=self.default_ttl)
 
-    async def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    async def get(self, key: str, default: Any | None = None) -> Any | None:
         """
         Retrieve the value for `key`, returning `default` if not found or if there's an error.
         Deserializes the stored JSON string into a Python object.

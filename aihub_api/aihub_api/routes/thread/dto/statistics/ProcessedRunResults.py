@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, Set
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -10,10 +10,10 @@ class ProcessedRunResults(BaseModel):
     """Holds the results after processing raw aggregated run data."""
 
     display_aggregates: Annotated[
-        Dict[str, IntermediateDisplayStats],
+        dict[str, IntermediateDisplayStats],
         Field(description="Aggregated statistics for each display, keyed by display ID"),
     ] = {}
     participating_agent_ids: Annotated[
-        Set[AgentIdentifier],
+        set[AgentIdentifier],
         Field(description="Set of agent identifiers that participated in the thread"),
     ] = set()

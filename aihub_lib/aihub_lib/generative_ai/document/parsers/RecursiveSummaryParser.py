@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -39,7 +39,7 @@ class RecursiveNodeSummarizer:
         self.min_summarization_length = min_summarization_length
         self.node_id_to_node = {}
 
-    def summarize_nodes(self, nodes: List[TextNode]) -> List[TextNode]:
+    def summarize_nodes(self, nodes: list[TextNode]) -> list[TextNode]:
         if not nodes:
             return []
 
@@ -54,16 +54,16 @@ class RecursiveNodeSummarizer:
 
         max_level: int = max(grouped_nodes.keys()) if grouped_nodes else -1
 
-        all_generated_summaries: List[TextNode] = []
+        all_generated_summaries: list[TextNode] = []
 
         for level in range(max_level, -1, -1):
-            original_nodes_at_this_level: List[TextNode] = grouped_nodes.get(level, [])
+            original_nodes_at_this_level: list[TextNode] = grouped_nodes.get(level, [])
 
-            child_summaries_for_this_level: List[TextNode] = [
+            child_summaries_for_this_level: list[TextNode] = [
                 s_node for s_node in all_generated_summaries if s_node.metadata.get(HEADING_LEVEL) == level + 1
             ]
 
-            summarized_nodes_at_this_level: List[TextNode] = self._summarize_level(
+            summarized_nodes_at_this_level: list[TextNode] = self._summarize_level(
                 original_nodes_at_this_level, child_summaries_for_this_level, level, llm_summarizer
             )
 
@@ -83,8 +83,8 @@ class RecursiveNodeSummarizer:
         return nodes + all_generated_summaries
 
     def _summarize_summaries(
-        self, child_summaries: List[TextNode], level: int, summarizer: LLMSummarizer, index: int
-    ) -> Optional[TextNode]:
+        self, child_summaries: list[TextNode], level: int, summarizer: LLMSummarizer, index: int
+    ) -> TextNode | None:
         if not child_summaries:
             return None
 
@@ -114,18 +114,18 @@ class RecursiveNodeSummarizer:
 
     def _summarize_level(
         self,
-        level_nodes: List[TextNode],
-        direct_child_summaries: List[TextNode],
+        level_nodes: list[TextNode],
+        direct_child_summaries: list[TextNode],
         level: int,
         summarizer: LLMSummarizer,
-    ) -> List[TextNode]:
-        summarized_nodes_for_this_level: List[TextNode] = []
+    ) -> list[TextNode]:
+        summarized_nodes_for_this_level: list[TextNode] = []
         processed_original_node_ids: set[str] = set()
         current_index_for_level: int = 0
 
         if not level_nodes:
             if direct_child_summaries:
-                summary_node_from_children: Optional[TextNode] = self._summarize_summaries(
+                summary_node_from_children: TextNode | None = self._summarize_summaries(
                     direct_child_summaries, level, summarizer, index=current_index_for_level
                 )
                 if summary_node_from_children:
@@ -136,13 +136,13 @@ class RecursiveNodeSummarizer:
             if node.node_id in processed_original_node_ids:
                 continue
 
-            current_group_original_nodes: List[TextNode] = [node]
+            current_group_original_nodes: list[TextNode] = [node]
             processed_original_node_ids.add(node.node_id)
             temp_curr: TextNode = node
 
             while NodeRelationship.NEXT in temp_curr.relationships:
                 next_node_id: str = temp_curr.relationships[NodeRelationship.NEXT].node_id
-                next_node_obj: Optional[TextNode] = self.node_id_to_node.get(next_node_id)
+                next_node_obj: TextNode | None = self.node_id_to_node.get(next_node_id)
 
                 if (
                     next_node_obj
@@ -158,11 +158,11 @@ class RecursiveNodeSummarizer:
                 else:
                     break
 
-            relevant_hierarchical_children: List[TextNode] = self._get_relevant_child_summaries(
+            relevant_hierarchical_children: list[TextNode] = self._get_relevant_child_summaries(
                 node, direct_child_summaries
             )
 
-            combined_text_sources: List[TextNode] = current_group_original_nodes + relevant_hierarchical_children
+            combined_text_sources: list[TextNode] = current_group_original_nodes + relevant_hierarchical_children
             combined_text: str = "\n\n".join(n.text for n in combined_text_sources if n.text and n.text.strip()).strip()
 
             if not combined_text:
@@ -205,9 +205,9 @@ class RecursiveNodeSummarizer:
 
     @staticmethod
     def _create_summary_node(
-        original_node: TextNode, summary_text: str, level: int = 0, index: Optional[int] = None
+        original_node: TextNode, summary_text: str, level: int = 0, index: int | None = None
     ) -> TextNode:
-        metadata: Dict[str, Any] = {
+        metadata: dict[str, Any] = {
             **original_node.metadata,
             TYPE: NODE_TYPE_SUMMARY,
             HEADING_LEVEL: level,
@@ -258,14 +258,14 @@ class RecursiveNodeSummarizer:
                     return i
         return 0
 
-    def _group_nodes_by_level(self, nodes: List[TextNode]) -> Dict[int, List[TextNode]]:
+    def _group_nodes_by_level(self, nodes: list[TextNode]) -> dict[int, list[TextNode]]:
         grouped_nodes = {}
         for node in nodes:
             level = self._get_summary_level(node)
             grouped_nodes.setdefault(level, []).append(node)
         return grouped_nodes
 
-    def _get_relevant_child_summaries(self, parent_node: TextNode, child_summaries: List[TextNode]) -> List[TextNode]:
+    def _get_relevant_child_summaries(self, parent_node: TextNode, child_summaries: list[TextNode]) -> list[TextNode]:
         return [child for child in child_summaries if self._is_child_of(child, parent_node)]
 
     def _is_child_of(self, child_node: TextNode, parent_node: TextNode) -> bool:
@@ -274,7 +274,7 @@ class RecursiveNodeSummarizer:
         return len(child_headers) == len(parent_headers) + 1 and child_headers[:-1] == parent_headers
 
     @staticmethod
-    def _get_header_hierarchy(node: TextNode) -> List[str]:
+    def _get_header_hierarchy(node: TextNode) -> list[str]:
         headers = []
         for i in range(1, 7):
             header = node.metadata.get(f"h{i}")

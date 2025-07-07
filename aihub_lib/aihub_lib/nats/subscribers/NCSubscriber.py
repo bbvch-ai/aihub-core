@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Awaitable, Callable, Optional, Type, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
@@ -40,11 +41,11 @@ class NCSubscriber(AbstractSubscriber):
         self,
         nc: NATS,
         subject: str,
-        event_cls: Type[TEvent],
+        event_cls: type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
     ):
         super().__init__(nc, subject, event_cls, handler)
-        self.subscription: Optional[Subscription] = None
+        self.subscription: Subscription | None = None
 
     async def start(self) -> None:
         """Subscribe to the configured subject and begin receiving messages."""

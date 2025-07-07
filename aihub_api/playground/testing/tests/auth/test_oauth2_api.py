@@ -1,13 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
-import jwt
 import httpx
-from fastapi.testclient import TestClient
-from mongoengine import connect, disconnect
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.user.UserController import UserController
+import jwt
+import pytest
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
@@ -16,10 +11,15 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
+    DummyResponse,
     generate_rsa_keypair,
     public_key_to_jwk,
-    DummyResponse,
 )
+from fastapi.testclient import TestClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 # Constants for the tests
 USER_ENDPOINT = "/api/v1/users/me"
@@ -69,7 +69,7 @@ def monkeypatch_httpx(monkeypatch, fake_jwks_response, oauth2_config):
 @pytest.fixture
 def valid_oauth2_token(oauth2_config, rsa_keys):
     """Generate a valid OAuth2 JWT token with test claims."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
         "name": "Melanie Musterfrau",

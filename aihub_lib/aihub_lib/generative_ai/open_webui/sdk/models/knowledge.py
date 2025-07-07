@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Union
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -17,8 +17,8 @@ class UserResponse(BaseModel):
 class KnowledgeAccessControlPermissions(BaseModel):
     """Access control permissions for a specific operation (read or write)."""
 
-    user_ids: Annotated[List[str], Field(description="List of user IDs with this permission")] = []
-    group_ids: Annotated[List[str], Field(description="List of group IDs with this permission")] = []
+    user_ids: Annotated[list[str], Field(description="List of user IDs with this permission")] = []
+    group_ids: Annotated[list[str], Field(description="List of group IDs with this permission")] = []
 
 
 class KnowledgeAccessControl(BaseModel):
@@ -47,10 +47,10 @@ class KnowledgeData(BaseModel):
     Additional custom data can be included in the extra_data field.
     """
 
-    file_ids: Annotated[List[str], Field(description="List of file IDs in this knowledge base")] = []
-    extra_data: Annotated[Dict[str, Any], Field(description="Any additional custom data")] = {}
+    file_ids: Annotated[list[str], Field(description="List of file IDs in this knowledge base")] = []
+    extra_data: Annotated[dict[str, Any], Field(description="Any additional custom data")] = {}
 
-    def model_dump(self) -> Dict[str, Any]:
+    def model_dump(self) -> dict[str, Any]:
         """Convert to a flat dictionary for API consumption"""
         result = {"file_ids": self.file_ids}
         result.update(self.extra_data)
@@ -70,13 +70,11 @@ class KnowledgeModel(BaseModel):
     name: Annotated[str, Field(description="Name of the knowledge base")]
     description: Annotated[str, Field(description="Description of the knowledge base")]
 
-    data: Annotated[Optional[KnowledgeData], Field(default=None, description="File IDs and other data")] = None
-    meta: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Metadata about the knowledge base")] = (
-        None
-    )
+    data: Annotated[KnowledgeData | None, Field(default=None, description="File IDs and other data")] = None
+    meta: Annotated[dict[str, Any] | None, Field(default=None, description="Metadata about the knowledge base")] = None
 
     access_control: Annotated[
-        Optional[KnowledgeAccessControl], Field(default=None, description="Access control settings")
+        KnowledgeAccessControl | None, Field(default=None, description="Access control settings")
     ] = None
 
     created_at: Annotated[int, Field(description="Creation timestamp (epoch)")]
@@ -86,14 +84,14 @@ class KnowledgeModel(BaseModel):
 class KnowledgeUserModel(KnowledgeModel):
     """Knowledge base with owner user information."""
 
-    user: Annotated[Optional[UserResponse], Field(default=None, description="User who owns the knowledge base")] = None
+    user: Annotated[UserResponse | None, Field(default=None, description="User who owns the knowledge base")] = None
 
 
 class KnowledgeResponse(KnowledgeModel):
     """Knowledge base with associated files metadata."""
 
     files: Annotated[
-        Optional[List[FileMetadataResponse]], Field(default=None, description="Associated files metadata")
+        list[FileMetadataResponse] | None, Field(default=None, description="Associated files metadata")
     ] = None
 
 
@@ -101,14 +99,14 @@ class KnowledgeUserResponse(KnowledgeUserModel):
     """Knowledge base with both owner information and files metadata."""
 
     files: Annotated[
-        Optional[List[FileMetadataResponse]], Field(default=None, description="Associated files metadata")
+        list[FileMetadataResponse] | None, Field(default=None, description="Associated files metadata")
     ] = None
 
 
 class KnowledgeFilesResponse(KnowledgeResponse):
     """Knowledge base with complete file information (not just metadata)."""
 
-    files: Annotated[List[FileModel], Field(description="Associated files with full details")]
+    files: Annotated[list[FileModel], Field(description="Associated files with full details")]
 
 
 class KnowledgeForm(BaseModel):
@@ -117,10 +115,10 @@ class KnowledgeForm(BaseModel):
     name: Annotated[str, Field(description="Name of the knowledge base")]
     description: Annotated[str, Field(description="Description of the knowledge base")]
     data: Annotated[
-        Optional[Union[KnowledgeData, Dict[str, Any]]], Field(default=None, description="File IDs and other data")
+        KnowledgeData | dict[str, Any] | None, Field(default=None, description="File IDs and other data")
     ] = None
     access_control: Annotated[
-        Optional[Union[KnowledgeAccessControl, Dict[str, Any]]],
+        KnowledgeAccessControl | dict[str, Any] | None,
         Field(default=None, description="Access control settings"),
     ] = None
 

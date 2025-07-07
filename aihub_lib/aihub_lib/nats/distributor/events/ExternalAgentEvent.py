@@ -37,7 +37,8 @@ class ExternalAgentEvent(BaseModel):
       }
     }
     ```
-    After `ExternalAgentEvent.deserialize_event(...)`, you get a `ExternalAgentEvent` with a `UserMessageEvent` as `event`.
+    After `ExternalAgentEvent.deserialize_event(...)`, you get a `ExternalAgentEvent`
+    with a `UserMessageEvent` as `event`.
     """
 
     thread_id: Annotated[str, Field(description="ID of the thread this event is related to.")]

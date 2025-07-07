@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -55,7 +55,7 @@ class EventController(Controller):
             event_class: Annotated[str, Query()] = None,
             user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[WSServerEvent]:
+        ) -> list[WSServerEvent]:
             """
             Returns all persisted events visible to the authenticated user.
             Useful for clients who want a snapshot of what has happened so far.
@@ -81,7 +81,7 @@ class EventController(Controller):
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
             user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[WSServerEvent]:
+        ) -> list[WSServerEvent]:
             """
             Returns all events in a given thread
             """
@@ -111,7 +111,8 @@ class EventController(Controller):
         ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can send `ExternalAgentEvent`s and receive responses (WSServerEvent or errors).
+            If the token is valid, the user can send `ExternalAgentEvent`s and receive
+            responses (WSServerEvent or errors).
             """
             await websocket.accept()  # Accept the connection first
 

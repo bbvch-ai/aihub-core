@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from typing import Annotated, Dict, List, Optional, Set, Type
+from typing import Annotated
 
 from cachetools import TTLCache
 from nats.aio.client import Client as NATS
@@ -37,7 +37,8 @@ class JetStreamEventStore:
 
     ### Key Features
     1. **Full History Replay**: Automatically replays all historical events when starting up.
-    2. **In-Memory Caching**: Stores events in memory for fast access while maintaining JetStream as the authoritative source.
+    2. **In-Memory Caching**: Stores events in memory for fast access while maintaining JetStream
+       as the authoritative source.
     3. **Event Synchronization**: Provides mechanisms to wait for specific events to arrive.
     4. **ExecutionContext-Scoped Storage**: Organizes events execution context for clean separation between workflows.
     5. **Automatic Cleanup**: Uses TTLCache to automatically expire old execution contexts after configurable periods.
@@ -58,7 +59,7 @@ class JetStreamEventStore:
         nc: Annotated[NATS, "NATS client for messaging"],
         js: Annotated[JetStreamContext, "JetStream context for persistent storage"],
         topic_manager: Annotated[AbstractStreamTopicManager, "Topic manager with stream capabilities"],
-        topic: Annotated[Type[Topic], "Topic under which these events were published"],
+        topic: Annotated[type[Topic], "Topic under which these events were published"],
         ttl_seconds: Annotated[int, "Time-to-live for cached execution context data in seconds"] = 60 * 60 * 24 * 30,
         # 30 days default TTL
     ):
@@ -71,8 +72,8 @@ class JetStreamEventStore:
         self.execution_context_stores = TTLCache(maxsize=100_000, ttl=ttl_seconds)
 
         # Synchronization for events being processed
-        self.pending_events: Set[str] = set()
-        self.event_sync_conditions: Dict[str, asyncio.Condition] = {}
+        self.pending_events: set[str] = set()
+        self.event_sync_conditions: dict[str, asyncio.Condition] = {}
 
         # Subscription
         self.subscription = None
@@ -282,7 +283,7 @@ class JetStreamEventStore:
                 try:
                     await asyncio.wait_for(condition.wait(), timeout=timeout)
                     return True
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning(f"Timeout waiting for event {event_key} to be stored")
                     return False
         finally:
@@ -299,8 +300,8 @@ class JetStreamEventStore:
         self,
         store_execution_context_id: Annotated[str, "Unique identifier for the jetstream store context"],
         class_name: Annotated[str, "The event class name to retrieve"],
-        until_event: Annotated[Optional[BaseEvent], "Only include events created until this event was received"] = None,
-    ) -> List[BaseEvent]:
+        until_event: Annotated[BaseEvent | None, "Only include events created until this event was received"] = None,
+    ) -> list[BaseEvent]:
         """
         Retrieves all events of the specified type for a execution context.
         If 'until' is specified, only returns events created until that timestamp.
@@ -311,9 +312,9 @@ class JetStreamEventStore:
     async def get_events_of_multiple_types(
         self,
         store_execution_context_id: Annotated[str, "Unique identifier for the jetstream store context"],
-        class_names: Annotated[List[str], "List of event class names to retrieve"],
-        until_event: Annotated[Optional[BaseEvent], "Only include events created until this event was received"] = None,
-    ) -> Dict[str, List[BaseEvent]]:
+        class_names: Annotated[list[str], "List of event class names to retrieve"],
+        until_event: Annotated[BaseEvent | None, "Only include events created until this event was received"] = None,
+    ) -> dict[str, list[BaseEvent]]:
         """
         Retrieves events for multiple types, organized by event type name.
         This is the primary method used by the Dispatcher.

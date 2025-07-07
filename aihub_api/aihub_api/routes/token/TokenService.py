@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
@@ -24,7 +23,7 @@ class TokenService:
         )
 
     @staticmethod
-    def list_tokens(user: UserIdentity) -> List[TokenResponse]:
+    def list_tokens(user: UserIdentity) -> list[TokenResponse]:
         """
         Lists all API tokens for the authenticated user.
         The token string is not included in the response.

@@ -1,4 +1,4 @@
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from aihub_lib.nats.events import BaseEvent
 from pydantic import BaseModel, ConfigDict, create_model
@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, create_model
 T = TypeVar("T", bound=BaseEvent)
 
 
-def create_input_model(event_class: Type[T]) -> Type[BaseModel]:
+def create_input_model(event_class: type[T]) -> type[BaseModel]:
     """
     Creates an input model for an event class by removing fields with generated values.
     """

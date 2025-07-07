@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,9 +10,9 @@ class BlobStorageConfig(BaseSettings):
     Reads settings from environment variables or a .env file.
     """
 
-    BLOB_STORAGE_NAME: Annotated[Optional[str], Field(description="The name of the Azure Blob Storage account.")] = None
+    BLOB_STORAGE_NAME: Annotated[str | None, Field(description="The name of the Azure Blob Storage account.")] = None
     BLOB_STORAGE_ENDPOINT: Annotated[
-        Optional[str], Field(description="The Blob service endpoint for the storage account.")
+        str | None, Field(description="The Blob service endpoint for the storage account.")
     ] = None
 
     # This secret key is used to sign our own internal URLs, not for Azure.

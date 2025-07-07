@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -15,13 +15,16 @@ class EventSpecs(BaseModel):
     event_name: Annotated[
         str,
         Field(
-            description="The name of event (e.g., a particular ControlEvent subclass name) that the agent can consume as a start event.",
+            description="The name of event (e.g., a particular ControlEvent subclass name) "
+            "that the agent can consume as a start event.",
         ),
     ]
     event_schema: Annotated[
-        Dict[str, Any],
+        dict[str, Any],
         Field(
-            description="A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.",
+            description="A dictionary describing the schema of this start event, providing details about "
+            "expected fields and their types. This helps external consumers understand how to "
+            "construct and validate events for initiating the agent's workflow.",
         ),
     ]
 
@@ -50,22 +53,25 @@ class AgentDiscoveryResponseEvent(BaseEvent):
     agent_config: Annotated[
         AgentConfig,
         Field(
-            description="The agent's configuration object, containing details like the model used, temperature settings, or other domain-specific parameters.",
+            description="The agent's configuration object, containing details like the model used, "
+            "temperature settings, or other domain-specific parameters.",
         ),
     ]
     is_conversational: Annotated[
         bool, Field(description="Whether the agent can participate in a chat-based conversation")
     ]
     start_events: Annotated[
-        List[EventSpecs],
+        list[EventSpecs],
         Field(
-            description="A list of `EventSpecs` objects, each describing a start event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
+            description="A list of `EventSpecs` objects, each describing a start event type and schema. "
+            "This lets consumers understand exactly how to initiate the agent's workflow.",
         ),
     ]
     stop_events: Annotated[
-        List[EventSpecs],
+        list[EventSpecs],
         Field(
-            description="A list of `EventSpecs` objects, each describing a stop event type and schema. This lets consumers understand exactly how to initiate the agent's workflow.",
+            description="A list of `EventSpecs` objects, each describing a stop event type and schema. "
+            "This lets consumers understand exactly how to initiate the agent's workflow.",
         ),
     ]
     network_graph: Annotated[

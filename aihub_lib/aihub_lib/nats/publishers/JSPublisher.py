@@ -53,7 +53,7 @@ class JSPublisher(AbstractPublisher):
                 ack = await asyncio.wait_for(future, timeout=5)
                 logger.debug(f"Publish ACK received: {ack}")
                 return  # Success, no retry needed
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning(f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}")
             except Exception as e:
                 logger.exception(f"NATS error while publishing event {event.event_name} to subject {subject}: {e}")

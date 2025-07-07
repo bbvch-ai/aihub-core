@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, Set
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import DisplayEvent
@@ -54,8 +53,8 @@ class WebSocketManager:
     """
 
     def __init__(self):
-        self.active_connections: Dict[str, Set[WebSocket]] = {}
-        self.user_preferred_locale: Dict[str, str] = {}
+        self.active_connections: dict[str, set[WebSocket]] = {}
+        self.user_preferred_locale: dict[str, str] = {}
 
     async def connect(self, websocket: WebSocket, user_id: str, locale: str) -> None:
         """

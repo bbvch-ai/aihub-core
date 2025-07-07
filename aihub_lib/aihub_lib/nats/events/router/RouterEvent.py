@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, List
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -15,6 +15,6 @@ class RouterEvent(ControlAndDisplayEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.router_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.router_event.description")
 
-    routes: Annotated[List[RouteOptions], Field(..., description="List of options")]
+    routes: Annotated[list[RouteOptions], Field(..., description="List of options")]
     selected_option: Annotated[RouteOptions, Field(description="Selected option")]
     reason: Annotated[str, Field(description="Reason for the decision")]

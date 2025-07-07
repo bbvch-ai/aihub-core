@@ -1,6 +1,7 @@
 from asyncio import sleep
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncGenerator, List, Optional, Type
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
@@ -43,9 +44,9 @@ class AgentTestRunner(AgentRunner):
 
     def __init__(
         self,
-        agent_type: Type[Agent],
+        agent_type: type[Agent],
         agent_config: AgentConfig,
-        locale_paths: Optional[List[str]] = None,
+        locale_paths: list[str] | None = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
@@ -54,12 +55,12 @@ class AgentTestRunner(AgentRunner):
             agent_config=agent_config,
             locale_paths=locale_paths,
         )
-        self.test_event_subscriber: Optional[JSSubscriber] = None
-        self.observed_events: List[ObservedEvent] = []
-        self.topic: Optional[PartialAgentTopic] = None
+        self.test_event_subscriber: JSSubscriber | None = None
+        self.observed_events: list[ObservedEvent] = []
+        self.topic: PartialAgentTopic | None = None
 
-        self.observe_discovery_event_subscriber: Optional[AgentNCSubscriber] = None
-        self.observe_discovery_response_event_subscriber: Optional[AgentNCSubscriber] = None
+        self.observe_discovery_event_subscriber: AgentNCSubscriber | None = None
+        self.observe_discovery_response_event_subscriber: AgentNCSubscriber | None = None
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -77,7 +78,7 @@ class AgentTestRunner(AgentRunner):
 
     @asynccontextmanager
     async def test_run(
-        self, delay_before_stop: int = 1, thread_id: Optional[str] = None
+        self, delay_before_stop: int = 1, thread_id: str | None = None
     ) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:
@@ -97,7 +98,7 @@ class AgentTestRunner(AgentRunner):
         await sleep(delay_before_stop)
         await self.test_run_stop()
 
-    async def test_run_start(self, thread_id: Optional[str] = None) -> PartialAgentTopic:
+    async def test_run_start(self, thread_id: str | None = None) -> PartialAgentTopic:
         await self.start()
         if thread_id is None:
             thread_id = str(ObjectId())
@@ -183,9 +184,9 @@ class AgentTestRunner(AgentRunner):
 
     def get_topics(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> List[AgentTopic]:
+    ) -> list[AgentTopic]:
         """Returns the topics of all observed events of the specified class, if any are AgentTopic."""
         return [
             ev.topic
@@ -197,9 +198,9 @@ class AgentTestRunner(AgentRunner):
 
     def get_events_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> List[BaseEvent]:
+    ) -> list[BaseEvent]:
         """Returns all observed events of the specified class."""
         return [
             ev.event
@@ -210,7 +211,7 @@ class AgentTestRunner(AgentRunner):
 
     def has_event_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> bool:
         """Check if any event of the specified class was observed."""
@@ -218,7 +219,7 @@ class AgentTestRunner(AgentRunner):
 
     def get_event_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> BaseEvent:
         """
@@ -232,7 +233,7 @@ class AgentTestRunner(AgentRunner):
 
     async def wait_for_event(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         timeout: float = 60.0,
         interval: float = 0.1,
     ) -> BaseEvent:

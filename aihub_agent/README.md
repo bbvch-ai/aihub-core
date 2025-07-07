@@ -151,7 +151,7 @@ class LimitChatHistoryEvent(ControlEvent):
     Represents the result of limiting a user's chat history to a specified 
     number of tokens to optimize cost and context usage.
     """
-    limited_history: List[ChatMessage] = Field(
+    limited_history: list[ChatMessage] = Field(
         ...,
         description="A trimmed list of messages that fit within the token limit."
     )
@@ -564,7 +564,7 @@ class RetrieveEvent(BaseModel):
     whenever the agent needs to pass relevant documents down the workflow 
     (e.g., for summarizing or for further analysis).
     """
-    documents: List[str] = Field(
+    documents: list[str] = Field(
         ...,
         description="List of retrieved documents ranked by similarity."
     )

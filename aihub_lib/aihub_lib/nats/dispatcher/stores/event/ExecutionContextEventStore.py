@@ -1,6 +1,5 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import DefaultDict, Dict, List, Optional
 
 from aihub_lib.nats.events import BaseEvent
 
@@ -10,7 +9,7 @@ class ExecutionContextEventStore:
     """Store for all events within a single run"""
 
     # Maps event_name -> event_id -> event
-    events: DefaultDict[str, Dict[str, BaseEvent]] = None
+    events: defaultdict[str, dict[str, BaseEvent]] = None
 
     def __post_init__(self):
         if self.events is None:
@@ -22,7 +21,7 @@ class ExecutionContextEventStore:
         event_id = event.event_id
         self.events[event_name][event_id] = event
 
-    def get_events_of_name(self, event_name: str, until_event: Optional[BaseEvent] = None) -> List[BaseEvent]:
+    def get_events_of_name(self, event_name: str, until_event: BaseEvent | None = None) -> list[BaseEvent]:
         """Get all events of a specific type, optionally filtered by timestamp"""
         events = list(self.events.get(event_name, {}).values())
 
@@ -34,8 +33,8 @@ class ExecutionContextEventStore:
         return events
 
     def get_events_of_multiple_names(
-        self, event_names: List[str], until_event: Optional[BaseEvent] = None
-    ) -> Dict[str, List[BaseEvent]]:
+        self, event_names: list[str], until_event: BaseEvent | None = None
+    ) -> dict[str, list[BaseEvent]]:
         """Get events of multiple types, organized by type name"""
         result = {}
         for event_name in event_names:

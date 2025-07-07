@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, List, Type
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -72,7 +72,7 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[AgentDTO]:
+        ) -> list[AgentDTO]:
             """
             Retrieve a list of all agents, both online (discoverable) and offline (not discoverable).
             """
@@ -87,7 +87,7 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[AgentDTO]:
+        ) -> list[AgentDTO]:
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
@@ -151,8 +151,8 @@ class AgentController(Controller):
         self,
         agent_class,
         agent_id,
-        start_event_class: Type[StartEvent],
-        stop_event_class: Type[StopEvent],
+        start_event_class: type[StartEvent],
+        stop_event_class: type[StopEvent],
         route_postfix="/send_event",
     ) -> "AgentController":
         """

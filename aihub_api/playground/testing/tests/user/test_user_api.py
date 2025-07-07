@@ -1,10 +1,6 @@
 import os
-import pytest
-from fastapi.testclient import TestClient
-from mongoengine import connect, disconnect
 
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.user.UserController import UserController
+import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -13,6 +9,11 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from fastapi.testclient import TestClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 USER_ENDPOINT = "/api/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]

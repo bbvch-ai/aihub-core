@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -64,7 +64,7 @@ class UserController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_my_dashboard(
             user: UserIdentity = Security(self.auth),
-        ) -> Optional[DashboardDTO]:
+        ) -> DashboardDTO | None:
             """
             Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
             """

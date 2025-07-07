@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from typing import Annotated, Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -16,12 +16,12 @@ class RunStatistics(BaseEventStatistics):
     @classmethod
     def from_run_data(
         cls,
-        run_data: Annotated[Dict[str, Any], "Data dict from aggregation pipeline"],
+        run_data: Annotated[dict[str, Any], "Data dict from aggregation pipeline"],
         agent_dto: Annotated[MinimalAgentDTO, "Pre-fetched agent DTO"],
     ) -> "RunStatistics":
         """Creates a RunStatistics DTO from aggregation data and agent DTO."""
-        run_started_at_dt: Optional[datetime] = run_data.get("started_at")
-        run_ended_at_dt: Optional[datetime] = run_data.get("ended_at")
+        run_started_at_dt: datetime | None = run_data.get("started_at")
+        run_ended_at_dt: datetime | None = run_data.get("ended_at")
 
         return cls(
             run_id=run_data["run_id"],
@@ -36,7 +36,7 @@ class RunStatistics(BaseEventStatistics):
             is_aitl=run_data.get("is_aitl", False),
             open_aitl=run_data.get("open_aitl", False),
             started_at=(
-                run_started_at_dt.replace(tzinfo=timezone.utc)
+                run_started_at_dt.replace(tzinfo=UTC)
                 if run_started_at_dt and run_started_at_dt.tzinfo is None
                 else run_started_at_dt
             )
@@ -45,7 +45,7 @@ class RunStatistics(BaseEventStatistics):
             if run_started_at_dt
             else None,
             ended_at=(
-                run_ended_at_dt.replace(tzinfo=timezone.utc)
+                run_ended_at_dt.replace(tzinfo=UTC)
                 if run_ended_at_dt and run_ended_at_dt.tzinfo is None
                 else run_ended_at_dt
             )

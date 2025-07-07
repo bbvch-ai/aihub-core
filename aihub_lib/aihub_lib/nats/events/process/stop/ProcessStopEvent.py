@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import Field
 
@@ -11,20 +11,23 @@ class ProcessStopEvent(WorkRequestEvent):
     """
 
     process_class: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="Process class associated with this Stop Event. This field will be auto-ingested by the process dispatcher."
+            description="Process class associated with this Stop Event. "
+            "This field will be auto-ingested by the process dispatcher."
         ),
     ] = None
     process_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="Process ID associated with this Stop Event. This field will be auto-ingested by the process dispatcher."
+            description="Process ID associated with this Stop Event. "
+            "This field will be auto-ingested by the process dispatcher."
         ),
     ] = None
     process_walkthrough_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="Walkthrough ID associated with this Stop Event. This field will be auto-ingested by the process dispatcher."
+            description="Walkthrough ID associated with this Stop Event. "
+            "This field will be auto-ingested by the process dispatcher."
         ),
     ] = None

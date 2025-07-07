@@ -1,7 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime
 
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -64,10 +63,10 @@ class ThreadService:
     @staticmethod
     async def create_thread(
         name: str,
-        user_ids: List[str],
+        user_ids: list[str],
         identity_provider: IdentityProvider,
         t: LocaleHandler,
-        agent_dtos: Optional[List[ThreadAgentDTO]] = None,
+        agent_dtos: list[ThreadAgentDTO] | None = None,
     ) -> ThreadDTO:
         users = [User(user_id=uid) for uid in user_ids]
         agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
@@ -97,7 +96,7 @@ class ThreadService:
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[int, List[ThreadDTO]]:
+    ) -> tuple[int, list[ThreadDTO]]:
         """Returns a paginated list of threads that the user is a member of."""
         skip = (page - 1) * page_size
         total = ThreadEntity.count_threads_by_user(user_id)
@@ -115,7 +114,7 @@ class ThreadService:
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[int, List[ThreadDTO]]:
+    ) -> tuple[int, list[ThreadDTO]]:
         """
         Returns a paginated list of threads that a specific agent is part of.
         """
@@ -144,7 +143,7 @@ class ThreadService:
         persisted_events = EventService.get_all_thread_display_events(thread_id)
         ws_events = [WSServerEvent.from_persisted_event(event) for event in persisted_events]
 
-        messages: List[ChatCompletionMessageParam] = []
+        messages: list[ChatCompletionMessageParam] = []
 
         def is_user_event(event: BaseEvent) -> bool:
             return event.is_user_message_event or event.is_hitl_response_event
@@ -246,7 +245,7 @@ class ThreadService:
 
     @staticmethod
     @cached(TTLCache(maxsize=128, ttl=60))
-    def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> Optional[MinimalAgentDTO]:
+    def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentDTO | None:
         """
         Fetches agent details and converts to MinimalAgentDTO.
         Returns None if the agent cannot be found or fetching fails.
@@ -263,7 +262,7 @@ class ThreadService:
             return None
 
     @staticmethod
-    def _process_aggregated_runs(aggregated_runs: List[Dict], t: "LocaleHandler") -> ProcessedRunResults:
+    def _process_aggregated_runs(aggregated_runs: list[dict], t: "LocaleHandler") -> ProcessedRunResults:
         """
         Processes raw aggregation results into intermediate display statistics
         and collects unique participating agent identifiers.
@@ -299,7 +298,8 @@ class ThreadService:
                     logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
             else:
                 logger.warning(
-                    f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent {start_agent_class}/{start_agent_id} could not be fetched."
+                    f"RunStatistics DTO skipped for run {run_data.get('run_id')} because "
+                    f"starting agent {start_agent_class}/{start_agent_id} could not be fetched."
                 )
 
             # Collect unique identifiers of all agents participating in the run
@@ -313,7 +313,7 @@ class ThreadService:
 
     @staticmethod
     def _calculate_overall_thread_stats(
-        display_aggregates: Dict[str, IntermediateDisplayStats],
+        display_aggregates: dict[str, IntermediateDisplayStats],
     ) -> CalculatedThreadStats:
         """
         Calculates overall thread statistics by summing up intermediate display stats.
@@ -322,8 +322,8 @@ class ThreadService:
         if not display_aggregates:
             return stats  # Return default empty stats if no aggregates
 
-        all_start_times: List[datetime] = []
-        all_end_times: List[datetime] = []
+        all_start_times: list[datetime] = []
+        all_end_times: list[datetime] = []
 
         for agg in display_aggregates.values():
             stats.num_events += agg.n_events
@@ -364,13 +364,13 @@ class ThreadService:
         """
         # 1. Fetch initial users and agents associated directly with the thread
         #    Leverages the cached agent fetcher.
-        initial_agent_dtos: List[MinimalAgentDTO] = []
+        initial_agent_dtos: list[MinimalAgentDTO] = []
         for agent_ref in entity.agents:
             dto = ThreadService._fetch_minimal_agent_dto(agent_ref.agent_class, agent_ref.agent_id, t)
             if dto:
                 initial_agent_dtos.append(dto)
 
-        user_dtos: List[UserDTO] = []
+        user_dtos: list[UserDTO] = []
         for user_ref in entity.users:
             try:
                 user_dto = await UserService.get_user_by_oid(user_ref.user_id, identity_provider=identity_provider)
@@ -382,9 +382,7 @@ class ThreadService:
         response = ThreadDTO(
             id=str(entity.id),
             created_at=(
-                entity.created_at.replace(tzinfo=timezone.utc)
-                if entity.created_at.tzinfo is None
-                else entity.created_at
+                entity.created_at.replace(tzinfo=UTC) if entity.created_at.tzinfo is None else entity.created_at
             )
             .isoformat()
             .replace("+00:00", "Z"),
@@ -395,7 +393,7 @@ class ThreadService:
 
         # 2. Get aggregated run statistics from the database
         try:
-            aggregated_runs: List[Dict] = PersistedAgentEventEntity.get_aggregated_run_statistics(str(entity.id))
+            aggregated_runs: list[dict] = PersistedAgentEventEntity.get_aggregated_run_statistics(str(entity.id))
         except Exception as e:
             logger.exception(f"Failed to get aggregated run statistics for thread {entity.id}: {e}")
             return response
@@ -407,7 +405,7 @@ class ThreadService:
         processed_results = ThreadService._process_aggregated_runs(aggregated_runs, t)
 
         # 4. Create final Display DTOs from intermediate aggregates
-        final_display_dtos: List[DisplayStatistics] = []
+        final_display_dtos: list[DisplayStatistics] = []
         for intermediate_stat in processed_results.display_aggregates.values():
             try:
                 display_dto = DisplayStatistics.from_intermediate(intermediate_stat)
@@ -417,7 +415,7 @@ class ThreadService:
                     f"Error creating DisplayStatistics DTO for display {intermediate_stat.display_id}: {e}"
                 )
 
-        min_utc_datetime = datetime.min.replace(tzinfo=timezone.utc)
+        min_utc_datetime = datetime.min.replace(tzinfo=UTC)
 
         def display_sort_key(display: DisplayStatistics) -> datetime:
             if display.started_at:
@@ -431,7 +429,7 @@ class ThreadService:
         response.displays = sorted(final_display_dtos, key=display_sort_key)
 
         # 5. Fetch DTOs for all unique participating agents
-        final_participating_agents: List[MinimalAgentDTO] = []
+        final_participating_agents: list[MinimalAgentDTO] = []
         for agent_id in processed_results.participating_agent_ids:
             dto = ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
             if dto:

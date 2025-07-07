@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, Dict, List, Type
+from typing import Annotated
 
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
@@ -82,7 +82,7 @@ class DocumentParserResource(ConfigurableResource):
         RTFReader: ["rtf"],
     }
 
-    def _get_readers_map(self) -> Dict[Type[BaseReader], List[str]]:
+    def _get_readers_map(self) -> dict[type[BaseReader], list[str]]:
         """
         Get the readers map based on the configured loader type.
         """

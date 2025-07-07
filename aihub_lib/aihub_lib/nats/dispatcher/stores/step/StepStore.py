@@ -1,6 +1,5 @@
 import hashlib
 import logging
-from typing import List
 
 from redis.asyncio import Redis
 
@@ -83,7 +82,7 @@ class StepStore(StoreBase):
         logger.debug(f"Incremented execution counter to {count} for step '{step_name}'")
 
     async def was_called_with_events(
-        self, execution_context_id: str, step_name: str, events: List[ControlEvent]
+        self, execution_context_id: str, step_name: str, events: list[ControlEvent]
     ) -> bool:
         """Checks if a step was called with a specific set of events."""
         key = self._events_to_key(step_name, events)
@@ -94,14 +93,14 @@ class StepStore(StoreBase):
         return await self.get_value(execution_context_id, key, default_value=False, transform_func=transform_to_bool)
 
     async def report_execution_context_with_events(
-        self, execution_context_id: str, step_name: str, events: List[ControlEvent]
+        self, execution_context_id: str, step_name: str, events: list[ControlEvent]
     ):
         """Reports that an execution context was called with a specific set of events."""
         key = self._events_to_key(step_name, events)
         await self.put_value(execution_context_id, key, b"true")
         logger.debug(f"Reported execution context {execution_context_id} with events {key} for step {step_name}")
 
-    def _events_to_key(self, step_name: str, events: List[ControlEvent]) -> str:
+    def _events_to_key(self, step_name: str, events: list[ControlEvent]) -> str:
         """Builds a unique key for a step and a list of events."""
         sorted_events = sorted(events, key=lambda e: e.event_id)
         events_list = "_".join([event.event_id for event in sorted_events])

@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, List, Optional
+from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
@@ -45,20 +45,23 @@ class UserMessageEvent(StartEvent):
     locale: Annotated[
         str,
         Field(
-            description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.",
+            description="The user’s locale, defaults to a system-wide default locale, "
+            "guiding language or regional adaptations.",
         ),
     ] = LocaleHandler.DEFAULT_LOCALE
     user: Annotated[UserIdentity, Field(description="User who sent the message")]
     messages: Annotated[
-        List[ChatMessage | UserChatMessage | AssistantChatMessage],
+        list[ChatMessage | UserChatMessage | AssistantChatMessage],
         Field(
-            description="A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
+            description="A list of chat messages (user and assistant) that provide context, enabling the agent to "
+            "understand what the user is asking for and what has been discussed so far.",
         ),
     ] = []
     files: Annotated[
-        Optional[List[UserUploadedFile]],
+        list[UserUploadedFile] | None,
         Field(
-            description="A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
+            description="A list of files that the user has uploaded, which can be used to provide "
+            "additional context or information for the agent.",
         ),
     ] = None
 

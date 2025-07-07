@@ -1,5 +1,3 @@
-from typing import Optional
-
 from .api.chats import ChatsClient
 from .api.files import FilesClient
 from .api.knowledge import KnowledgeClient
@@ -34,7 +32,7 @@ class OpenWebuiClient:
         ```
     """
 
-    def __init__(self, base_url: str = "http://localhost:8080", token: Optional[str] = None, timeout: int = 10):
+    def __init__(self, base_url: str = "http://localhost:8080", token: str | None = None, timeout: int = 10):
         self.base_url = base_url
         self.token = token
         self.timeout = timeout

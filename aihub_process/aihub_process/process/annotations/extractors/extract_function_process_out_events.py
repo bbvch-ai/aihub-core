@@ -1,17 +1,17 @@
 import inspect
-from typing import Annotated, List, Tuple, Type, get_args, get_origin
+from typing import Annotated, get_args, get_origin
 
 from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
 
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
-def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEvent], BaseProcessEntity.Out]]:
+def extract_function_process_out_events(func) -> list[tuple[type[WorkRequestEvent], BaseProcessEntity.Out]]:
     """
     Analyzes a process step function's signature to extract its output events
     under a strict contract.
 
-    This version handles `Tuple[Annotated[...]]` returns and enforces that
+    This version handles `tuple[Annotated[...]]` returns and enforces that
     each `Annotated` item contains exactly one event type (not a Union or List).
     """
     sig = inspect.signature(func)
@@ -23,7 +23,7 @@ def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEven
 
     origin = get_origin(return_annotation)
 
-    if origin in (tuple, Tuple):
+    if origin in (tuple, tuple):
         annotations_to_process = get_args(return_annotation)
     else:
         annotations_to_process = [return_annotation]
@@ -40,7 +40,8 @@ def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEven
 
         if not config_instance:
             raise TypeError(
-                f"In process step '{func.__name__}', the return annotation at index {i} is missing a .Out configuration."
+                f"In process step '{func.__name__}', the return annotation at "
+                f"index {i} is missing a .Out configuration."
             )
 
         # 1. Disallow containers (List, Dict) and special types (Union).
@@ -53,7 +54,7 @@ def extract_function_process_out_events(func) -> List[Tuple[Type[WorkRequestEven
             )
 
         # 2. Ensure the type is a class and a valid subclass of our event base classes.
-        if not inspect.isclass(core_type) or not issubclass(core_type, (WorkRequestEvent, ProcessStopEvent)):
+        if not inspect.isclass(core_type) or not issubclass(core_type, WorkRequestEvent | ProcessStopEvent):
             raise TypeError(
                 f"In process step '{func.__name__}', the output type '{core_type.__name__}' at index {i} "
                 f"is not a valid subclass of WorkRequestEvent or ProcessStopEvent."

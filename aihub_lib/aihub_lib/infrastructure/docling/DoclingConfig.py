@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,7 +10,7 @@ class DoclingConfig(BaseSettings):
     ]
     DOCLING_API_TIMEOUT: Annotated[int, Field(300, description="Timeout for Docling API calls in seconds")]
     DOCLING_FROM_FORMATS: Annotated[
-        List[str],
+        list[str],
         Field(
             description="Input formats for Docling",
         ),
@@ -28,7 +28,7 @@ class DoclingConfig(BaseSettings):
         "json_docling",
         "audio",
     ]
-    DOCLING_TO_FORMATS: Annotated[List[str], Field(description="Output formats")] = ["md", "json"]
+    DOCLING_TO_FORMATS: Annotated[list[str], Field(description="Output formats")] = ["md", "json"]
     DOCLING_IMAGE_EXPORT_MODE: Annotated[
         str,
         Field(
@@ -49,7 +49,7 @@ class DoclingConfig(BaseSettings):
         str, Field(default="<!-- PageBreak -->", description="Placeholder for page breaks in Markdown output")
     ]
     DOCLING_EXTENSIONS: Annotated[
-        List[str],
+        list[str],
         Field(
             description="",
         ),

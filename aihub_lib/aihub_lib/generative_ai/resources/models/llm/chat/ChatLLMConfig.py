@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncIterator, Callable, List, Optional, Tuple
+from typing import Annotated
 
 from llama_index.core.llms import LLM
 from pydantic import Field
@@ -22,9 +23,7 @@ class ChatLLMParameter(LLMModelParameter):
     temperature: Annotated[float, Field(description="Controls randomness of the model output.")] = 0.0
     top_p: Annotated[float, Field(description="Nucleus sampling threshold.")] = 1.0
     frequency_penalty: Annotated[float, Field(description="Penalizes frequent tokens to reduce repetition.")] = 0.0
-    max_tokens: Annotated[Optional[int], Field(description="Maximum number of tokens generated in the response.")] = (
-        None
-    )
+    max_tokens: Annotated[int | None, Field(description="Maximum number of tokens generated in the response.")] = None
     presence_penalty: Annotated[float, Field(description="Encourages new topics by penalizing repeated topics.")] = 0.0
     seed: Annotated[int, Field(description="Seed for reproducibility, if supported by the model.")] = 0
 
@@ -46,19 +45,19 @@ class ChatLLMConfig(LLMConfig):
 
     @property
     @abstractmethod
-    def tokenizer(self) -> Callable[[str], List[int]]:
+    def tokenizer(self) -> Callable[[str], list[int]]:
         pass
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMParameter] = None) -> Tuple[LLM, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: ChatLLMParameter | None = None) -> tuple[LLM, LLMCostTracker]:
         pass
 
     @asynccontextmanager
     async def cost_reporting_llm(
         self,
         displayer: EventDisplayer,
-        model_parameter: Optional[ChatLLMParameter] = None,
-        system_prompt: Optional[str] = None,
+        model_parameter: ChatLLMParameter | None = None,
+        system_prompt: str | None = None,
     ) -> AsyncIterator[LLM]:
         """
         Async context manager that yields an LLM configured with merged parameters and a system prompt.

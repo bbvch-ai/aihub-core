@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
@@ -16,7 +16,7 @@ class StartEvent(ControlAndDisplayEvent):
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
     """
 
-    def to_context_dict(self) -> Dict[str, Any]:
+    def to_context_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary suitable for context injection, excluding internal event fields like
         event_id and created_at. This helps workflows pass only essential context to downstream steps.

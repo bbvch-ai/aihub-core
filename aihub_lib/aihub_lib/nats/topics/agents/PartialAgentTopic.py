@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import Field
 
@@ -26,14 +26,14 @@ class PartialAgentTopic(Topic):
       unknowns as flexible conditions.
     """
 
-    agent_class: Annotated[Optional[str], Field(description="Agent class or None if unspecified.")] = None
-    agent_id: Annotated[Optional[str], Field(description="Agent ID or None if unspecified.")] = None
-    run_id: Annotated[Optional[str], Field(description="Run ID or None if unspecified.")] = None
-    thread_id: Annotated[Optional[str], Field(description="Thread ID or None if unspecified.")] = None
-    display_id: Annotated[Optional[str], Field(description="Display ID or None if unspecified.")] = None
-    event_type: Annotated[Optional[str], Field(description="Event type or None if unspecified.")] = None
-    event_name: Annotated[Optional[str], Field(description="Event name or None if unspecified.")] = None
-    event_id: Annotated[Optional[str], Field(description="Event ID or None if unspecified.")] = None
+    agent_class: Annotated[str | None, Field(description="Agent class or None if unspecified.")] = None
+    agent_id: Annotated[str | None, Field(description="Agent ID or None if unspecified.")] = None
+    run_id: Annotated[str | None, Field(description="Run ID or None if unspecified.")] = None
+    thread_id: Annotated[str | None, Field(description="Thread ID or None if unspecified.")] = None
+    display_id: Annotated[str | None, Field(description="Display ID or None if unspecified.")] = None
+    event_type: Annotated[str | None, Field(description="Event type or None if unspecified.")] = None
+    event_name: Annotated[str | None, Field(description="Event name or None if unspecified.")] = None
+    event_id: Annotated[str | None, Field(description="Event ID or None if unspecified.")] = None
 
     @property
     def execution_context_id(self) -> str:
@@ -61,7 +61,7 @@ class PartialAgentTopic(Topic):
         ) = subject.split(".")
         assert topic_type == AgentTopicManager.AGENT_TOPIC, f"Unexpected topic type in subject: {subject}"
 
-        def none_if_wildcard(value: str) -> Optional[str]:
+        def none_if_wildcard(value: str) -> str | None:
             return value if value != "*" else None
 
         return cls(

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi
 from pulumi_azure_native import app, operationalinsights
 
@@ -15,7 +13,7 @@ class ManagedEnvironment(pulumi.ComponentResource):
         name: str,
         config: ManagedEnvironmentConfig,
         infrastructure_subnet_id: pulumi.Output[str],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 

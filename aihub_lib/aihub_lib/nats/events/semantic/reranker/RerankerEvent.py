@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Dict, List, Optional
+from typing import Annotated, ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, RerankerAttributes, SpanAttributes
 from pydantic import Field
@@ -15,21 +15,21 @@ class RerankerEvent(SemanticEvent):
     )
 
     input_nodes: Annotated[
-        Optional[List[IngestedNode]], Field(description="List of input documents provided to the reranker.")
+        list[IngestedNode] | None, Field(description="List of input documents provided to the reranker.")
     ] = None
     output_nodes: Annotated[
-        Optional[List[IngestedNode]], Field(description="List of documents outputted by the reranker.")
+        list[IngestedNode] | None, Field(description="List of documents outputted by the reranker.")
     ] = None
-    query: Annotated[Optional[str], Field(description="The query string used by the reranker.")] = None
-    rerank_model_name: Annotated[Optional[str], Field(description="Name of the reranker model being used.")] = None
+    query: Annotated[str | None, Field(description="The query string used by the reranker.")] = None
+    rerank_model_name: Annotated[str | None, Field(description="Name of the reranker model being used.")] = None
     top_k: Annotated[
-        Optional[int],
+        int | None,
         Field(
             description="The top K parameter, representing the number of results to be reranked.",
         ),
     ] = None
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.RERANKER.value,
             RerankerAttributes.RERANKER_QUERY: self.query,

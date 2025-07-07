@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime, timezone
-from typing import Annotated, List
+from datetime import UTC, datetime
+from typing import Annotated
 
 from pydantic import Field
 
@@ -15,7 +15,7 @@ class DisplayStatistics(BaseEventStatistics):
     """Statistics for a display, including its runs, intended for API response."""
 
     display_id: Annotated[str, Field(description="The display ID")]
-    runs: Annotated[List[RunStatistics], Field(description="Runs in this display, sorted by start time")] = []
+    runs: Annotated[list[RunStatistics], Field(description="Runs in this display, sorted by start time")] = []
 
     @classmethod
     def from_intermediate(
@@ -49,9 +49,9 @@ class DisplayStatistics(BaseEventStatistics):
                     return datetime.fromisoformat(started_at_str.replace("Z", "+00:00"))
                 except ValueError:
                     logger.exception(f"Could not parse run start time for sorting: {started_at_str}")
-                    return datetime.min.replace(tzinfo=timezone.utc)  # Fallback
+                    return datetime.min.replace(tzinfo=UTC)  # Fallback
             # Place runs with no start time at the beginning or end consistently
-            return datetime.min.replace(tzinfo=timezone.utc)
+            return datetime.min.replace(tzinfo=UTC)
 
         sorted_runs = sorted(intermediate.runs, key=sort_key)
 
@@ -68,17 +68,13 @@ class DisplayStatistics(BaseEventStatistics):
             is_aitl=is_aitl,
             open_aitl=open_aitl,
             started_at=(
-                started_at_dt.replace(tzinfo=timezone.utc)
-                if started_at_dt and started_at_dt.tzinfo is None
-                else started_at_dt
+                started_at_dt.replace(tzinfo=UTC) if started_at_dt and started_at_dt.tzinfo is None else started_at_dt
             )
             .isoformat()
             .replace("+00:00", "Z")
             if started_at_dt
             else None,
-            ended_at=(
-                ended_at_dt.replace(tzinfo=timezone.utc) if ended_at_dt and ended_at_dt.tzinfo is None else ended_at_dt
-            )
+            ended_at=(ended_at_dt.replace(tzinfo=UTC) if ended_at_dt and ended_at_dt.tzinfo is None else ended_at_dt)
             .isoformat()
             .replace("+00:00", "Z")
             if ended_at_dt

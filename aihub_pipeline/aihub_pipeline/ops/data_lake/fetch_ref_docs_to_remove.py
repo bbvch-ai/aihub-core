@@ -1,5 +1,3 @@
-from typing import List
-
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from dagster import OpExecutionContext, op
 
@@ -11,8 +9,8 @@ from aihub_pipeline.util.connection_utils import connect_to_mongo_db
 
 @op(code_version="v1")
 def fetch_ref_docs_to_remove(
-    context: OpExecutionContext, data_lake_files: List[DataLakeFile], doc_store_resource: DocStoreResource
-) -> List[RefDocDocument]:
+    context: OpExecutionContext, data_lake_files: list[DataLakeFile], doc_store_resource: DocStoreResource
+) -> list[RefDocDocument]:
     """Fetches all RefDocs that are in the DocumentStore but no longer in the DataLake."""
     context.log.info(f"Reported {len(data_lake_files)} data lake files")
     ids = [data_lake_file.id_ for data_lake_file in data_lake_files]

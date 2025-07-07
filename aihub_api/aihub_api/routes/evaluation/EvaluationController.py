@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -78,7 +78,7 @@ class EvaluationController(Controller):
         )
         async def get_datasets(
             user: UserIdentity = Security(self.auth),
-        ) -> List[MinimalDataset]:
+        ) -> list[MinimalDataset]:
             return await EvaluationService.get_datasets()
 
         return self
@@ -124,7 +124,7 @@ class EvaluationController(Controller):
         async def get_experiments(
             user: UserIdentity = Security(self.auth),
             t: LocaleHandler = Depends(use_locale),
-        ) -> List[MinimalExperiment]:
+        ) -> list[MinimalExperiment]:
             return await EvaluationService.get_experiments(t)
 
         return self

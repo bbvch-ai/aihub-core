@@ -1,12 +1,12 @@
-from aihub_agent.context.run.RunContext import RunContext
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig
 from playground.minimal_workflow.bounded_loop.events.BeginEvent import BeginEvent
-from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
 from playground.minimal_workflow.bounded_loop.events.BoundedLoopAEvent import BoundedLoopAEvent
+from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
 
 
 class BoundedLoopAgent(Agent):

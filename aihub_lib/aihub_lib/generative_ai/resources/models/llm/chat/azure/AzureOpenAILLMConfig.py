@@ -1,11 +1,11 @@
-from typing import Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Annotated
 
 import tiktoken
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.azure_openai import AzureOpenAI
 from pydantic import Field
-from typing_extensions import Annotated, Callable
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
@@ -23,11 +23,9 @@ class AzureOpenAIParameter(ChatLLMParameter):
 
     logprobs: Annotated[bool, Field(description="If True, return log probabilities of tokens.")] = False
 
-    top_logprobs: Annotated[Optional[int], Field(description="Number of top log probabilities to return.")] = None
+    top_logprobs: Annotated[int | None, Field(description="Number of top log probabilities to return.")] = None
 
-    logit_bias: Annotated[Optional[Dict[str, float]], Field(description="Adjust probabilities of specific tokens.")] = (
-        None
-    )
+    logit_bias: Annotated[dict[str, float] | None, Field(description="Adjust probabilities of specific tokens.")] = None
 
 
 class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
@@ -55,12 +53,10 @@ class AzureOpenAILLMConfig(ChatLLMConfig, AzureOpenaiResourceConfig):
     ] = AzureOpenAIParameter()
 
     @property
-    def tokenizer(self) -> Callable[[str], List[int]]:
+    def tokenizer(self) -> Callable[[str], list[int]]:
         return tiktoken.encoding_for_model(self.name).encode
 
-    def to_llama_index(
-        self, model_parameter: Optional[AzureOpenAIParameter] = None
-    ) -> Tuple[AzureOpenAI, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: AzureOpenAIParameter | None = None) -> tuple[AzureOpenAI, LLMCostTracker]:
         """
         Instantiate an AzureOpenAI LLM and a LLMCostTracker.
 

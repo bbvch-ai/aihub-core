@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from pydantic import Field
 
@@ -10,4 +10,4 @@ class HumanWorkRequestEvent(WorkRequestEvent):
     WIP
     """
 
-    users: Annotated[Optional[List[str]], Field(description="The list of users.")] = None
+    users: Annotated[list[str] | None, Field(description="The list of users.")] = None

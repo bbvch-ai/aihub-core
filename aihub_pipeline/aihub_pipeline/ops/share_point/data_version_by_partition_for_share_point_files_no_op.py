@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -17,7 +15,7 @@ def data_version_by_partition_for_share_point_files_no_op(
     context: OpExecutionContext,
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
-    sharepoint_files: List[MinimalSharePointFile],
+    sharepoint_files: list[MinimalSharePointFile],
 ) -> DataVersionsByPartition:
     """Generates a dynamic partition key for each file in SharePoint, reports the SharePoint materialization
     and returns a DataVersion for each partition key.

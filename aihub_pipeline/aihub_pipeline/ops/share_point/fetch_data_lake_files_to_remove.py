@@ -1,5 +1,3 @@
-from typing import List
-
 from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
 
@@ -11,10 +9,10 @@ from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
 @op(code_version="v1")
 def fetch_data_lake_files_to_remove(
     context: OpExecutionContext,
-    share_point_files: List[MinimalSharePointFile],
+    share_point_files: list[MinimalSharePointFile],
     data_lake_resource: DataLakeResource,
     data_lake_client: ResourceParam[FileSystemClient],
-) -> List[DataLakeFile]:
+) -> list[DataLakeFile]:
     """Fetches all DataLakeFiles that are in the DataLake but no longer in SharePoint."""
     uris_to_exclude = [
         f"{data_lake_resource.container_name}/{data_lake_resource.directory_name}/{file.path.lstrip('/')}"
@@ -38,16 +36,16 @@ def fetch_data_lake_files_without_excluded_uris(
     data_lake_client: ResourceParam[FileSystemClient],
     data_lake_container_name: str,
     data_lake_directory_name: str,
-    excluded_uris: List[str] = None,
+    excluded_uris: list[str] = None,
     figures_directory: str = "__figures__",
-) -> List[DataLakeFile]:
+) -> list[DataLakeFile]:
     if excluded_uris is None:
         excluded_uris = []
 
     excluded_uris_set = set(excluded_uris)
 
     paths = data_lake_client.get_paths(path=f"{data_lake_directory_name}/", recursive=True)
-    data_lake_files: List[DataLakeFile] = []
+    data_lake_files: list[DataLakeFile] = []
 
     for path in paths:
         if path.is_directory:

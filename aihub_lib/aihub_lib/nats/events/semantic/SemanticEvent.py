@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
@@ -33,7 +33,7 @@ class SemanticEvent(ControlAndDisplayEvent):
     to translate the event’s internal state into OpenInference semantic attributes.
     """
 
-    def to_semantic_convention(self) -> Dict[str, Any]:
+    def to_semantic_convention(self) -> dict[str, Any]:
         """
         Convert the event’s internal data into a dictionary of attributes adhering to OpenInference
         semantic conventions. This method MUST be implemented by subclasses to fulfill the

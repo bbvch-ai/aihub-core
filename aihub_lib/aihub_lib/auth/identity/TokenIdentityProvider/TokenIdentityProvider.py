@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -42,10 +40,10 @@ class TokenIdentityProvider(IdentityProvider):
             roles=user.roles,
         )
 
-    async def get_user_roles(self, user_oid: str) -> List[str]:
+    async def get_user_roles(self, user_oid: str) -> list[str]:
         user = await self.get_user_identity_by_oid(user_oid)
         return user.roles
 
-    async def get_user_profile_image_data_url(self, user_oid: str) -> Optional[str]:
+    async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
         user = await self.get_user_identity_by_oid(user_oid)
         return user.profile_image

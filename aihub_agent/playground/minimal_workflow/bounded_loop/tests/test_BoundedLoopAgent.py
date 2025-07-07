@@ -3,14 +3,14 @@ from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgent import BoundedLoopAgent
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig
 from playground.minimal_workflow.bounded_loop.events.BeginEvent import BeginEvent
-from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
 from playground.minimal_workflow.bounded_loop.events.BoundedLoopAEvent import BoundedLoopAEvent
+from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
 
 scenarios("./features/bounded_loop_agent.feature")
 

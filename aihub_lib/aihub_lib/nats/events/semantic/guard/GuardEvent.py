@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict
+from typing import ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 
@@ -12,7 +12,7 @@ class GuardEvent(SemanticEvent):
         "lib.events.semantic_guard_event.description"
     )
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.GUARDRAIL.value,
         }

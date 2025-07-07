@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -45,7 +45,7 @@ class KnowledgeController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_databases(
             user: UserIdentity = Security(self.auth),
-        ) -> List[DatabaseDTO]:
+        ) -> list[DatabaseDTO]:
             """
             Returns all available knowledge namespaces with the number of documents in each.
             """
@@ -109,7 +109,7 @@ class KnowledgeController(Controller):
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
             user: UserIdentity = Security(self.auth),
-        ) -> List[IngestedNode]:
+        ) -> list[IngestedNode]:
             """
             Returns nodes for a given document.
             """
@@ -133,7 +133,7 @@ class KnowledgeController(Controller):
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
             user: UserIdentity = Security(self.auth),
-        ) -> List[NodeSummaryDTO]:
+        ) -> list[NodeSummaryDTO]:
             """
             Returns nodes for a given document.
             """

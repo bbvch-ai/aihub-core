@@ -1,5 +1,4 @@
 import functools
-from typing import Set, Type
 
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
@@ -27,7 +26,8 @@ class Agent(DispatchableWorkflow):
     Many agents can be used in three different settings, which you must keep in mind while designing your agent:
     - As an assistant, in which case some user sends a message to the agent and the agent responds.
     - As an agent within an agentic process, in which the agent performs one piece of work as part of a process.
-    - As an agent that is called from another agent to deliver a result which the other agent can use to fulfil ITS goal.
+    - As an agent that is called from another agent to deliver a result which the other agent can use to
+      fulfil ITS goal.
 
     Usually, marking the agent as an assistant is as simply as accepting the UserMessageEvent as a StartEvent,
     as it makes the agent 'conversational'. However, try not to limit your agents to conversations only, as it
@@ -42,7 +42,7 @@ class Agent(DispatchableWorkflow):
 
     @classmethod
     @functools.cache
-    def get_start_events(cls) -> Set[Type[StartEvent]]:
+    def get_start_events(cls) -> set[type[StartEvent]]:
         """
         Returns all event types that are considered start events (subclasses of StartEvent).
         These events indicate how a run/workflow can be initiated.
@@ -52,7 +52,7 @@ class Agent(DispatchableWorkflow):
 
     @classmethod
     @functools.cache
-    def get_stop_events(cls) -> Set[Type[StopEvent]]:
+    def get_stop_events(cls) -> set[type[StopEvent]]:
         """
         Returns all event types that are considered stop events (subclasses of StopEvent).
         These events indicate how a run/workflow can terminate.

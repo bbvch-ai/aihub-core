@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Optional
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -18,8 +18,8 @@ class ApiConfig(BaseConfig):
 
     # Azure settings
     app_service_plan_name: Annotated[str, Field(description="Name of the Azure App Service Plan")]
-    cosmos_account_name: Annotated[Optional[str], Field(description="Name of the Azure Cosmos DB account")]
-    cosmos_resource_group: Annotated[Optional[str], Field(description="Name of the Azure Cosmos DB resource group")]
+    cosmos_account_name: Annotated[str | None, Field(description="Name of the Azure Cosmos DB account")]
+    cosmos_resource_group: Annotated[str | None, Field(description="Name of the Azure Cosmos DB resource group")]
 
     # Anonymization settings
     anonym_name: Annotated[str, Field(description="Anonymized name for the API service")] = "Aihub API"

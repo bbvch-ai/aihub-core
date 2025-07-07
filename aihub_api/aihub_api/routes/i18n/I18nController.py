@@ -18,7 +18,8 @@ class I18nController(Controller):
     In a multi-language environment, it's often useful to provide endpoints that reflect the user’s language
     preferences. The `I18nController` exposes endpoints that:
     - Detect the user’s current locale (e.g., from headers, user profile, or query parameters).
-    - Return test strings in the detected language, verifying that translations and locale handling are working properly.
+    - Return test strings in the detected language, verifying
+      that translations and locale handling are working properly.
 
     ### Endpoint
     - `GET /i18n/my-locale`: Returns a `LocaleResponse` object containing the user's detected language and

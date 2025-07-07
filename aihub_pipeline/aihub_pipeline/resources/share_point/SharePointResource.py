@@ -2,7 +2,7 @@ import asyncio
 import os
 import re
 from datetime import datetime
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated
 
 import aiohttp
 import requests
@@ -18,18 +18,19 @@ class SharePointResource(ConfigurableResource):
     client_secret: Annotated[str, Field(description="Azure AD application client secret")]
     site_url: Annotated[str, Field(description="SharePoint site URL")]
     target_folders: Annotated[
-        Optional[List[str]],
+        list[str] | None,
         Field(default=None, description="List of folder paths to fetch files from. If None, fetches from root."),
     ]
     exclude_folders: Annotated[
-        Optional[List[str]],
+        list[str] | None,
         Field(
             default_factory=lambda: [r".*archiv.*"],
-            description="List of regular expressions. Any folder whose name matches one of these patterns (case-insensitive) will be excluded.",
+            description="List of regular expressions. "
+            "Any folder whose name matches one of these patterns (case-insensitive) will be excluded.",
         ),
     ]
     supported_filetypes: Annotated[
-        Optional[List[str]],
+        list[str] | None,
         Field(
             default_factory=lambda: [
                 r"\.jpe?g$",
@@ -48,7 +49,8 @@ class SharePointResource(ConfigurableResource):
                 r"\.md$",
                 r"\.rtf$",
             ],
-            description="List of regular expressions. Any file whose name matches one of these patterns will be included.",
+            description="List of regular expressions."
+            "Any file whose name matches one of these patterns will be included.",
         ),
     ]
     max_retries: Annotated[
@@ -66,16 +68,17 @@ class SharePointResource(ConfigurableResource):
             default=1.0,
             ge=0.1,
             le=10.0,
-            description="Initial delay in seconds between retry attempts. Delay doubles after each failed attempt (0.1-10.0).",
+            description="Initial delay in seconds between retry attempts. "
+            "Delay doubles after each failed attempt (0.1-10.0).",
         ),
     ]
 
-    _access_token: Optional[str] = PrivateAttr(default=None)
-    _token_expiry: Optional[datetime] = PrivateAttr(default=None)
-    _site_id: Optional[str] = PrivateAttr(default=None)
-    _drive_id: Optional[str] = PrivateAttr(default=None)
-    _compiled_exclude_patterns: Optional[List[re.Pattern]] = PrivateAttr(default=None)
-    _compiled_include_patterns: Optional[List[re.Pattern]] = PrivateAttr(default=None)
+    _access_token: str | None = PrivateAttr(default=None)
+    _token_expiry: datetime | None = PrivateAttr(default=None)
+    _site_id: str | None = PrivateAttr(default=None)
+    _drive_id: str | None = PrivateAttr(default=None)
+    _compiled_exclude_patterns: list[re.Pattern] | None = PrivateAttr(default=None)
+    _compiled_include_patterns: list[re.Pattern] | None = PrivateAttr(default=None)
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -113,7 +116,7 @@ class SharePointResource(ConfigurableResource):
         )
         return self._access_token
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self._get_access_token()}", "Content-Type": "application/json"}
 
     def _get_site_id(self) -> str:
@@ -140,7 +143,7 @@ class SharePointResource(ConfigurableResource):
         self._drive_id = response.json()["value"][0]["id"]
         return self._drive_id
 
-    def _get_folder_id_by_path(self, folder_path: str) -> Optional[str]:
+    def _get_folder_id_by_path(self, folder_path: str) -> str | None:
         url = f"https://graph.microsoft.com/v1.0/sites/{self._get_site_id()}/drives/{self._get_drive_id()}/root:/{folder_path}"
         response = requests.get(url, headers=self._get_headers())
         return response.json()["id"] if response.status_code == 200 else None
@@ -166,7 +169,7 @@ class SharePointResource(ConfigurableResource):
             return False
         return any(pattern.match(folder_name) for pattern in self._compiled_exclude_patterns)
 
-    def _get_files_from_url(self, url: str) -> List[MinimalSharePointFile]:
+    def _get_files_from_url(self, url: str) -> list[MinimalSharePointFile]:
         files = []
 
         while url:
@@ -201,11 +204,11 @@ class SharePointResource(ConfigurableResource):
 
         return files
 
-    def _get_files_from_folder(self, folder_id: str) -> List[MinimalSharePointFile]:
+    def _get_files_from_folder(self, folder_id: str) -> list[MinimalSharePointFile]:
         url = f"https://graph.microsoft.com/v1.0/sites/{self._get_site_id()}/drives/{self._get_drive_id()}/items/{folder_id}/children"
         return self._get_files_from_url(url)
 
-    def fetch_minimal_files(self, folder_paths: Optional[List[str]] = None) -> List[MinimalSharePointFile]:
+    def fetch_minimal_files(self, folder_paths: list[str] | None = None) -> list[MinimalSharePointFile]:
         folders_to_scan = folder_paths or self.target_folders or ["root"]
         all_files = []
 
@@ -288,7 +291,7 @@ class SharePointResource(ConfigurableResource):
             id=file_metadata["id"],
         )
 
-    async def get_multiple_minimal_share_point_files(self, file_ids: List[str]) -> List[MinimalSharePointFile]:
+    async def get_multiple_minimal_share_point_files(self, file_ids: list[str]) -> list[MinimalSharePointFile]:
         timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=60)
         connector = aiohttp.TCPConnector(limit=5)
 

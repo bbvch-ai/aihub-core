@@ -64,7 +64,6 @@ docling-core = "^2.38.0"
 pytest = "^8.3.2"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
-isort = "^5.13.2"
 matplotlib = "^3.9.3"
 pytest-bdd = "^8.1.0"
 toml-sort = "^0.24.2"
@@ -91,10 +90,7 @@ target-version = 'py311'
 
 [tool.ruff.lint]
 extend-ignore = ["E203"]
-
-[tool.isort]
-profile = "black"
-line_length = 120
+select = ["E", "F", "UP", "I"]
 
 [tool.mypy]
 python_version = "v0.13.0"

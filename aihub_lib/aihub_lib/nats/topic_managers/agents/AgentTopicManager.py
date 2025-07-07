@@ -38,7 +38,10 @@ class AgentTopicManager(TopicManager):
         event_id: str,
     ) -> str:
         """Returns a subject pinpointing a specific event in a given agent run."""
-        return f"{self.AGENT_TOPIC}.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
+        return (
+            f"{self.AGENT_TOPIC}.{agent_class}.{agent_id}"
+            f".{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
+        )
 
     def get_subject_for_all_events_in_agent(self) -> str:
         """Returns a subject pattern matching all events from all agents."""

@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 import pulumi
 from pulumi_azure_native import dbforpostgresql, network, web
 
@@ -13,7 +11,7 @@ from aihub_iac.azure.providers.WebAppCreator import WebAppCreator
 class Phoenix(pulumi.ComponentResource):
     """A Pulumi component resource for deploying Phoenix infrastructure"""
 
-    def __init__(self, stack: str, name: str, config: PhoenixConfig, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, stack: str, name: str, config: PhoenixConfig, opts: pulumi.ResourceOptions | None = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name
@@ -127,7 +125,7 @@ class Phoenix(pulumi.ComponentResource):
             stack=self.stack,
         )
 
-    def _get_oauth_env(self) -> List[web.NameValuePairArgs]:
+    def _get_oauth_env(self) -> list[web.NameValuePairArgs]:
         """Get environment variables for the oAuth"""
         return [
             web.NameValuePairArgs(name="PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_ID", value=self.config.client_id),
@@ -139,7 +137,7 @@ class Phoenix(pulumi.ComponentResource):
             ),
         ]
 
-    def _get_registry_env(self) -> List[web.NameValuePairArgs]:
+    def _get_registry_env(self) -> list[web.NameValuePairArgs]:
         """Get environment variables for the docker registry"""
         return [
             web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_URL", value=self.config.registry_url),

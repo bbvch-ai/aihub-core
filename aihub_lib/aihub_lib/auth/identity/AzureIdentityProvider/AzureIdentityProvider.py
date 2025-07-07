@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService import AzureGraphService
@@ -25,8 +24,8 @@ class AzureIdentityProvider(IdentityProvider):
     async def get_user_identity_by_email(self, email: str) -> UserIdentity:
         return await self.graph_service.get_user_identity_by_email(email)
 
-    async def get_user_roles(self, user_oid: str) -> List[str]:
+    async def get_user_roles(self, user_oid: str) -> list[str]:
         return await self.graph_service.get_user_roles(user_oid)
 
-    async def get_user_profile_image_data_url(self, user_oid: str) -> Optional[str]:
+    async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
         return await self.graph_service.get_user_profile_image_data_url(user_oid)

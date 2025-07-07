@@ -1,7 +1,7 @@
 import time
+from typing import Annotated
 
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 
 
 class ModelDetails(BaseModel):

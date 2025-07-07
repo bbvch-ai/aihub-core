@@ -1,6 +1,5 @@
 import hashlib
 import logging
-from typing import Optional
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -26,7 +25,7 @@ class OpenWebuiAuthHandler(TokenAuthHandler):
     def __init__(self, identity_provider: AzureIdentityProvider):
         super().__init__(identity_provider)
         self.config = OAuth2Config()
-        self.app_client_id_for_roles: Optional[str] = self.config.CLIENT_ID
+        self.app_client_id_for_roles: str | None = self.config.CLIENT_ID
 
     async def __call__(
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())

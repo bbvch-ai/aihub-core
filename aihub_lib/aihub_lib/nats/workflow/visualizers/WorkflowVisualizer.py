@@ -2,7 +2,7 @@ import inspect
 import logging
 from collections import defaultdict
 from types import UnionType
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, get_args, get_origin
+from typing import Any, TypeVar, Union, cast, get_args, get_origin
 
 import networkx as nx
 from aihub_agent.agents.Agent import Agent
@@ -21,7 +21,7 @@ from aihub_lib.nats.workflow.annotations.extractors.extract_return_events import
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
-EventType = Type[BaseEvent]
+EventType = type[BaseEvent]
 
 
 class WorkflowVisualizer:
@@ -37,11 +37,11 @@ class WorkflowVisualizer:
     The graph includes special START and END nodes, with edges showing the event flow between steps.
     """
 
-    def __init__(self, agent: Type[Agent], locale: str = "en") -> None:
+    def __init__(self, agent: type[Agent], locale: str = "en") -> None:
         """Initialize the WorkflowVisualizer with an agent class and locale."""
         self.agent = agent
         self.locale = locale
-        self.graph: Optional[nx.DiGraph] = None
+        self.graph: nx.DiGraph | None = None
 
     def build_workflow_graph(self) -> nx.DiGraph:
         """
@@ -113,12 +113,12 @@ class WorkflowVisualizer:
             return LocaleHandler(self.locale).extract(step_name_locale_str) or default_name
         return default_name
 
-    def _get_localized_step_description(self, step_method: Any) -> Optional[str]:
+    def _get_localized_step_description(self, step_method: Any) -> str | None:
         """Get the localized description of a step."""
         step_description_locale_str = getattr(step_method, "_step_description", None)
         return LocaleHandler(self.locale).extract(step_description_locale_str) if step_description_locale_str else None
 
-    def _get_step_input_events(self, step_method: Any) -> Dict[str, InputEventInfo]:
+    def _get_step_input_events(self, step_method: Any) -> dict[str, InputEventInfo]:
         """Get information about the input events required by a step."""
         input_event_mapping = getattr(step_method, "_input_event_mapping", {})
         optional_map = getattr(step_method, "_parameter_optional_map", {})
@@ -137,7 +137,7 @@ class WorkflowVisualizer:
 
         return result
 
-    def _get_step_output_events(self, step_method: Any) -> List[EventInfo]:
+    def _get_step_output_events(self, step_method: Any) -> list[EventInfo]:
         """Get information about the output events produced by a step."""
         output_events = extract_return_events(step_method)
         return [self._get_event_info(event_class) for event_class in output_events]
@@ -162,7 +162,7 @@ class WorkflowVisualizer:
 
         return event_info
 
-    def _extract_event_payload_info(self, event_class: EventType) -> Dict[str, EventPayloadField]:
+    def _extract_event_payload_info(self, event_class: EventType) -> dict[str, EventPayloadField]:
         """Extract payload information from an event class."""
         payload_info = {}
 
@@ -196,11 +196,11 @@ class WorkflowVisualizer:
 
         if origin is Union or origin is UnionType:
             return self._format_union_type(args)
-        elif origin in (list, List) and args:
+        if origin in (list, list) and args:
             return f"{self._get_human_readable_type(args[0])}[]"
-        elif origin in (dict, Dict) and len(args) == 2:
+        elif origin in (dict, dict) and len(args) == 2:
             key_type, value_type = args
-            return f"Dict[{self._get_human_readable_type(key_type)}, {self._get_human_readable_type(value_type)}]"
+            return f"dict[{self._get_human_readable_type(key_type)}, {self._get_human_readable_type(value_type)}]"
         elif inspect.isclass(type_annotation):
             if hasattr(BaseEvent, "__class__") and issubclass(type_annotation, BaseEvent):
                 return type_annotation.__name__
@@ -208,7 +208,7 @@ class WorkflowVisualizer:
 
         return str(type_annotation)
 
-    def _format_union_type(self, args: Tuple[Any, ...]) -> str:
+    def _format_union_type(self, args: tuple[Any, ...]) -> str:
         """Format a Union type for human readability."""
         if type(None) in args:
             non_none_args = [arg for arg in args if arg is not type(None)]
@@ -219,19 +219,19 @@ class WorkflowVisualizer:
         else:
             return " | ".join(self._get_human_readable_type(arg) for arg in args)
 
-    def _create_event_mappings(self, G: nx.DiGraph, step_names: Dict[str, Any], START_NODE: str, END_NODE: str) -> None:
+    def _create_event_mappings(self, G: nx.DiGraph, step_names: dict[str, Any], START_NODE: str, END_NODE: str) -> None:
         """Create direct step-to-step connections based on event flow."""
-        event_producers: Dict[EventType, Set[str]] = defaultdict(set)
-        event_consumers: Dict[EventType, Set[str]] = defaultdict(set)
+        event_producers: dict[EventType, set[str]] = defaultdict(set)
+        event_consumers: dict[EventType, set[str]] = defaultdict(set)
 
         self._build_event_mappings(step_names, event_producers, event_consumers)
         self._add_event_edges(G, event_producers, event_consumers, START_NODE, END_NODE)
 
     def _build_event_mappings(
         self,
-        step_names: Dict[str, Any],
-        event_producers: Dict[EventType, Set[str]],
-        event_consumers: Dict[EventType, Set[str]],
+        step_names: dict[str, Any],
+        event_producers: dict[EventType, set[str]],
+        event_consumers: dict[EventType, set[str]],
     ) -> None:
         """Build mappings between events and their producers/consumers."""
         for step_name, step_method in step_names.items():
@@ -251,8 +251,8 @@ class WorkflowVisualizer:
     def _add_event_edges(
         self,
         G: nx.DiGraph,
-        event_producers: Dict[EventType, Set[str]],
-        event_consumers: Dict[EventType, Set[str]],
+        event_producers: dict[EventType, set[str]],
+        event_consumers: dict[EventType, set[str]],
         START_NODE: str,
         END_NODE: str,
     ) -> None:
@@ -298,8 +298,8 @@ class WorkflowVisualizer:
     def _add_in_the_loop_edges(
         self,
         G: nx.DiGraph,
-        event_producers: Dict[EventType, Set[str]],
-        event_consumers: Dict[EventType, Set[str]],
+        event_producers: dict[EventType, set[str]],
+        event_consumers: dict[EventType, set[str]],
     ) -> None:
         """
         Add special edges for request-response pairs in "in the loop" patterns.
@@ -333,7 +333,8 @@ class WorkflowVisualizer:
                     for consumer in consumers:
                         edge_attrs = {
                             "event_name": f"{req_name[:req_name.rfind('Request')]}",
-                            "event_full_name": f"{req_class.__module__}.{req_name} → {resp_class.__module__}.{expected_resp_name}",
+                            "event_full_name": f"{req_class.__module__}.{req_name} → "
+                            f"{resp_class.__module__}.{expected_resp_name}",
                             "is_start_event": False,
                             "is_stop_event": False,
                             "payload": {},

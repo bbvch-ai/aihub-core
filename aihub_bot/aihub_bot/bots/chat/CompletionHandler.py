@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 from asyncio import Event, Task
-from typing import AsyncGenerator, List, Optional, Tuple
+from collections.abc import AsyncGenerator
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
@@ -34,7 +34,7 @@ class CompletionHandler:
         raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
-    def get_system_message(turn_context: TurnContext, path: str) -> Optional[Message]:
+    def get_system_message(turn_context: TurnContext, path: str) -> Message | None:
         """
         ### What
         - Returns the configured system message for the given path.
@@ -46,7 +46,7 @@ class CompletionHandler:
         - The LLM and Agents should get instructions on how to interact with the user.
         - The instructions should be personalized with the user's name.
         """
-        system_message: Optional[str] = PathEntity.get_system_message_by_path(path)
+        system_message: str | None = PathEntity.get_system_message_by_path(path)
         if system_message is None:
             return None
         username = turn_context.activity.from_property.name
@@ -61,7 +61,7 @@ class CompletionHandler:
         )
 
     @staticmethod
-    def handle_slack_message(turn_context: TurnContext) -> Optional[TurnContext]:
+    def handle_slack_message(turn_context: TurnContext) -> TurnContext | None:
         is_direct_message = CompletionHandler.is_slack_direct_message(turn_context)
         is_channel_message = CompletionHandler.is_slack_channel_message(turn_context)
         is_mentioned = CompletionHandler.is_bot_mentioned(turn_context)
@@ -90,7 +90,7 @@ class CompletionHandler:
 
     @staticmethod
     def is_bot_mentioned(turn_context: TurnContext) -> bool:
-        mentions: List[Entity] = turn_context.activity.get_mentions()
+        mentions: list[Entity] = turn_context.activity.get_mentions()
         return any(
             mention.additional_properties["mentioned"]["id"] == turn_context.activity.recipient.id
             for mention in mentions
@@ -111,7 +111,7 @@ class CompletionHandler:
         channel_data = turn_context.activity.channel_data
         ts: str = channel_data["SlackMessage"]["event"]["ts"]
         turn_context.activity.conversation.id = channel_conversation_id + f":{ts}"
-        parent_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(channel_conversation_id)
+        parent_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(channel_conversation_id)
         CompletionHandler.add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
 
@@ -171,7 +171,7 @@ class CompletionHandler:
     @staticmethod
     def add_messages_to_conversation(
         turn_context: TurnContext,
-        messages: List[Message] | Message,
+        messages: list[Message] | Message,
     ) -> ConversationEntity:
         """
         ### What
@@ -191,7 +191,7 @@ class CompletionHandler:
     @staticmethod
     def get_messages_by_conversation_id(
         conversation_id: str,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """
         ### What
         - Get all messages from the persisted conversation.
@@ -219,9 +219,9 @@ class CompletionHandler:
         async def _send_text(
             _turn_context: TurnContext,
             _buffer: str,
-            _activity: Optional[Activity] = None,
+            _activity: Activity | None = None,
             _sent_text: str = "",
-        ) -> Tuple[Optional[Activity], str]:
+        ) -> tuple[Activity | None, str]:
             if not _buffer:
                 return _activity, _sent_text
             if _activity is None:

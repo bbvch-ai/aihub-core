@@ -3,7 +3,7 @@ import hashlib
 import mimetypes
 import os
 from datetime import datetime
-from typing import Annotated, Dict, Optional
+from typing import Annotated
 
 from azure.storage.filedatalake import FileSystemClient
 from pydantic import BaseModel, Field, computed_field
@@ -28,9 +28,9 @@ class DataLakeFile(BaseModel):
     created: Annotated[int, Field(description="The UNIX timestamp when the file was created.")]
     updated: Annotated[int, Field(description="The UNIX timestamp when the file was last updated.")]
 
-    metadata: Annotated[Dict, Field(description="A dictionary of metadata associated with the file.")]
+    metadata: Annotated[dict, Field(description="A dictionary of metadata associated with the file.")]
 
-    content: Annotated[Optional[bytes], Field(description="The binary content of the file.")] = None
+    content: Annotated[bytes | None, Field(description="The binary content of the file.")] = None
 
     @computed_field
     @property
@@ -41,7 +41,8 @@ class DataLakeFile(BaseModel):
     def from_uri(uri: str, fs_client: FileSystemClient):
         """
         Create a DataLakeFile instance by retrieving file properties from the Azure Data Lake using its URI.
-        Fetches the file's metadata and properties from the data lake and populates the DataLakeFile instance accordingly.
+        Fetches the file's metadata and properties from the data lake and
+        populates the DataLakeFile instance accordingly.
         """
         uri_parts = uri.split("/")
         namespace = uri_parts[1]
@@ -85,7 +86,7 @@ class DataLakeFile(BaseModel):
         )
 
     @staticmethod
-    def from_content(uri: str, content: bytes, metadata: Dict = None):
+    def from_content(uri: str, content: bytes, metadata: dict = None):
         """
         Create a DataLakeFile instance from given content to be uploaded to the data lake.
         Constructs the necessary file properties and metadata based on the provided content and URI.

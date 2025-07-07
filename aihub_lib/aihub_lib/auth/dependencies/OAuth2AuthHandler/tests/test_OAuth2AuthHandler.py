@@ -1,6 +1,6 @@
 import base64
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
 import jwt
@@ -51,7 +51,8 @@ def oauth2_context() -> dict:
 
 @given(
     parsers.parse(
-        'an OAuth2 configuration with tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'
+        'an OAuth2 configuration with tenant_id "{tenant_id}", '
+        'client_id "{client_id}", and authority_url "{authority_url}"'
     ),
     target_fixture="oauth2_config",
 )
@@ -69,7 +70,7 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
 )
 def generated_token(monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, name: str, email: str, roles: str) -> str:
     """Generate a valid OAuth2 JWT with the specified claims."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now + timedelta(minutes=10)
 
     monkeypatch.setenv("NAME", name)
@@ -105,7 +106,7 @@ def generated_expired_token(
     monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
 ) -> str:
     """Generate an expired OAuth2 JWT and store it in the context."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now - timedelta(minutes=10)
 
     monkeypatch.setenv("NAME", name)

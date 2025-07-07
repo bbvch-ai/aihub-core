@@ -1,7 +1,6 @@
-from typing import List, Literal, Optional
+from typing import Annotated, Literal
 
 from pydantic import Field
-from typing_extensions import Annotated
 
 from aihub_lib.generative_ai.resources.models.AzureOpenaiResourceConfig import AzureOpenaiResourceConfig
 from aihub_lib.generative_ai.resources.models.ResourceConfig import ResourceParameter
@@ -10,26 +9,27 @@ from aihub_lib.generative_ai.resources.models.stt.STTConfig import STTConfig
 
 class AzureSTTParameter(ResourceParameter):
     language: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="The language of the input audio in ISO-639-1 format (e.g., 'en'). Improves accuracy and latency."
+            description="The language of the input audio in ISO-639-1 format "
+            "(e.g., 'en'). Improves accuracy and latency."
         ),
     ] = None
 
     prompt: Annotated[
-        Optional[str],
+        str | None,
         Field(
             description="An optional text prompt to guide the model's style or continue from a previous audio segment."
         ),
     ] = None
 
     response_format: Annotated[
-        Optional[Literal["json", "text", "srt", "verbose_json", "vtt"]],
+        Literal["json", "text", "srt", "verbose_json", "vtt"] | None,
         Field(description="The format of the output transcription."),
     ] = "json"
 
     temperature: Annotated[
-        Optional[float],
+        float | None,
         Field(
             ge=0.0,
             le=1.0,
@@ -38,7 +38,7 @@ class AzureSTTParameter(ResourceParameter):
     ] = 0.0
 
     timestamp_granularities: Annotated[
-        Optional[List[Literal["word", "segment"]]],
+        list[Literal["word", "segment"]] | None,
         Field(
             description="Timestamp granularities to populate in verbose_json format. Supports 'word' and/or 'segment'."
         ),

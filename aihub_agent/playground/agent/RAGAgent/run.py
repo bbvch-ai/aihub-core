@@ -1,13 +1,7 @@
 import asyncio
 
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -15,6 +9,12 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.logging.logger import enable_logging
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
@@ -27,8 +27,10 @@ async def main():
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
             system_prompt=LocaleString(
-                en="You're an agent answering user requests. Only use the context information provided, either as documents or images."
-                "Analyze the context information and provide a detailed answer to the user question. If you don't know the answer, say 'I don't know'."
+                en="You're an agent answering user requests. "
+                "Only use the context information provided, either as documents or images."
+                "Analyze the context information and provide a detailed answer to the user question. "
+                "If you don't know the answer, say 'I don't know'."
             ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
@@ -57,7 +59,8 @@ async def main():
             ),
             number_of_input_tokens=100_000,
             condense_question_prompt=LocaleString(
-                en="Given the following conversation between a user and an AI assistant and a follow-up question from the user,"
+                en="Given the following conversation between a user "
+                "and an AI assistant and a follow-up question from the user,"
                 "rephrase the follow-up question to be a standalone question."
                 "\n"
                 "Chat history:"

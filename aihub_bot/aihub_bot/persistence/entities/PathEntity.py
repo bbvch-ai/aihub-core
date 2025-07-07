@@ -1,5 +1,3 @@
-from typing import Optional
-
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, StringField
 
 
@@ -36,16 +34,16 @@ class PathEntity(Document):
     slack_token = StringField(required=False)
 
     @classmethod
-    def get_credentials_by_path(cls, path: str) -> Optional[Credentials]:
+    def get_credentials_by_path(cls, path: str) -> Credentials | None:
         doc = cls.objects().filter(path=path).first()
         return doc.credentials if doc else None
 
     @classmethod
-    def get_system_message_by_path(cls, path: str) -> Optional[str]:
+    def get_system_message_by_path(cls, path: str) -> str | None:
         doc = cls.objects().filter(path=path).first()
         return doc.system_message if doc else None
 
     @classmethod
-    def get_slack_token_by_path(cls, path: str) -> Optional[str]:
+    def get_slack_token_by_path(cls, path: str) -> str | None:
         doc = cls.objects().filter(path=path).first()
         return doc.slack_token if doc else None

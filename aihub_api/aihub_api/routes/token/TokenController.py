@@ -1,5 +1,3 @@
-from typing import List
-
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -50,7 +48,7 @@ class TokenController(Controller):
             description="Lists all API tokens for the authenticated user. The token value is not returned.",
             tags=self.tags,
         )
-        async def list_tokens_endpoint(user: UserIdentity = Security(self.auth)) -> List[TokenResponse]:
+        async def list_tokens_endpoint(user: UserIdentity = Security(self.auth)) -> list[TokenResponse]:
             return TokenService.list_tokens(user)
 
         return self

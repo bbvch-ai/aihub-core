@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -6,12 +6,12 @@ from pydantic import BaseModel, ConfigDict, Field
 class BaseMessage(BaseModel):
     """Base class for all chat message types with common fields for tree structure"""
 
-    id: Annotated[Optional[str], Field(default=None, description="Unique message identifier")] = None
-    parentId: Annotated[Optional[str], Field(default=None, description="Parent message identifier")] = None
-    childrenIds: Annotated[List[str], Field(description="Child message identifiers")] = []
+    id: Annotated[str | None, Field(default=None, description="Unique message identifier")] = None
+    parentId: Annotated[str | None, Field(default=None, description="Parent message identifier")] = None
+    childrenIds: Annotated[list[str], Field(description="Child message identifiers")] = []
     role: Annotated[str, Field(description="Role of the message sender")]
     content: Annotated[str, Field(description="Text content of the message")]
-    timestamp: Annotated[Optional[int], Field(default=None, description="Message timestamp")] = None
+    timestamp: Annotated[int | None, Field(default=None, description="Message timestamp")] = None
 
     # Allow additional fields that might be present
     model_config = ConfigDict(extra="allow")
@@ -21,21 +21,21 @@ class UserMessage(BaseMessage):
     """Message from the user with model preferences"""
 
     role: Annotated[Literal["user"], Field(description="User role identifier")] = "user"
-    models: Annotated[Optional[List[str]], Field(default=None, description="Preferred models to use")] = None
+    models: Annotated[list[str] | None, Field(default=None, description="Preferred models to use")] = None
 
 
 class AssistantMessage(BaseMessage):
     """Message from the assistant with additional metadata"""
 
     role: Annotated[Literal["assistant"], Field(description="Assistant role identifier")] = "assistant"
-    model: Annotated[Optional[str], Field(default=None, description="Model identifier used for generation")] = None
-    modelName: Annotated[Optional[str], Field(default=None, description="Human-readable model name")] = None
-    modelIdx: Annotated[Optional[int], Field(default=None, description="Model index in the models array")] = None
-    userContext: Annotated[Optional[Any], Field(default=None, description="User context information")] = None
-    lastSentence: Annotated[Optional[str], Field(default=None, description="Last sentence of the response")] = None
-    done: Annotated[Optional[bool], Field(default=None, description="Whether generation is complete")] = None
+    model: Annotated[str | None, Field(default=None, description="Model identifier used for generation")] = None
+    modelName: Annotated[str | None, Field(default=None, description="Human-readable model name")] = None
+    modelIdx: Annotated[int | None, Field(default=None, description="Model index in the models array")] = None
+    userContext: Annotated[Any | None, Field(default=None, description="User context information")] = None
+    lastSentence: Annotated[str | None, Field(default=None, description="Last sentence of the response")] = None
+    done: Annotated[bool | None, Field(default=None, description="Whether generation is complete")] = None
     tool_calls: Annotated[
-        Optional[List[Dict[str, Any]]], Field(default=None, description="Tool calls made by the assistant")
+        list[dict[str, Any]] | None, Field(default=None, description="Tool calls made by the assistant")
     ] = None
 
 
@@ -53,7 +53,7 @@ class ToolMessage(BaseMessage):
 
 
 # Type alias for any message type
-ChatMessageType = Union[UserMessage, AssistantMessage, SystemMessage, ToolMessage, Dict[str, Any]]
+ChatMessageType = UserMessage | AssistantMessage | SystemMessage | ToolMessage | dict[str, Any]
 
 
 class ChatMessageContent(BaseModel):
@@ -62,28 +62,28 @@ class ChatMessageContent(BaseModel):
     Contains all fields from any message type.
     """
 
-    id: Annotated[Optional[str], Field(default=None, description="Message identifier")] = None
-    parentId: Annotated[Optional[str], Field(default=None, description="Parent message identifier")] = None
-    childrenIds: Annotated[List[str], Field(description="Child message identifiers")] = []
+    id: Annotated[str | None, Field(default=None, description="Message identifier")] = None
+    parentId: Annotated[str | None, Field(default=None, description="Parent message identifier")] = None
+    childrenIds: Annotated[list[str], Field(description="Child message identifiers")] = []
     role: Annotated[str, Field(description="Role of the message sender")]
     content: Annotated[str, Field(description="Text content of the message")]
-    timestamp: Annotated[Optional[int], Field(default=None, description="Message timestamp")] = None
+    timestamp: Annotated[int | None, Field(default=None, description="Message timestamp")] = None
 
     # User message specific fields
-    models: Annotated[Optional[List[str]], Field(default=None, description="Models to use for generation")] = None
+    models: Annotated[list[str] | None, Field(default=None, description="Models to use for generation")] = None
 
     # Assistant message specific fields
-    model: Annotated[Optional[str], Field(default=None, description="Model used for generation")] = None
-    modelName: Annotated[Optional[str], Field(default=None, description="Human-readable model name")] = None
-    modelIdx: Annotated[Optional[int], Field(default=None, description="Model index in the models array")] = None
-    userContext: Annotated[Optional[Any], Field(default=None, description="User context information")] = None
-    lastSentence: Annotated[Optional[str], Field(default=None, description="Last sentence in the response")] = None
-    done: Annotated[Optional[bool], Field(default=None, description="Whether generation is complete")] = None
+    model: Annotated[str | None, Field(default=None, description="Model used for generation")] = None
+    modelName: Annotated[str | None, Field(default=None, description="Human-readable model name")] = None
+    modelIdx: Annotated[int | None, Field(default=None, description="Model index in the models array")] = None
+    userContext: Annotated[Any | None, Field(default=None, description="User context information")] = None
+    lastSentence: Annotated[str | None, Field(default=None, description="Last sentence in the response")] = None
+    done: Annotated[bool | None, Field(default=None, description="Whether generation is complete")] = None
 
     # Tool message specific fields
-    tool_call_id: Annotated[Optional[str], Field(default=None, description="Tool call identifier")] = None
+    tool_call_id: Annotated[str | None, Field(default=None, description="Tool call identifier")] = None
     tool_calls: Annotated[
-        Optional[List[Dict[str, Any]]], Field(default=None, description="Tool calls made by the assistant")
+        list[dict[str, Any]] | None, Field(default=None, description="Tool calls made by the assistant")
     ] = None
 
     # Additional fields
@@ -93,7 +93,7 @@ class ChatMessageContent(BaseModel):
 class ChatHistory(BaseModel):
     """Chat history containing messages and current message ID."""
 
-    messages: Annotated[Dict[str, ChatMessageContent], Field(description="Map of message IDs to message contents")]
+    messages: Annotated[dict[str, ChatMessageContent], Field(description="Map of message IDs to message contents")]
     currentId: Annotated[str, Field(description="ID of the current/latest message")]
 
 
@@ -102,17 +102,17 @@ class ChatData(BaseModel):
     Complete chat data structure as used in API requests/responses.
     """
 
-    id: Annotated[Optional[str], Field(default="", description="Chat identifier")] = ""
+    id: Annotated[str | None, Field(default="", description="Chat identifier")] = ""
     title: Annotated[str, Field(description="Title of the chat")]
-    models: Annotated[List[str], Field(description="Models available for this chat")] = []
-    params: Annotated[Dict[str, Any], Field(description="Additional parameters")] = {}
+    models: Annotated[list[str], Field(description="Models available for this chat")] = []
+    params: Annotated[dict[str, Any], Field(description="Additional parameters")] = {}
     history: Annotated[ChatHistory, Field(description="Chat message history map")] = None
     messages: Annotated[
-        Optional[List[ChatMessageContent]], Field(default=None, description="Messages in array format")
+        list[ChatMessageContent] | None, Field(default=None, description="Messages in array format")
     ] = None
-    tags: Annotated[List[str], Field(description="Tags associated with this chat")] = []
-    timestamp: Annotated[Optional[int], Field(default=None, description="Chat timestamp")] = None
-    files: Annotated[List[Dict[str, Any]], Field(description="Files attached to the chat")] = []
+    tags: Annotated[list[str], Field(description="Tags associated with this chat")] = []
+    timestamp: Annotated[int | None, Field(default=None, description="Chat timestamp")] = None
+    files: Annotated[list[dict[str, Any]], Field(description="Files attached to the chat")] = []
 
     # Allow additional fields for flexibility
     model_config = ConfigDict(extra="allow")
@@ -128,11 +128,9 @@ class ChatImportForm(BaseModel):
     """Form data for importing an existing chat with additional metadata."""
 
     chat: Annotated[ChatData, Field(description="Complete chat data structure")]
-    meta: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Additional metadata")] = None
-    pinned: Annotated[Optional[bool], Field(default=False, description="Whether this chat should be pinned")] = False
-    folder_id: Annotated[Optional[str], Field(default=None, description="ID of the folder to place this chat in")] = (
-        None
-    )
+    meta: Annotated[dict[str, Any] | None, Field(default=None, description="Additional metadata")] = None
+    pinned: Annotated[bool | None, Field(default=False, description="Whether this chat should be pinned")] = False
+    folder_id: Annotated[str | None, Field(default=None, description="ID of the folder to place this chat in")] = None
 
 
 class ChatTitleIdResponse(BaseModel):
@@ -156,11 +154,11 @@ class ChatResponse(BaseModel):
     chat: Annotated[ChatData, Field(description="Complete chat data")]
     updated_at: Annotated[int, Field(description="Last update timestamp")]
     created_at: Annotated[int, Field(description="Creation timestamp")]
-    share_id: Annotated[Optional[str], Field(default=None, description="Share identifier")] = None
+    share_id: Annotated[str | None, Field(default=None, description="Share identifier")] = None
     archived: Annotated[bool, Field(description="Whether chat is archived")]
-    pinned: Annotated[Optional[bool], Field(default=False, description="Whether chat is pinned")] = False
-    meta: Annotated[Dict[str, Any], Field(description="Additional metadata")] = {}
-    folder_id: Annotated[Optional[str], Field(default=None, description="Folder identifier")] = None
+    pinned: Annotated[bool | None, Field(default=False, description="Whether chat is pinned")] = False
+    meta: Annotated[dict[str, Any], Field(description="Additional metadata")] = {}
+    folder_id: Annotated[str | None, Field(default=None, description="Folder identifier")] = None
 
 
 class MessageForm(BaseModel):
@@ -173,7 +171,7 @@ class EventForm(BaseModel):
     """Form data for sending a chat message event."""
 
     type: Annotated[str, Field(description="Event type")]
-    data: Annotated[Dict[str, Any], Field(description="Event data")]
+    data: Annotated[dict[str, Any], Field(description="Event data")]
 
 
 class TagForm(BaseModel):
@@ -185,20 +183,20 @@ class TagForm(BaseModel):
 class TagFilterForm(TagForm):
     """Form data for filtering chats by tag with pagination."""
 
-    skip: Annotated[Optional[int], Field(default=0, description="Number of results to skip")] = 0
-    limit: Annotated[Optional[int], Field(default=50, description="Maximum number of results to return")] = 50
+    skip: Annotated[int | None, Field(default=0, description="Number of results to skip")] = 0
+    limit: Annotated[int | None, Field(default=50, description="Maximum number of results to return")] = 50
 
 
 class CloneForm(BaseModel):
     """Form data for cloning a chat."""
 
-    title: Annotated[Optional[str], Field(default=None, description="New title for the cloned chat")] = None
+    title: Annotated[str | None, Field(default=None, description="New title for the cloned chat")] = None
 
 
 class ChatFolderIdForm(BaseModel):
     """Form data for updating a chat's folder."""
 
-    folder_id: Annotated[Optional[str], Field(default=None, description="New folder ID")] = None
+    folder_id: Annotated[str | None, Field(default=None, description="New folder ID")] = None
 
 
 class TagModel(BaseModel):

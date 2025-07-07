@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -17,7 +17,7 @@ class AgentJSSubscriber(JSSubscriber):
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
         queue_group: str,
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ):
         """Subscribe to all control events within a specific agent instance."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_instance()
@@ -41,7 +41,7 @@ class AgentJSSubscriber(JSSubscriber):
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
         queue_group: str,
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ):
         """Subscribe to all events within a specific agent instance."""
         subject = topic_manager.get_subject_for_everything_within_agent_instance()

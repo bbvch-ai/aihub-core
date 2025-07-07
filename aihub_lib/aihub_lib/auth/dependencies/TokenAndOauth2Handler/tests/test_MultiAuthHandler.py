@@ -89,7 +89,8 @@ scenarios("features/multi_auth_handler.feature")
 
 @given(
     parsers.parse(
-        'an OAuth2 configuration with tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'
+        'an OAuth2 configuration with tenant_id "{tenant_id}", '
+        'client_id "{client_id}", and authority_url "{authority_url}"'
     ),
     target_fixture="oauth2_config",
 )

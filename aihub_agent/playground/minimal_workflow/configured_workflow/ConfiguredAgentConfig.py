@@ -1,4 +1,4 @@
-from aihub_lib.agents.AgentConfig import StepConfig, AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 
 
 class StartStepConfig(StepConfig):

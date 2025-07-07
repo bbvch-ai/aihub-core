@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 class TokenAndOauth2Handler(AuthHandler):
     """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies."""
 
-    def __init__(self, bearer_handlers: List[BearerAuthHandler], oauth2_handlers: List[OAuth2AuthHandler]):
+    def __init__(self, bearer_handlers: list[BearerAuthHandler], oauth2_handlers: list[OAuth2AuthHandler]):
         self.bearer_handlers = bearer_handlers
         self.oauth2_handlers = oauth2_handlers
 

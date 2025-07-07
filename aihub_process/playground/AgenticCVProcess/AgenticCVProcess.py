@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from llama_index.core.base.llms.types import ChatMessage
-
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from llama_index.core.base.llms.types import ChatMessage
+
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.human.Human import Human

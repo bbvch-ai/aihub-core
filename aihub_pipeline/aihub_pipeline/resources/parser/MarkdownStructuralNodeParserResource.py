@@ -34,7 +34,7 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
                 "node_parser": MarkdownStructuralNodeParserResource(),
             }
         )
-    """
+    """  # noqa: E501
 
     def get_node_parser_for_ref_doc(
         self, ref_doc: RefDocDocument, document_store_name: str

@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Optional, Type, Union
+from typing import Annotated, ClassVar
 
 from pydantic import Field, PrivateAttr
 
@@ -30,17 +30,18 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
         "lib.events.aitl_request_event.description"
     )
 
-    _response: Optional[Type[AgentInTheLoopResponseEvent]] = PrivateAttr(None)
-    _exception: Optional[Type[AgentInTheLoopExceptionEvent]] = PrivateAttr(None)
+    _response: type[AgentInTheLoopResponseEvent] | None = PrivateAttr(None)
+    _exception: type[AgentInTheLoopExceptionEvent] | None = PrivateAttr(None)
 
     start_event: Annotated[
         StartEvent | UserMessageEvent,
         Field(description="The event that will be sent to the other agent to initiate its task."),
     ]
     other_agent_topic: Annotated[
-        Union[PartialAgentTopic, AgentTopic],
+        PartialAgentTopic | AgentTopic,
         Field(
-            description="A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.",
+            description="A partial or full agent topic specifying the target agent and event routing, "
+            "ensuring the task is delegated to the correct agent.",
         ),
     ]
     share_thread_id: Annotated[
@@ -52,14 +53,15 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     share_run_id: Annotated[
         bool,
         Field(
-            description="Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+            description="Whether to share the run context with the other agent. "
+            "Warning: In almost all cases, you will not want to share the run!",
         ),
     ] = False
 
     def __init__(
         self,
-        response: Optional[Type[AgentInTheLoopResponseEvent]] = None,
-        exception: Optional[Type[AgentInTheLoopExceptionEvent]] = None,
+        response: type[AgentInTheLoopResponseEvent] | None = None,
+        exception: type[AgentInTheLoopExceptionEvent] | None = None,
         **data,
     ):
         super().__init__(**data)
@@ -67,9 +69,9 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
         self._exception = exception
 
     @property
-    def response(self) -> Optional[Type[AgentInTheLoopResponseEvent]]:
+    def response(self) -> type[AgentInTheLoopResponseEvent] | None:
         return self._response
 
     @property
-    def exception(self) -> Optional[Type[AgentInTheLoopExceptionEvent]]:
+    def exception(self) -> type[AgentInTheLoopExceptionEvent] | None:
         return self._exception

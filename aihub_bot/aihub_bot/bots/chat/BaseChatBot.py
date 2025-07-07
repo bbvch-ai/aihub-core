@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Event, Task
-from typing import Any, Dict
+from typing import Any
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
@@ -29,7 +29,7 @@ class BaseChatBot(ActivityHandler):
         self,
         path: str,
         completion_handler: CompletionHandler,
-        handler_kwargs: Dict[str, Any],
+        handler_kwargs: dict[str, Any],
         typing_timeout_seconds: int = 60,
     ):
         self.path = path
@@ -82,7 +82,8 @@ class BaseChatBot(ActivityHandler):
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,
-                    text="This conversation has expired after 1 month of inactivity. Your previous messages are no longer available.",
+                    text="This conversation has expired after 1 month of inactivity. "
+                    "Your previous messages are no longer available.",
                 )
             )
 

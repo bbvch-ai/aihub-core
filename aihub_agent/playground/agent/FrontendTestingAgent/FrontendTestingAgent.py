@@ -1,38 +1,37 @@
 import random
 
-from llama_index.core.schema import TextNode, NodeWithScore
-
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
-    UserMessageEvent,
-    EmbeddingEvent,
-    RetrieverEvent,
-    RerankerEvent,
-    ToolEvent,
-    StopEvent,
     AgentInTheLoop,
+    EmbeddingEvent,
+    ExceptionEvent,
     HumanInTheLoop,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
-    ExceptionEvent,
+    RerankerEvent,
+    RetrieverEvent,
+    StopEvent,
+    ToolEvent,
+    UserMessageEvent,
 )
-
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding
 from aihub_lib.nats.events.semantic.guard import GuardEvent
 from aihub_lib.persistence.rag.vectors.node_metadata import (
-    DOCUMENT_TITLE,
-    SOURCE,
     CREATED_AT,
-    REFERENCE_URL,
     DOCUMENT_ID,
+    DOCUMENT_TITLE,
+    REFERENCE_URL,
+    SOURCE,
 )
+from llama_index.core.schema import NodeWithScore, TextNode
+
+from aihub_agent.agents.Agent import Agent
+from aihub_agent.workflow.decorators.step import step
 from playground.agent.FrontendTestingAgent.events.FrontendTestingEventA import FrontendTestingEventA
 from playground.agent.FrontendTestingAgent.events.FrontendTestingEventB import FrontendTestingEventB
 

@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -25,7 +24,8 @@ class UserService:
 
     ### Methods
     - `get_logged_in_user`: Converts the currently authenticated user into a `UserDTO`.
-    - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID), useful for building responses that include user details.
+    - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID),
+      useful for building responses that include user details.
     """
 
     @staticmethod
@@ -66,11 +66,11 @@ class UserService:
             last_updated_from_db = user_entity.last_updated
 
             if last_updated_from_db.tzinfo is None:
-                last_updated_aware = last_updated_from_db.replace(tzinfo=timezone.utc)
+                last_updated_aware = last_updated_from_db.replace(tzinfo=UTC)
             else:
                 last_updated_aware = last_updated_from_db
 
-            if (datetime.now(timezone.utc) - last_updated_aware) < timedelta(hours=24):
+            if (datetime.now(UTC) - last_updated_aware) < timedelta(hours=24):
                 return UserDTO.from_user_entity(user_entity)
         except DoesNotExist:
             pass
@@ -87,7 +87,7 @@ class UserService:
         return UserDTO.from_user_identity(user_identity)
 
     @staticmethod
-    def get_user_dashboard(user: UserIdentity) -> Optional[DashboardDTO]:
+    def get_user_dashboard(user: UserIdentity) -> DashboardDTO | None:
         """
         Retrieves the dashboard settings for the given authenticated user.
         """

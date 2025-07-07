@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncGenerator, List, Optional
+from collections.abc import AsyncGenerator
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -27,9 +27,9 @@ class AgentCompletionHandler(CompletionHandler):
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
-        locale: Optional[str] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
+        locale: str | None = None,
         **kwargs,
     ) -> str:
         """Get a non-streaming Agent completion."""
@@ -63,9 +63,9 @@ class AgentCompletionHandler(CompletionHandler):
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
-        locale: Optional[str] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
+        locale: str | None = None,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Get a streaming Agent completion."""
@@ -109,10 +109,10 @@ class AgentCompletionHandler(CompletionHandler):
         agent_id: str,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
         stream: bool = False,
-        locale: Optional[str] = None,
+        locale: str | None = None,
     ) -> StreamingResources | JsonResources:
         """
         ### What
@@ -124,7 +124,7 @@ class AgentCompletionHandler(CompletionHandler):
         - The messages must be converted to the correct format to send them to the Agent.
         - The context is needed to generate the completion.
         """
-        persisted_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(
+        persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
         system_message: Message = CompletionHandler.get_system_message(
@@ -133,7 +133,7 @@ class AgentCompletionHandler(CompletionHandler):
         )
         if system_message is not None:
             persisted_messages.insert(0, system_message)
-        chat_messages: List[ChatMessage] = [
+        chat_messages: list[ChatMessage] = [
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
         user = UserIdentity(

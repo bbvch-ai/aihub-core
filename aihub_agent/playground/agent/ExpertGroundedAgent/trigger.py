@@ -1,10 +1,5 @@
 import asyncio
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgent import ExpertGroundedAgent
-from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgentConfig import ExpertGroundedAgentConfig
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -13,6 +8,11 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgent import ExpertGroundedAgent
+from aihub_agent.agents.ExpertGroundedAgent.ExpertGroundedAgentConfig import ExpertGroundedAgentConfig
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
@@ -42,7 +42,8 @@ async def main():
             start_event=UserMessageEvent(
                 messages=[
                     ChatMessage(
-                        content="Philipp Kronenberg started working at bbv 10 years ago and went all the way from developer to chief executive operator.",
+                        content="Philipp Kronenberg started working at bbv 10 years ago "
+                        "and went all the way from developer to chief executive operator.",
                         role=MessageRole.SYSTEM,
                     ),
                     ChatMessage(content="Who is the CEO of bbv?", role=MessageRole.USER),
