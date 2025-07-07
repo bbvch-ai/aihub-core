@@ -247,6 +247,8 @@ class AgentController(Controller):
                 return send_event
 
             # Create the endpoint
+            print(f"Creating endpoint: {endpoint_name} at {endpoint_route}")
             create_endpoint(start_event_input_type)
+            print(f"Created endpoint: {endpoint_name} at {endpoint_route}")
 
         return self

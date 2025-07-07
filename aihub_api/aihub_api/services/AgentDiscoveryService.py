@@ -40,6 +40,7 @@ class AgentDiscoveryService:
         self.running = True
         self.task = asyncio.create_task(self._discovery_loop())
         logger.info("Agent discovery service started")
+        print("Agent discovery service started")
 
     async def stop(self):
         if not self.running:
@@ -53,10 +54,12 @@ class AgentDiscoveryService:
             except asyncio.CancelledError:
                 pass
         logger.info("Agent discovery service stopped")
+        print("Agent discovery service stopped")
 
     async def _discovery_loop(self):
         while self.running:
             try:
+                print("Agent discovery loop")
                 await self._discover_and_register_agents()
             except Exception as e:
                 logger.error(f"Error in agent discovery: {e}")
@@ -81,6 +84,7 @@ class AgentDiscoveryService:
         self, agent_class: str, agent_id: str, start_events: List[EventSpecs], stop_events: List[EventSpecs]
     ):
         # Create an endpoint for this event type
+        print("Registering endpoints for agent")
         self.agent_controller.send_event_to(
             agent_class=agent_class,
             agent_id=agent_id,

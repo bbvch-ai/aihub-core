@@ -61,9 +61,6 @@ async def main():
             OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
         ],
     )
-    # auth = DangerousDevelopmentOnlyAuthHandler(
-    #     identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-    # )
 
     azure_openai_settings = DevelopmentOpenaiResourceSettings()
 
@@ -81,17 +78,7 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        AgentController(auth=auth)
-        .get_agent()
-        .get_agent_threads()
-        .get_agents()
-        .discover_agents()
-        .send_event_to(
-            "LLMWrappingAgent",
-            "dev_agent",
-            start_event_class=UserMessageEvent,
-            stop_event_class=LLMStopEvent,
-        ),
+        AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(

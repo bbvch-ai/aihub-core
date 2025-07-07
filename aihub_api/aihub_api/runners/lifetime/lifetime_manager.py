@@ -103,7 +103,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.external_event_distributor = external_event_distributor
 
         # Store the agent controller reference for the discovery service
-        agent_controller = app.state.agent_controller if hasattr(app.state, "agent_controller") else None
+        controllers = getattr(app.state, "controllers", {})
+        agent_controller = controllers.get("AgentController") or getattr(app.state, "agent_controller", None)
+        print("Agent Controller:", agent_controller)
+        print("Available controllers:", list(controllers.keys()))
 
         if agent_controller:
             # Create and start the agent discovery service
