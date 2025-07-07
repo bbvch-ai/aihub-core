@@ -65,7 +65,7 @@ def get_base_type(annotation: type) -> tuple[type, ...]:
     if origin is Annotated:
         return get_base_type(get_args(annotation)[0])
 
-    # Case 2: Union[A, B, ...] or Optional[A]
+    # Case 2: Union[A, B, ...] or Optional[A] or A | None
     if origin is Union:
         base_types: list[type] = []
         for arg in get_args(annotation):

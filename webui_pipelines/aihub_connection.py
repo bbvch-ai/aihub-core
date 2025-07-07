@@ -18,7 +18,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-def str_to_object_id(context_id: Optional[str]) -> str:
+def str_to_object_id(context_id: str | None) -> str:
     if not context_id:
         return str(ObjectId())
     hashed = hashlib.md5(context_id.encode()).digest()[:12]
