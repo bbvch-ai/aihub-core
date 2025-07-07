@@ -181,7 +181,7 @@ const timeRanges = ref<string[]>(['1h', '24h', '30d', '365d'])
 const agent = ref<AgentDto | null>(null)
 
 type eventType = { label: string, event: string }
-const eventOptions = computed<eventtype[]>(() => {
+const eventOptions = computed<eventType[]>(() => {
   return [
     'StartEvent',
     'UserMessageEvent',
