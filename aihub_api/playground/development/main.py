@@ -61,6 +61,9 @@ async def main():
             OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
         ],
     )
+    # auth = DangerousDevelopmentOnlyAuthHandler(
+    #     identity_provider=DangerousDevelopmentOnlyIdentityProvider()
+    # )
 
     azure_openai_settings = DevelopmentOpenaiResourceSettings()
 
