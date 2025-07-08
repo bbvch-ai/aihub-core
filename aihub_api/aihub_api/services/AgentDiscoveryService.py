@@ -42,14 +42,14 @@ class AgentDiscoveryService:
         locale_handler: LocaleHandler,
         discovery_interval: int = 60,
     ):
-        self.nc = nc
-        self.app = api_app
-        self.agent_controller = agent_controller
-        self.locale_handler = locale_handler
-        self.discovery_interval = discovery_interval
+        self.nc: NATS = nc
+        self.app: FastAPI = api_app
+        self.agent_controller: AgentController = agent_controller
+        self.locale_handler: LocaleHandler = locale_handler
+        self.discovery_interval: int = discovery_interval
         self.registered_agents: set[tuple[str, str]] = set()
-        self.running = False
-        self.task = None
+        self.running: bool = False
+        self.task: asyncio.Task | None = None
 
     async def start(self):
         if self.running:
