@@ -54,10 +54,7 @@ class AgentDiscoveryService:
         self.running = False
         if self.task:
             self.task.cancel()
-            try:
-                await self.task
-            except asyncio.CancelledError:
-                pass
+            await asyncio.gather(self.task, return_exceptions=True)
         logger.info("Agent discovery service stopped")
 
     async def _discovery_loop(self):
