@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from mongoengine import connect, disconnect
 
@@ -84,6 +85,16 @@ UserEntity.ensure_user_exists(
 )
 
 token = TokenService.create_token(token_name, expiry, user)
+
+admin_role = RoleEntity.get_role_by_name(roles[0])
+if admin_role is None:
+    role = RoleEntity(
+        name=roles[0],
+        description=f"Role for {token_name}",
+        access_rules=["aihub.admin.>"],
+    )
+    role.save()
+
 print(f"Generated token for user {user.name} ({user.email}):")
 print(token.token)
 
