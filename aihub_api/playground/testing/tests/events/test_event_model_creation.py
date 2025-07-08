@@ -1,5 +1,5 @@
 from types import UnionType
-from typing import Union, get_args, get_origin, List
+from typing import get_args, get_origin
 
 import pytest
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
@@ -192,7 +192,7 @@ class TestFieldTyping:
 
             # Check union structure for optional field
             origin = get_origin(optional_nested_field.annotation)
-            if origin in (Union, UnionType):
+            if origin is UnionType:
                 args = get_args(optional_nested_field.annotation)
                 assert len(args) == 2
                 assert type(None) in args
@@ -209,7 +209,7 @@ class TestFieldTyping:
             union_field = model.model_fields["union_field"]
             origin = get_origin(union_field.annotation)
             args = get_args(union_field.annotation)
-            assert origin in (Union, UnionType)
+            assert origin is UnionType
             assert str in args
             assert int in args
             assert union_field.is_required()
@@ -220,7 +220,7 @@ class TestFieldTyping:
             assert optional_union_field.default is None
 
             # Check the inner union type
-            if get_origin(optional_union_field.annotation) in (Union, UnionType):
+            if get_origin(optional_union_field.annotation) is UnionType:
                 args = get_args(optional_union_field.annotation)
                 # Should be Union[str, int, None] or similar
                 assert type(None) in args
@@ -234,7 +234,7 @@ class TestFieldTyping:
             origin = get_origin(complex_union_field.annotation)
             args = get_args(complex_union_field.annotation)
 
-            assert origin in (Union, UnionType)
+            assert origin is UnionType
             assert str in args
             # One of the args should be a BaseModel subclass (dynamically created)
             nested_types = [arg for arg in args if isinstance(arg, type) and issubclass(arg, BaseModel)]
@@ -253,7 +253,7 @@ class TestFieldTyping:
             origin = get_origin(list_field.annotation)
             args = get_args(list_field.annotation)
 
-            assert origin is list or origin is List
+            assert origin is list
             assert len(args) == 1
 
             # The list element should be a BaseModel subclass (dynamically created)
@@ -276,7 +276,7 @@ class TestFieldTyping:
             nested_optional = NestedTestModel.model_fields["nested_optional"]
             origin = get_origin(nested_optional.annotation)
             args = get_args(nested_optional.annotation)
-            assert origin in (Union, UnionType)
+            assert origin is UnionType
             assert int in args
             assert type(None) in args
             assert not nested_optional.is_required()
@@ -401,14 +401,14 @@ class TestFieldTyping:
         for model in [input_model, output_model]:
             # Test List type
             list_field = model.model_fields["list_of_nested"]
-            assert get_origin(list_field.annotation) in [list, list]
+            assert get_origin(list_field.annotation) is list, list
 
             # Test Union types
             union_field = model.model_fields["union_field"]
-            assert get_origin(union_field.annotation) in (Union, UnionType)
+            assert get_origin(union_field.annotation) is UnionType
 
             complex_union_field = model.model_fields["complex_union"]
-            assert get_origin(complex_union_field.annotation) in (Union, UnionType)
+            assert get_origin(complex_union_field.annotation) is UnionType
 
 
 class TestInstanceCreation:

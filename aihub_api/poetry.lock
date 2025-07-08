@@ -2243,7 +2243,7 @@ files = [
 
 [[package]]
 name = "jambo"
-version = "0.3.0"
+version = "0.4.0"
 description = "Jambo - JSON Schema to Pydantic Converter"
 optional = false
 python-versions = "<4.0,>=3.10"
@@ -2259,8 +2259,8 @@ pydantic = ">=2.10.6"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/jambo.git"
-reference = "v0.3.0"
-resolved_reference = "3911fbe9cd61548e0901758d9f5f198b0b847a76"
+reference = "v0.4.0"
+resolved_reference = "294d6dc7465edb399fc3ece44301f55d6d082112"
 
 [[package]]
 name = "jedi"
@@ -6529,4 +6529,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "eaa9976ef418206f2524bf69b767ca2dba42e44e0418beeddc05262e17a96d03"
+content-hash = "92c71c6514091e621e27ec70af39874b4a2abd7e6c92a0d387f4b1fdf78bc538"
