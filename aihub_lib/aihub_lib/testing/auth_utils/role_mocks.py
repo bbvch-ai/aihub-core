@@ -35,7 +35,7 @@ def mock_role_entity_methods():
             yield
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_role_entity_admin_only():
     """
     Mock RoleEntity methods for tests that only need admin access rules.
