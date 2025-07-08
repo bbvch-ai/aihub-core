@@ -54,7 +54,6 @@ def agent_id() -> str:
     return "test_agent_1"
 
 
-
 @pytest.fixture(autouse=True)
 def mock_user_entity():
     """Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig."""

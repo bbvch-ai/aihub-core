@@ -31,9 +31,6 @@ async def api_client():
             yield client
 
 
-# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
-
-
 @pytest.mark.parametrize(
     "headers, params, expected_locale",
     [

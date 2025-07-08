@@ -45,7 +45,6 @@ async def agent_api_client():
             yield client
 
 
-
 @pytest.mark.asyncio(loop_scope="module")
 async def test_discover_agents(agent_api_client):
     """Test GET /agent/discover returns a list containing the simulated agent."""

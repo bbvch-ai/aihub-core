@@ -10,9 +10,6 @@ from mongoengine import connect, disconnect
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.routes.user.UserController import UserController
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
-)
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
@@ -20,9 +17,8 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     generate_rsa_keypair,
     public_key_to_jwk,
@@ -48,12 +44,6 @@ def mongo_db():
 def oauth2_config(monkeypatch):
     """Set OAuth2 env vars and return an OAuth2Config instance."""
     return OAuth2Config()
-
-
-# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
-
-
-# Using the shared mock_user_entity fixture from aihub_lib.testing.auth_utils.user_mocks
 
 
 @pytest.fixture
@@ -132,7 +122,7 @@ async def oauth2_api_client():
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_token, expected_user_data, mock_user_entity):
+async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_token, expected_user_data):
     """Test GET /user/me returns expected user data with a valid OAuth2 token."""
     headers = {
         "Authorization": f"Bearer {valid_oauth2_token}",
@@ -153,7 +143,7 @@ async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_invalid_oauth2_token(oauth2_api_client, mock_user_entity):
+async def test_get_user_with_invalid_oauth2_token(oauth2_api_client):
     """Test GET /user/me returns an error for an invalid OAuth2 token."""
     headers = {
         "Authorization": "Bearer invalid.token.value",

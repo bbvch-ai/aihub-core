@@ -46,7 +46,7 @@ def valid_token_request():
     return {"name": "Test Token", "expiry_date": expiry_date.isoformat()}
 
 
-def test_create_token(api_client, valid_token_request, mock_role_entity_admin_only):
+def test_create_token(api_client, valid_token_request, mock_role_entity_admin_only):  # noqa: F811
     """Test creating a new API token returns valid data."""
     response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     if response.status_code != 201:
@@ -58,7 +58,7 @@ def test_create_token(api_client, valid_token_request, mock_role_entity_admin_on
     assert data["name"] == valid_token_request["name"]
 
 
-def test_create_token_with_past_date(api_client, valid_token_request, mock_role_entity_admin_only):
+def test_create_token_with_past_date(api_client, valid_token_request, mock_role_entity_admin_only):  # noqa: F811
     """Test creating a token with past expiry date returns validation error."""
     valid_token_request["expiry_date"] = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
@@ -68,7 +68,7 @@ def test_create_token_with_past_date(api_client, valid_token_request, mock_role_
     assert any("Expiry date must be in the future" in error for error in error_details)
 
 
-def test_list_tokens(api_client, valid_token_request, mock_role_entity_admin_only):
+def test_list_tokens(api_client, valid_token_request, mock_role_entity_admin_only):  # noqa: F811
     """Test listing API tokens returns created token without token value."""
     create_response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     assert create_response.status_code == 201
@@ -80,7 +80,7 @@ def test_list_tokens(api_client, valid_token_request, mock_role_entity_admin_onl
     assert tokens[0]["name"] == valid_token_request["name"]
 
 
-def test_revoke_token(api_client, valid_token_request, mock_role_entity_admin_only):
+def test_revoke_token(api_client, valid_token_request, mock_role_entity_admin_only):  # noqa: F811
     """Test revoking an API token removes it from the list."""
     create_response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     assert create_response.status_code == 201
@@ -93,7 +93,7 @@ def test_revoke_token(api_client, valid_token_request, mock_role_entity_admin_on
     assert token_id not in token_ids
 
 
-def test_revoke_nonexistent_token(api_client, mock_role_entity_admin_only):
+def test_revoke_nonexistent_token(api_client, mock_role_entity_admin_only):  # noqa: F811
     """Test revoking a non-existent token returns error."""
     response = api_client.delete(f"{TOKEN_BASE}/123456789012345678901234")
     assert response.status_code == 400
@@ -141,7 +141,13 @@ def test_revoke_nonexistent_token(api_client, mock_role_entity_admin_only):
         ),
     ],
 )
-def test_create_token_validation(api_client, invalid_request, expected_error, expected_status, mock_role_entity_admin_only):
+def test_create_token_validation(
+    api_client,
+    invalid_request,
+    expected_error,
+    expected_status,
+    mock_role_entity_admin_only,  # noqa: F811
+):
     """Test token creation with invalid payload returns proper validation errors."""
     response = api_client.post(f"{TOKEN_BASE}/", json=invalid_request)
     assert response.status_code == expected_status

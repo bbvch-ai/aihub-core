@@ -1,5 +1,4 @@
 import json
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -39,7 +38,6 @@ async def api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
-
 
 
 @pytest.mark.asyncio(loop_scope="module")

@@ -1,6 +1,5 @@
 import os
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -45,9 +44,6 @@ def valid_token(mongo_db):
     yield token_obj.token
     user.delete()
     token_obj.delete()
-
-
-# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
 
 
 @pytest.fixture

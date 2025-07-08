@@ -15,7 +15,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity, get_expected_user_data  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse, get_expected_user_data  # noqa: F401
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/users/me"
@@ -42,17 +42,8 @@ async def api_client():
             yield client
 
 
-# Using the shared mock_role_entity_methods fixture from aihub_lib.testing.auth_utils.role_mocks
-
-
-# Using the shared mock_user_entity fixture from aihub_lib.testing.auth_utils.user_mocks
-
-
-# Using the shared get_expected_user_data function from aihub_lib.testing.auth_utils.user_mocks
-
-
 @pytest.mark.asyncio
-async def test_get_user_endpoint(api_client, mock_user_entity):
+async def test_get_user_endpoint(api_client):
     """Test GET /user/me returns expected user data."""
     headers = {"Content-Type": "application/json"}
     response = await api_client.get(USER_ENDPOINT, headers=headers)
@@ -71,7 +62,7 @@ async def test_get_user_endpoint(api_client, mock_user_entity):
 
 
 @pytest.mark.asyncio
-async def test_user_dto_structure(api_client, mock_user_entity):
+async def test_user_dto_structure(api_client):
     """Test that user DTO has the expected structure."""
     response = await api_client.get(USER_ENDPOINT)
     user_data = response.json()
@@ -90,7 +81,7 @@ async def test_user_dto_structure(api_client, mock_user_entity):
         {},
     ],
 )
-async def test_user_endpoint_different_headers(api_client, headers, mock_user_entity):
+async def test_user_endpoint_different_headers(api_client, headers):
     """Test GET /user/me with various headers."""
     response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200
