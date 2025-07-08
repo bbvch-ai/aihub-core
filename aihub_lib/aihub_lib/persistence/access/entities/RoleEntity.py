@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from mongoengine import Document, ListField, StringField
 
 
