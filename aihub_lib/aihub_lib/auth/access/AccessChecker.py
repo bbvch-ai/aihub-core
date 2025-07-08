@@ -23,7 +23,7 @@ class AccessChecker:
 
     3.  Admin Check: aihub.admin are automatically also aihub.user. To differentiate whether a user accessing an
         endpoint has user or admin privilege, we use AccessLevel.ACCESS_ADMIN or AccessLevel.ACCESS_USER.
-        Note that adn admin accessing an endpoint requiring user privileges will still enter the endpoint
+        Note that an admin accessing an endpoint requiring user privileges will still enter the endpoint
         with AccessLevel.ACCESS_ADMIN
         - User Access Rule: `aihub.admin.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
