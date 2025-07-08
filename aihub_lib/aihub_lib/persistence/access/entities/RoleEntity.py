@@ -19,7 +19,7 @@ class RoleEntity(Document):
     access_rules = ListField(StringField(), default=list)
 
     @classmethod
-    def get_role_by_name(cls, role_name: str) -> Optional["RoleEntity"]:
+    def get_role_by_name(cls, role_name: str) -> RoleEntity | None:
         """
         Fetches a role by its name. Returns None if the role does not exist.
         """
