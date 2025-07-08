@@ -53,6 +53,7 @@ class AgentDiscoveryService:
 
     async def start(self):
         if self.running:
+            logger.warning("Agent discovery service is already running")
             return
 
         self.running = True
