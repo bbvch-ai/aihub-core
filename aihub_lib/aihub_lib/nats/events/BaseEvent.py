@@ -94,6 +94,18 @@ class BaseEvent(BaseModel):
     def event_name(self):
         return self._event_name
 
+    @classmethod
+    def parent_event_names_from_class(cls) -> List[str]:
+        result = [cls.event_name_from_class()]
+        parent_classes = get_parent_classes_until_base(cls, BaseEvent)
+        class_dict = {cls.__name__: cls for cls in cls.__mro__ if cls.__name__ in parent_classes}
+        sorted_parent_classes = sorted(
+            list(parent_classes), key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
+        )
+
+        result.extend(sorted_parent_classes)
+        return result
+
     @computed_field
     @property
     def _parent_event_names(self) -> list[str]:
@@ -334,9 +346,7 @@ class BaseEvent(BaseModel):
                     (
                         serialize_chat_message_blocks(item)
                         if isinstance(item, ChatMessage)
-                        else item.model_dump()
-                        if isinstance(item, BaseModel)
-                        else item
+                        else item.model_dump() if isinstance(item, BaseModel) else item
                     )
                     for item in value
                 ]

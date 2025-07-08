@@ -87,12 +87,22 @@ class AgentRunner:
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [
-            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in start_events
+            EventSpecs(
+                event_name=e.event_name_from_class(),
+                event_schema=e.model_json_schema(),
+                event_parents=e.parent_event_names_from_class(),
+            )
+            for e in start_events
         ]
 
         stop_events = self.agent_type.get_stop_events()
         stop_event_specs = [
-            EventSpecs(event_name=e.event_name_from_class(), event_schema=e.model_json_schema()) for e in stop_events
+            EventSpecs(
+                event_name=e.event_name_from_class(),
+                event_schema=e.model_json_schema(),
+                event_parents=e.parent_event_names_from_class(),
+            )
+            for e in stop_events
         ]
 
         network_graph = WorkflowVisualizer(agent=self.agent_type)

@@ -27,6 +27,12 @@ class EventSpecs(BaseModel):
             "construct and validate events for initiating the agent's workflow.",
         ),
     ]
+    event_parents: Annotated[
+        List[str],
+        Field(
+            description="A list of parent event names that this event is derived from, allowing for hierarchical event structures."
+        ),
+    ]
 
 
 class AgentDiscoveryResponseEvent(BaseEvent):

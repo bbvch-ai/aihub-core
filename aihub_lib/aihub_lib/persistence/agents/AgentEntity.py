@@ -72,6 +72,7 @@ class EventSpec(EmbeddedDocument):
 
     event_name = StringField(required=True)
     event_schema_json = StringField(required=True)  # Store as JSON string to avoid issues with $ in keys
+    event_parents = ListField(StringField(), default=[])
 
     @property
     def event_schema(self):
@@ -81,7 +82,11 @@ class EventSpec(EmbeddedDocument):
     @classmethod
     def from_dto(cls, event_dto):
         """Create an EventSpec from a DTO object."""
-        return cls(event_name=event_dto.event_name, event_schema_json=json.dumps(event_dto.event_schema))
+        return cls(
+            event_name=event_dto.event_name,
+            event_schema_json=json.dumps(event_dto.event_schema),
+            event_parents=event_dto.event_parents,
+        )
 
 
 class AgentConfig(EmbeddedDocument):

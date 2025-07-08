@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 import time
-from typing import List, Set, Tuple, Union, Type, Annotated
+from typing import List, Set, Tuple, Union, Type, Annotated, Dict, Any
 
 from bson import ObjectId
 from fastapi import FastAPI, Depends, Body, Security, Query, HTTPException
@@ -124,6 +124,7 @@ class AgentDiscoveryService:
                     input_type=start_event_input_type,
                     start_event_type=start_event_type,
                     stop_event_union_type=stop_event_union_type,
+                    start_event_parents=start_event_specs.event_parents,
                     agent_class=agent_class,
                     agent_id=agent_id,
                 ),
@@ -139,6 +140,7 @@ class AgentDiscoveryService:
         input_type: Type[BaseModel],
         start_event_type: Type[BaseModel],
         stop_event_union_type: Type[BaseEvent],
+        start_event_parents: List[str],
         agent_class: str,
         agent_id: str,
     ):
@@ -158,22 +160,30 @@ class AgentDiscoveryService:
             user = UserIdentity(id="system", name="System", email="", roles=["AllAgents"])
             # Create the start event - you'll need to adapt this based on your EventModelCreationService
             # Option 1: If you have a way to map input types back to event classes
-            user_identity = start_event_type.model_fields["user"].annotation.model_validate(user, from_attributes=True)
-            start_event = start_event_type(
-                event_id=str(ObjectId()),
-                created_at=time.time_ns(),
-                user=user_identity,
-                **start_event_input.model_dump(),
-                locale=t.locale,
-            )
+            # user_identity = start_event_type.model_fields["user"].annotation.model_validate(user, from_attributes=True)
+            # start_event = start_event_type(
+            #     event_id=str(ObjectId()),
+            #     created_at=time.time_ns(),
+            #     user=user_identity,
+            #     **start_event_input.model_dump(),
+            #     locale=t.locale,
+            # )
 
-            start_event_typed = StartEvent.model_validate(start_event, from_attributes=True)
+            json_data: Dict[str, Any] = {
+                "event_id": str(ObjectId()),
+                "created_at": time.time_ns(),
+                "user": user.model_dump(),
+                **start_event_input.model_dump(),
+                "locale": t.locale,
+                "_parent_event_names": start_event_parents,
+            }
+            start_event = BaseEvent.deserialize_event(json_data)
 
             stop_event = await AgentService.send_event(
                 nc,
                 external_event_distributor,
                 user,
-                start_event_typed,
+                start_event,
                 agent_class,
                 agent_id,
                 thread_id,

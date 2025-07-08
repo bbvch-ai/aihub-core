@@ -104,10 +104,18 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
         start_events = [
-            EventSpecs(event_name=StartEvent.event_name_from_class(), event_schema=StartEvent.model_json_schema())
+            EventSpecs(
+                event_name=StartEvent.event_name_from_class(),
+                event_schema=StartEvent.model_json_schema(),
+                event_parents=StartEvent.parent_event_names_from_class(),
+            )
         ]
         stop_events = [
-            EventSpecs(event_name=StopEvent.event_name_from_class(), event_schema=StopEvent.model_json_schema())
+            EventSpecs(
+                event_name=StopEvent.event_name_from_class(),
+                event_schema=StopEvent.model_json_schema(),
+                event_parents=StopEvent.parent_event_names_from_class(),
+            )
         ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
