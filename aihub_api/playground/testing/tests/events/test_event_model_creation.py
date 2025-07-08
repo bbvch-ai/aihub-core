@@ -1,11 +1,11 @@
-from typing import Type, get_origin, get_args, Union, List
+from typing import Union, get_args, get_origin
 
 import pytest
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from pydantic import BaseModel
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
-from playground.testing.tests.events.TestEvent import TestEvent, NestedTestModel, Level2Model, Level3Model
+from playground.testing.tests.events.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
 
 
 class TestDataProvider:
@@ -60,13 +60,13 @@ def output_model_factory(request, event_specs):
 
 
 @pytest.fixture
-def input_model(input_model_factory) -> Type[BaseModel]:
+def input_model(input_model_factory) -> type[BaseModel]:
     factory, _ = input_model_factory
     return factory()
 
 
 @pytest.fixture
-def output_model(output_model_factory) -> Type[BaseModel]:
+def output_model(output_model_factory) -> type[BaseModel]:
     factory, _ = output_model_factory
     return factory()
 
@@ -252,7 +252,7 @@ class TestFieldTyping:
             origin = get_origin(list_field.annotation)
             args = get_args(list_field.annotation)
 
-            assert origin is list or origin is List
+            assert origin is list or origin is list
             assert len(args) == 1
 
             # The list element should be a BaseModel subclass (dynamically created)
@@ -400,7 +400,7 @@ class TestFieldTyping:
         for model in [input_model, output_model]:
             # Test List type
             list_field = model.model_fields["list_of_nested"]
-            assert get_origin(list_field.annotation) in [list, List]
+            assert get_origin(list_field.annotation) in [list, list]
 
             # Test Union types
             union_field = model.model_fields["union_field"]
