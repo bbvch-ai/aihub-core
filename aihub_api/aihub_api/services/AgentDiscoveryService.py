@@ -5,6 +5,8 @@ from functools import reduce
 from operator import or_
 from typing import Annotated, Any
 
+from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -178,6 +180,15 @@ class AgentDiscoveryService:
             """
             Send a specific event type to a specific agent. Returns any possible stop event type.
             """
+            if thread_id is not None:
+                thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+
+                user_in_thread = user.id in [u.id for u in thread.users]
+                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                    thread.process_class, thread.process_id
+                )
+                if not (user_in_thread or thread_belongs_to_users_process):
+                    raise agent_controller.not_authorized_to_view_exception
 
             json_data: dict[str, Any] = {
                 "event_id": str(ObjectId()),

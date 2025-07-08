@@ -8,7 +8,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, Security
+from fastapi import Depends, Security, HTTPException
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -55,6 +55,8 @@ class AgentController(Controller):
     name = LocaleString(en="Agents")
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
+
+    not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: str | None = None
