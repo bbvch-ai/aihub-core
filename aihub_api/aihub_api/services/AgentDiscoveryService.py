@@ -101,7 +101,7 @@ class AgentDiscoveryService:
     def _get_agent_endpoint_names(self, agent_class: str, agent_id: str) -> tuple[str, str, str]:
         agent_class_name = snakecase(agent_class)
         agent_id_snake = snakecase(agent_id)
-        base_path = f"{self.agent_controller.route}/{agent_class_name}/{agent_id_snake}"
+        base_path = f"{self.agent_controller.base_route}/{agent_class_name}/{agent_id_snake}"
         return agent_class_name, agent_id_snake, base_path
 
     def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
