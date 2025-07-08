@@ -13,7 +13,7 @@ from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import Ev
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from nats.aio.client import Client as NATS
-from openai import BaseModel
+from pydantic import BaseModel
 from stringcase import snakecase
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
