@@ -125,6 +125,7 @@ class Api(pulumi.ComponentResource):
             web.NameValuePairArgs(name="ROLES", value=self.config.anonym_roles),
             web.NameValuePairArgs(name="OID", value=self.config.anonym_oid),
             web.NameValuePairArgs(name="AZURE_CLIENT_ID", value=self.identity.client_id),
+            *self._get_additional_env_vars(),
         ]
 
         identity = web.ManagedServiceIdentityArgs(
@@ -161,4 +162,11 @@ class Api(pulumi.ComponentResource):
             web.NameValuePairArgs(name="CLIENT_ID", value=self.config.client_id),
             web.NameValuePairArgs(name="TENANT_ID", value=self.config.tenant_id),
             web.NameValuePairArgs(name="AUTHORITY_URL", value=self.config.authority_url),
+        ]
+
+    def _get_additional_env_vars(self) -> List[web.NameValuePairArgs]:
+        """Get additional environment variables from the config's additional_env_vars dict"""
+        return [
+            web.NameValuePairArgs(name=key, value=value)
+            for key, value in self.config.additional_env_vars.items()
         ]
