@@ -14,6 +14,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 
 TOKEN_BASE = "/api/v1/tokens"
 DEFAULT_USER_ID = "1234567890"
@@ -140,7 +141,12 @@ def test_revoke_nonexistent_token(api_client):
         ),
     ],
 )
-def test_create_token_validation(api_client, invalid_request, expected_error, expected_status):
+def test_create_token_validation(
+    api_client,
+    invalid_request,
+    expected_error,
+    expected_status,
+):
     """Test token creation with invalid payload returns proper validation errors."""
     response = api_client.post(f"{TOKEN_BASE}/", json=invalid_request)
     assert response.status_code == expected_status

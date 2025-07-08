@@ -74,7 +74,6 @@ class OpenaiService:
     @staticmethod
     async def get_models_with_assistants(
         chat_models: List[ChatLLMConfig],
-        user: UserIdentity,
         nc: NATS,
         t: LocaleHandler,
         exclude_webui_agents: bool,
@@ -85,18 +84,18 @@ class OpenaiService:
         """
         chat_models = [ModelDetails(id=model.name) for model in chat_models]
         agent_dtos = await AgentService.discover_agents(nc, t)
-        agent_dtos = [
-            agent_dto
-            for agent_dto in agent_dtos
-            if (agent_dto.is_conversational and user.has_access_to_agent(agent_dto.agent_class, agent_dto.agent_id))
-        ]
 
         # Ensures we have no recursive webui agent discovery
         if exclude_webui_agents:
             agent_dtos = [agent_dto for agent_dto in agent_dtos if agent_dto.agent_class != "WebuiAgent"]
 
         assistants = [
-            ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
+            ModelDetails(
+                id=f"{agent_dto.agent_class}/{agent_dto.agent_id}",
+                object="assistant",
+                agent_class=agent_dto.agent_class,
+                agent_id=agent_dto.agent_id,
+            )
             for agent_dto in agent_dtos
         ]
         return ModelResponse(data=[*chat_models, *assistants])
@@ -116,7 +115,6 @@ class OpenaiService:
     async def get_model_with_assistants(
         chat_models: List[ChatLLMConfig],
         model_name: str,
-        user: UserIdentity,
         nc: NATS,
         t: LocaleHandler,
     ) -> ModelDetails:
@@ -130,11 +128,16 @@ class OpenaiService:
             pass
         agent_class, agent_id = model_name.split("/")
         agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
+
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
-        if not user.has_access_to_agent(agent_class, agent_id):
-            raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-        return ModelDetails(id=f"{agent_dto.agent_class}/{agent_dto.agent_id}", object="assistant")
+
+        return ModelDetails(
+            id=f"{agent_dto.agent_class}/{agent_dto.agent_id}",
+            object="assistant",
+            agent_class=agent_dto.agent_class,
+            agent_id=agent_dto.agent_id,
+        )
 
     @staticmethod
     def get_embeddings(
@@ -220,9 +223,6 @@ class OpenaiService:
             return await OpenaiService.chat_completion(chat_models, model_name, chat_completion_request)
 
         agent_class, agent_id = model_name.split("/")
-
-        if not user.has_access_to_agent(agent_class, agent_id):
-            raise HTTPException(status_code=403, detail="User does not have access to this agent.")
 
         agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
 

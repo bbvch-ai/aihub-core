@@ -15,6 +15,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLM
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"

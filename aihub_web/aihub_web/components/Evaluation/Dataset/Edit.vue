@@ -69,7 +69,7 @@
         <Button
           type="button"
           :label="t('evaluation.dataset.add_button')"
-          icon="pi pi-search"
+          icon="pi pi-plus"
           :disabled="!question || !answer"
           @click="add"
         />
@@ -93,10 +93,10 @@ const emit = defineEmits<{
   'update:modelValue': [Dataset]
 }>()
 
-const { cloned: dataset } = useCloned<Dataset>(
-  () => props.modelValue,
-  { deep: true },
-)
+const dataset = ref<Dataset | DatasetCreate>(props.modelValue)
+watch(() => props.modelValue, (newValue: Dataset | DatasetCreate) => {
+  dataset.value = newValue
+}, { deep: true })
 
 const question = ref('')
 const answer = ref('')

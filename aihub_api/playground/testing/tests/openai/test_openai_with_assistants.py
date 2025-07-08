@@ -1,4 +1,5 @@
 import json
+
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
@@ -12,6 +13,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"

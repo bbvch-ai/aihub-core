@@ -14,6 +14,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"

@@ -16,10 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { LlmCostEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
+import type { LlmCostEvent, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerEvent & { event: LlmCostEvent }
+  event: WsServerEventReadable & { event: LlmCostEvent }
   thread: ThreadDto
 }>()
 </script>

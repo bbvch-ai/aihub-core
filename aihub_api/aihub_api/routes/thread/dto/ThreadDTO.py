@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
-from aihub_api.routes.user.dto.UserDTO import UserDTO
+from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +16,15 @@ class ThreadDTO(BaseModel):
     # Basic thread information
     id: Annotated[str, Field(description="The thread ID")]
     name: Annotated[str, Field(description="User given name of thread")]
-    users: Annotated[List[UserDTO], Field(description="List of users in thread")]
+    users: Annotated[List[MinimalUserDTO], Field(description="List of users in thread")]
     agents: Annotated[List[MinimalAgentDTO], Field(description="List of agents initially associated with thread")]
     created_at: Annotated[str, Field(description="Date at which thread was created (ISO format string)")]
+
+    process_class: Annotated[Optional[str], Field(description="Class of the process that generated the thread")] = None
+    process_id: Annotated[Optional[str], Field(description="ID of the process that generated the thread")] = None
+    process_walkthrough_id: Annotated[
+        Optional[str], Field(description="ID of the walkthrough that generated the thread")
+    ] = None
 
     # Aggregated Event statistics for the whole thread
     num_events: Annotated[int, Field(description="Total number of events in the thread")] = 0

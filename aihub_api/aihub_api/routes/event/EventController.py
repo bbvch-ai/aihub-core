@@ -1,6 +1,7 @@
 import logging
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -20,6 +21,7 @@ from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
 from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
 from ...sockets.sender.WebSocketSender import WebSocketSender
+from ..thread.ThreadService import ThreadService
 from .dto.EventTimeseries import EventTimeseries
 from .EventService import EventService
 
@@ -44,43 +46,18 @@ class EventController(Controller):
     description = LocaleString(en="Inspect events in the system")
     icon = "mdi:apache-kafka"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/events", is_admin_only=True):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
-
-    def get_events(self, path: str = "/") -> "EventController":
-        @self.router.get(path, tags=self.tags)
-        async def get_events(
-            thread_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-            display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-            event_class: Annotated[str, Query()] = None,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
-        ) -> List[WSServerEvent]:
-            """
-            Returns all persisted events visible to the authenticated user.
-            Useful for clients who want a snapshot of what has happened so far.
-            """
-            if display_id is not None and thread_id is None:
-                raise HTTPException(
-                    status_code=400, detail="If display_id is provided, thread_id must also be provided."
-                )
-            return EventService.get_user_events(
-                user.id,
-                t.locale,
-                str_to_object_id(thread_id) if thread_id else None,
-                str_to_object_id(display_id) if display_id else None,
-                event_class,
-            )
-
-        return self
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/events", additionally_required_permission: Optional[str] = None
+    ):
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_events_in_thread(self, path: str = "/threads/{thread_id}") -> "EventController":
         @self.router.get(path, tags=self.tags)
         async def get_events_in_thread(
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
         ) -> List[WSServerEvent]:
             """
             Returns all events in a given thread
@@ -89,11 +66,22 @@ class EventController(Controller):
                 raise HTTPException(
                     status_code=400, detail="If display_id is provided, thread_id must also be provided."
                 )
-            return EventService.get_user_events(
-                user.id,
-                t.locale,
-                str_to_object_id(thread_id),
-                str_to_object_id(display_id) if display_id else None,
+
+            thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
+            user_in_thread = user.id in [u.id for u in thread.users]
+            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread.process_class, thread.process_id
+            )
+            if not (user_in_thread or thread_belongs_to_users_process):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have access to this thread. Please contact the process owner.",
+                )
+
+            return EventService.get_events_in_thread(
+                locale=t.locale,
+                thread_id=str_to_object_id(thread_id),
+                display_id=str_to_object_id(display_id) if display_id else None,
             )
 
         return self
@@ -152,6 +140,8 @@ class EventController(Controller):
     def get_event_timeseries(self, route: str = "/timeseries/{time_range}") -> "EventController":
         @self.router.get(route, tags=self.tags)
         async def get_event_timeseries(
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             time_range: Annotated[
                 TimeRange,
                 Path(
@@ -160,10 +150,9 @@ class EventController(Controller):
                 ),
             ],
             thread_id: Annotated[str, Query()] = None,
-            agent_id: Annotated[str, Query(title="Agent ID")] = None,
             agent_class: Annotated[str, Query(title="Agent Class")] = None,
+            agent_id: Annotated[str, Query(title="Agent ID")] = None,
             event_name: Annotated[str, Query(title="Event Name")] = None,
-            user: UserIdentity = Security(self.auth),
         ) -> EventTimeseries:
             """
             Retrieves time-based statistics.
@@ -173,6 +162,39 @@ class EventController(Controller):
             - 30d: 1 day resolution
             - 365d: 1 week resolution
             """
+            access_checker = AccessChecker.from_user(user)
+
+            if agent_id and not agent_class:
+                raise HTTPException(
+                    status_code=400, detail="If agent_id is provided, agent_class must also be provided."
+                )
+
+            if agent_class and agent_id:
+                if not access_checker.has_access_to_agent(agent_class, agent_id):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"User {user.id} does not have access to agent {agent_class}:{agent_id}",
+                    )
+
+            if agent_class:
+                if not access_checker.has_access_to_agent_class(agent_class):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"User {user.id} does not have access to agent class {agent_class}",
+                    )
+
+            if thread_id:
+                thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
+                user_in_thread = user.id in [u.id for u in thread.users]
+                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                    thread.process_class, thread.process_id
+                )
+                if not (user_in_thread or thread_belongs_to_users_process):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You do not have access to this thread. Please contact the process owner.",
+                    )
+
             return EventService.get_event_timeseries(
                 time_range, agent_id=agent_id, agent_class=agent_class, event_name=event_name, thread_id=thread_id
             )

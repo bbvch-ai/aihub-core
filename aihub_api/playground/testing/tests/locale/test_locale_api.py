@@ -11,6 +11,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
 BASE_URL = "http://test"
 API_ENDPOINT = "/api/v1/i18n/my-locale"

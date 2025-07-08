@@ -9,7 +9,6 @@ from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity, TimeRange
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -44,10 +43,9 @@ class EventService:
     """
 
     @staticmethod
-    def get_user_events(
-        user_oid: str,
+    def get_events_in_thread(
+        thread_id: ObjectId,
         locale: Optional[str] = None,
-        thread_id: Optional[ObjectId] = None,
         display_id: Optional[ObjectId] = None,
         event_class: Optional[str] = None,
     ) -> List[WSServerEvent]:
@@ -57,16 +55,11 @@ class EventService:
         2. Querying the persistence layer for display events in those threads.
         3. Converting them into `WSServerEvent`s for consistent client-facing output.
         """
-        if thread_id is None:
-            user_threads = ThreadEntity.get_threads_by_user(user_oid)
-            thread_ids = [str(thread.id) for thread in user_threads]
-            persisted_events = PersistedAgentEventEntity.display_events_for_threads(thread_ids, event_name=event_class)
-        else:
-            persisted_events = PersistedAgentEventEntity.display_events_for_thread(
-                thread_id=str(thread_id),
-                display_id=str(display_id) if display_id is not None else None,
-                event_name=event_class,
-            )
+        persisted_events = PersistedAgentEventEntity.display_events_for_thread(
+            thread_id=str(thread_id),
+            display_id=str(display_id) if display_id is not None else None,
+            event_name=event_class,
+        )
         return [WSServerEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod

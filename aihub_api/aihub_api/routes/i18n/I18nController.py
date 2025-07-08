@@ -1,3 +1,5 @@
+from typing import Annotated, Optional
+
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -19,50 +21,22 @@ class I18nController(Controller):
     preferences. The `I18nController` exposes endpoints that:
     - Detect the user’s current locale (e.g., from headers, user profile, or query parameters).
     - Return test strings in the detected language, verifying that translations and locale handling are working properly.
-
-    ### Endpoint
-    - `GET /i18n/my-locale`: Returns a `LocaleResponse` object containing the user's detected language and
-      a test string localized in that language.
-
-    ### Dependencies
-    - `use_locale`: A dependency that sets up and returns a `LocaleHandler` based on the request.
-    - `auth`: An authentication dependency determining the user. If none is provided, no authentication applies.
-
-    ### Example
-    ```python
-    app = FastAPI()
-    I18nController()
-        .get_my_locale()
-        .mount(app)
-    ```
-
-    When called, `GET /i18n/my-locale` returns something like `{"lang": "en", "test": "This is a test."}`
-    depending on the user’s locale.
     """
 
     name = LocaleString(en="Localization")
     description = LocaleString(en="Localization service")
     icon = "mdi:language"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/i18n", is_admin_only=True):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/i18n", additionally_required_permission: Optional[str] = None
+    ):
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_my_locale(self, route: str = "/my-locale") -> "I18nController":
-        @self.router.get(
-            route,
-            summary="Get User Locale",
-            description=(
-                "Retrieves the current locale setting for the user's session and returns a test string "
-                "in the detected language."
-            ),
-            responses={
-                200: {"description": "Successful response with user locale information"},
-            },
-            tags=self.tags,
-        )
+        @self.router.get(route, tags=self.tags)
         async def get_locale(
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> LocaleResponse:
             """
             Return the user's current locale and a localized test string.

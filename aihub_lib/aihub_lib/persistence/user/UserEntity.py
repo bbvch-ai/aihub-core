@@ -55,8 +55,8 @@ class UserEntity(Document):
     favorite_modules = ListField(StringField(), default=list)
     dashboard = EmbeddedDocumentField(Dashboard)
 
-    @classmethod
-    def _create_default_dashboard(cls) -> Dashboard:
+    @staticmethod
+    def create_default_dashboard() -> Dashboard:
         return Dashboard(
             minRow=1,
             margin=24,
@@ -100,7 +100,7 @@ class UserEntity(Document):
     def create_user(
         cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None
     ) -> "UserEntity":
-        default_dashboard = cls._create_default_dashboard()
+        default_dashboard = cls.create_default_dashboard()
         user = cls(
             id=oid,
             name=name,
@@ -138,3 +138,13 @@ class UserEntity(Document):
     @classmethod
     def by_email(cls, email: str) -> "UserEntity":
         return cls.objects.get(email=email)
+
+    @classmethod
+    def count_users(cls) -> int:
+        """Count the total number of users."""
+        return cls.objects.count()
+
+    @classmethod
+    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> List["UserEntity"]:
+        """Get a paginated list of users, ordered by name."""
+        return cls.objects.order_by("name").skip(skip).limit(limit)

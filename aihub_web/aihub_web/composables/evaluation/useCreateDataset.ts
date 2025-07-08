@@ -3,7 +3,7 @@ import { createDataset as createDatasetCall, type DatasetCreate } from '@core/sd
 export const useCreateDataset = () => {
   const queryCache = useQueryCache()
 
-  const { mutate: createDataset } = useMutation({
+  const { mutateAsync: createDataset } = useMutation({
     mutation: async ({ dataset }: { dataset: DatasetCreate }) => {
       await createDatasetCall({
         composable: '$fetch',

@@ -88,16 +88,16 @@ class ThreadEntity(Document):
 
     @classmethod
     def get_paginated_threads_by_agent(
-        cls, agent_class: str, agent_id: str, skip: int = 0, limit: int = 20
+        cls, agent_class: str, agent_id: str, user_id: Optional[str] = None, skip: int = 0, limit: int = 20
     ) -> List["ThreadEntity"]:
-        """Get a paginated list of threads that include the specified agent."""
-        return (
-            cls.objects()
-            .filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
-            .order_by("-created_at")
-            .skip(skip)
-            .limit(limit)
-        )
+        """
+        Get a paginated list of threads that include the specified agent.
+        If a user_id is provided, it also filters for threads containing that user.
+        """
+        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
+        if user_id:
+            query = query.filter(users__user_id=user_id)
+        return query.order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod
     def get_threads_by_users(cls, user_ids: List[str]) -> List["ThreadEntity"]:

@@ -24,10 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ThreadDto, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
+import type { ThreadDto, UserMessageEvent, WsServerEventReadable } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: UserMessageEvent }
+  event: WsServerEventReadable & { event: UserMessageEvent }
   thread: ThreadDto
 }>()
 

@@ -24,12 +24,12 @@ import type {
   ChatMessageInput,
   MinimalAgentDto,
   ThreadDto,
-  UserDto,
-  WsServerEvent,
+  MinimalUserDto,
+  WsServerEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: WsServerEvent[]
+  events: WsServerEventReadable[]
   thread: ThreadDto
 }>()
 
@@ -46,7 +46,7 @@ type ExtendedChatMessage = ChatMessageInput & {
   displayId: string
 }
 
-const user = computed<UserDto>(() => props.thread.users.at(-1)!)
+const user = computed<MinimalUserDto>(() => props.thread.users.at(-1)!)
 
 const getAgentDto = (agent_class: string, agent_id: string) =>
   props.thread.participating_agents.find(
@@ -55,13 +55,13 @@ const getAgentDto = (agent_class: string, agent_id: string) =>
   )
 
 const toDisplay = (msg: ExtendedChatMessage) => {
-  router.push(localeRoute(`/admin/threads/${props.thread.id}/display/${msg.displayId}`))
+  router.push(localeRoute(`/service/threads/${props.thread.id}/display/${msg.displayId}`))
 }
 
 const createUserMessage = (
   blocks: ChatMessageInput['blocks'],
   timestamp: number,
-  event: WsServerEvent,
+  event: WsServerEventReadable,
 ): ExtendedChatMessage => ({
   role: 'user',
   blocks,
@@ -74,7 +74,7 @@ const createUserMessage = (
 
 const createAssistantMessage = (
   text: string,
-  event: WsServerEvent,
+  event: WsServerEventReadable,
   timestamp: number,
 ): ExtendedChatMessage => {
   const agentDto = getAgentDto(event.agent_class, event.agent_id)

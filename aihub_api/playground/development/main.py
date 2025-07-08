@@ -10,6 +10,7 @@ from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.routes.role.RoleController import RoleController
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
@@ -70,9 +71,9 @@ async def main():
     runner.mount(
         HealthController(auth=auth).get_health(),
         SuiteController(auth=auth).get_suite(),
-        UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
+        UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
-        EventController(auth=auth).ws().get_events().get_event_timeseries(),
+        EventController(auth=auth).ws().get_events_in_thread().get_event_timeseries(),
         ThreadController(auth=auth)
         .get_user_threads()
         .create_thread()
@@ -93,6 +94,7 @@ async def main():
             stop_event_class=LLMStopEvent,
         ),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
+        RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(
             auth=auth,
             embedding_models=[

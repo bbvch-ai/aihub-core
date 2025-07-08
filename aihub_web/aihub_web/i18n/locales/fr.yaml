@@ -7,9 +7,41 @@ languages:
   it: "Italien"
   fr: "Français"
 
+http_error:
+  code:
+    # 4xx Client Errors
+    400: "Requête invalide. Veuillez vérifier l'adresse et réessayer."
+    401: "Veuillez vous connecter pour accéder à cette page."
+    403: "Vous n'avez pas la permission de voir ceci."
+    404: "Désolé, nous n'avons pas pu trouver cette page."
+    405: "Cette action n'est pas autorisée ici."
+    408: "La requête a expiré. Veuillez réessayer."
+    429: "Trop de requêtes. Veuillez patienter un instant."
+
+    # 5xx Server Errors
+    500: "Une erreur s'est produite sur nos serveurs."
+    502: "Une erreur de serveur s'est produite. Veuillez réessayer."
+    503: "Notre service est temporairement indisponible."
+    504: "Un serveur ne répond pas. Veuillez réessayer."
+
 user:
+  title: "Utilisateurs"
   logout: "Déconnexion"
   language: "Langue"
+  list:
+    name: "Nom"
+    email: "E-mail"
+    avatar: "Avatar"
+    roles: "Rôles"
+    last_accessed: "Dernier accès"
+
+time_ago:
+  last_hour: "Dernière heure"
+  last_day: "Dernier jour"
+  last_week: "La semaine dernière"
+  last_month: "Le mois dernier"
+  last_year: "L''année dernière"
+  long_time_ago: "Il y a longtemps"
 
 thread:
   title: "Interactions"
@@ -205,19 +237,19 @@ dashboard:
   create_widget: "Créer un nouveau widget"
   events:
     StartEvent:
-      label: 'Exécutions d''agents démarrées'
+      label: "Exécutions d'agents démarrées"
     StopEvent:
-      label: 'Exécutions réussies'
+      label: "Exécutions réussies"
     UserMessageEvent:
-      label: 'Messages de chat utilisateur'
+      label: "Messages de chat utilisateur"
     ExceptionEvent:
-      label: 'Erreurs'
+      label: "Erreurs"
     HumanInTheLoopRequestEvent:
-      label: 'Humain dans la boucle'
+      label: "Humain dans la boucle"
     BotInTheLoopRequestEvent:
-      label: 'Demander dans Slack/Teams'
+      label: "Demander dans Slack/Teams"
     AgentInTheLoopRequestEvent:
-      label: 'Tâches déléguées'
+      label: "Tâches déléguées"
 
 evaluation:
   dataset:
@@ -274,3 +306,28 @@ evaluation:
       conciseness: "Concision"
       correctness: "Exactitude"
       completeness: "Complétude"
+
+role:
+  title: "Rôles d'accès"
+  name: "Nom"
+  description: "Description"
+  edit: "Modifier le rôle"
+  create_new: "Nouveau rôle"
+  add_access_role: "Ajouter un rôle d'accès"
+  add_button: "Ajouter"
+  is_new: "Nouveau"
+  save_button: "Enregistrer"
+  access_rules: "Règles d'accès"
+  create_dialog:
+    description: "Créez un nouveau rôle avec des règles d'accès. Pour attribuer le nouveau rôle aux utilisateurs, veuillez utiliser votre AD."
+  remove_dialog:
+    confirm: "Êtes-vous sûr?"
+    explanation: "Si vous supprimez ce rôle, les utilisateurs risquent de perdre l'accès à certaines fonctionnalités du hub d'IA."
+    cancel: "Annuler"
+    proceed: "Supprimer quand même"
+  role_deleted:
+    summary: "Rôle supprimé"
+    detail: "Le rôle a été supprimé. Les utilisateurs avec ce rôle peuvent avoir perdu l'accès à certaines fonctionnalités."
+  role_saved:
+    summary: "Rôle enregistré"
+    detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."

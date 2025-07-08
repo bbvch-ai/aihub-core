@@ -59,9 +59,3 @@ class OpenWebuiAuthHandler(TokenAuthHandler):
             raise HTTPException(status_code=401, detail="User name and email hash validation failed.")
 
         return await self._identity_provider.get_user_identity_by_email(open_webui_user_email)
-
-    async def authenticate_token(self, token_str: str) -> UserIdentity:
-        """
-        Authenticates a user using a bearer token string directly (e.g., for WebSockets).
-        """
-        raise ValueError("authenticate_token() should not be called for WebSockets.")
