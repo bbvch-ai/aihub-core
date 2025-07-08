@@ -77,7 +77,7 @@ class AgentDiscoveryService:
                 logger.debug("Starting agent discovery")
                 await self._discover_and_register_agents()
             except Exception as e:
-                logger.error(f"Error in agent discovery: {e}")
+                logger.exception(f"Error in agent discovery: {e}")
 
             await asyncio.sleep(self.discovery_interval)
 
