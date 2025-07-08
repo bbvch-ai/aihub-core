@@ -86,10 +86,16 @@ def combine_nodes_in_order(
             content = n.content
 
             if n.content_type == NODE_CONTENT_TYPE_FIGURE:
-                image_path = content.split("](")[-1][:-1]
-                container, blob_path = image_path.split("/", 1)
-                image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
-                context_blocks.append(ImageBlock(url=image_url))
+                if "](" in content:
+                    try:
+                        image_path = content.split("](")[-1][:-1]
+                        container, blob_path = image_path.split("/", 1)
+                        image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
+                        context_blocks.append(ImageBlock(url=image_url))
+                    except (ValueError, IndexError):
+                        context_blocks.append(TextBlock(text=(f"{content}\n\n")))
+                else:
+                    context_blocks.append(TextBlock(text=(f"{content}\n\n")))
             else:
                 context_blocks.append(TextBlock(text=(f"{content}\n\n")))
 
