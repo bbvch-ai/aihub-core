@@ -1,27 +1,25 @@
 import asyncio
 import logging
-
 import time
-from typing import List, Set, Tuple, Union, Type, Annotated, Dict, Any
+from typing import Annotated, Any, Dict, List, Set, Tuple, Type, Union
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.nats.events import BaseEvent, ExceptionEvent
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from bson import ObjectId
-from fastapi import FastAPI, Depends, Body, Query, HTTPException
+from fastapi import Body, Depends, FastAPI, HTTPException, Query
+from nats.aio.client import Client as NATS
 from openai import BaseModel
 from stringcase import snakecase
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.events import BaseEvent, ExceptionEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
-from nats.aio.client import Client as NATS
-
 from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +87,6 @@ class AgentDiscoveryService:
     def _register_agent_endpoints(
         self, agent_class: str, agent_id: str, start_events: List[EventSpecs], stop_events: List[EventSpecs]
     ):
-
         agent_class_name = snakecase(agent_class)
         agent_id_snake = snakecase(agent_id)
 
