@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Optional
+from typing import Annotated, ClassVar
 
 from pydantic import Field, model_validator
 
@@ -26,10 +26,8 @@ class DisplayEvent(BaseEvent):
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.display_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.display_event.description")
 
-    display_name: Annotated[Optional[LocaleString], Field(description="Display name for the event")] = None
-    display_description: Annotated[Optional[LocaleString], Field(description="Display description for the event")] = (
-        None
-    )
+    display_name: Annotated[LocaleString | None, Field(description="Display name for the event")] = None
+    display_description: Annotated[LocaleString | None, Field(description="Display description for the event")] = None
 
     @model_validator(mode="after")
     def set_default_values(self) -> "DisplayEvent":

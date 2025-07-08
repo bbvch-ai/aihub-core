@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -10,7 +9,7 @@ from aihub_bot.runners.BotRunner import BotRunner
 @dataclass
 class BotServiceResponse:
     path: str
-    payload: Dict
+    payload: dict
 
 
 class BotTestRunner(BotRunner):
@@ -31,7 +30,7 @@ class BotTestRunner(BotRunner):
             summary="Catch-all service endpoint for bot responses",
         )
 
-        self.responses: List[BotServiceResponse] = []
+        self.responses: list[BotServiceResponse] = []
 
     async def service_endpoint(self, request: Request, full_path: str):
         """

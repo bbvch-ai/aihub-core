@@ -15,12 +15,12 @@ def precondition():
 
     ### Example
     ```python
-    def ensure_enough_events(parallel_events: List[ParallelEvent], config: PreconditionAgentConfig) -> bool:
+    def ensure_enough_events(parallel_events: list[ParallelEvent], config: PreconditionAgentConfig) -> bool:
         return len(parallel_events) == config.number_of_events
 
     class PreconditionAgent(Agent):
         @step(precondition=ensure_enough_events)
-        async def stop_step(self, _: List[ParallelEvent]):
+        async def stop_step(self, _: list[ParallelEvent]):
             # Implementation...
             pass
     ```

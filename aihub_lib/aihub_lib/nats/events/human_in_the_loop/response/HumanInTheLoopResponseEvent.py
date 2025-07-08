@@ -26,6 +26,7 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
     request_event: Annotated[
         HumanInTheLoopRequestEvent,
         Field(
-            description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+            description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context "
+            "for where and why the workflow paused.",
         ),
     ]

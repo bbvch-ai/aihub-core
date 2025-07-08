@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import Any, ClassVar, Dict, Type
+from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
@@ -32,7 +32,7 @@ class Topic(BaseModel, abc.ABC):
       affecting others.
     """
 
-    _topic_registry: ClassVar[Dict[str, Type["Topic"]]] = {}
+    _topic_registry: ClassVar[dict[str, type["Topic"]]] = {}
 
     @property
     @abc.abstractmethod

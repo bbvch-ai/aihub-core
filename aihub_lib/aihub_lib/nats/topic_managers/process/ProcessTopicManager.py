@@ -37,7 +37,10 @@ class ProcessTopicManager(TopicManager):
         event_id: str,
     ) -> str:
         """Returns a subject pinpointing a specific event in a given process run."""
-        return f"{self.PROCESS_TOPIC}.{process_class}.{process_id}.{process_walkthrough_id}.{event_type}.{event_name}.{event_id}"
+        return (
+            f"{self.PROCESS_TOPIC}.{process_class}.{process_id}."
+            f"{process_walkthrough_id}.{event_type}.{event_name}.{event_id}"
+        )
 
     def get_subject_for_all_events_in_process(self) -> str:
         """Returns a subject pattern matching all events from all processs."""

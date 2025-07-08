@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Annotated, List, Optional, Tuple
+from typing import Annotated
 
 import mongoengine.errors
 from bson import ObjectId
@@ -41,7 +41,7 @@ class StreamingResources:
     stop_signal: asyncio.Event
     subscriber: NCSubscriber
     chunk_queue: asyncio.Queue
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = (
+    stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None = (
         None  # Added field to store the final StopEvent
     )
 
@@ -50,10 +50,10 @@ class StreamingResources:
 class JsonResources:
     stop_signal: asyncio.Event
     subscriber: NCSubscriber
-    chunk_events: List[ChunkEvent]
+    chunk_events: list[ChunkEvent]
     costs: LLMCosts
     model_name: str
-    stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent] = (
+    stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None = (
         None  # Added field to store the final StopEvent
     )
 
@@ -74,15 +74,15 @@ class ChatService:
         user: UserIdentity,
         agent_class: str,
         agent_id: str,
-        messages: List[ChatMessage],
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
-        files: Optional[List[UserUploadedFile]] = None,
+        messages: list[ChatMessage],
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
+        files: list[UserUploadedFile] | None = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
-        locale: Optional[str] = None,
-    ) -> Tuple[ExternalAgentEvent, AgentThreadTopicManager]:
+        locale: str | None = None,
+    ) -> tuple[ExternalAgentEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
@@ -159,13 +159,13 @@ class ChatService:
         user: UserIdentity,
         agent_class: str,
         agent_id: str,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
-        files: Optional[List[UserUploadedFile]] = None,
-        locale: Optional[str] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
+        files: list[UserUploadedFile] | None = None,
+        locale: str | None = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
@@ -232,13 +232,13 @@ class ChatService:
         user: UserIdentity,
         agent_class: str,
         agent_id: str,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
-        files: Optional[List[UserUploadedFile]] = None,
-        locale: Optional[str] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
+        files: list[UserUploadedFile] | None = None,
+        locale: str | None = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
@@ -269,7 +269,7 @@ class ChatService:
         external_event_distributor: ExternalAgentEventDistributor,
     ):
         stop_signal = asyncio.Event()
-        chunk_events: List[ChunkEvent] = []
+        chunk_events: list[ChunkEvent] = []
         costs = LLMCosts.from_zero()
         model_name = f"{agent_class}/{agent_id}"
 
@@ -322,7 +322,7 @@ class ChatService:
 
     @staticmethod
     def build_json_response_content(
-        chunk_events: List[ChunkEvent], stop_event: Optional[StopEvent | HumanInTheLoopRequestEvent]
+        chunk_events: list[ChunkEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
     ) -> ChatContent:
         """
         Construct a JSON response from collected chunk events.

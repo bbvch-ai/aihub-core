@@ -1,6 +1,6 @@
 import json
-from datetime import datetime, timezone
-from typing import Annotated, Dict, Optional
+from datetime import UTC, datetime
+from typing import Annotated
 
 from llama_index.core.schema import BaseNode, NodeWithScore, TextNode
 from openinference.semconv.trace import DocumentAttributes
@@ -57,30 +57,30 @@ class IngestedNode(IngestedBase):
     )
     document_id: Annotated[str, Field(description="ID of original ref_doc.")]
 
-    start_char_idx: Annotated[Optional[int], Field(description="The start character index of the Node.")] = None
-    end_char_idx: Annotated[Optional[int], Field(description="The end character index of the Node.")] = None
+    start_char_idx: Annotated[int | None, Field(description="The start character index of the Node.")] = None
+    end_char_idx: Annotated[int | None, Field(description="The end character index of the Node.")] = None
 
-    index: Annotated[Optional[int], Field(description="Index counting position of node in document")] = None
-    section_start_line: Annotated[Optional[int], Field(description="Start line of the node in document")] = None
-    section_end_line: Annotated[Optional[int], Field(description="End line of the node in document")] = None
+    index: Annotated[int | None, Field(description="Index counting position of node in document")] = None
+    section_start_line: Annotated[int | None, Field(description="Start line of the node in document")] = None
+    section_end_line: Annotated[int | None, Field(description="End line of the node in document")] = None
 
-    h1: Annotated[Optional[str], Field(description="H1 of the node in document")] = None
-    h2: Annotated[Optional[str], Field(description="H2 of the node in document")] = None
-    h3: Annotated[Optional[str], Field(description="H3 of the node in document")] = None
-    h4: Annotated[Optional[str], Field(description="H4 of the node in document")] = None
-    h5: Annotated[Optional[str], Field(description="H5 of the node in document")] = None
-    h6: Annotated[Optional[str], Field(description="H6 of the node in document")] = None
+    h1: Annotated[str | None, Field(description="H1 of the node in document")] = None
+    h2: Annotated[str | None, Field(description="H2 of the node in document")] = None
+    h3: Annotated[str | None, Field(description="H3 of the node in document")] = None
+    h4: Annotated[str | None, Field(description="H4 of the node in document")] = None
+    h5: Annotated[str | None, Field(description="H5 of the node in document")] = None
+    h6: Annotated[str | None, Field(description="H6 of the node in document")] = None
 
-    heading_level: Annotated[
-        Optional[HeadingLevelValue], Field(description="Heading level of the node in document")
-    ] = None
+    heading_level: Annotated[HeadingLevelValue | None, Field(description="Heading level of the node in document")] = (
+        None
+    )
 
-    score: Annotated[Optional[float], Field(description="Score representing the relevance of the document.")] = None
+    score: Annotated[float | None, Field(description="Score representing the relevance of the document.")] = None
 
     @classmethod
     def from_llama_index_node(cls, node: TextNode | BaseNode):
         def to_iso(timestamp: int):
-            dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
 
         document_id = node.ref_doc_id or node.metadata.get(
@@ -125,7 +125,7 @@ class IngestedNode(IngestedBase):
         node.score = node_with_score.score
         return node
 
-    def to_semantic_convention(self, key: str, i: int) -> Dict[str, str]:
+    def to_semantic_convention(self, key: str, i: int) -> dict[str, str]:
         return {
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_ID}": self.id,
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_SCORE}": self.score,

@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -6,9 +6,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ApiConfig(BaseSettings):
     DEV_DEBUG: Annotated[bool, Field(description="Debug mode for development")] = False
-    VERSION: Annotated[Optional[str], Field(description="Version of the app")] = None
+    VERSION: Annotated[str | None, Field(description="Version of the app")] = None
 
-    FRONTEND_ORIGIN: Annotated[Optional[str], Field(description="Comma separated list of origins to allow CORS")] = None
+    FRONTEND_ORIGIN: Annotated[str | None, Field(description="Comma separated list of origins to allow CORS")] = None
 
     DB_NAME: Annotated[
         str,

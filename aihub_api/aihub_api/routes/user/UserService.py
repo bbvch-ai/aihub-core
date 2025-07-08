@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -28,7 +28,8 @@ class UserService:
 
     ### Methods
     - `get_logged_in_user`: Converts the currently authenticated user into a `UserDTO`.
-    - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID), useful for building responses that include user details.
+    - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID), useful for
+    building responses that include user details.
     """
 
     @staticmethod
@@ -62,7 +63,7 @@ class UserService:
         return await UserWithAccessDTO.from_user_entity(user_entity, runner, nc, t)
 
     @staticmethod
-    async def get_paginated_users(page: int = 1, page_size: int = 20) -> Tuple[int, List[UserDTO]]:
+    async def get_paginated_users(page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
         """
         Retrieves a paginated list of users from the local database.
         """
@@ -75,7 +76,7 @@ class UserService:
         return total, user_dtos
 
     @staticmethod
-    def get_user_dashboard(user: UserIdentity) -> Optional[DashboardDTO]:
+    def get_user_dashboard(user: UserIdentity) -> DashboardDTO | None:
         """
         Retrieves the dashboard settings for the given authenticated user.
         """

@@ -1,4 +1,4 @@
-from typing import Annotated, List, Type
+from typing import Annotated
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -15,7 +15,7 @@ class GuardResult(BaseModel):
     success: bool
 
 
-def guard_result_factory(t: LocaleHandler) -> Type[GuardResult]:
+def guard_result_factory(t: LocaleHandler) -> type[GuardResult]:
     class LocalizedGuardResult(GuardResult):
         reasoning: Annotated[str, Field(description=t("lib.guards.agent_description_guard.reason"))]
         success: Annotated[bool, Field(description=t("lib.guards.agent_description_guard.success"))]
@@ -29,7 +29,7 @@ async def agent_description_guard(
     llm: LLM,
     t: LocaleHandler,
     user_query: str,
-    messages: List[ChatMessage],
+    messages: list[ChatMessage],
 ) -> GuardResult:
     prompt = PromptTemplate(t("lib.guards.agent_description_guard.prompt"))
     history = "".join(

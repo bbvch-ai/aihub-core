@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import AssetIn, AssetKey, AutomationCondition, Output, graph_asset
 
 from aihub_pipeline.ops.document.add_metadata_to_ref_docs import add_metadata_to_ref_docs
@@ -25,8 +23,8 @@ def removed_documents_factory(key: AssetKey, data_lake_key: str | AssetKey) -> g
         description="Removes documents from the Doc Store that are no longer present in the Data Lake",
     )
     def removed_documents(
-        data_lake_files: List[DataLakeFile],
-    ) -> Output[List[RefDocDocument]]:
+        data_lake_files: list[DataLakeFile],
+    ) -> Output[list[RefDocDocument]]:
         return add_metadata_to_ref_docs(delete_removed_ref_docs_from_docstore(data_lake_files))
 
     return removed_documents

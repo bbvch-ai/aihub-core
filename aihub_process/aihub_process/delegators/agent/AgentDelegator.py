@@ -1,5 +1,6 @@
 import logging
-from typing import Annotated, Awaitable, Callable, Type
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -64,7 +65,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
     def __init__(
         self,
-        process_class: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
+        process_class: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
         process_id: Annotated[str, "Process ID"],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
@@ -110,11 +111,12 @@ class AgentDelegator(AbstractEntityDelegator):
                 self.subscriptions.append(subscription)
 
                 logger.debug(
-                    f"Subscribed to agent '{config.agent_class}' with id '{config.agent_id}' for event '{stop_event.event_name_from_class()}'"
+                    f"Subscribed to agent '{config.agent_class}' with id "
+                    f"'{config.agent_id}' for event '{stop_event.event_name_from_class()}'"
                 )
 
     def handle_process_step_input_factory(
-        self, work_event_type: Type[AgentWorkEvent], is_process_start: bool
+        self, work_event_type: type[AgentWorkEvent], is_process_start: bool
     ) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
         """
         The agent delegator must differentiate the cases in which the agent can trigger a new process walkthrough

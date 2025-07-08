@@ -1,6 +1,6 @@
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Generator
+from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from bson import ObjectId
@@ -150,7 +150,7 @@ def insert_token_document(
         email=email,
         roles=roles_list,
     )
-    expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+    expiry = datetime.now(UTC) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
         name="token-name",
         expiry_date=expiry,
@@ -232,7 +232,7 @@ def set_token_expired(token_context: dict, monkeypatch) -> None:
     """Set the token's expiry date to a past time."""
     token_doc = token_context.get("token_doc")
     if token_doc:
-        token_doc.expiry_date = datetime.now(timezone.utc) - timedelta(hours=1)
+        token_doc.expiry_date = datetime.now(UTC) - timedelta(hours=1)
         token_doc.save()
 
     # Mock handler to always raise token expired error

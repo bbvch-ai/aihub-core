@@ -1,13 +1,13 @@
 import inspect
 from types import UnionType
-from typing import Annotated, Any, List, Optional, Set, Tuple, Type, Union, get_args, get_origin
+from typing import Annotated, Any, Union, get_args, get_origin
 
 from aihub_lib.nats.events import BaseEvent
 
 
 def extract_event_classes(
     annotation: Annotated[Any, "A type annotation representing one or more event types."],
-) -> Tuple[Set[Type[BaseEvent]], bool, Optional[int]]:
+) -> tuple[set[type[BaseEvent]], bool, int | None]:
     """
     Analyze a type annotation related to events and extract:
     - The set of possible event types (classes inheriting from BaseEvent).
@@ -22,7 +22,7 @@ def extract_event_classes(
       - A single BaseEvent subclass
       - A Union of multiple BaseEvent subclasses
       - Optional types (BaseEvent | None)
-      - Containers like List[SomeEvent] or a fixed-size list type.
+      - Containers like list[SomeEvent] or a fixed-size list type.
 
     ### Returns
     A tuple `(event_classes, is_optional, required_size)` where:
@@ -38,7 +38,7 @@ def extract_event_classes(
        If the annotation is a Union or UnionType and includes `None`, we mark it as optional.
        We recursively process the non-None arguments to gather event types.
 
-    3. **Containers (List[SomeEvent]):**
+    3. **Containers (list[SomeEvent]):**
        If the annotation is a list-like, we recurse into its element type.
 
     4. **Direct Event Type:**
@@ -47,11 +47,11 @@ def extract_event_classes(
     ### Examples
     - `SomeEvent` → event_classes={SomeEvent}, is_optional=False, required_size=None
     - `SomeEvent | None` → event_classes={SomeEvent}, is_optional=True, required_size=None
-    - `List[SomeEvent]` → event_classes={SomeEvent}, is_optional=False, required_size=None
-    - `FixedList[AnotherEvent, 3]` (hypothetical) → event_classes={AnotherEvent}, is_optional=False, required_size=3
+    - `list[SomeEvent]` → event_classes={SomeEvent}, is_optional=False, required_size=None
+    - `Fixedlist[AnotherEvent, 3]` (hypothetical) → event_classes={AnotherEvent}, is_optional=False, required_size=3
     """
 
-    event_classes: Set[Type[BaseEvent]] = set()
+    event_classes: set[type[BaseEvent]] = set()
     is_optional = False
     required_size = None
     origin = get_origin(annotation)
@@ -85,8 +85,8 @@ def extract_event_classes(
                 etypes, _, _ = extract_event_classes(arg)
                 event_classes.update(etypes)
 
-    elif origin in (list, List):
-        # List[...] of events
+    elif origin in (list, list):
+        # list[...] of events
         elem_type = args[0]
         etypes, optional, _ = extract_event_classes(elem_type)
         event_classes.update(etypes)

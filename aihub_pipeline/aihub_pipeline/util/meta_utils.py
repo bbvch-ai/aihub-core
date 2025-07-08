@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -116,7 +115,7 @@ def ref_doc_metadata(ref_doc: RefDocDocument):
     }
 
 
-def nodes_metadata_table(nodes: List[TextNode]):
+def nodes_metadata_table(nodes: list[TextNode]):
     columns = [
         TableColumn("id", "string"),
         TableColumn("text", "string"),
@@ -149,7 +148,7 @@ def nodes_metadata_table(nodes: List[TextNode]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def data_lake_metadata_table(data_lake_files: List[DataLakeFile]):
+def data_lake_metadata_table(data_lake_files: list[DataLakeFile]):
     columns = [
         TableColumn("name", "string"),
         TableColumn("updated", "string"),
@@ -163,7 +162,7 @@ def data_lake_metadata_table(data_lake_files: List[DataLakeFile]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def ref_doc_metadata_table(ref_docs: List[RefDocDocument]):
+def ref_doc_metadata_table(ref_docs: list[RefDocDocument]):
     columns = [
         TableColumn("id", "string"),
         TableColumn("text", "string"),
@@ -195,7 +194,7 @@ def sharepoint_file_table_row(sharepoint_file: MinimalSharePointFile) -> dict:
     }
 
 
-def sharepoint_metadata_table(sharepoint_files: List[MinimalSharePointFile]):
+def sharepoint_metadata_table(sharepoint_files: list[MinimalSharePointFile]):
     columns = [
         TableColumn("name", "string"),
         TableColumn("modified", "string"),

@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -42,7 +41,7 @@ class WebSocketSender:
 
     @staticmethod
     @cached(TTLCache(maxsize=128, ttl=60))
-    def get_users_in_thread(thread_id: str) -> List[str]:
+    def get_users_in_thread(thread_id: str) -> list[str]:
         """Retrieves the users associated with a thread ID. This is cached."""
         thread = ThreadEntity.get_thread_by_id(thread_id)
         return [user.user_id for user in thread.users]

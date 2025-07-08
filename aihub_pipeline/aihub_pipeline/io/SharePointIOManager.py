@@ -1,5 +1,4 @@
 import asyncio
-from typing import List
 
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
@@ -12,15 +11,17 @@ class SharePointIoManager(ConfigurableIOManager):
 
     def handle_output(self, context: OutputContext, obj: bytes | SharePointFile):
         """
-        Currently we do not support writing outputs to SharePoint. We do not have access to any SharePoint API that allows writing files.
+        Currently we do not support writing outputs to SharePoint.
+        We do not have access to any SharePoint API that allows writing files.
         Our pipelines should not require writing outputs to SharePoint.
         """
         raise NotImplementedError("Writing outputs to SharePoint is not supported.")
 
-    def load_input(self, context: InputContext) -> SharePointFile | List[MinimalSharePointFile]:
+    def load_input(self, context: InputContext) -> SharePointFile | list[MinimalSharePointFile]:
         """
         Load SharePoint files based on the partition key or upstream output.
-        CAREFUL: If no partition key is provided, it will fetch all files from the upstream output but WITHOUT downloading them.
+        CAREFUL: If no partition key is provided, it will fetch all
+        files from the upstream output but WITHOUT downloading them.
         """
         if context.has_partition_key:
             return self.sharepoint_client.download_file(context.partition_key)

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -32,7 +32,7 @@ class KnowledgeController(Controller):
         auth: AuthHandler,
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
-        additionally_required_permission: Optional[str] = None,
+        additionally_required_permission: str | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(
@@ -45,7 +45,7 @@ class KnowledgeController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_databases(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
-        ) -> List[DatabaseDTO]:
+        ) -> list[DatabaseDTO]:
             """
             Returns all available knowledge namespaces with the number of documents in each.
             """
@@ -109,7 +109,7 @@ class KnowledgeController(Controller):
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
-        ) -> List[IngestedNode]:
+        ) -> list[IngestedNode]:
             """
             Returns nodes for a given document.
             """
@@ -133,7 +133,7 @@ class KnowledgeController(Controller):
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
-        ) -> List[NodeSummaryDTO]:
+        ) -> list[NodeSummaryDTO]:
             """
             Returns nodes for a given document.
             """

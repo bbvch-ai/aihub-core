@@ -1,8 +1,9 @@
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated, Any, AsyncIterator, Callable, Dict, List, Optional
+from typing import Annotated, Any
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
@@ -56,7 +57,8 @@ class RunTraceCoordinator:
     ### Lifecycle
     1. **Run Start:** `trace_run_start` is called when a run begins. It creates a server span and returns
        telemetry headers that can be injected into subsequent steps for consistent correlation.
-    2. **Run Termination:** On `StopEvent` or `ExceptionEvent`, `trace_run_stop` updates the run span status and ends it.
+    2. **Run Termination:** On `StopEvent` or `ExceptionEvent`, `trace_run_stop` updates
+        the run span status and ends it.
     3. **Step Execution:** `trace_step_start` creates a child span of the run’s span. Steps’ inputs/outputs
        are recorded. On success, `trace_step_stop` is called. On error, `trace_step_error` is invoked.
 
@@ -90,7 +92,7 @@ class RunTraceCoordinator:
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
 
-    def trace_run_start(self, topic: AgentTopic, event: StartEvent) -> Dict[str, str]:
+    def trace_run_start(self, topic: AgentTopic, event: StartEvent) -> dict[str, str]:
         """
         Initiates a run-level span upon receiving a StartEvent.
 
@@ -118,7 +120,7 @@ class RunTraceCoordinator:
         ) as span:
             logger.debug(f"Tracing run start for {topic.agent_class}")
             span_context = trace.set_span_in_context(span)
-            telemetry_headers: Dict[str, str] = {}
+            telemetry_headers: dict[str, str] = {}
             inject(telemetry_headers, context=span_context)
             logger.debug(f"Tracing run start for {topic.agent_class} with headers {telemetry_headers}")
             asyncio.create_task(self._end_span_on_event(topic, span))
@@ -172,10 +174,10 @@ class RunTraceCoordinator:
     @asynccontextmanager
     async def trace_step_start(
         self,
-        telemetry_headers: Dict[str, str],
+        telemetry_headers: dict[str, str],
         topic: AgentTopic,
         step_method: Callable,
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
     ) -> AsyncIterator[Span]:
         """
         Context manager that starts a step-level child span. It:
@@ -232,7 +234,7 @@ class RunTraceCoordinator:
             finally:
                 logger.debug(f"Finished tracing step: {span_name}")
 
-    async def trace_step_stop(self, span: Span, output_events: Optional[List[BaseEvent]]):
+    async def trace_step_stop(self, span: Span, output_events: list[BaseEvent] | None):
         """
         Ends the step span. If `output_events` are present, serializes them and attaches to the span.
         If there's a `SemanticEvent`, sets semantic conventions too.

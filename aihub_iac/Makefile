@@ -10,12 +10,8 @@ typecheck:
 	@echo "Running type checks for pipelines..."
 	poetry run mypy .
 
-sort-imports:
-	@echo "Sorting imports for pipelines..."
-	poetry run isort .
-
-pr-ready: sort-imports format lint
-	@echo "Running full check (format, sort)..."
+pr-ready: format lint
+	@echo "Running full check (format, lint)..."
 
 .PHONY: mirror-image
 

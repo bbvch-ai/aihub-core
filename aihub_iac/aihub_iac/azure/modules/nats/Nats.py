@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi
 from pulumi_azure_native import containerinstance, network
 
@@ -21,7 +19,7 @@ class Nats(pulumi.ComponentResource):
 
     NATS_IP_ADDRESS = "10.0.1.4"
 
-    def __init__(self, stack: str, name: str, config: NatsConfig, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, stack: str, name: str, config: NatsConfig, opts: pulumi.ResourceOptions | None = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name

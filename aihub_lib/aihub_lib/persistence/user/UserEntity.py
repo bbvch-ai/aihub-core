@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from mongoengine import (
@@ -98,7 +97,7 @@ class UserEntity(Document):
 
     @classmethod
     def create_user(
-        cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None
+        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
     ) -> "UserEntity":
         default_dashboard = cls.create_default_dashboard()
         user = cls(
@@ -109,14 +108,14 @@ class UserEntity(Document):
             profile_image=profile_image,
             favorite_modules=[],
             dashboard=default_dashboard,
-            last_updated=datetime.now(timezone.utc),
+            last_updated=datetime.now(UTC),
         )
         user.save()
         return user
 
     @classmethod
     def ensure_user_exists(
-        cls, oid: str, name: str, email: str, roles: List[str], profile_image: Optional[str] = None
+        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
     ) -> "UserEntity":
         try:
             user = cls.objects.get(id=oid)
@@ -125,7 +124,7 @@ class UserEntity(Document):
             user.roles = roles
             user.profile_image = profile_image
 
-            user.last_updated = datetime.now(timezone.utc)
+            user.last_updated = datetime.now(UTC)
             user.save()
             return user
         except DoesNotExist:
@@ -145,6 +144,6 @@ class UserEntity(Document):
         return cls.objects.count()
 
     @classmethod
-    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> List["UserEntity"]:
+    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list["UserEntity"]:
         """Get a paginated list of users, ordered by name."""
         return cls.objects.order_by("name").skip(skip).limit(limit)

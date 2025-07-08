@@ -1,7 +1,7 @@
 import html
 import os
 from io import StringIO
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
@@ -33,10 +33,10 @@ class DocumentIntelligenceLoader(BaseReader):
     def load_data(
         self,
         file: str,
-        extra_info: Optional[Dict] = None,
-        fs: Optional[AbstractFileSystem] = None,
-        figures_directory_name: Optional[str] = None,
-    ) -> List[Document]:
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             poller = self.document_intelligence_client.begin_analyze_document(

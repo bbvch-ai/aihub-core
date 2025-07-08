@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, List
+from typing import TYPE_CHECKING, Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -21,9 +21,9 @@ class UserAccess(BaseModel):
 
 
 class Access(BaseModel):
-    services: Annotated[List[UserAccess], Field(description="List of services and access levels")] = []
-    agents: Annotated[List[UserAccess], Field(description="List of agents and access levels")] = []
-    processes: Annotated[List[UserAccess], Field(description="List of processes and access levels")] = []
+    services: Annotated[list[UserAccess], Field(description="List of services and access levels")] = []
+    agents: Annotated[list[UserAccess], Field(description="List of agents and access levels")] = []
+    processes: Annotated[list[UserAccess], Field(description="List of processes and access levels")] = []
 
 
 class UserWithAccessDTO(UserDTO):

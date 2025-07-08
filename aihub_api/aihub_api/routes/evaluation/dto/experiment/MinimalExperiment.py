@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -10,10 +10,10 @@ from aihub_api.routes.evaluation.dto.dataset.MinimalDataset import MinimalDatase
 class MinimalExperiment(BaseModel):
     id: Annotated[str, Field(description="The unique identifier of the experiment in Phoenix.")]
     name: Annotated[str, Field(description="The name of the experiment.")]
-    description: Annotated[Optional[str], Field(description="The description of the experiment.")] = None
+    description: Annotated[str | None, Field(description="The description of the experiment.")] = None
     agent: Annotated[MinimalAgentDTO, Field(description="Agent that was evaluated")]
     created_at: Annotated[
-        Optional[datetime], Field(description="Timestamp of when the experiment data was recorded or fetched.")
+        datetime | None, Field(description="Timestamp of when the experiment data was recorded or fetched.")
     ] = None
     dataset: Annotated[MinimalDataset, Field(description="The dataset associated with this experiment.")]
     locale: Annotated[str, Field(description="The locale of the experiment.")]

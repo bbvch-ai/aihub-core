@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import List, Optional
 
 from bson import ObjectId
 from mongoengine import (
@@ -30,7 +29,7 @@ class EventInfo(EmbeddedDocument):
     full_name = StringField(required=True)
     is_start_event = BooleanField(required=True)
     is_stop_event = BooleanField(required=True)
-    payload = DictField(required=True)  # Dict[str, EventPayloadField]
+    payload = DictField(required=True)  # dict[str, EventPayloadField]
 
 
 class InputEventInfo(EmbeddedDocument):
@@ -49,7 +48,7 @@ class NodeData(EmbeddedDocument):
     label = StringField(required=True)
     description = StringField()
     icon = StringField()
-    input_events = DictField(field=EmbeddedDocumentField(InputEventInfo))  # Dict[str, InputEventInfo]
+    input_events = DictField(field=EmbeddedDocumentField(InputEventInfo))  # dict[str, InputEventInfo]
     output_events = ListField(EmbeddedDocumentField(EventInfo))
     max_executions = IntField()
     stop_on_error = BooleanField()
@@ -65,7 +64,7 @@ class EdgeData(EmbeddedDocument):
     event_full_name = StringField(required=True)
     is_start_event = BooleanField(required=True)
     is_stop_event = BooleanField(required=True)
-    payload = DictField(required=True)  # Dict[str, EventPayloadField]
+    payload = DictField(required=True)  # dict[str, EventPayloadField]
 
 
 class EventSpec(EmbeddedDocument):
@@ -118,10 +117,10 @@ class AgentEntity(Document):
         agent_id: str,
         agent_config: AgentConfig,
         is_conversational: bool,
-        start_events: List[EventSpec],
-        stop_events: List[EventSpec],
+        start_events: list[EventSpec],
+        stop_events: list[EventSpec],
         network_graph: dict,
-        agent_entity_id: Optional[ObjectId] = None,
+        agent_entity_id: ObjectId | None = None,
     ) -> "AgentEntity":
         agent = cls(
             id=agent_entity_id or ObjectId(),

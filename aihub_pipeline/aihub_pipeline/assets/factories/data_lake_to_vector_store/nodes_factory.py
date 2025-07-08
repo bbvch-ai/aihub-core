@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 from llama_index.core.schema import TextNode
 
@@ -30,7 +28,7 @@ def nodes_factory(key: AssetKey, document_key: str | AssetKey, partitions: Dynam
     )
     def nodes(
         document: RefDocDocument,
-    ) -> Output[List[TextNode]]:
+    ) -> Output[list[TextNode]]:
         return insert_nodes_into_vector_store(
             embed_nodes(
                 ensure_node_default_metadata(

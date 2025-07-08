@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import Backoff, ResourceParam, RetryPolicy, op
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.schema import MetadataMode, TextNode
@@ -11,13 +9,13 @@ from pydantic_core import ValidationError
     retry_policy=RetryPolicy(max_retries=6, delay=1, backoff=Backoff.EXPONENTIAL),
 )
 def embed_nodes(
-    nodes: List[TextNode],
+    nodes: list[TextNode],
     embedding_model: ResourceParam[BaseEmbedding],
-) -> List[TextNode]:
+) -> list[TextNode]:
     """Adds vector embeddings to a list of TextNodes using the provided embedding model."""
     texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
 
-    def embed_text_batch(_texts: List[str]) -> List[List[float]]:
+    def embed_text_batch(_texts: list[str]) -> list[list[float]]:
         try:
             return embedding_model.get_text_embedding_batch(_texts)
         except ValidationError as _:

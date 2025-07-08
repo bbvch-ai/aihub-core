@@ -1,7 +1,5 @@
 import copy
-from typing import Type, TypeVar
 
-from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
@@ -19,41 +17,41 @@ class EventModelCreationService:
     )
 
     @staticmethod
-    def create_input_model(event_class: Type[BaseModel]) -> Type[BaseModel]:
+    def create_input_model(event_class: type[BaseModel]) -> type[BaseModel]:
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._input_excluded_fields, EventModelCreationService._input_suffix
         )
 
     @staticmethod
-    def create_output_model(event_class: Type[BaseModel]) -> Type[BaseModel]:
+    def create_output_model(event_class: type[BaseModel]) -> type[BaseModel]:
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._output_excluded_fields, EventModelCreationService._output_suffix
         )
 
     @staticmethod
-    def create_input_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
+    def create_input_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         event_class = EventModelCreationService.create_model_from_specs(event_specs)
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._input_excluded_fields, EventModelCreationService._input_suffix
         )
 
     @staticmethod
-    def create_output_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
+    def create_output_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         event_class = EventModelCreationService.create_model_from_specs(event_specs)
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._output_excluded_fields, EventModelCreationService._output_suffix
         )
 
     @staticmethod
-    def create_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
+    def create_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         schema = copy.deepcopy(event_specs.event_schema)
         schema["title"] = event_specs.event_name
         return SchemaConverter.build(schema)
 
     @staticmethod
     def _create_filtered_model(
-        model_name: str, source_model_class: Type[BaseModel], excluded_fields: set
-    ) -> Type[BaseModel]:
+        model_name: str, source_model_class: type[BaseModel], excluded_fields: set
+    ) -> type[BaseModel]:
         fields = {}
         for name, field_info in source_model_class.model_fields.items():
             if name not in excluded_fields:
@@ -66,7 +64,7 @@ class EventModelCreationService:
         )
 
     @staticmethod
-    def _create_model_from_class(event_class: Type[BaseModel], excluded_fields: set, suffix: str) -> Type[BaseModel]:
+    def _create_model_from_class(event_class: type[BaseModel], excluded_fields: set, suffix: str) -> type[BaseModel]:
         model_name = f"{event_class.__name__}{suffix}"
         return EventModelCreationService._create_filtered_model(
             model_name=model_name, source_model_class=event_class, excluded_fields=excluded_fields

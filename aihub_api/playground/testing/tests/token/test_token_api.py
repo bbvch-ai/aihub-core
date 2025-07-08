@@ -1,10 +1,6 @@
-import pytest
-from datetime import datetime, timezone, timedelta
-from fastapi.testclient import TestClient
-from mongoengine import connect, disconnect
+from datetime import UTC, datetime, timedelta
 
-from aihub_api.routes.token.TokenController import TokenController
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
+import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -15,6 +11,11 @@ from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from fastapi.testclient import TestClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.token.TokenController import TokenController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 TOKEN_BASE = "/api/v1/tokens"
 DEFAULT_USER_ID = "1234567890"
@@ -42,7 +43,7 @@ def api_client(mongodb):
 @pytest.fixture
 def valid_token_request():
     """Return a valid token request payload."""
-    expiry_date = datetime.now(timezone.utc) + timedelta(days=365)
+    expiry_date = datetime.now(UTC) + timedelta(days=365)
     return {"name": "Test Token", "expiry_date": expiry_date.isoformat()}
 
 
@@ -60,7 +61,7 @@ def test_create_token(api_client, valid_token_request):
 
 def test_create_token_with_past_date(api_client, valid_token_request):
     """Test creating a token with past expiry date returns validation error."""
-    valid_token_request["expiry_date"] = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    valid_token_request["expiry_date"] = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     response = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request)
     assert response.status_code == 422
     error_response = response.json()
@@ -105,7 +106,7 @@ def test_revoke_nonexistent_token(api_client):
         (
             {
                 "name": "",
-                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "expiry_date": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
             },
             "String should have at least 1 character",
             422,
@@ -113,7 +114,7 @@ def test_revoke_nonexistent_token(api_client):
         (
             {
                 "name": "   ",
-                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "expiry_date": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
             },
             "String should have at least 1 character",
             422,
@@ -121,7 +122,7 @@ def test_revoke_nonexistent_token(api_client):
         (
             {
                 "name": "x" * 101,
-                "expiry_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                "expiry_date": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
             },
             "String should have at most 100 characters",
             422,
@@ -129,7 +130,7 @@ def test_revoke_nonexistent_token(api_client):
         (
             {
                 "name": "Test Token",
-                "expiry_date": (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat(),
+                "expiry_date": (datetime.now(UTC) - timedelta(seconds=1)).isoformat(),
             },
             "Expiry date must be in the future",
             422,

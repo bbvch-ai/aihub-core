@@ -1,5 +1,4 @@
 import base64
-from typing import List
 from urllib.parse import quote, unquote
 
 from adlfs import AzureBlobFileSystem
@@ -24,7 +23,8 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
     The AzureDataLakeIOManager depends on two other resources:
     - **DataLakeClientResource**: Responsible for providing the FileSystemClient to interact with the Azure Data Lake.
-    - **DataLakeFileSystemResource**: Responsible for providing the AzureBlobFileSystem to interact with the Azure Data Lake.
+    - **DataLakeFileSystemResource**: Responsible for providing the AzureBlobFileSystem to interact with the
+    Azure Data Lake.
 
     Hence, do NOT use this IO Manager as the default io_manager with the resource key ``"io_manager"``.
     In most cases, you'll want to use it with the resource key ``"data_lake_io_manager"``.
@@ -93,7 +93,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     data_lake_client: ResourceDependency[FileSystemClient]
     data_lake_file_system: ResourceDependency[AzureBlobFileSystem]
 
-    def handle_output(self, context: OutputContext, obj: DataLakeFile | List[DataLakeFile]) -> None:
+    def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
         # Check if obj is a single DataLakeFile or a list of DataLakeFiles
         if isinstance(obj, DataLakeFile):
             data_lake_files = [obj]
@@ -133,7 +133,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
             context.log.info(f"Successfully wrote file {data_lake_file.uri} to data lake.")
 
-    def load_input(self, context: InputContext) -> DataLakeFile | List[DataLakeFile]:
+    def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:
             # If the context has a partition key, proceed as usual
             document_uri = context.partition_key

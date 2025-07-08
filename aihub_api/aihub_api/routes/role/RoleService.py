@@ -1,5 +1,3 @@
-from typing import List
-
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
 from aihub_api.routes.role.dto.CreateRoleRequest import CreateRoleRequest
@@ -19,7 +17,7 @@ class RoleService:
         return RoleResponse.from_role_entity(role)
 
     @staticmethod
-    def list_roles() -> List[RoleResponse]:
+    def list_roles() -> list[RoleResponse]:
         """Lists all roles in the database."""
         roles = RoleEntity.objects()
         return [RoleResponse.from_role_entity(role) for role in roles]

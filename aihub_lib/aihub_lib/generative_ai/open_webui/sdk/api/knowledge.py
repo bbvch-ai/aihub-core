@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from ..client import BaseClient
 from ..models.knowledge import (
@@ -48,12 +48,12 @@ class KnowledgeClient(BaseClient):
         ```
     """
 
-    async def get_knowledge_bases(self) -> List[KnowledgeUserResponse]:
+    async def get_knowledge_bases(self) -> list[KnowledgeUserResponse]:
         """Get all knowledge bases the user has read access to"""
         response = await self.get("/api/v1/knowledge/")
         return [KnowledgeUserResponse.model_validate(kb) for kb in response.json()]
 
-    async def get_writable_knowledge_bases(self) -> List[KnowledgeUserResponse]:
+    async def get_writable_knowledge_bases(self) -> list[KnowledgeUserResponse]:
         """Get all knowledge bases the user has write access to"""
         response = await self.get("/api/v1/knowledge/list")
         return [KnowledgeUserResponse.model_validate(kb) for kb in response.json()]
@@ -62,8 +62,8 @@ class KnowledgeClient(BaseClient):
         self,
         name: str,
         description: str,
-        file_ids: Optional[List[str]] = None,
-        access_control: Optional[Union[KnowledgeAccessControl, Dict[str, Any]]] = None,
+        file_ids: list[str] | None = None,
+        access_control: KnowledgeAccessControl | dict[str, Any] | None = None,
     ) -> KnowledgeResponse:
         """Create a new knowledge base"""
         # Prepare the knowledge data - file_ids is the main content
@@ -92,8 +92,8 @@ class KnowledgeClient(BaseClient):
         knowledge_id: str,
         name: str,
         description: str,
-        file_ids: Optional[List[str]] = None,
-        access_control: Optional[Union[KnowledgeAccessControl, Dict[str, Any]]] = None,
+        file_ids: list[str] | None = None,
+        access_control: KnowledgeAccessControl | dict[str, Any] | None = None,
     ) -> KnowledgeFilesResponse:
         """Update a knowledge base by ID"""
         # Get existing knowledge base to preserve data if file_ids is None
@@ -149,7 +149,7 @@ class KnowledgeClient(BaseClient):
         response = await self.post(f"/api/v1/knowledge/{knowledge_id}/reset")
         return KnowledgeResponse.model_validate(response.json())
 
-    async def add_files_batch(self, knowledge_id: str, file_ids: List[str]) -> KnowledgeFilesResponse:
+    async def add_files_batch(self, knowledge_id: str, file_ids: list[str]) -> KnowledgeFilesResponse:
         """Add multiple files to a knowledge base in a single operation"""
         form_data = [KnowledgeFileIdForm(file_id=file_id) for file_id in file_ids]
         response = await self.post(
@@ -161,10 +161,10 @@ class KnowledgeClient(BaseClient):
 
     def create_access_control(
         self,
-        read_user_ids: Optional[List[str]] = None,
-        read_group_ids: Optional[List[str]] = None,
-        write_user_ids: Optional[List[str]] = None,
-        write_group_ids: Optional[List[str]] = None,
+        read_user_ids: list[str] | None = None,
+        read_group_ids: list[str] | None = None,
+        write_user_ids: list[str] | None = None,
+        write_group_ids: list[str] | None = None,
     ) -> KnowledgeAccessControl:
         """Create a properly structured access control object for knowledge bases"""
         return KnowledgeAccessControl(

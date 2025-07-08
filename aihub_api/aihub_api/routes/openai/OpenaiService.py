@@ -3,8 +3,9 @@ import inspect
 import io
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Any, AsyncGenerator, Callable, Dict, List, Literal, Optional, Tuple
+from collections.abc import AsyncGenerator, Callable
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
@@ -63,7 +64,7 @@ class OpenaiService:
     """
 
     @staticmethod
-    def get_models(chat_models: List[ChatLLMConfig]) -> ModelResponse:
+    def get_models(chat_models: list[ChatLLMConfig]) -> ModelResponse:
         """
         Retrieve the list of available chat models.
         Returns a ModelResponse containing details of every configured chat model.
@@ -73,7 +74,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: List[ChatLLMConfig],
+        chat_models: list[ChatLLMConfig],
         nc: NATS,
         t: LocaleHandler,
         exclude_webui_agents: bool,
@@ -101,7 +102,7 @@ class OpenaiService:
         return ModelResponse(data=[*chat_models, *assistants])
 
     @staticmethod
-    def get_model(chat_models: List[ChatLLMConfig], model_name: str) -> ModelDetails:
+    def get_model(chat_models: list[ChatLLMConfig], model_name: str) -> ModelDetails:
         """
         Fetch details for a specific chat model by name.
         Scans the chat model configurations and returns the matching model's details.
@@ -113,7 +114,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_model_with_assistants(
-        chat_models: List[ChatLLMConfig],
+        chat_models: list[ChatLLMConfig],
         model_name: str,
         nc: NATS,
         t: LocaleHandler,
@@ -141,11 +142,11 @@ class OpenaiService:
 
     @staticmethod
     def get_embeddings(
-        embedding_models: List[EmbeddingLLMConfig],
+        embedding_models: list[EmbeddingLLMConfig],
         model_name: str,
-        input_text: str | List[str],
-        dimensions: Optional[int] = None,
-        encoding_format: Optional[str] = None,
+        input_text: str | list[str],
+        dimensions: int | None = None,
+        encoding_format: str | None = None,
     ) -> EmbeddingsResponse:
         """
         Generate text embeddings using the specified embedding model.
@@ -172,7 +173,7 @@ class OpenaiService:
 
     @staticmethod
     async def chat_completion(
-        chat_models: List[ChatLLMConfig],
+        chat_models: list[ChatLLMConfig],
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
     ) -> ChatCompletion | StreamingResponse:
@@ -206,7 +207,7 @@ class OpenaiService:
 
     @staticmethod
     async def chat_completion_with_assistants(
-        chat_models: List[ChatLLMConfig],
+        chat_models: list[ChatLLMConfig],
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
@@ -252,7 +253,7 @@ class OpenaiService:
         user: UserIdentity,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        locale: Optional[str] = None,
+        locale: str | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
@@ -285,7 +286,7 @@ class OpenaiService:
         return ChatCompletion(
             id=str(uuid.uuid4()),
             object="chat.completion",
-            created=int(datetime.now(timezone.utc).timestamp()),
+            created=int(datetime.now(UTC).timestamp()),
             model=resources.model_name,
             choices=[
                 JsonChoice(
@@ -313,7 +314,7 @@ class OpenaiService:
         user: UserIdentity,
         nc: NATS,
         external_event_distributor: ExternalAgentEventDistributor,
-        locale: Optional[str] = None,
+        locale: str | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
@@ -345,7 +346,7 @@ class OpenaiService:
                     chat_completion_chunk = ChatCompletionChunk(
                         id=str(uuid.uuid4()),
                         object="chat.completion.chunk",
-                        created=int(datetime.now(timezone.utc).timestamp()),
+                        created=int(datetime.now(UTC).timestamp()),
                         model=chunk_event.model_name,
                         choices=[
                             Choice(
@@ -361,7 +362,7 @@ class OpenaiService:
                     )
                     yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
                     resources.chunk_queue.task_done()
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # No new chunk yet; keep waiting
                     continue
                 except asyncio.CancelledError:
@@ -377,7 +378,7 @@ class OpenaiService:
             chat_completion_chunk = ChatCompletionChunk(
                 id=str(uuid.uuid4()),
                 object="chat.completion.chunk",
-                created=int(datetime.now(timezone.utc).timestamp()),
+                created=int(datetime.now(UTC).timestamp()),
                 model="",
                 choices=[Choice(index=0, delta=ChoiceDelta(content=content, role="assistant"), finish_reason="stop")],
                 usage=None,
@@ -391,7 +392,7 @@ class OpenaiService:
 
     @staticmethod
     async def generate_image(
-        image_models: List[AzureOpenaiImageModelConfig],
+        image_models: list[AzureOpenaiImageModelConfig],
         model_name: str,
         image_generation_request: ImageGenerationRequest,
     ) -> ImagesResponse:
@@ -411,14 +412,14 @@ class OpenaiService:
 
     @staticmethod
     async def stt(
-        stt_models: List[AzureOpenaiSTTConfig],
+        stt_models: list[AzureOpenaiSTTConfig],
         file: UploadFile,
         model_name: str,
-        language: Optional[str],
-        prompt: Optional[str],
-        response_format: Optional[str],
-        temperature: Optional[float],
-        timestamp_granularities: Optional[List[Literal["word", "segment"]]],
+        language: str | None,
+        prompt: str | None,
+        response_format: str | None,
+        temperature: float | None,
+        timestamp_granularities: list[Literal["word", "segment"]] | None,
     ) -> Transcription | TranscriptionVerbose | str:
         """
         Transcribe an audio file to text.
@@ -434,8 +435,8 @@ class OpenaiService:
 
         file_ext = file.filename.rsplit(".", 1)[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
-        audio_chunks: List[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
-        transcription_chunks: List[TranscriptionChunk] = []
+        audio_chunks: list[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
+        transcription_chunks: list[TranscriptionChunk] = []
 
         for i, audio_chunk in enumerate(audio_chunks):
             buffer = io.BytesIO()
@@ -474,7 +475,7 @@ class OpenaiService:
 
     @staticmethod
     async def tts(
-        tts_models: List[AzureOpenaiTTSConfig],
+        tts_models: list[AzureOpenaiTTSConfig],
         model_name: str,
         input_text: str,
         tts_request: TextToSpeechRequest,
@@ -496,7 +497,7 @@ class OpenaiService:
     @staticmethod
     def _extract_thread_and_display_id(
         chat_completion_request: ChatCompletionRequest,
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         thread_id = chat_completion_request.metadata.thread_id if chat_completion_request.metadata else None
         display_id = chat_completion_request.metadata.display_id if chat_completion_request.metadata else None
         return thread_id, display_id
@@ -504,19 +505,19 @@ class OpenaiService:
     @staticmethod
     def _extract_files(
         chat_completion_request: ChatCompletionRequest,
-    ) -> List[UserUploadedFile] | None:
+    ) -> list[UserUploadedFile] | None:
         return chat_completion_request.metadata.files if chat_completion_request.metadata else None
 
     @staticmethod
     async def _reconstruct_history(
         chat_completion_request: ChatCompletionRequest, thread_id: str
-    ) -> List[ChatCompletionMessageParam]:
+    ) -> list[ChatCompletionMessageParam]:
         history = await ThreadService.thread_as_message_history(thread_id)
         user_message = chat_completion_request.messages[-1]
         return history.messages + [user_message]
 
     @staticmethod
-    def _filter_kwargs(sdk_fn: Callable, fn_kwargs_model: BaseModel) -> Dict[str, Any]:
+    def _filter_kwargs(sdk_fn: Callable, fn_kwargs_model: BaseModel) -> dict[str, Any]:
         """
         Wraps an SDK client's `chat.completions.create` method, intelligently preparing
         arguments from a Pydantic model instance.
@@ -525,7 +526,7 @@ class OpenaiService:
         sdk_known_param_names = set(sdk_method_signature.parameters.keys())
         payload_dict = fn_kwargs_model.model_dump(exclude_unset=True)
 
-        sdk_call_kwargs: Dict[str, Any] = {}
+        sdk_call_kwargs: dict[str, Any] = {}
 
         for key, value in payload_dict.items():
             if key in sdk_known_param_names and key != "metadata":

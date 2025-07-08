@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -72,7 +72,7 @@ class ThreadController(Controller):
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/threads", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/threads", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
@@ -259,7 +259,8 @@ class ThreadController(Controller):
                 if not AccessChecker(list(access_rules)).has_access_to_agent(agent.agent_class, agent.agent_id):
                     raise HTTPException(
                         status_code=403,
-                        detail=f"User {add_user_dto.user_id} does not have access to agent {agent.agent_class}:{agent.agent_id}",
+                        detail=f"User {add_user_dto.user_id} does not have access "
+                        f"to agent {agent.agent_class}:{agent.agent_id}",
                     )
 
             return await ThreadService.add_user_to_thread(thread_id, add_user_dto.user_id, t=t)

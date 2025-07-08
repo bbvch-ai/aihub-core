@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -17,7 +17,7 @@ class ProcessJSSubscriber(JSSubscriber):
         topic_manager: ProcessInstanceTopicManager,
         handler: Callable[[WorkEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ):
         """Subscribe to all work events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_events_within_process_instance()
@@ -41,7 +41,7 @@ class ProcessJSSubscriber(JSSubscriber):
         topic_manager: ProcessInstanceTopicManager,
         handler: Callable[[WorkRequestEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ):
         """Subscribe to all work request events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_request_events_within_process_instance()
@@ -65,7 +65,7 @@ class ProcessJSSubscriber(JSSubscriber):
         topic_manager: ProcessInstanceTopicManager,
         handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ):
         """Subscribe to all events within a specific process instance."""
         subject = topic_manager.get_subject_for_everything_within_process_instance()

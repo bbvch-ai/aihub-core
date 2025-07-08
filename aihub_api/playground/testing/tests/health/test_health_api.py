@@ -1,7 +1,4 @@
 import pytest
-from fastapi.testclient import TestClient
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -9,6 +6,9 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.routes.health.HealthController import HealthController
+from fastapi.testclient import TestClient
+
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_ENDPOINT = "/api/v1/health"
 EXPECTED_STATUS = "ok"

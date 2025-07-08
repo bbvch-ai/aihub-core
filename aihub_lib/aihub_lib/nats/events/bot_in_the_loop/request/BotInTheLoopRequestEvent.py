@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Union
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -34,8 +34,9 @@ class BotInTheLoopRequestEvent(ControlEvent):
         str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
     ]
     topic: Annotated[
-        Union[PartialAgentTopic, AgentTopic],
+        PartialAgentTopic | AgentTopic,
         Field(
-            description="A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+            description="A partial or full agent topic specifying the event type and name of the expected response "
+            "event, ensuring the correct workflow step resumes once the human replies.",
         ),
     ]

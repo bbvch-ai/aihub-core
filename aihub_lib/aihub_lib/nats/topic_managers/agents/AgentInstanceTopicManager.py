@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Tuple
+from typing import Annotated
 
 from typing_extensions import override
 
@@ -28,7 +28,8 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
 
     ### Use Cases
     - **Dedicated Monitoring:** A dashboard might show all events from a single critical agent instance.
-    - **Per-Agent Control:** An orchestrator that needs to send requests or receive responses only from a known agent instance.
+    - **Per-Agent Control:** An orchestrator that needs to send requests
+      or receive responses only from a known agent instance.
     """
 
     def __init__(
@@ -43,8 +44,8 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
     def get_agent_discovery_subject_request(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
-        agent_class: Optional[str] = None,
-        agent_id: Optional[str] = None,
+        agent_class: str | None = None,
+        agent_id: str | None = None,
     ) -> str:
         """
         Returns a subject for requesting discovery info about this agent instance (or a provided override).
@@ -59,8 +60,8 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
     def get_agent_discovery_subject_response(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
-        agent_class: Optional[str] = None,
-        agent_id: Optional[str] = None,
+        agent_class: str | None = None,
+        agent_id: str | None = None,
     ) -> str:
         """
         Returns a subject for receiving agent discovery responses for this agent instance (or a provided override).
@@ -182,7 +183,7 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
             event_id="*",
         )
 
-    def get_stream(self) -> Tuple[str, str]:
+    def get_stream(self) -> tuple[str, str]:
         return self._get_stream_name_for_all_events(), self.get_subject_for_all_events_in_agent()
 
     def _get_stream_name_for_all_events(self) -> str:

@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
@@ -77,23 +76,23 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self,
         agent_class: str,
         agent_id: str,
-        simulated_events: Optional[List[BaseEvent]] = None,
+        simulated_events: list[BaseEvent] | None = None,
     ):
         super().__init__()
         self.agent_class = agent_class
         self.agent_id = agent_id
         self.topic_manager = AgentInstanceTopicManager(agent_class, agent_id)
 
-        self.nc: Optional[NATS] = None
-        self.js: Optional[JetStreamContext] = None
+        self.nc: NATS | None = None
+        self.js: JetStreamContext | None = None
 
-        self.agent_control_event_subscriber: Optional[JSSubscriber[ControlEvent]] = None
-        self.js_publisher: Optional[JSPublisher] = None
+        self.agent_control_event_subscriber: JSSubscriber[ControlEvent] | None = None
+        self.js_publisher: JSPublisher | None = None
 
-        self.nc_publisher: Optional[NCPublisher[AgentDiscoveryResponseEvent]] = None
-        self.discovery_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
+        self.nc_publisher: NCPublisher[AgentDiscoveryResponseEvent] | None = None
+        self.discovery_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
 
-        self.simulated_events: List[BaseEvent] = simulated_events or []
+        self.simulated_events: list[BaseEvent] = simulated_events or []
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """

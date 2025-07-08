@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, Type
+from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 
@@ -119,7 +119,7 @@ class AgentNCSubscriber(NCSubscriber):
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
-        event: Type[BaseEvent],
+        event: type[BaseEvent],
     ):
         """
         Creates a NCSubscriber for all agent events.

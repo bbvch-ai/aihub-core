@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi
 from pulumi_azure_native import network
 
@@ -12,7 +10,7 @@ from aihub_iac.azure.providers.NetworkProvider import NetworkProvider
 class Network(pulumi.ComponentResource):
     """A Pulumi component resource for creating network infrastructure"""
 
-    def __init__(self, stack: str, name: str, config: NetworkConfig, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, stack: str, name: str, config: NetworkConfig, opts: pulumi.ResourceOptions | None = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name

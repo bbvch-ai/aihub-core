@@ -19,7 +19,8 @@ class OAuth2Config(BaseSettings):
     `OAuth2Config`:
     - Loads these from environment variables or a `.env` file.
     - Provides computed properties to construct full URLs for authorization, token retrieval, and JWKS keys.
-    - Returns an `OAuth2AuthorizationCodeBearer` schema, simplifying the integration with FastAPI's dependency injection.
+    - Returns an `OAuth2AuthorizationCodeBearer` schema, simplifying
+      the integration with FastAPI's dependency injection.
 
     ### Example
     ```python

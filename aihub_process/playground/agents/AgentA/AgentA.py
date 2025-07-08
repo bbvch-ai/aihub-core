@@ -1,5 +1,5 @@
-from aihub_agent.workflow.decorators.step import step
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.workflow.decorators.step import step
 
 from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
 from playground.agents.AgentA.events.AgentAStopEvent import AgentAStopEvent

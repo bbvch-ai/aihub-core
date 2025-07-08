@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 import pulumi
 from pulumi_azure_native import app, dbforpostgresql, network, privatedns
 
@@ -17,7 +15,7 @@ from aihub_iac.azure.resources.storage.StorageResourceFactory import StorageReso
 class Dagster(pulumi.ComponentResource):
     """A Pulumi component resource for deploying Dagster infrastructure"""
 
-    def __init__(self, stack: str, name: str, config: DagsterConfig, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, stack: str, name: str, config: DagsterConfig, opts: pulumi.ResourceOptions | None = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name
@@ -240,7 +238,7 @@ class Dagster(pulumi.ComponentResource):
             env=self._get_dagster_service_and_daemon_env_vars(),
         )
 
-    def _get_dagster_service_and_daemon_env_vars(self) -> List[app.EnvironmentVarArgs]:
+    def _get_dagster_service_and_daemon_env_vars(self) -> list[app.EnvironmentVarArgs]:
         """Get environment variables for the Dagster Service container"""
         env_vars = [
             app.EnvironmentVarArgs(name="PYTHONUNBUFFERED", value="1"),
@@ -271,7 +269,7 @@ class Dagster(pulumi.ComponentResource):
 
         return env_vars
 
-    def _additional_secrets_from_additional_env_vars(self) -> List[app.SecretArgs]:
+    def _additional_secrets_from_additional_env_vars(self) -> list[app.SecretArgs]:
         additional_secrets = []
         for name, value in self.config.additional_env_vars.items():
             if isinstance(value, dict) and "secret_ref" in value and "secret_value" in value:

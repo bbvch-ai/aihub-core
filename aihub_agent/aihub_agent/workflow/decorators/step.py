@@ -1,6 +1,7 @@
 import inspect
 import logging
-from typing import Annotated, Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
@@ -13,15 +14,15 @@ logger = logging.getLogger(__name__)
 def step(
     *,
     max_executions_per_run: Annotated[
-        Optional[int],
+        int | None,
         "Maximum number of times this step can be executed in a single run",
     ] = None,
     stop_on_error: Annotated[bool, "If True, the workflow stops on any error in this step"] = True,
-    name: Annotated[Optional[LocaleString], "A localized name for the step, used in UI or logs"] = None,
-    icon: Annotated[Optional[str], "An icon name for the step from iconify.design, used in UI"] = None,
-    description: Annotated[Optional[LocaleString], "A localized description of what the step does"] = None,
+    name: Annotated[LocaleString | None, "A localized name for the step, used in UI or logs"] = None,
+    icon: Annotated[str | None, "An icon name for the step from iconify.design, used in UI"] = None,
+    description: Annotated[LocaleString | None, "A localized description of what the step does"] = None,
     precondition: Annotated[
-        Optional[Callable[..., Awaitable[bool]]], "A function to check if the step is ready to run"
+        Callable[..., Awaitable[bool]] | None, "A function to check if the step is ready to run"
     ] = None,
 ):
     """
@@ -42,7 +43,7 @@ def step(
     ### Example
     ```python
     @step(max_executions_per_run=3, stop_on_error=False, name=LocaleString(en="My Step"))
-    def my_step(event: SomeEvent | None, data: List[AnotherEvent]):
+    def my_step(event: SomeEvent | None, data: list[AnotherEvent]):
         # Implementation...
         pass
     ```

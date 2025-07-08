@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -47,7 +47,7 @@ class EventController(Controller):
     icon = "mdi:apache-kafka"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/events", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/events", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
@@ -58,7 +58,7 @@ class EventController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-        ) -> List[WSServerEvent]:
+        ) -> list[WSServerEvent]:
             """
             Returns all events in a given thread
             """
@@ -99,7 +99,8 @@ class EventController(Controller):
         ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can send `ExternalAgentEvent`s and receive responses (WSServerEvent or errors).
+            If the token is valid, the user can send `ExternalAgentEvent`s and receive responses
+            (WSServerEvent or errors).
             """
             await websocket.accept()  # Accept the connection first
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 from llama_index.vector_stores.azureaisearch import MetadataIndexFieldType
 
@@ -69,24 +69,24 @@ class NodeMetadata(TypedDict, total=False):
     content_type: NodeContentType
     language: LanguageValue
     version: int
-    created_at: Optional[int]
-    updated_at: Optional[int]
-    inserted_at: Optional[int]
+    created_at: int | None
+    updated_at: int | None
+    inserted_at: int | None
     index: int
     section_start_line: int
     section_end_line: int
-    h1: Optional[str]
-    h2: Optional[str]
-    h3: Optional[str]
-    h4: Optional[str]
-    h5: Optional[str]
-    h6: Optional[str]
+    h1: str | None
+    h2: str | None
+    h3: str | None
+    h4: str | None
+    h5: str | None
+    h6: str | None
     heading_level: HeadingLevelValue
-    reference_name: Optional[str]
-    reference_url: Optional[str]
+    reference_name: str | None
+    reference_url: str | None
 
 
-DEFAULT_METADATA: Dict[str, Any] = {
+DEFAULT_METADATA: dict[str, Any] = {
     NAMESPACE: "",
     SOURCE: "",
     DOCUMENT_TITLE: "",
@@ -114,7 +114,7 @@ DEFAULT_METADATA: Dict[str, Any] = {
 }
 
 # Field definitions with their types for Azure Search
-DEFAULT_METADATA_FIELDS: Dict[str, tuple] = {
+DEFAULT_METADATA_FIELDS: dict[str, tuple] = {
     NAMESPACE: (NAMESPACE, MetadataIndexFieldType.STRING),
     SOURCE: (SOURCE, MetadataIndexFieldType.STRING),
     DOCUMENT_TITLE: (DOCUMENT_TITLE, MetadataIndexFieldType.STRING),

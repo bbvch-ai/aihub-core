@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -18,7 +18,7 @@ class SuiteController(Controller):
     icon = "material-symbols:token"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/suites", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/suites", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 

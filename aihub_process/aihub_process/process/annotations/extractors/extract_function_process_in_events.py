@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, List, Tuple, Type, get_args, get_origin
+from typing import Annotated, get_args, get_origin
 
 from aihub_lib.nats.events import WorkEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_classes import extract_event_classes
@@ -7,7 +7,7 @@ from aihub_lib.nats.workflow.annotations.extractors.extract_event_classes import
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
-def extract_function_process_in_events(func) -> List[Tuple[Type[WorkEvent], BaseProcessEntity.In]]:
+def extract_function_process_in_events(func) -> list[tuple[type[WorkEvent], BaseProcessEntity.In]]:
     """
     Analyzes a process step function's signature to extract and validate its input events.
 

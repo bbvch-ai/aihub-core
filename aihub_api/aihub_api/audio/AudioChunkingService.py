@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List
+from typing import Annotated
 
 from openai.types.audio import Transcription, TranscriptionVerbose
 from pydub import AudioSegment
@@ -7,7 +7,7 @@ from pydub.silence import detect_nonsilent
 
 logger = logging.getLogger(__name__)
 
-AudioChunk = Annotated[List[List[int]], "[[start: ms, end: ms]]"]
+AudioChunk = Annotated[list[list[int]], "[[start: ms, end: ms]]"]
 TranscriptionChunk = Transcription | TranscriptionVerbose | str
 
 
@@ -34,7 +34,7 @@ class AudioChunkingService:
     ] = -40  # -40dB threshold identifies most speech pauses without excessive chunking
 
     @staticmethod
-    async def chunk_audio(audio: AudioSegment) -> List[AudioSegment]:
+    async def chunk_audio(audio: AudioSegment) -> list[AudioSegment]:
         file_size: Annotated[int, "bytes"] = len(audio.raw_data)
         total_duration: Annotated[int, "ms"] = len(audio)
         max_duration: Annotated[int, "ms"] = int(total_duration / (file_size / AudioChunkingService.MAX_CHUNK_SIZE))
@@ -42,14 +42,14 @@ class AudioChunkingService:
         if total_duration <= max_duration:
             return [audio]
 
-        nonsilent_chunks: Annotated[List[List[int]], "[[start: ms, end: ms]]"] = detect_nonsilent(
+        nonsilent_chunks: Annotated[list[list[int]], "[[start: ms, end: ms]]"] = detect_nonsilent(
             audio,
             min_silence_len=AudioChunkingService.MIN_SILENCE_LEN,
             silence_thresh=AudioChunkingService.SILENCE_THRESH,
             seek_step=10,  # 10 ms step for faster processing
         )
-        segments: List[AudioSegment] = []
-        segment: Annotated[List[List[int]], "[[start: ms, end: ms]]"] = []
+        segments: list[AudioSegment] = []
+        segment: Annotated[list[list[int]], "[[start: ms, end: ms]]"] = []
         for chunk in nonsilent_chunks:
             _, chunk_end = chunk
             if segment:
@@ -70,7 +70,7 @@ class AudioChunkingService:
         return segments
 
     @staticmethod
-    def merge_transcriptions(transcription_chunks: List[TranscriptionChunk]) -> str:
+    def merge_transcriptions(transcription_chunks: list[TranscriptionChunk]) -> str:
         if isinstance(transcription_chunks[0], str):
 
             def get_text(x: str):
@@ -81,7 +81,7 @@ class AudioChunkingService:
             def get_text(x: Transcription | TranscriptionVerbose):
                 return x.text
 
-        merged_words: List[str] = []
+        merged_words: list[str] = []
         for chunk in transcription_chunks:
             chunk_text = get_text(chunk)
             chunk_words = chunk_text.split()

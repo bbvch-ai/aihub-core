@@ -1,5 +1,6 @@
 import abc
-from typing import Annotated, Awaitable, Callable, List, Type
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from aihub_lib.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -34,7 +35,7 @@ class AbstractEntityDelegator(abc.ABC):
 
     def __init__(
         self,
-        process_class: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
+        process_class: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
         process_id: Annotated[str, "Process ID"],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
@@ -55,7 +56,7 @@ class AbstractEntityDelegator(abc.ABC):
 
         self.queue_group = queue_group
 
-        self.subscriptions: List[ProcessNCSubscriber | ProcessJSSubscriber] = []
+        self.subscriptions: list[ProcessNCSubscriber | ProcessJSSubscriber] = []
 
     @abc.abstractmethod
     async def start(self):
@@ -93,7 +94,7 @@ class AbstractEntityDelegator(abc.ABC):
 
     @abc.abstractmethod
     def handle_process_step_input_factory(
-        self, work_event_type: Type[WorkEvent], is_process_start: bool
+        self, work_event_type: type[WorkEvent], is_process_start: bool
     ) -> Callable[[BaseEvent, Topic], Awaitable[None]]:
         """
         A delegator must usually create some kind of subscription for each event from its entity of interest and map

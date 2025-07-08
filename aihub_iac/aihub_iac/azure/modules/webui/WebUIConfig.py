@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Optional
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -47,7 +47,7 @@ class WebUIConfig(StorageConfig):
     cpu: Annotated[float, Field(description="CPU cores for the container")] = 2
     memory: Annotated[str, Field(description="Memory for the container")] = "4Gi"
     min_replicas: Annotated[int, Field(description="Minimum number of replicas for the container")] = 1
-    max_replicas: Annotated[Optional[int], Field(description="Maximum number of replicas for the container")] = None
+    max_replicas: Annotated[int | None, Field(description="Maximum number of replicas for the container")] = None
 
     # Registry settings
     registry_user: Annotated[

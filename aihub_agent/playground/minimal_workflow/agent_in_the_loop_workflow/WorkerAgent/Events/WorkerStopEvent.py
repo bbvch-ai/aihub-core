@@ -1,7 +1,7 @@
 from typing import Annotated
-from pydantic import Field
 
 from aihub_lib.nats.events import StopEvent
+from pydantic import Field
 
 
 class WorkerStopEvent(StopEvent):

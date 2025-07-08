@@ -1,7 +1,8 @@
 import abc
 import os
 from abc import abstractmethod
-from typing import AsyncContextManager, List, Optional, Set
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.routing import APIRoute
@@ -31,8 +32,10 @@ class Runner(abc.ABC):
     - **Dual Application Architecture:** Distinguishes between a base application (for static files or other mounts)
       and the API application (serving routes under a given prefix).
     - **Integration with Config:** Pulls version info and other details from `ApiConfig`.
-    - **Easy Controller Mounting:** Controllers that subclass `Controller` can be attached with a simple `.mount()` call.
-    - **Abstract Lifetime Management:** Each implementation must provide a `lifetime_manager` for handling async startup/shutdown.
+    - **Easy Controller Mounting:** Controllers that subclass `Controller` can be attached with a simple
+      `.mount()` call.
+    - **Abstract Lifetime Management:** Each implementation must provide a `lifetime_manager`
+      for handling async startup/shutdown.
     - **Optional Frontend Integration:** Serve a frontend directly by calling `.mount_frontend(directory)`.
 
     ### Usage
@@ -52,7 +55,7 @@ class Runner(abc.ABC):
         api_path: str = "/api/v1",
         title: str = "AI Hub Service",
         description: str = "AI Hub",
-        origins: Optional[List[str]] = None,
+        origins: list[str] | None = None,
         debug: bool = False,
     ):
         self.title = title
@@ -69,11 +72,11 @@ class Runner(abc.ABC):
         self.api_path = api_path
         self._base_app.mount(api_path, self._api_app)
 
-        self.controllers: Set[Controller] = set()
+        self.controllers: set[Controller] = set()
 
     @property
     @abstractmethod
-    def lifetime_manager(self) -> AsyncContextManager:
+    def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         pass
 
     def get_app(self) -> FastAPI:

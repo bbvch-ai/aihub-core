@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 from aihub_iac.azure.constants.resources import (
@@ -25,7 +23,7 @@ class ResourceNamer(BaseModel):
     project_name: str
     location_short: str
 
-    def generate_name(self, resource_type: str, suffix: Optional[str] = None) -> str:
+    def generate_name(self, resource_type: str, suffix: str | None = None) -> str:
         """
         Generate a standardized resource name following the pattern:
         {project_name}-{resource_type}-{location_short}[-{suffix}]
@@ -43,42 +41,42 @@ class ResourceNamer(BaseModel):
 
         return "-".join(name_parts)
 
-    def cosmos_name(self, suffix: Optional[str] = None) -> str:
+    def cosmos_name(self, suffix: str | None = None) -> str:
         """Generate a cosmos DB account name"""
         return self.generate_name(COSMOS, suffix)
 
-    def app_service_name(self, suffix: Optional[str] = None) -> str:
+    def app_service_name(self, suffix: str | None = None) -> str:
         """Generate an app service name"""
         return self.generate_name(APP_SERVICE, suffix)
 
-    def postgres_name(self, suffix: Optional[str] = None) -> str:
+    def postgres_name(self, suffix: str | None = None) -> str:
         """Generate an app service name"""
         return self.generate_name(POSTGRES, suffix)
 
-    def ai_search_name(self, suffix: Optional[str] = None) -> str:
+    def ai_search_name(self, suffix: str | None = None) -> str:
         """Generate an AI search service name"""
         return self.generate_name(AI_SEARCH_SERVICE, suffix)
 
-    def container_app_name(self, suffix: Optional[str] = None) -> str:
+    def container_app_name(self, suffix: str | None = None) -> str:
         """Generate an AI search service name"""
         return self.generate_name(CONTAINER_APP, suffix)
 
-    def container_app_environment_name(self, suffix: Optional[str] = None) -> str:
+    def container_app_environment_name(self, suffix: str | None = None) -> str:
         return self.generate_name(CONTAINER_APP_ENVIRONMENT, suffix)
 
-    def container_instance_name(self, suffix: Optional[str] = None) -> str:
+    def container_instance_name(self, suffix: str | None = None) -> str:
         return self.generate_name(CONTAINER_INSTANCE, suffix)
 
-    def container_group_name(self, suffix: Optional[str] = None) -> str:
+    def container_group_name(self, suffix: str | None = None) -> str:
         return self.generate_name(CONTAINER_GROUP, suffix)
 
-    def log_workspace(self, suffix: Optional[str] = None) -> str:
+    def log_workspace(self, suffix: str | None = None) -> str:
         return self.generate_name(LOG_WORKSPACE, suffix)
 
-    def v_net_name(self, suffix: Optional[str] = None) -> str:
+    def v_net_name(self, suffix: str | None = None) -> str:
         return self.generate_name(V_NET, suffix)
 
-    def storage_account_name(self, suffix: Optional[str] = None) -> str:
+    def storage_account_name(self, suffix: str | None = None) -> str:
         """
         Generate a storage account name.
         Note: Storage accounts have specific naming restrictions:
@@ -90,5 +88,5 @@ class ResourceNamer(BaseModel):
         # Ensure it's no longer than 24 characters
         return base_name[:24]
 
-    def key_vault_name(self, suffix: Optional[str] = None) -> str:
+    def key_vault_name(self, suffix: str | None = None) -> str:
         return self.generate_name("kv", suffix)

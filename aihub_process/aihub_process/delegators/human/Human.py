@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import Field
 
@@ -15,4 +15,4 @@ class Human(BaseProcessEntity):
         method: str = "POST"
 
     class Out(BaseProcessEntity.Out):
-        users: Annotated[List[str], Field(description="The list of users.")]
+        users: Annotated[list[str], Field(description="The list of users.")]

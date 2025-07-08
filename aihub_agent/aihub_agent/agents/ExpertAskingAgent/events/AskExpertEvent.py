@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -11,9 +11,10 @@ class AskExpertEvent(ControlEvent):
 
     question_to_expert: Annotated[str, Field(..., description="The question to ask the expert")]
     locale: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.",
+            description="The user’s locale, defaults to a system-wide default locale, "
+            "guiding language or regional adaptations.",
         ),
     ] = LocaleHandler.DEFAULT_LOCALE
     user: Annotated[UserIdentity, Field(description="User who sent the message")]

@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
@@ -41,7 +39,7 @@ class MultiStrategyTokenIdentityProvider(IdentityProvider):
         error_message = f"All user email providers failed for email '{email}'. Errors: " + " | ".join(errors)
         raise PermissionError(error_message)
 
-    async def get_user_roles(self, user_oid: str) -> List[str]:
+    async def get_user_roles(self, user_oid: str) -> list[str]:
         errors = []
         for provider in self.providers:
             try:
@@ -52,7 +50,7 @@ class MultiStrategyTokenIdentityProvider(IdentityProvider):
         error_message = f"All user role providers failed for oid '{user_oid}'. Errors: " + " | ".join(errors)
         raise PermissionError(error_message)
 
-    async def get_user_profile_image_data_url(self, user_oid: str) -> Optional[str]:
+    async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
         errors = []
         for provider in self.providers:
             try:

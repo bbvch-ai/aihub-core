@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 
@@ -17,9 +15,9 @@ class ScoreScalerPostProcessor(BaseNodePostprocessor):
 
     def _postprocess_nodes(
         self,
-        nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
-    ) -> List[NodeWithScore]:
+        nodes: list[NodeWithScore],
+        query_bundle: QueryBundle | None = None,
+    ) -> list[NodeWithScore]:
         for node in nodes:
             node.score = self._scale_score(node.score)
         return nodes

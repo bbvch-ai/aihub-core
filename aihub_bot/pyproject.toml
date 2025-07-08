@@ -32,7 +32,6 @@ botbuilder-integration-aiohttp = "^4.16.2"
 pytest = "^8.3.2"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
-isort = "^5.13.2"
 mypy = "^1.13.0"
 toml-sort = "^0.24.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
@@ -54,11 +53,7 @@ line-length = 120
 target-version = 'py311'
 
 [tool.ruff.lint]
-extend-ignore = ["E203"]
-
-[tool.isort]
-profile = "black"
-line_length = 120
+select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120

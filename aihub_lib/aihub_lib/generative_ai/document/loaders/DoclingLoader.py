@@ -2,7 +2,7 @@ import base64
 import html
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
@@ -29,10 +29,10 @@ class DoclingLoader(BaseReader):
     def load_data(
         self,
         file: str,
-        extra_info: Optional[Dict] = None,
-        fs: Optional[AbstractFileSystem] = None,
-        figures_directory_name: Optional[str] = None,
-    ) -> List[Document]:
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
@@ -76,7 +76,7 @@ class DoclingLoader(BaseReader):
         ]
 
 
-def inject_figure_tags(markdown_text: str, img_strs: List[str]):
+def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     """Inject html <figure> tags around base64 encoded images."""
     for image_str in img_strs:
         markdown_text = markdown_text.replace(

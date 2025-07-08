@@ -1,6 +1,6 @@
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 import phoenix as px
 from bson import ObjectId
@@ -61,10 +61,10 @@ class PhoenixExperimentEvaluator:
 
     async def _agent_interaction_task(
         self,
-        example_input: Dict[str, Any],
+        example_input: dict[str, Any],
         agent_class: str,
         agent_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Task function for Phoenix: sends a question to the agent and returns its response.
         Encapsulates the complex NATS-based communication, needed to interact with our agents,
@@ -131,7 +131,7 @@ class PhoenixExperimentEvaluator:
         return ChatPromptTemplate(message_templates=chat_messages)
 
     async def _evaluate_with_judge(
-        self, prompt_template: ChatPromptTemplate, prompt_vars: Dict[str, Any]
+        self, prompt_template: ChatPromptTemplate, prompt_vars: dict[str, Any]
     ) -> JudgeOutput:
         """
         Calls the judge LLM with a constructed prompt and parses the structured output.
@@ -144,7 +144,7 @@ class PhoenixExperimentEvaluator:
         )
 
     async def _run_single_evaluation(
-        self, evaluator_type: str, task_output: Dict[str, Any], **kwargs
+        self, evaluator_type: str, task_output: dict[str, Any], **kwargs
     ) -> PhoenixEvaluationResult:
         """
         Generic function to run a single evaluation type (Correctness, Completeness, etc.).
@@ -169,9 +169,9 @@ class PhoenixExperimentEvaluator:
         agent_class: str,
         agent_id: str,
         dataset_id: str,
-        experiment_name: Optional[str] = None,
-        experiment_description: Optional[str] = None,
-        experiment_metadata: Optional[Dict[str, Any]] = None,
+        experiment_name: str | None = None,
+        experiment_description: str | None = None,
+        experiment_metadata: dict[str, Any] | None = None,
     ) -> RanExperiment:
         """
         Runs a full evaluation experiment using Arize Phoenix.
@@ -192,7 +192,7 @@ class PhoenixExperimentEvaluator:
             raise ValueError(message)
 
         # Wrapper function to match Phoenix's expected task signature.
-        async def task_for_phoenix(example: PhoenixExample) -> Dict[str, Any]:
+        async def task_for_phoenix(example: PhoenixExample) -> dict[str, Any]:
             return await self._agent_interaction_task(
                 example_input=example.input,
                 agent_class=agent_class,
@@ -201,7 +201,7 @@ class PhoenixExperimentEvaluator:
 
         @create_evaluator(name="Correctness", kind="LLM")
         async def correctness_phoenix_eval(
-            output: Dict[str, Any], reference: Dict[str, Any], input: Dict[str, Any]
+            output: dict[str, Any], reference: dict[str, Any], input: dict[str, Any]
         ) -> PhoenixEvaluationResult:
             """Evaluates correctness and returns a PhoenixEvaluationResult."""
             reference_answer = reference.get("answer")
@@ -213,7 +213,7 @@ class PhoenixExperimentEvaluator:
             )
 
         @create_evaluator(name="Completeness", kind="LLM")
-        async def completeness_phoenix_eval(output: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+        async def completeness_phoenix_eval(output: dict[str, Any], input: dict[str, Any]) -> PhoenixEvaluationResult:
             """Evaluates completeness and returns a PhoenixEvaluationResult."""
             return await self._run_single_evaluation(
                 "completeness",
@@ -222,7 +222,7 @@ class PhoenixExperimentEvaluator:
             )
 
         @create_evaluator(name="Conciseness", kind="LLM")
-        async def conciseness_phoenix_eval(output: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+        async def conciseness_phoenix_eval(output: dict[str, Any], input: dict[str, Any]) -> PhoenixEvaluationResult:
             """Evaluates conciseness and returns a PhoenixEvaluationResult."""
             return await self._run_single_evaluation(
                 "conciseness",

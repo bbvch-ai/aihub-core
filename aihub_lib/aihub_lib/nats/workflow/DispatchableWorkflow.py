@@ -1,7 +1,7 @@
 import abc
 import functools
 import inspect
-from typing import Callable, List, Set, Type
+from collections.abc import Callable
 
 from aihub_lib.nats.events import ControlEvent
 
@@ -13,8 +13,8 @@ class DispatchableWorkflow(abc.ABC):
     For an entity to be event-driven, it means that it defines a set of steps that will be executed if a certain
     set of conditions is satisfied, most often linked to the presence of certain events.
 
-    Such an entity is called a "dispatchable workflow", because the entity that will coordinate the execution of its steps
-    with the reception of events is called the "dispatcher".
+    Such an entity is called a "dispatchable workflow", because the entity that will coordinate the
+    execution of its steps with the reception of events is called the "dispatcher".
 
     In a minimal implementation, a dispatchable workflow is defined by a set of methods that are marked as steps.
     Note that the class of a dispatchable workflow itself must be stateless, as the state of the class is indirectly
@@ -42,7 +42,7 @@ class DispatchableWorkflow(abc.ABC):
 
     @classmethod
     @functools.cache
-    def get_steps(cls) -> List[Callable]:
+    def get_steps(cls) -> list[Callable]:
         """
         Returns all methods on this dispatchable workflow that are marked as steps.
         A step is identified by the `STEP_ANNOTATION` attribute set by the `@step` or `@process_step` decorator.
@@ -55,7 +55,7 @@ class DispatchableWorkflow(abc.ABC):
 
     @classmethod
     @functools.cache
-    def get_steps_waiting_for_event(cls, event_class: Type[ControlEvent]) -> List[Callable]:
+    def get_steps_waiting_for_event(cls, event_class: type[ControlEvent]) -> list[Callable]:
         """
         Given an event type, returns the steps that can handle it.
         This helps the dispatcher decide which steps to execute when a certain event arrives.
@@ -65,7 +65,7 @@ class DispatchableWorkflow(abc.ABC):
 
     @classmethod
     @functools.cache
-    def get_input_events(cls) -> Set[Type[ControlEvent]]:
+    def get_input_events(cls) -> set[type[ControlEvent]]:
         """
         Aggregates all input event types required by all steps.
         This provides a global view of which events can drive the workflow.
@@ -75,7 +75,7 @@ class DispatchableWorkflow(abc.ABC):
 
     @classmethod
     @functools.cache
-    def get_output_events(cls) -> Set[Type[ControlEvent]]:
+    def get_output_events(cls) -> set[type[ControlEvent]]:
         """
         Aggregates all output event types produced by all steps.
         This provides a global view of which events the can emit.

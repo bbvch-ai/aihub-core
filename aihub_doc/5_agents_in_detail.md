@@ -393,7 +393,7 @@ returns a list of `EventA` instances, which can be processed in parallel by subs
 class FanOutAgent(Agent):
 
     @step()
-    async def start_step(self, event: StartEvent) -> List[EventA]:
+    async def start_step(self, event: StartEvent) -> list[EventA]:
         print("[FanOutAgent.start_step]", event)
         return [EventA(payload=str(i)) for i in range(1, 6)]  # Events A1, A2, A3, A4, A5
 

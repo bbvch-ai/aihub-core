@@ -30,20 +30,9 @@ typecheck:
 	@(cd aihub_bot && make typecheck)
 	@(cd aihub_iac && make typecheck)
 
-# Sort imports with isort
-sort-imports:
-	@echo "Sorting imports for pipelines..."
-	@(cd aihub_pipeline &&  make sort-imports)
-	@(cd aihub_lib &&  make sort-imports)
-	@(cd aihub_agent &&  make sort-imports)
-	@(cd aihub_process &&  make sort-imports)
-	@(cd aihub_api &&  make sort-imports)
-	@(cd aihub_bot &&  make sort-imports)
-	@(cd aihub_iac &&  make sort-imports)
-
-# Run format, sort-imports, type-check, and test in sequence
+# Run format, type-check, and test in sequence
 pr-ready:
-	@echo "Running full check (format-pipelines, sort-imports)..."
+	@echo "Running full check (format, lint)..."
 	@(cd aihub_pipeline &&  make pr-ready)
 	@(cd aihub_lib &&  make pr-ready)
 	@(cd aihub_agent &&  make pr-ready)

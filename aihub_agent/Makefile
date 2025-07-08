@@ -12,11 +12,6 @@ typecheck:
 	@echo "Running type checks..."
 	poetry run mypy aihub_agent
 
-# Sort imports with isort
-sort-imports:
-	@echo "Sorting imports..."
-	poetry run isort aihub_agent
-
 clean-jupyter:
 	@echo "Cleaning up notebooks..."
 	jupyter nbconvert --ClearOutputPreprocessor.enabled=True --clear-output --inplace **/*.ipynb
@@ -29,5 +24,5 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                  -k "not azure"
 
-pr-ready: sort-imports format lint
+pr-ready: format lint
 	@echo "Running full check (format, sort)..."

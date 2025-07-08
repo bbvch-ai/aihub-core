@@ -1,5 +1,6 @@
 import logging
-from typing import AsyncContextManager, List, Optional
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
@@ -49,13 +50,13 @@ class ApiRunner(Runner):
         api_path: str = "/api/v1",
         title: str = "AI Hub",
         description: str = "AI Hub Backend",
-        origins: Optional[List[str]] = None,
+        origins: list[str] | None = None,
         debug: bool = False,
     ):
         super().__init__(api_path, title, description, origins, debug)
 
     @property
-    def lifetime_manager(self) -> AsyncContextManager:
+    def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         return lifetime_manager
 
     def _get_api_app(self) -> FastAPI:

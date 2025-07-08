@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..client import BaseClient
 from ..models.users import (
@@ -36,7 +36,7 @@ class UsersClient(BaseClient):
         ```
     """
 
-    async def get_users(self, skip: Optional[int] = None, limit: Optional[int] = None) -> List[User]:
+    async def get_users(self, skip: int | None = None, limit: int | None = None) -> list[User]:
         """Retrieve a list of all users with optional pagination"""
         params = {}
         if skip is not None:
@@ -47,12 +47,12 @@ class UsersClient(BaseClient):
         response = await self.get("/api/v1/users/", params=params)
         return [User.model_validate(user) for user in response.json()]
 
-    async def get_user_groups(self) -> List[Dict[str, Any]]:
+    async def get_user_groups(self) -> list[dict[str, Any]]:
         """Get groups for the authenticated user"""
         response = await self.get("/api/v1/users/groups")
         return response.json()
 
-    async def get_user_permissions(self) -> Dict[str, Any]:
+    async def get_user_permissions(self) -> dict[str, Any]:
         """Get permissions for the authenticated user"""
         response = await self.get("/api/v1/users/permissions")
         return response.json()
@@ -62,12 +62,12 @@ class UsersClient(BaseClient):
         response = await self.get("/api/v1/users/default/permissions")
         return UserPermissions.model_validate(response.json())
 
-    async def update_default_user_permissions(self, permissions: UserPermissions) -> Dict[str, Any]:
+    async def update_default_user_permissions(self, permissions: UserPermissions) -> dict[str, Any]:
         """Update default user permissions (admin only)"""
         response = await self.post("/api/v1/users/default/permissions", json_data=permissions.model_dump())
         return response.json()
 
-    async def update_user_role(self, user_id: str, role: str) -> Optional[User]:
+    async def update_user_role(self, user_id: str, role: str) -> User | None:
         """Update a user's role (admin only)"""
         form_data = UserRoleUpdateRequest(id=user_id, role=role)
         response = await self.post("/api/v1/users/update/role", json_data=form_data.model_dump())
@@ -85,12 +85,12 @@ class UsersClient(BaseClient):
         response = await self.post("/api/v1/users/user/settings/update", json_data=settings.model_dump())
         return UserSettings.model_validate(response.json())
 
-    async def get_user_info(self) -> Optional[Dict[str, Any]]:
+    async def get_user_info(self) -> dict[str, Any] | None:
         """Get additional info for the authenticated user"""
         response = await self.get("/api/v1/users/user/info")
         return response.json()
 
-    async def update_user_info(self, info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def update_user_info(self, info: dict[str, Any]) -> dict[str, Any] | None:
         """Update additional info for the authenticated user"""
         response = await self.post("/api/v1/users/user/info/update", json_data=info)
         return response.json()
@@ -101,8 +101,8 @@ class UsersClient(BaseClient):
         return UserResponse.model_validate(response.json())
 
     async def update_user(
-        self, user_id: str, name: str, email: str, profile_image_url: str, password: Optional[str] = None
-    ) -> Optional[User]:
+        self, user_id: str, name: str, email: str, profile_image_url: str, password: str | None = None
+    ) -> User | None:
         """Update a user's profile information (admin only)"""
         update_data = UserUpdateRequest(name=name, email=email, profile_image_url=profile_image_url, password=password)
         response = await self.post(f"/api/v1/users/{user_id}/update", json_data=update_data.model_dump())

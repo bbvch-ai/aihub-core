@@ -1,4 +1,4 @@
-from aihub_lib.nats.events import DisplayEvent, ControlEvent
+from aihub_lib.nats.events import ControlEvent, DisplayEvent
 
 
 class FrontendTestingEventB(DisplayEvent, ControlEvent):

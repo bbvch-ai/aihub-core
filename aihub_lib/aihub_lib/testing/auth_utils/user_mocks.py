@@ -1,6 +1,6 @@
 """Mock fixtures for UserEntity methods used in testing."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -26,7 +26,7 @@ def _create_mock_user_entity_function():
             profile_image=None,
             favorite_modules=[],
             dashboard=UserEntity.create_default_dashboard(),
-            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=timezone.utc),
+            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC),
         )
         return user
 

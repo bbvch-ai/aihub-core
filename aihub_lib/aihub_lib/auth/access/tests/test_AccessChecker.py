@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -21,19 +19,19 @@ def access_rules():
 
 
 @given(parsers.parse("no access rules"))
-def given_no_access_rules(access_rule: str, access_rules: List[str]):
+def given_no_access_rules(access_rule: str, access_rules: list[str]):
     """Adds an access rule to the user's list of access roles."""
     access_rules.clear()
 
 
 @given(parsers.parse('the access rule "{access_rule}"'))
-def given_access_rules(access_rule: str, access_rules: List[str]):
+def given_access_rules(access_rule: str, access_rules: list[str]):
     """Adds an access rule to the user's list of access roles."""
     access_rules.append(access_rule)
 
 
 @when(parsers.parse('the access checker checks for the permission "{permission_template}"'))
-def check_permission(context, access_rules: List[str], permission_template: str):
+def check_permission(context, access_rules: list[str], permission_template: str):
     """Initializes AccessChecker and stores the result or any exception."""
     try:
         checker = AccessChecker(access_rules)
@@ -46,7 +44,7 @@ def check_permission(context, access_rules: List[str], permission_template: str)
 
 
 @when(parsers.parse('the access checker checks for the permission "{user_permission_template}"'))
-def check_user_level_permission(context, access_rules: List[str], user_permission_template: str):
+def check_user_level_permission(context, access_rules: list[str], user_permission_template: str):
     """Alias for the main 'when' step for clarity in admin scenarios."""
     check_permission(context, access_rules, user_permission_template)
 

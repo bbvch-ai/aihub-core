@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Awaitable, Callable, Optional, Type
+from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
@@ -42,15 +42,15 @@ class JSSubscriber(AbstractSubscriber):
         stream_name: str,
         stream_subject: str,
         queue_group: str,
-        event_cls: Type[TEvent],
+        event_cls: type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ):
         super().__init__(nc, subject, event_cls, handler)
         self.js = js or nc.jetstream()
         self.queue_group = queue_group
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
-        self.js_subscription: Optional[JetStreamContext.PushSubscription] = None
+        self.js_subscription: JetStreamContext.PushSubscription | None = None
 
     async def start(self):
         """

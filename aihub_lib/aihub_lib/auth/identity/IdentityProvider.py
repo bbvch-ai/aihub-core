@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
@@ -23,9 +22,9 @@ class IdentityProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_user_roles(self, user_oid: str) -> List[str]:
+    async def get_user_roles(self, user_oid: str) -> list[str]:
         pass
 
     @abstractmethod
-    async def get_user_profile_image_data_url(self, user_oid: str) -> Optional[str]:
+    async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
         pass

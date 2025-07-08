@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from bson import ObjectId
 from nats.aio.client import Client as NATS
@@ -39,7 +38,8 @@ class ExternalAgentEventDistributor:
 
     ### Flow
     1. `receive_event`: Main entry point. Identifies the event type and dispatches to the appropriate handler.
-    2. `_handle_start_event`: If user starts something (like an agent run), it may reconstruct message history and publish a start event.
+    2. `_handle_start_event`: If user starts something (like an agent run),
+       it may reconstruct message history and publish a start event.
     3. `_handle_display_message`: Convert a user-provided `DisplayEvent` into a JetStream event.
     4. `_handle_human_in_the_loop_response`: Ensure correctness and publish the HITL response event.
 
@@ -55,7 +55,7 @@ class ExternalAgentEventDistributor:
         self.nc_publisher = NCPublisher(nc)
         self.js_publisher = JSPublisher(js)
 
-    async def distribute_event(self, external_event: ExternalAgentEvent, user: Optional[UserIdentity] = None):
+    async def distribute_event(self, external_event: ExternalAgentEvent, user: UserIdentity | None = None):
         """
         Entry point for distributing an external event (ExternalAgentEvent) to agents or other systems through NATs.
 

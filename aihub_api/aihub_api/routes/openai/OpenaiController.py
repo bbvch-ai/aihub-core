@@ -1,5 +1,6 @@
 import logging
-from typing import Annotated, AsyncIterator, List, Literal, Optional
+from collections.abc import AsyncIterator
+from typing import Annotated, Literal
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -38,23 +39,26 @@ logger = logging.getLogger(__name__)
 
 class OpenaiController(Controller):
     """
-    A controller that fully emulates the OpenAI API, enabling AI Hub to serve as a drop-in replacement for OpenAI's endpoints.
+    A controller that fully emulates the OpenAI API, enabling AI Hub to serve as a drop-in replacement
+    for OpenAI's endpoints.
 
     ### Why OpenaiController?
-    The OpenaiController is designed to mirror the exact API interface provided by OpenAI, so that customers can seamlessly switch
-    from OpenAI's services to AI Hub without modifying their client code. Every endpoint that OpenAI offers—ranging from model management,
-    chat completions, embeddings, image generation, to audio processing (both speech-to-text and text-to-speech)—is implemented here with the same
+    The OpenaiController is designed to mirror the exact API interface provided by OpenAI,
+    so that customers can seamlessly switch from OpenAI's services to AI Hub without modifying their client code.
+    Every endpoint that OpenAI offers—ranging from model management, chat completions, embeddings, image generation,
+    to audio processing (both speech-to-text and text-to-speech)—is implemented here with the same
     request/response structure expected by the OpenAI Python and JavaScript SDKs.
 
     ### Key Intentions
-    - **API Compatibility**: Provide identical endpoints and interfaces as OpenAI, allowing customers to replace OpenAI endpoints with AI Hub's
-      endpoints without changes to their integration.
-    - **Unified Access**: Centralize access to various generative AI capabilities (LLM chat, embeddings, image generation, STT, and TTS)
-      under a single controller.
-    - **Extensibility**: Support multiple underlying model configurations (e.g., Azure, Self-Hosted, ...) and validate compatibility where necessary.
+    - **API Compatibility**: Provide identical endpoints and interfaces as OpenAI, allowing customers to replace
+      OpenAI endpoints with AI Hub's endpoints without changes to their integration.
+    - **Unified Access**: Centralize access to various generative AI capabilities (LLM chat, embeddings,
+      image generation, STT, and TTS) under a single controller.
+    - **Extensibility**: Support multiple underlying model configurations (e.g., Azure, Self-Hosted, ...)
+      and validate compatibility where necessary.
 
-    This setup ensures that your backend exposes a fully OpenAI-compatible API interface, allowing customers to plug in the
-    OpenAI SDKs directly against AI Hub.
+    This setup ensures that your backend exposes a fully OpenAI-compatible API interface,
+    allowing customers to plug in the OpenAI SDKs directly against AI Hub.
     """
 
     name = LocaleString(en="OpenAI")
@@ -66,12 +70,12 @@ class OpenaiController(Controller):
         *,
         auth: AuthHandler,
         route: str = "/openai",
-        additionally_required_permission: Optional[str] = None,
-        embedding_models: Optional[List[EmbeddingLLMConfig]] = None,
-        chat_models: Optional[List[ChatLLMConfig]] = None,
-        image_models: Optional[List[AzureOpenaiImageModelConfig]] = None,
-        stt_models: Optional[List[AzureOpenaiSTTConfig]] = None,
-        tts_models: Optional[List[AzureOpenaiTTSConfig]] = None,
+        additionally_required_permission: str | None = None,
+        embedding_models: list[EmbeddingLLMConfig] | None = None,
+        chat_models: list[ChatLLMConfig] | None = None,
+        image_models: list[AzureOpenaiImageModelConfig] | None = None,
+        stt_models: list[AzureOpenaiSTTConfig] | None = None,
+        tts_models: list[AzureOpenaiTTSConfig] | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.embedding_models = embedding_models or []
@@ -90,7 +94,8 @@ class OpenaiController(Controller):
         @self.router.get(
             route,
             summary="List Models",
-            description="Lists the currently available models, and provides basic information about each one such as the owner and availability.",
+            description="Lists the currently available models, and provides basic information about each one "
+            "such as the owner and availability.",
             response_model=ModelResponse,
             tags=self.tags,
         )
@@ -109,7 +114,8 @@ class OpenaiController(Controller):
         @self.router.get(
             route,
             summary="List Models (including ai-hub assistants)",
-            description="Lists the currently available models and ai-hub assistants, and provides basic information about each one such as the owner and availability.",
+            description="Lists the currently available models and ai-hub assistants, and provides basic information "
+            "about each one such as the owner and availability.",
             response_model=ModelResponse,
             tags=self.tags,
         )
@@ -135,7 +141,8 @@ class OpenaiController(Controller):
         @self.router.get(
             route,
             summary="Retrieve model",
-            description="Retrieves a model instance, providing basic information about the model such as the owner and permissioning.",
+            description="Retrieves a model instance, providing basic information about "
+            "the model such as the owner and permissioning.",
             tags=self.tags,
         )
         async def get_model(
@@ -150,7 +157,8 @@ class OpenaiController(Controller):
         @self.router.get(
             route,
             summary="Retrieve model (including ai-hub assistants)",
-            description="Retrieves a model or ai-hub assistant instance, providing basic information about the model such as the owner and permissioning.",
+            description="Retrieves a model or ai-hub assistant instance, providing basic information "
+            "about the model such as the owner and permissioning.",
             tags=self.tags,
         )
         async def get_model_with_assistants(
@@ -194,7 +202,11 @@ class OpenaiController(Controller):
             route,
             response_model=ChatCompletion,
             summary="Create chat completion",
-            description="Creates a model response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
+            description="Creates a model response for the given chat conversation. Learn more in the text generation, "
+            "vision, and audio guides. Parameter support can differ depending on the model used to "
+            "generate the response, particularly for newer reasoning models. Parameters that are only "
+            "supported for reasoning models are noted below. For the current state of unsupported "
+            "parameters in reasoning models, refer to the reasoning guide.",
             tags=self.tags,
         )
         async def chat_completion(
@@ -211,7 +223,11 @@ class OpenaiController(Controller):
             route,
             response_model=ChatCompletion,
             summary="Create chat completion (including ai-hub assistants)",
-            description="Creates a model or ai-hub assistant response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
+            description="Creates a model or ai-hub assistant response for the given chat conversation. "
+            "Learn more in the text generation, vision, and audio guides. Parameter support can differ "
+            "depending on the model used to generate the response, particularly for newer reasoning "
+            "models. Parameters that are only supported for reasoning models are noted below. For the "
+            "current state of unsupported parameters in reasoning models, refer to the reasoning guide.",
             tags=self.tags,
         )
         async def chat_completion_with_assistants(
@@ -260,13 +276,14 @@ class OpenaiController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             file: UploadFile = File(..., description="The audio file to transcribe"),
             model: str = Form(..., description="ID of the model to use"),
-            language: Optional[str] = Form(None, description="ISO-639-1 language code"),
-            prompt: Optional[str] = Form(None, description="Optional text prompt"),
-            response_format: Optional[str] = Form("json", description="Format of the response"),
-            temperature: Optional[float] = Form(0, description="Sampling temperature between 0 and 1"),
-            timestamp_granularities: Optional[List[Literal["word", "segment"]]] = Form(
+            language: str | None = Form(None, description="ISO-639-1 language code"),
+            prompt: str | None = Form(None, description="Optional text prompt"),
+            response_format: str | None = Form("json", description="Format of the response"),
+            temperature: float | None = Form(0, description="Sampling temperature between 0 and 1"),
+            timestamp_granularities: list[Literal["word", "segment"]] | None = Form(
                 None,
-                description="Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
+                description="Timestamp granularities (e.g. 'word' or 'segment'); "
+                "only used with verbose_json response_format",
             ),
         ) -> Transcription | TranscriptionVerbose | str:
             return await OpenaiService.stt(

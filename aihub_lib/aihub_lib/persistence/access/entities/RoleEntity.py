@@ -1,5 +1,3 @@
-from typing import List, Set
-
 from mongoengine import Document, ListField, StringField
 
 
@@ -21,7 +19,7 @@ class RoleEntity(Document):
     access_rules = ListField(StringField(), default=list)
 
     @classmethod
-    def get_access_rules_for_roles(cls, role_names: List[str]) -> Set[str]:
+    def get_access_rules_for_roles(cls, role_names: list[str]) -> set[str]:
         """
         Fetches all roles corresponding to the given role names and returns a
         unique set of all their associated access rules.
@@ -35,7 +33,7 @@ class RoleEntity(Document):
         return all_rules
 
     @staticmethod
-    def filter_existing_roles(role_names: List[str]) -> List[str]:
+    def filter_existing_roles(role_names: list[str]) -> list[str]:
         """
         Filters a list of potential role names, returning only those that
         exist in the database.

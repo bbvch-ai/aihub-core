@@ -1,4 +1,5 @@
-from typing import Annotated, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Annotated
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
@@ -23,9 +24,10 @@ class BotInTheLoopThread(BaseModel):
         ),
     ]
     slack_thread_ts: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="The timestamp of the Slack thread that acts as an identifier for the Slack thread where the bot-in-the-loop request is sent to.",
+            description="The timestamp of the Slack thread that acts as an identifier "
+            "for the Slack thread where the bot-in-the-loop request is sent to.",
         ),
     ] = None
     last_request_event: Annotated[
@@ -41,7 +43,7 @@ class BotInTheLoopHandler:
     CACHE_TTL_SECONDS = 60 * 60 * 24 * 30
 
     def __init__(self):
-        self.threads: Dict[str, BotInTheLoopThread] = {}
+        self.threads: dict[str, BotInTheLoopThread] = {}
         self.path: str = f"/bearer_token/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
         # Use TTLCache with max size of 100 entries
         self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)

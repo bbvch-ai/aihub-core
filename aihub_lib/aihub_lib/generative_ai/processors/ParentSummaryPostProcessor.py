@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, List, Optional, Set
+from typing import Annotated
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle, RelatedNodeInfo
@@ -20,9 +20,9 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
         return "ParentSummaryPostProcessor"
 
     def _postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None
-    ) -> List[NodeWithScore]:
-        all_nodes: Dict[str, NodeWithScore] = {n.node.node_id: n for n in nodes}
+        self, nodes: list[NodeWithScore], query_bundle: QueryBundle | None = None
+    ) -> list[NodeWithScore]:
+        all_nodes: dict[str, NodeWithScore] = {n.node.node_id: n for n in nodes}
 
         for node in nodes:
             visited_ids = set(all_nodes.keys())
@@ -37,9 +37,9 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
     def _retrieve_parents_for_node(
         self,
         content_node: NodeWithScore,
-        visited_ids: Set[str],
-    ) -> List[NodeWithScore]:
-        parents: List[NodeWithScore] = []
+        visited_ids: set[str],
+    ) -> list[NodeWithScore]:
+        parents: list[NodeWithScore] = []
         current_node = content_node
         level = 0
 

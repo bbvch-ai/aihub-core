@@ -1,4 +1,5 @@
-from typing import Annotated, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Annotated
 
 import google.genai as genai
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
@@ -18,10 +19,8 @@ class GeminiLLMParameter(ChatLLMParameter):
     gemini and openai models interchangeably.
     """
 
-    logprobs: Annotated[Optional[int], Field(None, description="Number of top tokens to return log probs for.")]
-    logit_bias: Annotated[
-        Optional[Dict[str, float]], Field(None, description="Adjust probabilities of specific tokens.")
-    ]
+    logprobs: Annotated[int | None, Field(None, description="Number of top tokens to return log probs for.")]
+    logit_bias: Annotated[dict[str, float] | None, Field(None, description="Adjust probabilities of specific tokens.")]
 
 
 class GeminiLLMConfig(ChatLLMConfig):
@@ -42,18 +41,18 @@ class GeminiLLMConfig(ChatLLMConfig):
     ]
 
     @property
-    def tokenizer(self) -> Callable[[str], List[int]]:
+    def tokenizer(self) -> Callable[[str], list[int]]:
         client = genai.Client(
             api_key=self.api_key,
         )
 
-        def token_counter(content: str) -> List[int]:
+        def token_counter(content: str) -> list[int]:
             response = client.models.count_tokens(model=f"models/{self.name}", contents=content)
             return [0] * response.total_tokens
 
         return token_counter
 
-    def to_llama_index(self, model_parameter: Optional[GeminiLLMParameter] = None) -> Tuple[OpenAILike, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: GeminiLLMParameter | None = None) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an Gemini model in openai compatible mode and a LLMCostTracker.
         This uses the OpenAILike wrapper since it mimics OpenAI-like APIs.

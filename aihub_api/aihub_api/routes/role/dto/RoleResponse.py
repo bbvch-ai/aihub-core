@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from pydantic import BaseModel, Field
@@ -12,7 +12,7 @@ class RoleResponse(BaseModel):
     id: Annotated[str, Field(description="The unique identifier of the role.")]
     name: Annotated[str, Field(description="The name of the role.")]
     description: Annotated[str, Field(description="The description of the role.")]
-    access_rules: Annotated[List[str], Field(description="The list of access rules for the role.")]
+    access_rules: Annotated[list[str], Field(description="The list of access rules for the role.")]
 
     @classmethod
     def from_role_entity(cls, role_entity: RoleEntity):

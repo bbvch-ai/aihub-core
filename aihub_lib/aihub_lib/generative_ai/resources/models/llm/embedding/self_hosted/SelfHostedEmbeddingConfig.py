@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Tuple
+from typing import Annotated
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
@@ -14,15 +14,16 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig i
 
 class SelfHostedEmbeddingParameter(EmbeddingLLMParameter):
     """
-    Parameters for a self-hosted embedding model, possibly using text-embedding-inference or another local inference server.
+    Parameters for a self-hosted embedding model, possibly using text-embedding-inference or another
+    local inference server.
 
     ### Why SelfHostedEmbeddingParameter?
     Self-hosted embedding services might allow instructions, truncation toggles, or other special parameters.
     Storing them here keeps configuration unified and flexible.
     """
 
-    text_instruction: Annotated[Optional[str], Field("", description="Instruction to apply when embedding text.")]
-    query_instruction: Annotated[Optional[str], Field("", description="Instruction to apply when embedding a query.")]
+    text_instruction: Annotated[str | None, Field("", description="Instruction to apply when embedding text.")]
+    query_instruction: Annotated[str | None, Field("", description="Instruction to apply when embedding a query.")]
     truncate_text: Annotated[bool, Field(False, description="If True, truncate text to model's max length.")]
 
 
@@ -50,8 +51,8 @@ class SelfHostedEmbeddingConfig(EmbeddingLLMConfig):
     ]
 
     def to_llama_index(
-        self, model_parameter: Optional[SelfHostedEmbeddingParameter] = None
-    ) -> Tuple[TextEmbeddingsInference, LLMCostTracker]:
+        self, model_parameter: SelfHostedEmbeddingParameter | None = None
+    ) -> tuple[TextEmbeddingsInference, LLMCostTracker]:
         """
         Instantiate a TextEmbeddingsInference object and LLMCostTracker for self-hosted embeddings.
 

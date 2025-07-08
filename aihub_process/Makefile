@@ -12,11 +12,6 @@ typecheck:
 	@echo "Running type checks..."
 	poetry run mypy aihub_process
 
-# Sort imports with isort
-sort-imports:
-	@echo "Sorting imports..."
-	poetry run isort aihub_process
-
 test-cov:
 	@echo "Running tests in aihub_api with coverage..."
 	poetry run pytest --cov=. \
@@ -25,6 +20,6 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                   || echo "No tests found. Skipping..."
 
-pr-ready: sort-imports format lint
-	@echo "Running full check (format, sort)..."
+pr-ready: format lint
+	@echo "Running full check (format, lint)..."
 

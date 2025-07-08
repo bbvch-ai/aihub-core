@@ -1,17 +1,4 @@
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
-from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
-from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
-from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
-    FewShotStandaloneQuestionCondenserEvent,
-)
-from aihub_agent.agents.FewShotAgent.events.RightAgentEvent import RightAgentEvent
-from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -23,10 +10,23 @@ from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLM
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
+from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
+from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
+    FewShotStandaloneQuestionCondenserEvent,
+)
+from aihub_agent.agents.FewShotAgent.events.RightAgentEvent import RightAgentEvent
+from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 
 scenarios("features/few_shot_agent.feature")
 

@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 

@@ -1,7 +1,8 @@
 import asyncio
 import inspect
 import logging
-from typing import Annotated, Awaitable, Callable, Dict, List, Optional, Type
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -36,8 +37,9 @@ class AgentDispatcher(BaseDispatcher):
     dispatchable workflows. These concepts are:
 
     1. **Context and State Management:**
-        The AgentDispatcher uses `RunContext` and `ThreadContext` for state persistence. It interacts with `DistributedEventStore`
-        and `StepStore` to track event histories and step execution counts across distributed environments.
+        The AgentDispatcher uses `RunContext` and `ThreadContext` for state persistence.
+        It interacts with `DistributedEventStore` and `StepStore` to track event
+        histories and step execution counts across distributed environments.
 
     2. **Tracing and Telemetry:**
         Through `RunTraceCoordinator`, it logs start/end times of runs and steps, aiding observability.
@@ -47,7 +49,7 @@ class AgentDispatcher(BaseDispatcher):
 
     def __init__(
         self,
-        agent: Annotated[Type[Agent], "The agent class defining steps and logic."],
+        agent: Annotated[type[Agent], "The agent class defining steps and logic."],
         agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
@@ -132,7 +134,7 @@ class AgentDispatcher(BaseDispatcher):
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
@@ -161,7 +163,7 @@ class AgentDispatcher(BaseDispatcher):
                 )
                 return False
 
-        precondition_fn: Optional[Callable[..., Awaitable[bool]]] = getattr(
+        precondition_fn: Callable[..., Awaitable[bool]] | None = getattr(
             step_method, Agent.PRECONDITION_FUNCTION_ANNOTATION, None
         )
 
@@ -182,7 +184,7 @@ class AgentDispatcher(BaseDispatcher):
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
@@ -308,7 +310,7 @@ class AgentDispatcher(BaseDispatcher):
         self,
         trigger_event: Annotated[ControlEvent, "The event that caused this step to trigger."],
         method: Annotated[Callable, "The method to prepare the args for."],
-        events: Annotated[Dict[str, List[ControlEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],

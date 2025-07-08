@@ -3,7 +3,7 @@ from aihub_lib.nats.events import DiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from bson import ObjectId
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import DiscoverableAgent

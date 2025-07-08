@@ -1,6 +1,7 @@
+from aihub_lib.nats.events import StopEvent, UserMessageEvent
+
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.nats.events import StopEvent, UserMessageEvent
 from playground.minimal_workflow.simple_workflow.events.SimpleEventA import SimpleEventA
 
 
