@@ -51,7 +51,6 @@ def agent_id() -> str:
     return "test_agent_1"
 
 
-
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClient, None]:
     """Create an API client with ThreadController endpoints mounted."""
