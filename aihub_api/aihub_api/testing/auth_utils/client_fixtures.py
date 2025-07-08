@@ -1,0 +1,123 @@
+"""Unified test client fixture utilities for consistent test setup."""
+
+import pytest_asyncio
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
+from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
+
+BASE_URL = "http://test"
+
+
+@pytest_asyncio.fixture
+async def development_auth_api_client(controller_mount_func):
+    """
+    Create an AsyncClient with DangerousDevelopmentOnlyAuthHandler for testing.
+
+    Args:
+        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
+
+    Usage:
+        @pytest.mark.asyncio
+        async def test_something(development_auth_api_client):
+            def mount_controller(auth):
+                return UserController(auth=auth).get_my_user()
+
+            client = await development_auth_api_client(mount_controller)
+            response = await client.get("/api/v1/users/me")
+    """
+    runner = ApiTestRunner()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    runner.mount(controller_mount_func(auth))
+
+    app = runner.get_app()
+    async with LifespanManager(app) as lifespan:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
+            yield client
+
+
+@pytest_asyncio.fixture
+async def token_auth_api_client(controller_mount_func):
+    """
+    Create an AsyncClient with TokenAuthHandler for testing.
+
+    Args:
+        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
+    """
+    runner = ApiTestRunner()
+    auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
+    runner.mount(controller_mount_func(auth))
+
+    app = runner.get_app()
+    async with LifespanManager(app) as lifespan:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
+            yield client
+
+
+@pytest_asyncio.fixture
+async def oauth2_auth_api_client(controller_mount_func):
+    """
+    Create an AsyncClient with OAuth2AuthHandler for testing.
+
+    Args:
+        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
+    """
+    runner = ApiTestRunner()
+    auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    runner.mount(controller_mount_func(auth))
+
+    app = runner.get_app()
+    async with LifespanManager(app) as lifespan:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
+            yield client
+
+
+def create_user_controller_mount():
+    """
+    Helper function to create a controller mount function for UserController.
+    Use this as the controller_mount_func parameter for the client fixtures.
+    """
+
+    def mount_func(auth):
+        from aihub_api.routes.user.UserController import UserController
+
+        return UserController(auth=auth).get_my_user()
+
+    return mount_func
+
+
+def create_token_controller_mount():
+    """
+    Helper function to create a controller mount function for TokenController.
+    Use this as the controller_mount_func parameter for the client fixtures.
+    """
+
+    def mount_func(auth):
+        from aihub_api.routes.token.TokenController import TokenController
+
+        return TokenController(auth=auth)
+
+    return mount_func
+
+
+def create_thread_controller_mount():
+    """
+    Helper function to create a controller mount function for ThreadController.
+    Use this as the controller_mount_func parameter for the client fixtures.
+    """
+
+    def mount_func(auth):
+        from aihub_api.routes.thread.ThreadController import ThreadController
+
+        return ThreadController(auth=auth)
+
+    return mount_func

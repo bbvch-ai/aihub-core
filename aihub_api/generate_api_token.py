@@ -1,13 +1,13 @@
 import subprocess
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.token.TokenService import TokenService
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.user.UserEntity import UserEntity
-from mongoengine import connect, disconnect
-
-from aihub_api.routes.token.TokenService import TokenService
 
 
 def get_azure_cli_user_info():
@@ -67,8 +67,8 @@ connect(db=ApiConfig().DB_NAME, host=host)
 
 user_name = cli_user_name
 token_name = f"{cli_user_name} Token"
-expiry = datetime.now(UTC) + timedelta(days=365)
-roles = ["AllAgents"]
+expiry = datetime.now(timezone.utc) + timedelta(days=365)
+roles = ["TestOnlyFullAdminAccess"]
 
 user = UserIdentity(
     id=cli_user_oid,

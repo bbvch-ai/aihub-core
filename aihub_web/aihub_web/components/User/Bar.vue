@@ -8,7 +8,7 @@
       @click="toggleDarkMode()"
     />
     <div
-      v-if="userIsLoading"
+      v-if="myUserIsLoading"
       class="flex flex-row gap-2"
     >
       <div class="flex flex-col gap-1">
@@ -33,15 +33,15 @@
     >
       <div>
         <p class="text-xs font-bold">
-          {{ user?.name }}
+          {{ myUser?.name }}
         </p>
         <p class="text-xs">
-          {{ user?.email }}
+          {{ myUser?.email }}
         </p>
       </div>
       <Avatar
-        :image="user?.profile_image ?? undefined"
-        :label="!user?.profile_image ? userInitials : undefined"
+        :image="myUser?.profile_image ?? undefined"
+        :label="!myUser?.profile_image ? userInitials : undefined"
         shape="circle"
         size="normal"
       />
@@ -53,10 +53,10 @@
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 
-const { user, userIsLoading } = useUser()
+const { myUser, myUserIsLoading } = useMyUser()
 
 const userInitials = computed(() =>
-  user.value?.name?.split(' ').map(n => n[0]).join(''),
+  myUser.value?.name?.split(' ').map(n => n[0]).join(''),
 )
 
 // Initialize the dark mode reactive state with persistence

@@ -19,9 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import type { UserDto } from '@core/sdk/client'
+import type { MinimalUserDto } from '@core/sdk/client'
 
 defineProps<{
-  user: UserDto
+  user: MinimalUserDto
 }>()
 </script>

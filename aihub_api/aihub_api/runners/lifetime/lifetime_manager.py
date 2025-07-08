@@ -57,7 +57,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     When `app` starts, this manager runs and sets up everything. When `app` stops, it tears down resources.
     """
 
-    logging.warning("Initializing NATS connection and resources")
+    logging.info("Initializing NATS connection and resources")
 
     nc = NATS()
 

@@ -1,5 +1,12 @@
 import pytest
 import pytest_asyncio
+from asgi_lifespan import LifespanManager
+from httpx import AsyncClient, ASGITransport
+from llama_index.core.base.llms.types import ChatMessage
+
+from aihub_api.events.EventModelCreationService import EventModelCreationService
+from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -7,13 +14,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
-from asgi_lifespan import LifespanManager
-from httpx import ASGITransport, AsyncClient
-from llama_index.core.base.llms.types import ChatMessage
-
-from aihub_api.events.EventModelCreationService import EventModelCreationService
-from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"

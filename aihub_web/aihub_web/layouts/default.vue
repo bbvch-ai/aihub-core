@@ -89,7 +89,7 @@ const online = ref<boolean>(false)
 const { apps } = useApps()
 
 const nonAdminApps = computed<MenuItem>(() => {
-  return apps.value.filter((app: MenuItem) => !app.path.includes('/admin/'))
+  return apps.value.filter((app: MenuItem) => !app.isAdmin)
 })
 
 const appIsActive = (app: MenuItem) => {

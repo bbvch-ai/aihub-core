@@ -1,6 +1,7 @@
-import { getEvents, type WsServerEvent } from '@core/sdk/client'
+import { getEventsInThread, type WsServerEventReadable } from '@core/sdk/client'
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export const useThreadEvents = defineQuery(() => {
@@ -10,14 +11,14 @@ export const useThreadEvents = defineQuery(() => {
   const route = useRoute()
   const queryCache = useQueryCache()
 
-  const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<WsServerEvent[]>({
+  const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<WsServerEventReadable[]>({
     key: () => ['thread', route.params.thread_id as string, 'events'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
-      return await getEvents({
+      return await getEventsInThread({
         composable: '$fetch',
-        query: {
+        path: {
           thread_id: route.params.thread_id as string,
         },
       })
@@ -42,13 +43,13 @@ export const useThreadEvents = defineQuery(() => {
     if (!rawEventData) return
 
     try {
-      const event = JSON.parse(rawEventData) as WsServerEvent
+      const event = JSON.parse(rawEventData) as WsServerEventReadable
 
       // Only process events for the current thread
       if (event.thread_id === route.params.thread_id) {
         // Get current events from cache
         const key = ['thread', route.params.thread_id, 'events']
-        const currentEvents = queryCache.getQueryData<WsServerEvent[]>(key) || []
+        const currentEvents = queryCache.getQueryData<WsServerEventReadable[]>(key) || []
 
         // Check if event already exists (avoid duplicates)
         const eventExists = currentEvents.some(e => e.event_id === event.event_id)

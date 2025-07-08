@@ -14,6 +14,7 @@ export const useApps = () => {
       description: service.description,
       icon: service.icon,
       path: service.path,
+      isAdmin: service.user_is_admin ?? false,
     } satisfies MenuItem
     )) ?? []
     return [

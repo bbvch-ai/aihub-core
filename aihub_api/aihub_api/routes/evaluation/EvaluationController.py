@@ -1,5 +1,7 @@
-from typing import Annotated
+from typing import Annotated, List, Optional
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -9,7 +11,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, Path, Security
+from fastapi import Body, Depends, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -36,7 +38,6 @@ class EvaluationController(Controller):
 
     ### Authentication
     Endpoints require authentication via the configured `auth` dependency.
-    Access is typically restricted to administrators (`is_admin_only=True` by default).
     """
 
     name = LocaleString(en="Evaluation")
@@ -49,9 +50,9 @@ class EvaluationController(Controller):
         auth: AuthHandler,
         judge: ChatLLMConfig,
         route: str = "/evaluations",
-        is_admin_only: bool = True,
+        additionally_required_permission: Optional[str] = None,
     ):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.judge = judge
 
     def create_dataset(self, route: str = "/datasets") -> "EvaluationController":
@@ -63,7 +64,7 @@ class EvaluationController(Controller):
         )
         async def create_dataset(
             create_dto: Annotated[DatasetCreate, Body()],
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
         ) -> Dataset:
             return await EvaluationService.create_dataset(create_dto)
 
@@ -77,8 +78,8 @@ class EvaluationController(Controller):
             description="Retrieves a list of all evaluation datasets.",
         )
         async def get_datasets(
-            user: UserIdentity = Security(self.auth),
-        ) -> list[MinimalDataset]:
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> List[MinimalDataset]:
             return await EvaluationService.get_datasets()
 
         return self
@@ -92,7 +93,7 @@ class EvaluationController(Controller):
         )
         async def get_dataset(
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to retrieve.")],
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
         ) -> Dataset:
             return await EvaluationService.get_dataset(dataset_id)
 
@@ -108,7 +109,7 @@ class EvaluationController(Controller):
         async def update_dataset(
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to update.")],
             update_dto: Annotated[DatasetUpdate, Body()],
-            user: UserIdentity = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
         ) -> Dataset:
             return await EvaluationService.update_dataset(dataset_id, update_dto)
 
@@ -122,10 +123,18 @@ class EvaluationController(Controller):
             description="Retrieves a list of all evaluation experiments.",
         )
         async def get_experiments(
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
-        ) -> list[MinimalExperiment]:
-            return await EvaluationService.get_experiments(t)
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> List[MinimalExperiment]:
+            experiments = await EvaluationService.get_experiments(t)
+            return [
+                experiment
+                for experiment in experiments
+                if AccessChecker.from_user(user).access_level_for_agent(
+                    experiment.agent.agent_class, experiment.agent.agent_id
+                )
+                == AccessLevel.ACCESS_ADMIN
+            ]
 
         return self
 
@@ -138,10 +147,18 @@ class EvaluationController(Controller):
         )
         async def get_experiment(
             experiment_id: Annotated[str, Path(description="The unique identifier of the experiment to retrieve.")],
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> Experiment:
-            return await EvaluationService.get_experiment(experiment_id, t)
+            experiment = await EvaluationService.get_experiment(experiment_id, t)
+            if (
+                AccessChecker.from_user(user).access_level_for_agent(
+                    experiment.agent.agent_class, experiment.agent.agent_id
+                )
+                != AccessLevel.ACCESS_ADMIN
+            ):
+                raise HTTPException(status_code=403, detail="Only administrators have access to an agents experiments.")
+            return experiment
 
         return self
 
@@ -154,11 +171,20 @@ class EvaluationController(Controller):
         )
         async def run_experiment(
             create_dto: Annotated[ExperimentCreate, Body()],
-            user: UserIdentity = Security(self.auth),
-            nats_client: NATS = Depends(use_nats),
-            external_event_distributor: ExternalAgentEventDistributor = Depends(use_external_event_distributor),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            nats_client: Annotated[NATS, Depends(use_nats)],
+            external_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> Experiment:
+            if (
+                AccessChecker.from_user(user).access_level_for_agent(create_dto.agent_class, create_dto.agent_id)
+                != AccessLevel.ACCESS_ADMIN
+            ):
+                raise HTTPException(
+                    status_code=403, detail="Only administrators can create an experiment for this agent."
+                )
             return await EvaluationService.run_experiment_evaluation(
                 create_dto=create_dto,
                 nats_client=nats_client,
