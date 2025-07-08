@@ -56,7 +56,7 @@ The backend of the AI-Hub serves as the crucial bridge between users, agents, an
     - `*`: Matches any single segment in the hierarchy
       - Example: `aihub.user.agent.class_a.*` matches `aihub.user.agent.class_a.id_123` but not `aihub.user.agent.class_a.id_123.property`
     - `>`: Matches all remaining segments (must be the last segment)
-      - Example: `aihub.user.agent.>` matches `aihub.user.agent.class_a.id_123` and also `aihub.user.agent.class_b.id_456.property`
+      - Example: `aihub.admin.agent.>` matches `aihub.user.agent.class_a.id_123` and also `aihub.user.agent.admin.id_456.property` (admins also have access to user endpoints)
 
 - **Permission Templates:**  
   Endpoints are protected using permission templates that define the required access level:
