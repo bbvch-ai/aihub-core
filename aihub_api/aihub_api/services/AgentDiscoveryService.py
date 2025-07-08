@@ -62,6 +62,7 @@ class AgentDiscoveryService:
 
     async def stop(self):
         if not self.running:
+            logger.warning("Agent discovery service is not running")
             return
 
         self.running = False
