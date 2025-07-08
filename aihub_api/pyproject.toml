@@ -42,6 +42,10 @@ pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
 
+[tool.poetry.dependencies.jambo]
+git = "https://github.com/bbvch-ai/jambo.git"
+tag = "v0.3.0"
+
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
 tag = "v0.213.0"

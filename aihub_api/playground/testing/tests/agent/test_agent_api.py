@@ -4,7 +4,7 @@ from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
 from llama_index.core.base.llms.types import ChatMessage
 
-from aihub_api.events.create_input_model import create_input_model
+from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
@@ -72,7 +72,9 @@ async def test_get_agent(agent_api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
     """Test POST /agent/{agent_class}/{agent_id}/send_event returns correct agent details."""
-    user_message = create_input_model(UserMessageEvent)(messages=[ChatMessage(role="user", content="Hey!")])
+    user_message = EventModelCreationService.create_input_model(UserMessageEvent)(
+        messages=[ChatMessage(role="user", content="Hey!")]
+    )
     print(user_message.model_dump_json())
     response = await agent_api_client.post(
         f"/agents/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()

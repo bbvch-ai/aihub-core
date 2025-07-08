@@ -2257,6 +2257,27 @@ files = [
 colors = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "jambo"
+version = "0.3.0"
+description = "Jambo - JSON Schema to Pydantic Converter"
+optional = false
+python-versions = "<4.0,>=3.10"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+email-validator = ">=2.2.0"
+jsonschema = ">=4.23.0"
+pydantic = ">=2.10.6"
+
+[package.source]
+type = "git"
+url = "https://github.com/bbvch-ai/jambo.git"
+reference = "v0.3.0"
+resolved_reference = "3911fbe9cd61548e0901758d9f5f198b0b847a76"
+
+[[package]]
 name = "jedi"
 version = "0.19.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -6523,4 +6544,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "d9fd32252c81e867b36738c2d52b4b141e6b22b4f48279e8220b9023713e5230"
+content-hash = "394346e368773928cb3bfd50809b41144320b3880cc2fd4ee317a6ac2d503021"
