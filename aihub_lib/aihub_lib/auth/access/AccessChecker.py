@@ -20,6 +20,13 @@ class AccessChecker:
         - User Access Rule: `aihub.user.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match!
         - Permission Template: `aihub.user.agent.?>` -> Match!
+
+    3.  Admin Check: aihub.admin are automatically also aihub.user. To differentiate whether a user accessing an
+        endpoint has user or admin privilege, we use AccessLevel.ACCESS_ADMIN or AccessLevel.ACCESS_USER.
+        Note that adn admin accessing an endpoint requiring user privileges will still enter the endpoint
+        with AccessLevel.ACCESS_ADMIN
+        - User Access Rule: `aihub.admin.agent.class_a.*`
+        - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
     """
 
     def __init__(self, user_access_rules: List[str]):
@@ -119,7 +126,7 @@ class AccessChecker:
             else self._access_rule_matches_concrete_permission
         )
 
-        # 1. Check for Admin access
+        # 1. Check for Admin access (admins implicitly have user-access as well)
         admin_perm_to_check = permission_template.replace("aihub.user.", "aihub.admin.", 1)
         for access_rule in self.admin_access_rules:
             if match_func(access_rule, admin_perm_to_check):
