@@ -79,16 +79,28 @@ class AgentDiscoveryService:
     async def _discover_and_register_agents(self):
         agents: List[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
 
+        for registered_agent_class, registered_agent_id in self.registered_agents:
+            self._deregister_agent_endpoints(registered_agent_class, registered_agent_id)
+
         for agent in agents:
             agent_key = (agent.agent_class, agent.agent_id)
-
-            if agent_key in self.registered_agents:
-                continue
 
             self._register_agent_endpoints(agent.agent_class, agent.agent_id, agent.start_events, agent.stop_events)
 
             self.registered_agents.add(agent_key)
             logger.info(f"Registered endpoints for agent: {agent.agent_class}.{agent.agent_id}")
+
+    def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
+        agent_class_name = snakecase(agent_class)
+        agent_id_snake = snakecase(agent_id)
+
+        for route in list(self.app.routes):
+            if route.path.startswith(f"/agents/{agent_class_name}/{agent_id_snake}/"):
+                self.app.routes.remove(route)
+                logger.info(f"Deregistered endpoint: {route.path}")
+
+        # Remove from registered agents
+        self.registered_agents.discard((agent_class, agent_id))
 
     def _register_agent_endpoints(
         self, agent_class: str, agent_id: str, start_events: List[EventSpecs], stop_events: List[EventSpecs]
