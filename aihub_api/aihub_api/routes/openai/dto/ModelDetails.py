@@ -1,8 +1,7 @@
 import time
-from typing import Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 
 
 class ModelDetails(BaseModel):
@@ -14,5 +13,5 @@ class ModelDetails(BaseModel):
 
     owned_by: Annotated[str, Field(description="The user ID of the owner.")] = "aihub"
 
-    agent_class: Annotated[Optional[str], Field(description="The agent class of the model.")] = None
-    agent_id: Annotated[Optional[str], Field(description="The agent ID of the model.")] = None
+    agent_class: Annotated[str | None, Field(description="The agent class of the model.")] = None
+    agent_id: Annotated[str | None, Field(description="The agent ID of the model.")] = None

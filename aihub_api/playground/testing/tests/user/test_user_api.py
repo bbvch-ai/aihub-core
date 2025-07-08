@@ -1,11 +1,5 @@
 import pytest
 import pytest_asyncio
-from asgi_lifespan import LifespanManager
-from httpx import AsyncClient, ASGITransport
-from mongoengine import connect, disconnect
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -15,7 +9,13 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse, get_expected_user_data  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import get_expected_user_data, mock_user_entity_autouse  # noqa: F401
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/users/me"

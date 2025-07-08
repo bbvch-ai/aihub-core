@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -36,7 +34,7 @@ class HealthController(Controller):
     icon = "solar:health-bold"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/health", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/health", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 

@@ -1,10 +1,5 @@
 import pytest
 import pytest_asyncio
-from asgi_lifespan import LifespanManager
-from httpx import AsyncClient, ASGITransport
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -16,6 +11,11 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingConfig,
 )
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+
+from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"

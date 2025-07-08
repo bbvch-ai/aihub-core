@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import Field
 
@@ -11,4 +11,4 @@ class PaginatedUsersResponse(PageDTO):
     Represents a paginated response containing a list of users.
     """
 
-    users: Annotated[List[UserDTO], Field(description="List of MinimalUserDTO objects for the current page.")]
+    users: Annotated[list[UserDTO], Field(description="List of MinimalUserDTO objects for the current page.")]

@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -50,7 +50,7 @@ class EvaluationController(Controller):
         auth: AuthHandler,
         judge: ChatLLMConfig,
         route: str = "/evaluations",
-        additionally_required_permission: Optional[str] = None,
+        additionally_required_permission: str | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.judge = judge
@@ -79,7 +79,7 @@ class EvaluationController(Controller):
         )
         async def get_datasets(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
-        ) -> List[MinimalDataset]:
+        ) -> list[MinimalDataset]:
             return await EvaluationService.get_datasets()
 
         return self
@@ -125,7 +125,7 @@ class EvaluationController(Controller):
         async def get_experiments(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> List[MinimalExperiment]:
+        ) -> list[MinimalExperiment]:
             experiments = await EvaluationService.get_experiments(t)
             return [
                 experiment

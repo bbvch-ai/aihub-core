@@ -1,5 +1,4 @@
 import re
-from typing import List, Set
 
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -29,7 +28,7 @@ class AccessChecker:
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
     """
 
-    def __init__(self, user_access_rules: List[str]):
+    def __init__(self, user_access_rules: list[str]):
         self.valid_access_rules = self._get_validated_access_rules(user_access_rules)
         self.admin_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.admin.")}
         self.user_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.user.")}
@@ -71,7 +70,7 @@ class AccessChecker:
         if "?>" in parts and parts[-1] != "?>":
             raise ValueError(f"Invalid permission template: '?>' must be the last token. Got: {template}")
 
-    def _get_validated_access_rules(self, access_rules: List[str]) -> Set[str]:
+    def _get_validated_access_rules(self, access_rules: list[str]) -> set[str]:
         """Filters and validates the user's access_rules."""
         validated = set()
         for access_rule in access_rules:

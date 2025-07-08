@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -25,7 +25,8 @@ class UserController(Controller):
 
     ### Why UserController?
     In many applications, authenticated users may want to retrieve their own profile or check who they are
-    logged in as. The `UserController` provides a simple endpoint that returns a `MinimalUserDTO` for the authenticated user.
+    logged in as. The `UserController` provides a simple endpoint that returns a `MinimalUserDTO`
+    for the authenticated user.
     """
 
     name = LocaleString(en="User")
@@ -33,7 +34,7 @@ class UserController(Controller):
     icon = "mdi:user"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/users", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/users", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
@@ -104,7 +105,7 @@ class UserController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_my_dashboard(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> Optional[DashboardDTO]:
+        ) -> DashboardDTO | None:
             """
             Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
             """

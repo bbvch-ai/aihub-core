@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, List, Optional, Type
+from typing import Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -65,7 +65,7 @@ class AgentController(Controller):
     icon = "meteor-icons:robot"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
@@ -75,7 +75,7 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> List[AgentDTO]:
+        ) -> list[AgentDTO]:
             """
             Retrieve a list of all agents, both online (discoverable) and offline (not discoverable).
             """
@@ -94,7 +94,7 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> List[AgentDTO]:
+        ) -> list[AgentDTO]:
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
@@ -162,8 +162,8 @@ class AgentController(Controller):
         self,
         agent_class,
         agent_id,
-        start_event_class: Type[StartEvent],
-        stop_event_class: Type[StopEvent],
+        start_event_class: type[StartEvent],
+        stop_event_class: type[StopEvent],
         route_postfix="/send_event",
     ) -> "AgentController":
         """

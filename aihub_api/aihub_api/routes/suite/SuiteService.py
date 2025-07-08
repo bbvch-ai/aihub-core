@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class SuiteService:
     @staticmethod
     def get_suite(user: UserIdentity, runner: "Runner", t: LocaleHandler) -> SuiteDTO:
-        services: List[ServiceDTO] = []
+        services: list[ServiceDTO] = []
         access_checker = AccessChecker.from_user(user)
         for controller in runner.controllers:
             user_service_access = access_checker.access_level_for_service(controller.service_name)

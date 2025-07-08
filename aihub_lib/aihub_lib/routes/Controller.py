@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 
@@ -61,14 +61,14 @@ class Controller(abc.ABC):
     description = LocaleString(en="This controller has no description.")
     icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
 
-    def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: Optional[str] = None):
+    def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
         self.base_route: str = route
         self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler(
             identity_provider=DangerousDevelopmentOnlyIdentityProvider()
         )
         self.router: APIRouter = APIRouter()
         self.additionally_required_permission = additionally_required_permission
-        self._runner: Optional["Runner"] = None
+        self._runner: Runner | None = None
 
     @property
     def service_name(self):
@@ -85,7 +85,8 @@ class Controller(abc.ABC):
 
             if not access_checker.has_access_to_service(self.service_name):
                 logger.warning(
-                    f"User {user.email} does not have access to service {self.service_name}. Got roles {user.roles} with access rules {access_checker.access_rules}"
+                    f"User {user.email} does not have access to service {self.service_name}. "
+                    f"Got roles {user.roles} with access rules {access_checker.access_rules}"
                 )
                 raise HTTPException(
                     status_code=403,
@@ -96,16 +97,19 @@ class Controller(abc.ABC):
                 self.additionally_required_permission
             ):
                 logger.warning(
-                    f"User {user.email} does not have special permission {self.additionally_required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}"
+                    f"User {user.email} does not have special permission {self.additionally_required_permission}. "
+                    f"Got roles {user.roles} with access rules {access_checker.access_rules}"
                 )
                 raise HTTPException(
                     status_code=403,
-                    detail=f"Forbidden: You do not have the required additional '{self.additionally_required_permission}' permission to access this service.",
+                    detail=f"Forbidden: You do not have the required additional "
+                    f"'{self.additionally_required_permission}' permission to access this service.",
                 )
 
             if not access_checker.has_access(required_permission):
                 logger.warning(
-                    f"User {user.email} does not have permission {required_permission}. Got roles {user.roles} with access rules {access_checker.access_rules}"
+                    f"User {user.email} does not have permission {required_permission}. "
+                    f"Got roles {user.roles} with access rules {access_checker.access_rules}"
                 )
                 raise HTTPException(
                     status_code=403,

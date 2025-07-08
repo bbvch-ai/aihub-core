@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -21,7 +21,7 @@ class RoleController(Controller):
     icon = "solar:users-group-rounded-bold"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: str | None = None
     ):
         super().__init__(
             auth=auth,
@@ -46,7 +46,8 @@ class RoleController(Controller):
                     if not AccessChecker.validate_user_access_rule(rule):
                         raise HTTPException(
                             status_code=400,
-                            detail=f"Invalid access rule: {rule}. Access rules must be in the format <resource>.<action>.",
+                            detail=f"Invalid access rule: {rule}. "
+                            f"Access rules must be in the format <resource>.<action>.",
                         )
                 return RoleService.create_role(role_data)
             except NotUniqueError:
@@ -65,7 +66,7 @@ class RoleController(Controller):
         )
         async def get_roles(
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
-        ) -> List[RoleResponse]:
+        ) -> list[RoleResponse]:
             return RoleService.list_roles()
 
         return self

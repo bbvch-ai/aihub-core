@@ -1,14 +1,8 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
-from asgi_lifespan import LifespanManager
-from httpx import AsyncClient, ASGITransport
-from mongoengine import connect, disconnect
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.user.UserController import UserController
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
@@ -16,6 +10,12 @@ from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/users/me"
@@ -39,7 +39,7 @@ def valid_token(mongo_db):
         email=os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
         roles=["TestOnlyFullAdminAccess"],
     )
-    expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+    expiry = datetime.now(UTC) + timedelta(hours=1)
     token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
     yield token_obj.token
     user.delete()

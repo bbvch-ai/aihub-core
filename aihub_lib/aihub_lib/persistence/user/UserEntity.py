@@ -144,6 +144,6 @@ class UserEntity(Document):
         return cls.objects.count()
 
     @classmethod
-    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> List["UserEntity"]:
+    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list["UserEntity"]:
         """Get a paginated list of users, ordered by name."""
         return cls.objects.order_by("name").skip(skip).limit(limit)

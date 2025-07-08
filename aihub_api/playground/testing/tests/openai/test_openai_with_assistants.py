@@ -2,11 +2,6 @@ import json
 
 import pytest
 import pytest_asyncio
-from asgi_lifespan import LifespanManager
-from httpx import AsyncClient, ASGITransport
-
-from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -14,6 +9,11 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+
+from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"

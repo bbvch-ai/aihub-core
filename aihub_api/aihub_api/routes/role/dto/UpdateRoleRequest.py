@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -6,6 +6,6 @@ from pydantic import BaseModel, Field
 class UpdateRoleRequest(BaseModel):
     """Request model for updating an existing role. All fields are optional."""
 
-    name: Annotated[Optional[str], Field(description="The new unique name of the role.")] = None
-    description: Annotated[Optional[str], Field(description="The new description for the role.")] = None
-    access_rules: Annotated[Optional[List[str]], Field(description="The new list of access rules.")] = None
+    name: Annotated[str | None, Field(description="The new unique name of the role.")] = None
+    description: Annotated[str | None, Field(description="The new description for the role.")] = None
+    access_rules: Annotated[list[str] | None, Field(description="The new list of access rules.")] = None

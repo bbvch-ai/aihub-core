@@ -1,13 +1,7 @@
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
-from asgi_lifespan import LifespanManager
-from typing import AsyncGenerator
-
-from httpx import AsyncClient, ASGITransport
-from mongoengine import connect, disconnect
-
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
     DangerousDevelopmentOnlyAuthConfig,
 )
@@ -20,9 +14,15 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from aihub_lib.testing.logging.logger import enable_logging
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.thread.ThreadController import ThreadController
+from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
 enable_logging()
 

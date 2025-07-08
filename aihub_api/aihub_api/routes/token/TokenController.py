@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -19,7 +19,7 @@ class TokenController(Controller):
     icon = "solar:password-bold"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/tokens", additionally_required_permission: Optional[str] = None
+        self, *, auth: AuthHandler, route: str = "/tokens", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
@@ -55,7 +55,7 @@ class TokenController(Controller):
         )
         async def list_tokens_endpoint(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> List[TokenResponse]:
+        ) -> list[TokenResponse]:
             return TokenService.list_tokens(user)
 
         return self

@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -16,14 +16,14 @@ class ThreadDTO(BaseModel):
     # Basic thread information
     id: Annotated[str, Field(description="The thread ID")]
     name: Annotated[str, Field(description="User given name of thread")]
-    users: Annotated[List[MinimalUserDTO], Field(description="List of users in thread")]
-    agents: Annotated[List[MinimalAgentDTO], Field(description="List of agents initially associated with thread")]
+    users: Annotated[list[MinimalUserDTO], Field(description="List of users in thread")]
+    agents: Annotated[list[MinimalAgentDTO], Field(description="List of agents initially associated with thread")]
     created_at: Annotated[str, Field(description="Date at which thread was created (ISO format string)")]
 
-    process_class: Annotated[Optional[str], Field(description="Class of the process that generated the thread")] = None
-    process_id: Annotated[Optional[str], Field(description="ID of the process that generated the thread")] = None
+    process_class: Annotated[str | None, Field(description="Class of the process that generated the thread")] = None
+    process_id: Annotated[str | None, Field(description="ID of the process that generated the thread")] = None
     process_walkthrough_id: Annotated[
-        Optional[str], Field(description="ID of the walkthrough that generated the thread")
+        str | None, Field(description="ID of the walkthrough that generated the thread")
     ] = None
 
     # Aggregated Event statistics for the whole thread
@@ -42,18 +42,18 @@ class ThreadDTO(BaseModel):
 
     # Overall Timing fields for the thread
     first_interaction: Annotated[
-        Optional[str], Field(description="Date of oldest event in thread (ISO format string)")
+        str | None, Field(description="Date of oldest event in thread (ISO format string)")
     ] = None
     latest_interaction: Annotated[
-        Optional[str], Field(description="Date of newest event in thread (ISO format string)")
+        str | None, Field(description="Date of newest event in thread (ISO format string)")
     ] = None
-    duration: Annotated[Optional[float], Field(description="Overall duration of interactions in seconds")] = None
+    duration: Annotated[float | None, Field(description="Overall duration of interactions in seconds")] = None
 
     # Enhanced statistics / Contents
     displays: Annotated[
-        List[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")
+        list[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")
     ] = []
     participating_agents: Annotated[
-        List[MinimalAgentDTO], Field(description="All unique agents that participated in the thread's events")
+        list[MinimalAgentDTO], Field(description="All unique agents that participated in the thread's events")
     ] = []
     llm_cost: Annotated[float, Field(description="Total LLM cost of the thread")] = 0.0
