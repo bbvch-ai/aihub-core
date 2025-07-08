@@ -11,6 +11,7 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
+from stringcase import snakecase
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.routes.agent.AgentController import AgentController
