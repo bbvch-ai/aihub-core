@@ -29,21 +29,21 @@ class EventModelCreationService:
         )
 
     @staticmethod
-    def create_input_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
+    def create_input_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         event_class = EventModelCreationService._create_model_from_specs(event_specs)
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._input_excluded_fields, EventModelCreationService._input_suffix
         )
 
     @staticmethod
-    def create_output_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
+    def create_output_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         event_class = EventModelCreationService._create_model_from_specs(event_specs)
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._output_excluded_fields, EventModelCreationService._output_suffix
         )
 
     @staticmethod
-    def _create_model_from_specs(event_specs: EventSpecs) -> Type[BaseModel]:
+    def _create_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         schema = copy.deepcopy(event_specs.event_schema)
         schema["title"] = event_specs.event_name
         return SchemaConverter.build(schema)
