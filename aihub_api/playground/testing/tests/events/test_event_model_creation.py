@@ -39,7 +39,11 @@ class TestDataProvider:
 
 @pytest.fixture
 def event_specs() -> EventSpecs:
-    return EventSpecs(event_name=TestEvent.event_name_from_class(), event_schema=TestEvent.model_json_schema())
+    return EventSpecs(
+        event_name=TestEvent.event_name_from_class(),
+        event_schema=TestEvent.model_json_schema(),
+        event_parents=TestEvent.parent_event_names_from_class(),
+    )
 
 
 @pytest.fixture(params=["class", "specs"])
