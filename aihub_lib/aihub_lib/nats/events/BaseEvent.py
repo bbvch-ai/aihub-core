@@ -95,7 +95,7 @@ class BaseEvent(BaseModel):
         return self._event_name
 
     @classmethod
-    def parent_event_names_from_class(cls) -> List[str]:
+    def parent_event_names_from_class(cls) -> list[str]:
         result = [cls.event_name_from_class()]
         parent_classes = get_parent_classes_until_base(cls, BaseEvent)
         class_dict = {cls.__name__: cls for cls in cls.__mro__ if cls.__name__ in parent_classes}
