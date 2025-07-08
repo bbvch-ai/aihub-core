@@ -5,7 +5,6 @@ from functools import reduce
 from operator import or_
 from typing import Annotated, Any
 
-from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -25,6 +24,7 @@ from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.thread.ThreadService import ThreadService
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ class AgentDiscoveryService:
     def _get_agent_endpoint_names(self, agent_class: str, agent_id: str) -> tuple[str, str, str]:
         agent_class_name = snakecase(agent_class)
         agent_id_snake = snakecase(agent_id)
-        base_path = f"/agents/{agent_class_name}/{agent_id_snake}"
+        base_path = f"{self.agent_controller.route}/{agent_class_name}/{agent_id_snake}"
         return agent_class_name, agent_id_snake, base_path
 
     def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
