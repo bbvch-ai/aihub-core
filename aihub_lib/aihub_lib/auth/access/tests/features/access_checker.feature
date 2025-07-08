@@ -57,6 +57,10 @@ Feature: User Access Control Checker
       | aihub.user.agent.class-a.id-1 | aihub.user.agent.?>         | ACCESS_USER    |
       | aihub.user.agent.*            | aihub.user.agent.?>         | ACCESS_USER    |
 
+      # Non-matching Cases
+      | aihub.user.service.>          | aihub.user.agent.?>         | ACCESS_DENIED  |
+      | aihub.user.agent.class-b.>    | aihub.user.agent.class-a.?* | ACCESS_DENIED  |
+
   Scenario Outline: Complex Implicit Matching with access rule Wildcards
     Given the access rule "<access_rule>"
     When the access checker checks for the permission "<permission_template>"

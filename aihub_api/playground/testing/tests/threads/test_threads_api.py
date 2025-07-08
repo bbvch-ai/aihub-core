@@ -22,10 +22,10 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity, Dashboard
 from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 
 enable_logging()
 
@@ -53,20 +53,6 @@ def agent_id() -> str:
     """Return test agent ID."""
     return "test_agent_1"
 
-
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """Mock UserRoleEntity methods to return a full admin role."""
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-        yield
 
 
 @pytest.fixture(autouse=True)

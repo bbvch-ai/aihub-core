@@ -1,11 +1,12 @@
 import { getNodesForDocument, type IngestedNode } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export const useNodes = defineQuery(() => {
   const route = useRoute()
   const { data: nodes, isPending: nodesAreLoading } = useQuery<IngestedNode[]>({
     key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string, 'nodes'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getNodesForDocument({

@@ -48,16 +48,8 @@ def mock_user_entity():
 
 
 @pytest.fixture(autouse=True)
-def mock_user_entity_autouse():
-    """
-    Auto-use version of the UserEntity mock for tests that always need it.
-    This fixture is automatically applied to all tests in the module where it's imported.
-
-    This mock will return a user with the provided user_oid, regardless of what it is.
-    This ensures that tests can use any user ID they want, not just the one from the config.
-    """
-    with patch.object(UserEntity, "by_oid", side_effect=_create_mock_user_entity_function()):
-        yield
+def mock_user_entity_autouse(mock_user_entity):
+    yield
 
 
 def get_expected_user_data(include_dashboard=True, include_access=True):

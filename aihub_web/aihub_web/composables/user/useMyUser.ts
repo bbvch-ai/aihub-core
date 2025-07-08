@@ -1,4 +1,5 @@
 import { getMyUser, type UserDto } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 
 export default defineQuery(() => {
   const {
@@ -6,7 +7,7 @@ export default defineQuery(() => {
     isPending: myUserIsLoading,
   } = useQuery<UserDto>({
     key: () => ['my_user'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getMyUser({

@@ -1,6 +1,7 @@
 import { getEventsInThread, type WsServerEventReadable } from '@core/sdk/client'
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export const useThreadEvents = defineQuery(() => {
@@ -12,7 +13,7 @@ export const useThreadEvents = defineQuery(() => {
 
   const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<WsServerEventReadable[]>({
     key: () => ['thread', route.params.thread_id as string, 'events'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getEventsInThread({

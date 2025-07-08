@@ -25,15 +25,15 @@ http_error:
     504: "A server is not responding. Please try again."
 
 user:
-  title: "Benutzer"
+  title: "User"
   logout: "Logout"
   language: "Language"
   list:
     name: "Name"
     email: "E-Mail"
-    avatar: "Profilbild"
-    roles: "Rollen"
-    last_accessed: "Zuletzt aktiv"
+    avatar: "Profile image"
+    roles: "Roles"
+    last_accessed: "Last active"
 
 time_ago:
   last_hour: "Last hour"

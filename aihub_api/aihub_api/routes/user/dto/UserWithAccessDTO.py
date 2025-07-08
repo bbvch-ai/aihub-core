@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 
 class UserAccess(BaseModel):
-    name: Annotated[str, Field(description="Name of the service")]
-    level: Annotated[AccessLevel, Field(description="Name of the service")]
+    name: Annotated[str, Field(description="Name of the service to which user has access to")]
+    level: Annotated[AccessLevel, Field(description="Users access level to service")]
 
 
 class Access(BaseModel):

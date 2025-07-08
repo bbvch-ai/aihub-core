@@ -40,7 +40,6 @@ class UserController(Controller):
     def get_users(self, route: str = "/") -> "UserController":
         """
         Registers an endpoint to retrieve a paginated list of users.
-        Requires 'aihub.users.list' permission.
         """
 
         @self.router.get(route, tags=self.tags)
@@ -81,7 +80,6 @@ class UserController(Controller):
     def get_user(self, route: str = "/{user_id}") -> "UserController":
         """
         Registers an endpoint to retrieve a specific user by their OID.
-        Requires 'aihub.users.read' permission.
         """
 
         @self.router.get(route, tags=self.tags)

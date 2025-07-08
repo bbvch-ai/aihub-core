@@ -39,9 +39,6 @@ def api_client(mongodb):
         yield client
 
 
-# Using the shared mock_role_entity_admin_only fixture from aihub_lib.testing.auth_utils.role_mocks
-
-
 @pytest.fixture
 def valid_token_request():
     """Return a valid token request payload."""

@@ -14,7 +14,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
@@ -40,20 +40,6 @@ async def api_client():
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 
-
-@pytest.fixture(autouse=True)
-def mock_role_entity_methods():
-    """Mock UserRoleEntity methods to return a full admin role."""
-    original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
-
-    def mock_get_access_rules_for_roles(role_names):
-        access_rules = original_get_access_rules_for_roles(role_names)
-        if "TestOnlyFullAdminAccess" in role_names:
-            access_rules.add("aihub.admin.>")
-        return access_rules
-
-    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-        yield
 
 
 @pytest.mark.asyncio(loop_scope="module")

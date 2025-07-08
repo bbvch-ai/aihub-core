@@ -45,8 +45,6 @@ async def agent_api_client():
             yield client
 
 
-# Using the shared mock_role_entity_admin_only fixture from aihub_lib.testing.auth_utils.role_mocks
-
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_discover_agents(agent_api_client):

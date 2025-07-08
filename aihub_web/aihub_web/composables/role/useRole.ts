@@ -1,4 +1,5 @@
 import { getRole, type RoleResponse } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export default defineQuery(() => {
@@ -9,7 +10,7 @@ export default defineQuery(() => {
     isPending: roleIsLoading,
   } = useQuery<RoleResponse>({
     key: () => ['roles', route.params.role_id as string],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getRole({
