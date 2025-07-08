@@ -5,7 +5,7 @@ import time
 from typing import List, Set, Tuple, Union, Type, Annotated, Dict, Any
 
 from bson import ObjectId
-from fastapi import FastAPI, Depends, Body, Security, Query, HTTPException
+from fastapi import FastAPI, Depends, Body, Query, HTTPException
 from openai import BaseModel
 from stringcase import snakecase
 
@@ -18,11 +18,9 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent
-from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
 
 logger = logging.getLogger(__name__)
@@ -50,7 +48,6 @@ class AgentDiscoveryService:
         self.running = True
         self.task = asyncio.create_task(self._discovery_loop())
         logger.info("Agent discovery service started")
-        print("Agent discovery service started")
 
     async def stop(self):
         if not self.running:
@@ -64,12 +61,11 @@ class AgentDiscoveryService:
             except asyncio.CancelledError:
                 pass
         logger.info("Agent discovery service stopped")
-        print("Agent discovery service stopped")
 
     async def _discovery_loop(self):
         while self.running:
             try:
-                print("Agent discovery loop")
+                logger.debug("Starting agent discovery")
                 await self._discover_and_register_agents()
             except Exception as e:
                 logger.error(f"Error in agent discovery: {e}")
