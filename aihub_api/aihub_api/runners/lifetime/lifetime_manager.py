@@ -112,7 +112,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             # Create and start the agent discovery service
             agent_discovery_service = AgentDiscoveryService(
                 nc=nc,
-                agent_controller=agent_controller,
+                app=app.state.api_app,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
