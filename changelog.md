@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.214.0] - 2025-07-08 - Streamlined Event Model Handling and Enhanced Developer Experience
+
+### Added
+- ✨ **New Event Model Creation Service**: Introduced `EventModelCreationService` to provide a unified and robust mechanism for generating Pydantic models from event classes or JSON schemas, enabling dynamic and consistent API model definitions.
+- 🧪 **Comprehensive Event Model Tests**: Added extensive test suites for the new `EventModelCreationService`, including complex nested models, union types, and list structures, to ensure the reliability and correctness of dynamically generated event models.
+- 🛠️ **Standardized IDE Inspection Profiles**: Integrated new IntelliJ IDEA inspection profiles and scopes (`Core.xml`, `ExcludeJambo.xml`) to enforce consistent code quality standards and improve developer experience.
+- 📦 **Jambo Dependency**: Introduced `jambo` as a new dependency to support advanced JSON schema to Pydantic model conversion within the new event model creation service.
+
+### Changed
+- 🚀 **CI/CD Workflow Enhancements**: Updated the `analyze-test-pr.yml` GitHub Actions workflow to include SSH setup and cleanup steps, facilitating secure interactions with private Git repositories during testing.
+- 🔄 **API Endpoint and Test Integration**: Migrated existing agent API endpoints and their associated tests to utilize the new `EventModelCreationService`, ensuring all model generation leverages the centralized logic.
+
+### Removed
+- 🗑️ **Deprecated Event Model Functions**: Removed the standalone `create_input_model` and `create_output_model` functions, as their functionality has been absorbed and improved by the new `EventModelCreationService`.
+
+---
+
+
+
 ## [v0.213.0] - 2025-07-07 - New Retrieval Agent for Focused Data Access
 
 ### Added
