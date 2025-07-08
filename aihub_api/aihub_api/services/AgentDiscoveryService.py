@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from functools import reduce
-
 import time
+from functools import reduce
+from operator import or_
 from typing import Annotated, Any
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -17,7 +17,6 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
-from operator import or_
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -97,12 +96,17 @@ class AgentDiscoveryService:
             self.registered_agents.add(agent_key)
             logger.info(f"Registered endpoints for agent: {agent.agent_class}.{agent.agent_id}")
 
-    def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
+    def _get_agent_endpoint_names(self, agent_class: str, agent_id: str) -> tuple[str, str, str]:
         agent_class_name = snakecase(agent_class)
         agent_id_snake = snakecase(agent_id)
+        base_path = f"/agents/{agent_class_name}/{agent_id_snake}"
+        return agent_class_name, agent_id_snake, base_path
+
+    def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
+        _, _, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
 
         for route in list(self.app.routes):
-            if route.path.startswith(f"/agents/{agent_class_name}/{agent_id_snake}/"):
+            if route.path.startswith(f"{base_path}/"):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
 
@@ -112,8 +116,7 @@ class AgentDiscoveryService:
     def _register_agent_endpoints(
         self, agent_class: str, agent_id: str, start_events: list[EventSpecs], stop_events: list[EventSpecs]
     ):
-        agent_class_name = snakecase(agent_class)
-        agent_id_snake = snakecase(agent_id)
+        agent_class_name, agent_id_snake, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
 
         stop_event_output_types = [
             EventModelCreationService.create_output_model_from_specs(stop_event) for stop_event in stop_events
@@ -128,8 +131,7 @@ class AgentDiscoveryService:
             start_event_name = snakecase(start_event_specs.event_name)
 
             endpoint_name = f"send_{start_event_name}_to_{agent_class_name}_{agent_id_snake}"
-            endpoint_route = f"/{agent_class_name}/{agent_id_snake}/{start_event_name}"
-            path = f"/agents{endpoint_route}"
+            path = f"{base_path}/{start_event_name}"
 
             start_event_input_type = EventModelCreationService.create_input_model_from_specs(start_event_specs)
 
