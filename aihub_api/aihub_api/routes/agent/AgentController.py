@@ -16,8 +16,7 @@ from fastapi.params import Query
 from nats.aio.client import Client as NATS
 from stringcase import snakecase
 
-from aihub_api.events.create_input_model import create_input_model
-from aihub_api.events.create_output_model import create_output_model
+from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -163,8 +162,8 @@ class AgentController(Controller):
         agent_id = snakecase(agent_id)
         postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
         name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
-        start_event_input_type = create_input_model(start_event_class)
-        stop_event_output_type = create_output_model(stop_event_class)
+        start_event_input_type = EventModelCreationService.create_input_model(start_event_class)
+        stop_event_output_type = EventModelCreationService.create_output_model(stop_event_class)
 
         if route_postfix.startswith("/"):
             route_postfix = route_postfix[1:]
