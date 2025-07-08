@@ -96,8 +96,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
-        self.start_events: List[EventSpecs] = []
-        self.stop_events: List[EventSpecs] = []
+        self.start_events: list[EventSpecs] = []
+        self.stop_events: list[EventSpecs] = []
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
@@ -176,28 +176,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
         self.start_events = [
-            EventSpecs(
-                event_name=StartEvent.event_name_from_class(),
-                event_schema=StartEvent.model_json_schema(),
-                event_parents=StartEvent.parent_event_names_from_class(),
-            ),
-            EventSpecs(
-                event_name=UserMessageEvent.event_name_from_class(),
-                event_schema=UserMessageEvent.model_json_schema(),
-                event_parents=UserMessageEvent.parent_event_names_from_class(),
-            ),
+            EventSpecs.from_event_class(StartEvent),
+            EventSpecs.from_event_class(UserMessageEvent),
         ]
         self.stop_events = [
-            EventSpecs(
-                event_name=StopEvent.event_name_from_class(),
-                event_schema=StopEvent.model_json_schema(),
-                event_parents=StopEvent.parent_event_names_from_class(),
-            ),
-            EventSpecs(
-                event_name=LLMStopEvent.event_name_from_class(),
-                event_schema=LLMStopEvent.model_json_schema(),
-                event_parents=LLMStopEvent.parent_event_names_from_class(),
-            ),
+            EventSpecs.from_event_class(StopEvent),
+            EventSpecs.from_event_class(LLMStopEvent),
         ]
 
         self.nc_publisher = NCPublisher(self.nc)

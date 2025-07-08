@@ -86,24 +86,10 @@ class AgentRunner:
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
 
         start_events = self.agent_type.get_start_events()
-        start_event_specs = [
-            EventSpecs(
-                event_name=e.event_name_from_class(),
-                event_schema=e.model_json_schema(),
-                event_parents=e.parent_event_names_from_class(),
-            )
-            for e in start_events
-        ]
+        start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
 
         stop_events = self.agent_type.get_stop_events()
-        stop_event_specs = [
-            EventSpecs(
-                event_name=e.event_name_from_class(),
-                event_schema=e.model_json_schema(),
-                event_parents=e.parent_event_names_from_class(),
-            )
-            for e in stop_events
-        ]
+        stop_event_specs = [EventSpecs.from_event_class(e) for e in stop_events]
 
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()

@@ -39,11 +39,7 @@ class TestDataProvider:
 
 @pytest.fixture
 def event_specs() -> EventSpecs:
-    return EventSpecs(
-        event_name=TestEvent.event_name_from_class(),
-        event_schema=TestEvent.model_json_schema(),
-        event_parents=TestEvent.parent_event_names_from_class(),
-    )
+    return EventSpecs.from_event_class(TestEvent)
 
 
 @pytest.fixture(params=["class", "specs"])
@@ -209,7 +205,7 @@ class TestFieldTyping:
     def test_union_field_types(self, input_model, output_model):
         """Test union type fields"""
         for model in [input_model, output_model]:
-            # Simple union: Union[str, int]
+            # Simple union: UnionType[str, int]
             union_field = model.model_fields["union_field"]
             origin = get_origin(union_field.annotation)
             args = get_args(union_field.annotation)
@@ -218,7 +214,7 @@ class TestFieldTyping:
             assert int in args
             assert union_field.is_required()
 
-            # Optional union: Optional[Union[str, int]]
+            # Optional union: Optional[UnionType[str, int]]
             optional_union_field = model.model_fields["optional_union"]
             assert not optional_union_field.is_required()
             assert optional_union_field.default is None
@@ -226,7 +222,7 @@ class TestFieldTyping:
             # Check the inner union type
             if get_origin(optional_union_field.annotation) is UnionType:
                 args = get_args(optional_union_field.annotation)
-                # Should be Union[str, int, None] or similar
+                # Should be UnionType[str, int, None] or similar
                 assert type(None) in args
 
     def test_complex_union_types(self, input_model, output_model, input_model_factory):
@@ -352,7 +348,7 @@ class TestFieldTyping:
                 output_origin = get_origin(output_field.annotation)
 
                 if input_origin is not None or output_origin is not None:
-                    # Both should have the same origin (Union, List, etc.)
+                    # Both should have the same origin (UnionType, list, etc.)
                     assert input_origin == output_origin, f"Field {field_name} has different generic origins"
 
                     # For nested models and complex types, verify structural compatibility
@@ -401,13 +397,13 @@ class TestFieldTyping:
                     pytest.fail(f"Failed to get origin/args for field {field_name}: {e}")
 
     def test_generic_type_preservation(self, input_model, output_model):
-        """Test that generic types (List, Union, Optional) are correctly preserved"""
+        """Test that generic types (list, UnionType, Optional) are correctly preserved"""
         for model in [input_model, output_model]:
-            # Test List type
+            # Test list type
             list_field = model.model_fields["list_of_nested"]
             assert get_origin(list_field.annotation) is list, list
 
-            # Test Union types
+            # Test UnionType types
             union_field = model.model_fields["union_field"]
             assert get_origin(union_field.annotation) is UnionType
 
@@ -477,7 +473,7 @@ class TestNestedModels:
             assert issubclass(nested_field.annotation, BaseModel)
 
 
-class TestUnionTypes:
+class TestUnionTypetypes:
     """Tests for union type handling"""
 
     def test_string_union(self, input_instance_complete, output_instance_complete):
@@ -498,7 +494,7 @@ class TestUnionTypes:
             assert instance.complex_union.nested_field == "complex_nested"
 
 
-class TestListHandling:
+class TestlistHandling:
     """Tests for list of nested models"""
 
     def test_list_of_nested(self, input_instance_complete, output_instance_complete):

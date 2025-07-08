@@ -28,11 +28,19 @@ class EventSpecs(BaseModel):
         ),
     ]
     event_parents: Annotated[
-        List[str],
+        list[str],
         Field(
             description="A list of parent event names that this event is derived from, allowing for hierarchical event structures."
         ),
     ]
+
+    @classmethod
+    def from_event_class(cls, event_class: type[BaseEvent]):
+        return cls(
+            event_name=event_class.event_name_from_class(),
+            event_schema=event_class.model_json_schema(),
+            event_parents=event_class.parent_event_names_from_class(),
+        )
 
 
 class AgentDiscoveryResponseEvent(BaseEvent):

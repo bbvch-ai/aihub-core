@@ -1,9 +1,10 @@
 import asyncio
 import logging
-import time
-from typing import Annotated, Any, Dict, List, Set, Tuple, Type, Union
+from functools import reduce
 
-from aihub_api.routes.agent.AgentController import AgentController
+import time
+from typing import Annotated, Any
+
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -16,9 +17,11 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
+from operator import or_
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 
@@ -44,7 +47,7 @@ class AgentDiscoveryService:
         self.agent_controller = agent_controller
         self.locale_handler = locale_handler
         self.discovery_interval = discovery_interval
-        self.registered_agents: Set[Tuple[str, str]] = set()
+        self.registered_agents: set[tuple[str, str]] = set()
         self.running = False
         self.task = None
 
@@ -77,7 +80,7 @@ class AgentDiscoveryService:
             await asyncio.sleep(self.discovery_interval)
 
     async def _discover_and_register_agents(self):
-        agents: List[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
+        agents: list[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
 
         for registered_agent_class, registered_agent_id in list(self.registered_agents):
             self._deregister_agent_endpoints(registered_agent_class, registered_agent_id)
@@ -105,7 +108,7 @@ class AgentDiscoveryService:
         self.registered_agents.discard((agent_class, agent_id))
 
     def _register_agent_endpoints(
-        self, agent_class: str, agent_id: str, start_events: List[EventSpecs], stop_events: List[EventSpecs]
+        self, agent_class: str, agent_id: str, start_events: list[EventSpecs], stop_events: list[EventSpecs]
     ):
         agent_class_name = snakecase(agent_class)
         agent_id_snake = snakecase(agent_id)
@@ -117,7 +120,7 @@ class AgentDiscoveryService:
         if len(stop_event_output_types) == 1:
             stop_event_union_type = stop_event_output_types[0]
         else:
-            stop_event_union_type = Union[tuple(stop_event_output_types)]
+            stop_event_union_type = reduce(or_, stop_event_output_types)
 
         for start_event_specs in start_events:
             start_event_name = snakecase(start_event_specs.event_name)
@@ -147,14 +150,13 @@ class AgentDiscoveryService:
 
     @staticmethod
     def create_endpoint(
-        input_type: Type[BaseModel],
-        stop_event_union_type: Type[BaseEvent],
-        start_event_parents: List[str],
+        input_type: type[BaseModel],
+        stop_event_union_type: type[BaseEvent],
+        start_event_parents: list[str],
         agent_class: str,
         agent_id: str,
         agent_controller: AgentController,
     ):
-
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[input_type, Body],
@@ -173,7 +175,7 @@ class AgentDiscoveryService:
             Send a specific event type to a specific agent. Returns any possible stop event type.
             """
 
-            json_data: Dict[str, Any] = {
+            json_data: dict[str, Any] = {
                 "event_id": str(ObjectId()),
                 "created_at": time.time_ns(),
                 "user": user.model_dump(),
