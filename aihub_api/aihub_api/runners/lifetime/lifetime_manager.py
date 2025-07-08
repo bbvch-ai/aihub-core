@@ -103,13 +103,17 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.external_event_distributor = external_event_distributor
 
         # Create and start the agent discovery service
-        agent_discovery_service = AgentDiscoveryService(
-            nc=nc,
-            app=app.state.api_app,
-            locale_handler=ApiLocaleHandler(),
-            discovery_interval=60,  # Check for new agents every 60 seconds
-        )
-        await agent_discovery_service.start()
+        api_app = app.state.api_app
+        if hasattr(api_app.state, "agent_controller"):
+            agent_discovery_service = AgentDiscoveryService(
+                nc=nc,
+                api_app=api_app,
+                agent_controller=api_app.state.agent_controller,
+                locale_handler=ApiLocaleHandler(),
+                discovery_interval=60,  # Check for new agents every 60 seconds
+            )
+            await agent_discovery_service.start()
+            app.state.agent_discovery_service = agent_discovery_service
 
         # Yield control back to FastAPI to start serving requests
         yield
@@ -118,8 +122,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await persist_subscriber.stop()
         await ws_subscriber.stop()
 
-        # Stop the discovery service
-        await agent_discovery_service.stop()
+        if hasattr(app.state, "agent_discovery_service"):
+            # Stop the discovery service
+            await app.state.agent_discovery_service.stop()
 
         disconnect()
 

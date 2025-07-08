@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
+from aihub_api.routes.agent.AgentController import AgentController
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
@@ -90,6 +91,10 @@ class ApiRunner(Runner):
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
         super().mount(*controllers)
+
+        for controller in controllers:
+            if isinstance(controller, AgentController):
+                self._api_app.state.agent_controller = controller
 
         self._api_app.openapi_tags = [
             {

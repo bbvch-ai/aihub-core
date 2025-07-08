@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Annotated, Any, Dict, List, Set, Tuple, Type, Union
 
+from aihub_api.routes.agent.AgentController import AgentController
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -11,7 +12,7 @@ from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAge
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
 from bson import ObjectId
-from fastapi import Body, Depends, FastAPI, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
@@ -30,9 +31,17 @@ class AgentDiscoveryService:
     This ensures that the API and the Agents are decoupled.
     """
 
-    def __init__(self, nc: NATS, app: FastAPI, locale_handler: LocaleHandler, discovery_interval: int = 60):
+    def __init__(
+        self,
+        nc: NATS,
+        api_app: FastAPI,
+        agent_controller: AgentController,
+        locale_handler: LocaleHandler,
+        discovery_interval: int = 60,
+    ):
         self.nc = nc
-        self.app = app
+        self.app = api_app
+        self.agent_controller = agent_controller
         self.locale_handler = locale_handler
         self.discovery_interval = discovery_interval
         self.registered_agents: Set[Tuple[str, str]] = set()
@@ -113,6 +122,7 @@ class AgentDiscoveryService:
                     start_event_parents=start_event_specs.event_parents,
                     agent_class=agent_class,
                     agent_id=agent_id,
+                    agent_controller=self.agent_controller,
                 ),
                 methods=["POST"],
                 name=endpoint_name,
@@ -128,12 +138,18 @@ class AgentDiscoveryService:
         start_event_parents: List[str],
         agent_class: str,
         agent_id: str,
+        agent_controller: AgentController,
     ):
+
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[input_type, Body],
             external_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            ],
+            user: Annotated[
+                UserIdentity,
+                Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
             ],
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
@@ -142,7 +158,6 @@ class AgentDiscoveryService:
             """
             Send a specific event type to a specific agent. Returns any possible stop event type.
             """
-            user = UserIdentity(id="system", name="System", email="", roles=["AllAgents"])
 
             json_data: Dict[str, Any] = {
                 "event_id": str(ObjectId()),

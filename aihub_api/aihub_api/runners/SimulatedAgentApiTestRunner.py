@@ -218,14 +218,19 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.js_publisher = JSPublisher(self.js)
 
-        AgentDiscoveryService(
-            nc=self.nc, app=self._api_app, locale_handler=ApiLocaleHandler(), discovery_interval=60
-        )._register_agent_endpoints(
-            agent_class=self.agent_class,
-            agent_id=self.agent_id,
-            start_events=self.start_events,
-            stop_events=self.stop_events,
-        )
+        if hasattr(self._api_app.state, "agent_controller"):
+            AgentDiscoveryService(
+                nc=self.nc,
+                api_app=self._api_app,
+                agent_controller=self._api_app.state.agent_controller,
+                locale_handler=ApiLocaleHandler(),
+                discovery_interval=60,
+            )._register_agent_endpoints(
+                agent_class=self.agent_class,
+                agent_id=self.agent_id,
+                start_events=self.start_events,
+                stop_events=self.stop_events,
+            )
 
     async def run(self):
         await self.start_simulation()
