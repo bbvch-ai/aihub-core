@@ -79,8 +79,10 @@ class AgentDiscoveryService:
     async def _discover_and_register_agents(self):
         agents: List[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
 
-        for registered_agent_class, registered_agent_id in self.registered_agents:
+        for registered_agent_class, registered_agent_id in list(self.registered_agents):
             self._deregister_agent_endpoints(registered_agent_class, registered_agent_id)
+
+        self.app.openapi_schema = None
 
         for agent in agents:
             agent_key = (agent.agent_class, agent.agent_id)
