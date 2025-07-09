@@ -7,6 +7,7 @@ from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
@@ -15,6 +16,7 @@ from nats.aio.client import Client as NATS
 from aihub_api.persistance.events.EventPersister import EventPersister
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
+from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 
 
 @asynccontextmanager
@@ -72,21 +74,28 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
 
-        topic_manager = AgentTopicManager()
 
-        # Persist all agent events
+        # Persist all events
         persister = EventPersister("default")
-        persist_subscriber = AgentNCSubscriber.for_all_agent_events(
-            nc=nc, topic_manager=topic_manager, handler=persister.persist_event
+
+        agent_topic_manager = AgentTopicManager()
+        agent_event_persist_subscriber = AgentNCSubscriber.for_all_agent_events(
+            nc=nc, topic_manager=agent_topic_manager, handler=persister.persist_agent_event
         )
-        await persist_subscriber.start()
+        await agent_event_persist_subscriber.start()
+
+        process_topic_manager = ProcessTopicManager()
+        process_event_persist_subscriber = ProcessNCSubscriber.for_all_process_events(
+            nc=nc, topic_manager=process_topic_manager, handler=persister.persist_process_event
+        )
+        await process_event_persist_subscriber.start()
 
         # Setup WebSocket event flow
         ws_manager = WebSocketManager()
         ws_sender = WebSocketSender(ws_manager=ws_manager)
         ws_subscriber = AgentNCSubscriber.for_all_agents_display_events(
             nc=nc,
-            topic_manager=topic_manager,
+            topic_manager=agent_topic_manager,
             handler=ws_sender.send_event,
         )
         await ws_subscriber.start()
@@ -104,7 +113,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         yield
 
         # Shutdown: stop subscribers
-        await persist_subscriber.stop()
+        await agent_event_persist_subscriber.stop()
+        await process_event_persist_subscriber.stop()
         await ws_subscriber.stop()
         disconnect()
 

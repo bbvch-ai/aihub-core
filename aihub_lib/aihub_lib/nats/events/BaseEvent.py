@@ -50,14 +50,11 @@ class BaseEvent(BaseModel):
     """
 
     _event_registry: ClassVar[dict[str, type["BaseEvent"]]] = {}
-    event_id: Annotated[str, Field(default_factory=lambda: str(ObjectId()))]
-    created_at: Annotated[
-        int,
-        Field(
-            default_factory=time.time_ns,
-            description="The time (in ns since epoch) the event was stored in the event store",
-        ),
-    ]
+    event_id: str = Field(default_factory=lambda: str(ObjectId()))
+    created_at: int = Field(
+        default_factory=time.time_ns,
+        description="The time (in ns since epoch) the event was stored in the event store",
+    )
 
     # Private attributes to handle unknown event types
     _unknown_event_name: str | None = PrivateAttr(None)

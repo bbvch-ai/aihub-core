@@ -12,7 +12,7 @@ from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from aihub_api.routes.event.dto.EventTimeseries import EventTimeseries
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
@@ -48,19 +48,19 @@ class EventService:
         locale: str | None = None,
         display_id: ObjectId | None = None,
         event_class: str | None = None,
-    ) -> list[WSServerEvent]:
+    ) -> list[WSServerAgentEvent]:
         """
         Retrieves all display events for a given user by:
         1. Finding all threads the user is part of.
         2. Querying the persistence layer for display events in those threads.
-        3. Converting them into `WSServerEvent`s for consistent client-facing output.
+        3. Converting them into `WSServerAgentEvent`s for consistent client-facing output.
         """
         persisted_events = PersistedAgentEventEntity.display_events_for_thread(
             thread_id=str(thread_id),
             display_id=str(display_id) if display_id is not None else None,
             event_name=event_class,
         )
-        return [WSServerEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
+        return [WSServerAgentEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod
     def get_all_thread_display_events(thread_id: str) -> list[PersistedAgentEventEntity]:
@@ -70,42 +70,9 @@ class EventService:
         return PersistedAgentEventEntity.display_events_for_thread(thread_id)
 
     @staticmethod
-    async def handle_external_event(
-        event: ExternalAgentEvent,
-        user: UserIdentity,
-        external_event_distributor: ExternalAgentEventDistributor,
-        ws_sender: WebSocketSender,
-    ):
-        """
-        Handles a user-sent WebSocket event. Usually, the event instructs the system (e.g., start a new agent run,
-        send a message, etc.). If an error occurs, an ExceptionEvent is sent back to the user.
-        """
-        try:
-            logger.debug(f"Handling event: {event}")
-            await external_event_distributor.distribute_event(event, user)
-        except Exception as e:
-            logger.exception(e)
-            # If there's an error, notify the user with an ExceptionEvent
-            await ws_sender.send_event(
-                ExceptionEvent(message=str(e)),
-                topic=AgentTopic(
-                    agent_class="ExceptionAgent",
-                    agent_id=user.id,
-                    run_id=str(ObjectId()),
-                    thread_id=event.thread_id,
-                    display_id=event.display_id,
-                    event_type=AgentTopicManager.DISPLAY_EVENT,
-                    event_name=ExceptionEvent.event_name_from_class(),
-                    event_id=str(ObjectId()),
-                ),
-            )
-
-    @staticmethod
     async def event_websocket_connection(
         websocket: WebSocket,
-        ws_sender: WebSocketSender,
         ws_manager: WebSocketManager,
-        external_event_distributor: ExternalAgentEventDistributor,
         user: UserIdentity,
         t: LocaleHandler,
     ):
@@ -118,15 +85,12 @@ class EventService:
             while True:
                 data = await websocket.receive_json()
                 logger.debug(f"Received data: {data}")
-                event = ExternalAgentEvent.deserialize_event(data)
-
-                # Handle the received event
-                await EventService.handle_external_event(event, user, external_event_distributor, ws_sender)
 
         except WebSocketDisconnect as e:
             logging.error(f"Websocket disconnected: {e}")
             logger.debug(f"User {user.id} disconnected from websocket")
             await ws_manager.disconnect(websocket, user.id)
+
 
     @staticmethod
     def get_event_timeseries(

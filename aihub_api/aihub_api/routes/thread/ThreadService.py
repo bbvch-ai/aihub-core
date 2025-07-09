@@ -34,7 +34,7 @@ from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 from aihub_api.routes.user.UserService import UserService
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class ThreadService:
     @staticmethod
     async def thread_as_message_history(thread_id: str) -> HistoryResponse:
         persisted_events = EventService.get_all_thread_display_events(thread_id)
-        ws_events = [WSServerEvent.from_persisted_event(event) for event in persisted_events]
+        ws_events = [WSServerAgentEvent.from_persisted_event(event) for event in persisted_events]
 
         messages: list[ChatCompletionMessageParam] = []
 

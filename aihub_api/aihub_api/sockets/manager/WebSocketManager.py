@@ -5,7 +5,7 @@ from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics import AgentTopic
 from fastapi import WebSocket
 
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class WebSocketManager:
     await ws_manager.connect(websocket, user_id="user123")
 
     # Later, to send an event
-    event = WSServerEvent(...)
+    event = WSServerAgentEvent(...)
     await ws_manager.send_event(event, user_id="user123")
 
     # On disconnection
@@ -80,7 +80,7 @@ class WebSocketManager:
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
 
-    async def send_event(self, event: DisplayEvent, topic: AgentTopic, user_id: str) -> None:
+    async def send_agent_event(self, event: DisplayEvent, topic: AgentTopic, user_id: str) -> None:
         """
         Send a JSON-serialized version of the given event to all active connections of the specified user.
 
@@ -91,7 +91,7 @@ class WebSocketManager:
         if user_id in self.active_connections:
             locale = self.user_preferred_locale.get(user_id)
             locale_handler = LocaleHandler(locale=locale)
-            external_event = WSServerEvent(
+            external_event = WSServerAgentEvent(
                 locale=locale,
                 agent_class=topic.agent_class,
                 agent_id=topic.agent_id,

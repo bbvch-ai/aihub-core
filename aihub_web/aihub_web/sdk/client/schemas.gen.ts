@@ -170,7 +170,7 @@ export const AgentDTOSchema = {
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph', 'is_online'],
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph'],
     title: 'AgentDTO',
     description: `A data transfer object for representing agent information in responses.
 
@@ -2422,14 +2422,18 @@ export const CreateThreadRequestSchema = {
                 type: 'string'
             },
             type: 'array',
-            title: 'User Ids'
+            title: 'User Ids',
+            description: 'List of user IDs to be associated with the thread',
+            default: []
         },
         agents: {
             items: {
                 '$ref': '#/components/schemas/ThreadAgentDTO'
             },
             type: 'array',
-            title: 'Agents'
+            title: 'Agents',
+            description: 'List of agents to be associated with the thread',
+            default: []
         }
     },
     type: 'object',
@@ -2476,6 +2480,7 @@ export const CreateTokenResponseSchema = {
         name: {
             type: 'string',
             title: 'Name',
+            description: 'The name of the API token',
             example: 'My API Token'
         },
         expiry_date: {
@@ -2551,7 +2556,8 @@ export const DashboardDTOSchema = {
             },
             type: 'array',
             title: 'Children',
-            description: 'List of widgets (dashboard items) within the grid.'
+            description: 'List of widgets (dashboard items) within the grid.',
+            default: []
         }
     },
     type: 'object',
@@ -3509,10 +3515,18 @@ export const EventSpecsSchema = {
             type: 'object',
             title: 'Event Schema',
             description: "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow."
+        },
+        event_parents: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Event Parents',
+            description: 'A list of parent event names that this event is derived from, allowing for hierarchical event structures.'
         }
     },
     type: 'object',
-    required: ['event_name', 'event_schema'],
+    required: ['event_name', 'event_schema', 'event_parents'],
     title: 'EventSpecs',
     description: 'Defines a specification for a start event that an agent can handle.'
 } as const;
@@ -6429,7 +6443,8 @@ export const ModelDetailsSchema = {
         created: {
             type: 'integer',
             title: 'Created',
-            description: 'The Unix timestamp of when the model was created.'
+            description: 'The Unix timestamp of when the model was created.',
+            default: 1752085763
         },
         owned_by: {
             type: 'string',
@@ -7159,6 +7174,7 @@ export const RevokeTokenResponseSchema = {
         detail: {
             type: 'string',
             title: 'Detail',
+            description: 'Status message about the token revocation',
             example: 'Token revoked successfully.'
         }
     },
@@ -8212,6 +8228,7 @@ export const TokenResponseSchema = {
         name: {
             type: 'string',
             title: 'Name',
+            description: 'The name of the API token',
             example: 'My API Token'
         },
         expiry_date: {
@@ -8613,11 +8630,11 @@ export const UserAccessSchema = {
         name: {
             type: 'string',
             title: 'Name',
-            description: 'Name of the service'
+            description: 'Name of the service/agent/process to which user has access to'
         },
         level: {
             '$ref': '#/components/schemas/AccessLevel',
-            description: 'Name of the service'
+            description: 'Users access level to service/agent/process'
         }
     },
     type: 'object',
@@ -8756,7 +8773,8 @@ export const UserDTOSchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'List of roles assigned to the user'
+            description: 'List of roles assigned to the user',
+            default: []
         },
         favorite_modules: {
             items: {
@@ -8764,7 +8782,8 @@ export const UserDTOSchema = {
             },
             type: 'array',
             title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite'
+            description: 'List of favorite modules from aihub suite',
+            default: []
         },
         dashboard: {
             anyOf: [
@@ -8885,7 +8904,8 @@ export const UserMessageEventSchema = {
             },
             type: 'array',
             title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.',
+            default: []
         },
         files: {
             anyOf: [
@@ -8965,7 +8985,8 @@ export const UserMessageEventInputSchema = {
             },
             type: 'array',
             title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.',
+            default: []
         },
         files: {
             anyOf: [
@@ -9052,7 +9073,8 @@ export const UserWithAccessDTOSchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'List of roles assigned to the user'
+            description: 'List of roles assigned to the user',
+            default: []
         },
         favorite_modules: {
             items: {
@@ -9060,7 +9082,8 @@ export const UserWithAccessDTOSchema = {
             },
             type: 'array',
             title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite'
+            description: 'List of favorite modules from aihub suite',
+            default: []
         },
         dashboard: {
             anyOf: [
@@ -9113,7 +9136,7 @@ export const ValidationErrorSchema = {
     title: 'ValidationError'
 } as const;
 
-export const WSServerEventSchema = {
+export const WSServerAgentEventSchema = {
     properties: {
         locale: {
             type: 'string',
@@ -9152,29 +9175,14 @@ export const WSServerEventSchema = {
             description: 'Display session ID, used to group events for the UI.'
         },
         run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Run Id',
             description: 'Optional run ID if the event is associated with a particular run.'
         },
         event_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Event Type',
-            description: "Type of the event (default: 'display_event').",
-            default: 'display_event'
+            description: "Type of the event (default: 'display_event')."
         },
         event_name: {
             type: 'string',
@@ -9275,14 +9283,14 @@ export const WSServerEventSchema = {
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'thread_id', 'display_id', 'event_name', 'event_id', 'event'],
-    title: 'WSServerEvent',
+    required: ['event_display_name', 'event_display_description', 'agent_class', 'agent_id', 'thread_id', 'display_id', 'run_id', 'event_type', 'event_name', 'event_id', 'event'],
+    title: 'WSServerAgentEvent',
     description: `Represents an event sent from the server to a user's WebSocket connection, encapsulating
 details necessary to identify and display the event in a client application.
 
-### Why WSServerEvent?
+### Why WSServerAgentEvent?
 In a real-time system, events generated by agents need to be transmitted to clients over
-WebSockets. A \`WSServerEvent\` standardizes the structure of these messages, including:
+WebSockets. A \`WSServerAgentEvent\` standardizes the structure of these messages, including:
 - Agent identifiers and context (thread/display/run).
 - Event type, name, and ID for classification.
 - Payload (\`event_data\`) containing the actual event content.
@@ -9291,7 +9299,7 @@ This consistency helps front-end clients parse and handle events uniformly, and 
 debugging or logging outbound messages.
 
 ### Conversion from Persisted Events
-The \`from_persisted_event\` method rebuilds a \`WSServerEvent\` from a \`PersistedAgentEventEntity\`,
+The \`from_persisted_event\` method rebuilds a \`WSServerAgentEvent\` from a \`PersistedAgentEventEntity\`,
 allowing previously stored events to be replayed or displayed to users.`
 } as const;
 

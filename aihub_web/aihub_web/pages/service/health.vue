@@ -1,7 +1,7 @@
 <template>
-  <p>
-    Health service
-  </p>
+  <div>
+    <ProcessForm />
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -1,32 +1,11 @@
-from typing import Annotated, Any
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events import BaseEvent
-
-
-class EventSpecs(BaseModel):
-    """
-    Defines a specification for a start event that an agent can handle.
-    """
-
-    event_name: Annotated[
-        str,
-        Field(
-            description="The name of event (e.g., a particular ControlEvent subclass name) "
-            "that the agent can consume as a start event.",
-        ),
-    ]
-    event_schema: Annotated[
-        dict[str, Any],
-        Field(
-            description="A dictionary describing the schema of this start event, providing details about "
-            "expected fields and their types. This helps external consumers understand how to "
-            "construct and validate events for initiating the agent's workflow.",
-        ),
-    ]
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 
 
 class AgentDiscoveryResponseEvent(BaseEvent):

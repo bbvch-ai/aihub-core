@@ -1,6 +1,8 @@
 from typing import Annotated
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
+from aihub_lib.nats.events.work_request.human.form.InputTextElement import InputTextElement
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage
 
@@ -10,7 +12,9 @@ from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.program.Program import Program
 from aihub_process.process.decorators.process_step import process_step
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
+from playground.AgenticCVProcess.events.human.AcceptCV import AcceptCV
 from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest
+from playground.AgenticCVProcess.events.human.RejectCV import RejectCV
 from playground.AgenticCVProcess.events.program.SaveDecisionRequest import SaveDecisionRequest
 from playground.AgenticCVProcess.events.program.SubmittedCV import SubmittedCV
 
@@ -33,8 +37,21 @@ class AgenticCVProcess(AgenticProcess):
         analyzed_cv: Annotated[
             AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")
         ],
-    ) -> Annotated[AcceptRejectRequest, Human.Out()]:
-        pass
+    ) -> Annotated[AcceptRejectRequest, Human.Out(users=[])]:
+        return AcceptRejectRequest(
+            forms=[
+                AcceptCV(
+                    display_name=LocaleString(en="This is Accept"),
+                    display_description=LocaleString(en="This is description"),
+                    reason=InputTextElement(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?"))
+                ),
+                RejectCV(
+                    display_name=LocaleString(en="This is Reject"),
+                    display_description=LocaleString(en="This is description"),
+                    reason=InputTextElement(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?"))
+                )
+            ]
+        )
 
     @process_step()
     def accept_cv(

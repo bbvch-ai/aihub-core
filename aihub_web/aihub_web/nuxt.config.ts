@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     '@primevue/nuxt-module',
     '@nuxt/eslint',
     '@nuxtjs/mdc',
+    '@sfxcode/formkit-primevue-nuxt',
   ],
 
   ssr: false,

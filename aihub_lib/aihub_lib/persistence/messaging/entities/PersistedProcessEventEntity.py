@@ -26,9 +26,9 @@ class PersistedProcessEventEntity(Document):
     def persist_event(cls, event: "BaseEvent", topic: "ProcessTopic", db: str):
         persisted_entity = cls(
             id=ObjectId(),
-            process_class=topic.agent_class,
-            process_id=topic.agent_id,
-            process_walkthrough_id=topic.thread_id,
+            process_class=topic.process_class,
+            process_id=topic.process_id,
+            process_walkthrough_id=topic.process_walkthrough_id,
             event_id=event.event_id,
             event_type=topic.event_type,
             event_name=topic.event_name,
