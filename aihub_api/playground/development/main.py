@@ -2,6 +2,8 @@ import asyncio
 from os.path import abspath, dirname, isdir, join
 
 import nest_asyncio
+
+from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
@@ -92,6 +94,7 @@ async def main():
             start_event_class=UserMessageEvent,
             stop_event_class=LLMStopEvent,
         ),
+        ProcessController(auth=auth).get_process().get_processes().discover_processes(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(

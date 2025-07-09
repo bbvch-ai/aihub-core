@@ -3515,18 +3515,10 @@ export const EventSpecsSchema = {
             type: 'object',
             title: 'Event Schema',
             description: "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow."
-        },
-        event_parents: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Event Parents',
-            description: 'A list of parent event names that this event is derived from, allowing for hierarchical event structures.'
         }
     },
     type: 'object',
-    required: ['event_name', 'event_schema', 'event_parents'],
+    required: ['event_name', 'event_schema'],
     title: 'EventSpecs',
     description: 'Defines a specification for a start event that an agent can handle.'
 } as const;
@@ -6444,7 +6436,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752085763
+            default: 1752090559
         },
         owned_by: {
             type: 'string',
@@ -6896,6 +6888,113 @@ and which remain open (None).
 - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
   PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
   unknowns as flexible conditions.`
+} as const;
+
+export const ProcessConfigDTOSchema = {
+    properties: {
+        process_id: {
+            type: 'string',
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Process Id',
+            description: 'Used to uniquely identify this process instance.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the process.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'The description of the process.'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            description: 'The icon representing the agent.',
+            default: 'meteor-icons:robot'
+        }
+    },
+    type: 'object',
+    required: ['process_id', 'name', 'description'],
+    title: 'ProcessConfigDTO'
+} as const;
+
+export const ProcessDTOSchema = {
+    properties: {
+        process_class: {
+            type: 'string',
+            title: 'Process Class',
+            description: 'The class or category of the process (e.g., a specific type of process).'
+        },
+        process_id: {
+            type: 'string',
+            title: 'Process Id',
+            description: 'A unique identifier for the process instance.'
+        },
+        process_config: {
+            '$ref': '#/components/schemas/ProcessConfigDTO',
+            description: 'Configuration for the process instance.'
+        },
+        human_inputs: {
+            items: {
+                '$ref': '#/components/schemas/ProcessInSpecs'
+            },
+            type: 'array',
+            title: 'Human Inputs',
+            description: 'List of human work events that the process can receive.'
+        },
+        program_inputs: {
+            items: {
+                '$ref': '#/components/schemas/ProcessInSpecs'
+            },
+            type: 'array',
+            title: 'Program Inputs',
+            description: 'List of program work events that the process can receive.'
+        },
+        is_online: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Online',
+            description: 'Indicates whether the agent is online and reachable.'
+        }
+    },
+    type: 'object',
+    required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs'],
+    title: 'ProcessDTO'
+} as const;
+
+export const ProcessInSpecsSchema = {
+    properties: {
+        route: {
+            type: 'string',
+            title: 'Route',
+            description: 'The route of the work event.'
+        },
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        is_process_start: {
+            type: 'boolean',
+            title: 'Is Process Start',
+            description: 'Whether the work event is a process start event.'
+        },
+        event_specs: {
+            '$ref': '#/components/schemas/EventSpecs',
+            description: 'The event specs of the work event.'
+        }
+    },
+    type: 'object',
+    required: ['route', 'method', 'is_process_start', 'event_specs'],
+    title: 'ProcessInSpecs'
 } as const;
 
 export const PromptTokensDetailsSchema = {

@@ -93,6 +93,8 @@ class ProcessRunner:
             process_class=self.process_class,
             process_id=self.process_config.process_id,
             process_config=self.process_config,
+            human_inputs=[],    # TODO: Derrive from process
+            program_inputs=[],  # TODO: Derrive from process
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 

@@ -2448,11 +2448,6 @@ export type EventSpecs = {
     event_schema: {
         [key: string]: unknown;
     };
-    /**
-     * Event Parents
-     * A list of parent event names that this event is derived from, allowing for hierarchical event structures.
-     */
-    event_parents: Array<string>;
 };
 
 /**
@@ -5093,6 +5088,92 @@ export type PartialAgentTopic = {
 };
 
 /**
+ * ProcessConfigDTO
+ */
+export type ProcessConfigDto = {
+    /**
+     * Process Id
+     * Used to uniquely identify this process instance.
+     */
+    process_id: string;
+    /**
+     * Name
+     * The name of the process.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the process.
+     */
+    description: string;
+    /**
+     * Icon
+     * The icon representing the agent.
+     */
+    icon?: string;
+};
+
+/**
+ * ProcessDTO
+ */
+export type ProcessDto = {
+    /**
+     * Process Class
+     * The class or category of the process (e.g., a specific type of process).
+     */
+    process_class: string;
+    /**
+     * Process Id
+     * A unique identifier for the process instance.
+     */
+    process_id: string;
+    /**
+     * Configuration for the process instance.
+     */
+    process_config: ProcessConfigDto;
+    /**
+     * Human Inputs
+     * List of human work events that the process can receive.
+     */
+    human_inputs: Array<ProcessInSpecs>;
+    /**
+     * Program Inputs
+     * List of program work events that the process can receive.
+     */
+    program_inputs: Array<ProcessInSpecs>;
+    /**
+     * Is Online
+     * Indicates whether the agent is online and reachable.
+     */
+    is_online?: boolean | null;
+};
+
+/**
+ * ProcessInSpecs
+ */
+export type ProcessInSpecs = {
+    /**
+     * Route
+     * The route of the work event.
+     */
+    route: string;
+    /**
+     * Method
+     * The HTTP method of the work event.
+     */
+    method: string;
+    /**
+     * Is Process Start
+     * Whether the work event is a process start event.
+     */
+    is_process_start: boolean;
+    /**
+     * The event specs of the work event.
+     */
+    event_specs: EventSpecs;
+};
+
+/**
  * PromptTokensDetails
  */
 export type PromptTokensDetails = {
@@ -7498,7 +7579,7 @@ export type GetAgentEventsInThreadData = {
          */
         display_id?: string;
     };
-    url: '/events/threads/{thread_id}';
+    url: '/events/agents/threads/{thread_id}';
 };
 
 export type GetAgentEventsInThreadErrors = {
@@ -7512,7 +7593,7 @@ export type GetAgentEventsInThreadError = GetAgentEventsInThreadErrors[keyof Get
 
 export type GetAgentEventsInThreadResponses = {
     /**
-     * Response Get Agent Events In Thread Events Threads  Thread Id  Get
+     * Response Get Agent Events In Thread Events Agents Threads  Thread Id  Get
      * Successful Response
      */
     200: Array<WsServerAgentEventReadable>;
@@ -7547,7 +7628,7 @@ export type GetAgentEventTimeseriesData = {
          */
         event_name?: string;
     };
-    url: '/events/timeseries/{time_range}';
+    url: '/events/agents/timeseries/{time_range}';
 };
 
 export type GetAgentEventTimeseriesErrors = {
@@ -7937,6 +8018,74 @@ export type SendEventToLlmWrappingAgentDevAgentSendEventResponses = {
 };
 
 export type SendEventToLlmWrappingAgentDevAgentSendEventResponse = SendEventToLlmWrappingAgentDevAgentSendEventResponses[keyof SendEventToLlmWrappingAgentDevAgentSendEventResponses];
+
+export type GetProcessData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+    };
+    query?: never;
+    url: '/processes/{process_class}/{process_id}';
+};
+
+export type GetProcessErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessError = GetProcessErrors[keyof GetProcessErrors];
+
+export type GetProcessResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProcessDto;
+};
+
+export type GetProcessResponse = GetProcessResponses[keyof GetProcessResponses];
+
+export type GetProcessesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/processes/';
+};
+
+export type GetProcessesResponses = {
+    /**
+     * Response Get Processes Processes  Get
+     * Successful Response
+     */
+    200: Array<ProcessDto>;
+};
+
+export type GetProcessesResponse = GetProcessesResponses[keyof GetProcessesResponses];
+
+export type DiscoverProcessesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/processes/discover';
+};
+
+export type DiscoverProcessesResponses = {
+    /**
+     * Response Discover Processes Processes Discover Get
+     * Successful Response
+     */
+    200: Array<ProcessDto>;
+};
+
+export type DiscoverProcessesResponse = DiscoverProcessesResponses[keyof DiscoverProcessesResponses];
 
 export type ListTokensEndpointData = {
     body?: never;

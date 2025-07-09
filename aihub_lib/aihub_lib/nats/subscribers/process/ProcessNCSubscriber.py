@@ -27,6 +27,23 @@ class ProcessNCSubscriber(NCSubscriber):
         )
 
     @classmethod
+    def for_process_discovery_response_events(
+            cls,
+            nc: NATS,
+            topic_manager: ProcessTopicManager,
+            handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
+            call_id: str = "*",
+    ):
+        """Subscribe to discovery response events for processes, optionally filtered by a specific call_id."""
+        subject = topic_manager.get_process_discovery_subject_response(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
     def for_all_process_events(
         cls,
         nc: NATS,
