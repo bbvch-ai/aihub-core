@@ -205,7 +205,7 @@ class TestFieldTyping:
     def test_union_field_types(self, input_model, output_model):
         """Test union type fields"""
         for model in [input_model, output_model]:
-            # Simple union: UnionType[str, int]
+            # Simple union: str | int
             union_field = model.model_fields["union_field"]
             origin = get_origin(union_field.annotation)
             args = get_args(union_field.annotation)
@@ -214,7 +214,7 @@ class TestFieldTyping:
             assert int in args
             assert union_field.is_required()
 
-            # Optional union: Optional[UnionType[str, int]]
+            # Optional union: Optional[str | int]
             optional_union_field = model.model_fields["optional_union"]
             assert not optional_union_field.is_required()
             assert optional_union_field.default is None
@@ -222,7 +222,7 @@ class TestFieldTyping:
             # Check the inner union type
             if get_origin(optional_union_field.annotation) is UnionType:
                 args = get_args(optional_union_field.annotation)
-                # Should be UnionType[str, int, None] or similar
+                # Should be str | int | None or similar
                 assert type(None) in args
 
     def test_complex_union_types(self, input_model, output_model, input_model_factory):
@@ -403,7 +403,7 @@ class TestFieldTyping:
             list_field = model.model_fields["list_of_nested"]
             assert get_origin(list_field.annotation) is list, list
 
-            # Test UnionType types
+            # Test Union types
             union_field = model.model_fields["union_field"]
             assert get_origin(union_field.annotation) is UnionType
 
@@ -473,7 +473,7 @@ class TestNestedModels:
             assert issubclass(nested_field.annotation, BaseModel)
 
 
-class TestUnionTypetypes:
+class TestUnionTypes:
     """Tests for union type handling"""
 
     def test_string_union(self, input_instance_complete, output_instance_complete):
@@ -494,7 +494,7 @@ class TestUnionTypetypes:
             assert instance.complex_union.nested_field == "complex_nested"
 
 
-class TestlistHandling:
+class TestListHandling:
     """Tests for list of nested models"""
 
     def test_list_of_nested(self, input_instance_complete, output_instance_complete):
