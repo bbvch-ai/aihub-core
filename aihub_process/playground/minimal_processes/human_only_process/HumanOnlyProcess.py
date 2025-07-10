@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from aihub_lib.nats.events.work_request.human.form.InputTextElement import InputTextElement
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.process.Process import Process
@@ -15,7 +15,7 @@ class HumanOnlyProcess(AgenticProcess):
     @process_step()
     async def start_with_output_from_agent_a(
         self,
-        work_from_agent_a: Annotated[HumanAWork, Human.In(route="/input_a", method="POST")],
+        work_from_agent_a: Annotated[HumanAWork, Human.In(route="/input_a", method="POST", start_form=HumanAWork(input_text_a=InputTextElement(label="Input text A")))],
     ) -> Annotated[HumanBWorkRequest, Human.Out(users=[])]:
         print(f"[AgentOnlyProcess.start_with_output_from_agent_a] {work_from_agent_a.agent_stop_event.payload}")
         return HumanBWorkRequest(

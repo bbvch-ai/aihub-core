@@ -36,7 +36,7 @@ class ProcessService:
             process = ProcessEntity.get_process(process_class, process_id)
             if process is None:
                 raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
-            return ProcessDTO.from_entity(process, t)
+            return ProcessDTO.from_entity(process, t, is_online=False)
 
     @staticmethod
     async def get_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
@@ -45,7 +45,7 @@ class ProcessService:
         that are saved in the database.
         """
         discovered_processes = await ProcessService.discover_processes(nc, t)
-        saved_processes = [ProcessDTO.from_entity(process, t) for process in ProcessEntity.get_processes()]
+        saved_processes = [ProcessDTO.from_entity(process, t, is_online=False) for process in ProcessEntity.get_processes()]
 
         all_processes = discovered_processes.copy()
         for saved_process in saved_processes:

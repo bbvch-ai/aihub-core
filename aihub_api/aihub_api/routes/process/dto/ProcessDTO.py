@@ -35,7 +35,7 @@ class ProcessDTO(BaseModel):
     is_online: Annotated[bool | None, Field(description="Indicates whether the agent is online and reachable.")] = None
 
     @classmethod
-    def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool | None = None) -> "ProcessDTO":
+    def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool) -> "ProcessDTO":
         human_inputs = [
             HumanInSpecs(
                 route=spec.route,

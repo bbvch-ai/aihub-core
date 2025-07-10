@@ -2,7 +2,7 @@ from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.work_request.human.form.InputTextElement import InputTextElement
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage
 

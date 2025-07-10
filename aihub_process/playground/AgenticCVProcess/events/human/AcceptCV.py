@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from aihub_lib.nats.events import HumanWorkEvent
-from aihub_lib.nats.events.work_request.human.form.InputTextElement import InputTextElement
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from pydantic import Field
 
 

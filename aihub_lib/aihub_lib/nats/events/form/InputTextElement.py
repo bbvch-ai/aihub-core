@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from aihub_lib.nats.events.work_request.human.form.base.PrimeVueElement import PrimeVueElement
+from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 
 
 class InputTextElement(PrimeVueElement):

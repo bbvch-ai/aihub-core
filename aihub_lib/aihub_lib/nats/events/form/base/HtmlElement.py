@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.nats.events.work_request.human.form.base.FormkitElement import FormkitElement
+from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 
 
 class HtmlElement(FormkitElement):

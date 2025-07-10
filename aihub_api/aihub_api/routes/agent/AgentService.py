@@ -71,7 +71,7 @@ class AgentService:
             agent = AgentEntity.get_agent(agent_class, agent_id)
             if agent is None:
                 raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
-            return AgentDTO.from_entity(agent, t)
+            return AgentDTO.from_entity(agent, t, is_online=False)
 
     @staticmethod
     async def get_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
@@ -80,7 +80,7 @@ class AgentService:
         that are saved in the database.
         """
         discovered_agents = await AgentService.discover_agents(nc, t)
-        saved_agents = [AgentDTO.from_entity(agent, t) for agent in AgentEntity.get_agents()]
+        saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
 
         all_agents = discovered_agents.copy()
         for saved_agent in saved_agents:
