@@ -3,6 +3,7 @@ from collections.abc import Awaitable, Callable
 from nats.aio.client import Client as NATS
 
 from aihub_lib.nats.events import BaseEvent, ControlEvent, InstanceDiscoveryRequestEvent, DisplayEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -60,7 +61,7 @@ class AgentNCSubscriber(NCSubscriber):
         )
 
     @classmethod
-    def for_agent_discovery_request_events(
+    def for_agent_instance_discovery_request_events(
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
@@ -68,7 +69,7 @@ class AgentNCSubscriber(NCSubscriber):
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for agents, optionally filtered by a specific call_id."""
-        subject = topic_manager.get_agent_discovery_subject_request(call_id)
+        subject = topic_manager.get_agent_instance_discovery_subject_request(call_id)
         return cls(
             nc=nc,
             subject=subject,
@@ -77,7 +78,24 @@ class AgentNCSubscriber(NCSubscriber):
         )
 
     @classmethod
-    def for_agent_discovery_response_events(
+    def for_agent_class_discovery_request_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[ClassDiscoveryRequestEvent, AgentTopic], Awaitable[None]],
+        call_id: str = "*",
+    ):
+        """Subscribe to discovery request events for agent classes, optionally filtered by a specific call_id."""
+        subject = topic_manager.get_agent_class_discovery_subject_request(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=ClassDiscoveryRequestEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_agent_instance_discovery_response_events(
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
@@ -85,7 +103,24 @@ class AgentNCSubscriber(NCSubscriber):
         call_id: str = "*",
     ):
         """Subscribe to discovery response events for agents, optionally filtered by a specific call_id."""
-        subject = topic_manager.get_agent_discovery_subject_response(call_id)
+        subject = topic_manager.get_agent_instance_discovery_subject_response(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_agent_class_discovery_response_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        call_id: str = "*",
+    ):
+        """Subscribe to discovery response events for agent classes, optionally filtered by a specific call_id."""
+        subject = topic_manager.get_agent_class_discovery_subject_response(call_id)
         return cls(
             nc=nc,
             subject=subject,

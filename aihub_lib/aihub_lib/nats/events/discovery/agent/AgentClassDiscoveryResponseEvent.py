@@ -42,7 +42,7 @@ class EventSpecs(BaseModel):
         )
 
 
-class AgentDiscoveryResponseEvent(BaseEvent):
+class AgentClassDiscoveryResponseEvent(BaseEvent):
     """
     A response event sent after an agent discovery request, detailing an agent's class, ID, configuration,
     and the set of start events it can handle.

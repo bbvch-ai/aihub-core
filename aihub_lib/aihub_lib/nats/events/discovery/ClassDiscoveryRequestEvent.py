@@ -1,7 +1,7 @@
 from aihub_lib.nats.events.BaseEvent import BaseEvent
 
 
-class DiscoveryRequestEvent(BaseEvent):
+class ClassDiscoveryRequestEvent(BaseEvent):
     """
     Represents a request event for discovery-related operations, such as retrieving metadata,
     capabilities, or configuration details about agents or the system as a whole.

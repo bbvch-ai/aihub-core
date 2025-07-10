@@ -41,7 +41,7 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
         self.agent_class = agent_class
         self.agent_id = agent_id
 
-    def get_agent_discovery_subject_request(
+    def get_agent_instance_discovery_subject_request(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
         agent_class: str | None = None,
@@ -51,13 +51,13 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
         Returns a subject for requesting discovery info about this agent instance (or a provided override).
         If agent_class/agent_id are not specified, it uses the instance's own identifiers.
         """
-        return super().get_agent_discovery_subject_request(
+        return super().get_agent_instance_discovery_subject_request(
             agent_class=agent_class or self.agent_class,
             agent_id=agent_id or self.agent_id,
             call_id=call_id,
         )
 
-    def get_agent_discovery_subject_response(
+    def get_agent_instance_discovery_subject_response(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
         agent_class: str | None = None,
@@ -67,7 +67,7 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
         Returns a subject for receiving agent discovery responses for this agent instance (or a provided override).
         If agent_class/agent_id are not specified, it uses the instance's own identifiers.
         """
-        return super().get_agent_discovery_subject_response(
+        return super().get_agent_instance_discovery_subject_response(
             agent_class=agent_class or self.agent_class,
             agent_id=agent_id or self.agent_id,
             call_id=call_id,
@@ -188,4 +188,7 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
 
     def _get_stream_name_for_all_events(self) -> str:
         """Returns the stream name used for all agent events."""
-        return f"{self.AGENT_TOPIC}_{self.agent_class}_stream"
+        if self.agent_id == "*":
+            return f"{self.AGENT_TOPIC}_{self.agent_class}_stream"
+        else:
+            return f"{self.AGENT_TOPIC}_{self.agent_class}_{self.agent_id}_stream"

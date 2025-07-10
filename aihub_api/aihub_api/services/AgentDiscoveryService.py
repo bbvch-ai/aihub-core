@@ -84,7 +84,7 @@ class AgentDiscoveryService:
 
     async def _discover_and_register_agents(self):
         # Step 1: Discover which agent classes are online
-        online_agents: list[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
+        online_agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc, self.locale_handler)
         online_agent_classes = set(agent.agent_class for agent in online_agents)
 
         # Step 2: Get all configured agent instances from database

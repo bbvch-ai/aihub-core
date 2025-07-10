@@ -97,7 +97,7 @@ class AgentController(Controller):
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
-            agents = await AgentService.discover_agents(nc, t)
+            agents = await AgentService.discover_agent_instances(nc, t)
             return [
                 agent
                 for agent in agents

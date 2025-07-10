@@ -87,7 +87,7 @@ class ProcessRunner:
             return
 
         logger.debug(f"Received discovery request for {topic.process_class} with id {topic.process_id}.")
-        subject = self.topic_manager.get_process_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_process_instance_discovery_subject_response(topic.call_id)
 
         process_discovery_response_event = ProcessDiscoveryResponseEvent(
             process_class=self.process_class,

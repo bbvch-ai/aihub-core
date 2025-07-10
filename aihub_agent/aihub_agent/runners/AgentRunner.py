@@ -3,7 +3,11 @@ import logging
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    EventSpecs,
+)
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -60,9 +64,9 @@ class AgentRunner:
 
         self.dispatcher: AgentDispatcher | None = None
 
-        self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
         self.control_event_subscriber: JSSubscriber | None = None
-        self.nc_publisher: NCPublisher[AgentDiscoveryResponseEvent] | None = None
+        self.nc_publisher: NCPublisher[AgentClassDiscoveryResponseEvent] | None = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
@@ -76,7 +80,7 @@ class AgentRunner:
             return
 
         logger.debug(f"Received discovery request for {topic.agent_class}.")
-        subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
@@ -87,7 +91,7 @@ class AgentRunner:
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
-        agent_discovery_response_event = AgentDiscoveryResponseEvent(
+        agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             start_events=start_event_specs,
@@ -126,7 +130,7 @@ class AgentRunner:
         await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()

@@ -32,7 +32,7 @@ async def main():
     async with runner.test_run():
         await runner.nc_publisher.publish_event(
             event=InstanceDiscoveryRequestEvent(),
-            subject=AgentTopicManager().get_agent_discovery_subject_request(call_id=call_id),
+            subject=AgentTopicManager().get_agent_instance_discovery_subject_request(call_id=call_id),
         )
 
 

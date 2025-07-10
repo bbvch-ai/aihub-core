@@ -105,7 +105,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
-        subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
         start_events = [EventSpecs.from_event_class(StartEvent)]
         stop_events = [EventSpecs.from_event_class(StopEvent)]
         agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent(
@@ -160,7 +160,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         await self.nc.connect(servers=["nats://localhost:4222"])
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()

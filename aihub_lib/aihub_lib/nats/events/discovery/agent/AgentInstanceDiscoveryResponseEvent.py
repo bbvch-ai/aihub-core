@@ -4,10 +4,13 @@ from pydantic import Field
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    EventSpecs,
+)
 
 
-class AgentInstanceDiscoveryResponseEvent(AgentDiscoveryResponseEvent):
+class AgentInstanceDiscoveryResponseEvent(AgentClassDiscoveryResponseEvent):
     """
     A response event sent after an agent discovery request, detailing an agent's class, ID, configuration,
     and the set of start events it can handle.

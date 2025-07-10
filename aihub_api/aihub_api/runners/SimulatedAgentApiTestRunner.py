@@ -122,7 +122,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         logger.debug(f"Received discovery request for {self.agent_class} ({self.agent_id})")
-        subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
         agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -188,7 +188,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         ]
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()

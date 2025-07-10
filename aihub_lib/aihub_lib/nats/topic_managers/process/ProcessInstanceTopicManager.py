@@ -16,7 +16,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
         self.process_class = process_class
         self.process_id = process_id
 
-    def get_process_discovery_subject_request(
+    def get_process_instance_discovery_subject_request(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
         process_class: str | None = None,
@@ -26,13 +26,13 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
         Returns a subject for requesting discovery info about this process instance (or a provided override).
         If process_class/process_id are not specified, it uses the instance's own identifiers.
         """
-        return super().get_process_discovery_subject_request(
+        return super().get_process_instance_discovery_subject_request(
             process_class=process_class or self.process_class,
             process_id=process_id or self.process_id,
             call_id=call_id,
         )
 
-    def get_process_discovery_subject_response(
+    def get_process_instance_discovery_subject_response(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
         process_class: str | None = None,
@@ -42,7 +42,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
         Returns a subject for receiving process discovery responses for this process instance (or a provided override).
         If process_class/process_id are not specified, it uses the instance's own identifiers.
         """
-        return super().get_process_discovery_subject_response(
+        return super().get_process_instance_discovery_subject_response(
             process_class=process_class or self.process_class,
             process_id=process_id or self.process_id,
             call_id=call_id,

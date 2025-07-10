@@ -32,7 +32,7 @@ class AgentDiscoveryTopic(DiscoveryTopic):
             request_response,
             call_id,
         ) = subject.split(".")
-        assert topic_type == AgentTopicManager.DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
+        assert topic_type == AgentTopicManager.INSTANCE_DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
         assert discovery_topic == AgentTopicManager.AGENT_TOPIC, f"Not an agent discovery topic: {subject}"
 
         return cls(

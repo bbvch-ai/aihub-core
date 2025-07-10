@@ -14,5 +14,5 @@ class DiscoveryTopic(Topic):
     @classmethod
     def from_subject(cls, subject: str) -> "DiscoveryTopic":
         topic_type, discovery_topic, request_response, call_id = subject.split(".")
-        assert topic_type == TopicManager.DISCOVERY_TOPIC, f"Trying to parse a non-discovery topic: {subject}"
+        assert topic_type == TopicManager.INSTANCE_DISCOVERY_TOPIC, f"Trying to parse a non-discovery topic: {subject}"
         return cls(discovery_topic=discovery_topic, request_response=request_response, call_id=call_id)

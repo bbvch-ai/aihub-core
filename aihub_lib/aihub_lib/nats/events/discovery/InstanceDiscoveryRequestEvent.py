@@ -1,7 +1,7 @@
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 
 
-class InstanceDiscoveryRequestEvent(DiscoveryRequestEvent):
+class InstanceDiscoveryRequestEvent(ClassDiscoveryRequestEvent):
     """
     Represents a request event for discovery-related operations, such as retrieving metadata,
     capabilities, or configuration details about agents or the system as a whole.

@@ -115,17 +115,19 @@ class AgentTestRunner(AgentRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
-            nc=self.nc,
-            topic_manager=AgentTopicManager(),
-            handler=self.observe_event,
+        self.observe_discovery_response_event_subscriber = (
+            AgentNCSubscriber.for_agent_instance_discovery_response_events(
+                nc=self.nc,
+                topic_manager=AgentTopicManager(),
+                handler=self.observe_event,
+            )
         )
         await self.observe_discovery_response_event_subscriber.start()
 

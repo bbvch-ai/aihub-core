@@ -18,7 +18,7 @@ class ProcessNCSubscriber(NCSubscriber):
         handler: Callable[[InstanceDiscoveryRequestEvent, ProcessTopic], Awaitable[None]],
         call_id: str = "*",
     ):
-        subject = topic_manager.get_process_discovery_subject_request(call_id)
+        subject = topic_manager.get_process_instance_discovery_subject_request(call_id)
         return cls(
             nc=nc,
             subject=subject,
