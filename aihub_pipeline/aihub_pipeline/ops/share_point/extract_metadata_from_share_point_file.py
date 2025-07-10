@@ -16,13 +16,13 @@ from aihub_pipeline.types.SharePointFile import SharePointFile
 
 
 @op(code_version="v1")
-def extract_metadata_from_share_point_file(sharepoint_file: SharePointFile) -> dict[str, Any]:
+def extract_metadata_from_share_point_file(share_point_file: SharePointFile) -> dict[str, Any]:
     metadata: dict[str, Any] = {
-        SOURCE: sharepoint_file.full_url,
+        SOURCE: share_point_file.full_url,
         INSERTED_AT: int(time.time()),
-        UPDATED_AT: int(sharepoint_file.modified_datetime.timestamp()),
-        CREATED_AT: int(sharepoint_file.created_datetime.timestamp()),
-        DOCUMENT_TITLE: sharepoint_file.name,
-        HASH: hashlib.sha256(sharepoint_file.content).hexdigest(),
+        UPDATED_AT: int(share_point_file.modified_datetime.timestamp()),
+        CREATED_AT: int(share_point_file.created_datetime.timestamp()),
+        DOCUMENT_TITLE: share_point_file.name,
+        HASH: hashlib.sha256(share_point_file.content).hexdigest(),
     }
     return metadata
