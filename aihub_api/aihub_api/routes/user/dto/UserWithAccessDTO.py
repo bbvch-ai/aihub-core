@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Annotated
 
+from aihub_api.routes.process.ProcessService import ProcessService
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -62,7 +63,13 @@ class UserWithAccessDTO(UserDTO):
 
             access.agents.append(UserAccess(name=agent.agent_config.name, level=agent_access))
 
-        # TODO: Add processes
+        processes = await ProcessService.get_processes(nc, t)
+        for process in processes:
+            process_access = access_checker.access_level_for_process(process_class=process.process_class, process_id=process.process_id)
+            if process_access == AccessLevel.ACCESS_DENIED:
+                continue
+
+            access.processes.append(UserAccess(name=process.process_config.name, level=process_access))
 
         return cls(
             id=user_entity.id,

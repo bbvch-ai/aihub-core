@@ -238,6 +238,33 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
+export const AgentInSpecsSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class or category of the agent.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'A unique identifier for the agent instance.'
+        },
+        is_process_start: {
+            type: 'boolean',
+            title: 'Is Process Start',
+            description: 'Whether the work event is a process start event.'
+        },
+        event_specs: {
+            '$ref': '#/components/schemas/EventSpecs',
+            description: 'The event specs of the work event.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'is_process_start', 'event_specs'],
+    title: 'AgentInSpecs'
+} as const;
+
 export const AgentInTheLoopExceptionEventSchema = {
     properties: {
         event_id: {
@@ -4222,6 +4249,33 @@ export const HealthResponseSchema = {
     title: 'HealthResponse'
 } as const;
 
+export const HumanInSpecsSchema = {
+    properties: {
+        route: {
+            type: 'string',
+            title: 'Route',
+            description: 'The route of the work event.'
+        },
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        is_process_start: {
+            type: 'boolean',
+            title: 'Is Process Start',
+            description: 'Whether the work event is a process start event.'
+        },
+        event_specs: {
+            '$ref': '#/components/schemas/EventSpecs',
+            description: 'The event specs of the work event.'
+        }
+    },
+    type: 'object',
+    required: ['route', 'method', 'is_process_start', 'event_specs'],
+    title: 'HumanInSpecs'
+} as const;
+
 export const HumanInTheLoopRequestEventSchema = {
     properties: {
         event_id: {
@@ -6436,7 +6490,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752090559
+            default: 1752138594
         },
         owned_by: {
             type: 'string',
@@ -6938,7 +6992,7 @@ export const ProcessDTOSchema = {
         },
         human_inputs: {
             items: {
-                '$ref': '#/components/schemas/ProcessInSpecs'
+                '$ref': '#/components/schemas/HumanInSpecs'
             },
             type: 'array',
             title: 'Human Inputs',
@@ -6946,11 +7000,19 @@ export const ProcessDTOSchema = {
         },
         program_inputs: {
             items: {
-                '$ref': '#/components/schemas/ProcessInSpecs'
+                '$ref': '#/components/schemas/ProgramInSpecs'
             },
             type: 'array',
             title: 'Program Inputs',
             description: 'List of program work events that the process can receive.'
+        },
+        agent_inputs: {
+            items: {
+                '$ref': '#/components/schemas/AgentInSpecs'
+            },
+            type: 'array',
+            title: 'Agent Inputs',
+            description: 'List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.'
         },
         is_online: {
             anyOf: [
@@ -6966,11 +7028,11 @@ export const ProcessDTOSchema = {
         }
     },
     type: 'object',
-    required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs'],
+    required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs', 'agent_inputs'],
     title: 'ProcessDTO'
 } as const;
 
-export const ProcessInSpecsSchema = {
+export const ProgramInSpecsSchema = {
     properties: {
         route: {
             type: 'string',
@@ -6994,7 +7056,7 @@ export const ProcessInSpecsSchema = {
     },
     type: 'object',
     required: ['route', 'method', 'is_process_start', 'event_specs'],
-    title: 'ProcessInSpecs'
+    title: 'ProgramInSpecs'
 } as const;
 
 export const PromptTokensDetailsSchema = {

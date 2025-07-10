@@ -214,6 +214,31 @@ export type AgentEventWritable = {
 };
 
 /**
+ * AgentInSpecs
+ */
+export type AgentInSpecs = {
+    /**
+     * Agent Class
+     * The class or category of the agent.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * A unique identifier for the agent instance.
+     */
+    agent_id: string;
+    /**
+     * Is Process Start
+     * Whether the work event is a process start event.
+     */
+    is_process_start: boolean;
+    /**
+     * The event specs of the work event.
+     */
+    event_specs: EventSpecs;
+};
+
+/**
  * AgentInTheLoopExceptionEvent
  * An error response from an agent when a delegated task fails.
  *
@@ -3029,6 +3054,31 @@ export type HealthResponse = {
 };
 
 /**
+ * HumanInSpecs
+ */
+export type HumanInSpecs = {
+    /**
+     * Route
+     * The route of the work event.
+     */
+    route: string;
+    /**
+     * Method
+     * The HTTP method of the work event.
+     */
+    method: string;
+    /**
+     * Is Process Start
+     * Whether the work event is a process start event.
+     */
+    is_process_start: boolean;
+    /**
+     * The event specs of the work event.
+     */
+    event_specs: EventSpecs;
+};
+
+/**
  * HumanInTheLoopRequestEvent
  * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
@@ -5135,12 +5185,17 @@ export type ProcessDto = {
      * Human Inputs
      * List of human work events that the process can receive.
      */
-    human_inputs: Array<ProcessInSpecs>;
+    human_inputs: Array<HumanInSpecs>;
     /**
      * Program Inputs
      * List of program work events that the process can receive.
      */
-    program_inputs: Array<ProcessInSpecs>;
+    program_inputs: Array<ProgramInSpecs>;
+    /**
+     * Agent Inputs
+     * List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.
+     */
+    agent_inputs: Array<AgentInSpecs>;
     /**
      * Is Online
      * Indicates whether the agent is online and reachable.
@@ -5149,9 +5204,9 @@ export type ProcessDto = {
 };
 
 /**
- * ProcessInSpecs
+ * ProgramInSpecs
  */
-export type ProcessInSpecs = {
+export type ProgramInSpecs = {
     /**
      * Route
      * The route of the work event.
