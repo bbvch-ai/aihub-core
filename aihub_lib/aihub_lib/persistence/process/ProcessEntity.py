@@ -29,6 +29,7 @@ class ProgramInSpecsEntity(EmbeddedDocument):
             event_specs=EventSpec.from_dto(process_in_dto.event_specs),
         )
 
+
 class HumanInSpecsEntity(EmbeddedDocument):
     route = StringField(required=True)
     method = StringField(required=True)
@@ -44,6 +45,7 @@ class HumanInSpecsEntity(EmbeddedDocument):
             event_specs=EventSpec.from_dto(process_in_dto.event_specs),
         )
 
+
 class AgentInSpecsEntity(EmbeddedDocument):
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
@@ -58,6 +60,7 @@ class AgentInSpecsEntity(EmbeddedDocument):
             is_process_start=process_in_dto.is_process_start,
             event_specs=EventSpec.from_dto(process_in_dto.event_specs),
         )
+
 
 class ProcessConfig(EmbeddedDocument):
     process_id = StringField(required=False)
@@ -108,7 +111,9 @@ class ProcessEntity(Document):
 
     @classmethod
     def create_or_update_from_dto(cls, process_dto) -> "ProcessEntity":
-        existing_process = cls.objects(process_class=process_dto.process_class, process_id=process_dto.process_id).first()
+        existing_process = cls.objects(
+            process_class=process_dto.process_class, process_id=process_dto.process_id
+        ).first()
 
         process_config = ProcessConfig(
             process_id=process_dto.process_config.process_id,
@@ -119,7 +124,9 @@ class ProcessEntity(Document):
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
         human_inputs = [HumanInSpecsEntity.from_dto(human_in_dto) for human_in_dto in process_dto.human_inputs]
-        program_inputs = [ProgramInSpecsEntity.from_dto(program_in_dto) for program_in_dto in process_dto.program_inputs]
+        program_inputs = [
+            ProgramInSpecsEntity.from_dto(program_in_dto) for program_in_dto in process_dto.program_inputs
+        ]
         agent_inputs = [AgentInSpecsEntity.from_dto(agent_in_dto) for agent_in_dto in process_dto.agent_inputs]
 
         if existing_process:

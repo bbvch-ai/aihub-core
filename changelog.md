@@ -8,16 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.217.0] - 2025-07-10 - Automated Agent API Integration and Event Inheritance
 
 ### Added
-- ✨ **Automated Agent API Endpoint Generation**: Introduced a new `AgentDiscoveryService` that dynamically discovers agents and registers corresponding API endpoints for their start events. This significantly streamlines the integration of new agents with the API, eliminating the need for manual endpoint configuration.
+- ✨ **Automated Agent API Endpoint Generation**: Introduced a new `AgentEndpointsDiscoveryService` that dynamically discovers agents and registers corresponding API endpoints for their start events. This significantly streamlines the integration of new agents with the API, eliminating the need for manual endpoint configuration.
 - 🦾 **Event Inheritance Tracking**: `EventSpecs` now include an `event_parents` field, providing a hierarchical view of event types. This new metadata enhances dynamic model generation and event handling capabilities.
 - 📄 **EventSpecs Creation Helper**: Added a convenient `EventSpecs.from_event_class` method to simplify and standardize the generation of event specifications from event classes.
 - 🔑 **Role Provisioning for API Tokens**: The `generate_api_token` script has been enhanced to automatically create specified roles if they do not already exist, improving the initial setup experience for new environments.
 
 ### Changed
 - ⚡️ **Flexible Agent Event Dispatch**: The `AgentService.send_event` method now universally accepts any `BaseEvent` as input, offering greater flexibility in initiating diverse agent interactions.
-- 🔄 **Dynamic Agent Endpoint Management**: Transitioned the agent event endpoint management from static, hardcoded definitions in `AgentController` to a dynamic, discovery-driven approach powered by the new `AgentDiscoveryService`.
+- 🔄 **Dynamic Agent Endpoint Management**: Transitioned the agent event endpoint management from static, hardcoded definitions in `AgentController` to a dynamic, discovery-driven approach powered by the new `AgentEndpointsDiscoveryService`.
 - 📚 **Event Model Creation Encapsulation**: Internal methods within `EventModelCreationService` have been refactored for improved code organization and clearer encapsulation.
-- 🏗️ **API State Access for Services**: The `ApiRunner` now stores the `AgentController` and API application instance directly in FastAPI's state, enabling seamless access for new services like `AgentDiscoveryService`.
+- 🏗️ **API State Access for Services**: The `ApiRunner` now stores the `AgentController` and API application instance directly in FastAPI's state, enabling seamless access for new services like `AgentEndpointsDiscoveryService`.
 - ⚠️ **Refined Unauthorized Access Handling**: Introduced a specific HTTP exception to provide clearer and more precise error responses when a user lacks authorization to view a particular thread.
 
 ### Refactor

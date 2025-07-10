@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -13,17 +13,20 @@ class ProgramInSpecs(BaseModel):
     is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
+
 class HumanInSpecs(BaseModel):
     route: Annotated[str, Field(description="The route of the work event.")]
     method: Annotated[str, Field(description="The HTTP method of the work event.")]
     is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
+
 class AgentInSpecs(BaseModel):
     agent_class: Annotated[str, Field(description="The class or category of the agent.")]
     agent_id: Annotated[str, Field(description="A unique identifier for the agent instance.")]
     is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
+
 
 class ProcessDiscoveryResponseEvent(BaseEvent):
     """

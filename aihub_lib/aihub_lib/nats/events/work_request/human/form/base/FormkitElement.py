@@ -5,4 +5,6 @@ from pydantic import Field
 
 
 class FormkitElement(BaseModel):
-    condition_if: Annotated[str | None, Field(description="Conditional expression to show this element", alias="if", pattern=r'^\$.+' )] = None
+    condition_if: Annotated[
+        str | None, Field(description="Conditional expression to show this element", alias="if", pattern=r"^\$.+")
+    ] = None

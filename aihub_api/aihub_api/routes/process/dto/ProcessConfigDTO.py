@@ -1,9 +1,8 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.processes.ProcessConfig import ProcessConfig
+from pydantic import BaseModel, Field
 
 
 class ProcessConfigDTO(BaseModel):

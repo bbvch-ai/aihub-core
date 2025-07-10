@@ -1,24 +1,28 @@
-from typing import Annotated, get_origin, ClassVar, get_args, Counter
+from collections import Counter
+from typing import Annotated, ClassVar, get_args, get_origin
 
 from pydantic import Field, model_validator
 
 from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
-from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from aihub_lib.nats.events.work_request.human.form.base.FormkitElement import FormkitElement
+from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 
 
 class HumanWorkRequestEvent(WorkRequestEvent):
     """
     WIP
     """
+
     endpoint: Annotated[str | None, Field(description="Endpoint to which this work must be submitted")] = None
-    method: Annotated[str | None, Field(description="HTTP Method that must be used to submit this piece of work")] = None
+    method: Annotated[str | None, Field(description="HTTP Method that must be used to submit this piece of work")] = (
+        None
+    )
     users: Annotated[list[str] | None, Field(description="The list of users.")] = None
 
     forms: Annotated[list[HumanWorkEvent], Field(description="The list of forms.")]
 
-    @model_validator(mode='after')
-    def validate_forms_and_attributes(self) -> 'HumanWorkRequestEvent':
+    @model_validator(mode="after")
+    def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":
         cls = self.__class__
         forms = self.forms
         all_errors = []
@@ -31,7 +35,8 @@ class HumanWorkRequestEvent(WorkRequestEvent):
                     continue
                 if not isinstance(field_value, FormkitElement):
                     all_errors.append(
-                        f"Attribute Error: In form {i} ({type(form).__name__}), field '{field_name}' must be a FormkitElement, "
+                        f"Attribute Error: In form {i} ({type(form).__name__}), "
+                        f"field '{field_name}' must be a FormkitElement, "
                         f"but received type '{type(field_value).__name__}'."
                     )
 

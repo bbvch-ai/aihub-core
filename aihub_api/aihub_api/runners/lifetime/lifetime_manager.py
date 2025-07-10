@@ -9,16 +9,16 @@ from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
-from aihub_api.services.AgentDiscoveryService import AgentDiscoveryService
+from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
-from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 
 
 @asynccontextmanager
@@ -76,7 +76,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
 
-
         # Persist all events
         persister = EventPersister("default")
 
@@ -114,7 +113,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Create and start the agent discovery service
         api_app = app.state.api_app
         if hasattr(api_app.state, "agent_controller"):
-            agent_discovery_service = AgentDiscoveryService(
+            agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
                 api_app=api_app,
                 agent_controller=api_app.state.agent_controller,

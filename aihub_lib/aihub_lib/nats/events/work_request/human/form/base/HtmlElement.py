@@ -9,4 +9,3 @@ class HtmlElement(FormkitElement):
     el: Annotated[str, Field(description="HTML element tag name", alias="$el")]
     attrs: Annotated[dict[str, str | dict], Field(description="HTML element attributes")]
     children: Annotated[list["HtmlElement"] | str, Field(description="HTML element children")]
-

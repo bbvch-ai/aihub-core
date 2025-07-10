@@ -1,13 +1,6 @@
 import asyncio
 from asyncio import sleep
 
-from bson import ObjectId
-from cachetools import TTLCache
-from nats.aio.client import Client as NATS
-from fastapi import HTTPException
-
-from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
-from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
@@ -17,6 +10,13 @@ from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import Pr
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics import ProcessDiscoveryTopic
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
+from bson import ObjectId
+from cachetools import TTLCache
+from fastapi import HTTPException
+from nats.aio.client import Client as NATS
+
+from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
+from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
 DISCOVER_PROCESS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire process list for 60s
@@ -50,14 +50,14 @@ class ProcessService:
         all_processes = discovered_processes.copy()
         for saved_process in saved_processes:
             was_discovered = (
-                    len(
-                        [
-                            a
-                            for a in discovered_processes
-                            if a.process_id == saved_process.process_id and a.process_class == saved_process.process_class
-                        ]
-                    )
-                    > 0
+                len(
+                    [
+                        a
+                        for a in discovered_processes
+                        if a.process_id == saved_process.process_id and a.process_class == saved_process.process_class
+                    ]
+                )
+                > 0
             )
             if not was_discovered:
                 all_processes.append(saved_process)

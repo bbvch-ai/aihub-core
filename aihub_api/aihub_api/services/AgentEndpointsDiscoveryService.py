@@ -12,7 +12,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
@@ -29,7 +29,7 @@ from aihub_api.routes.thread.ThreadService import ThreadService
 logger = logging.getLogger(__name__)
 
 
-class AgentDiscoveryService:
+class AgentEndpointsDiscoveryService:
     """
     This service ensures that new agents in the system are automatically registered.
     This ensures that the API and the Agents are decoupled.

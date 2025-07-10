@@ -12,19 +12,9 @@ class InputTextElement(PrimeVueElement):
     placeholder: Annotated[str, Field(description="Placeholder text")] = ""
     prefix: Annotated[str, Field(description="Prefix text")] = ""
     suffix: Annotated[str, Field(description="Suffix text")] = ""
-    icon_prefix: Annotated[
-        str,
-        Field(
-            description="Icon prefix",
-            alias="iconPrefix",
-            pattern=r"^pi pi-[a-z0-9-]+$"
-        )
-    ] = ""
-    icon_suffix: Annotated[
-        str,
-        Field(
-            description="Icon suffix",
-            alias="iconSuffix",
-            pattern=r"^pi pi-[a-z0-9-]+$"
-        )
-    ] = ""
+    icon_prefix: Annotated[str, Field(description="Icon prefix", alias="iconPrefix", pattern=r"^pi pi-[a-z0-9-]+$")] = (
+        ""
+    )
+    icon_suffix: Annotated[str, Field(description="Icon suffix", alias="iconSuffix", pattern=r"^pi pi-[a-z0-9-]+$")] = (
+        ""
+    )

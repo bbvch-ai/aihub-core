@@ -1,13 +1,16 @@
 from typing import Annotated
 
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
+from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import (
+    AgentInSpecs,
+    HumanInSpecs,
+    ProgramInSpecs,
+)
+from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from pydantic import BaseModel, Field
 
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import HumanInSpecs, ProgramInSpecs, \
-    AgentInSpecs
-from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 
 
 class ProcessDTO(BaseModel):
@@ -33,26 +36,47 @@ class ProcessDTO(BaseModel):
 
     @classmethod
     def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool | None = None) -> "ProcessDTO":
-        human_inputs = [HumanInSpecs(
-            route=spec.route,
-            method=spec.method,
-            is_process_start=spec.is_process_start,
-            event_specs=EventSpecs(event_name=spec.event_specs.event_name, event_schema=spec.event_specs.event_schema),
-        ) for spec in entity.human_inputs]
+        human_inputs = [
+            HumanInSpecs(
+                route=spec.route,
+                method=spec.method,
+                is_process_start=spec.is_process_start,
+                event_specs=EventSpecs(
+                    event_name=spec.event_specs.event_name,
+                    event_schema=spec.event_specs.event_schema,
+                    event_parents=spec.event_specs.event_parents,
+                ),
+            )
+            for spec in entity.human_inputs
+        ]
 
-        program_inputs = [ProgramInSpecs(
-            route=spec.route,
-            method=spec.method,
-            is_process_start=spec.is_process_start,
-            event_specs=EventSpecs(event_name=spec.event_specs.event_name, event_schema=spec.event_specs.event_schema),
-        ) for spec in entity.program_inputs]
+        program_inputs = [
+            ProgramInSpecs(
+                route=spec.route,
+                method=spec.method,
+                is_process_start=spec.is_process_start,
+                event_specs=EventSpecs(
+                    event_name=spec.event_specs.event_name,
+                    event_schema=spec.event_specs.event_schema,
+                    event_parents=spec.event_specs.event_parents,
+                ),
+            )
+            for spec in entity.program_inputs
+        ]
 
-        agent_inputs = [AgentInSpecs(
-            agent_class=spec.agent_class,
-            agent_id=spec.agent_id,
-            is_process_start=spec.is_process_start,
-            event_specs=EventSpecs(event_name=spec.event_specs.event_name, event_schema=spec.event_specs.event_schema),
-        ) for spec in entity.agent_inputs]
+        agent_inputs = [
+            AgentInSpecs(
+                agent_class=spec.agent_class,
+                agent_id=spec.agent_id,
+                is_process_start=spec.is_process_start,
+                event_specs=EventSpecs(
+                    event_name=spec.event_specs.event_name,
+                    event_schema=spec.event_specs.event_schema,
+                    event_parents=spec.event_specs.event_parents,
+                ),
+            )
+            for spec in entity.agent_inputs
+        ]
 
         return cls(
             process_class=entity.process_class,

@@ -2,11 +2,6 @@ import logging
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
-from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import ExceptionEvent
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity, TimeRange
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -14,7 +9,6 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from aihub_api.routes.event.dto.EventTimeseries import EventTimeseries
 from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
-from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +84,6 @@ class EventService:
             logging.error(f"Websocket disconnected: {e}")
             logger.debug(f"User {user.id} disconnected from websocket")
             await ws_manager.disconnect(websocket, user.id)
-
 
     @staticmethod
     def get_event_timeseries(

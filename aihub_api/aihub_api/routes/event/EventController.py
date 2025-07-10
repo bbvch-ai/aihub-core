@@ -6,8 +6,6 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
-from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import TimeRange
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
@@ -19,8 +17,6 @@ from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerA
 from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
-from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
-from ...sockets.sender.WebSocketSender import WebSocketSender
 from ..thread.ThreadService import ThreadService
 from .dto.EventTimeseries import EventTimeseries
 from .EventService import EventService

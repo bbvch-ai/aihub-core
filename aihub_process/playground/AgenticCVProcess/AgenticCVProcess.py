@@ -43,13 +43,13 @@ class AgenticCVProcess(AgenticProcess):
                 AcceptCV(
                     display_name=LocaleString(en="This is Accept"),
                     display_description=LocaleString(en="This is description"),
-                    reason=InputTextElement(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?"))
+                    reason=InputTextElement(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?")),
                 ),
                 RejectCV(
                     display_name=LocaleString(en="This is Reject"),
                     display_description=LocaleString(en="This is description"),
-                    reason=InputTextElement(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?"))
-                )
+                    reason=InputTextElement(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?")),
+                ),
             ]
         )
 

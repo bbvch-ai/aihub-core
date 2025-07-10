@@ -31,10 +31,9 @@ from aihub_lib.nats.events import (
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.events.semantic.guard import GuardEvent
+from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag
 from typing_extensions import override
-
-from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 
 # Import all events here that the frontend should be able to display
 DisplayEvents = (

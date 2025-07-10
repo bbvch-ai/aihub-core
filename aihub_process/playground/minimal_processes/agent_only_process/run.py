@@ -8,7 +8,6 @@ from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
 from playground.agents.AgentA.AgentA import AgentA
-from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
 from playground.agents.AgentB.AgentB import AgentB
 from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 

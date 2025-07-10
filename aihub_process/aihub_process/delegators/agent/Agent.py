@@ -20,4 +20,3 @@ class Agent(BaseProcessEntity):
 
         agent_class: str
         agent_id: str
-

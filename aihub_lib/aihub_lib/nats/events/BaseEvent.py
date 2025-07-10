@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Annotated, Any, ClassVar
+from typing import Any, ClassVar
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
