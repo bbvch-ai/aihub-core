@@ -19,7 +19,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 )
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
-from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
@@ -81,17 +80,7 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        AgentController(auth=auth)
-        .get_agent()
-        .get_agent_threads()
-        .get_agents()
-        .discover_agents()
-        .send_event_to(
-            "LLMWrappingAgent",
-            "dev_agent",
-            start_event_class=UserMessageEvent,
-            stop_event_class=LLMStopEvent,
-        ),
+        AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(

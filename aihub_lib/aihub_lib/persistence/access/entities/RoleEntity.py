@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from mongoengine import Document, ListField, StringField
 
 
@@ -17,6 +19,13 @@ class RoleEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
+
+    @classmethod
+    def get_role_by_name(cls, role_name: str) -> RoleEntity | None:
+        """
+        Fetches a role by its name. Returns None if the role does not exist.
+        """
+        return cls.objects(name=role_name).first()
 
     @classmethod
     def get_access_rules_for_roles(cls, role_names: list[str]) -> set[str]:

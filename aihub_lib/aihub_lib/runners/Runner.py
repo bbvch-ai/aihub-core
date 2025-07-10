@@ -71,6 +71,7 @@ class Runner(abc.ABC):
         # Mount the API under the specified path
         self.api_path = api_path
         self._base_app.mount(api_path, self._api_app)
+        self._base_app.state.api_app = self._api_app
 
         self.controllers: set[Controller] = set()
 

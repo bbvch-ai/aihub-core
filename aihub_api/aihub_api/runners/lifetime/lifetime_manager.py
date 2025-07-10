@@ -12,7 +12,9 @@ from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
+from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
+from aihub_api.services.AgentDiscoveryService import AgentDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
@@ -100,12 +102,30 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.ws_sender = ws_sender
         app.state.external_event_distributor = external_event_distributor
 
+        # Create and start the agent discovery service
+        api_app = app.state.api_app
+        if hasattr(api_app.state, "agent_controller"):
+            agent_discovery_service = AgentDiscoveryService(
+                nc=nc,
+                api_app=api_app,
+                agent_controller=api_app.state.agent_controller,
+                locale_handler=ApiLocaleHandler(),
+                discovery_interval=60,  # Check for new agents every 60 seconds
+            )
+            await agent_discovery_service.start()
+            app.state.agent_discovery_service = agent_discovery_service
+
         # Yield control back to FastAPI to start serving requests
         yield
 
         # Shutdown: stop subscribers
         await persist_subscriber.stop()
         await ws_subscriber.stop()
+
+        if hasattr(app.state, "agent_discovery_service"):
+            # Stop the discovery service
+            await app.state.agent_discovery_service.stop()
+
         disconnect()
 
     finally:

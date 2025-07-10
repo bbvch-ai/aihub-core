@@ -72,6 +72,7 @@ class EventSpec(EmbeddedDocument):
 
     event_name = StringField(required=True)
     event_schema_json = StringField(required=True)  # Store as JSON string to avoid issues with $ in keys
+    event_parents = ListField(StringField(), default=list)
 
     @property
     def event_schema(self):
@@ -81,10 +82,14 @@ class EventSpec(EmbeddedDocument):
     @classmethod
     def from_dto(cls, event_dto):
         """Create an EventSpec from a DTO object."""
-        return cls(event_name=event_dto.event_name, event_schema_json=json.dumps(event_dto.event_schema))
+        return cls(
+            event_name=event_dto.event_name,
+            event_schema_json=json.dumps(event_dto.event_schema),
+            event_parents=event_dto.event_parents,
+        )
 
 
-class AgentConfig(EmbeddedDocument):
+class AgentConfigEntity(EmbeddedDocument):
     agent_id = StringField(required=True)
     name = StringField(required=True)
     description = StringField(required=True)
@@ -102,7 +107,7 @@ class AgentEntity(Document):
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
-    agent_config = EmbeddedDocumentField(AgentConfig, required=True)
+    agent_config = EmbeddedDocumentField(AgentConfigEntity, required=True)
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
@@ -115,7 +120,7 @@ class AgentEntity(Document):
         cls,
         agent_class: str,
         agent_id: str,
-        agent_config: AgentConfig,
+        agent_config: AgentConfigEntity,
         is_conversational: bool,
         start_events: list[EventSpec],
         stop_events: list[EventSpec],
@@ -146,7 +151,7 @@ class AgentEntity(Document):
         # Check if an agent with the same agent_class and agent_id already exists
         existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
 
-        agent_config = AgentConfig(
+        agent_config = AgentConfigEntity(
             agent_id=agent_dto.agent_config.agent_id,
             name=agent_dto.agent_config.name,
             description=agent_dto.agent_config.description,

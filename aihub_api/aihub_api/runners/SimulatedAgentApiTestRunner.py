@@ -31,7 +31,9 @@ from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDisco
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
+from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_api.services.AgentDiscoveryService import AgentDiscoveryService
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +96,9 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
+        self.start_events: list[EventSpecs] = []
+        self.stop_events: list[EventSpecs] = []
+
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
         Handler for control events targeting this agent instance. If a StartEvent arrives,
@@ -115,26 +120,6 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         """
         logger.debug(f"Received discovery request for {self.agent_class} ({self.agent_id})")
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [
-            EventSpecs(
-                event_name=StartEvent.event_name_from_class(),
-                event_schema=StartEvent.model_json_schema(),
-            ),
-            EventSpecs(
-                event_name=UserMessageEvent.event_name_from_class(),
-                event_schema=UserMessageEvent.model_json_schema(),
-            ),
-        ]
-        stop_events = [
-            EventSpecs(
-                event_name=StopEvent.event_name_from_class(),
-                event_schema=StopEvent.model_json_schema(),
-            ),
-            EventSpecs(
-                event_name=LLMStopEvent.event_name_from_class(),
-                event_schema=LLMStopEvent.model_json_schema(),
-            ),
-        ]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -145,8 +130,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 system_prompt=LocaleString(de="Test Agent System Prompt"),
             ),
             is_conversational=True,
-            start_events=start_events,
-            stop_events=stop_events,
+            start_events=self.start_events,
+            stop_events=self.stop_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
@@ -190,6 +175,15 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.nc = NATS()
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
+        self.start_events = [
+            EventSpecs.from_event_class(StartEvent),
+            EventSpecs.from_event_class(UserMessageEvent),
+        ]
+        self.stop_events = [
+            EventSpecs.from_event_class(StopEvent),
+            EventSpecs.from_event_class(LLMStopEvent),
+        ]
+
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
@@ -207,6 +201,20 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.agent_control_event_subscriber.start()
 
         self.js_publisher = JSPublisher(self.js)
+
+        if hasattr(self._api_app.state, "agent_controller"):
+            AgentDiscoveryService(
+                nc=self.nc,
+                api_app=self._api_app,
+                agent_controller=self._api_app.state.agent_controller,
+                locale_handler=ApiLocaleHandler(),
+                discovery_interval=60,
+            )._register_agent_endpoints(
+                agent_class=self.agent_class,
+                agent_id=self.agent_id,
+                start_events=self.start_events,
+                stop_events=self.stop_events,
+            )
 
     async def run(self):
         await self.start_simulation()
