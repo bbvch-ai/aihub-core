@@ -86,8 +86,7 @@ UserEntity.ensure_user_exists(
 
 token = TokenService.create_token(token_name, expiry, user)
 
-admin_role = RoleEntity.get_role_by_name(roles[0])
-if admin_role is None:
+if RoleEntity.get_role_by_name(roles[0]) is None:
     role = RoleEntity(
         name=roles[0],
         description=f"Role for {token_name}",
