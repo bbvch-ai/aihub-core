@@ -1,5 +1,3 @@
-from typing import List
-
 from llama_index.core import Document
 from pydantic import computed_field
 
@@ -19,5 +17,5 @@ class DocumentWithFigureInfo(Document):
 
     @computed_field
     @property
-    def figure_ids(self) -> List[str]:
+    def figure_ids(self) -> list[str]:
         return self.metadata.get("figure_ids", [])

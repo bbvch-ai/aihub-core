@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from typing import Annotated, Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -16,12 +16,20 @@ class RunStatistics(BaseEventStatistics):
     @classmethod
     def from_run_data(
         cls,
-        run_data: Annotated[Dict[str, Any], "Data dict from aggregation pipeline"],
+        run_data: Annotated[dict[str, Any], "Data dict from aggregation pipeline"],
         agent_dto: Annotated[MinimalAgentDTO, "Pre-fetched agent DTO"],
     ) -> "RunStatistics":
         """Creates a RunStatistics DTO from aggregation data and agent DTO."""
-        run_started_at_dt: Optional[datetime] = run_data.get("started_at")
-        run_ended_at_dt: Optional[datetime] = run_data.get("ended_at")
+        run_started_at_dt: datetime | None = run_data.get("started_at")
+        run_ended_at_dt: datetime | None = run_data.get("ended_at")
+
+        started_at = run_started_at_dt
+        if run_started_at_dt and run_started_at_dt.tzinfo is None:
+            started_at = run_started_at_dt.replace(tzinfo=UTC)
+
+        ended_at = run_ended_at_dt
+        if run_ended_at_dt and run_ended_at_dt.tzinfo is None:
+            ended_at = run_ended_at_dt.replace(tzinfo=UTC)
 
         return cls(
             run_id=run_data["run_id"],
@@ -35,23 +43,7 @@ class RunStatistics(BaseEventStatistics):
             open_bitl=run_data.get("open_bitl", False),
             is_aitl=run_data.get("is_aitl", False),
             open_aitl=run_data.get("open_aitl", False),
-            started_at=(
-                run_started_at_dt.replace(tzinfo=timezone.utc)
-                if run_started_at_dt and run_started_at_dt.tzinfo is None
-                else run_started_at_dt
-            )
-            .isoformat()
-            .replace("+00:00", "Z")
-            if run_started_at_dt
-            else None,
-            ended_at=(
-                run_ended_at_dt.replace(tzinfo=timezone.utc)
-                if run_ended_at_dt and run_ended_at_dt.tzinfo is None
-                else run_ended_at_dt
-            )
-            .isoformat()
-            .replace("+00:00", "Z")
-            if run_ended_at_dt
-            else None,
+            started_at=started_at.isoformat().replace("+00:00", "Z") if run_started_at_dt else None,
+            ended_at=ended_at.isoformat().replace("+00:00", "Z") if run_ended_at_dt else None,
             duration=run_data.get("duration"),
         )

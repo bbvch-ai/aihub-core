@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Annotated, Any, ClassVar, Dict, List, Optional, Type, Union
+from typing import Annotated, Any, ClassVar
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
@@ -16,7 +16,7 @@ from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classe
 logger = logging.getLogger(__name__)
 
 
-def serialize_chat_message_blocks(chat_message: ChatMessage) -> Dict:
+def serialize_chat_message_blocks(chat_message: ChatMessage) -> dict:
     msg_dict = chat_message.model_dump()
     for block in msg_dict["blocks"]:
         if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
@@ -49,7 +49,7 @@ class BaseEvent(BaseModel):
       (PID, thread ID) for better observability in logs or traces.
     """
 
-    _event_registry: ClassVar[Dict[str, Type["BaseEvent"]]] = {}
+    _event_registry: ClassVar[dict[str, type["BaseEvent"]]] = {}
     event_id: Annotated[str, Field(default_factory=lambda: str(ObjectId()))]
     created_at: Annotated[
         int,
@@ -60,11 +60,11 @@ class BaseEvent(BaseModel):
     ]
 
     # Private attributes to handle unknown event types
-    _unknown_event_name: Optional[str] = PrivateAttr(None)
-    _unknown_data: Optional[Dict[str, Any]] = PrivateAttr(None)
-    _unknown_parent_classes: Optional[List[str]] = PrivateAttr(None)
+    _unknown_event_name: str | None = PrivateAttr(None)
+    _unknown_data: dict[str, Any] | None = PrivateAttr(None)
+    _unknown_parent_classes: list[str] | None = PrivateAttr(None)
 
-    _jetstream_sequence: Optional[int] = PrivateAttr(None)
+    _jetstream_sequence: int | None = PrivateAttr(None)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
@@ -96,8 +96,10 @@ class BaseEvent(BaseModel):
 
     @computed_field
     @property
-    def _parent_event_names(self) -> List[str]:
-        """Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance."""
+    def _parent_event_names(self) -> list[str]:
+        """
+        Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+        """
         if self._unknown_parent_classes is not None:
             return self._unknown_parent_classes
 
@@ -216,7 +218,7 @@ class BaseEvent(BaseModel):
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
-    def deserialize_event(cls, data: Union[bytes, str, Dict[str, Any]]) -> "BaseEvent":
+    def deserialize_event(cls, data: bytes | str | dict[str, Any]) -> "BaseEvent":
         """
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.
@@ -243,7 +245,7 @@ class BaseEvent(BaseModel):
 
         # Get event type and parent classes
         event_name: str = json_data.get("_event_name")
-        parent_classes: List[str] = json_data.get("_parent_event_names", [])
+        parent_classes: list[str] = json_data.get("_parent_event_names", [])
 
         # If the exact class is registered, try to instantiate it and propagate any validation errors
         if event_name and isinstance(event_name, str):
@@ -296,7 +298,7 @@ class BaseEvent(BaseModel):
 
         return event
 
-    def to_trace_dict(self) -> Dict[str, Any]:
+    def to_trace_dict(self) -> dict[str, Any]:
         """
         Prepares a dictionary suitable for tracing and logging:
         - Human-readable timestamps.
@@ -316,7 +318,7 @@ class BaseEvent(BaseModel):
         return event_dict
 
     @override
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """
         Serializes the event into a dictionary. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.

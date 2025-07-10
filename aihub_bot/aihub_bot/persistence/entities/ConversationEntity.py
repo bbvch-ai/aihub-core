@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
 
 from mongoengine import (
     BooleanField,
@@ -54,7 +53,7 @@ class ConversationTracker(Document):
 
     meta = {"collection": "conversation_trackers", "strict": True}
     conversation_id = StringField(required=True, unique=True)
-    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    created_at = DateTimeField(default=lambda: datetime.now(UTC))
     explicitly_deleted = BooleanField(default=False)
 
     @classmethod
@@ -63,7 +62,7 @@ class ConversationTracker(Document):
             upsert=True,
             set__conversation_id=conversation_id,
             set__explicitly_deleted=False,
-            set_on_insert__created_at=datetime.now(timezone.utc),
+            set_on_insert__created_at=datetime.now(UTC),
         )
 
     @classmethod
@@ -127,7 +126,7 @@ class ConversationEntity(Document):
     def create_conversation(
         cls,
         conversation_id: str,
-        messages: List[Message],
+        messages: list[Message],
     ) -> "ConversationEntity":
         conversation = cls(conversation_id=conversation_id, messages=messages, last_activity=datetime.utcnow())
         return conversation.save()
@@ -141,7 +140,7 @@ class ConversationEntity(Document):
     def add_messages_to_conversation(
         cls,
         conversation_id: str,
-        messages: List[Message],
+        messages: list[Message],
     ) -> "ConversationEntity":
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         if conversation is None:

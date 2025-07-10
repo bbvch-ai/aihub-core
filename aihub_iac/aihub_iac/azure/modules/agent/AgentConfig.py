@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Dict, Optional, Union
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -38,25 +38,26 @@ class AgentConfig(BaseConfig):
     memory_in_gb: Annotated[float, Field(description="Memory allocation in GB")] = 0.5
 
     # AI resources
-    ai_search_name: Annotated[Optional[str], Field(description="Name of the AI search service")] = None
-    ai_search_resource_group: Annotated[Optional[str], Field(description="Resource group for AI search")] = None
-    doc_store_name: Annotated[Optional[str], Field(description="Name of the document store")] = None
-    doc_store_resource_group: Annotated[Optional[str], Field(description="Resource group for document store")] = None
+    ai_search_name: Annotated[str | None, Field(description="Name of the AI search service")] = None
+    ai_search_resource_group: Annotated[str | None, Field(description="Resource group for AI search")] = None
+    doc_store_name: Annotated[str | None, Field(description="Name of the document store")] = None
+    doc_store_resource_group: Annotated[str | None, Field(description="Resource group for document store")] = None
 
     doc_store_cosmos_account_name: Annotated[
-        Optional[str], Field(description="Name of the Cosmos DB account for document storage")
+        str | None, Field(description="Name of the Cosmos DB account for document storage")
     ] = None
     doc_store_cosmos_resource_group: Annotated[
-        Optional[str], Field(description="Resource group for Cosmos DB document storage")
+        str | None, Field(description="Resource group for Cosmos DB document storage")
     ] = None
 
     # Other settings
     log_level: Annotated[str, Field(description="Logging level for the application")] = "WARNING"
 
     additional_env_vars: Annotated[
-        Dict[str, Union[str, Dict[str, str]]],
+        dict[str, str | dict[str, str]],
         Field(
-            description="Additional environment variables to pass to the agent container, can be plain values or secret references",
+            description="Additional environment variables to pass to the agent "
+            "container, can be plain values or secret references",
         ),
     ] = {}
 
@@ -82,7 +83,10 @@ class AgentConfig(BaseConfig):
 
     @property
     def effective_ai_search_name(self) -> str:
-        """Generate the AI search name, using the configured value or a default based on the project name, AI search service, and location"""
+        """
+        Generate the AI search name, using the configured value or a default
+        based on the project name, AI search service, and location
+        """
         return self.ai_search_name or self.resource_namer.ai_search_name()
 
     @property

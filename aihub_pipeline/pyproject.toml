@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_pipeline"
-version = "v0.213.0"
+version = "v0.216.0"
 description = "pipeline core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -22,7 +22,7 @@ lxml = "^5.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.213.0"
+tag = "v0.216.0"
 subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]
@@ -30,7 +30,6 @@ pytest = "^8.3.2"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 mypy = "^1.13.0"
-isort = "^5.13.2"
 pytest-cov = "^6.0.0"
 
 [build-system]
@@ -42,11 +41,7 @@ line-length = 120
 target-version = 'py311'
 
 [tool.ruff.lint]
-extend-ignore = ["E203"]
-
-[tool.isort]
-profile = "black"
-line_length = 120
+select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120

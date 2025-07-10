@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Annotated, Callable, Dict, List, Type
+from collections.abc import Callable
+from typing import Annotated
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import (
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 class ProcessDispatcher(BaseDispatcher):
     def __init__(
         self,
-        process: Annotated[Type[AgenticProcess], "The agentic process defining steps and logic."],
+        process: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
@@ -91,7 +92,7 @@ class ProcessDispatcher(BaseDispatcher):
     async def is_step_ready(
         self,
         step_method: Annotated[Callable, "The step method to check."],
-        events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[ProcessTopic, "Topic info for the current process."],
     ) -> bool:
         """
@@ -110,7 +111,7 @@ class ProcessDispatcher(BaseDispatcher):
         self,
         trigger_event: Annotated[WorkEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
-        events: Annotated[Dict[str, List[WorkEvent]], "All events for this run, keyed by event name."],
+        events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
         topic: Annotated[ProcessTopic, "Topic info for the current process."],
     ):
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, step_method, events)
@@ -138,7 +139,7 @@ class ProcessDispatcher(BaseDispatcher):
             return
 
         if result:
-            if not isinstance(result, (list, tuple)):
+            if not isinstance(result, list | tuple):
                 result = [result]
             result = tuple(result)
 
@@ -152,12 +153,14 @@ class ProcessDispatcher(BaseDispatcher):
 
             for event, event_type, config in zip(result, event_types, configs):
                 logger.debug(
-                    f"Process step returned '{event.event_name_from_class()}' and config '{config.__class__.__name__}' step '{step_method.__name__}'"
+                    f"Process step returned '{event.event_name_from_class()}' "
+                    f"and config '{config.__class__.__name__}' step '{step_method.__name__}'"
                 )
 
                 if not isinstance(event, event_type):
                     raise RuntimeError(
-                        f"Step '{step_method.__name__}' returned an event of type {type(event)}, but expected {event_type}"
+                        f"Step '{step_method.__name__}' returned an event of "
+                        f"type {type(event)}, but expected {event_type}"
                     )
 
                 if isinstance(event, AgentWorkRequestEvent) and isinstance(config, Agent.Out):
@@ -183,7 +186,8 @@ class ProcessDispatcher(BaseDispatcher):
 
                 else:
                     raise RuntimeError(
-                        f"Mismatch found between event '{event.event_name_from_class()}' and config '{config.__class__.__name__}' step '{step_method.__name__}'"
+                        f"Mismatch found between event '{event.event_name_from_class()}' and "
+                        f"config '{config.__class__.__name__}' step '{step_method.__name__}'"
                     )
 
                 await self.publish_event(event, topic)

@@ -1,5 +1,6 @@
 import logging
-from typing import Annotated, Awaitable, Callable, Type
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
 from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
@@ -61,11 +62,12 @@ class ProcessDelegator(AbstractEntityDelegator):
                 self.subscriptions.append(subscription)
 
                 logger.debug(
-                    f"Subscribed to external-process '{config.process_class}' with id '{config.process_id}' for event '{stop_event.event_name_from_class()}'"
+                    f"Subscribed to external-process '{config.process_class}' "
+                    f"with id '{config.process_id}' for event '{stop_event.event_name_from_class()}'"
                 )
 
     def handle_process_step_input_factory(
-        self, work_event_type: Type[ProcessWorkEvent], is_process_start: bool
+        self, work_event_type: type[ProcessWorkEvent], is_process_start: bool
     ) -> Callable[[ProcessStopEvent, ProcessTopic], Awaitable[None]]:
         async def _handle_process_step_input(
             event: Annotated[ProcessStopEvent, "The incoming process stop event to handle."],

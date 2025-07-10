@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mongoengine import (
     DictField,
@@ -67,8 +67,8 @@ class RefDoc(Document):
         cls,
         db_alias: str,
         namespace: str,
-        exclude_ids: Optional[List[str]] = None,
-    ) -> List["RefDoc"]:
+        exclude_ids: list[str] | None = None,
+    ) -> list["RefDoc"]:
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return list(SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace, id__nin=(exclude_ids or [])))
 
@@ -90,7 +90,7 @@ class RefDoc(Document):
         namespace: str,
         skip: int,
         limit: int,
-    ) -> List["RefDoc"]:
+    ) -> list["RefDoc"]:
         """
         Retrieves a paginated list of documents from a given namespace.
         Documents are ordered by their internal ID by default MongoEngine behavior without explicit order_by.
@@ -100,7 +100,7 @@ class RefDoc(Document):
             return list(SwitchedRefDoc.objects.filter(**query_filter).skip(skip).limit(limit).order_by("id"))
 
     @classmethod
-    def get_all_namespaces(cls, db_alias: str) -> List[str]:
+    def get_all_namespaces(cls, db_alias: str) -> list[str]:
         """
         Returns a list of all unique namespace values.
         """
@@ -108,7 +108,7 @@ class RefDoc(Document):
             return SwitchedRefDoc.objects.distinct("data.metadata.namespace")
 
     @classmethod
-    def get_namespaces(cls, db_alias: str) -> List[Dict[str, Any]]:
+    def get_namespaces(cls, db_alias: str) -> list[dict[str, Any]]:
         """
         Returns a list of dictionaries containing namespace names and document counts.
         Also includes the latest updated_at, latest inserted_at, oldest created_at timestamps,

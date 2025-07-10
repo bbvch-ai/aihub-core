@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from botbuilder.schema import (
     Activity,
@@ -16,7 +16,7 @@ from msrest.serialization import Model
 from pydantic import create_model
 
 
-def _type_to_pydantic(str_type: Type[Model]) -> Any:
+def _type_to_pydantic(str_type: type[Model]) -> Any:
     if str_type._attribute_map:
         fields = {}
         for info in str_type._attribute_map.values():
@@ -43,16 +43,16 @@ def _string_to_type(type_str: str) -> Any:
     if type_str.startswith("[") and type_str.endswith("]"):
         inner_type_str = type_str[1:-1].strip()  # Remove the surrounding brackets.
         inner_type = _string_to_type(inner_type_str)
-        return List[inner_type]
+        return list[inner_type]
 
     # Handle map types (e.g. "{ChannelAccount}").
     if type_str.startswith("{") and type_str.endswith("}"):
         inner_type_str = type_str[1:-1].strip()
         inner_type = _string_to_type(inner_type_str)
-        return Dict[str, inner_type]
+        return dict[str, inner_type]
 
     # Map custom types. Add or modify entries based on your actual types.
-    custom_types: Dict[str, Type[Model]] = {
+    custom_types: dict[str, type[Model]] = {
         "ChannelAccount": ChannelAccount,
         "ConversationAccount": ConversationAccount,
         "MessageReaction": MessageReaction,

@@ -1,4 +1,3 @@
-from typing import List
 from unittest.mock import MagicMock
 
 import pytest
@@ -161,7 +160,7 @@ def test_multiple_child_nodes(mock_llm):
 
 
 def test_no_nodes(mock_llm):
-    nodes: List[TextNode] = []
+    nodes: list[TextNode] = []
 
     summarizer = RecursiveNodeSummarizer(llm=mock_llm)
     summarized_nodes = summarizer.summarize_nodes(nodes)

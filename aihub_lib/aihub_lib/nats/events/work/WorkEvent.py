@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Optional
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -18,7 +18,7 @@ class WorkEvent(ProcessEvent):
         "lib.process_steps.work_event.description"
     )
 
-    display_name: Annotated[Optional[LocaleString], Field(description="Display name for the process step")] = None
+    display_name: Annotated[LocaleString | None, Field(description="Display name for the process step")] = None
     display_description: Annotated[
-        Optional[LocaleString], Field(description="Display description for the process step")
+        LocaleString | None, Field(description="Display description for the process step")
     ] = None

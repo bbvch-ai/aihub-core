@@ -72,12 +72,12 @@ import type { GridStackElement } from 'gridstack'
 
 const { agents, agentsAreLoading } = useAgents()
 const { t } = useI18n()
-const { user, userIsLoading } = useUser()
+const { myUser, myUserIsLoading } = useMyUser()
 const { saveDashboard } = useSaveDashboard()
 
-watch(user, () => {
-  if (user.value?.dashboard?.children && grid) {
-    grid.load(user.value?.dashboard?.children ?? [])
+watch(myUser, () => {
+  if (myUser.value?.dashboard?.children && grid) {
+    grid.load(myUser.value?.dashboard?.children ?? [])
   }
 })
 
@@ -131,8 +131,8 @@ onMounted(() => {
     }
   }
 
-  if (!userIsLoading.value) {
-    grid.load(user.value?.dashboard?.children ?? [])
+  if (!myUserIsLoading.value) {
+    grid.load(myUser.value?.dashboard?.children ?? [])
   }
 
   grid.on('change', () => {

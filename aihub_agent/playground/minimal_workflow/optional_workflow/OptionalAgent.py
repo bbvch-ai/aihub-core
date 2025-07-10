@@ -1,5 +1,4 @@
 import random
-from typing import List, Optional
 
 from aihub_lib.nats.events import StartEvent, StopEvent
 
@@ -13,7 +12,7 @@ from playground.minimal_workflow.optional_workflow.events.EventOptionalD import 
 
 class OptionalAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent) -> List[EventOptionalA | EventOptionalB]:
+    async def start_step(self, event: StartEvent) -> list[EventOptionalA | EventOptionalB]:
         if random.random() > 0.5:
             print("[OptionalAgent.start_step] Only EventA")
             return [EventOptionalA()]
@@ -22,7 +21,7 @@ class OptionalAgent(Agent):
 
     @step(max_executions_per_run=1)
     async def optional_step(
-        self, event: EventOptionalA, optional_event: Optional[EventOptionalB]
+        self, event: EventOptionalA, optional_event: EventOptionalB | None
     ) -> EventOptionalC | EventOptionalD:
         if optional_event:
             print("[OptionalAgent.optional_step] Received Optional EventB")

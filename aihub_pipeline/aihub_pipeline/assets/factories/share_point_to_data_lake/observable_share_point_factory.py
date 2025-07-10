@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import (
     AssetKey,
     DataVersionsByPartition,
@@ -35,7 +33,7 @@ def observable_share_point_factory(key: AssetKey, partitions: DynamicPartitionsD
         context: OpExecutionContext,
         sharepoint_client: ResourceParam[SharePointResource],
     ) -> DataVersionsByPartition:
-        share_point_files: List[MinimalSharePointFile] = sharepoint_client.fetch_minimal_files()
+        share_point_files: list[MinimalSharePointFile] = sharepoint_client.fetch_minimal_files()
         return data_version_by_partition_for_share_point_files_no_op(
             context=context,
             partition=partitions,

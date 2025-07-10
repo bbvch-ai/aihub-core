@@ -1,5 +1,6 @@
 import inspect
-from typing import Annotated, Callable, Set, Type
+from collections.abc import Callable
+from typing import Annotated
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_classes import extract_event_classes
@@ -10,7 +11,7 @@ def extract_return_events(
         Callable,
         "A function or method whose return type is to be analyzed for event types.",
     ],
-) -> Set[Type[BaseEvent]]:
+) -> set[type[BaseEvent]]:
     """
     Determine which event types a function produces based on its return annotation.
 

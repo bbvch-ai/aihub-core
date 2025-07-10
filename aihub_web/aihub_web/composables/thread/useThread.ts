@@ -1,11 +1,12 @@
 import { getThread, type ThreadDto } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export const useThread = defineQuery(() => {
   const route = useRoute()
   const { data: thread, isPending: threadIsLoading } = useQuery<ThreadDto>({
     key: () => ['threads', route.params.thread_id as string],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getThread({

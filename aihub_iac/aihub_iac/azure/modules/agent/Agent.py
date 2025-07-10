@@ -1,5 +1,4 @@
 import time
-from typing import List, Optional
 
 import pulumi
 from pulumi_azure_native import containerinstance
@@ -17,7 +16,7 @@ class Agent(pulumi.ComponentResource):
         stack: str,
         name: str,
         config: AgentConfig,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
@@ -132,7 +131,7 @@ class Agent(pulumi.ComponentResource):
         else:
             raise ValueError(f"No private IP found for container group {container_group.name}")
 
-    def _get_environment_variables(self) -> List[containerinstance.EnvironmentVariableArgs]:
+    def _get_environment_variables(self) -> list[containerinstance.EnvironmentVariableArgs]:
         """Define the environment variables for the container"""
         nats_ip = self._get_nats_container_group_private_ip()
         env_vars = [

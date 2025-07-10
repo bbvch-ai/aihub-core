@@ -1,6 +1,8 @@
 import time
-from typing import Annotated, List, Type
+from typing import Annotated
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -16,8 +18,7 @@ from fastapi.params import Query
 from nats.aio.client import Client as NATS
 from stringcase import snakecase
 
-from aihub_api.events.create_input_model import create_input_model
-from aihub_api.events.create_output_model import create_output_model
+from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -63,21 +64,27 @@ class AgentController(Controller):
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
 
-    def __init__(self, *, auth: AuthHandler, route: str = "/agents", is_admin_only=True):
-        super().__init__(auth=auth, route=route, is_admin_only=is_admin_only)
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: str | None = None
+    ):
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_agents(self, route: str = "/") -> "AgentController":
         @self.router.get(route, tags=self.tags)
         async def get_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
-        ) -> List[AgentDTO]:
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[AgentDTO]:
             """
             Retrieve a list of all agents, both online (discoverable) and offline (not discoverable).
             """
             agents = await AgentService.get_agents(nc, t)
-            return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
+            return [
+                agent
+                for agent in agents
+                if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
+            ]
 
         return self
 
@@ -85,14 +92,18 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def discover_agents(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
-        ) -> List[AgentDTO]:
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[AgentDTO]:
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
             agents = await AgentService.discover_agents(nc, t)
-            return [agent for agent in agents if user.has_access_to_agent(agent.agent_class, agent.agent_id)]
+            return [
+                agent
+                for agent in agents
+                if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
+            ]
 
         return self
 
@@ -102,14 +113,14 @@ class AgentController(Controller):
             nc: Annotated[NATS, Depends(use_nats)],
             agent_class: str,
             agent_id: str,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> AgentDTO:
             """
             Retrieve details for a specific agent. Raises 403 if the user lacks access.
             """
-            if not user.has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             return await AgentService.get_agent(nc, agent_class, agent_id, t)
 
         return self
@@ -119,24 +130,24 @@ class AgentController(Controller):
         async def get_agent_threads(
             agent_class: str,
             agent_id: str,
-            user: UserIdentity = Security(self.auth),
-            t: LocaleHandler = Depends(use_locale),
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedThreadsResponse:
             """
             Retrieve all threads that a specific agent is part of. Raises 403 if the user lacks access.
             """
-            if not user.has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
-
+            access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_paginated_agent_threads(
                 agent_class,
                 agent_id,
-                identity_provider=self.auth.identity_provider,
                 t=t,
                 page=page,
                 page_size=page_size,
+                user_id=None if access_level == AccessLevel.ACCESS_ADMIN else user.id,
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -151,8 +162,8 @@ class AgentController(Controller):
         self,
         agent_class,
         agent_id,
-        start_event_class: Type[StartEvent],
-        stop_event_class: Type[StopEvent],
+        start_event_class: type[StartEvent],
+        stop_event_class: type[StopEvent],
         route_postfix="/send_event",
     ) -> "AgentController":
         """
@@ -163,8 +174,8 @@ class AgentController(Controller):
         agent_id = snakecase(agent_id)
         postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
         name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
-        start_event_input_type = create_input_model(start_event_class)
-        stop_event_output_type = create_output_model(stop_event_class)
+        start_event_input_type = EventModelCreationService.create_input_model(start_event_class)
+        stop_event_output_type = EventModelCreationService.create_output_model(stop_event_class)
 
         if route_postfix.startswith("/"):
             route_postfix = route_postfix[1:]
@@ -178,16 +189,16 @@ class AgentController(Controller):
             external_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_event_distributor)
             ],
-            user: UserIdentity = Security(self.auth),
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
             thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            t: LocaleHandler = Depends(use_locale),
         ) -> stop_event_output_type:
             """
             Send an event to a specific agent. Raises 403 if the user lacks access.
             """
-            if not user.has_access_to_agent(agent_class, agent_id):
-                raise HTTPException(status_code=403, detail="User does not have access to this agent.")
             start_event = start_event_class(
                 event_id=str(ObjectId()),
                 created_at=time.time_ns(),

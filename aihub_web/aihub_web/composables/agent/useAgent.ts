@@ -1,11 +1,12 @@
 import { type AgentDto, getAgent } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export const useAgent = defineQuery(() => {
   const route = useRoute()
   const { data: agent, isPending: agentIsLoading } = useQuery<AgentDto>({
     key: () => ['agents', route.params.agent_class as string, route.params.agent_id as string],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getAgent({

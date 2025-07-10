@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, Optional, Type
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -28,8 +28,9 @@ class AgentConfig(BaseModel):
     that follow the same workflow can still be configured to achieve different outcomes through a different
     set of configurations.
 
-    Usually, you will want to inherit from this AgentConfig and pass it to your runner. The dispatcher will then flexibly
-    inject the config into each step, giving you full control over the agent's runtime behavior.
+    Usually, you will want to inherit from this AgentConfig and pass it to your runner.
+    The dispatcher will then flexibly inject the config into each step,
+    giving you full control over the agent's runtime behavior.
 
     Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
     way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
@@ -54,28 +55,31 @@ class AgentConfig(BaseModel):
     icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
 
     color: Annotated[
-        Optional[str],
+        str | None,
         Field(
             description="The color of the agent UI theme.",
-            deprecated="This field is deprecated. It will be removed in a future release. If you need a color, please define it yourself in a subclass of AgentConfig.",
+            deprecated="This field is deprecated. It will be removed in a future release. "
+            "If you need a color, please define it yourself in a subclass of AgentConfig.",
         ),
     ] = "#10A37F"
     voice: Annotated[
-        Optional[str],
+        str | None,
         Field(
             description="The TTS voice ID the agent uses.",
-            deprecated="This field is deprecated. It will be removed in a future release. If you need a voice, please define it yourself in a subclass of AgentConfig.",
+            deprecated="This field is deprecated. It will be removed in a future release. "
+            "If you need a voice, please define it yourself in a subclass of AgentConfig.",
         ),
     ] = "de-DE-ChristophNeural"
     system_prompt: Annotated[
         LocaleString,
         Field(
             description="The system prompt of the agent.",
-            deprecated="This field is deprecated. It will be removed in a future release. If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
+            deprecated="This field is deprecated. It will be removed in a future release."
+            "If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
         ),
     ]
 
-    def get_step_configs(self) -> Dict[Type[StepConfig], StepConfig]:
+    def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """
         Scans all fields in this AgentConfig and collects any that are `StepConfig` instances.
         """

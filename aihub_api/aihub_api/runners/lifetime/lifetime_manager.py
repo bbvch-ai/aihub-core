@@ -1,6 +1,6 @@
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
@@ -41,8 +41,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
        Initializes a `WebSocketManager`, `WebSocketSender`, and `ExternalAgentEventDistributor`.
        Then subscribes to display events via `NCSubscriber` and sends them to connected websockets.
     5. **App State Initialization:**
-       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_event_distributor`) in `app.state`,
-       making them accessible throughout the app.
+       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_event_distributor`)
+       in `app.state`, making them accessible throughout the app.
     6. **Cleanup on Exit:**
        On shutdown, it stops the subscribers and closes the NATS connection.
 
@@ -57,7 +57,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     When `app` starts, this manager runs and sets up everything. When `app` stops, it tears down resources.
     """
 
-    logging.warning("Initializing NATS connection and resources")
+    logging.info("Initializing NATS connection and resources")
 
     nc = NATS()
 

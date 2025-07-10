@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 from llama_index.core.schema import TextNode
 
@@ -29,9 +27,10 @@ def summary_nodes_factory(
         ins={"nodes": AssetIn(key=nodes_key), "document": AssetIn(key=document_key)},
         partitions_def=partitions,
         automation_condition=AutomationCondition.eager(),
-        description="Generates summary nodes for a reference document by extending input nodes with summary nodes, embedding them, and inserting them into a vector store.",
+        description="Generates summary nodes for a reference document by extending input nodes with summary nodes, "
+        "embedding them, and inserting them into a vector store.",
     )
-    def summary_nodes(nodes: List[TextNode], document: RefDocDocument) -> Output[List[TextNode]]:
+    def summary_nodes(nodes: list[TextNode], document: RefDocDocument) -> Output[list[TextNode]]:
         return insert_nodes_into_vector_store(
             embed_nodes(
                 ensure_node_default_metadata(extend_nodes_with_summary_nodes_using_recursive_summary_parser(nodes)),

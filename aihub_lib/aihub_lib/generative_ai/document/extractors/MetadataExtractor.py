@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List
 
 from aihub_lib.generative_ai.document.parsers.Split import Split
 
@@ -10,7 +9,7 @@ class MetadataExtractor(ABC):
     """
 
     @abstractmethod
-    def extract(self, splits: List[Split]) -> List[Split]:
+    def extract(self, splits: list[Split]) -> list[Split]:
         """
         Extract metadata from markdown content.
         """

@@ -1,5 +1,4 @@
 from functools import cache
-from typing import List
 
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore, IndexManagement, MetadataIndexFieldType
 
@@ -17,7 +16,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 @cache
 def create_azure_ai_search_vector_store(
     vector_store_name: str,
-    metadata_fields: List[str] | None = None,
+    metadata_fields: list[str] | None = None,
     language: str = "de",
     semantic_configuration_name: str = "mySemanticConfig",
     dimensions: int = 3072,

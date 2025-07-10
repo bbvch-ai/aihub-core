@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Tuple
+from typing import Annotated
 
 from typing_extensions import override
 
@@ -19,8 +19,8 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
     def get_process_discovery_subject_request(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
-        process_class: Optional[str] = None,
-        process_id: Optional[str] = None,
+        process_class: str | None = None,
+        process_id: str | None = None,
     ) -> str:
         """
         Returns a subject for requesting discovery info about this process instance (or a provided override).
@@ -35,8 +35,8 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
     def get_process_discovery_subject_response(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],
-        process_class: Optional[str] = None,
-        process_id: Optional[str] = None,
+        process_class: str | None = None,
+        process_id: str | None = None,
     ) -> str:
         """
         Returns a subject for receiving process discovery responses for this process instance (or a provided override).
@@ -129,7 +129,7 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
             event_id="*",
         )
 
-    def get_stream(self) -> Tuple[str, str]:
+    def get_stream(self) -> tuple[str, str]:
         return self._get_stream_name_for_all_events(), self.get_subject_for_all_events_in_process()
 
     def _get_stream_name_for_all_events(self) -> str:

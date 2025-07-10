@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -10,7 +10,7 @@ from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 
 
 async def route_to_event_using_llm(
-    instructions: str, routes: List[RouteOptions], llm: LLM, t: LocaleHandler
+    instructions: str, routes: list[RouteOptions], llm: LLM, t: LocaleHandler
 ) -> RouterEvent:
     class RouteSelectionModel(BaseModel):
         """Model for selecting a routing option."""

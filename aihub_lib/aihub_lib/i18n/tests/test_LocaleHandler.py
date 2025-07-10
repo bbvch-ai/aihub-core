@@ -1,5 +1,4 @@
 import os
-from typing import Dict, List
 
 import pytest
 
@@ -9,7 +8,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 LANG_FOLDER = os.path.join(os.path.dirname(__file__), "../translations")
 
 
-def _create_yaml_files(directory: str) -> Dict[str, List[str]]:
+def _create_yaml_files(directory: str) -> dict[str, list[str]]:
     yaml_files = {}
     for root, _, files in os.walk(directory):
         for file in files:
@@ -22,7 +21,7 @@ def _create_yaml_files(directory: str) -> Dict[str, List[str]]:
 
 
 @pytest.fixture(scope="module")
-def yaml_files() -> Dict[str, List[str]]:
+def yaml_files() -> dict[str, list[str]]:
     return _create_yaml_files(LANG_FOLDER)
 
 
@@ -46,7 +45,7 @@ def multi_locale_data() -> LocaleString:
     )
 
 
-def test_all_languages_present(yaml_files: Dict[str, List[str]]):
+def test_all_languages_present(yaml_files: dict[str, list[str]]):
     missing_languages = {}
     for base_name, files in yaml_files.items():
         languages = set(file.split(".")[-2] for file in files)

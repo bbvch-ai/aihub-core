@@ -1,7 +1,7 @@
 import base64
 import logging
 from enum import Enum
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated
 
 import httpx
 from botbuilder.schema import Activity, Attachment
@@ -24,10 +24,10 @@ class FileInfo(BaseModel):
     """Normalized file information across different platforms."""
 
     name: Annotated[str, Field(description="Name of the file")]
-    content_type: Annotated[Optional[str], Field(description="MIME type of the file")] = None
+    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
     url: Annotated[str, Field(description="URL of the file")]
-    content_bytes: Annotated[Optional[bytes], Field(description="Content of the file in bytes")] = None
-    headers: Annotated[Dict[str, str], Field(description="HTTP headers for the file")] = {}
+    content_bytes: Annotated[bytes | None, Field(description="Content of the file in bytes")] = None
+    headers: Annotated[dict[str, str], Field(description="HTTP headers for the file")] = {}
     source: Annotated[FileSource, Field(description="Source of the file (e.g., Slack, Teams, etc.)")] = (
         FileSource.GENERIC
     )
@@ -37,7 +37,7 @@ class ContentExtractor:
     """Unified handler for file processing from various sources."""
 
     @staticmethod
-    def extract_content_from_activity(path: str, activity: Activity) -> List[Content]:
+    def extract_content_from_activity(path: str, activity: Activity) -> list[Content]:
         """Extract all content (text and files) from an activity."""
         content = []
 
@@ -54,14 +54,14 @@ class ContentExtractor:
         return content
 
     @staticmethod
-    def _extract_text_content(activity: Activity) -> List[Content]:
+    def _extract_text_content(activity: Activity) -> list[Content]:
         """Extract text content from activity."""
         if activity.text:
             return [Content(text=activity.text, type="text")]
         return []
 
     @staticmethod
-    def _extract_slack_files(path: str, activity: Activity) -> List[Content]:
+    def _extract_slack_files(path: str, activity: Activity) -> list[Content]:
         """Extract files from Slack channel data."""
         content = []
 
@@ -86,7 +86,7 @@ class ContentExtractor:
         return content
 
     @staticmethod
-    def _extract_attachments(activity: Activity) -> List[Content]:
+    def _extract_attachments(activity: Activity) -> list[Content]:
         """Extract files from activity attachments."""
         content = []
 

@@ -1,10 +1,9 @@
 import abc
-from typing import Tuple
 
 
 class AbstractStreamTopicManager(abc.ABC):
     @abc.abstractmethod
-    def get_stream(self) -> Tuple[str, str]:
+    def get_stream(self) -> tuple[str, str]:
         pass
 
     @abc.abstractmethod

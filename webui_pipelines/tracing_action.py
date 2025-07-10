@@ -19,7 +19,7 @@ from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
-def str_to_object_id(context_id: Optional[str]) -> ObjectId:
+def str_to_object_id(context_id: str | None) -> ObjectId:
     if not context_id:
         return ObjectId()
     hashed = hashlib.md5(context_id.encode()).digest()[:12]
@@ -42,7 +42,7 @@ class Action:
         __user__=None,
         __event_emitter__=None,
         __event_call__=None,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         try:
             code = f"""
             window.parent.postMessage({{

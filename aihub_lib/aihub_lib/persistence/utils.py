@@ -1,11 +1,10 @@
 import hashlib
-from typing import Optional
 
 from bson import ObjectId
 from bson.errors import InvalidId
 
 
-def str_to_object_id(context_id: Optional[str]) -> ObjectId:
+def str_to_object_id(context_id: str | None) -> ObjectId:
     if not context_id:
         return ObjectId()
     try:

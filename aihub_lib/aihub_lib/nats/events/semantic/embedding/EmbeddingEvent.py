@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Dict, List, Optional
+from typing import Annotated, ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
@@ -14,13 +14,13 @@ class EmbeddingEvent(SemanticEvent):
         "lib.events.semantic_embedding_event.description"
     )
 
-    text: Annotated[Optional[str], Field(description="The text represented in the embedding")] = None
-    embedding_model_name: Annotated[Optional[str], Field(description="The name of the embedding model used.")] = None
+    text: Annotated[str | None, Field(description="The text represented in the embedding")] = None
+    embedding_model_name: Annotated[str | None, Field(description="The name of the embedding model used.")] = None
     embeddings: Annotated[
-        Optional[List[Embedding]], Field(description="A list of embedding objects containing text and vector data.")
+        list[Embedding] | None, Field(description="A list of embedding objects containing text and vector data.")
     ] = None
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.EMBEDDING.value,
             SpanAttributes.EMBEDDING_MODEL_NAME: self.embedding_model_name,

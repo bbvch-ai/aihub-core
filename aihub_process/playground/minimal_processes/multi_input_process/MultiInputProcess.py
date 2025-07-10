@@ -1,15 +1,14 @@
-from typing import Annotated, Tuple
+from typing import Annotated
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
-
 from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent
 from playground.agents.AgentC.events.AgentCStartEvent import AgentCStartEvent
-from playground.events.AgentCWorkRequest import AgentCWorkRequest
-from playground.events.AgentBWorkRequest import AgentBWorkRequest
 from playground.events.AgentAWork import AgentAWork
+from playground.events.AgentBWorkRequest import AgentBWorkRequest
+from playground.events.AgentCWorkRequest import AgentCWorkRequest
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 
 
@@ -18,7 +17,7 @@ class MultiInputProcess(AgenticProcess):
     async def start_and_delegate_to_b_and_c(
         self,
         work_from_agent_a: Annotated[AgentAWork, Agent.In(agent_class="AgentA", agent_id="agent_a")],
-    ) -> Tuple[
+    ) -> tuple[
         Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")],
         Annotated[AgentCWorkRequest, Agent.Out(agent_class="AgentC", agent_id="agent_c")],
     ]:

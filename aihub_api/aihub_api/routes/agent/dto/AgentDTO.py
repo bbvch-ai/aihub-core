@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -50,11 +50,11 @@ class AgentDTO(MinimalAgentDTO):
     """
 
     start_events: Annotated[
-        List[EventSpecs],
+        list[EventSpecs],
         Field(description="A list of `EventSpecs` representing events that can start this agent's workflow."),
     ]
     stop_events: Annotated[
-        List[EventSpecs],
+        list[EventSpecs],
         Field(description="A list of `EventSpecs` representing events that can stop this agent's workflow."),
     ]
     network_graph: Annotated[
@@ -63,12 +63,10 @@ class AgentDTO(MinimalAgentDTO):
             description="A network graph of the agent, showing how different components are connected and interact.",
         ),
     ]
-    is_online: Annotated[Optional[bool], Field(description="Indicates whether the agent is online and reachable.")] = (
-        None
-    )
+    is_online: Annotated[bool | None, Field(description="Indicates whether the agent is online and reachable.")] = None
 
     @classmethod
-    def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: Optional[bool] = None) -> "AgentDTO":
+    def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
         agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
 

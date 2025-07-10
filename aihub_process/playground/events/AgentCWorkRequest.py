@@ -1,9 +1,10 @@
-from typing import ClassVar, Type
+from typing import ClassVar
 
-from aihub_lib.nats.events import AgentWorkRequestEvent, AgentWorkEvent
+from aihub_lib.nats.events import AgentWorkEvent, AgentWorkRequestEvent
+
 from playground.agents.AgentC.events.AgentCStartEvent import AgentCStartEvent
 from playground.events.AgentCWork import AgentCWork
 
 
 class AgentCWorkRequest(AgentWorkRequestEvent[AgentCStartEvent]):
-    work: ClassVar[Type[AgentWorkEvent]] = AgentCWork
+    work: ClassVar[type[AgentWorkEvent]] = AgentCWork

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_process"
-version = "v0.213.0"
+version = "v0.216.0"
 description = "agentic process automation"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -23,7 +23,6 @@ httpx = "^0.28.1"
 pytest = "^8.3.2"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
-isort = "^5.13.2"
 mypy = "^1.13.0"
 toml-sort = "^0.24.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
@@ -33,7 +32,7 @@ asgi-lifespan = "^2.1.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.213.0"
+tag = "v0.216.0"
 subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies.aihub_agent]
@@ -49,11 +48,7 @@ line-length = 120
 target-version = 'py311'
 
 [tool.ruff.lint]
-extend-ignore = ["E203"]
-
-[tool.isort]
-profile = "black"
-line_length = 120
+select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120

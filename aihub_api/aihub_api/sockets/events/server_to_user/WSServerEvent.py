@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, Dict, Optional, Union
+from typing import Annotated, Any
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
@@ -37,36 +37,35 @@ from pydantic import BaseModel, Discriminator, Field, Tag
 from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
-DisplayEvents = Union[
-    Annotated[StartEvent, Tag("StartEvent")],
-    Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")],
-    Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")],
-    Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")],
-    Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")],
-    Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")],
-    Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")],
-    Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")],
-    Annotated[LLMCostEvent, Tag("LLMCostEvent")],
-    Annotated[ChunkEvent, Tag("ChunkEvent")],
-    Annotated[ThoughtEvent, Tag("ThoughtEvent")],
-    Annotated[GuardEvent, Tag("GuardEvent")],
-    Annotated[RouterEvent, Tag("RouterEvent")],
-    Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")],
-    Annotated[SemanticEvent, Tag("SemanticEvent")],
-    Annotated[AgentEvent, Tag("AgentEvent")],
-    Annotated[ChainEvent, Tag("ChainEvent")],
-    Annotated[EmbeddingEvent, Tag("EmbeddingEvent")],
-    Annotated[LLMEvent, Tag("LLMEvent")],
-    Annotated[LLMStopEvent, Tag("LLMStopEvent")],
-    Annotated[RerankerEvent, Tag("RerankerEvent")],
-    Annotated[RetrieverEvent, Tag("RetrieverEvent")],
-    Annotated[ToolEvent, Tag("ToolEvent")],
-    Annotated[StartEvent, Tag("StartEvent")],
-    Annotated[UserMessageEvent, Tag("UserMessageEvent")],
-    Annotated[ExceptionEvent, Tag("ExceptionEvent")],
-    Annotated[StopEvent, Tag("StopEvent")],
-    Annotated[DisplayEvent, Tag("DisplayEvent")],
-]
+DisplayEvents = (
+    Annotated[StartEvent, Tag("StartEvent")]
+    | Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")]
+    | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
+    | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
+    | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
+    | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
+    | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
+    | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
+    | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
+    | Annotated[ChunkEvent, Tag("ChunkEvent")]
+    | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
+    | Annotated[GuardEvent, Tag("GuardEvent")]
+    | Annotated[RouterEvent, Tag("RouterEvent")]
+    | Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")]
+    | Annotated[SemanticEvent, Tag("SemanticEvent")]
+    | Annotated[AgentEvent, Tag("AgentEvent")]
+    | Annotated[ChainEvent, Tag("ChainEvent")]
+    | Annotated[EmbeddingEvent, Tag("EmbeddingEvent")]
+    | Annotated[LLMEvent, Tag("LLMEvent")]
+    | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
+    | Annotated[RerankerEvent, Tag("RerankerEvent")]
+    | Annotated[RetrieverEvent, Tag("RetrieverEvent")]
+    | Annotated[ToolEvent, Tag("ToolEvent")]
+    | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
+    | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
+    | Annotated[StopEvent, Tag("StopEvent")]
+    | Annotated[DisplayEvent, Tag("DisplayEvent")]
+)
 
 
 def event_discriminator(event: DisplayEvent) -> str:
@@ -123,9 +122,9 @@ class WSServerEvent(BaseModel):
     ]
     display_id: Annotated[str, Field(description="Display session ID, used to group events for the UI.")]
     run_id: Annotated[
-        Optional[str], Field(description="Optional run ID if the event is associated with a particular run.")
+        str | None, Field(description="Optional run ID if the event is associated with a particular run.")
     ] = None
-    event_type: Annotated[Optional[str], Field(description="Type of the event (default: 'display_event').")] = (
+    event_type: Annotated[str | None, Field(description="Type of the event (default: 'display_event').")] = (
         AgentTopicManager.DISPLAY_EVENT
     )
     event_name: Annotated[str, Field(description="Name of the event, indicating its subtype or category.")]
@@ -140,7 +139,7 @@ class WSServerEvent(BaseModel):
 
     @classmethod
     def from_persisted_event(
-        cls, persisted_event: PersistedAgentEventEntity, locale: Optional[str] = None
+        cls, persisted_event: PersistedAgentEventEntity, locale: str | None = None
     ) -> "WSServerEvent":
         """
         Construct a WSServerEvent from a PersistedAgentEventEntity, converting persisted event data
@@ -164,7 +163,7 @@ class WSServerEvent(BaseModel):
         )
 
     @override
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """
         Serializes the event into a dictionary. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.

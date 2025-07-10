@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import Field
 
@@ -57,14 +57,14 @@ class AgentTopic(PartialAgentTopic):
     def from_partial_topic(
         cls,
         partial_topic: PartialAgentTopic,
-        agent_class: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
-        thread_id: Optional[str] = None,
-        display_id: Optional[str] = None,
-        event_type: Optional[str] = None,
-        event_name: Optional[str] = None,
-        event_id: Optional[str] = None,
+        agent_class: str | None = None,
+        agent_id: str | None = None,
+        run_id: str | None = None,
+        thread_id: str | None = None,
+        display_id: str | None = None,
+        event_type: str | None = None,
+        event_name: str | None = None,
+        event_id: str | None = None,
     ) -> "AgentTopic":
         """
         Converts a PartialAgentTopic into a fully-defined AgentTopic, filling in any missing fields

@@ -44,12 +44,12 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
         from dagster import Definitions, asset
 
         @asset(partitions_def=my_partition, io_manager_key="vector_store_io_manager")
-        def text_nodes(ref_doc: RefDocDocument) -> List[TextNode]:
+        def text_nodes(ref_doc: RefDocDocument) -> list[TextNode]:
             # TextNodes returned by this asset will be stored in the vector store
             ...
 
         @asset(partitions_def=my_partition)
-        def downstream_asset(text_nodes: List[TextNode]):
+        def downstream_asset(text_nodes: list[TextNode]):
             # TextNodes loaded from the vector store
             ...
 
@@ -64,7 +64,7 @@ class AzureAISearchVectorStoreResource(ConfigurableResource):
             },
         )
 
-    """
+    """  # noqa: E501
 
     vector_store_name: str
     dimensions: int = 3072

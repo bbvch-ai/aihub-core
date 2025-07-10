@@ -1,5 +1,3 @@
-from typing import List
-
 from azure.storage.filedatalake import FileSystemClient
 from dagster import ResourceParam, op
 
@@ -11,9 +9,9 @@ def fetch_all_files_in_data_lake_no_op(
     data_lake_container_name: str,
     data_lake_directory_name: str,
     data_lake_figures_directory_name: str,
-) -> List[DataLakeFile]:
+) -> list[DataLakeFile]:
     paths = data_lake_client.get_paths(path=f"{data_lake_directory_name}/", recursive=True)
-    data_lake_files: List[DataLakeFile] = []
+    data_lake_files: list[DataLakeFile] = []
 
     for path in paths:
         if path.is_directory:
@@ -40,7 +38,7 @@ def fetch_all_files_in_data_lake(
     data_lake_container_name: str,
     data_lake_directory_name: str,
     data_lake_figures_directory_name: str,
-) -> List[DataLakeFile]:
+) -> list[DataLakeFile]:
     """Fetches all files in the data lake for a given namespace."""
     return fetch_all_files_in_data_lake_no_op(
         data_lake_client=data_lake_client,

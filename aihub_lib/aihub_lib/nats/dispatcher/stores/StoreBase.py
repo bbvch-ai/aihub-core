@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Annotated, Any, Callable, List, TypeVar
+from collections.abc import Callable
+from typing import Annotated, Any, TypeVar
 
 from redis.asyncio import Redis
 
@@ -129,7 +130,7 @@ class StoreBase:
             logger.exception(f"Error serializing JSON value for list '{key}': {e}")
             return False
 
-    async def get_list(self, run_id: str, key: str, transform_func: Callable[[bytes], T] = None) -> List[T]:
+    async def get_list(self, run_id: str, key: str, transform_func: Callable[[bytes], T] = None) -> list[T]:
         """Retrieves all items from a Redis list with optional transformation."""
         redis_key = self._build_key(run_id, key)
         result = []

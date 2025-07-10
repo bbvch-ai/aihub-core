@@ -2,19 +2,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RetrievalAgent.RetrievalAgent import RetrievalAgent
-from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
-from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
-from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
     SelfHostedEmbeddingParameter,
@@ -25,7 +14,18 @@ from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.logging.logger import enable_logging
-from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
+from dotenv import load_dotenv
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
+from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
+from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
+from aihub_agent.agents.RetrievalAgent.RetrievalAgent import RetrievalAgent
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 

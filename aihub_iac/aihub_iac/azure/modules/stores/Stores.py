@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi
 from pulumi_azure_native import cosmosdb, dbforpostgresql, network, search
 
@@ -27,7 +25,7 @@ class Stores(pulumi.ComponentResource):
         stack: str,
         name: str,
         config: StoresConfig = None,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 

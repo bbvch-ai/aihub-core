@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCredential
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class GraphAPIError(Exception):
     """Custom exception for errors during Microsoft Graph API calls."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None, response_text: Optional[str] = None):
+    def __init__(self, message: str, status_code: int | None = None, response_text: str | None = None):
         super().__init__(message)
         self.status_code = status_code
         self.response_text = response_text
@@ -60,9 +60,9 @@ class AzureGraphService:
         self,
         method: str,
         url: str,
-        access_token: Optional[str] = None,
+        access_token: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         A centralized helper for making authorized requests to the Graph API.
         Handles token acquisition, header injection, and robust error handling.
@@ -94,7 +94,7 @@ class AzureGraphService:
 
         return response.json() if response.status_code != 204 else {}
 
-    async def _get_user_profile(self, user_oid: str) -> Dict[str, Any]:
+    async def _get_user_profile(self, user_oid: str) -> dict[str, Any]:
         """
         Fetches a user's core profile from Graph API by their Object ID.
         Returns the raw user data dictionary on success.
@@ -117,7 +117,7 @@ class AzureGraphService:
         self.user_profile_cache[cache_key] = user_data
         return user_data
 
-    async def _get_user_profile_by_email(self, email: str) -> Dict[str, Any]:
+    async def _get_user_profile_by_email(self, email: str) -> dict[str, Any]:
         """Finds a user's OID by email and fetches their profile."""
         logger.debug(f"Fetching user by email {email}.")
         # Use a filter that works for both mail and UPN
@@ -137,7 +137,7 @@ class AzureGraphService:
         logger.debug(f"User found by email {email}: OID {user_oid}")
         return await self._get_user_profile(user_oid)
 
-    async def get_user_profile_image_data_url(self, user_oid: str) -> Optional[str]:
+    async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
         """
         Fetches a user's profile photo and returns it as a base64 data URL.
         Returns None if the user has no photo (404), raises on other errors.
@@ -163,7 +163,7 @@ class AzureGraphService:
         self.profile_image_cache[cache_key] = image_data_url
         return image_data_url
 
-    async def get_user_roles(self, user_oid: str) -> List[str]:
+    async def get_user_roles(self, user_oid: str) -> list[str]:
         """
         Calculates the effective application roles for a user for this specific application.
         """
@@ -201,7 +201,10 @@ class AzureGraphService:
         if assignments_cache_key in self.app_role_assignments_cache:
             assigned_role_ids = self.app_role_assignments_cache[assignments_cache_key]
         else:
-            assign_url = f"{self.MS_GRAPH_BASE_URL}/users/{user_oid}/appRoleAssignments?$filter=resourceId eq {target_app_sp_id}&$select=appRoleId"
+            assign_url = (
+                f"{self.MS_GRAPH_BASE_URL}/users/{user_oid}/appRoleAssignments?"
+                f"$filter=resourceId eq {target_app_sp_id}&$select=appRoleId"
+            )
             assignments_response = await self._make_graph_request("GET", assign_url)
             assigned_role_ids = [a["appRoleId"] for a in assignments_response.get("value", [])]
             self.app_role_assignments_cache[assignments_cache_key] = assigned_role_ids

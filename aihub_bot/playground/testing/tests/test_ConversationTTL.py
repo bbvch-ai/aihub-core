@@ -2,18 +2,10 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
 
 import pytest
 import pytest_asyncio
 import requests
-from asgi_lifespan import LifespanManager
-from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect
-
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, ConversationTracker, Message, Content
-from aihub_bot.routes.agent.AgentChatController import AgentChatController
-from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -23,6 +15,13 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
+
+from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, ConversationTracker, Message
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
+from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 
 # Constants
 BASE_URL = "http://test/api/v1"
@@ -187,7 +186,7 @@ async def test_conversation_ttl_with_bot(
     """Test creation of a conversation via the bot and verify TTL tracking"""
     # Load the user message template
     with open(Path(__file__).parent / "user_message.json") as file:
-        payload: Dict = json.loads(file.read())
+        payload: dict = json.loads(file.read())
 
     # Use a unique conversation ID
     conversation_id = f"ttl_test_{datetime.now().timestamp()}"

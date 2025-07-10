@@ -1,9 +1,7 @@
 import asyncio
 from asyncio import sleep
-from typing import List, Optional
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
@@ -76,7 +74,7 @@ class AgentService:
             return AgentDTO.from_entity(agent, t)
 
     @staticmethod
-    async def get_agents(nc: NATS, t: LocaleHandler) -> List[AgentDTO]:
+    async def get_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         """
         Returns both agents that are online (answer to a discovery broadcast) and agents
         that are saved in the database.
@@ -113,7 +111,7 @@ class AgentService:
             return GET_AGENT_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        agent_dto: Optional[AgentDTO] = None
+        agent_dto: AgentDTO | None = None
         agent_found_event = asyncio.Event()
 
         async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
@@ -148,7 +146,7 @@ class AgentService:
         # Wait up to 1 second for response
         try:
             await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
@@ -159,7 +157,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
-    async def discover_agents(nc: NATS, t: LocaleHandler) -> List[AgentDTO]:
+    async def discover_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -225,8 +223,8 @@ class AgentService:
         start_event: StartEvent,
         agent_class: str,
         agent_id: str,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
     ) -> StopEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
@@ -269,16 +267,21 @@ class AgentService:
     async def get_paginated_agent_threads(
         agent_class: str,
         agent_id: str,
-        identity_provider: IdentityProvider,
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[int, List[ThreadDTO]]:
+        user_id: str | None = None,
+    ) -> tuple[int, list[ThreadDTO]]:
         """
         Retrieves a paginated list of threads that a specific agent is part of.
         """
         return await ThreadService.get_paginated_threads_for_agent(
-            agent_class, agent_id, identity_provider=identity_provider, t=t, page=page, page_size=page_size
+            agent_class,
+            agent_id,
+            t=t,
+            page=page,
+            page_size=page_size,
+            user_id=user_id,
         )
 
     @staticmethod

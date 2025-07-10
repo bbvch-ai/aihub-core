@@ -1,5 +1,4 @@
 import functools
-from typing import List, Tuple, Type
 
 from aihub_lib.nats.events import (
     AgentWorkEvent,
@@ -33,7 +32,8 @@ class AgenticProcess(DispatchableWorkflow):
     - Decide for each work what entity should do the work: An agent, a human or a program.
     - Delegate the work to the right entity
     - Wait for the delegated work to be completed, take the result, transform it, and delegate to the next entity.
-    - Hence, through a series of work delegations, the process input (start) is transformed into the process output (end).
+    - Hence, through a series of work delegations, the process input (start)
+      is transformed into the process output (end).
 
     The process itself should never do work on its own. As soon as you start implementing logic within a process step,
     you are off-track. Everything you do within a process step should be delegated to an entity, and the
@@ -48,8 +48,8 @@ class AgenticProcess(DispatchableWorkflow):
     @classmethod
     @functools.cache
     def get_events_with_in_type(
-        cls, config_class: Type[BaseProcessEntity.In]
-    ) -> List[Tuple[Type[WorkEvent], BaseProcessEntity.In]]:
+        cls, config_class: type[BaseProcessEntity.In]
+    ) -> list[tuple[type[WorkEvent], BaseProcessEntity.In]]:
         """
         Scans all process steps to find inputs matching a specific configuration class.
         This now iterates over the pre-processed list stored on each step method.
@@ -64,29 +64,29 @@ class AgenticProcess(DispatchableWorkflow):
 
     @classmethod
     @functools.cache
-    def get_events_with_agent_in(cls) -> List[Tuple[Type[AgentWorkEvent], Agent.In]]:
+    def get_events_with_agent_in(cls) -> list[tuple[type[AgentWorkEvent], Agent.In]]:
         return cls.get_events_with_in_type(Agent.In)
 
     @classmethod
     @functools.cache
-    def get_events_with_human_in(cls) -> List[Tuple[Type[HumanWorkEvent], Human.In]]:
+    def get_events_with_human_in(cls) -> list[tuple[type[HumanWorkEvent], Human.In]]:
         return cls.get_events_with_in_type(Human.In)
 
     @classmethod
     @functools.cache
-    def get_events_with_program_in(cls) -> List[Tuple[Type[ProgramWorkEvent], Program.In]]:
+    def get_events_with_program_in(cls) -> list[tuple[type[ProgramWorkEvent], Program.In]]:
         return cls.get_events_with_in_type(Program.In)
 
     @classmethod
     @functools.cache
-    def get_events_with_process_in(cls) -> List[Tuple[Type[ProcessWorkEvent], Process.In]]:
+    def get_events_with_process_in(cls) -> list[tuple[type[ProcessWorkEvent], Process.In]]:
         return cls.get_events_with_in_type(Process.In)
 
     @classmethod
     @functools.cache
     def get_events_with_out_type(
-        cls, config_class: Type[BaseProcessEntity.Out]
-    ) -> List[Tuple[Type[WorkRequestEvent], BaseProcessEntity.Out]]:
+        cls, config_class: type[BaseProcessEntity.Out]
+    ) -> list[tuple[type[WorkRequestEvent], BaseProcessEntity.Out]]:
         """
         Scans all process steps to find outputs matching a specific configuration class.
         This now iterates over the pre-processed list stored on each step method.
@@ -101,15 +101,15 @@ class AgenticProcess(DispatchableWorkflow):
 
     @classmethod
     @functools.cache
-    def get_events_with_agent_out(cls) -> List[Tuple[Type[AgentWorkRequestEvent], Agent.Out]]:
+    def get_events_with_agent_out(cls) -> list[tuple[type[AgentWorkRequestEvent], Agent.Out]]:
         return cls.get_events_with_out_type(Agent.Out)
 
     @classmethod
     @functools.cache
-    def get_events_with_human_out(cls) -> List[Tuple[Type[HumanWorkRequestEvent], Human.Out]]:
+    def get_events_with_human_out(cls) -> list[tuple[type[HumanWorkRequestEvent], Human.Out]]:
         return cls.get_events_with_out_type(Human.Out)
 
     @classmethod
     @functools.cache
-    def get_events_with_program_out(cls) -> List[Tuple[Type[ProgramWorkRequestEvent], Program.Out]]:
+    def get_events_with_program_out(cls) -> list[tuple[type[ProgramWorkRequestEvent], Program.Out]]:
         return cls.get_events_with_out_type(Program.Out)

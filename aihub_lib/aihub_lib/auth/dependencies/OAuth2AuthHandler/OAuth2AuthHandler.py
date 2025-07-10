@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import httpx
 import jwt
@@ -74,7 +73,7 @@ class OAuth2AuthHandler(AuthHandler):
             logger.exception("Error fetching JWKS: %s", str(e))
             raise HTTPException(status_code=500, detail="Authentication service unavailable")
 
-    async def _get_rsa_key(self, kid: str) -> Optional[object]:
+    async def _get_rsa_key(self, kid: str) -> object | None:
         """
         Gets an RSA key for the specified key ID (kid).
         Uses TTLCache to automatically manage key expiration.

@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -12,12 +12,12 @@ class OpenWebUIConfig(BaseModel):
 
     webui_secret_key: Annotated[str, Field(description="Secret key for web UI")]
 
-    aihub_api_key: Annotated[Optional[str], Field(description="AIHub API key")] = None
-    custom_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key")] = None
-    custom_rag_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for RAG")] = None
-    custom_audio_stt_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for audio STT")] = None
-    custom_audio_tts_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for audio TTS")] = None
-    custom_images_openai_api_key: Annotated[Optional[str], Field(description="OpenAI API key for images")] = None
+    aihub_api_key: Annotated[str | None, Field(description="AIHub API key")] = None
+    custom_openai_api_key: Annotated[str | None, Field(description="OpenAI API key")] = None
+    custom_rag_openai_api_key: Annotated[str | None, Field(description="OpenAI API key for RAG")] = None
+    custom_audio_stt_openai_api_key: Annotated[str | None, Field(description="OpenAI API key for audio STT")] = None
+    custom_audio_tts_openai_api_key: Annotated[str | None, Field(description="OpenAI API key for audio TTS")] = None
+    custom_images_openai_api_key: Annotated[str | None, Field(description="OpenAI API key for images")] = None
     jina_api_key: Annotated[str, Field(description="Jina API key")]
 
     oidc_client_id: Annotated[str, Field(description="OIDC client ID")]

@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Generic, Tuple, Type, TypeVar, cast
+from typing import Annotated, Generic, TypeVar, cast
 
 from pydantic import Field
 
@@ -22,7 +22,7 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
     agent_stop_event: Annotated[TEvent, Field(description="The stop event of the agent that completed the work.")]
 
     @classmethod
-    def get_stop_event_type(cls) -> Tuple[Type[StopEvent], ...]:
+    def get_stop_event_type(cls) -> tuple[type[StopEvent], ...]:
         """
         Extracts the concrete stop event type(s) from the `agent_stop_event` field.
         This version uses Pydantic's `model_fields` for robust type resolution
@@ -50,4 +50,4 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
             if not inspect.isclass(t):
                 raise TypeError(f"Extracted type '{t}' is not a class. " f"Full annotation was '{field_annotation}'.")
 
-        return cast(Tuple[Type[StopEvent], ...], base_types)
+        return cast(tuple[type[StopEvent], ...], base_types)

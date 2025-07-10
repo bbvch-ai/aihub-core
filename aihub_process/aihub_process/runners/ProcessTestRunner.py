@@ -1,6 +1,7 @@
 from asyncio import sleep
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncGenerator, List, Optional, Type
+from typing import Annotated
 
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import (
@@ -46,9 +47,9 @@ class ProcessTestRunner(ProcessRunner):
 
     def __init__(
         self,
-        process_type: Type[AgenticProcess],
+        process_type: type[AgenticProcess],
         process_config: ProcessConfig,
-        locale_paths: Optional[List[str]] = None,
+        locale_paths: list[str] | None = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
@@ -57,11 +58,11 @@ class ProcessTestRunner(ProcessRunner):
             process_config=process_config,
             locale_paths=locale_paths,
         )
-        self.test_event_subscriber: Optional[JSSubscriber] = None
-        self.observed_events: List[ObservedEvent] = []
+        self.test_event_subscriber: JSSubscriber | None = None
+        self.observed_events: list[ObservedEvent] = []
 
-        self.observe_discovery_event_subscriber: Optional[ProcessNCSubscriber] = None
-        self.observe_discovery_response_event_subscriber: Optional[ProcessNCSubscriber] = None
+        self.observe_discovery_event_subscriber: ProcessNCSubscriber | None = None
+        self.observe_discovery_response_event_subscriber: ProcessNCSubscriber | None = None
 
     async def observe_event(self, event: BaseEvent, topic: Topic):
         """
@@ -148,9 +149,9 @@ class ProcessTestRunner(ProcessRunner):
 
     def get_topics(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> List[ProcessTopic]:
+    ) -> list[ProcessTopic]:
         """Returns the topics of all observed events of the specified class, if any are ProcessTopic."""
         return [
             ev.topic
@@ -162,9 +163,9 @@ class ProcessTestRunner(ProcessRunner):
 
     def get_events_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> List[BaseEvent]:
+    ) -> list[BaseEvent]:
         """Returns all observed events of the specified class."""
         return [
             ev.event
@@ -175,7 +176,7 @@ class ProcessTestRunner(ProcessRunner):
 
     def has_event_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> bool:
         """Check if any event of the specified class was observed."""
@@ -183,7 +184,7 @@ class ProcessTestRunner(ProcessRunner):
 
     def get_event_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> BaseEvent:
         """
@@ -197,7 +198,7 @@ class ProcessTestRunner(ProcessRunner):
 
     async def wait_for_event(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         timeout: float = 60.0,
         interval: float = 0.1,
     ) -> BaseEvent:

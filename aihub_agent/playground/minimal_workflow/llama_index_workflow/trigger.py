@@ -1,8 +1,5 @@
 import asyncio
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
     OpenaiLikeLLMConfig,
     OpenaiLikeLLMParameter,
@@ -11,6 +8,9 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import (
     LlamaIndexAgent,
 )

@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, Optional
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -8,9 +8,9 @@ class UserUISettings(BaseModel):
     Settings for the user interface with optional parameters and notifications.
     """
 
-    params: Annotated[Dict[str, Any], Field(description="UI parameters")] = {}
-    version: Annotated[Optional[str], Field(default=None, description="UI version")] = None
-    notifications: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Notification settings")] = None
+    params: Annotated[dict[str, Any], Field(description="UI parameters")] = {}
+    version: Annotated[str | None, Field(default=None, description="UI version")] = None
+    notifications: Annotated[dict[str, Any] | None, Field(default=None, description="Notification settings")] = None
 
 
 class UserSettings(BaseModel):
@@ -52,10 +52,10 @@ class User(BaseModel):
     updated_at: Annotated[int, Field(description="Last update timestamp")]
     created_at: Annotated[int, Field(description="Creation timestamp")]
 
-    api_key: Annotated[Optional[str], Field(default=None, description="API key for authentication")] = None
+    api_key: Annotated[str | None, Field(default=None, description="API key for authentication")] = None
     settings: Annotated[UserSettings, Field(default_factory=UserSettings, description="User settings")] = UserSettings()
-    info: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Additional user information")] = None
-    oauth_sub: Annotated[Optional[str], Field(default=None, description="OAuth subject identifier")] = None
+    info: Annotated[dict[str, Any] | None, Field(default=None, description="Additional user information")] = None
+    oauth_sub: Annotated[str | None, Field(default=None, description="OAuth subject identifier")] = None
 
 
 class UserUpdateRequest(BaseModel):
@@ -64,7 +64,7 @@ class UserUpdateRequest(BaseModel):
     name: Annotated[str, Field(description="New display name")]
     email: Annotated[str, Field(description="New email address")]
     profile_image_url: Annotated[str, Field(description="New profile image URL")]
-    password: Annotated[Optional[str], Field(default=None, description="New password (optional)")] = None
+    password: Annotated[str | None, Field(default=None, description="New password (optional)")] = None
 
 
 class UserRoleUpdateRequest(BaseModel):
@@ -79,7 +79,7 @@ class UserResponse(BaseModel):
 
     name: Annotated[str, Field(description="User display name")]
     profile_image_url: Annotated[str, Field(description="Profile image URL")]
-    active: Annotated[Optional[bool], Field(default=None, description="Whether user is currently active")] = None
+    active: Annotated[bool | None, Field(default=None, description="Whether user is currently active")] = None
 
 
 class ApiKeyResponse(BaseModel):

@@ -1,19 +1,16 @@
-from pytest_bdd import scenarios, given, when, then, parsers
-
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.processes.ProcessConfig import ProcessConfig
-from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
+from aihub_lib.testing.asyncio_utils.bdd import async_test
+from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
 from playground.agents.AgentA.AgentA import AgentA
 from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
-
 from playground.agents.AgentB.AgentB import AgentB
-
-from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
+from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 
 # Adjust the path to your feature file if necessary
 scenarios("./features/agent_only_process.feature")

@@ -17,10 +17,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, ChunkEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
+import type { ChatMessageOutput, ChunkEvent, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: ChunkEvent }
+  event: WsServerEventReadable & { event: ChunkEvent }
   thread: ThreadDto
 }>()
 

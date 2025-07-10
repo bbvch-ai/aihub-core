@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 import pulumi
 from pulumi_azure_native import app, containerinstance, dbforpostgresql, network, privatedns
 
@@ -25,7 +23,7 @@ class WebUI(pulumi.ComponentResource):
         stack: str,
         name: str,
         config: WebUIConfig,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
@@ -349,7 +347,7 @@ class WebUI(pulumi.ComponentResource):
         else:
             raise ValueError(f"No private IP found for container group {container_group.name}")
 
-    def _additional_secrets_from_additional_env_vars(self) -> List[app.SecretArgs]:
+    def _additional_secrets_from_additional_env_vars(self) -> list[app.SecretArgs]:
         additional_secrets = []
         for name, value in self.config.openwebui_config.additional_env_vars.items():
             if isinstance(value, dict) and "secret_ref" in value and "secret_value" in value:

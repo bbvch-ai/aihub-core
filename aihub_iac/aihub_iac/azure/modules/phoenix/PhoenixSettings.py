@@ -1,12 +1,12 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class PhoenixSettings(BaseSettings):
-    PHOENIX_CLIENT_SECRET: Annotated[Optional[str], Field(description="-")] = None
-    PHOENIX_SECRET: Annotated[Optional[str], Field(description="-")] = None
+    PHOENIX_CLIENT_SECRET: Annotated[str | None, Field(description="-")] = None
+    PHOENIX_SECRET: Annotated[str | None, Field(description="-")] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

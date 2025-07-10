@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.213.0"
+version = "v0.216.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -103,8 +103,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.213.0"
-resolved_reference = "21916f8ebb146c54b691a962b369403bb9b9e143"
+reference = "v0.216.0"
+resolved_reference = "ddd7b7be62e3d9988b2d620325b7e181605cdb5b"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -2242,19 +2242,25 @@ files = [
 ]
 
 [[package]]
-name = "isort"
-version = "5.13.2"
-description = "A Python utility / library to sort Python imports."
+name = "jambo"
+version = "0.4.0"
+description = "Jambo - JSON Schema to Pydantic Converter"
 optional = false
-python-versions = ">=3.8.0"
-groups = ["dev"]
-files = [
-    {file = "isort-5.13.2-py3-none-any.whl", hash = "sha256:8ca5e72a8d85860d5a3fa69b8745237f2939afe12dbf656afbcb47fe72d947a6"},
-    {file = "isort-5.13.2.tar.gz", hash = "sha256:48fdfcb9face5d58a4f6dde2e72a1fb8dcaf8ab26f95ab49fab84c2ddefb0109"},
-]
+python-versions = "<4.0,>=3.10"
+groups = ["main"]
+files = []
+develop = false
 
-[package.extras]
-colors = ["colorama (>=0.4.6)"]
+[package.dependencies]
+email-validator = ">=2.2.0"
+jsonschema = ">=4.23.0"
+pydantic = ">=2.10.6"
+
+[package.source]
+type = "git"
+url = "https://github.com/bbvch-ai/jambo.git"
+reference = "v0.4.0"
+resolved_reference = "294d6dc7465edb399fc3ece44301f55d6d082112"
 
 [[package]]
 name = "jedi"
@@ -6523,4 +6529,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "d9fd32252c81e867b36738c2d52b4b141e6b22b4f48279e8220b9023713e5230"
+content-hash = "da530c4d74a915c3595d8e967053133aaf633240aefa9d04e32b192beaee2b7b"

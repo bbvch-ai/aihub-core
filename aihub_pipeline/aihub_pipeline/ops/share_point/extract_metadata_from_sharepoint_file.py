@@ -1,6 +1,6 @@
 import hashlib
 import time
-from typing import Any, Dict
+from typing import Any
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -16,8 +16,8 @@ from aihub_pipeline.types.SharePointFile import SharePointFile
 
 
 @op(code_version="v1")
-def extract_metadata_from_share_point_file(sharepoint_file: SharePointFile) -> Dict[str, Any]:
-    metadata: Dict[str, Any] = {
+def extract_metadata_from_share_point_file(sharepoint_file: SharePointFile) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
         SOURCE: sharepoint_file.full_url,
         INSERTED_AT: int(time.time()),
         UPDATED_AT: int(sharepoint_file.modified_datetime.timestamp()),

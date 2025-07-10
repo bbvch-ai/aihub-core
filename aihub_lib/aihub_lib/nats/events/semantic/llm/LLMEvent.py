@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, ClassVar, Dict, List, Optional
+from typing import Annotated, Any, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import TokenCountingHandler
@@ -19,47 +19,41 @@ class LLMEvent(SemanticEvent):
         "lib.events.semantic_llm_event.description"
     )
 
-    input_messages: Annotated[
-        Optional[List[Message]], Field(description="List of messages sent to the LLM as input.")
-    ] = None
+    input_messages: Annotated[list[Message] | None, Field(description="List of messages sent to the LLM as input.")] = (
+        None
+    )
     output_messages: Annotated[
-        Optional[List[Message]], Field(description="List of messages received from the LLM as output.")
+        list[Message] | None, Field(description="List of messages received from the LLM as output.")
     ] = None
     invocation_parameters: Annotated[
-        Optional[Dict[str, Any]], Field(description="Parameters used during the invocation of the LLM.")
+        dict[str, Any] | None, Field(description="Parameters used during the invocation of the LLM.")
     ] = None
-    chat_model_name: Annotated[Optional[str], Field(description="The name of the language model being utilized.")] = (
-        None
-    )
-    provider: Annotated[Optional[str], Field(description="The hosting provider of the LLM, e.g., OpenAI, Azure.")] = (
-        None
-    )
-    system: Annotated[Optional[str], Field(description="The AI product as identified by the client or server.")] = None
-    prompt_template: Annotated[Optional[str], Field(description="The prompt template as a Python f-string.")] = None
+    chat_model_name: Annotated[str | None, Field(description="The name of the language model being utilized.")] = None
+    provider: Annotated[str | None, Field(description="The hosting provider of the LLM, e.g., OpenAI, Azure.")] = None
+    system: Annotated[str | None, Field(description="The AI product as identified by the client or server.")] = None
+    prompt_template: Annotated[str | None, Field(description="The prompt template as a Python f-string.")] = None
     prompt_template_variables: Annotated[
-        Optional[Dict[str, str]], Field(description="A dictionary of input variables to the prompt template.")
+        dict[str, str] | None, Field(description="A dictionary of input variables to the prompt template.")
     ] = None
     prompt_template_version: Annotated[
-        Optional[str], Field(description="The version of the prompt template being used.")
+        str | None, Field(description="The version of the prompt template being used.")
     ] = None
-    token_count_prompt: Annotated[Optional[int], Field(description="The number of tokens in the prompt.")] = None
-    token_count_completion: Annotated[Optional[int], Field(description="The number of tokens in the completion.")] = (
-        None
-    )
+    token_count_prompt: Annotated[int | None, Field(description="The number of tokens in the prompt.")] = None
+    token_count_completion: Annotated[int | None, Field(description="The number of tokens in the completion.")] = None
     token_count_total: Annotated[
-        Optional[int],
+        int | None,
         Field(
             description="The total number of tokens, including both prompt and completion.",
         ),
     ] = None
     tools: Annotated[
-        Optional[List[Dict[str, Any]]],
+        list[dict[str, Any]] | None,
         Field(
             description="List of tools that are advertised to the LLM to be able to call.",
         ),
     ] = None
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
             SpanAttributes.LLM_INVOCATION_PARAMETERS: json.dumps(self.invocation_parameters),
@@ -93,7 +87,7 @@ class LLMEvent(SemanticEvent):
 
     @classmethod
     def from_chat_response(
-        cls, input_messages: List[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: AgentConfig
+        cls, input_messages: list[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: AgentConfig
     ) -> "LLMEvent":
         handlers = llm.callback_manager.handlers
         token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)

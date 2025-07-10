@@ -1,12 +1,10 @@
-from typing import List
-
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from dagster import Output, op
 from llama_index.core.schema import TextNode
 
 
 @op(code_version="v1")
-def ensure_node_default_metadata(nodes: List[TextNode]) -> Output[List[TextNode]]:
+def ensure_node_default_metadata(nodes: list[TextNode]) -> Output[list[TextNode]]:
     """Inserts a list of nodes into the vector store by having the appropriate
     IO manager set as the output IO Manager"""
     for node in nodes:

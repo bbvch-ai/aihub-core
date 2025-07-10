@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
@@ -37,11 +36,11 @@ class AgentRunner:
 
     def __init__(
         self,
-        servers: List[str],
+        servers: list[str],
         redis_url: str,
-        agent_type: Type[Agent],
+        agent_type: type[Agent],
         agent_config: AgentConfig,
-        locale_paths: Optional[List[str]] = None,
+        locale_paths: list[str] | None = None,
     ):
         if not isinstance(agent_type, type):
             raise ValueError("agent_type must be a class, not an instance or module.")
@@ -58,14 +57,14 @@ class AgentRunner:
         self.agent_class = self.agent_type.__name__
         self.topic_manager = AgentInstanceTopicManager(self.agent_class, self.agent_config.agent_id)
 
-        self.nc: Optional[NATS] = None
-        self.js: Optional[JetStreamContext] = None
+        self.nc: NATS | None = None
+        self.js: JetStreamContext | None = None
 
-        self.dispatcher: Optional[AgentDispatcher] = None
+        self.dispatcher: AgentDispatcher | None = None
 
-        self.discovery_event_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
-        self.control_event_subscriber: Optional[JSSubscriber] = None
-        self.nc_publisher: Optional[NCPublisher[AgentDiscoveryResponseEvent]] = None
+        self.discovery_event_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.control_event_subscriber: JSSubscriber | None = None
+        self.nc_publisher: NCPublisher[AgentDiscoveryResponseEvent] | None = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 

@@ -1,4 +1,4 @@
-import type { WsServerEvent } from '@core/sdk/client'
+import type { WsServerEventReadable } from '@core/sdk/client'
 
 import {
   EventDisplayAgentInTheLoopRequestEvent,
@@ -22,7 +22,7 @@ import {
 } from '#components'
 
 export const useEventComponent = () => {
-  const resolveComponentForEvent = (event: WsServerEvent) => {
+  const resolveComponentForEvent = (event: WsServerEventReadable) => {
     const mapping = {
       UserMessageEvent: EventDisplayUserMessageEvent,
       ChunkEvent: EventDisplayChunkEvent,

@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, Type
+from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 
@@ -47,7 +47,7 @@ class ProcessNCSubscriber(NCSubscriber):
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
         handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
-        event: Type[BaseEvent],
+        event: type[BaseEvent],
     ):
         subject = topic_manager.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id="*",

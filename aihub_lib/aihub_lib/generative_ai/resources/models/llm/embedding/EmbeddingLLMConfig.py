@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Annotated, Optional, Tuple
+from typing import Annotated
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from pydantic import Field
@@ -40,6 +40,6 @@ class EmbeddingLLMConfig(LLMConfig):
 
     @abstractmethod
     def to_llama_index(
-        self, model_parameter: Optional[EmbeddingLLMParameter] = None
-    ) -> Tuple[BaseEmbedding, LLMCostTracker]:
+        self, model_parameter: EmbeddingLLMParameter | None = None
+    ) -> tuple[BaseEmbedding, LLMCostTracker]:
         pass

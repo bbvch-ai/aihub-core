@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
@@ -20,19 +20,19 @@ class RAGAgentConfig(AgentConfig):
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
     ]
     condense_question_prompt: Annotated[
-        Optional[LocaleString],
+        LocaleString | None,
         Field(description="Prompt template for transforming a user query into a standalone question."),
     ] = None
     context_prompt: Annotated[
-        Optional[LocaleString],
+        LocaleString | None,
         Field(description="Prompt template for providing context (e.g., retrieved documents) to the LLM."),
     ] = None
     few_shot_guard_examples: Annotated[
-        List[FewShotGuardExample],
+        list[FewShotGuardExample],
         Field(description="Examples for the few-shot guard to define which user requests are accepted."),
     ] = []
     check_context_sufficiency: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             description="Whether or not to check if the retrieved context is sufficient for generating a response.",
         ),

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, List, Literal, Optional
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,21 +10,21 @@ class TaskSummaryData(BaseModel):
     n_examples: Annotated[int, Field(description="Number of examples in the experiment.")]
     n_runs: Annotated[int, Field(description="Number of task runs executed.")]
     n_errors: Annotated[int, Field(description="Number of errors during task execution.")]
-    top_error: Annotated[Optional[str], Field(description="Most frequent error message, if any.")] = None
+    top_error: Annotated[str | None, Field(description="Most frequent error message, if any.")] = None
 
 
 class EvaluationSummaryData(BaseModel):
     evaluator: Annotated[str, Field(description="Name of the evaluator.")]
     n: Annotated[int, Field(description="Number of items evaluated.")]
-    avg_score: Annotated[Optional[float], Field(description="Average score from this evaluator.")] = None
+    avg_score: Annotated[float | None, Field(description="Average score from this evaluator.")] = None
 
 
 class EvaluationData(BaseModel):
     name: Annotated[str, Field(description="Name of the evaluator.")]
     annotator_kind: Annotated[Literal["LLM", "Code"], Field(description="Kind of evaluator, either LLM or Code.")]
     score: Annotated[float, Field(description="Score between 0 and 1.")]
-    explanation: Annotated[Optional[str], Field(description="Explanation given by Judge LLM.")] = None
-    error: Annotated[Optional[str], Field(description="Error message if the task run failed.")] = None
+    explanation: Annotated[str | None, Field(description="Explanation given by Judge LLM.")] = None
+    error: Annotated[str | None, Field(description="Error message if the task run failed.")] = None
 
 
 class ExperimentRunRecord(BaseModel):
@@ -34,22 +34,23 @@ class ExperimentRunRecord(BaseModel):
     assistant_answer: Annotated[str, Field(description="Response given by assistant.")]
     thread_id: Annotated[str, "Unique conversation/workflow identifier within the agent instance"]
     display_id: Annotated[str, "UI-facing grouping ID for events within a thread and run"]
-    error: Annotated[Optional[str], Field(description="Error message if the task run failed.")] = None
-    latency_ms: Annotated[Optional[float], Field(description="Latency of the task run in milliseconds.")] = None
+    error: Annotated[str | None, Field(description="Error message if the task run failed.")] = None
+    latency_ms: Annotated[float | None, Field(description="Latency of the task run in milliseconds.")] = None
     start_time: Annotated[datetime, Field(description="Start time of the task run.")]
     end_time: Annotated[datetime, Field(description="End time of the task run.")]
-    conciseness: Annotated[Optional[EvaluationData], Field(description="How concise is the answer")] = None
-    correctness: Annotated[Optional[EvaluationData], Field(description="How correct is the answer")] = None
-    completeness: Annotated[Optional[EvaluationData], Field(description="How complete is the answer")] = None
+    conciseness: Annotated[EvaluationData | None, Field(description="How concise is the answer")] = None
+    correctness: Annotated[EvaluationData | None, Field(description="How correct is the answer")] = None
+    completeness: Annotated[EvaluationData | None, Field(description="How complete is the answer")] = None
 
 
 class Experiment(MinimalExperiment):
-    conciseness: Annotated[Optional[EvaluationSummaryData], Field(description="How concise is the answer")] = None
-    correctness: Annotated[Optional[EvaluationSummaryData], Field(description="How correct is the answer")] = None
-    completeness: Annotated[Optional[EvaluationSummaryData], Field(description="How complete is the answer")] = None
+    conciseness: Annotated[EvaluationSummaryData | None, Field(description="How concise is the answer")] = None
+    correctness: Annotated[EvaluationSummaryData | None, Field(description="How correct is the answer")] = None
+    completeness: Annotated[EvaluationSummaryData | None, Field(description="How complete is the answer")] = None
     items: Annotated[
-        List[ExperimentRunRecord],
+        list[ExperimentRunRecord],
         Field(
-            description="Detailed records of each run within the experiment, including inputs, outputs, and evaluations."
+            description="Detailed records of each run within the experiment, "
+            "including inputs, outputs, and evaluations."
         ),
     ]

@@ -1,8 +1,9 @@
 import asyncio
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.logging.logger import enable_logging
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.agent.BotInTheLoopAgent.BotInTheLoopAgent import BotInTheLoopAgent
 from playground.agent.BotInTheLoopAgent.BotInTheLoopAgentConfig import BotInTheLoopAgentConfig
 

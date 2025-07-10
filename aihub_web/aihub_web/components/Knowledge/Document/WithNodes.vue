@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { type IngestedDocument, getDocumentById, getNodesForDocument, type IngestedNode } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 
 const props = defineProps<{
   db: string
@@ -28,7 +29,7 @@ const props = defineProps<{
 
 const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocument>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId as string],
-  staleTime: 1000 * 60 * 5, // 5 minutes
+  staleTime: minutesToMilliseconds(5),
   enabled: true,
   query: async () => {
     return await getDocumentById({
@@ -44,7 +45,7 @@ const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocume
 
 const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Node[]>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId, 'nodes'],
-  staleTime: 1000 * 60 * 5,
+  staleTime: minutesToMilliseconds(5),
   enabled: true,
   query: async () => {
     return await getNodesForDocument({

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
@@ -19,9 +19,9 @@ class CreateTokenRequest(BaseModel):
     @classmethod
     def expiry_date_must_be_future(cls, v: datetime) -> datetime:
         if v.tzinfo is None:  # If datetime is naive, assume UTC
-            v = v.replace(tzinfo=timezone.utc)
+            v = v.replace(tzinfo=UTC)
 
-        if v <= datetime.now(timezone.utc):
+        if v <= datetime.now(UTC):
             raise ValueError("Expiry date must be in the future")
         return v
 

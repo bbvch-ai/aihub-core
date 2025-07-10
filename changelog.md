@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.216.0] - 2025-07-08 - Foundational Polish: Modernizing Python Syntax and Enhancing Type Safety
+
+### Added
+- ✨ **Deprecated `AgentConfig` Fields:** Introduced deprecation warnings for `color`, `voice`, and `system_prompt` fields within `AgentConfig`, guiding users to define these properties directly in agent subclasses for better customization.
+
+### Changed
+- 🔄 **Standardized Datetime Handling:** Updated datetime operations to consistently use timezone-aware UTC for improved time-based accuracy and consistency across the platform.
+- 🔄 **Improved Subprocess Execution:** Enhanced `subprocess.run` calls in internal scripts for more robust and secure execution, particularly within bot setup processes.
+- 🔄 **`jambo` Library Update:** Upgraded the `jambo` schema conversion library to `v0.4.0`, bringing internal improvements for dynamic model creation and API event handling.
+- 🔄 **Refined Docstrings and Comments:** Various docstrings and inline comments across the codebase were updated for greater clarity and precision, especially concerning complex components like dispatchers and service methods.
+
+### Fixed
+- 🐛 **Clarified Error Messages:** Enhanced error messages in several API endpoints (e.g., thread and role management) to provide more informative feedback to users.
+- 🐛 **Robust Type Parsing:** Corrected and improved the internal parsing of type annotations for event and parameter extraction, ensuring more reliable and accurate workflow dispatching.
+
+### Refactor
+- 🧹 **Type Hint Modernization:** Performed a comprehensive refactoring across the entire codebase to leverage native Python type hints (e.g., `list`, `dict`, `set`, `tuple`, `X | None`) for improved readability, maintainability, and static analysis.
+- 🧹 **Linting and Formatting Overhaul:** Consolidated and enhanced code quality checks by deprecating `isort` and configuring `ruff` to handle import sorting and enforce stricter linting rules.
+
+---
+
+
+
+## [v0.215.0] - 2025-07-08 - Granular Access Control and Enhanced User Management
+
+### Security
+- 🔑 **Introduced Hierarchical Role-Based Access Control (RBAC)**: Implemented a new, comprehensive RBAC system that supports hierarchical access rules with granular control over services, agents, and processes.
+- 🔐 **Enforced Granular Endpoint Permissions**: All major API endpoints across agents, evaluations, events, files, i18n, knowledge, OpenAI, threads, and tokens now utilize the new RBAC, ensuring fine-grained access based on user roles and specific resource permissions.
+- 🔒 **Restricted Knowledge Base Access**: Access to knowledge bases, including databases, documents, and nodes, is now limited to users with administrative privileges.
+- 🛡️ **Enhanced Thread Management Security**: Improved security checks for thread creation, viewing, and modification, including verifying user and agent access, and preventing unauthorized changes to process-owned threads.
+- 👁️ **Refined Event Visibility**: The general event retrieval endpoint has been removed, and access to thread-specific events and event timeseries is now strictly controlled by user permissions.
+
+### Added
+- 🗄️ **Role Management API**: Introduced a new API (`/roles`) enabling administrators to create, list, retrieve, update, and delete custom roles with associated hierarchical access rules.
+- 📋 **User Management API for Administrators**: New API endpoints (`/users`, `/users/{user_id}`) provide administrators with the ability to list all users and retrieve detailed information for specific users, including their assigned roles and granular access levels across services, agents, and processes.
+- 👤 **Minimal User DTO**: Introduced a lightweight `MinimalUserDTO` for contexts where only essential user information is required, improving API efficiency.
+- 📊 **Paginated User Listing**: Administrators can now retrieve a paginated list of all users via the API, enhancing user management capabilities.
+- 👑 **User Access Details in User Profile**: Users can now view their specific access levels for different services, agents, and processes directly in their profile (visible to admins).
+- 💬 **Process-Associated Thread Metadata**: Added `process_class`, `process_id`, and `process_walkthrough_id` to `ThreadDTO` for better contextualization of threads initiated by processes.
+- 🤖 **Agent Metadata in Model Details**: `agent_class` and `agent_id` fields were added to `ModelDetails` to provide clearer context for AI-Hub agents exposed as OpenAI models.
+- ⌛ **User-Friendly Time Ago Display**: Implemented a new composable for displaying relative time (e.g., "Last hour", "Last week") with severity indicators in the UI.
+- 💥 **Global HTTP Error Toasts**: Configured the frontend client to display informative toast messages for HTTP response errors, improving user feedback.
+- 🛠️ **New UI Components for Role Management**: Introduced dedicated components for creating, editing, and displaying roles, enhancing the administrative user experience.
+- 👨‍💻 **New UI Components for User Management**: Added new components to list users and display their detailed access information for administrators.
+
+### Changed
+- 🔄 **Updated Role Naming Convention**: The `AllAgents` role has been renamed to `TestOnlyFullAdminAccess` for clearer intent and consistency with the new access control model.
+- 🛣️ **Streamlined Frontend Routing**: All previously "admin" specific routes (e.g., `/admin/agents`) have been unified under a `/service/` prefix, aligning with the new granular access control model where permissions define access rather than a fixed "admin" route.
+- 🌐 **Refined Internationalization Endpoint Access**: The `/i18n/my-locale` endpoint now requires a general user permission.
+- 📂 **File Access Endpoints**: Access to logged-in file URLs is now managed by the new permission system.
+- 📈 **Dashboard Event Labels**: Improved clarity of labels for various event types displayed in dashboard widgets.
+- 🎨 **Service Selection Layout**: Adjusted the layout of the service selection component for improved visual consistency.
+
+### Refactor
+- 🧹 **Centralized Access Control Logic**: All access validation logic has been consolidated into the new `AccessChecker` class within `aihub_lib`, removing redundant checks from individual controllers and DTOs.
+- ⚙️ **Refined Controller Initialization**: The `Controller` base class now uses a more flexible `additionally_required_permission` parameter instead of a simple `is_admin_only` flag.
+- 🚀 **Optimized Service Layer Dependencies**: Removed direct `IdentityProvider` dependencies from several service methods, pushing identity retrieval and access checks to higher layers or internal `UserEntity` management.
+- 📦 **Consolidated User DTOs**: Simplified the user data transfer object hierarchy by replacing `MyUserDTO` with a more comprehensive `UserDTO` that includes roles and dashboard configurations, and introducing `MinimalUserDTO` for basic user representation.
+- 🧪 **Improved Testing Infrastructure**: Enhanced test client fixtures and introduced dedicated mock fixtures for `RoleEntity` and `UserEntity` methods, making authentication and data-related tests more robust and easier to set up.
+- ⏱️ **Standardized Caching Durations**: Updated `staleTime` configurations across multiple composables to use `date-fns` `minutesToMilliseconds` for better readability and consistency.
+
+---
+
+
+
+## [v0.214.0] - 2025-07-08 - Streamlined Event Model Handling and Enhanced Developer Experience
+
+### Added
+- ✨ **New Event Model Creation Service**: Introduced `EventModelCreationService` to provide a unified and robust mechanism for generating Pydantic models from event classes or JSON schemas, enabling dynamic and consistent API model definitions.
+- 🧪 **Comprehensive Event Model Tests**: Added extensive test suites for the new `EventModelCreationService`, including complex nested models, union types, and list structures, to ensure the reliability and correctness of dynamically generated event models.
+- 🛠️ **Standardized IDE Inspection Profiles**: Integrated new IntelliJ IDEA inspection profiles and scopes (`Core.xml`, `ExcludeJambo.xml`) to enforce consistent code quality standards and improve developer experience.
+- 📦 **Jambo Dependency**: Introduced `jambo` as a new dependency to support advanced JSON schema to Pydantic model conversion within the new event model creation service.
+
+### Changed
+- 🚀 **CI/CD Workflow Enhancements**: Updated the `analyze-test-pr.yml` GitHub Actions workflow to include SSH setup and cleanup steps, facilitating secure interactions with private Git repositories during testing.
+- 🔄 **API Endpoint and Test Integration**: Migrated existing agent API endpoints and their associated tests to utilize the new `EventModelCreationService`, ensuring all model generation leverages the centralized logic.
+
+### Removed
+- 🗑️ **Deprecated Event Model Functions**: Removed the standalone `create_input_model` and `create_output_model` functions, as their functionality has been absorbed and improved by the new `EventModelCreationService`.
+
+---
+
+
+
 ## [v0.213.0] - 2025-07-07 - New Retrieval Agent for Focused Data Access
 
 ### Added

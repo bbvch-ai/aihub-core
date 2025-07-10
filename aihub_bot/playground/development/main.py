@@ -1,9 +1,5 @@
 import asyncio
 
-from aihub_bot.routes.agent.AgentChatController import AgentChatController
-from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
-from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
-from aihub_bot.runners.BotTestRunner import BotTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -13,6 +9,11 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
+
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
+from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
+from aihub_bot.runners.BotTestRunner import BotTestRunner
 
 enable_logging()
 

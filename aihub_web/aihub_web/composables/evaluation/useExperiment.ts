@@ -1,11 +1,12 @@
 import { type Experiment, getExperiment } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
+import { minutesToMilliseconds } from 'date-fns'
 
 export const useExperiment = defineQuery(() => {
   const route = useRoute()
   const { data: experiment, isPending: experimentIsLoading } = useQuery<Experiment>({
     key: () => ['experiments', route.params.experiment_id as string],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getExperiment({

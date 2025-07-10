@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Dict, Optional
+from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -13,8 +13,8 @@ class SlackResponderInfo(BaseModel):
     """
 
     user_id: Annotated[str, Field(description="The Slack user ID.")]
-    user_name: Annotated[Optional[str], Field(description="The Slack user name.")] = None
-    additional_info: Annotated[Optional[Dict], Field(description="Additional Slack-specific user information.")] = None
+    user_name: Annotated[str | None, Field(description="The Slack user name.")] = None
+    additional_info: Annotated[dict | None, Field(description="Additional Slack-specific user information.")] = None
 
 
 class BotInTheLoopResponseEvent(ControlEvent):
@@ -35,12 +35,14 @@ class BotInTheLoopResponseEvent(ControlEvent):
     request_event: Annotated[
         BotInTheLoopRequestEvent,
         Field(
-            description="The original `BotInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+            description="The original `BotInTheLoopRequestEvent` that led to this response, providing context "
+            "for where and why the workflow paused.",
         ),
     ]
     responder: Annotated[
-        Optional[SlackResponderInfo],
+        SlackResponderInfo | None,
         Field(
-            description="Information about the Slack user who responded to the request, enabling tracking of who provided the input.",
+            description="Information about the Slack user who responded to the request, "
+            "enabling tracking of who provided the input.",
         ),
     ] = None

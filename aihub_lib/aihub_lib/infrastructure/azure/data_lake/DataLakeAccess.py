@@ -1,5 +1,3 @@
-from typing import Optional
-
 from adlfs import AzureBlobFileSystem
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient
@@ -15,11 +13,11 @@ class DataLakeAccess:
     _storage_service_name = None
     _service_endpoint = None
     _credential = None
-    _cached_fs_client: Optional[AzureBlobFileSystem] = None
+    _cached_fs_client: AzureBlobFileSystem | None = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(DataLakeAccess, cls).__new__(cls)
+            cls._instance = super(DataLakeAccess, cls).__new__(cls)  # noqa: UP008
             cls._instance._initialize()
         return cls._instance
 

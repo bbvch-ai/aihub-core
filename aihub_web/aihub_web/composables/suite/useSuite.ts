@@ -1,4 +1,5 @@
 import { getSuite, type SuiteDto } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 
 export const useSuite = defineQuery(() => {
   const {
@@ -6,7 +7,7 @@ export const useSuite = defineQuery(() => {
     isPending: suiteIsLoading,
   } = useQuery<SuiteDto>({
     key: () => ['suite'],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
       return await getSuite({

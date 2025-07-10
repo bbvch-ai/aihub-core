@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 import pulumi
 from pulumi_azure_native import containerinstance, cosmosdb, web
 
@@ -13,7 +11,7 @@ from aihub_iac.azure.providers.WebAppCreator import WebAppCreator
 class Bot(pulumi.ComponentResource):
     """A Pulumi component resource for deploying Bot services"""
 
-    def __init__(self, stack: str, name: str, config: BotConfig, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, stack: str, name: str, config: BotConfig, opts: pulumi.ResourceOptions | None = None):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
         self.name = name
@@ -127,7 +125,7 @@ class Bot(pulumi.ComponentResource):
             stack=self.stack,
         )
 
-    def _get_base_env(self) -> List[web.NameValuePairArgs]:
+    def _get_base_env(self) -> list[web.NameValuePairArgs]:
         """Get base environment variables for subscription, app name and region"""
         return [
             web.NameValuePairArgs(name="AZURE_SUBSCRIPTION_ID", value=self.config.subscription_id),
@@ -135,7 +133,7 @@ class Bot(pulumi.ComponentResource):
             web.NameValuePairArgs(name="APP_NAME", value=self.config.project_name),
         ]
 
-    def _get_registry_env(self) -> List[web.NameValuePairArgs]:
+    def _get_registry_env(self) -> list[web.NameValuePairArgs]:
         """Get environment variables for the docker registry"""
         return [
             web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_URL", value=self.config.registry_url),
@@ -143,7 +141,7 @@ class Bot(pulumi.ComponentResource):
             web.NameValuePairArgs(name="DOCKER_REGISTRY_SERVER_PASSWORD", value=self.config.registry_pat),
         ]
 
-    def _get_oauth_env(self) -> List[web.NameValuePairArgs]:
+    def _get_oauth_env(self) -> list[web.NameValuePairArgs]:
         """Get environment variables for the oAuth"""
         return [
             web.NameValuePairArgs(name="CLIENT_ID", value=self.config.client_id),

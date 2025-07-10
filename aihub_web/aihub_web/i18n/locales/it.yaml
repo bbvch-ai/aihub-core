@@ -7,9 +7,41 @@ languages:
   it: "Italiano"
   fr: "Francese"
 
+http_error:
+  code:
+    # 4xx Client Errors
+    400: "Richiesta non valida. Controlla l'indirizzo e riprova."
+    401: "Effettua il login per accedere a questa pagina."
+    403: "Non hai il permesso di visualizzare questo."
+    404: "Spiacenti, non siamo riusciti a trovare quella pagina."
+    405: "Questa azione non è consentita qui."
+    408: "La richiesta è scaduta. Riprova."
+    429: "Troppe richieste. Attendi un momento."
+
+    # 5xx Server Errors
+    500: "Si è verificato un errore sui nostri server."
+    502: "Si è verificato un errore del server. Riprova."
+    503: "Il nostro servizio è temporaneamente non disponibile."
+    504: "Un server non risponde. Riprova."
+
 user:
+  title: "Utenti"
   logout: "Esci"
   language: "Lingua"
+  list:
+    name: "Nome"
+    email: "E-mail"
+    avatar: "Avatar"
+    roles: "Ruoli"
+    last_accessed: "Ultimo accesso"
+
+time_ago:
+  last_hour: "Ultima ora"
+  last_day: "Ultimo giorno"
+  last_week: "La settimana scorsa"
+  last_month: "Lo scorso mese"
+  last_year: "L''anno scorso"
+  long_time_ago: "Molto tempo fa"
 
 thread:
   title: "Interazioni"
@@ -205,19 +237,19 @@ dashboard:
   create_widget: "Crea nuovo widget"
   events:
     StartEvent:
-      label: 'Esecuzioni agente avviate'
+      label: "Esecuzioni agente avviate"
     StopEvent:
-      label: 'Esecuzioni riuscite'
+      label: "Esecuzioni riuscite"
     UserMessageEvent:
-      label: 'Messaggi chat utente'
+      label: "Messaggi chat utente"
     ExceptionEvent:
-      label: 'Errori'
+
     HumanInTheLoopRequestEvent:
-      label: 'Umano nel loop'
+      label: "Umano nel loop"
     BotInTheLoopRequestEvent:
-      label: 'Chiedi in Slack/Teams'
+      label: "Chiedi in Slack/Teams"
     AgentInTheLoopRequestEvent:
-      label: 'Compiti delegati'
+      label: "Compiti delegati"
 
 evaluation:
   dataset:
@@ -274,3 +306,28 @@ evaluation:
       conciseness: "Concisione"
       correctness: "Correttezza"
       completeness: "Completezza"
+
+role:
+  title: "Ruoli di accesso"
+  name: "Nome"
+  description: "Descrizione"
+  edit: "Modifica ruolo"
+  create_new: "Nuovo ruolo"
+  add_access_role: "Aggiungi ruolo di accesso"
+  add_button: "Aggiungi"
+  is_new: "Nuovo"
+  save_button: "Salva"
+  access_rules: "Regole di accesso"
+  create_dialog:
+    description: "Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo ruolo agli utenti, utilizza il tuo AD."
+  remove_dialog:
+    confirm: "Sei sicuro?"
+    explanation: "Se rimuovi questo ruolo, gli utenti potrebbero perdere l'accesso a determinate funzionalità dell'hub AI."
+    cancel: "Annulla"
+    proceed: "Elimina comunque"
+  role_deleted:
+    summary: "Ruolo eliminato"
+    detail: "Il ruolo è stato eliminato. Gli utenti con questo ruolo potrebbero aver perso l'accesso a determinate funzionalità."
+  role_saved:
+    summary: "Ruolo salvato"
+    detail: "Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato."

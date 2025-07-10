@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
     DangerousDevelopmentOnlyAuthConfig,
 )
@@ -9,7 +7,8 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
     """
-    A developer user information provider that returns a fixed user identity from the DangerousDevelopmentOnlyAuthConfig.
+    A developer user information provider that returns a fixed user identity
+    from the DangerousDevelopmentOnlyAuthConfig.
 
     It checks if the provided oid matches the configured dev oid and, if so, returns a UserIdentity
     built from the configuration settings. This is useful in development or testing environments
@@ -28,7 +27,8 @@ class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
                 roles=self.config.ROLES,
             )
         raise ValueError(
-            f"DangerousDevelopmentOnlyIdentityProvider: oid '{user_oid}' does not match the configured dev oid '{self.config.OID}'."
+            f"DangerousDevelopmentOnlyIdentityProvider: oid '{user_oid}' "
+            f"does not match the configured dev oid '{self.config.OID}'."
         )
 
     async def get_user_identity_by_email(self, email: str) -> UserIdentity:
@@ -40,11 +40,12 @@ class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
                 roles=self.config.ROLES,
             )
         raise ValueError(
-            f"DangerousDevelopmentOnlyIdentityProvider: email '{email}' does not match the configured dev email '{self.config.EMAIL}'."
+            f"DangerousDevelopmentOnlyIdentityProvider: email '{email}' "
+            f"does not match the configured dev email '{self.config.EMAIL}'."
         )
 
-    async def get_user_roles(self, user_oid: str) -> List[str]:
+    async def get_user_roles(self, user_oid: str) -> list[str]:
         return self.config.ROLES
 
-    async def get_user_profile_image_data_url(self, user_oid: str) -> Optional[str]:
+    async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
         return None

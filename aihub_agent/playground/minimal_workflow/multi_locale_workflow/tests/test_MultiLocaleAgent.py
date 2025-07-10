@@ -1,15 +1,16 @@
 import os
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import scenarios, given, when, then, parsers
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgent import MultiLocaleAgent
 from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
-from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent
 
 scenarios("./features/multi_locale_agent.feature")
 

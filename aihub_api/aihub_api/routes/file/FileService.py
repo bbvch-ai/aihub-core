@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
@@ -26,7 +26,7 @@ class FileService:
 
     @staticmethod
     def get_anonymous_file_url(container: str, file_path: str, expires: int, signature: str) -> str:
-        now_timestamp = datetime.now(timezone.utc).timestamp()
+        now_timestamp = datetime.now(UTC).timestamp()
 
         if now_timestamp > expires:
             raise HTTPException(status_code=status.HTTP_410_GONE, detail="This link has expired.")
@@ -55,7 +55,7 @@ class FileService:
     def _generate_internal_signature(container: str, path: str, expires: int) -> str:
         """Generates an HMAC signature for our internal anonymous URL."""
         secret = BlobStorageAccess().get_url_signing_secret()
-        msg = f"{container}{path}{expires}".encode("utf-8")
+        msg = f"{container}{path}{expires}".encode()
         return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
 
     @staticmethod
@@ -77,11 +77,14 @@ class FileService:
         if file_path.startswith("/"):
             file_path = file_path[1:]
 
-        expires_dt = datetime.now(timezone.utc) + timedelta(hours=lifetime_hours)
+        expires_dt = datetime.now(UTC) + timedelta(hours=lifetime_hours)
         expires_timestamp = int(expires_dt.timestamp())
 
         signature = FileService._generate_internal_signature(
             container=container, path=file_path, expires=expires_timestamp
         )
 
-        return f"{get_anonymous_file_redirect_api_endpoint}/{container}/{file_path}?expires={expires_timestamp}&signature={signature}"
+        return (
+            f"{get_anonymous_file_redirect_api_endpoint}/{container}/{file_path}"
+            f"?expires={expires_timestamp}&signature={signature}"
+        )

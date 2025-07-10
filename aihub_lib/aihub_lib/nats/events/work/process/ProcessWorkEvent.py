@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Generic, Tuple, Type, TypeVar, cast
+from typing import Annotated, Generic, TypeVar, cast
 
 from pydantic import Field
 
@@ -23,7 +23,7 @@ class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
     process_stop_event: Annotated[TEvent, Field(description="The stop event of the process that completed the work.")]
 
     @classmethod
-    def get_stop_event_type(cls) -> Tuple[Type[ProcessStopEvent], ...]:
+    def get_stop_event_type(cls) -> tuple[type[ProcessStopEvent], ...]:
         """
         Extracts the concrete stop event type(s) from the `agent_stop_event` field.
         This version uses Pydantic's `model_fields` for robust type resolution
@@ -51,4 +51,4 @@ class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
             if not inspect.isclass(t):
                 raise TypeError(f"Extracted type '{t}' is not a class. " f"Full annotation was '{field_annotation}'.")
 
-        return cast(Tuple[Type[ProcessStopEvent], ...], base_types)
+        return cast(tuple[type[ProcessStopEvent], ...], base_types)

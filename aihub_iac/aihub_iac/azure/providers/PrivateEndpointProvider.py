@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pulumi
 from pulumi_azure_native import network, privatedns
 
@@ -21,8 +19,8 @@ class PrivateEndpointProvider:
         self.location = location
         self.network_provider = network_provider
         self.parent = parent
-        self.dns_zones: Dict[str, privatedns.PrivateZone] = {}
-        self.vnet_links: Dict[str, privatedns.VirtualNetworkLink] = {}
+        self.dns_zones: dict[str, privatedns.PrivateZone] = {}
+        self.vnet_links: dict[str, privatedns.VirtualNetworkLink] = {}
         self.stack = stack
 
     def create_dns_zone(self, zone_name: str, zone_domain: str) -> privatedns.PrivateZone:

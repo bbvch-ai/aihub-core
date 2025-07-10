@@ -1,7 +1,6 @@
 import html
 from collections import defaultdict
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime
 
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
@@ -38,28 +37,28 @@ def sanitize_metadata_value(value: str) -> str:
     return sanitized_value
 
 
-def format_unix_timestamp(timestamp: Optional[int]) -> Optional[str]:
+def format_unix_timestamp(timestamp: int | None) -> str | None:
     if timestamp is None or timestamp <= 0:
         return None
     try:
-        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        dt = datetime.fromtimestamp(timestamp, tz=UTC)
         return dt.strftime("%d.%m.%Y")
     except (ValueError, OverflowError):
         return None
 
 
 def combine_nodes_in_order(
-    context_nodes: List[IngestedNode],
+    context_nodes: list[IngestedNode],
     t: LocaleHandler,
     context_prompt: LocaleString = None,
 ) -> ChatMessage:
-    nodes_per_document: Dict[str, List[IngestedNode]] = defaultdict(list)
+    nodes_per_document: dict[str, list[IngestedNode]] = defaultdict(list)
 
     for context_node in context_nodes:
         key = context_node.source
         nodes_per_document[key].append(context_node)
 
-    context_blocks: List[ImageBlock | TextBlock] = []
+    context_blocks: list[ImageBlock | TextBlock] = []
     for key, nodes in nodes_per_document.items():
         node: IngestedNode = nodes[0]
 

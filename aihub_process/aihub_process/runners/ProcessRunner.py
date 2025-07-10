@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import List, Optional, Type
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
@@ -37,11 +36,11 @@ class ProcessRunner:
 
     def __init__(
         self,
-        servers: List[str],
+        servers: list[str],
         redis_url: str,
-        process_type: Type[AgenticProcess],
+        process_type: type[AgenticProcess],
         process_config: ProcessConfig,
-        locale_paths: Optional[List[str]] = None,
+        locale_paths: list[str] | None = None,
     ):
         if not isinstance(process_type, type):
             raise ValueError("process_type must be a class, not an instance or module.")
@@ -59,17 +58,17 @@ class ProcessRunner:
         self.process_class = self.process_type.__name__
         self.topic_manager = ProcessInstanceTopicManager(self.process_class, self.process_config.process_id)
 
-        self.nc: Optional[NATS] = None
-        self.js: Optional[JetStreamContext] = None
+        self.nc: NATS | None = None
+        self.js: JetStreamContext | None = None
 
-        self.dispatcher: Optional[ProcessDispatcher] = None
+        self.dispatcher: ProcessDispatcher | None = None
 
-        self.agent_delegator: Optional[AgentDelegator] = None
-        self.process_delegator: Optional[ProcessDelegator] = None
+        self.agent_delegator: AgentDelegator | None = None
+        self.process_delegator: ProcessDelegator | None = None
 
-        self.discovery_event_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
-        self.work_event_subscriber: Optional[JSSubscriber] = None
-        self.nc_publisher: Optional[NCPublisher[ProcessDiscoveryResponseEvent]] = None
+        self.discovery_event_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.work_event_subscriber: JSSubscriber | None = None
+        self.nc_publisher: NCPublisher[ProcessDiscoveryResponseEvent] | None = None
 
         self.locale_handler = ProcessLocaleHandler(locale_paths=locale_paths)
 

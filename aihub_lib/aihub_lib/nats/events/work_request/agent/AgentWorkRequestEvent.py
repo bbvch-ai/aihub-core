@@ -1,4 +1,4 @@
-from typing import Annotated, Generic, Optional, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 from pydantic import Field
 
@@ -16,15 +16,17 @@ class AgentWorkRequestEvent(WorkRequestEvent, Generic[TEvent]):
     """
 
     agent_class: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="Class of agent to which work shall be delegated. Automatically injected by the process dispatcher."
+            description="Class of agent to which work shall be delegated. "
+            "Automatically injected by the process dispatcher."
         ),
     ] = None
     agent_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
-            description="ID of agent to which work shall be delegated. Automatically injected by the process dispatcher."
+            description="ID of agent to which work shall be delegated."
+            "Automatically injected by the process dispatcher."
         ),
     ] = None
     start_event: Annotated[TEvent, Field(description="Start event that shall be sent to the agent")]

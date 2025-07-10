@@ -1,35 +1,34 @@
-from typing import Annotated, Optional
+from datetime import datetime
+from typing import Annotated
 
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
+from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
 
-class UserDTO(BaseModel):
-    id: Annotated[str, Field(description="The user's unique identifier (OID).")]
-    name: Annotated[str, Field(description="The user's name.")]
-    email: Annotated[str, Field(description="The user's email address.")]
-    profile_image: Annotated[Optional[str], Field(description="User's profile image in base64.")] = None
-
-    @classmethod
-    def from_authenticated_user(cls, user: UserIdentity):
-        return cls(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-        )
+class UserDTO(MinimalUserDTO):
+    last_accessed: Annotated[datetime, Field(description="Last time the user was updated")]
+    roles: Annotated[list[str], Field(description="List of roles assigned to the user")] = []
+    favorite_modules: Annotated[list[str], Field(description="List of favorite modules from aihub suite")] = []
+    dashboard: Annotated[DashboardDTO | None, Field(description="User dashboard configuration for index page")] = None
 
     @classmethod
     def from_user_entity(cls, user_entity: UserEntity):
-        return cls(
-            id=user_entity.id, name=user_entity.name, email=user_entity.email, profile_image=user_entity.profile_image
-        )
+        dashboard_data = user_entity.dashboard.to_mongo()
+        dashboard_dto = DashboardDTO(**dashboard_data)
 
-    @classmethod
-    def from_user_identity(cls, user_identity: UserIdentity):
+        valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
+
         return cls(
-            id=user_identity.id,
-            name=user_identity.name,
-            email=user_identity.email,
-            profile_image=user_identity.profile_image,
+            id=user_entity.id,
+            name=user_entity.name,
+            email=user_entity.email,
+            profile_image=user_entity.profile_image,
+            dashboard=dashboard_dto,
+            favorite_modules=user_entity.favorite_modules,
+            roles=valid_roles,
+            last_accessed=user_entity.last_updated,
         )

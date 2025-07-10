@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
@@ -41,7 +41,7 @@ class TimeRangeDetailConfig:
     align_to_end_of_day: bool
 
 
-TIME_RANGE_CONFIG: Dict[TimeRange, TimeRangeDetailConfig] = {
+TIME_RANGE_CONFIG: dict[TimeRange, TimeRangeDetailConfig] = {
     TimeRange.ONE_HOUR: TimeRangeDetailConfig(
         resolution=Resolution.ONE_MINUTE,
         interval_seconds=60,
@@ -112,8 +112,8 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     def display_events_for_thread(
-        cls, thread_id: str, display_id: Optional[str] = None, event_name: Optional[str] = None
-    ) -> List["PersistedAgentEventEntity"]:
+        cls, thread_id: str, display_id: str | None = None, event_name: str | None = None
+    ) -> list["PersistedAgentEventEntity"]:
         query = cls.objects().filter(thread_id=thread_id, event_type=AgentTopicManager.DISPLAY_EVENT)
 
         if display_id is not None:
@@ -126,8 +126,8 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     def display_events_for_threads(
-        cls, thread_ids: List[str], event_name: Optional[str] = None
-    ) -> List["PersistedAgentEventEntity"]:
+        cls, thread_ids: list[str], event_name: str | None = None
+    ) -> list["PersistedAgentEventEntity"]:
         query = cls.objects().filter(thread_id__in=thread_ids, event_type=AgentTopicManager.DISPLAY_EVENT)
 
         if event_name is not None:
@@ -136,7 +136,7 @@ class PersistedAgentEventEntity(Document):
         return query.order_by("event_data__created_at")
 
     @classmethod
-    def display_events_for_agent(cls, agent_id: str) -> List["PersistedAgentEventEntity"]:
+    def display_events_for_agent(cls, agent_id: str) -> list["PersistedAgentEventEntity"]:
         return (
             cls.objects()
             .filter(agent_id=agent_id, event_type=AgentTopicManager.DISPLAY_EVENT)
@@ -144,7 +144,7 @@ class PersistedAgentEventEntity(Document):
         )
 
     @classmethod
-    def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> List["PersistedAgentEventEntity"]:
+    def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
             .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
@@ -152,7 +152,7 @@ class PersistedAgentEventEntity(Document):
         )
 
     @classmethod
-    def human_in_the_loop_response_events_for_thread(cls, thread_id: str) -> List["PersistedAgentEventEntity"]:
+    def human_in_the_loop_response_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
             .filter(
@@ -164,7 +164,7 @@ class PersistedAgentEventEntity(Document):
         )
 
     @classmethod
-    def all_events_for_thread(cls, thread_id: str) -> List["PersistedAgentEventEntity"]:
+    def all_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         """
         Retrieves all events (both display and control) for a thread.
         """
@@ -173,7 +173,7 @@ class PersistedAgentEventEntity(Document):
     # Inside ThreadService or potentially PersistedAgentEventEntity as a class method
 
     @classmethod
-    def get_aggregated_run_statistics(cls, thread_id: str) -> List[dict]:
+    def get_aggregated_run_statistics(cls, thread_id: str) -> list[dict]:
         """
         Uses MongoDB aggregation to calculate statistics for each run within a thread.
         Returns a list of dictionaries, each summarizing a run.
@@ -348,7 +348,7 @@ class PersistedAgentEventEntity(Document):
         return results
 
     @classmethod
-    def to_message_history(cls, thread_id: str) -> List[UserChatMessage | AssistantChatMessage]:
+    def to_message_history(cls, thread_id: str) -> list[UserChatMessage | AssistantChatMessage]:
         # Retrieve and filter events from the database
         events = (
             cls.objects()
@@ -366,7 +366,7 @@ class PersistedAgentEventEntity(Document):
             .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
         )
 
-        message_history: List[UserChatMessage | AssistantChatMessage] = []
+        message_history: list[UserChatMessage | AssistantChatMessage] = []
         assistant_content_buffer = ""
         current_run_id = None
         current_agent_id = None
@@ -443,11 +443,11 @@ class PersistedAgentEventEntity(Document):
     def get_event_timeseries(
         cls,
         time_range: TimeRange,
-        thread_id: Optional[ObjectId] = None,
-        agent_id: Optional[ObjectId] = None,
-        agent_class: Optional[str] = None,
-        event_name: Optional[str] = None,
-    ) -> Tuple[List[EventBucket], datetime, datetime, Resolution]:
+        thread_id: ObjectId | None = None,
+        agent_id: ObjectId | None = None,
+        agent_class: str | None = None,
+        event_name: str | None = None,
+    ) -> tuple[list[EventBucket], datetime, datetime, Resolution]:
         """
         Uses MongoDB aggregation to calculate time-based statistics for a thread or agent.
         Counts total events, optionally filtered by a specific event_name.
@@ -457,7 +457,7 @@ class PersistedAgentEventEntity(Document):
         """
         config = TIME_RANGE_CONFIG.get(time_range)
 
-        current_utc_time = datetime.now(timezone.utc)
+        current_utc_time = datetime.now(UTC)
         if config.align_to_end_of_day:
             end_time_boundary = current_utc_time.replace(hour=23, minute=59, second=59, microsecond=999999)
         else:
@@ -468,7 +468,7 @@ class PersistedAgentEventEntity(Document):
             start_time = current_utc_time - config.delta
             end_time_boundary = current_utc_time
 
-        match_filter: Dict[str, Any] = {
+        match_filter: dict[str, Any] = {
             "event_data.created_at": {
                 "$gte": int(start_time.timestamp() * 1e9),
                 "$lte": int(end_time_boundary.timestamp() * 1e9),
@@ -485,7 +485,7 @@ class PersistedAgentEventEntity(Document):
         if event_name:
             match_filter["event_parents"] = event_name
 
-        pipeline: List[Dict[str, Any]] = [
+        pipeline: list[dict[str, Any]] = [
             # 1. Match events based on primary criteria
             {"$match": match_filter},
             # 2. Add a standardized BSON date field
@@ -541,11 +541,11 @@ class PersistedAgentEventEntity(Document):
 
         for result in results:
             if result["start_time"].tzinfo is None:
-                result["start_time"] = result["start_time"].replace(tzinfo=timezone.utc)
+                result["start_time"] = result["start_time"].replace(tzinfo=UTC)
             if result["end_time"].tzinfo is None:
-                result["end_time"] = result["end_time"].replace(tzinfo=timezone.utc)
+                result["end_time"] = result["end_time"].replace(tzinfo=UTC)
 
-        filled_results: List[EventBucket] = []
+        filled_results: list[EventBucket] = []
         current_loop_time = start_time
 
         if config.interval_seconds >= 3600:
@@ -584,14 +584,16 @@ class PersistedAgentEventEntity(Document):
                     )
 
             current_loop_time = current_bucket_end_time
-            # Safety break for the unlikely event that 'end_time_boundary' isn't reached due to floating point issues with many small intervals
+            # Safety break for the unlikely event that 'end_time_boundary' isn't reached
+            # due to floating point issues with many small intervals
             if (
                 len(filled_results) > ((end_time_boundary - start_time).total_seconds() / config.interval_seconds) + 10
                 and config.interval_seconds > 0
             ):
                 # This condition suggests we've created significantly more buckets than expected
                 logger.warning(
-                    f"Exiting fill loop early due to excessive bucket count. Current loop time: {current_loop_time}, end_time_boundary: {end_time_boundary}"
+                    f"Exiting fill loop early due to excessive bucket count. Current loop time: "
+                    f"{current_loop_time}, end_time_boundary: {end_time_boundary}"
                 )
                 break
 

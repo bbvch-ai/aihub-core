@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional
 
 from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
@@ -21,7 +20,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 
-DEFAULT_DOCUMENTS: List[Document] = [
+DEFAULT_DOCUMENTS: list[Document] = [
     Document(
         text="AI is crazy. It stands for artificial insanity.",
         metadata={
@@ -68,7 +67,7 @@ def fill_collection(
     embed_model: SelfHostedEmbeddingConfig,
     vector_store: MilvusVectorStore,
     doc_store: MongoDocumentStore,
-    nodes: Optional[List[TextNode]] = None,
+    nodes: list[TextNode] | None = None,
 ):
     embeddings, _ = embed_model.to_llama_index(model_parameter=None)
 

@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
@@ -15,9 +15,9 @@ from aihub_process.process.annotations.extractors.extract_function_process_out_e
 
 def process_step(
     *,
-    name: Annotated[Optional[LocaleString], "A localized name for the step"] = None,
-    icon: Annotated[Optional[str], "An icon name for the step"] = None,
-    description: Annotated[Optional[LocaleString], "A localized description of what the step does"] = None,
+    name: Annotated[LocaleString | None, "A localized name for the step"] = None,
+    icon: Annotated[str | None, "An icon name for the step"] = None,
+    description: Annotated[LocaleString | None, "A localized description of what the step does"] = None,
 ):
     """
     Decorator that marks a function as a process step, attaching metadata and analyzing its event inputs.
