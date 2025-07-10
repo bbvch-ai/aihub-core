@@ -89,6 +89,7 @@ class ProcessService:
                 process_config=ProcessConfigDTO.from_process_config(event.process_config, t),
                 human_inputs=event.human_inputs,
                 program_inputs=event.program_inputs,
+                agent_inputs=event.agent_inputs,
                 is_online=True,
             )
             ProcessEntity.create_or_update_from_dto(process_dto)

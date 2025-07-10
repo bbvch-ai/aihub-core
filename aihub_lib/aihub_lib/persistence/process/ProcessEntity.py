@@ -14,14 +14,14 @@ from mongoengine import (
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
 
 
-class ProcessInSpec(EmbeddedDocument):
+class ProgramInSpecsEntity(EmbeddedDocument):
     route = StringField(required=True)
     method = StringField(required=True)
     is_process_start = BooleanField(required=True)
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_dto(cls, process_in_dto) -> "ProcessInSpec":
+    def from_dto(cls, process_in_dto) -> "ProgramInSpecsEntity":
         return cls(
             route=process_in_dto.route,
             method=process_in_dto.method,
@@ -29,6 +29,35 @@ class ProcessInSpec(EmbeddedDocument):
             event_specs=EventSpec.from_dto(process_in_dto.event_specs),
         )
 
+class HumanInSpecsEntity(EmbeddedDocument):
+    route = StringField(required=True)
+    method = StringField(required=True)
+    is_process_start = BooleanField(required=True)
+    event_specs = EmbeddedDocumentField(EventSpec, required=True)
+
+    @classmethod
+    def from_dto(cls, process_in_dto) -> "HumanInSpecsEntity":
+        return cls(
+            route=process_in_dto.route,
+            method=process_in_dto.method,
+            is_process_start=process_in_dto.is_process_start,
+            event_specs=EventSpec.from_dto(process_in_dto.event_specs),
+        )
+
+class AgentInSpecsEntity(EmbeddedDocument):
+    agent_class = StringField(required=True)
+    agent_id = StringField(required=True)
+    is_process_start = BooleanField(required=True)
+    event_specs = EmbeddedDocumentField(EventSpec, required=True)
+
+    @classmethod
+    def from_dto(cls, process_in_dto) -> "AgentInSpecsEntity":
+        return cls(
+            agent_class=process_in_dto.agent_class,
+            agent_id=process_in_dto.agent_id,
+            is_process_start=process_in_dto.is_process_start,
+            event_specs=EventSpec.from_dto(process_in_dto.event_specs),
+        )
 
 class ProcessConfig(EmbeddedDocument):
     process_id = StringField(required=False)
@@ -46,8 +75,9 @@ class ProcessEntity(Document):
     process_class = StringField(required=True)
     process_id = StringField(required=True)
     process_config = EmbeddedDocumentField(ProcessConfig, required=True)
-    human_inputs = ListField(EmbeddedDocumentField(ProcessInSpec))      # TODO: Make required
-    program_inputs = ListField(EmbeddedDocumentField(ProcessInSpec))    # TODO: Make required
+    human_inputs = ListField(EmbeddedDocumentField(HumanInSpecsEntity), default=list)
+    program_inputs = ListField(EmbeddedDocumentField(ProgramInSpecsEntity), default=list)
+    agent_inputs = ListField(EmbeddedDocumentField(AgentInSpecsEntity), default=list)
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
@@ -57,8 +87,9 @@ class ProcessEntity(Document):
         process_class: str,
         process_id: str,
         process_config: ProcessConfig,
-        human_inputs: list[ProcessInSpec],
-        program_inputs: list[ProcessInSpec],
+        human_inputs: list[HumanInSpecsEntity],
+        program_inputs: list[ProgramInSpecsEntity],
+        agent_inputs: list[AgentInSpecsEntity],
         process_entity_id: ObjectId | None = None,
     ) -> "ProcessEntity":
         process = cls(
@@ -67,6 +98,7 @@ class ProcessEntity(Document):
             process_id=process_id,
             process_config=process_config,
             human_inputs=human_inputs,
+            agent_inputs=agent_inputs,
             program_inputs=program_inputs,
             first_discovered=datetime.now(),
             last_discovered=datetime.now(),
@@ -86,14 +118,16 @@ class ProcessEntity(Document):
         )
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
-        human_inputs = [ProcessInSpec.from_dto(process_in_dto) for process_in_dto in process_dto.human_inputs]
-        program_inputs = [ProcessInSpec.from_dto(process_in_dto) for process_in_dto in process_dto.program_inputs]
+        human_inputs = [HumanInSpecsEntity.from_dto(human_in_dto) for human_in_dto in process_dto.human_inputs]
+        program_inputs = [ProgramInSpecsEntity.from_dto(program_in_dto) for program_in_dto in process_dto.program_inputs]
+        agent_inputs = [AgentInSpecsEntity.from_dto(agent_in_dto) for agent_in_dto in process_dto.agent_inputs]
 
         if existing_process:
             # Update existing process
             existing_process.process_config = process_config
             existing_process.human_inputs = human_inputs
             existing_process.program_inputs = program_inputs
+            existing_process.agent_inputs = agent_inputs
             existing_process.last_discovered = datetime.now()
             existing_process.save()
             return existing_process
@@ -105,6 +139,7 @@ class ProcessEntity(Document):
                 process_config=process_config,
                 human_inputs=human_inputs,
                 program_inputs=program_inputs,
+                agent_inputs=agent_inputs,
             )
 
     @classmethod

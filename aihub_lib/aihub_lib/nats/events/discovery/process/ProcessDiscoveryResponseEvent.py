@@ -7,12 +7,23 @@ from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 
-class ProcessInSpecs(BaseModel):
+class ProgramInSpecs(BaseModel):
     route: Annotated[str, Field(description="The route of the work event.")]
     method: Annotated[str, Field(description="The HTTP method of the work event.")]
     is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
+class HumanInSpecs(BaseModel):
+    route: Annotated[str, Field(description="The route of the work event.")]
+    method: Annotated[str, Field(description="The HTTP method of the work event.")]
+    is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
+    event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
+
+class AgentInSpecs(BaseModel):
+    agent_class: Annotated[str, Field(description="The class or category of the agent.")]
+    agent_id: Annotated[str, Field(description="A unique identifier for the agent instance.")]
+    is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
+    event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
 class ProcessDiscoveryResponseEvent(BaseEvent):
     """
@@ -35,8 +46,11 @@ class ProcessDiscoveryResponseEvent(BaseEvent):
     process_id: Annotated[str, Field(description="A unique identifier for the process instance.")]
     process_config: Annotated[ProcessConfig, Field(description="Configuration for the process instance.")]
     human_inputs: Annotated[
-        list[ProcessInSpecs], Field(description="List of human work events that the process can receive.")
+        list[HumanInSpecs], Field(description="List of human work events that the process can receive.")
     ]
     program_inputs: Annotated[
-        list[ProcessInSpecs], Field(description="List of program work events that the process can receive.")
+        list[ProgramInSpecs], Field(description="List of program work events that the process can receive.")
+    ]
+    agent_inputs: Annotated[
+        list[AgentInSpecs], Field(description="List of agent work events that the process can receive.")
     ]

@@ -2,8 +2,11 @@ import asyncio
 import logging
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.nats.events import ProcessStartEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
+from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent, \
+    ProcessInSpecs, HumanInSpecs, ProgramInSpecs, AgentInSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -89,12 +92,43 @@ class ProcessRunner:
         logger.debug(f"Received discovery request for {topic.process_class} with id {topic.process_id}.")
         subject = self.topic_manager.get_process_discovery_subject_response(topic.call_id)
 
+        human_inputs: list[HumanInSpecs] = [
+            HumanInSpecs(
+                route=human_in.route,
+                method=human_in.method,
+                is_process_start=issubclass(human_work_event, ProcessStartEvent),
+                event_specs=EventSpecs.from_event_class(human_work_event)
+            )
+            for human_work_event, human_in in self.process_type.get_events_with_human_in()
+        ]
+
+        program_inputs: list[ProgramInSpecs] = [
+            ProgramInSpecs(
+                route=process_in.route,
+                method=process_in.method,
+                is_process_start=issubclass(process_work_event, ProcessStartEvent),
+                event_specs=EventSpecs.from_event_class(process_work_event)
+            )
+            for process_work_event, process_in in self.process_type.get_events_with_process_in()
+        ]
+
+        agent_inputs: list[AgentInSpecs] = [
+            AgentInSpecs(
+                agent_class=agent_in.agent_class,
+                agent_id=agent_in.agent_id,
+                is_process_start=issubclass(agent_work_event, ProcessStartEvent),
+                event_specs=EventSpecs.from_event_class(agent_work_event)
+            )
+            for agent_work_event, agent_in in self.process_type.get_events_with_agent_in()
+        ]
+
         process_discovery_response_event = ProcessDiscoveryResponseEvent(
             process_class=self.process_class,
             process_id=self.process_config.process_id,
             process_config=self.process_config,
-            human_inputs=[],    # TODO: Derrive from process
-            program_inputs=[],  # TODO: Derrive from process
+            human_inputs=human_inputs,
+            program_inputs=program_inputs,
+            agent_inputs=agent_inputs,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
