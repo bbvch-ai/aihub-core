@@ -71,11 +71,21 @@ class AgentDTO(MinimalAgentDTO):
         agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
 
         start_events = [
-            EventSpecs(event_name=event.event_name, event_schema=event.event_schema) for event in entity.start_events
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema,
+                event_parents=event.event_parents,
+            )
+            for event in entity.start_events
         ]
 
         stop_events = [
-            EventSpecs(event_name=event.event_name, event_schema=event.event_schema) for event in entity.stop_events
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema,
+                event_parents=event.event_parents,
+            )
+            for event in entity.stop_events
         ]
 
         network_graph = WorkflowGraph.model_validate(entity.network_graph)

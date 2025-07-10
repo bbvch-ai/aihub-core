@@ -103,12 +103,8 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [
-            EventSpecs(event_name=StartEvent.event_name_from_class(), event_schema=StartEvent.model_json_schema())
-        ]
-        stop_events = [
-            EventSpecs(event_name=StopEvent.event_name_from_class(), event_schema=StopEvent.model_json_schema())
-        ]
+        start_events = [EventSpecs.from_event_class(StartEvent)]
+        stop_events = [EventSpecs.from_event_class(StopEvent)]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,

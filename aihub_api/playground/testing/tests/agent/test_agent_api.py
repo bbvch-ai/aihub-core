@@ -6,11 +6,12 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
+from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
+from stringcase import snakecase
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.routes.agent.AgentController import AgentController
@@ -23,18 +24,7 @@ AGENT_ID = "test_agent_1"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def agent_api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    controller = (
-        AgentController(auth=auth)
-        .discover_agents()
-        .get_agents()
-        .get_agent()
-        .send_event_to(
-            AGENT_CLASS,
-            AGENT_ID,
-            start_event_class=UserMessageEvent,
-            stop_event_class=LLMStopEvent,
-        )
-    )
+    controller = AgentController(auth=auth).discover_agents().get_agents().get_agent()
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()
@@ -72,13 +62,14 @@ async def test_get_agent(agent_api_client):
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
-    """Test POST /agent/{agent_class}/{agent_id}/send_event returns correct agent details."""
+    """Test POST /agent/{agent_class}/{agent_id}/{event_name} returns correct agent details."""
     user_message = EventModelCreationService.create_input_model(UserMessageEvent)(
         messages=[ChatMessage(role="user", content="Hey!")]
     )
-    print(user_message.model_dump_json())
+    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{snakecase(UserMessageEvent.event_name_from_class())}"
     response = await agent_api_client.post(
-        f"/agents/{AGENT_CLASS}/{AGENT_ID}/send_event", content=user_message.model_dump_json()
+        url=path,
+        content=user_message.model_dump_json(),
     )
     assert response.status_code == 200, f"Response: {response.text}"
 
@@ -86,4 +77,4 @@ async def test_send_event_to_agent(agent_api_client):
     assert data.get("output_messages")
     assert len(data.get("output_messages")) == 1
     assert data.get("output_messages")[0].get("role") == "assistant"
-    assert data.get("output_messages")[0].get("content") == "First chunk.\nSecond chunk"
+    assert data.get("output_messages")[0].get("contents")[0].get("text") == "First chunk.\nSecond chunk"

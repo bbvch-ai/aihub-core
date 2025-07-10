@@ -10,6 +10,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
+from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,10 @@ class ApiRunner(Runner):
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
         super().mount(*controllers)
+
+        for controller in controllers:
+            if isinstance(controller, AgentController):
+                self._api_app.state.agent_controller = controller
 
         self._api_app.openapi_tags = [
             {
