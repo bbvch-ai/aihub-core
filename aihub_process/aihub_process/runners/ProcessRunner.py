@@ -11,6 +11,7 @@ from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent impor
     ProcessDiscoveryResponseEvent,
     ProgramInSpecs,
 )
+from aihub_lib.nats.events.work_request.human.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -101,7 +102,9 @@ class ProcessRunner:
                 route=human_in.route,
                 method=human_in.method,
                 is_process_start=issubclass(human_work_event, ProcessStartEvent),
-                event_specs=EventSpecs.from_event_class(human_work_event),
+                event_specs=EventSpecs.from_event_class(
+                    FormkitElement.remove_formkit_elements(human_work_event)
+                ),
             )
             for human_work_event, human_in in self.process_type.get_events_with_human_in()
         ]
