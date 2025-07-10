@@ -83,20 +83,42 @@ class AgentDiscoveryService:
             await asyncio.sleep(self.discovery_interval)
 
     async def _discover_and_register_agents(self):
-        agents: list[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
+        # Step 1: Discover which agent classes are online
+        online_agents: list[AgentDTO] = await AgentService.discover_agents(self.nc, self.locale_handler)
+        online_agent_classes = set(agent.agent_class for agent in online_agents)
 
+        # Step 2: Get all configured agent instances from database
+        configured_agents = []
+        for agent_class in online_agent_classes:
+            configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+            for config in configs:
+                # Find the base agent info (start_events, stop_events) for this class
+                base_agent = next((agent for agent in online_agents if agent.agent_class == agent_class), None)
+                if base_agent:
+                    configured_agents.append(
+                        (
+                            agent_class,
+                            config.config_id,
+                            base_agent.start_events,
+                            base_agent.stop_events,
+                            config.config_data,
+                        )
+                    )
+
+        # Step 3: Deregister old endpoints
         for registered_agent_class, registered_agent_id in list(self.registered_agents):
             self._deregister_agent_endpoints(registered_agent_class, registered_agent_id)
 
         self.app.openapi_schema = None
 
-        for agent in agents:
-            agent_key = (agent.agent_class, agent.agent_id)
+        # Step 4: Register new endpoints for configured agents
+        for agent_class, config_id, start_events, stop_events, config_data in configured_agents:
+            agent_key = (agent_class, config_id)
 
-            self._register_agent_endpoints(agent.agent_class, agent.agent_id, agent.start_events, agent.stop_events)
+            self._register_agent_endpoints(agent_class, config_id, start_events, stop_events, config_data)
 
             self.registered_agents.add(agent_key)
-            logger.info(f"Registered endpoints for agent: {agent.agent_class}.{agent.agent_id}")
+            logger.info(f"Registered endpoints for configured agent: {agent_class}.{config_id}")
 
     def _get_agent_endpoint_names(self, agent_class: str, agent_id: str) -> tuple[str, str, str]:
         agent_class_name = snakecase(agent_class)
@@ -116,7 +138,12 @@ class AgentDiscoveryService:
         self.registered_agents.discard((agent_class, agent_id))
 
     def _register_agent_endpoints(
-        self, agent_class: str, agent_id: str, start_events: list[EventSpecs], stop_events: list[EventSpecs]
+        self,
+        agent_class: str,
+        agent_id: str,
+        start_events: list[EventSpecs],
+        stop_events: list[EventSpecs],
+        config_data: dict = None,
     ):
         agent_class_name, agent_id_snake, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
 
@@ -146,6 +173,7 @@ class AgentDiscoveryService:
                     agent_class=agent_class,
                     agent_id=agent_id,
                     agent_controller=self.agent_controller,
+                    config_data=config_data,
                 ),
                 methods=["POST"],
                 name=endpoint_name,
@@ -162,6 +190,7 @@ class AgentDiscoveryService:
         agent_class: str,
         agent_id: str,
         agent_controller: AgentController,
+        config_data: dict = None,
     ):
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
@@ -197,6 +226,7 @@ class AgentDiscoveryService:
                 **start_event_input.model_dump(),
                 "locale": t.locale,
                 "_parent_event_names": start_event_parents,
+                "agent_config_data": config_data or {},
             }
             event: BaseEvent = BaseEvent.deserialize_event(json_data)
 

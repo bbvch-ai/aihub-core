@@ -15,6 +15,11 @@ from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent.dto.AgentConfigInstanceDTO import (
+    AgentConfigInstanceDTO,
+    CreateAgentConfigInstanceRequest,
+    UpdateAgentConfigInstanceRequest,
+)
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 
@@ -149,5 +154,90 @@ class AgentController(Controller):
             return PaginatedThreadsResponse(
                 threads=threads, total=total, page=page, page_size=page_size, total_pages=total_pages
             )
+
+        return self
+
+    def get_agent_configs(self, route: str = "/{agent_class}/configs") -> "AgentController":
+        @self.router.get(route, tags=self.tags)
+        async def get_agent_configs(
+            agent_class: str,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.config.read"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[AgentConfigInstanceDTO]:
+            """
+            Retrieve all configurations for a specific agent class.
+            """
+            return await AgentService.get_agent_configs(agent_class, t)
+
+        return self
+
+    def get_agent_config(self, route: str = "/{agent_class}/configs/{config_id}") -> "AgentController":
+        @self.router.get(route, tags=self.tags)
+        async def get_agent_config(
+            agent_class: str,
+            config_id: str,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.config.read"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> AgentConfigInstanceDTO:
+            """
+            Retrieve a specific configuration for an agent class.
+            """
+            return await AgentService.get_agent_config(agent_class, config_id, t)
+
+        return self
+
+    def create_agent_config(self, route: str = "/{agent_class}/configs") -> "AgentController":
+        @self.router.post(route, tags=self.tags, status_code=201)
+        async def create_agent_config(
+            agent_class: str,
+            request: CreateAgentConfigInstanceRequest,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.config.write"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> AgentConfigInstanceDTO:
+            """
+            Create a new configuration for an agent class.
+            """
+            return await AgentService.create_agent_config(agent_class, request, t)
+
+        return self
+
+    def update_agent_config(self, route: str = "/{agent_class}/configs/{config_id}") -> "AgentController":
+        @self.router.put(route, tags=self.tags)
+        async def update_agent_config(
+            agent_class: str,
+            config_id: str,
+            request: UpdateAgentConfigInstanceRequest,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.config.write"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> AgentConfigInstanceDTO:
+            """
+            Update an existing configuration for an agent class.
+            """
+            return await AgentService.update_agent_config(agent_class, config_id, request, t)
+
+        return self
+
+    def delete_agent_config(self, route: str = "/{agent_class}/configs/{config_id}") -> "AgentController":
+        @self.router.delete(route, tags=self.tags, status_code=204)
+        async def delete_agent_config(
+            agent_class: str,
+            config_id: str,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.config.write"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> None:
+            """
+            Delete a configuration for an agent class.
+            """
+            await AgentService.delete_agent_config(agent_class, config_id, t)
 
         return self

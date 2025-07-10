@@ -102,6 +102,10 @@ class AgentDispatcher(BaseDispatcher):
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
+            # Store agent configuration data separately for easy access
+            if hasattr(event, "agent_config_data") and event.agent_config_data:
+                await run_context.set("agent_config_data", event.agent_config_data)
+
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
             # Clean up run-specific data
@@ -318,6 +322,9 @@ class AgentDispatcher(BaseDispatcher):
         step_signature = inspect.signature(method)
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
 
+        # Get dynamic configuration data from run context
+        agent_config_data = await run_context.get("agent_config_data", {})
+
         # Prepare arguments
         for param in step_signature.parameters.values():
             # Handle special configurations injected by agent_config.get_step_configs()
@@ -325,9 +332,24 @@ class AgentDispatcher(BaseDispatcher):
                 events_and_kwargs.kwargs[param.name] = self.step_configs[param.annotation]
                 continue
 
-            # Handle AgentConfig if requested
+            # Handle AgentConfig if requested - create instance from dynamic config data
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-                events_and_kwargs.kwargs[param.name] = self.agent_config
+                if agent_config_data:
+                    # Create a new instance of the specific AgentConfig class with dynamic data
+                    try:
+                        dynamic_config = param.annotation(**agent_config_data)
+                        events_and_kwargs.kwargs[param.name] = dynamic_config
+                        logger.debug(
+                            f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to create dynamic config for {param.annotation.__name__}: {e}. Using default config."
+                        )
+                        events_and_kwargs.kwargs[param.name] = self.agent_config
+                else:
+                    # Fallback to default config if no dynamic data available
+                    events_and_kwargs.kwargs[param.name] = self.agent_config
                 continue
 
             # Handle RunContext / ThreadContext

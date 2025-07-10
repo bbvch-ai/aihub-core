@@ -1,5 +1,7 @@
 from typing import Any
 
+from pydantic import Field
+
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
@@ -15,6 +17,10 @@ class StartEvent(ControlAndDisplayEvent):
     By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
     """
+
+    agent_config_data: dict[str, Any] = Field(
+        default_factory=dict, description="A dictionary representing the agent's specific configuration for this run."
+    )
 
     def to_context_dict(self) -> dict[str, Any]:
         """
