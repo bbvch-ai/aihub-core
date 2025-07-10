@@ -2,11 +2,11 @@ from types import UnionType
 from typing import get_args, get_origin
 
 import pytest
-
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs, AgentDiscoveryResponseEvent
+from aihub_lib.nats.events.BaseEvent import BaseEvent
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from pydantic import BaseModel
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
@@ -597,3 +597,121 @@ class TestSchemaValidation:
         event_spec_data = serialized["start_events"][0]
         assert "event_parents" in event_spec_data
         assert event_spec_data["event_parents"] == ["TestEvent"]
+
+    def test_base_event_deserialization_preserves_event_parents(self):
+        """Test that BaseEvent deserialization preserves the event_parents field"""
+        # Create a TestEvent instance
+        original_event = TestEvent(
+            test_field="test_value",
+            nested_model={"nested_field": "nested_value"},
+            union_field="test_union",
+            complex_union="test_complex",
+            list_of_nested=[],
+        )
+
+        # Serialize the event to a dictionary (like AgentDiscoveryService does)
+        serialized_data = original_event.model_dump()
+
+        # Deserialize using BaseEvent.deserialize_event with dict (like AgentDiscoveryService)
+        deserialized_event = BaseEvent.deserialize_event(serialized_data)
+
+        # Verify the deserialized event preserves the event_parents field
+        assert deserialized_event._event_name == "TestEvent"
+        assert deserialized_event._parent_event_names == ["TestEvent"]
+        assert deserialized_event._parent_event_names == original_event._parent_event_names
+
+        # Verify other fields are preserved
+        assert deserialized_event.test_field == "test_value"
+        assert deserialized_event.nested_model.nested_field == "nested_value"
+        assert deserialized_event.union_field == "test_union"
+        assert deserialized_event.complex_union == "test_complex"
+        assert len(deserialized_event.list_of_nested) == 0
+
+    def test_unknown_event_deserialization_preserves_event_parents(self):
+        """Test that unknown event deserialization preserves the event_parents field"""
+        # Create a dictionary representing an unknown event type with event_parents (like AgentDiscoveryService)
+        unknown_event_data = {
+            "_event_name": "UnknownTestEvent",
+            "event_id": "test_id_123",
+            "created_at": 1234567890,
+            "_parent_event_names": ["UnknownTestEvent", "SomeParentEvent", "BaseEvent"],
+            "custom_field": "custom_value",
+            "test_field": "test_value",
+        }
+
+        # Deserialize using BaseEvent.deserialize_event with dict (like AgentDiscoveryService)
+        deserialized_event = BaseEvent.deserialize_event(unknown_event_data)
+
+        # Verify the deserialized event preserves the event_parents field
+        assert deserialized_event._event_name == "UnknownTestEvent"
+        assert deserialized_event._parent_event_names == ["UnknownTestEvent", "SomeParentEvent", "BaseEvent"]
+
+        # Verify custom fields are preserved
+        assert deserialized_event.model_dump()["custom_field"] == "custom_value"
+        assert deserialized_event.model_dump()["test_field"] == "test_value"
+
+        # Verify the event ID and timestamp are preserved
+        assert deserialized_event.event_id == "test_id_123"
+        assert deserialized_event.created_at == 1234567890
+
+    def test_complete_event_chain_preserves_event_parents(self):
+        """Test the complete chain: TestEvent -> EventSpecs -> PydanticModel -> TestEvent"""
+        # Step 1: Create original TestEvent instance
+        original_event = TestEvent(
+            test_field="chain_test",
+            nested_model={"nested_field": "chain_nested", "nested_optional": 42},
+            union_field=123,
+            complex_union={"nested_field": "chain_complex"},
+            list_of_nested=[{"nested_field": "item1"}, {"nested_field": "item2"}],
+        )
+
+        # Step 2: Convert TestEvent to EventSpecs
+        event_specs = EventSpecs.from_event_class(TestEvent)
+
+        # Verify EventSpecs contains correct event_parents
+        assert event_specs.event_parents == ["TestEvent"]
+        assert event_specs.event_name == "TestEvent"
+
+        # Step 3: Create Pydantic input model from EventSpecs
+        input_model = EventModelCreationService.create_input_model_from_specs(event_specs)
+
+        # Step 4: Create input model instance from original event data
+        original_data = original_event.model_dump()
+        # Remove fields that are excluded from input models
+        excluded_fields = EventModelCreationService._input_excluded_fields
+        input_data = {k: v for k, v in original_data.items() if k not in excluded_fields}
+
+        input_instance = input_model(**input_data)
+
+        # Step 5: Convert back to full event data (simulate AgentDiscoveryService pattern)
+        full_event_data = {
+            "event_id": "chain_test_id",
+            "created_at": 1234567890,
+            "_event_name": "TestEvent",
+            "_parent_event_names": event_specs.event_parents,
+            **input_instance.model_dump(),
+        }
+
+        # Step 6: Deserialize using BaseEvent to get TestEvent back
+        final_event = BaseEvent.deserialize_event(full_event_data)
+
+        # Verify the complete chain preserved everything correctly
+        assert isinstance(final_event, TestEvent)
+        assert final_event._event_name == "TestEvent"
+        assert final_event._parent_event_names == ["TestEvent"]
+        assert final_event._parent_event_names == original_event._parent_event_names
+
+        # Verify all field values are preserved
+        assert final_event.test_field == "chain_test"
+        assert final_event.nested_model.nested_field == "chain_nested"
+        assert final_event.nested_model.nested_optional == 42
+        assert final_event.union_field == 123
+        assert final_event.complex_union.nested_field == "chain_complex"
+        assert len(final_event.list_of_nested) == 2
+        assert final_event.list_of_nested[0].nested_field == "item1"
+        assert final_event.list_of_nested[1].nested_field == "item2"
+
+        # Verify that the final event can be serialized/deserialized again
+        reserialized_data = final_event.model_dump()
+        final_deserialized = BaseEvent.deserialize_event(reserialized_data)
+        assert final_deserialized._parent_event_names == ["TestEvent"]
