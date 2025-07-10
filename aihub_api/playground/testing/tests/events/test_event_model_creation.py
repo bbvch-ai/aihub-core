@@ -2,7 +2,11 @@ from types import UnionType
 from typing import get_args, get_origin
 
 import pytest
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
+
+from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs, AgentDiscoveryResponseEvent
 from pydantic import BaseModel
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
@@ -551,3 +555,45 @@ class TestSchemaValidation:
         types = [item.get("type") for item in union_prop["anyOf"]]
         assert "string" in types
         assert "integer" in types
+
+    def test_event_parents_field_population(self, event_specs):
+        """Test that EventSpecs.event_parents contains the correct inheritance hierarchy"""
+        # TestEvent directly inherits from BaseEvent, so event_parents should contain only 'TestEvent'
+        assert event_specs.event_parents == ["TestEvent"]
+
+        # Verify it matches what the actual event instance would have
+        test_event_instance = TestEvent(
+            test_field="test",
+            nested_model={"nested_field": "nested"},
+            union_field="union",
+            complex_union="complex",
+            list_of_nested=[],
+        )
+        assert event_specs.event_parents == test_event_instance._parent_event_names
+
+    def test_agent_discovery_response_event_serialization(self, event_specs):
+        discovery_event = AgentDiscoveryResponseEvent(
+            agent_class="TestAgent",
+            agent_id="test_agent",
+            agent_config=AgentConfig(
+                agent_id="test_agent",
+                name=LocaleString(en="Test Agent"),
+                description=LocaleString(en="Test agent description"),
+                system_prompt=LocaleString(en="Test system prompt"),
+            ),
+            is_conversational=False,
+            start_events=[event_specs],
+            stop_events=[],
+            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+        )
+
+        # Serialize the event
+        serialized = discovery_event.model_dump()
+
+        # Verify the serialized event includes the event_parents field in start_events
+        assert "start_events" in serialized
+        assert len(serialized["start_events"]) == 1
+
+        event_spec_data = serialized["start_events"][0]
+        assert "event_parents" in event_spec_data
+        assert event_spec_data["event_parents"] == ["TestEvent"]
