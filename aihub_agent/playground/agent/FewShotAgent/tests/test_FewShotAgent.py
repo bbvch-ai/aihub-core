@@ -34,7 +34,7 @@ enable_logging()
 
 
 @pytest.fixture
-def agent_config_data():
+def _agent_config_data():
     """
     Stores all dynamic config items at the scenario level so they persist
     across steps in a single scenario.
@@ -77,7 +77,7 @@ def azure_llm_config():
 
 
 @given("I have an empty agent config")
-def given_empty_scenario_config(agent_config_data):
+def given_empty_scenario_config(_agent_config_data):
     """
     Just ensure scenario_data is initialized. (It's already done by the fixture, but
     we have a step for clarity.)
@@ -86,17 +86,17 @@ def given_empty_scenario_config(agent_config_data):
 
 
 @given(parsers.parse('the agent description is "{desc}"'))
-def given_agent_description(agent_config_data, desc: str):
-    agent_config_data["description"] = desc
+def given_agent_description(_agent_config_data, desc: str):
+    _agent_config_data["description"] = desc
 
 
 @given(parsers.parse('the few shot system prompt is "{prompt}"'))
-def given_few_shot_system_prompt(agent_config_data, prompt: str):
-    agent_config_data["few_shot_system_prompt"] = prompt
+def given_few_shot_system_prompt(_agent_config_data, prompt: str):
+    _agent_config_data["few_shot_system_prompt"] = prompt
 
 
 @given("the following few-shot examples:")
-def given_few_shot_examples(agent_config_data, datatable):
+def given_few_shot_examples(_agent_config_data, datatable):
     """
     Parse the table of few-shot examples from the feature and store them in the config.
     Example table rows:
@@ -106,25 +106,25 @@ def given_few_shot_examples(agent_config_data, datatable):
     """
     for row in datatable[1:]:
         user_text, agent_text = row
-        agent_config_data["few_shot_examples"].append({"user": user_text, "agent": agent_text})
+        _agent_config_data["few_shot_examples"].append({"user": user_text, "agent": agent_text})
 
 
 @pytest.mark.usefixtures("azure_agent_config")
 @given("I create a FewShotAgent runner with the config with valid azure configuration", target_fixture="agent_runner")
-def _(agent_config_data, azure_llm_config):
+def _(_agent_config_data, azure_llm_config):
     """
     Finally build the actual AgentTestRunner now that we have
     description, system prompt, and examples in scenario_data.
     """
     examples = [
         FewShotExample(user=LocaleString(en=example["user"]), agent=LocaleString(en=example["agent"]))
-        for example in agent_config_data["few_shot_examples"]
+        for example in _agent_config_data["few_shot_examples"]
     ]
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
         name=LocaleString(en="FewShotAgent"),
-        description=LocaleString(en=agent_config_data["description"]),
+        description=LocaleString(en=_agent_config_data["description"]),
         system_prompt=LocaleString(en="You're an agent..."),
         llm=azure_llm_config,
         number_of_input_tokens=100000,
@@ -137,7 +137,7 @@ def _(agent_config_data, azure_llm_config):
         ),
         few_shot=FewShotStepConfig(
             few_shot_examples=examples,
-            few_shot_system_prompt=LocaleString(en=agent_config_data["few_shot_system_prompt"]),
+            few_shot_system_prompt=LocaleString(en=_agent_config_data["few_shot_system_prompt"]),
         ),
     )
 
@@ -148,20 +148,20 @@ def _(agent_config_data, azure_llm_config):
 @given(
     "I create a FewShotAgent runner with the config with valid self hosted configuration", target_fixture="agent_runner"
 )
-def _(agent_config_data, self_hosted_llm_config):
+def _(_agent_config_data, self_hosted_llm_config):
     """
     Finally build the actual AgentTestRunner now that we have
     description, system prompt, and examples in scenario_data.
     """
     examples = [
         FewShotExample(user=LocaleString(en=example["user"]), agent=LocaleString(en=example["agent"]))
-        for example in agent_config_data["few_shot_examples"]
+        for example in _agent_config_data["few_shot_examples"]
     ]
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
         name=LocaleString(en="FewShotAgent"),
-        description=LocaleString(en=agent_config_data["description"]),
+        description=LocaleString(en=_agent_config_data["description"]),
         system_prompt=LocaleString(en="You're an agent..."),
         llm=self_hosted_llm_config,
         number_of_input_tokens=100000,
@@ -174,7 +174,7 @@ def _(agent_config_data, self_hosted_llm_config):
         ),
         few_shot=FewShotStepConfig(
             few_shot_examples=examples,
-            few_shot_system_prompt=LocaleString(en=agent_config_data["few_shot_system_prompt"]),
+            few_shot_system_prompt=LocaleString(en=_agent_config_data["few_shot_system_prompt"]),
         ),
     )
 

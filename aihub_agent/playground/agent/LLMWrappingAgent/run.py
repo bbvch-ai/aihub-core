@@ -17,20 +17,6 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=LLMWrappingAgent,
-        agent_config=LLMWrappingAgentConfig(
-            agent_id="dev_agent",
-            name=LocaleString(en="Dev Agent"),
-            description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
-            llm=AzureOpenAILLMConfig(
-                name="gpt-4o",
-                base_url="https://aihub-dev-openai-che.openai.azure.com/",
-                api_version="2024-12-01-preview",
-                prompt_tokens_costs_per_thousand=0.0045,
-                completion_tokens_costs_per_thousand=0.0133,
-                default_parameter=AzureOpenAIParameter(temperature=0.0),
-            ),
-        ),
     )
 
     await runner.run_forever()

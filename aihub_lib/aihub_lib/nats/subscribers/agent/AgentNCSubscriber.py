@@ -2,7 +2,7 @@ from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, DiscoveryRequestEvent, DisplayEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent, InstanceDiscoveryRequestEvent, DisplayEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -64,7 +64,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[DiscoveryRequestEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[InstanceDiscoveryRequestEvent, AgentTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for agents, optionally filtered by a specific call_id."""
@@ -72,7 +72,7 @@ class AgentNCSubscriber(NCSubscriber):
         return cls(
             nc=nc,
             subject=subject,
-            event_cls=DiscoveryRequestEvent,
+            event_cls=InstanceDiscoveryRequestEvent,
             handler=handler,
         )
 

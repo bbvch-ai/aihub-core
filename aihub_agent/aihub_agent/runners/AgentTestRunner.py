@@ -5,7 +5,7 @@ from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
+from aihub_lib.nats.events import AgentInstanceDiscoveryResponseEvent, BaseEvent, InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -45,14 +45,12 @@ class AgentTestRunner(AgentRunner):
     def __init__(
         self,
         agent_type: type[Agent],
-        agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
             redis_url=RedisConfig().REDIS_URL,
             agent_type=agent_type,
-            agent_config=agent_config,
             locale_paths=locale_paths,
         )
         self.test_event_subscriber: JSSubscriber | None = None
@@ -170,13 +168,13 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_discovery_request_event(self) -> bool:
         """Check if a DiscoveryRequestEvent was observed."""
-        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+        return any(isinstance(event.event, InstanceDiscoveryRequestEvent) for event in self.observed_events)
 
     @property
     def has_own_agent_discovery_response_event(self) -> bool:
         """Check if an AgentDiscoveryResponseEvent with the agent's class and ID was observed."""
         return any(
-            isinstance(event.event, AgentDiscoveryResponseEvent)
+            isinstance(event.event, AgentInstanceDiscoveryResponseEvent)
             and event.event.agent_class == self.agent_class
             and event.event.agent_id == self.agent_config.agent_id
             for event in self.observed_events

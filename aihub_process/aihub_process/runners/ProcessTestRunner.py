@@ -6,7 +6,7 @@ from typing import Annotated
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import (
     BaseEvent,
-    DiscoveryRequestEvent,
+    InstanceDiscoveryRequestEvent,
     ProcessExceptionEvent,
     ProcessStartEvent,
     ProcessStopEvent,
@@ -135,7 +135,7 @@ class ProcessTestRunner(ProcessRunner):
     @property
     def has_discovery_request_event(self) -> bool:
         """Check if a DiscoveryRequestEvent was observed."""
-        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+        return any(isinstance(event.event, InstanceDiscoveryRequestEvent) for event in self.observed_events)
 
     @property
     def has_own_process_discovery_response_event(self) -> bool:

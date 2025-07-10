@@ -2,13 +2,13 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
-from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -50,7 +50,6 @@ class AgentDispatcher(BaseDispatcher):
     def __init__(
         self,
         agent: Annotated[type[Agent], "The agent class defining steps and logic."],
-        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
@@ -62,13 +61,9 @@ class AgentDispatcher(BaseDispatcher):
     ):
         super().__init__(nc, js, redis, topic_manager, AgentTopic)
         self.agent = agent
-        self.agent_config = agent_config
         self.locale_handler = locale_handler
 
-        self.tracer = RunTraceCoordinator(
-            self.nc, project_name=locale_handler.extract_multi_locale(agent_config.name, "en")
-        )
-        self.step_configs = agent_config.get_step_configs()
+        self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__class__.__name__)
 
     @override
     async def handle_event(
@@ -88,10 +83,11 @@ class AgentDispatcher(BaseDispatcher):
         await super().handle_event(event, topic)
 
         # Retrieve contexts (run and thread)
-        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
+        run_context = RunContext(self.redis, topic.threadWhat_id, topic.run_id)
         thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if event.is_start_event:
+            event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
             telemetry_headers = self.tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
@@ -103,8 +99,8 @@ class AgentDispatcher(BaseDispatcher):
                 await run_context.set(key, value)
 
             # Store agent configuration data separately for easy access
-            if hasattr(event, "agent_config_data") and event.agent_config_data:
-                await run_context.set("agent_config_data", event.agent_config_data)
+            if hasattr(event, "_agent_config_data") and event.agent_config_data:
+                await run_context.set("_agent_config_data", event.agent_config_data)
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
@@ -323,7 +319,9 @@ class AgentDispatcher(BaseDispatcher):
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
 
         # Get dynamic configuration data from run context
-        agent_config_data = await run_context.get("agent_config_data", {})
+        agent_config_data = await run_context.get("_agent_config_data", None)
+        if agent_config_data is None:
+            raise ValueError("AgentConfig data is required for this step, but none was provided in the run context.")
 
         # Prepare arguments
         for param in step_signature.parameters.values():
@@ -336,20 +334,15 @@ class AgentDispatcher(BaseDispatcher):
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
                 if agent_config_data:
                     # Create a new instance of the specific AgentConfig class with dynamic data
-                    try:
-                        dynamic_config = param.annotation(**agent_config_data)
-                        events_and_kwargs.kwargs[param.name] = dynamic_config
-                        logger.debug(
-                            f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to create dynamic config for {param.annotation.__name__}: {e}. Using default config."
-                        )
-                        events_and_kwargs.kwargs[param.name] = self.agent_config
+                    dynamic_config = param.annotation(**agent_config_data)
+                    events_and_kwargs.kwargs[param.name] = dynamic_config
+                    logger.debug(
+                        f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+                    )
                 else:
-                    # Fallback to default config if no dynamic data available
-                    events_and_kwargs.kwargs[param.name] = self.agent_config
+                    raise ValueError(
+                        f"AgentConfig parameter '{param.name}' requires dynamic configuration data, but none was provided."
+                    )
                 continue
 
             # Handle RunContext / ThreadContext

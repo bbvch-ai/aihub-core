@@ -7,8 +7,10 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StopEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
+    AgentInstanceDiscoveryResponseEvent,
+)
+from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -120,7 +122,7 @@ class AgentService:
         agent_dto: AgentDTO | None = None
         agent_found_event = asyncio.Event()
 
-        async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
+        async def discovery_handler(event: AgentInstanceDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             nonlocal agent_dto
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
@@ -146,7 +148,8 @@ class AgentService:
 
         # Send discovery request for the specific agent
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(), subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
+            event=InstanceDiscoveryRequestEvent(),
+            subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id),
         )
 
         # Wait up to 1 second for response
@@ -176,7 +179,7 @@ class AgentService:
         call_id = str(ObjectId())
         discovery_responses = []
 
-        async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
+        async def discovery_handler(event: AgentInstanceDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             discovery_responses.append(event)
 
         topic_manager = AgentTopicManager()
@@ -188,7 +191,8 @@ class AgentService:
 
         # Broadcast the discovery request
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(), subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id)
+            event=InstanceDiscoveryRequestEvent(),
+            subject=topic_manager.get_agent_discovery_subject_request(call_id=call_id),
         )
 
         # Wait briefly for responses

@@ -4,7 +4,7 @@ import logging
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import StartEvent, UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
@@ -39,7 +39,6 @@ class AgentRunner:
         servers: list[str],
         redis_url: str,
         agent_type: type[Agent],
-        agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         if not isinstance(agent_type, type):
@@ -50,39 +49,33 @@ class AgentRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type
-        self.agent_config = agent_config
         self.running = False
         self._stop_signal = asyncio.Event()
 
         self.agent_class = self.agent_type.__name__
-        self.topic_manager = AgentInstanceTopicManager(self.agent_class, self.agent_config.agent_id)
+        self.topic_manager = AgentInstanceTopicManager(self.agent_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
 
         self.dispatcher: AgentDispatcher | None = None
 
-        self.discovery_event_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
         self.control_event_subscriber: JSSubscriber | None = None
         self.nc_publisher: NCPublisher[AgentDiscoveryResponseEvent] | None = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
         agent configuration as well as some carefully crafted event specifications.
         """
-        if topic.agent_class not in [self.agent_class, "*"] or topic.agent_id not in [
-            self.agent_config.agent_id,
-            "*",
-        ]:
-            logger.debug(
-                f"Discovery request for {topic.agent_class} with id {topic.agent_id} does not match this agent."
-            )
+        if topic.agent_class not in [self.agent_class, "*"]:
+            logger.debug(f"Discovery request for {topic.agent_class} does not match this agent.")
             return
 
-        logger.debug(f"Received discovery request for {topic.agent_class} with id {topic.agent_id}.")
+        logger.debug(f"Received discovery request for {topic.agent_class}.")
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
 
         start_events = self.agent_type.get_start_events()
@@ -96,9 +89,7 @@ class AgentRunner:
 
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
-            agent_id=self.agent_config.agent_id,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
-            agent_config=self.agent_config,
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             network_graph=network_graph.to_pydantic(),
@@ -126,7 +117,6 @@ class AgentRunner:
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
             self.agent_type,
-            self.agent_config,
             self.nc,
             self.js,
             self.redis,
@@ -147,7 +137,7 @@ class AgentRunner:
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
-            queue_group=f"agent_runner_{self.agent_class}_{self.agent_config.agent_id}",
+            queue_group=f"agent_runner_{self.agent_class}",
         )
         await self.control_event_subscriber.start()
 
@@ -189,7 +179,7 @@ class AgentRunner:
         Starts the agent and waits indefinitely (or until a stop event is triggered).
         Useful for production usage where the agent should run until manually stopped.
         """
-        logger.debug(f"Starting {self.agent_class}.{self.agent_config.agent_id}")
+        logger.debug(f"Starting {self.agent_class}")
         await self.start()
         try:
             await self._stop_signal.wait()

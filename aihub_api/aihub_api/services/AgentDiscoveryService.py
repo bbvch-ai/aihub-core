@@ -12,7 +12,7 @@ from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import EventSpecs
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
@@ -226,7 +226,7 @@ class AgentDiscoveryService:
                 **start_event_input.model_dump(),
                 "locale": t.locale,
                 "_parent_event_names": start_event_parents,
-                "agent_config_data": config_data or {},
+                "_agent_config_data": config_data or {},
             }
             event: BaseEvent = BaseEvent.deserialize_event(json_data)
 

@@ -35,7 +35,7 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
     def __init__(
         self,
         agent_class: Annotated[str, "Agent class identifier"],
-        agent_id: Annotated[str, "Unique agent instance ID"],
+        agent_id: Annotated[str, "Unique agent instance ID"] = "*",
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -188,4 +188,4 @@ class AgentInstanceTopicManager(AgentTopicManager, AbstractStreamTopicManager):
 
     def _get_stream_name_for_all_events(self) -> str:
         """Returns the stream name used for all agent events."""
-        return f"{self.AGENT_TOPIC}_{self.agent_class}_{self.agent_id}_stream"
+        return f"{self.AGENT_TOPIC}_{self.agent_class}_stream"

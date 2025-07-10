@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -66,13 +66,13 @@ class ProcessRunner:
         self.agent_delegator: AgentDelegator | None = None
         self.process_delegator: ProcessDelegator | None = None
 
-        self.discovery_event_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
         self.work_event_subscriber: JSSubscriber | None = None
         self.nc_publisher: NCPublisher[ProcessDiscoveryResponseEvent] | None = None
 
         self.locale_handler = ProcessLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: ProcessDiscoveryTopic):
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessDiscoveryTopic):
         """
         Responds to discovery requests by publishing a ProcessDiscoveryResponseEvent that includes the basic
         process configuration.

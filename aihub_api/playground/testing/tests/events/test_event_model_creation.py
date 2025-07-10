@@ -6,7 +6,10 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.BaseEvent import BaseEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
+    AgentInstanceDiscoveryResponseEvent,
+    EventSpecs,
+)
 from pydantic import BaseModel
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
@@ -572,7 +575,7 @@ class TestSchemaValidation:
         assert event_specs.event_parents == test_event_instance._parent_event_names
 
     def test_agent_discovery_response_event_serialization(self, event_specs):
-        discovery_event = AgentDiscoveryResponseEvent(
+        discovery_event = AgentInstanceDiscoveryResponseEvent(
             agent_class="TestAgent",
             agent_id="test_agent",
             agent_config=AgentConfig(

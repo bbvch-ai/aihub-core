@@ -1,48 +1,13 @@
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from aihub_lib.nats.events import BaseEvent
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 
 
-class EventSpecs(BaseModel):
-    """
-    Defines a specification for a start event that an agent can handle.
-    """
-
-    event_name: Annotated[
-        str,
-        Field(
-            description="The name of event (e.g., a particular ControlEvent subclass name) "
-            "that the agent can consume as a start event.",
-        ),
-    ]
-    event_schema: Annotated[
-        dict[str, Any],
-        Field(
-            description="A dictionary describing the schema of this start event, providing details about "
-            "expected fields and their types. This helps external consumers understand how to "
-            "construct and validate events for initiating the agent's workflow.",
-        ),
-    ]
-    event_parents: Annotated[
-        list[str],
-        Field(
-            description="A list of parent event names that this event is derived from, allowing for hierarchical event structures."
-        ),
-    ]
-
-    @classmethod
-    def from_event_class(cls, event_class: type[BaseEvent]):
-        return cls(
-            event_name=event_class.event_name_from_class(),
-            event_schema=event_class.model_json_schema(),
-            event_parents=event_class.parent_event_names_from_class(),
-        )
-
-
-class AgentDiscoveryResponseEvent(BaseEvent):
+class AgentInstanceDiscoveryResponseEvent(AgentDiscoveryResponseEvent):
     """
     A response event sent after an agent discovery request, detailing an agent's class, ID, configuration,
     and the set of start events it can handle.
@@ -61,6 +26,14 @@ class AgentDiscoveryResponseEvent(BaseEvent):
 
     agent_class: Annotated[
         str, Field(description="The class or category of the agent (e.g., a specific type of AI assistant).")
+    ]
+    agent_id: Annotated[str, Field(description="A unique identifier for the agent instance.")]
+    agent_config: Annotated[
+        AgentConfig,
+        Field(
+            description="The agent's configuration object, containing details like the model used, "
+            "temperature settings, or other domain-specific parameters.",
+        ),
     ]
     is_conversational: Annotated[
         bool, Field(description="Whether the agent can participate in a chat-based conversation")
