@@ -342,14 +342,16 @@ class BaseEvent(BaseModel):
             elif isinstance(value, BaseModel):
                 data[field_name] = value.model_dump()
             elif isinstance(value, list):
-                data[field_name] = [
-                    (
-                        serialize_chat_message_blocks(item)
-                        if isinstance(item, ChatMessage)
-                        else item.model_dump() if isinstance(item, BaseModel) else item
-                    )
-                    for item in value
-                ]
+
+                def item_dump(item):
+                    if isinstance(item, ChatMessage):
+                        return serialize_chat_message_blocks(item)
+                    elif isinstance(item, BaseModel):
+                        return item.model_dump()
+                    else:
+                        return item
+
+                data[field_name] = [item_dump(item) for item in value]
 
         if not self._unknown_data:
             return data
