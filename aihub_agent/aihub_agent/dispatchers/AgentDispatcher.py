@@ -65,6 +65,8 @@ class AgentDispatcher(BaseDispatcher):
 
         self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__class__.__name__)
         self.agent_config_type: type[AgentConfig] = agent.agent_config_type
+        if self.agent_config_type is None:
+            raise ValueError(f"Agent '{agent.__class__.__name__}' has no AgentConfig type.")
 
     @override
     async def handle_event(
