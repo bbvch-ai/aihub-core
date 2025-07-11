@@ -162,9 +162,6 @@ class Api(pulumi.ComponentResource):
             web.NameValuePairArgs(name="AUTHORITY_URL", value=self.config.authority_url),
         ]
 
-    def _get_additional_env_vars(self) -> List[web.NameValuePairArgs]:
+    def _get_additional_env_vars(self) -> list[web.NameValuePairArgs]:
         """Get additional environment variables from the config's additional_env_vars dict"""
-        return [
-            web.NameValuePairArgs(name=key, value=value)
-            for key, value in self.config.additional_env_vars.items()
-        ]
+        return [web.NameValuePairArgs(name=key, value=value) for key, value in self.config.additional_env_vars.items()]

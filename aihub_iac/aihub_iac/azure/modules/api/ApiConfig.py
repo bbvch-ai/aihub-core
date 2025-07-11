@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar,  Dict, Union
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -70,7 +70,7 @@ class ApiConfig(BaseConfig):
     version: Annotated[str, Field(description="Version of the API service")]
 
     additional_env_vars: Annotated[
-        Dict[str, Union[str, Dict[str, str]]],
+        dict[str, str | dict[str, str]],
         Field(
             description="Additional environment variables to pass to the api, can be plain values or secret references",
         ),
