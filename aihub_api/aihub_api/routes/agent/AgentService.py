@@ -19,7 +19,8 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentInstanceDiscoveryTopic import AgentInstanceDiscoveryTopic
 from aihub_lib.persistence.agents.AgentConfigInstanceEntity import AgentConfigInstanceEntity
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
@@ -188,7 +189,7 @@ class AgentService:
         agent_dto: AgentClassDTO | None = None
         agent_found_event = asyncio.Event()
 
-        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
+        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentClassDiscoveryTopic):
             nonlocal agent_dto
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
@@ -275,7 +276,7 @@ class AgentService:
         call_id = str(ObjectId())
         discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
 
-        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
+        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentClassDiscoveryTopic):
             discovery_responses.append(event)
 
         topic_manager = AgentTopicManager()

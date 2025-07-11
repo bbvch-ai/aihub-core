@@ -19,7 +19,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentInstanceDiscoveryTopic import AgentInstanceDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -100,7 +100,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.

@@ -33,7 +33,7 @@ from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics import AgentDiscoveryTopic
+from aihub_lib.nats.topics import AgentInstanceDiscoveryTopic
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class AgentDiscoveryService:
         self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
         self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
         agent configuration as well as some carefully crafted event specifications.

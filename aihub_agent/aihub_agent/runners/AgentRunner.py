@@ -19,7 +19,7 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -71,7 +71,7 @@ class AgentRunner:
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
         agent configuration as well as some carefully crafted event specifications.
