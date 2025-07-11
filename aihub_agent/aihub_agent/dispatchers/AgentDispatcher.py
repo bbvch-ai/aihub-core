@@ -64,7 +64,7 @@ class AgentDispatcher(BaseDispatcher):
         self.locale_handler = locale_handler
 
         self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__class__.__name__)
-        self.agent_config_type = agent.agent_config_type
+        self.agent_config_type: type[AgentConfig] = agent.agent_config_type
 
     @override
     async def handle_event(

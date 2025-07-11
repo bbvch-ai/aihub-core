@@ -7,6 +7,7 @@ from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDisc
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
     EventSpecs,
+    AgentConfigSpecs,
 )
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -91,8 +92,11 @@ class AgentRunner:
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
+        agent_config_specs = AgentConfigSpecs.from_agent_config_class(self.agent_type.agent_config_type)
+
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
+            agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             start_events=start_event_specs,
             stop_events=stop_event_specs,

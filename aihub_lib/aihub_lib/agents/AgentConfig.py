@@ -79,6 +79,10 @@ class AgentConfig(BaseModel):
         ),
     ]
 
+    @classmethod
+    def config_name_from_class(cls):
+        return cls.__name__
+
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """
         Scans all fields in this AgentConfig and collects any that are `StepConfig` instances.

@@ -2,6 +2,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events import BaseEvent
 
@@ -42,6 +43,32 @@ class EventSpecs(BaseModel):
         )
 
 
+class AgentConfigSpecs(BaseModel):
+    """
+    Defines a specification for an agent's configuration.
+    """
+
+    agent_config_name: Annotated[
+        str,
+        Field(description="The name of the agent configuration (e.g., 'LLMWrappingAgentConfig'). "),
+    ]
+    agent_config_schema: Annotated[
+        dict[str, Any],
+        Field(
+            description="A dictionary describing the schema of the agent configuration, providing details about "
+            "expected fields and their types. This helps external consumers understand how to "
+            "construct and validate agent configurations.",
+        ),
+    ]
+
+    @classmethod
+    def from_agent_config_class(cls, agent_config_class: type[AgentConfig]):
+        return cls(
+            agent_config_name=agent_config_class.config_name_from_class(),
+            agent_config_schema=agent_config_class.model_json_schema(),
+        )
+
+
 class AgentClassDiscoveryResponseEvent(BaseEvent):
     """
     A response event sent after an agent discovery request, detailing an agent's class, ID, configuration,
@@ -64,6 +91,13 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
     ]
     is_conversational: Annotated[
         bool, Field(description="Whether the agent can participate in a chat-based conversation")
+    ]
+    agent_config_specs: Annotated[
+        AgentConfigSpecs,
+        Field(
+            description="A specification of the agent's configuration, including its name and schema. "
+            "This helps consumers understand how to configure the agent.",
+        ),
     ]
     start_events: Annotated[
         list[EventSpecs],
