@@ -1,8 +1,8 @@
 from typing import Annotated
 
+from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from pydantic import Field
 
-from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 

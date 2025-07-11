@@ -218,7 +218,7 @@ class AgentService:
     @staticmethod
     async def send_event(
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         user: UserIdentity,
         start_event: BaseEvent,
         agent_class: str,
@@ -255,7 +255,7 @@ class AgentService:
             external_event=external_event,
             topic_manager=topic_manager,
             nc=nc,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
         )
 
         await resources.stop_signal.wait()

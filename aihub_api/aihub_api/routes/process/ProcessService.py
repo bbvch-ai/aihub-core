@@ -1,8 +1,11 @@
 import asyncio
 from asyncio import sleep
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import DiscoveryRequestEvent
+from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
+from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from aihub_lib.nats.events import DiscoveryRequestEvent, WorkEvent
 from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
@@ -45,7 +48,9 @@ class ProcessService:
         that are saved in the database.
         """
         discovered_processes = await ProcessService.discover_processes(nc, t)
-        saved_processes = [ProcessDTO.from_entity(process, t, is_online=False) for process in ProcessEntity.get_processes()]
+        saved_processes = [
+            ProcessDTO.from_entity(process, t, is_online=False) for process in ProcessEntity.get_processes()
+        ]
 
         all_processes = discovered_processes.copy()
         for saved_process in saved_processes:
@@ -177,3 +182,22 @@ class ProcessService:
             DISCOVER_PROCESS_CACHE[cache_key] = processes
 
         return processes
+
+    @staticmethod
+    async def send_event(
+        external_process_event_distributor: ExternalProcessEventDistributor,
+        user: UserIdentity,
+        work_event: WorkEvent,
+        process_class: str,
+        process_id: str,
+        process_walkthrough_id: str | None = None,
+    ) -> bool:
+        # TODO: Safe if it is only partial, and return False
+        external_event = ExternalProcessEvent(
+            process_class=process_class,
+            process_id=process_id,
+            process_walkthrough_id=process_walkthrough_id,
+            event=work_event,
+        )
+        await external_process_event_distributor.distribute_event(external_event, user)
+        return True

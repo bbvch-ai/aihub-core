@@ -1,3 +1,4 @@
+import copy
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
@@ -37,6 +38,6 @@ class EventSpecs(BaseModel):
     def from_event_class(cls, event_class: type[BaseEvent]):
         return cls(
             event_name=event_class.event_name_from_class(),
-            event_schema=event_class.model_json_schema(),
+            event_schema=copy.deepcopy(event_class.model_json_schema()),
             event_parents=event_class.parent_event_names_from_class(),
         )

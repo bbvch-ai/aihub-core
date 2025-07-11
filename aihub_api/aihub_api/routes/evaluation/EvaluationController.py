@@ -8,7 +8,9 @@ from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import Chat
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, HTTPException, Path, Security
@@ -173,8 +175,8 @@ class EvaluationController(Controller):
             create_dto: Annotated[ExperimentCreate, Body()],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             nats_client: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> Experiment:
@@ -188,7 +190,7 @@ class EvaluationController(Controller):
             return await EvaluationService.run_experiment_evaluation(
                 create_dto=create_dto,
                 nats_client=nats_client,
-                external_event_distributor=external_event_distributor,
+                external_agent_event_distributor=external_agent_event_distributor,
                 judge=self.judge,
                 authenticated_user=user,
                 t=t,

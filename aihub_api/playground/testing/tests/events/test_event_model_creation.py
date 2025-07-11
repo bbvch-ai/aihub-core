@@ -629,7 +629,8 @@ class TestSchemaValidation:
 
     def test_unknown_event_deserialization_preserves_event_parents(self):
         """Test that unknown event deserialization preserves the event_parents field"""
-        # Create a dictionary representing an unknown event type with event_parents (like AgentEndpointsDiscoveryService)
+        # Create a dictionary representing an unknown event type with event_parents
+        # (like AgentEndpointsDiscoveryService)
         unknown_event_data = {
             "_event_name": "UnknownTestEvent",
             "event_id": "test_id_123",

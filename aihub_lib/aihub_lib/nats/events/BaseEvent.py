@@ -155,6 +155,14 @@ class BaseEvent(BaseModel):
         return "WorkRequestEvent" in self._parent_event_names
 
     @property
+    def is_human_work_event(self) -> bool:
+        return "HumanWorkEvent" in self._parent_event_names
+
+    @property
+    def is_program_work_event(self) -> bool:
+        return "ProgramWorkEvent" in self._parent_event_names
+
+    @property
     def is_exception_event(self) -> bool:
         return "ExceptionEvent" in self._parent_event_names
 
@@ -333,7 +341,7 @@ class BaseEvent(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         data = super().model_dump(**kwargs)
-        for field_name, value in self.__dict__.items():
+        for field_name, value in data.items():
             if isinstance(value, ChatMessage):
                 data[field_name] = serialize_chat_message_blocks(value)
             elif isinstance(value, BaseModel):

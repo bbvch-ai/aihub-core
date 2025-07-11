@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from aihub_lib.nats.events.form.base.HtmlElement import HtmlElement
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 
@@ -22,6 +22,7 @@ class HumanInSpecs(BaseModel):
     is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
     form: Annotated[list[HtmlElement | InputTextElement], Field(description="Formkit elements of the work event.")] = []
+
 
 class AgentInSpecs(BaseModel):
     agent_class: Annotated[str, Field(description="The class or category of the agent.")]

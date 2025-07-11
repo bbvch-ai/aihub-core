@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import logging
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
@@ -11,7 +12,6 @@ from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent impor
     ProcessDiscoveryResponseEvent,
     ProgramInSpecs,
 )
-from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -104,10 +104,10 @@ class ProcessRunner:
                 is_process_start=issubclass(human_work_event, ProcessStartEvent),
                 event_specs=EventSpecs(
                     event_name=human_work_event.event_name_from_class(),
-                    event_schema=FormkitElement.remove_formkit_elements(human_work_event).model_json_schema(),
-                    event_parents=human_work_event.parent_event_names_from_class()
+                    event_schema=copy.deepcopy(human_work_event.to_form_submission_model().model_json_schema()),
+                    event_parents=human_work_event.parent_event_names_from_class(),
                 ),
-                form=([] if not human_in.start_form else human_in.start_form.to_formkit())
+                form=([] if not human_in.start_form else human_in.start_form.to_formkit_form()),
             )
             for human_work_event, human_in in self.process_type.get_events_with_human_in()
         ]

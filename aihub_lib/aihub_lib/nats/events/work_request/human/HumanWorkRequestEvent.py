@@ -3,8 +3,9 @@ from typing import Annotated, ClassVar, get_args, get_origin
 
 from pydantic import Field, model_validator
 
-from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
+from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
+from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 
 
@@ -27,12 +28,17 @@ class HumanWorkRequestEvent(WorkRequestEvent):
         forms = self.forms
         all_errors = []
 
-        # Validate that form attributes are FormkitElements
-        base_event_fields = set(HumanWorkEvent.model_fields.keys())
+        # Part 1: Validate that custom form attributes are FormkitElements
+        # Define the set of fields inherited from the base HumanWorkEvent to ignore.
+        base_form_fields = set(HumanWorkEvent.model_fields.keys())
+
         for i, form in enumerate(forms):
-            for field_name, field_value in form:
-                if field_name in base_event_fields:
-                    continue
+            # Isolate fields specific to the subclass (e.g., in HumanBWork)
+            # by removing the base event fields.
+            custom_fields = set(form.model_fields.keys()) - base_form_fields
+
+            for field_name in custom_fields:
+                field_value = getattr(form, field_name)
                 if not isinstance(field_value, FormkitElement):
                     all_errors.append(
                         f"Attribute Error: In form {i} ({type(form).__name__}), "
@@ -40,17 +46,18 @@ class HumanWorkRequestEvent(WorkRequestEvent):
                         f"but received type '{type(field_value).__name__}'."
                     )
 
-        # Validate form types and counts against ClassVars
+        # Part 2: Validate form types and counts against ClassVars
         expected_types = []
-        for ann in cls.__annotations__.values():
-            if get_origin(ann) is ClassVar and get_args(ann):
-                type_arg = get_args(ann)[0]
-                if get_origin(type_arg) is type and get_args(type_arg):
-                    form_class = get_args(type_arg)[0]
-                    if issubclass(form_class, HumanWorkEvent):
-                        expected_types.append(form_class)
+        # Find all ClassVars on this class (e.g., HumanBWorkRequest) that
+        # define an expected form type.
+        for key in cls.__annotations__:
+            if get_origin(getattr(cls, "__annotations__", {}).get(key)) is ClassVar:
+                class_var_value = getattr(cls, key, None)
+                # Check if the ClassVar's value is a class that inherits from HumanWorkEvent
+                if isinstance(class_var_value, type) and issubclass(class_var_value, HumanWorkEvent):
+                    expected_types.append(class_var_value)
 
-        # This check only runs if the class has defined expected forms.
+        # This check only runs if the class has defined expected forms via ClassVars.
         if expected_types:
             actual_types = [type(form) for form in forms]
             if Counter(actual_types) != Counter(expected_types):
@@ -65,3 +72,4 @@ class HumanWorkRequestEvent(WorkRequestEvent):
             raise ValueError("\n".join(all_errors))
 
         return self
+

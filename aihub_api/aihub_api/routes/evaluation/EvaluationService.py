@@ -379,7 +379,7 @@ class EvaluationService:
     async def run_experiment_evaluation(
         create_dto: ExperimentCreate,
         nats_client: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         judge: ChatLLMConfig,
         authenticated_user: UserIdentity,
         t: LocaleHandler,
@@ -387,7 +387,7 @@ class EvaluationService:
         """Runs a new evaluation experiment using the PhoenixExperimentEvaluator."""
         evaluator = PhoenixExperimentEvaluator(
             nats_client=nats_client,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
             judge=judge,
             authenticated_user=authenticated_user,
             t=t,

@@ -175,8 +175,6 @@ class ProcessDispatcher(BaseDispatcher):
 
                 elif isinstance(event, HumanWorkRequestEvent) and isinstance(config, Human.Out):
                     logger.debug("Step return correctly identified as HumanWorkRequestEvent")
-                    event.endpoint = config.endpoint
-                    event.method = config.method
                     event.users = config.users
 
                 elif isinstance(event, ProcessStopEvent) and isinstance(config, Process.Out):

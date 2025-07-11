@@ -13,7 +13,9 @@ from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import Az
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, File, Form, Security, UploadFile
@@ -233,8 +235,8 @@ class OpenaiController(Controller):
         async def chat_completion_with_assistants(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -248,7 +250,7 @@ class OpenaiController(Controller):
                     raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
             return await OpenaiService.chat_completion_with_assistants(
-                self.chat_models, model_name, completion_request, user, nc, external_event_distributor, t
+                self.chat_models, model_name, completion_request, user, nc, external_agent_event_distributor, t
             )
 
         return self

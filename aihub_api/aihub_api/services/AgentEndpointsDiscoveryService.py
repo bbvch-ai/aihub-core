@@ -9,7 +9,9 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -166,8 +168,8 @@ class AgentEndpointsDiscoveryService:
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[input_type, Body],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             user: Annotated[
                 UserIdentity,
@@ -202,7 +204,7 @@ class AgentEndpointsDiscoveryService:
 
             stop_event = await AgentService.send_event(
                 nc,
-                external_event_distributor,
+                external_agent_event_distributor,
                 user,
                 event,
                 agent_class,

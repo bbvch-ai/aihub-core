@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
+from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
@@ -95,6 +96,9 @@ class ApiRunner(Runner):
         for controller in controllers:
             if isinstance(controller, AgentController):
                 self._api_app.state.agent_controller = controller
+
+            if isinstance(controller, ProcessController):
+                self._api_app.state.process_controller = controller
 
         self._api_app.openapi_tags = [
             {

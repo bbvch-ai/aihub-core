@@ -1,10 +1,9 @@
 from typing import Annotated
 
+from aihub_lib.nats.events import HumanWorkEvent, ProcessStartEvent
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from pydantic import Field
 
-from aihub_lib.nats.events import HumanWorkEvent
-from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 
-
-class HumanAWork(HumanWorkEvent):
+class HumanAWork(HumanWorkEvent, ProcessStartEvent):
     input_text_a: Annotated[InputTextElement | str, Field(description="Input text A")]

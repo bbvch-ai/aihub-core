@@ -2,10 +2,12 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -45,7 +47,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
        Initializes a `WebSocketManager`, `WebSocketSender`, and `ExternalAgentEventDistributor`.
        Then subscribes to display events via `NCSubscriber` and sends them to connected websockets.
     5. **App State Initialization:**
-       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_event_distributor`)
+       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_agent_event_distributor`)
        in `app.state`, making them accessible throughout the app.
     6. **Cleanup on Exit:**
        On shutdown, it stops the subscribers and closes the NATS connection.
@@ -101,17 +103,20 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await ws_subscriber.start()
 
-        external_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_agent_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_process_event_distributor = ExternalProcessEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
-        app.state.external_event_distributor = external_event_distributor
+        app.state.external_agent_event_distributor = external_agent_event_distributor
+        app.state.external_process_event_distributor = external_process_event_distributor
+
+        api_app = app.state.api_app
 
         # Create and start the agent discovery service
-        api_app = app.state.api_app
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -123,6 +128,18 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             await agent_discovery_service.start()
             app.state.agent_discovery_service = agent_discovery_service
 
+        # Create and start the process discovery service
+        if hasattr(api_app.state, "process_controller"):
+            process_discovery_service = ProcessEndpointsDiscoveryService(
+                nc=nc,
+                api_app=api_app,
+                process_controller=api_app.state.process_controller,
+                locale_handler=ApiLocaleHandler(),
+                discovery_interval=60,  # Check for new agents every 60 seconds
+            )
+            await process_discovery_service.start()
+            app.state.process_discovery_service = process_discovery_service
+
         # Yield control back to FastAPI to start serving requests
         yield
 
@@ -131,9 +148,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await process_event_persist_subscriber.stop()
         await ws_subscriber.stop()
 
+        # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
-            # Stop the discovery service
             await app.state.agent_discovery_service.stop()
+
+        if hasattr(app.state, "process_discovery_service"):
+            await app.state.process_discovery_service.stop()
 
         disconnect()
 
