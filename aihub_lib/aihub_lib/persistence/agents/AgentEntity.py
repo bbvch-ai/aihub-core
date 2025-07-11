@@ -199,4 +199,4 @@ class AgentEntity(Document):
 
     @classmethod
     def get_agent(cls, agent_class: str, agent_id: str) -> "AgentEntity":
-        return cls.objects().get(agent_class=agent_class, agent_id=agent_id)
+        return cls.objects(agent_class=agent_class, agent_id=agent_id).first()

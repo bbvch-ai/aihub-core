@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import sleep
 
+from aihub_api.routes.process.dto.ProcessStartDTO import ProcessStartDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
@@ -201,3 +202,12 @@ class ProcessService:
         )
         await external_process_event_distributor.distribute_event(external_event, user)
         return True
+
+    @staticmethod
+    async def get_process_start_forms(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> list[ProcessStartDTO]:
+        process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
+        return [
+            ProcessStartDTO(form=human_input.form, route=human_input.route, method=human_input.method)
+            for human_input in process.human_inputs
+            if human_input.is_process_start
+        ]

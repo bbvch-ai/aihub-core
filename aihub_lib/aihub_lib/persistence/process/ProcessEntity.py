@@ -8,7 +8,7 @@ from mongoengine import (
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
-    StringField,
+    StringField, DictField,
 )
 
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
@@ -35,14 +35,16 @@ class HumanInSpecsEntity(EmbeddedDocument):
     method = StringField(required=True)
     is_process_start = BooleanField(required=True)
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
+    form = ListField(DictField(), default=list)
 
     @classmethod
-    def from_dto(cls, process_in_dto) -> "HumanInSpecsEntity":
+    def from_dto(cls, human_in_dto) -> "HumanInSpecsEntity":
         return cls(
-            route=process_in_dto.route,
-            method=process_in_dto.method,
-            is_process_start=process_in_dto.is_process_start,
-            event_specs=EventSpec.from_dto(process_in_dto.event_specs),
+            route=human_in_dto.route,
+            method=human_in_dto.method,
+            is_process_start=human_in_dto.is_process_start,
+            event_specs=EventSpec.from_dto(human_in_dto.event_specs),
+            form=[form_element.model_dump() for form_element in human_in_dto.form],
         )
 
 
@@ -159,4 +161,4 @@ class ProcessEntity(Document):
 
     @classmethod
     def get_process(cls, process_class: str, process_id: str) -> "ProcessEntity":
-        return cls.objects().get(process_class=process_class, process_id=process_id)
+        return cls.objects(process_class=process_class, process_id=process_id).first()

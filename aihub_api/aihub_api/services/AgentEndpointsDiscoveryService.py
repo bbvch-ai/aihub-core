@@ -100,14 +100,11 @@ class AgentEndpointsDiscoveryService:
             self.registered_agents.add(agent_key)
             logger.info(f"Registered endpoints for agent: {agent.agent_class}.{agent.agent_id}")
 
-    def _get_agent_endpoint_names(self, agent_class: str, agent_id: str) -> tuple[str, str, str]:
-        agent_class_name = snakecase(agent_class)
-        agent_id_snake = snakecase(agent_id)
-        base_path = f"{self.agent_controller.base_route}/{agent_class_name}/{agent_id_snake}"
-        return agent_class_name, agent_id_snake, base_path
+    def _get_agent_endpoint_name(self, agent_class: str, agent_id: str) -> str:
+        return f"{self.agent_controller.base_route}/{agent_class}/{agent_id}"
 
     def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
-        _, _, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
+        base_path = self._get_agent_endpoint_name(agent_class, agent_id)
 
         for route in list(self.app.routes):
             if route.path.startswith(f"{base_path}/"):
@@ -120,7 +117,10 @@ class AgentEndpointsDiscoveryService:
     def _register_agent_endpoints(
         self, agent_class: str, agent_id: str, start_events: list[EventSpecs], stop_events: list[EventSpecs]
     ):
-        agent_class_name, agent_id_snake, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
+        base_path = self._get_agent_endpoint_name(agent_class, agent_id)
+        agent_class_snake = snakecase(agent_class)
+        agent_id_snake = snakecase(agent_id)
+
 
         stop_event_output_types = [
             EventModelCreationService.create_output_model_from_specs(stop_event) for stop_event in stop_events
@@ -134,7 +134,7 @@ class AgentEndpointsDiscoveryService:
         for start_event_specs in start_events:
             start_event_name = snakecase(start_event_specs.event_name)
 
-            endpoint_name = f"send_{start_event_name}_to_{agent_class_name}_{agent_id_snake}"
+            endpoint_name = f"send_{start_event_name}_to_{agent_class_snake}_{agent_id_snake}"
             path = f"{base_path}/{start_event_name}"
 
             start_event_input_type = EventModelCreationService.create_input_model_from_specs(start_event_specs)

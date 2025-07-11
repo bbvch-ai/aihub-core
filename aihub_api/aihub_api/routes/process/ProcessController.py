@@ -1,11 +1,13 @@
 from typing import Annotated
 
+from aihub_api.routes.process.dto.ProcessStartDTO import ProcessStartDTO
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, Security
 from nats.aio.client import Client as NATS
@@ -78,5 +80,20 @@ class ProcessController(Controller):
             Retrieve details for a specific process. Raises 403 if the user lacks access.
             """
             return await ProcessService.get_process(nc, process_class, process_id, t)
+
+        return self
+
+    def get_process_start_forms(self, route: str = "/{process_class}/{process_id}/start_forms") -> "ProcessController":
+        @self.router.get(route, tags=self.tags)
+        async def get_process_start_forms(
+            process_class: str,
+            process_id: str,
+            nc: Annotated[NATS, Depends(use_nats)],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[ProcessStartDTO]:
+            return await ProcessService.get_process_start_forms(nc, process_class, process_id, t)
 
         return self

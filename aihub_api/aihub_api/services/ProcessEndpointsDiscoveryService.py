@@ -94,14 +94,11 @@ class ProcessEndpointsDiscoveryService:
             self.registered_processes.add(process_key)
             logger.info(f"Registered endpoints for process: {process.process_class}.{process.process_id}")
 
-    def _get_process_endpoint_names(self, process_class: str, process_id: str) -> tuple[str, str, str]:
-        process_class_name = snakecase(process_class)
-        process_id_snake = snakecase(process_id)
-        base_path = f"{self.process_controller.base_route}/{process_class_name}/{process_id_snake}"
-        return process_class_name, process_id_snake, base_path
+    def _get_process_endpoint_name(self, process_class: str, process_id: str) -> str:
+        return f"{self.process_controller.base_route}/{process_class}/{process_id}"
 
     def _deregister_process_endpoints(self, process_class: str, process_id: str):
-        _, _, base_path = self._get_process_endpoint_names(process_class, process_id)
+        base_path = self._get_process_endpoint_name(process_class, process_id)
 
         for route in list(self.app.routes):
             if route.path.startswith(f"{base_path}/"):
@@ -117,16 +114,18 @@ class ProcessEndpointsDiscoveryService:
         process_id: str,
         human_input: HumanInSpecs,
     ):
-        process_class_name, process_id_snake, base_path = self._get_process_endpoint_names(process_class, process_id)
+        base_path = self._get_process_endpoint_name(process_class, process_id)
 
         form_field_info = HumanInSpecs.model_fields["form"]
         form_type_annotation = form_field_info.annotation
 
+        process_class_snake = snakecase(process_class)
+        process_id_snake = snakecase(process_id)
         get_endpoint_name = (
-            f"get_form_for_{process_class_name}_{process_id_snake}_{human_input.route.replace('/', '_')}"
+            f"get_form_for_{process_class_snake}_{process_id_snake}_{human_input.route.replace('/', '_')}"
         )
         post_endpoint_name = (
-            f"submit_form_for_{process_class_name}_{process_id_snake}_{human_input.route.replace('/', '_')}"
+            f"submit_form_for_{process_class_snake}_{process_id_snake}_{human_input.route.replace('/', '_')}"
         )
 
         if human_input.is_process_start:
