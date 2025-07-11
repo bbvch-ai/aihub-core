@@ -20,7 +20,7 @@ from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
 
-from aihub_api.events.ModelCreationService import ModelCreationService
+from aihub_api.services.ModelCreationService import ModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService

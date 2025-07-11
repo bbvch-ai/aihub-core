@@ -12,8 +12,8 @@ from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent i
 )
 from pydantic import BaseModel
 
-from aihub_api.events.ModelCreationService import ModelCreationService
-from playground.testing.tests.events.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
+from aihub_api.services.ModelCreationService import ModelCreationService
+from playground.testing.tests.services.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
 
 
 class TestDataProvider:
