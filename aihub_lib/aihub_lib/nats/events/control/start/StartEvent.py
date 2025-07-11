@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Annotated
 
 from pydantic import Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
@@ -18,9 +19,7 @@ class StartEvent(ControlAndDisplayEvent):
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
     """
 
-    agent_config_data: dict[str, Any] = Field(
-        default_factory=dict, description="A dictionary representing the agent's specific configuration for this run."
-    )
+    agent_config: Annotated[AgentConfig, Field(description="Agent configuration")]
 
     def to_context_dict(self) -> dict[str, Any]:
         """

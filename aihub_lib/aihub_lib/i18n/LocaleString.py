@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from mongoengine import EmbeddedDocument
 from pydantic import BaseModel, Field
 
 
@@ -22,3 +23,27 @@ class LocaleString(BaseModel):
             fr=LocaleHandler("fr")(path),
             it=LocaleHandler("it")(path),
         )
+
+    @classmethod
+    def from_entity(cls, entity: "LocaleStringEntity") -> "LocaleString":
+        """
+        Converts a MongoEngine embedded document to a LocaleString instance.
+        """
+        return cls(
+            de=entity.de,
+            en=entity.en,
+            fr=entity.fr,
+            it=entity.it,
+        )
+
+
+class LocaleStringEntity(EmbeddedDocument):
+    """
+    A MongoEngine embedded document that represents a localized string.
+    This is used to store localized strings in MongoDB.
+    """
+
+    de: str | None = None
+    en: str | None = None
+    fr: str | None = None
+    it: str | None = None

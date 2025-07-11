@@ -1,8 +1,9 @@
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.persistence.agents import AgentConfigInstanceEntity
 
 
 class StepConfig(BaseModel):
@@ -79,9 +80,28 @@ class AgentConfig(BaseModel):
         ),
     ]
 
+    # Private attributes to handle unknown config types
+    _unknown_config_name: str | None = PrivateAttr(None)
+    _unknown_data: dict[str, Any] | None = PrivateAttr(None)
+
     @classmethod
     def config_name_from_class(cls):
         return cls.__name__
+
+    @classmethod
+    def from_entity(cls, entity: "AgentConfigInstanceEntity") -> "AgentConfig":
+        config = cls(
+            agent_id=entity.agent_id,
+            name=LocaleString.from_entity(entity.name),
+            description=LocaleString.from_entity(entity.description),
+            icon=entity.icon,
+            color=entity.color,
+            voice=entity.voice,
+            system_prompt=LocaleString.from_entity(entity.system_prompt),
+        )
+        config._unknown_config_name = entity.agent_class
+        config._unknown_data = entity.config_data
+        return config
 
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """

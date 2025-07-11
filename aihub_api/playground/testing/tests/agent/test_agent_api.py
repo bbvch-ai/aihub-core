@@ -13,7 +13,7 @@ from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
 from stringcase import snakecase
 
-from aihub_api.events.EventModelCreationService import EventModelCreationService
+from aihub_api.events.ModelCreationService import ModelCreationService
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
@@ -63,7 +63,7 @@ async def test_get_agent(agent_api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
     """Test POST /agent/{agent_class}/{agent_id}/{event_name} returns correct agent details."""
-    user_message = EventModelCreationService.create_input_model(UserMessageEvent)(
+    user_message = ModelCreationService.create_input_model_from_event_class(UserMessageEvent)(
         messages=[ChatMessage(role="user", content="Hey!")]
     )
     path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{snakecase(UserMessageEvent.event_name_from_class())}"

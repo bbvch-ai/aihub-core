@@ -12,7 +12,7 @@ from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent i
 )
 from pydantic import BaseModel
 
-from aihub_api.events.EventModelCreationService import EventModelCreationService
+from aihub_api.events.ModelCreationService import ModelCreationService
 from playground.testing.tests.events.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
 
 
@@ -53,18 +53,18 @@ def event_specs() -> EventSpecs:
 def input_model_factory(request, event_specs):
     """Factory that creates input models using both methods"""
     if request.param == "class":
-        return lambda: EventModelCreationService.create_input_model(TestEvent), "class"
+        return lambda: ModelCreationService.create_input_model_from_event_class(TestEvent), "class"
     else:
-        return lambda: EventModelCreationService.create_input_model_from_specs(event_specs), "specs"
+        return lambda: ModelCreationService.create_input_model_from_event_specs(event_specs), "specs"
 
 
 @pytest.fixture(params=["class", "specs"])
 def output_model_factory(request, event_specs):
     """Factory that creates output models using both methods"""
     if request.param == "class":
-        return lambda: EventModelCreationService.create_output_model(TestEvent), "class"
+        return lambda: ModelCreationService.create_output_model_from_event_class(TestEvent), "class"
     else:
-        return lambda: EventModelCreationService.create_output_model_from_specs(event_specs), "specs"
+        return lambda: ModelCreationService.create_output_model_from_event_specs(event_specs), "specs"
 
 
 @pytest.fixture
@@ -676,12 +676,12 @@ class TestSchemaValidation:
         assert event_specs.event_name == "TestEvent"
 
         # Step 3: Create Pydantic input model from EventSpecs
-        input_model = EventModelCreationService.create_input_model_from_specs(event_specs)
+        input_model = ModelCreationService.create_input_model_from_event_specs(event_specs)
 
         # Step 4: Create input model instance from original event data
         original_data = original_event.model_dump()
         # Remove fields that are excluded from input models
-        excluded_fields = EventModelCreationService._input_excluded_fields
+        excluded_fields = ModelCreationService._input_excluded_fields
         input_data = {k: v for k, v in original_data.items() if k not in excluded_fields}
 
         input_instance = input_model(**input_data)

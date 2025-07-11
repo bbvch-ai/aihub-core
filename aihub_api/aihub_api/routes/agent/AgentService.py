@@ -34,7 +34,7 @@ from aihub_api.routes.agent.dto.AgentConfigInstanceDTO import (
     CreateAgentConfigInstanceRequest,
     UpdateAgentConfigInstanceRequest,
 )
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO, MinimalAgentDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO, MinimalAgentDTO, AgentClassDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
@@ -237,67 +237,7 @@ class AgentService:
             return DISCOVER_AGENTS_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        discovery_responses = []
-
-        async def discovery_handler(event: AgentInstanceDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
-            discovery_responses.append(event)
-
-        topic_manager = AgentTopicManager()
-        nc_publisher = NCPublisher(nc)
-        nc_subscriber = AgentNCSubscriber.for_agent_instance_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
-        )
-        await nc_subscriber.start()
-
-        # Broadcast the discovery request
-        await nc_publisher.publish_event(
-            event=InstanceDiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_instance_discovery_subject_request(call_id=call_id),
-        )
-
-        # Wait briefly for responses
-        await sleep(1)
-        await nc_subscriber.stop()
-
-        unique_agents_dict = {}
-
-        for response in discovery_responses:
-            unique_key = (response.agent_class, response.agent_id)
-
-            if unique_key not in unique_agents_dict:
-                agent_dto = AgentDTO(
-                    agent_class=response.agent_class,
-                    agent_id=response.agent_id,
-                    agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
-                    is_conversational=response.is_conversational,
-                    start_events=response.start_events,
-                    stop_events=response.stop_events,
-                    network_graph=response.network_graph,
-                    is_online=True,
-                )
-                AgentEntity.create_or_update_from_dto(agent_dto)
-                unique_agents_dict[unique_key] = agent_dto
-
-        agents = list(unique_agents_dict.values())
-
-        if len(agents) > 0:
-            DISCOVER_AGENTS_CACHE[cache_key] = agents
-
-        return agents
-
-    @staticmethod
-    async def discover_agent_classes(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
-        """
-        Discovers all agents by broadcasting a discovery request and waiting for responses.
-        Returns a cached result if available.
-        """
-        cache_key = "all_agent_classes"
-
-        if cache_key in DISCOVER_AGENTS_CACHE:
-            return DISCOVER_AGENTS_CACHE[cache_key]
-
-        call_id = str(ObjectId())
-        discovery_responses = []
+        discovery_responses: list[AgentInstanceDiscoveryResponseEvent] = []
 
         async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             discovery_responses.append(event)
@@ -335,6 +275,57 @@ class AgentService:
                     network_graph=response.network_graph,
                     is_online=True,
                 )
+                AgentEntity.create_or_update_from_dto(agent_dto)
+                unique_agents_dict[unique_key] = agent_dto
+
+        agents = list(unique_agents_dict.values())
+
+        if len(agents) > 0:
+            DISCOVER_AGENTS_CACHE[cache_key] = agents
+
+        return agents
+
+    @staticmethod
+    async def discover_agent_classes(nc: NATS) -> list[AgentClassDTO]:
+        """
+        Discovers all agents by broadcasting a discovery request and waiting for responses.
+        Returns a cached result if available.
+        """
+        cache_key = "all_agent_classes"
+
+        if cache_key in DISCOVER_AGENTS_CACHE:
+            return DISCOVER_AGENTS_CACHE[cache_key]
+
+        call_id = str(ObjectId())
+        discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
+
+        async def discovery_handler(event: AgentInstanceDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
+            discovery_responses.append(event)
+
+        topic_manager = AgentTopicManager()
+        nc_publisher = NCPublisher(nc)
+        nc_subscriber = AgentNCSubscriber.for_agent_instance_discovery_response_events(
+            nc, topic_manager, discovery_handler, call_id=call_id
+        )
+        await nc_subscriber.start()
+
+        # Broadcast the discovery request
+        await nc_publisher.publish_event(
+            event=InstanceDiscoveryRequestEvent(),
+            subject=topic_manager.get_agent_instance_discovery_subject_request(call_id=call_id),
+        )
+
+        # Wait briefly for responses
+        await sleep(1)
+        await nc_subscriber.stop()
+
+        unique_agents_dict: dict[str, AgentClassDTO] = {}
+
+        for response in discovery_responses:
+            unique_key = response.agent_class
+
+            if unique_key not in unique_agents_dict:
+                agent_dto = AgentClassDTO.from_discovery_event(response)
                 AgentEntity.create_or_update_from_dto(agent_dto)
                 unique_agents_dict[unique_key] = agent_dto
 
