@@ -37,7 +37,7 @@ class AgentInstanceDiscoveryResponseEvent(AgentClassDiscoveryResponseEvent):
     ]
 
     @classmethod
-    def from_agent_dto(cls, agent_dto: AgentDTO) -> "AgentInstanceDiscoveryResponseEvent":
+    def from_agent_dto(cls, agent_dto) -> "AgentInstanceDiscoveryResponseEvent":
         """
         Converts an AgentDTO to an AgentInstanceDiscoveryResponseEvent.
         This is useful for creating a discovery response from a DTO representation of an agent.

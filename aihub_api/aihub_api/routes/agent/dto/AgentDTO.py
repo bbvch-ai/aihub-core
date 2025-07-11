@@ -11,8 +11,6 @@ from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent i
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import BaseModel, Field
 
-from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
-
 
 class AgentClassDTO(BaseModel):
     """
@@ -82,11 +80,10 @@ class MinimalAgentDTO(BaseModel):
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler) -> "MinimalAgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
-        agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
         return cls(
             agent_class=entity.agent_class,
             agent_id=entity.agent_id,
-            agent_config=agent_config_dto,
+            agent_config=AgentConfig.from_entity(entity.agent_config),
             is_conversational=entity.is_conversational,
         )
 
@@ -122,8 +119,6 @@ class AgentDTO(MinimalAgentDTO):
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
-        agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
-
         start_events = [
             EventSpecs(
                 event_name=event.event_name,
@@ -147,7 +142,7 @@ class AgentDTO(MinimalAgentDTO):
         return cls(
             agent_class=entity.agent_class,
             agent_id=entity.agent_id,
-            agent_config=agent_config_dto,
+            agent_config=AgentConfig.from_entity(entity.agent_config),
             is_conversational=entity.is_conversational,
             start_events=start_events,
             stop_events=stop_events,
