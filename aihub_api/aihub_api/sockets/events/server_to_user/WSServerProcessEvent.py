@@ -3,77 +3,29 @@ from typing import Annotated, Any
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
-    AgentEvent,
-    AgentInTheLoopExceptionEvent,
-    AgentInTheLoopRequestEvent,
-    AgentInTheLoopResponseEvent,
-    ChainEvent,
-    ChunkEvent,
-    DisplayEvent,
-    EmbeddingEvent,
-    ExceptionEvent,
-    GuardRejectionEvent,
-    HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
-    LimitChatHistoryEvent,
-    LLMCostEvent,
-    LLMEvent,
-    LLMStopEvent,
-    RerankerEvent,
-    RetrieverEvent,
-    StandaloneQuestionCondenserEvent,
-    StartEvent,
-    StopEvent,
-    ThoughtEvent,
-    ToolEvent,
-    UserMessageEvent,
+    WorkRequestEvent,
+    WorkEvent,
 )
-from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.nats.events.semantic import SemanticEvent
-from aihub_lib.nats.events.semantic.guard import GuardEvent
+from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag
 from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
-DisplayEvents = (
-    Annotated[StartEvent, Tag("StartEvent")]
-    | Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")]
-    | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
-    | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
-    | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
-    | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
-    | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
-    | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
-    | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
-    | Annotated[ChunkEvent, Tag("ChunkEvent")]
-    | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
-    | Annotated[GuardEvent, Tag("GuardEvent")]
-    | Annotated[RouterEvent, Tag("RouterEvent")]
-    | Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")]
-    | Annotated[SemanticEvent, Tag("SemanticEvent")]
-    | Annotated[AgentEvent, Tag("AgentEvent")]
-    | Annotated[ChainEvent, Tag("ChainEvent")]
-    | Annotated[EmbeddingEvent, Tag("EmbeddingEvent")]
-    | Annotated[LLMEvent, Tag("LLMEvent")]
-    | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
-    | Annotated[RerankerEvent, Tag("RerankerEvent")]
-    | Annotated[RetrieverEvent, Tag("RetrieverEvent")]
-    | Annotated[ToolEvent, Tag("ToolEvent")]
-    | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
-    | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
-    | Annotated[StopEvent, Tag("StopEvent")]
-    | Annotated[DisplayEvent, Tag("DisplayEvent")]
+ProcessEvents = (
+    Annotated[ProcessEvent, Tag("ProcessEvent")]
+    | Annotated[WorkRequestEvent, Tag("WorkRequestEvent")]
+    | Annotated[WorkEvent, Tag("WorkEvent")]
 )
 
 
-def event_discriminator(event: DisplayEvent) -> str:
+def event_discriminator(event: ProcessEvent) -> str:
     # Get all tags from DisplayEvents union
-    valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
+    valid_tags = [arg.__metadata__[0].tag for arg in ProcessEvents.__args__]
 
     # Return "DisplayEvent" if _event_name is missing or not in valid_tags
     if not hasattr(event, "_event_name"):
-        return "DisplayEvent"
+        return "ProcessEvent"
 
     if event._event_name in valid_tags:
         return event._event_name
@@ -82,7 +34,7 @@ def event_discriminator(event: DisplayEvent) -> str:
         if event_name in valid_tags:
             return event_name
 
-    return "DisplayEvent"
+    return "ProcessEvent"
 
 
 class WSServerProcessEvent(BaseModel):
@@ -121,7 +73,7 @@ class WSServerProcessEvent(BaseModel):
     event_name: Annotated[str, Field(description="Name of the event, indicating its subtype or category.")]
     event_id: Annotated[str, Field(description="Unique identifier of this event instance.")]
     event: Annotated[
-        DisplayEvents,
+        ProcessEvent,
         Field(
             description="Data of the event itself.",
             discriminator=Discriminator(event_discriminator),
@@ -137,7 +89,7 @@ class WSServerProcessEvent(BaseModel):
         into a client-ready format.
         """
         locale_handler = LocaleHandler(locale=locale)
-        display_event = DisplayEvent.deserialize_event(persisted_event.event_data)
+        process_event = ProcessEvent.deserialize_event(persisted_event.event_data)
         return cls(
             locale=locale or locale_handler.DEFAULT_LOCALE,
             process_class=persisted_event.process_class,
@@ -146,9 +98,9 @@ class WSServerProcessEvent(BaseModel):
             event_type=persisted_event.event_type,
             event_name=persisted_event.event_name,
             event_id=persisted_event.event_id,
-            event=display_event,
-            event_display_name=locale_handler.extract(display_event.display_name),
-            event_display_description=locale_handler.extract(display_event.display_description),
+            event=process_event,
+            event_display_name=locale_handler.extract(process_event.display_name),
+            event_display_description=locale_handler.extract(process_event.display_description),
         )
 
     @override

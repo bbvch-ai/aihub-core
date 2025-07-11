@@ -9,10 +9,10 @@ from aihub_lib.nats.distributor.dependencies.use_external_process_event_distribu
     use_external_process_event_distributor,
 )
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from aihub_lib.nats.events import WorkEvent
+from aihub_lib.nats.events import WorkEvent, HumanWorkRequestEvent
 from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import HumanInSpecs, ProgramInSpecs
 from bson import ObjectId
-from fastapi import Body, Depends, FastAPI, Path, Security
+from fastapi import Body, Depends, FastAPI, Path, Security, HTTPException
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
@@ -21,6 +21,7 @@ from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.process.ProcessService import ProcessService
+from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +153,7 @@ class ProcessEndpointsDiscoveryService:
                 process_class=process_class,
                 process_id=process_id,
                 process_controller=self.process_controller,
+                event_name=human_input.event_specs.event_name,
             ),
             methods=["GET"],
             name=get_endpoint_name,
@@ -221,6 +223,7 @@ class ProcessEndpointsDiscoveryService:
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
+        event_name: str,
     ):
         def get_form(
             _: Annotated[
@@ -234,11 +237,12 @@ class ProcessEndpointsDiscoveryService:
 
     @staticmethod
     def create_form_get_endpoint(
-            form_type: type,
-            form: list[BaseModel],
-            process_class: str,
-            process_id: str,
-            process_controller: ProcessController,
+        form_type: type,
+        form: list[BaseModel],
+        process_class: str,
+        process_id: str,
+        process_controller: ProcessController,
+        event_name: str,
     ):
         def get_form(
                 process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
@@ -247,8 +251,21 @@ class ProcessEndpointsDiscoveryService:
                     Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
                 ],
         ) -> form_type:
-            # TODO: Retrieve form from database
-            return None
+            persisted_event = PersistedProcessEventEntity.find_request_for_work_event(
+                process_walkthrough_id=process_walkthrough_id,
+                event_name=event_name,
+            )
+            if not persisted_event:
+                raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
+            for work_form in persisted_event["event_data"]["forms"]:
+                work_form_elements: form_type = []
+                if work_form["_event_name"] == event_name:
+                    for key, value in work_form.items():
+                        if isinstance(value, dict) and value.get("is_formkit_element"):
+                            work_form_elements.append(value)
+                return work_form_elements
+
+            raise HTTPException(status_code=400, detail="Error creating form")
 
         return get_form
 
