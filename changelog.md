@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.219.0] - 2025-07-11 - Internal Workflow Automation Adjustment
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+
+---
+
+
+
 ## [v0.218.0] - 2025-07-11 - Enhanced API Configuration and Extensibility
 
 ### Added
