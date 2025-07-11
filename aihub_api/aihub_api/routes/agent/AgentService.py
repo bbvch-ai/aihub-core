@@ -246,20 +246,20 @@ class AgentService:
         call_id = str(ObjectId())
         discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
 
-        async def discovery_handler(event: AgentInstanceDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
+        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             discovery_responses.append(event)
 
         topic_manager = AgentTopicManager()
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = AgentNCSubscriber.for_agent_instance_discovery_response_events(
+        nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
 
         # Broadcast the discovery request
         await nc_publisher.publish_event(
-            event=InstanceDiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_instance_discovery_subject_request(call_id=call_id),
+            event=ClassDiscoveryRequestEvent(),
+            subject=topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
         # Wait briefly for responses
