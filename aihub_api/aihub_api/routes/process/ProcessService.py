@@ -1,7 +1,11 @@
 import asyncio
+from typing import Any
+
+import time
 from asyncio import sleep
 
 from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
@@ -254,3 +258,85 @@ class ProcessService:
                 process_human_input_dtos.append(process_human_input_dto)
 
         return process_human_input_dtos
+
+    @staticmethod
+    async def submit_process_start_form(
+        nc: NATS,
+        process_class: str,
+        process_id: str,
+        route: str,
+        method: str,
+        raw_event_data: dict,
+        external_process_event_distributor: ExternalProcessEventDistributor,
+        user: UserIdentity,
+        t: LocaleHandler,
+    ) -> SubmittedFormDTO:
+        process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
+        human_in = next((human_in for human_in in process.human_inputs if human_in.route == route and human_in.method == method), None)
+
+        if not human_in:
+            raise ValueError(f"No human input found for route {route} and method {method}")
+
+        json_data: dict[str, Any] = {
+            "event_id": str(ObjectId()),
+            "created_at": time.time_ns(),
+            **raw_event_data,
+            "_event_name": human_in.event_specs.event_name,
+            "_parent_event_names": human_in.event_specs.event_parents,
+        }
+        event: WorkEvent = WorkEvent.deserialize_event(json_data)
+
+        await ProcessService.send_event(
+            external_process_event_distributor,
+            user,
+            event,
+            process_class,
+            process_id,
+        )
+        return SubmittedFormDTO()
+
+    @staticmethod
+    async def submit_process_open_form(
+        nc: NATS,
+        process_class: str,
+        process_id: str,
+        process_walkthrough_id: str,
+        route: str,
+        method: str,
+        raw_event_data: dict,
+        external_process_event_distributor: ExternalProcessEventDistributor,
+        user: UserIdentity,
+        t: LocaleHandler,
+    ) -> SubmittedFormDTO:
+        process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
+        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(process_class, process_id, process_walkthrough_id)
+
+        human_in = None
+        for persisted_event in persisted_events:
+            for work_form in persisted_event["event_data"]["forms"]:
+                potential_human_in = next((human_in for human_in in process.human_inputs if human_in.event_specs.event_name == work_form["_event_name"]), None)
+                if potential_human_in:
+                    human_in = potential_human_in
+                    break
+
+        if not human_in:
+            raise ValueError(f"No human input found for route {route} and method {method}")
+
+        json_data: dict[str, Any] = {
+            "event_id": str(ObjectId()),
+            "created_at": time.time_ns(),
+            **raw_event_data,
+            "_event_name": human_in.event_specs.event_name,
+            "_parent_event_names": human_in.event_specs.event_parents,
+        }
+        event: WorkEvent = WorkEvent.deserialize_event(json_data)
+
+        await ProcessService.send_event(
+            external_process_event_distributor,
+            user,
+            event,
+            process_class,
+            process_id,
+            process_walkthrough_id,
+        )
+        return SubmittedFormDTO()

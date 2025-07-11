@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -12,9 +13,7 @@ from aihub_lib.nats.distributor.dependencies.use_external_process_event_distribu
     use_external_process_event_distributor,
 )
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from aihub_lib.nats.events import WorkEvent, HumanWorkRequestEvent
 from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import HumanInSpecs, ProgramInSpecs
-from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, Path, Security, HTTPException
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
@@ -24,7 +23,6 @@ from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.process.ProcessService import ProcessService
-from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +148,7 @@ class ProcessEndpointsDiscoveryService:
                 process_class=process_class,
                 process_id=process_id,
                 process_controller=self.process_controller,
-                human_in=human_input,
+                input_specs=human_input,
             ),
             methods=["GET"],
             name=get_endpoint_name,
@@ -163,12 +161,10 @@ class ProcessEndpointsDiscoveryService:
             path=path,
             endpoint=post_endpoint_creator(
                 input_type=post_input_type,
-                output_type=bool,
-                start_event_name=human_input.event_specs.event_name,
-                start_event_parents=human_input.event_specs.event_parents,
                 process_class=process_class,
                 process_id=process_id,
                 process_controller=self.process_controller,
+                input_specs=human_input,
             ),
             methods=[human_input.method],
             name=post_endpoint_name,
@@ -205,11 +201,10 @@ class ProcessEndpointsDiscoveryService:
             path=path,
             endpoint=endpoint_creator(
                 input_type=post_input_type,
-                output_type=bool,
-                start_event_parents=program_input.event_specs.event_parents,
                 process_class=process_class,
                 process_id=process_id,
                 process_controller=self.process_controller,
+                input_specs=program_input,
             ),
             methods=[program_input.method],
             name=post_endpoint_name,
@@ -222,7 +217,7 @@ class ProcessEndpointsDiscoveryService:
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
-        human_in: HumanInSpecs,
+        input_specs: HumanInSpecs,
     ):
         async def get_form(
             nc: Annotated[NATS, Depends(use_nats)],
@@ -238,7 +233,7 @@ class ProcessEndpointsDiscoveryService:
                 process_id=process_id,
                 t=t,
             )
-            process_dto = next((dto for dto in process_human_input_dtos if dto.route == human_in.route and dto.method == human_in.method), None)
+            process_dto = next((dto for dto in process_human_input_dtos if dto.route == input_specs.route and dto.method == input_specs.method), None)
 
             if not process_dto:
                 raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
@@ -252,59 +247,40 @@ class ProcessEndpointsDiscoveryService:
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
-        human_in: HumanInSpecs,
+        input_specs: HumanInSpecs,
     ):
-        def get_form(
+        async def get_form(
             process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
             _: Annotated[
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
             ],
+            nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ProcessHumanInputDto:
-            persisted_event = PersistedProcessEventEntity.find_request_for_work_event(
+            process_human_input_dtos = await ProcessService.get_process_open_forms(
+                nc=nc,
                 process_class=process_class,
                 process_id=process_id,
                 process_walkthrough_id=process_walkthrough_id,
-                event_name=human_in.event_specs.event_name,
+                t=t,
             )
-            if not persisted_event:
+            process_dto = next((dto for dto in process_human_input_dtos if dto.route == input_specs.route and dto.method == input_specs.method), None)
+
+            if not process_dto:
                 raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
-            for work_form in persisted_event["event_data"]["forms"]:
-                if work_form["_event_name"] != human_in.event_specs.event_name:
-                    continue
 
-                work_form_elements: list[dict] = []
-                for key, value in work_form.items():
-                    if isinstance(value, dict) and value.get("is_formkit_element"):
-                        work_form_elements.append({
-                            "name": key,
-                            **value,
-                        })
-
-                process_human_input_dto = ProcessHumanInputDto(
-                    name=t.extract(human_in.name),
-                    description=t.extract(human_in.description),
-                    route=human_in.route,
-                    method=human_in.method,
-                    form=work_form_elements,
-                )
-                process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
-                return process_human_input_dto
-
-            raise HTTPException(status_code=400, detail="Error creating form")
+            return process_dto
 
         return get_form
 
     @staticmethod
     def create_form_post_endpoint_process_start(
         input_type: type[BaseModel],
-        output_type: type,
-        start_event_name: str,
-        start_event_parents: list[str],
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
+        input_specs: HumanInSpecs | ProgramInSpecs,
     ):
         async def send_event(
             work_event_input: Annotated[input_type, Body],
@@ -315,25 +291,19 @@ class ProcessEndpointsDiscoveryService:
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
             ],
-        ) -> output_type:
-            """
-            Send a specific event type to a specific process. Returns any possible stop event type.
-            """
-            json_data: dict[str, Any] = {
-                "event_id": str(ObjectId()),
-                "created_at": time.time_ns(),
-                **work_event_input.model_dump(),
-                "_event_name": start_event_name,
-                "_parent_event_names": start_event_parents,
-            }
-            event: WorkEvent = WorkEvent.deserialize_event(json_data)
-
-            return await ProcessService.send_event(
-                external_process_event_distributor,
-                user,
-                event,
-                process_class,
-                process_id,
+            nc: Annotated[NATS, Depends(use_nats)],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> SubmittedFormDTO:
+            return await ProcessService.submit_process_start_form(
+                nc=nc,
+                process_class=process_class,
+                process_id=process_id,
+                route=input_specs.route,
+                method=input_specs.method,
+                raw_event_data=work_event_input.model_dump(),
+                external_process_event_distributor=external_process_event_distributor,
+                user=user,
+                t=t,
             )
 
         return send_event
@@ -341,12 +311,10 @@ class ProcessEndpointsDiscoveryService:
     @staticmethod
     def create_form_post_endpoint(
         input_type: type[BaseModel],
-        output_type: type,
-        start_event_name: str,
-        start_event_parents: list[str],
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
+        input_specs: HumanInSpecs | ProgramInSpecs,
     ):
         async def send_event(
             process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
@@ -358,26 +326,20 @@ class ProcessEndpointsDiscoveryService:
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
             ],
-        ) -> output_type:
-            """
-            Send a specific event type to a specific process. Returns any possible stop event type.
-            """
-            json_data: dict[str, Any] = {
-                "event_id": str(ObjectId()),
-                "created_at": time.time_ns(),
-                **work_event_input.model_dump(),
-                "_event_name": start_event_name,
-                "_parent_event_names": start_event_parents,
-            }
-            event: WorkEvent = WorkEvent.deserialize_event(json_data)
-
-            return await ProcessService.send_event(
-                external_process_event_distributor,
-                user,
-                event,
-                process_class,
-                process_id,
+            nc: Annotated[NATS, Depends(use_nats)],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> SubmittedFormDTO:
+            return await ProcessService.submit_process_open_form(
+                nc=nc,
+                process_class=process_class,
+                process_id=process_id,
                 process_walkthrough_id=process_walkthrough_id,
+                route=input_specs.route,
+                method=input_specs.method,
+                raw_event_data=work_event_input.model_dump(),
+                external_process_event_distributor=external_process_event_distributor,
+                user=user,
+                t=t,
             )
 
         return send_event
