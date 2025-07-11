@@ -175,6 +175,7 @@ class AgentDiscoveryService:
                     agent_class=agent_class,
                     agent_id=agent_id,
                     agent_controller=self.agent_controller,
+                    agent_config=config,
                 ),
                 methods=["POST"],
                 name=endpoint_name,
