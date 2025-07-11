@@ -238,7 +238,10 @@ class ProcessService:
 
                 for key, value in work_form.items():
                     if isinstance(value, dict) and value.get("is_formkit_element"):
-                        work_form_elements.append(value)
+                        work_form_elements.append({
+                            "name": key,
+                            **value,
+                        })
 
                 process_human_input_dto = ProcessHumanInputDto(
                     name=t.extract(human_in.name),

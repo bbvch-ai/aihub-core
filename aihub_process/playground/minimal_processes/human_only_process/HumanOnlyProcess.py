@@ -22,7 +22,9 @@ class HumanOnlyProcess(AgenticProcess):
             Human.In(
                 route="/input_a",
                 method="POST",
-                start_form=HumanAWork(input_text_a=InputTextElement(label=LocaleString(en="Input text A"))),
+                start_form=HumanAWork(
+                    input_text_a=InputTextElement(label=LocaleString(en="Input text A"))
+                ),
             ),
         ],
     ) -> Annotated[HumanBWorkRequest, Human.Out(users=[])]:
