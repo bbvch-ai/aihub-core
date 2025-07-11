@@ -12,8 +12,11 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import BaseEvent, ExceptionEvent
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events import BaseEvent, ExceptionEvent, InstanceDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
+    EventSpecs,
+    AgentInstanceDiscoveryResponseEvent,
+)
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
@@ -26,6 +29,11 @@ from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics import AgentDiscoveryTopic
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +60,43 @@ class AgentDiscoveryService:
         self.registered_agents: set[tuple[str, str]] = set()
         self.running: bool = False
         self.task: asyncio.Task | None = None
+        self.topic_manager: AgentTopicManager = AgentTopicManager()
+
+        self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
+
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+        """
+        Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
+        agent configuration as well as some carefully crafted event specifications.
+        """
+        logger.debug(f"Received discovery request for {topic.agent_class} with id {topic.agent_id}.")
+
+        subject = self.topic_manager.get_agent_instance_discovery_subject_response(
+            topic.call_id, topic.agent_class, topic.agent_id
+        )
+
+        agent = AgentService.discover_agent_instances()
+
+        start_events = self.agent_type.get_start_events()
+        start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
+
+        stop_events = self.agent_type.get_stop_events()
+        stop_event_specs = [EventSpecs.from_event_class(e) for e in stop_events]
+
+        network_graph = WorkflowVisualizer(agent=self.agent_type)
+        network_graph.build_workflow_graph()
+
+        agent_discovery_response_event = AgentDiscoveryResponseEvent(
+            agent_class=self.agent_class,
+            agent_id=self.agent_config.agent_id,
+            is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
+            agent_config=self.agent_config,
+            start_events=start_event_specs,
+            stop_events=stop_event_specs,
+            network_graph=network_graph.to_pydantic(),
+        )
+        await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     async def start(self):
         if self.running:
@@ -60,6 +105,13 @@ class AgentDiscoveryService:
 
         self.running = True
         self.task = asyncio.create_task(self._discovery_loop())
+
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
+            nc=self.nc,
+            topic_manager=AgentTopicManager(),
+            handler=self.discovery_handler,
+        )
+        await self.discovery_event_subscriber.start()
         logger.info("Agent discovery service started")
 
     async def stop(self):
@@ -68,6 +120,7 @@ class AgentDiscoveryService:
             return
 
         self.running = False
+        await self.discovery_event_subscriber.stop()
         if self.task:
             self.task.cancel()
             await asyncio.gather(self.task, return_exceptions=True)

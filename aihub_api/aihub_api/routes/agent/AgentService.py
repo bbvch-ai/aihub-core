@@ -29,7 +29,6 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.routes.agent.dto.AgentConfigInstanceDTO import (
     AgentConfigInstanceDTO,
     CreateAgentConfigInstanceRequest,
@@ -41,7 +40,8 @@ from aihub_api.routes.thread.ThreadService import ThreadService
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
 DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
-GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
+GET_AGENT_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
+GET_AGENT_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache agent classes for 60s
 
 
 class AgentService:
@@ -118,86 +118,60 @@ class AgentService:
         """
         cache_key = (agent_class, agent_id)
 
-        if cache_key in GET_AGENT_CACHE:
-            return GET_AGENT_CACHE[cache_key]
+        if cache_key in GET_AGENT_INSTANCE_CACHE:
+            return GET_AGENT_INSTANCE_CACHE[cache_key]
 
-        call_id = str(ObjectId())
         agent_dto: AgentDTO | None = None
-        agent_found_event = asyncio.Event()
-
-        async def discovery_handler(event: AgentInstanceDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
-            nonlocal agent_dto
-            # Found the agent, stop subscriber and signal event
-            await nc_subscriber.stop()
-            agent_dto = AgentDTO(
-                agent_class=event.agent_class,
-                agent_id=event.agent_id,
-                agent_config=AgentConfigDTO.from_agent_config(event.agent_config, t),
-                is_conversational=event.is_conversational,
-                start_events=event.start_events,
-                stop_events=event.stop_events,
-                network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-                is_online=True,
-            )
-            AgentEntity.create_or_update_from_dto(agent_dto)
-            agent_found_event.set()
-
-        topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
-        nc_publisher = NCPublisher(nc)
-        nc_subscriber = AgentNCSubscriber.for_agent_instance_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
-        )
-        await nc_subscriber.start()
-
-        # Send discovery request for the specific agent
-        await nc_publisher.publish_event(
-            event=InstanceDiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_instance_discovery_subject_request(call_id=call_id),
-        )
-
-        # Wait up to 1 second for response
-        try:
-            await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
-        except TimeoutError:
-            await nc_subscriber.stop()
-            raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
         if agent_dto is not None:
-            GET_AGENT_CACHE[cache_key] = agent_dto
+            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
+            return agent_dto
+
+        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class, t)
+
+        configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+        for config in configs:
+            if config.agent_id == agent_id:
+                agent_config = AgentConfig.from_entity(config)
+                agent_dto = AgentDTO.from_class_and_config(
+                    class_dto=agent_class_dto,
+                    agent_config=agent_config,
+                )
+
+        if agent_dto is not None:
+            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
             return agent_dto
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
-    async def discover_agent_class(nc: NATS, agent_class: str, t: LocaleHandler) -> AgentDTO:
+    async def discover_agent_class(nc: NATS, agent_class: str, t: LocaleHandler) -> AgentClassDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
         """
         cache_key = agent_class
 
-        if cache_key in GET_AGENT_CACHE:
-            return GET_AGENT_CACHE[cache_key]
+        if cache_key in GET_AGENT_CLASS_CACHE:
+            return GET_AGENT_CLASS_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        agent_dto: AgentDTO | None = None
+        agent_dto: AgentClassDTO | None = None
         agent_found_event = asyncio.Event()
 
         async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             nonlocal agent_dto
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
-            agent_dto = AgentDTO(
+            agent_dto = AgentClassDTO(
                 agent_class=event.agent_class,
-                agent_id=event.agent_id,
-                agent_config=AgentConfigDTO.from_agent_config(event.agent_config, t),
+                agent_config_specs=event.agent_config_specs,
                 is_conversational=event.is_conversational,
                 start_events=event.start_events,
                 stop_events=event.stop_events,
                 network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
                 is_online=True,
             )
-            AgentEntity.create_or_update_from_dto(agent_dto)
             agent_found_event.set()
 
         topic_manager = AgentInstanceTopicManager(agent_class=agent_class)
@@ -218,13 +192,13 @@ class AgentService:
             await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
         except TimeoutError:
             await nc_subscriber.stop()
-            raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
+            raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
         if agent_dto is not None:
-            GET_AGENT_CACHE[cache_key] = agent_dto
+            GET_AGENT_CLASS_CACHE[cache_key] = agent_dto
             return agent_dto
 
-        raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
+        raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
     @staticmethod
     async def discover_agent_instances(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
@@ -250,7 +224,6 @@ class AgentService:
                 agent_dto = AgentDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=config_instance,
-                    t=t,
                 )
                 configured_agents.append(agent_dto)
 
@@ -386,7 +359,7 @@ class AgentService:
         requests.
         """
         DISCOVER_AGENTS_CACHE.clear()
-        GET_AGENT_CACHE.clear()
+        GET_AGENT_INSTANCE_CACHE.clear()
 
     @staticmethod
     async def get_agent_configs(agent_class: str, t: LocaleHandler) -> list[AgentConfigInstanceDTO]:

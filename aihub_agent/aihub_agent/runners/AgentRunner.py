@@ -71,7 +71,7 @@ class AgentRunner:
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
         agent configuration as well as some carefully crafted event specifications.
@@ -81,7 +81,7 @@ class AgentRunner:
             return
 
         logger.debug(f"Received discovery request for {topic.agent_class}.")
-        subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_agent_class_discovery_subject_response(topic.call_id)
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
@@ -134,7 +134,7 @@ class AgentRunner:
         await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
@@ -164,6 +164,7 @@ class AgentRunner:
         self._stop_signal.set()
         self.running = False
 
+        await self.discovery_event_subscriber.stop()
         await self.control_event_subscriber.stop()
         await self.dispatcher.stop()
 
