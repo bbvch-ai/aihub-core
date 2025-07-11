@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.218.0] - 2025-07-11 - Enhanced API Configuration and Extensibility
+
+### Added
+- ✨ **Enabled custom environment variable configuration for API services:** This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+
+---
+
+
+
 ## [v0.217.0] - 2025-07-10 - Automated Agent API Integration and Event Inheritance
 
 ### Added
