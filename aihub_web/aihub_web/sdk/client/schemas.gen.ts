@@ -4165,8 +4165,117 @@ export const HealthResponseSchema = {
     title: 'HealthResponse'
 } as const;
 
+export const HtmlElementSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        '$el': {
+            type: 'string',
+            title: '$El',
+            description: 'HTML element tag name'
+        },
+        attrs: {
+            additionalProperties: {
+                anyOf: [
+                    {
+                        type: 'string'
+                    },
+                    {
+                        additionalProperties: true,
+                        type: 'object'
+                    }
+                ]
+            },
+            type: 'object',
+            title: 'Attrs',
+            description: 'HTML element attributes',
+            default: {}
+        },
+        children: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/LocaleString'
+                    },
+                    type: 'array'
+                },
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Children',
+            description: 'HTML element children'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['$el', 'children'],
+    title: 'HtmlElement'
+} as const;
+
+export const HumanAWorkInputSchema = {
+    properties: {
+        input_text_a: {
+            type: 'string',
+            title: 'Input Text A',
+            description: 'Input text A'
+        }
+    },
+    type: 'object',
+    required: ['input_text_a'],
+    title: 'HumanAWorkInput'
+} as const;
+
+export const HumanBWorkInputSchema = {
+    properties: {
+        input_text_b: {
+            type: 'string',
+            title: 'Input Text B',
+            description: 'Input text B'
+        }
+    },
+    type: 'object',
+    required: ['input_text_b'],
+    title: 'HumanBWorkInput'
+} as const;
+
 export const HumanInSpecsSchema = {
     properties: {
+        name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The name of the work event.'
+        },
+        description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'A description of the work event, providing details about its purpose.'
+        },
         route: {
             type: 'string',
             title: 'Route',
@@ -4185,10 +4294,26 @@ export const HumanInSpecsSchema = {
         event_specs: {
             '$ref': '#/components/schemas/EventSpecs',
             description: 'The event specs of the work event.'
+        },
+        form: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputTextElement'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Form',
+            description: 'Formkit elements of the work event.',
+            default: []
         }
     },
     type: 'object',
-    required: ['route', 'method', 'is_process_start', 'event_specs'],
+    required: ['name', 'description', 'route', 'method', 'is_process_start', 'event_specs'],
     title: 'HumanInSpecs'
 } as const;
 
@@ -5071,6 +5196,152 @@ export const InputEventInfoSchema = {
     required: ['event_names', 'optional'],
     title: 'InputEventInfo',
     description: 'Information about an input event for a step.'
+} as const;
+
+export const InputTextElementSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeInputText',
+            title: 'Formkit',
+            description: 'PrimeVue InputText element.',
+            default: 'primeInputText'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Help text of this field'
+        },
+        validation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validation',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Placeholder text'
+        },
+        prefix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Prefix text'
+        },
+        suffix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Suffix text'
+        },
+        iconPrefix: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconprefix',
+            description: 'Icon prefix'
+        },
+        iconSuffix: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconsuffix',
+            description: 'Icon suffix'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label'],
+    title: 'InputTextElement'
 } as const;
 
 export const JSONSchemaSchema = {
@@ -6207,7 +6478,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752142262
+            default: 1752252938
         },
         owned_by: {
             type: 'string',
@@ -6747,6 +7018,49 @@ export const ProcessDTOSchema = {
     type: 'object',
     required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs', 'agent_inputs'],
     title: 'ProcessDTO'
+} as const;
+
+export const ProcessHumanInputDtoSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the work event.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'A description of the work event, providing details about its purpose.'
+        },
+        route: {
+            type: 'string',
+            title: 'Route',
+            description: 'The route of the work event.'
+        },
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        form: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputTextElement'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Form',
+            description: 'Formkit fields to render the UI'
+        }
+    },
+    type: 'object',
+    required: ['name', 'description', 'route', 'method', 'form'],
+    title: 'ProcessHumanInputDto'
 } as const;
 
 export const ProgramInSpecsSchema = {
@@ -7676,6 +7990,12 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 ### Use Cases
 - Signaling that a response is ready, and no more actions are needed.
 - Informing the user interface that the conversation or task has concluded.`
+} as const;
+
+export const SubmittedFormDTOSchema = {
+    properties: {},
+    type: 'object',
+    title: 'SubmittedFormDTO'
 } as const;
 
 export const SuiteDTOSchema = {

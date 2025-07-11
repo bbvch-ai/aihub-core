@@ -198,7 +198,6 @@ class ProcessService:
         process_id: str,
         process_walkthrough_id: str | None = None,
     ) -> bool:
-        # TODO: Safe if it is only partial, and return False
         external_event = ExternalProcessEvent(
             process_class=process_class,
             process_id=process_id,
@@ -329,7 +328,10 @@ class ProcessService:
             "_event_name": human_in.event_specs.event_name,
             "_parent_event_names": human_in.event_specs.event_parents,
         }
+
+        # TODO: Catch if WorkEvent can not be created and safe partial object to DB
         event: WorkEvent = WorkEvent.deserialize_event(json_data)
+
 
         await ProcessService.send_event(
             external_process_event_distributor,

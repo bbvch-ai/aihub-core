@@ -3004,9 +3004,79 @@ export type HealthResponse = {
 };
 
 /**
+ * HtmlElement
+ */
+export type HtmlElement = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * $El
+     * HTML element tag name
+     */
+    $el: string;
+    /**
+     * Attrs
+     * HTML element attributes
+     */
+    attrs?: {
+        [key: string]: string | {
+            [key: string]: unknown;
+        };
+    };
+    /**
+     * Children
+     * HTML element children
+     */
+    children: Array<LocaleString> | Array<string> | LocaleString | string;
+    [key: string]: unknown | true | (string | null) | string | {
+        [key: string]: string | {
+            [key: string]: unknown;
+        };
+    } | (Array<LocaleString> | Array<string> | LocaleString | string) | undefined;
+};
+
+/**
+ * HumanAWorkInput
+ */
+export type HumanAWorkInput = {
+    /**
+     * Input Text A
+     * Input text A
+     */
+    input_text_a: string;
+};
+
+/**
+ * HumanBWorkInput
+ */
+export type HumanBWorkInput = {
+    /**
+     * Input Text B
+     * Input text B
+     */
+    input_text_b: string;
+};
+
+/**
  * HumanInSpecs
  */
 export type HumanInSpecs = {
+    /**
+     * The name of the work event.
+     */
+    name: LocaleString;
+    /**
+     * A description of the work event, providing details about its purpose.
+     */
+    description: LocaleString;
     /**
      * Route
      * The route of the work event.
@@ -3026,6 +3096,11 @@ export type HumanInSpecs = {
      * The event specs of the work event.
      */
     event_specs: EventSpecs;
+    /**
+     * Form
+     * Formkit elements of the work event.
+     */
+    form?: Array<HtmlElement | InputTextElement>;
 };
 
 /**
@@ -3604,6 +3679,78 @@ export type InputEventInfo = {
      * Whether this input is optional
      */
     optional: boolean;
+};
+
+/**
+ * InputTextElement
+ */
+export type InputTextElement = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue InputText element.
+     */
+    formkit?: 'primeInputText';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label of this field
+     */
+    label: LocaleString;
+    /**
+     * Help text of this field
+     */
+    help?: LocaleString | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is disabled
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder text
+     */
+    placeholder?: LocaleString | null;
+    /**
+     * Prefix text
+     */
+    prefix?: LocaleString | null;
+    /**
+     * Suffix text
+     */
+    suffix?: LocaleString | null;
+    /**
+     * Iconprefix
+     * Icon prefix
+     */
+    iconPrefix?: string | null;
+    /**
+     * Iconsuffix
+     * Icon suffix
+     */
+    iconSuffix?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeInputText' | (string | null) | LocaleString | (LocaleString | null) | (string | null) | boolean | (LocaleString | null) | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -4984,6 +5131,37 @@ export type ProcessDto = {
 };
 
 /**
+ * ProcessHumanInputDto
+ */
+export type ProcessHumanInputDto = {
+    /**
+     * Name
+     * The name of the work event.
+     */
+    name: string;
+    /**
+     * Description
+     * A description of the work event, providing details about its purpose.
+     */
+    description: string;
+    /**
+     * Route
+     * The route of the work event.
+     */
+    route: string;
+    /**
+     * Method
+     * The HTTP method of the work event.
+     */
+    method: string;
+    /**
+     * Form
+     * Formkit fields to render the UI
+     */
+    form: Array<HtmlElement | InputTextElement>;
+};
+
+/**
  * ProgramInSpecs
  */
 export type ProgramInSpecs = {
@@ -5937,6 +6115,13 @@ export type StopEventWritable = {
      */
     display_description?: LocaleString | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * SubmittedFormDTO
+ */
+export type SubmittedFormDto = {
+    [key: string]: unknown;
 };
 
 /**
@@ -7845,6 +8030,180 @@ export type DiscoverProcessesResponses = {
 
 export type DiscoverProcessesResponse = DiscoverProcessesResponses[keyof DiscoverProcessesResponses];
 
+export type GetProcessStartFormsData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+    };
+    query?: never;
+    url: '/processes/{process_class}/{process_id}/start_forms';
+};
+
+export type GetProcessStartFormsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessStartFormsError = GetProcessStartFormsErrors[keyof GetProcessStartFormsErrors];
+
+export type GetProcessStartFormsResponses = {
+    /**
+     * Response Get Process Start Forms Processes  Process Class   Process Id  Start Forms Get
+     * Successful Response
+     */
+    200: Array<ProcessHumanInputDto>;
+};
+
+export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof GetProcessStartFormsResponses];
+
+export type GetProcessOpenFormsData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+        /**
+         * Process Walkthrough Id
+         */
+        process_walkthrough_id: string;
+    };
+    query?: never;
+    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
+};
+
+export type GetProcessOpenFormsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
+
+export type GetProcessOpenFormsResponses = {
+    /**
+     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
+     * Successful Response
+     */
+    200: Array<ProcessHumanInputDto>;
+};
+
+export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
+
+export type SendProcessStartFormData = {
+    /**
+     * Data
+     */
+    body: {
+        [key: string]: unknown;
+    };
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+    };
+    query: {
+        /**
+         * Route to which human input should be submitted
+         */
+        submission_route: string;
+        /**
+         * Method using which human input should be submitted
+         */
+        submission_method: string;
+    };
+    url: '/processes/{process_class}/{process_id}/submit_start_form';
+};
+
+export type SendProcessStartFormErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendProcessStartFormError = SendProcessStartFormErrors[keyof SendProcessStartFormErrors];
+
+export type SendProcessStartFormResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubmittedFormDto;
+};
+
+export type SendProcessStartFormResponse = SendProcessStartFormResponses[keyof SendProcessStartFormResponses];
+
+export type SendProcessOpenFormData = {
+    /**
+     * Data
+     */
+    body: {
+        [key: string]: unknown;
+    };
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+        /**
+         * Process Walkthrough Id
+         */
+        process_walkthrough_id: string;
+    };
+    query: {
+        /**
+         * Route to which human input should be submitted
+         */
+        submission_route: string;
+        /**
+         * Method using which human input should be submitted
+         */
+        submission_method: string;
+    };
+    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/submit_open_form';
+};
+
+export type SendProcessOpenFormErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendProcessOpenFormError = SendProcessOpenFormErrors[keyof SendProcessOpenFormErrors];
+
+export type SendProcessOpenFormResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubmittedFormDto;
+};
+
+export type SendProcessOpenFormResponse = SendProcessOpenFormResponses[keyof SendProcessOpenFormResponses];
+
 export type ListTokensEndpointData = {
     body?: never;
     path?: never;
@@ -8725,6 +9084,107 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetData = {
+    body?: never;
+    path: {
+        /**
+         * Walkthrough ID
+         */
+        process_walkthrough_id: string;
+    };
+    query?: never;
+    url: '/processes/HumanOnlyProcess/agent_only_process/{process_walkthrough_id}/input_b';
+};
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetError = GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetErrors[keyof GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetErrors];
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProcessHumanInputDto;
+};
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponse = GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponses[keyof GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponses];
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostData = {
+    body: HumanBWorkInput;
+    path: {
+        /**
+         * Walkthrough ID
+         */
+        process_walkthrough_id: string;
+    };
+    query?: never;
+    url: '/processes/HumanOnlyProcess/agent_only_process/{process_walkthrough_id}/input_b';
+};
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostError = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostErrors[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostErrors];
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubmittedFormDto;
+};
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponse = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponses[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponses];
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/processes/HumanOnlyProcess/agent_only_process/input_a';
+};
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProcessHumanInputDto;
+};
+
+export type GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponse = GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponses[keyof GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponses];
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostData = {
+    body: HumanAWorkInput;
+    path?: never;
+    query?: never;
+    url: '/processes/HumanOnlyProcess/agent_only_process/input_a';
+};
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostError = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostErrors[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostErrors];
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubmittedFormDto;
+};
+
+export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponse = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponses[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});
