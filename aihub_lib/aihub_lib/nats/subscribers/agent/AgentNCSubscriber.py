@@ -2,7 +2,7 @@ from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, InstanceDiscoveryRequestEvent, DisplayEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent, DisplayEvent, InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager

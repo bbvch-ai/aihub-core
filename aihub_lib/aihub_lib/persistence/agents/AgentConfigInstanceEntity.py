@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from mongoengine import DateTimeField, DictField, Document, StringField, EmbeddedDocumentField
+from mongoengine import DateTimeField, DictField, Document, EmbeddedDocumentField, StringField
 
 from aihub_lib.i18n.LocaleString import LocaleStringEntity
 

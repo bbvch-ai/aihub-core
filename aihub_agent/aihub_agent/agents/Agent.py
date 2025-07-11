@@ -1,5 +1,4 @@
 import functools
-from abc import abstractmethod
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.control.start import StartEvent

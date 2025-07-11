@@ -4,10 +4,10 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
-    AgentConfigSpecs,
     AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+    EventSpecs,
 )
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import BaseModel, Field
 
@@ -34,7 +34,8 @@ class AgentClassDTO(BaseModel):
     network_graph: Annotated[
         WorkflowGraph,
         Field(
-            description="A network graph of the agent class, showing how different components are connected and interact.",
+            description="A network graph of the agent class, "
+            "showing how different components are connected and interact.",
         ),
     ]
     is_conversational: Annotated[

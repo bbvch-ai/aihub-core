@@ -1,12 +1,10 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import Field
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
-    EventSpecs,
 )
 
 
