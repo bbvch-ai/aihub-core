@@ -1,4 +1,5 @@
 import functools
+from abc import abstractmethod
 
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
@@ -39,6 +40,15 @@ class Agent(DispatchableWorkflow):
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
     STOP_ON_ERROR_ANNOTATION = "_stop_on_error"
     MAX_EXECUTION_PER_RUN_ANNOTATION = "_max_executions_per_run"
+
+    @property
+    @abstractmethod
+    def agent_config_type(self) -> type:
+        """
+        This property is only here to enforce that subclasses of Agent must define
+        an `agent_config_type` field.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
 
     @classmethod
     @functools.cache

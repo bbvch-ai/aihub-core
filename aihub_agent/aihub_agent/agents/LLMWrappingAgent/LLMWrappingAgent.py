@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
 
@@ -7,11 +9,13 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class LLMWrappingAgent(Agent):
+    agent_config_type: LLMWrappingAgentConfig
+
     @step()
     async def start_step(
         self,
         event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
+        agent_config: LLMWrappingAgent.agent_config_type,
         displayer: EventDisplayer,
     ) -> LLMStopEvent:
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
