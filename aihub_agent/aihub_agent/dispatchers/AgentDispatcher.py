@@ -64,6 +64,7 @@ class AgentDispatcher(BaseDispatcher):
         self.locale_handler = locale_handler
 
         self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__class__.__name__)
+        self.agent_config_type = agent.agent_config_type
 
     @override
     async def handle_event(
@@ -332,6 +333,12 @@ class AgentDispatcher(BaseDispatcher):
 
             # Handle AgentConfig if requested - create instance from dynamic config data
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
+                # Ensure the AgentConfig typing is consistent with the agent class
+                if not param.annotation == self.agent_config_type:
+                    raise ValueError(
+                        f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
+                        f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
+                    )
                 if agent_config_data:
                     # Create a new instance of the specific AgentConfig class with dynamic data
                     dynamic_config = param.annotation(**agent_config_data)
