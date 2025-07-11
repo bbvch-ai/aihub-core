@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import sleep
 
-from aihub_api.routes.process.dto.ProcessStartDTO import ProcessStartDTO
+from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
@@ -13,6 +13,7 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics import ProcessDiscoveryTopic
+from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from bson import ObjectId
 from cachetools import TTLCache
@@ -204,21 +205,49 @@ class ProcessService:
         return True
 
     @staticmethod
-    async def get_process_start_forms(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> list[ProcessStartDTO]:
+    async def get_process_start_forms(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> list[ProcessHumanInputDto]:
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        process_start_dtos: list[ProcessStartDTO] = []
+        process_human_input_dtos: list[ProcessHumanInputDto] = []
 
         for human_input in process.human_inputs:
             if not human_input.is_process_start:
                 continue
 
-            process_start_dto = ProcessStartDTO(
+            process_human_input_dto = ProcessHumanInputDto(
                 name=t.extract(human_input.name),
                 description=t.extract(human_input.description),
                 route=human_input.route,
                 method=human_input.method,
                 form=human_input.form,
             )
-            process_start_dto.form = [form_element.in_locale(t) for form_element in process_start_dto.form]
-            process_start_dtos.append(process_start_dto)
-        return process_start_dtos
+            process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
+            process_human_input_dtos.append(process_human_input_dto)
+        return process_human_input_dtos
+
+    @staticmethod
+    async def get_process_open_forms(nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler) -> list[ProcessHumanInputDto]:
+        process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
+        process_human_input_dtos: list[ProcessHumanInputDto] = []
+
+        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(process_class, process_id, process_walkthrough_id)
+
+        for persisted_event in persisted_events:
+            for work_form in persisted_event["event_data"]["forms"]:
+                human_in = next((human_in for human_in in process.human_inputs if human_in.event_specs.event_name == work_form["_event_name"]), None)
+                work_form_elements: list[dict] = []
+
+                for key, value in work_form.items():
+                    if isinstance(value, dict) and value.get("is_formkit_element"):
+                        work_form_elements.append(value)
+
+                process_human_input_dto = ProcessHumanInputDto(
+                    name=t.extract(human_in.name),
+                    description=t.extract(human_in.description),
+                    route=human_in.route,
+                    method=human_in.method,
+                    form=work_form_elements,
+                )
+                process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
+                process_human_input_dtos.append(process_human_input_dto)
+
+        return process_human_input_dtos

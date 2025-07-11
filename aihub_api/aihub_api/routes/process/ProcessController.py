@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from aihub_api.routes.process.dto.ProcessStartDTO import ProcessStartDTO
+from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -93,7 +93,23 @@ class ProcessController(Controller):
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> list[ProcessStartDTO]:
+        ) -> list[ProcessHumanInputDto]:
             return await ProcessService.get_process_start_forms(nc, process_class, process_id, t)
+
+        return self
+
+    def get_process_open_forms(self, route: str = "/{process_class}/{process_id}/{process_walkthrough_id}/open_forms") -> "ProcessController":
+        @self.router.get(route, tags=self.tags)
+        async def get_process_open_forms(
+            process_class: str,
+            process_id: str,
+            process_walkthrough_id: str,
+            nc: Annotated[NATS, Depends(use_nats)],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[ProcessHumanInputDto]:
+            return await ProcessService.get_process_open_forms(nc, process_class, process_id, process_walkthrough_id, t)
 
         return self

@@ -40,7 +40,7 @@ class PersistedProcessEventEntity(Document):
         persisted_entity.save()
 
     @classmethod
-    def get_open_human_work_requests(cls, process_walkthrough_id: str) -> list[PersistedProcessEventEntity]:
+    def get_open_human_work_requests(cls, process_class: str, process_id: str, process_walkthrough_id: str) -> list[PersistedProcessEventEntity]:
         """
         Finds unanswered human work requests for a given process walkthrough.
 
@@ -55,6 +55,8 @@ class PersistedProcessEventEntity(Document):
             # within the specified process walkthrough.
             {
                 "$match": {
+                    "process_class": process_class,
+                    "process_id": process_id,
                     "process_walkthrough_id": process_walkthrough_id,
                     "event_parents": "HumanWorkRequestEvent",
                 }
@@ -66,14 +68,18 @@ class PersistedProcessEventEntity(Document):
                     "from": cls._get_collection_name(),
                     "let": {
                         "form_event_names": "$event_data.forms._event_name",
-                        "walkthrough_id": "$process_walkthrough_id",
+                        "form_process_class": "$process_class",
+                        "form_process_id": "$process_id",
+                        "form_process_walkthrough_id": "$process_walkthrough_id",
                     },
                     "pipeline": [
                         {
                             "$match": {
                                 "$expr": {
                                     "$and": [
-                                        {"$eq": ["$process_walkthrough_id", "$$walkthrough_id"]},
+                                        {"$eq": ["$process_walkthrough_id", "$$form_process_walkthrough_id"]},
+                                        {"$eq": ["$process_class", "$$form_process_class"]},
+                                        {"$eq": ["$process_id", "$$form_process_id"]},
                                         {"$eq": ["$event_type", "work"]},
                                         {"$in": ["$event_name", "$$form_event_names"]},
                                     ]
@@ -110,7 +116,11 @@ class PersistedProcessEventEntity(Document):
 
     @classmethod
     def find_request_for_work_event(
-        cls, process_walkthrough_id: str, event_name: str
+        cls,
+        process_class: str,
+        process_id: str,
+        process_walkthrough_id: str,
+        event_name: str
     ) -> PersistedProcessEventEntity | None:
         """
         Finds the specific HumanWorkRequestEvent that corresponds to a given work event name
@@ -122,6 +132,8 @@ class PersistedProcessEventEntity(Document):
         """
         return cls.objects(
             # These fields are defined in the schema and are queried normally.
+            process_class=process_class,
+            process_id=process_id,
             process_walkthrough_id=process_walkthrough_id,
             event_parents="HumanWorkRequestEvent",
 

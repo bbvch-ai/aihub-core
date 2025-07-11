@@ -3,8 +3,11 @@ import logging
 import time
 from typing import Annotated, Any
 
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_process_event_distributor import (
     use_external_process_event_distributor,
 )
@@ -116,9 +119,6 @@ class ProcessEndpointsDiscoveryService:
     ):
         base_path = self._get_process_endpoint_name(process_class, process_id)
 
-        form_field_info = HumanInSpecs.model_fields["form"]
-        form_type_annotation = form_field_info.annotation
-
         process_class_snake = snakecase(process_class)
         process_id_snake = snakecase(process_id)
         get_endpoint_name = (
@@ -147,12 +147,10 @@ class ProcessEndpointsDiscoveryService:
         self.app.add_api_route(
             path=path,
             endpoint=get_endpoint_creator(
-                form_type=form_type_annotation,
-                form=human_input.form,
                 process_class=process_class,
                 process_id=process_id,
                 process_controller=self.process_controller,
-                event_name=human_input.event_specs.event_name,
+                human_in=human_input,
             ),
             methods=["GET"],
             name=get_endpoint_name,
@@ -184,10 +182,14 @@ class ProcessEndpointsDiscoveryService:
         process_id: str,
         program_input: ProgramInSpecs,
     ):
-        process_class_name, process_id_snake, base_path = self._get_process_endpoint_names(process_class, process_id)
+        base_path = self._get_process_endpoint_name(process_class, process_id)
+
+        process_class_snake = snakecase(process_class)
+        process_id_snake = snakecase(process_id)
+
 
         post_endpoint_name = (
-            f"submit_form_for_{process_class_name}_{process_id_snake}_{program_input.route.replace('/', '_')}"
+            f"submit_form_for_{process_class_snake}_{process_id_snake}_{program_input.route.replace('/', '_')}"
         )
         path = f"{base_path}{program_input.route}"
 
@@ -217,52 +219,75 @@ class ProcessEndpointsDiscoveryService:
 
     @staticmethod
     def create_form_get_endpoint_process_start(
-        form_type: type,
-        form: list[BaseModel],
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
-        event_name: str,
+        human_in: HumanInSpecs,
     ):
-        def get_form(
+        async def get_form(
+            nc: Annotated[NATS, Depends(use_nats)],
             _: Annotated[
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
             ],
-        ) -> form_type:
-            return form
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> ProcessHumanInputDto:
+            process_human_input_dtos = await ProcessService.get_process_start_forms(
+                nc=nc,
+                process_class=process_class,
+                process_id=process_id,
+                t=t,
+            )
+            process_dto = next((dto for dto in process_human_input_dtos if dto.route == human_in.route and dto.method == human_in.method), None)
+
+            if not process_dto:
+                raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
+
+            return process_dto
 
         return get_form
 
     @staticmethod
     def create_form_get_endpoint(
-        form_type: type,
-        form: list[BaseModel],
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
-        event_name: str,
+        human_in: HumanInSpecs,
     ):
         def get_form(
-                process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
-                _: Annotated[
-                    UserIdentity,
-                    Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
-                ],
-        ) -> form_type:
+            process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
+            _: Annotated[
+                UserIdentity,
+                Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> ProcessHumanInputDto:
             persisted_event = PersistedProcessEventEntity.find_request_for_work_event(
+                process_class=process_class,
+                process_id=process_id,
                 process_walkthrough_id=process_walkthrough_id,
-                event_name=event_name,
+                event_name=human_in.event_specs.event_name,
             )
             if not persisted_event:
                 raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
             for work_form in persisted_event["event_data"]["forms"]:
-                work_form_elements: form_type = []
-                if work_form["_event_name"] == event_name:
-                    for key, value in work_form.items():
-                        if isinstance(value, dict) and value.get("is_formkit_element"):
-                            work_form_elements.append(value)
-                return work_form_elements
+                if work_form["_event_name"] != human_in.event_specs.event_name:
+                    continue
+
+                work_form_elements: list[dict] = []
+                for key, value in work_form.items():
+                    if isinstance(value, dict) and value.get("is_formkit_element"):
+                        work_form_elements.append(value)
+
+                process_human_input_dto = ProcessHumanInputDto(
+                    name=t.extract(human_in.name),
+                    description=t.extract(human_in.description),
+                    route=human_in.route,
+                    method=human_in.method,
+                    form=work_form_elements,
+                )
+                process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
+                return process_human_input_dto
 
             raise HTTPException(status_code=400, detail="Error creating form")
 
