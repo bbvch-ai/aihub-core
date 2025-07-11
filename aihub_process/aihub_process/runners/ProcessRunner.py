@@ -99,6 +99,8 @@ class ProcessRunner:
 
         human_inputs: list[HumanInSpecs] = [
             HumanInSpecs(
+                name=human_work_event.display_name_from_class(),
+                description=human_work_event.display_description_from_class(),
                 route=human_in.route,
                 method=human_in.method,
                 is_process_start=issubclass(human_work_event, ProcessStartEvent),
@@ -107,10 +109,7 @@ class ProcessRunner:
                     event_schema=copy.deepcopy(human_work_event.to_form_submission_model().model_json_schema()),
                     event_parents=human_work_event.parent_event_names_from_class(),
                 ),
-                form=([] if not human_in.start_form else human_in.start_form.to_formkit_form(
-                    title=human_in.start_form.display_name,
-                    description=human_in.start_form.display_description,
-                )),
+                form=([] if not human_in.start_form else human_in.start_form.to_formkit_form()),
             )
             for human_work_event, human_in in self.process_type.get_events_with_human_in()
         ]

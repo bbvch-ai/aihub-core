@@ -38,6 +38,8 @@ class ProcessDTO(BaseModel):
     def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool) -> "ProcessDTO":
         human_inputs = [
             HumanInSpecs(
+                name=spec.name,
+                description=spec.description,
                 route=spec.route,
                 method=spec.method,
                 is_process_start=spec.is_process_start,

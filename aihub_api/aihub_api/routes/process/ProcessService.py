@@ -206,8 +206,19 @@ class ProcessService:
     @staticmethod
     async def get_process_start_forms(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> list[ProcessStartDTO]:
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        return [
-            ProcessStartDTO(form=human_input.form, route=human_input.route, method=human_input.method)
-            for human_input in process.human_inputs
-            if human_input.is_process_start
-        ]
+        process_start_dtos: list[ProcessStartDTO] = []
+
+        for human_input in process.human_inputs:
+            if not human_input.is_process_start:
+                continue
+
+            process_start_dto = ProcessStartDTO(
+                name=t.extract(human_input.name),
+                description=t.extract(human_input.description),
+                route=human_input.route,
+                method=human_input.method,
+                form=human_input.form,
+            )
+            process_start_dto.form = [form_element.in_locale(t) for form_element in process_start_dto.form]
+            process_start_dtos.append(process_start_dto)
+        return process_start_dtos

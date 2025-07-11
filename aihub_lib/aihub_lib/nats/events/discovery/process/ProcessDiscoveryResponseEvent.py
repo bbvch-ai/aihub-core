@@ -2,6 +2,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
@@ -16,6 +17,10 @@ class ProgramInSpecs(BaseModel):
 
 
 class HumanInSpecs(BaseModel):
+    name: Annotated[LocaleString, Field(description="The name of the work event.")]
+    description: Annotated[
+        LocaleString, Field(description="A description of the work event, providing details about its purpose.")
+    ]
     route: Annotated[str, Field(description="The route of the work event.")]
     method: Annotated[str, Field(description="The HTTP method of the work event.")]
     is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]

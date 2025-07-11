@@ -33,9 +33,9 @@ class WorkEvent(ProcessEvent):
         return self
 
     @classmethod
-    def display_name_from_class(cls):
+    def display_name_from_class(cls) -> LocaleString:
         return cls._display_name
 
     @classmethod
-    def display_description_from_class(cls):
+    def display_description_from_class(cls) -> LocaleString:
         return cls._display_description

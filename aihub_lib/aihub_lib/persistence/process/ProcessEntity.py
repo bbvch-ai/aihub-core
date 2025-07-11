@@ -31,6 +31,8 @@ class ProgramInSpecsEntity(EmbeddedDocument):
 
 
 class HumanInSpecsEntity(EmbeddedDocument):
+    name = DictField(required=True)
+    description = DictField(required=True)
     route = StringField(required=True)
     method = StringField(required=True)
     is_process_start = BooleanField(required=True)
@@ -40,6 +42,8 @@ class HumanInSpecsEntity(EmbeddedDocument):
     @classmethod
     def from_dto(cls, human_in_dto) -> "HumanInSpecsEntity":
         return cls(
+            name=human_in_dto.name.model_dump(),
+            description=human_in_dto.description.model_dump(),
             route=human_in_dto.route,
             method=human_in_dto.method,
             is_process_start=human_in_dto.is_process_start,

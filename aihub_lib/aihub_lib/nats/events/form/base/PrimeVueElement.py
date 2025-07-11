@@ -3,6 +3,7 @@ from typing import Annotated
 
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 
@@ -14,3 +15,11 @@ class PrimeVueElement(FormkitElement, abc.ABC):
     help: Annotated[LocaleString | None, Field(description="Help text of this field")] = None
     # https://formkit.com/essentials/validation
     validation: Annotated[str | None, Field(description="Validation expression")] = None
+
+    def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
+        self_copy = self.model_copy()
+        if isinstance(self_copy.label, LocaleString):
+            self_copy.label = t.extract(self_copy.label)
+        if isinstance(self_copy.help, LocaleString):
+            self_copy.help = t.extract(self_copy.help)
+        return self_copy
