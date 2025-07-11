@@ -101,9 +101,7 @@ class AgentDispatcher(BaseDispatcher):
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
-            # Store agent configuration data separately for easy access
-            if hasattr(event, "_agent_config_data") and event.agent_config_data:
-                await run_context.set("_agent_config_data", event.agent_config_data)
+            await run_context.set("_agent_config", event.agent_config)
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
@@ -322,9 +320,9 @@ class AgentDispatcher(BaseDispatcher):
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
 
         # Get dynamic configuration data from run context
-        agent_config_data = await run_context.get("_agent_config_data", None)
-        if agent_config_data is None:
-            raise ValueError("AgentConfig data is required for this step, but none was provided in the run context.")
+        agent_config: AgentConfig = await run_context.get("_agent_config", None)
+        if agent_config is None:
+            raise ValueError("AgentConfig must be set at this point. Something went wrong in the StartEvent handling.")
 
         # Prepare arguments
         for param in step_signature.parameters.values():
@@ -341,17 +339,12 @@ class AgentDispatcher(BaseDispatcher):
                         f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
                         f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
                     )
-                if agent_config_data:
-                    # Create a new instance of the specific AgentConfig class with dynamic data
-                    dynamic_config = param.annotation(**agent_config_data)
-                    events_and_kwargs.kwargs[param.name] = dynamic_config
-                    logger.debug(
-                        f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
-                    )
-                else:
-                    raise ValueError(
-                        f"AgentConfig parameter '{param.name}' requires dynamic configuration data, but none was provided."
-                    )
+                # Create a new instance of the specific AgentConfig class with dynamic data
+                dynamic_config = agent_config.parent_config(param.annotation)
+                events_and_kwargs.kwargs[param.name] = dynamic_config
+                logger.debug(
+                    f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+                )
                 continue
 
             # Handle RunContext / ThreadContext
