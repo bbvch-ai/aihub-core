@@ -101,7 +101,7 @@ class AgentDiscoveryService:
         self.running = True
         self.task = asyncio.create_task(self._discovery_loop())
 
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.discovery_handler,
