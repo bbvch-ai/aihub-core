@@ -1,7 +1,6 @@
 import copy
 
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentConfigSpecs
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentConfigSpecs, EventSpecs
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
 
