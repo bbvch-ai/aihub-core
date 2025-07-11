@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
@@ -22,3 +22,20 @@ class WorkEvent(ProcessEvent):
     display_description: Annotated[
         LocaleString | None, Field(description="Display description for the process step")
     ] = None
+
+    @model_validator(mode="after")
+    def set_default_values(self) -> "WorkEvent":
+        """Set default values from class if instance values are None."""
+        if not self.display_name:
+            self.display_name = self.__class__._display_name
+        if not self.display_description:
+            self.display_description = self.__class__._display_description
+        return self
+
+    @classmethod
+    def display_name_from_class(cls):
+        return cls._display_name
+
+    @classmethod
+    def display_description_from_class(cls):
+        return cls._display_description

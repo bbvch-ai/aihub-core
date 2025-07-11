@@ -5,12 +5,18 @@ from typing import Union, get_args, get_origin
 from openai import BaseModel
 from pydantic import create_model
 
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.form import HtmlElement
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 
 
 class Form(BaseModel):
-    def to_formkit_form(self) -> list[FormkitElement]:
+    def to_formkit_form(
+        self,
+        title: LocaleString | None = None,
+        description: LocaleString | None = None,
+    ) -> list[FormkitElement]:
         """
         Generates a list of FormkitElement objects from the event's attributes.
 
@@ -20,6 +26,16 @@ class Form(BaseModel):
         element's 'name'.
         """
         formkit_elements: list[FormkitElement] = []
+
+        if title is not None:
+            formkit_elements.append(
+                HtmlElement(el="h1", children=title)
+            )
+
+        if description is not None:
+            formkit_elements.append(
+                HtmlElement(el="p", children=description)
+            )
 
         # Iterate over the fields of the Pydantic model instance
         for field_name, field_info in self.model_fields.items():

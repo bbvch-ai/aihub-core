@@ -107,7 +107,10 @@ class ProcessRunner:
                     event_schema=copy.deepcopy(human_work_event.to_form_submission_model().model_json_schema()),
                     event_parents=human_work_event.parent_event_names_from_class(),
                 ),
-                form=([] if not human_in.start_form else human_in.start_form.to_formkit_form()),
+                form=([] if not human_in.start_form else human_in.start_form.to_formkit_form(
+                    title=human_in.start_form.display_name,
+                    description=human_in.start_form.display_description,
+                )),
             )
             for human_work_event, human_in in self.process_type.get_events_with_human_in()
         ]

@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
@@ -21,12 +22,12 @@ class HumanOnlyProcess(AgenticProcess):
             Human.In(
                 route="/input_a",
                 method="POST",
-                start_form=HumanAWork(input_text_a=InputTextElement(label="Input text A")),
+                start_form=HumanAWork(input_text_a=InputTextElement(label=LocaleString(en="Input text A"))),
             ),
         ],
     ) -> Annotated[HumanBWorkRequest, Human.Out(users=[])]:
         print(f"[AgentOnlyProcess.start_with_output_from_agent_a] {work_from_agent_a.input_text_a}")
-        return HumanBWorkRequest(forms=[HumanBWork(input_text_b=InputTextElement(label="Input text B"))])
+        return HumanBWorkRequest(forms=[HumanBWork(input_text_b=InputTextElement(label=LocaleString(en="Input text B")))])
 
     @process_step()
     async def end_with_output_from_agent_b(
