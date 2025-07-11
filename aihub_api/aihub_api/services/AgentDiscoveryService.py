@@ -76,27 +76,22 @@ class AgentDiscoveryService:
             topic.call_id, topic.agent_class, topic.agent_id
         )
 
-        agent = AgentService.discover_agent_instances()
+        agents: list[AgentDTO] = []
+        if topic.agent_class == "*":
+            agents = await AgentService.discover_agent_instances(self.nc)
 
-        start_events = self.agent_type.get_start_events()
-        start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
+            if topic.agent_id != "*":
+                agents = [agent for agent in agents if agent.agent_id == topic.agent_id]
 
-        stop_events = self.agent_type.get_stop_events()
-        stop_event_specs = [EventSpecs.from_event_class(e) for e in stop_events]
+        elif topic.agent_id == "*":
+            agents = await AgentService.discover_agent_instances_by_class(nc=self.nc, agent_class=topic.agent_class)
 
-        network_graph = WorkflowVisualizer(agent=self.agent_type)
-        network_graph.build_workflow_graph()
+        else:
+            agents.append(await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id))
 
-        agent_discovery_response_event = AgentDiscoveryResponseEvent(
-            agent_class=self.agent_class,
-            agent_id=self.agent_config.agent_id,
-            is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
-            agent_config=self.agent_config,
-            start_events=start_event_specs,
-            stop_events=stop_event_specs,
-            network_graph=network_graph.to_pydantic(),
-        )
-        await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
+        for agent in agents:
+            agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent.from_agent_dto(agent)
+            await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     async def start(self):
         if self.running:
@@ -137,7 +132,7 @@ class AgentDiscoveryService:
             await asyncio.sleep(self.discovery_interval)
 
     async def _discover_and_register_agents(self):
-        configured_agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc, self.locale_handler)
+        configured_agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc)
 
         # Deregister old endpoints
         for registered_agent_class, registered_agent_id in list(self.registered_agents):

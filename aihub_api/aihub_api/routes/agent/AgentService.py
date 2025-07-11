@@ -77,7 +77,7 @@ class AgentService:
         otherwise, use saved information from the database.
         """
         try:
-            return await AgentService.discover_agent_instance(nc, agent_class, agent_id, t)
+            return await AgentService.discover_agent_instance(nc, agent_class, agent_id)
         except HTTPException:
             agent = AgentEntity.get_agent(agent_class, agent_id)
             if agent is None:
@@ -90,7 +90,7 @@ class AgentService:
         Returns both agents that are online (answer to a discovery broadcast) and agents
         that are saved in the database.
         """
-        discovered_agents = await AgentService.discover_agent_instances(nc, t)
+        discovered_agents = await AgentService.discover_agent_instances(nc)
         saved_agents = [AgentDTO.from_entity(agent, t) for agent in AgentEntity.get_agents()]
 
         all_agents = discovered_agents.copy()
@@ -111,7 +111,7 @@ class AgentService:
         return all_agents
 
     @staticmethod
-    async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:
+    async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str) -> AgentDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -127,7 +127,7 @@ class AgentService:
             GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
             return agent_dto
 
-        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class, t)
+        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
 
         configs = AgentConfigInstanceEntity.find_for_class(agent_class)
         for config in configs:
@@ -145,7 +145,36 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
-    async def discover_agent_class(nc: NATS, agent_class: str, t: LocaleHandler) -> AgentClassDTO:
+    async def discover_agent_instances_by_class(nc: NATS, agent_class: str) -> list[AgentDTO]:
+        """
+        Retrieves all instances of a specific agent class. If cached, returns immediately.
+        Otherwise, sends a targeted discovery request and waits for responses.
+        """
+        cache_key = (agent_class, "*")
+
+        if cache_key in GET_AGENT_INSTANCE_CACHE:
+            return GET_AGENT_INSTANCE_CACHE[cache_key]
+
+        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
+
+        configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+        agent_instances = []
+        for config in configs:
+            agent_config = AgentConfig.from_entity(config)
+            agent_dto = AgentDTO.from_class_and_config(
+                class_dto=agent_class_dto,
+                agent_config=agent_config,
+            )
+            agent_instances.append(agent_dto)
+
+        if len(agent_instances) > 0:
+            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instances
+            return agent_instances
+
+        raise HTTPException(status_code=404, detail=f"No instances found for agent class {agent_class}.")
+
+    @staticmethod
+    async def discover_agent_class(nc: NATS, agent_class: str) -> AgentClassDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -201,7 +230,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
     @staticmethod
-    async def discover_agent_instances(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
+    async def discover_agent_instances(nc: NATS) -> list[AgentDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
