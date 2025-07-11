@@ -72,7 +72,7 @@ class MinimalAgentDTO(BaseModel):
     agent_class: Annotated[str, Field(description="The agent's class identifier (e.g., 'my_agent_class').")]
     agent_id: Annotated[str, Field(description="Unique identifier for the agent instance (e.g., 'agent_123').")]
     agent_config: Annotated[
-        AgentConfigDTO,
+        AgentConfig,
         Field(description="Configuration details of the agent, including name, description, and prompts."),
     ]
     is_conversational: Annotated[
@@ -156,12 +156,12 @@ class AgentDTO(MinimalAgentDTO):
         )
 
     @classmethod
-    def from_class_and_config(cls, class_dto: AgentClassDTO, agent_config: AgentConfig, t: LocaleHandler) -> "AgentDTO":
+    def from_class_and_config(cls, class_dto: AgentClassDTO, agent_config: AgentConfig) -> "AgentDTO":
         """Creates an AgentDTO from an AgentClassDTO and an AgentConfig."""
         return cls(
             agent_class=class_dto.agent_class,
             agent_id=agent_config.agent_id,
-            agent_config=AgentConfigDTO.from_agent_config(agent_config, t),
+            agent_config=agent_config,
             is_conversational=class_dto.is_conversational,
             start_events=class_dto.start_events,
             stop_events=class_dto.stop_events,

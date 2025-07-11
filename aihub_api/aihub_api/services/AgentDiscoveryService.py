@@ -24,9 +24,8 @@ from aihub_api.services.ModelCreationService import ModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO, AgentClassDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
-from aihub_lib.persistence.agents import AgentConfigInstanceEntity
 
 logger = logging.getLogger(__name__)
 
@@ -85,29 +84,14 @@ class AgentDiscoveryService:
             await asyncio.sleep(self.discovery_interval)
 
     async def _discover_and_register_agents(self):
-        # Step 1: Discover which agent classes are online
-        online_agents: list[AgentClassDTO] = await AgentService.discover_agent_classes(self.nc)
+        configured_agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc, self.locale_handler)
 
-        # Step 2: Get all configured agent instances from database
-        configured_agents = []
-        for agent in online_agents:
-            agent_class = agent.agent_class
-            configs = AgentConfigInstanceEntity.find_for_class(agent_class)
-            for config in configs:
-                config_instance = AgentConfig.from_entity(config)
-                agent_dto = AgentDTO.from_class_and_config(
-                    class_dto=agent,
-                    agent_config=config_instance,
-                    t=self.locale_handler,
-                )
-                configured_agents.append(agent_dto)
-
-        # Step 3: Deregister old endpoints
+        # Deregister old endpoints
         for registered_agent_class, registered_agent_id in list(self.registered_agents):
             self._deregister_agent_endpoints(registered_agent_class, registered_agent_id)
         self.app.openapi_schema = None
 
-        # Step 4: Register new endpoints for configured agents
+        # Register new endpoints for configured agents
         for agent in configured_agents:
             agent_key = (agent.agent_class, agent.agent_id)
 

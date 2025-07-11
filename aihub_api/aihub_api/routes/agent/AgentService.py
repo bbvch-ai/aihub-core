@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import sleep
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -236,54 +237,27 @@ class AgentService:
         if cache_key in DISCOVER_AGENTS_CACHE:
             return DISCOVER_AGENTS_CACHE[cache_key]
 
-        call_id = str(ObjectId())
-        discovery_responses: list[AgentInstanceDiscoveryResponseEvent] = []
+        # Step 1: Discover which agent classes are online
+        online_agents: list[AgentClassDTO] = await AgentService.discover_agent_classes(nc)
 
-        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
-            discovery_responses.append(event)
-
-        topic_manager = AgentTopicManager()
-        nc_publisher = NCPublisher(nc)
-        nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
-        )
-        await nc_subscriber.start()
-
-        # Broadcast the discovery request
-        await nc_publisher.publish_event(
-            event=ClassDiscoveryRequestEvent(),
-            subject=topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
-        )
-
-        # Wait briefly for responses
-        await sleep(1)
-        await nc_subscriber.stop()
-
-        unique_agents_dict = {}
-
-        for response in discovery_responses:
-            unique_key = (response.agent_class, response.agent_id)
-
-            if unique_key not in unique_agents_dict:
-                agent_dto = AgentDTO(
-                    agent_class=response.agent_class,
-                    agent_id=response.agent_id,
-                    agent_config=AgentConfigDTO.from_agent_config(response.agent_config, t),
-                    is_conversational=response.is_conversational,
-                    start_events=response.start_events,
-                    stop_events=response.stop_events,
-                    network_graph=response.network_graph,
-                    is_online=True,
+        # Step 2: Get all configured agent instances from database
+        configured_agents = []
+        for agent in online_agents:
+            agent_class = agent.agent_class
+            configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+            for config in configs:
+                config_instance = AgentConfig.from_entity(config)
+                agent_dto = AgentDTO.from_class_and_config(
+                    class_dto=agent,
+                    agent_config=config_instance,
+                    t=t,
                 )
-                AgentEntity.create_or_update_from_dto(agent_dto)
-                unique_agents_dict[unique_key] = agent_dto
+                configured_agents.append(agent_dto)
 
-        agents = list(unique_agents_dict.values())
+        if len(configured_agents) > 0:
+            DISCOVER_AGENTS_CACHE[cache_key] = configured_agents
 
-        if len(agents) > 0:
-            DISCOVER_AGENTS_CACHE[cache_key] = agents
-
-        return agents
+        return configured_agents
 
     @staticmethod
     async def discover_agent_classes(nc: NATS) -> list[AgentClassDTO]:
