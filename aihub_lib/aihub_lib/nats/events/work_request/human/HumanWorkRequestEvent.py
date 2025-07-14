@@ -58,7 +58,10 @@ class HumanWorkRequestEvent(WorkRequestEvent):
     method: Annotated[str | None, Field(description="HTTP Method that must be used to submit this piece of work")] = (
         None
     )
-    users: Annotated[list[str] | None, Field(description="The list of users.")] = None
+    user_ids: Annotated[list[str], Field(description="The list of user IDs that can submit work.")] = []
+    user_emails: Annotated[list[str], Field(description="The list of user E-Mails that can submit work.")] = []
+    user_roles: Annotated[list[str], Field(description="The list of roles that can submit work.")] = []
+    notify: Annotated[bool, Field(description="Whether to notify the users or not.")] = True
 
     forms: Annotated[list[HumanWorkEvent], Field(description="The list of forms.")]
 

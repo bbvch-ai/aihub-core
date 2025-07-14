@@ -8,9 +8,9 @@ from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
-from playground.minimal_processes.human_only_process.events.HumanAWork import HumanAWork
-from playground.minimal_processes.human_only_process.events.HumanBWork import HumanBWork
-from playground.minimal_processes.human_only_process.events.HumanBWorkReqeust import HumanBWorkRequest
+from playground.events.HumanAWork import HumanAWork
+from playground.events.HumanBWork import HumanBWork
+from playground.events.HumanBWorkReqeust import HumanBWorkRequest
 
 
 class HumanOnlyProcess(AgenticProcess):
@@ -22,16 +22,16 @@ class HumanOnlyProcess(AgenticProcess):
             Human.In(
                 route="/input_a",
                 method="POST",
-                start_form=HumanAWork(input_text_a=InputTextElement(label=LocaleString(en="Input text A"))),
+                start_form=HumanAWork(payload=InputTextElement(label=LocaleString(en="Input text A"))),
             ),
         ],
-    ) -> Annotated[HumanBWorkRequest, Human.Out(users=[])]:
-        print(f"[AgentOnlyProcess.start_with_output_from_human_a] {work_from_human_a.input_text_a}")
+    ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AllAgents"])]:
+        print(f"[AgentOnlyProcess.start_with_output_from_human_a] {work_from_human_a.payload}")
         return HumanBWorkRequest(
             forms=[
                 HumanBWork(
-                    input_text_b=InputTextElement(
-                        label=LocaleString(en=f"Please respond to {work_from_human_a.input_text_a} with a single word:")
+                    payload=InputTextElement(
+                        label=LocaleString(en=f"Please respond to <{work_from_human_a.payload}> with a single word:")
                     )
                 )
             ]
@@ -41,6 +41,6 @@ class HumanOnlyProcess(AgenticProcess):
     async def end_with_output_from_human_b(
         self, work_from_human_b: Annotated[HumanBWorkRequest.work, Human.In(route="/input_b", method="POST")]
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
-        print(f"[AgentOnlyProcess.end_with_output_from_human_b] {work_from_human_b.input_text_b}")
-        payload = f"{work_from_human_b.input_text_b} -> HumanOnlyProcess output"
+        print(f"[AgentOnlyProcess.end_with_output_from_human_b] {work_from_human_b.payload}")
+        payload = f"{work_from_human_b.payload} -> HumanOnlyProcess output"
         return CustomProcessStopEvent(payload=payload)

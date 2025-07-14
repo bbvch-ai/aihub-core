@@ -43,7 +43,7 @@ class ProcessTopicManager(TopicManager):
         )
 
     def get_subject_for_all_events_in_process(self) -> str:
-        """Returns a subject pattern matching all events from all processs."""
+        """Returns a subject pattern matching all events from all processes."""
         return self.get_subject_for_specific_event_in_process(
             process_class="*",
             process_id="*",
@@ -54,7 +54,7 @@ class ProcessTopicManager(TopicManager):
         )
 
     def get_subject_for_all_work_request_events_in_process(self) -> str:
-        """Returns a subject pattern matching all control events from all processs."""
+        """Returns a subject pattern matching all control events from all processes."""
         return self.get_subject_for_specific_event_in_process(
             process_class="*",
             process_id="*",
@@ -65,7 +65,7 @@ class ProcessTopicManager(TopicManager):
         )
 
     def get_subject_for_all_work_events_in_process(self) -> str:
-        """Returns a subject pattern matching all control events from all processs."""
+        """Returns a subject pattern matching all control events from all processes."""
         return self.get_subject_for_specific_event_in_process(
             process_class="*",
             process_id="*",

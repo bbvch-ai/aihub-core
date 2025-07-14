@@ -6,4 +6,4 @@ from pydantic import Field
 
 
 class HumanAWork(HumanWorkEvent, ProcessStartEvent):
-    input_text_a: Annotated[InputTextElement | str, Field(description="Input text A")]
+    payload: Annotated[InputTextElement | str, Field(description="Input text A")]
