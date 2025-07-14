@@ -12,7 +12,7 @@ from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Path, Query
 
-from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
+from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 
 from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
@@ -29,12 +29,6 @@ class EventController(Controller):
     A controller that manages the event-related endpoints, including:
     - Retrieving a user’s persisted events.
     - Establishing a WebSocket connection for real-time two-way messaging.
-
-    ### Why EventController?
-    In interactive systems, clients often need to:
-    - Fetch historical events (e.g., from past sessions or previous steps in a workflow).
-    - Maintain a live WebSocket connection for sending commands and receiving updates in real-time.
-
     The `EventController` provides HTTP and WebSocket endpoints to handle these use cases.
     """
 
@@ -54,7 +48,7 @@ class EventController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
             thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
             display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-        ) -> list[WSServerAgentEvent]:
+        ) -> list[ContextualizedAgentEvent]:
             """
             Returns all events in a given thread
             """
@@ -155,17 +149,17 @@ class EventController(Controller):
         ):
             """
             Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can receive live event streams
+            If the token is valid, the user can receive live event streams.
+            Note that this websocket connection does NOT accept events from the user due to security
+            reasons. Please use the dedicated agent or process endpoints to publish events.
             """
-            await websocket.accept()  # Accept the connection first
+            await websocket.accept()
 
-            # Receive initial auth message
             first_message = await websocket.receive_json()
             token = first_message.get("token")
 
-            # Handle "Bearer " prefix if present
             if token.startswith("Bearer "):
-                token = token[7:]  # Extract token after "Bearer "
+                token = token[7:]
 
             if not token:
                 await websocket.close(code=4000, reason="No token provided")

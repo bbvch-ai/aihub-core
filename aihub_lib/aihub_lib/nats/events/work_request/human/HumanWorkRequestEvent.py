@@ -1,9 +1,8 @@
 from collections import Counter
-from typing import Annotated, ClassVar, get_args, get_origin
+from typing import Annotated, ClassVar, get_origin
 
 from pydantic import Field, model_validator
 
-from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
@@ -72,4 +71,3 @@ class HumanWorkRequestEvent(WorkRequestEvent):
             raise ValueError("\n".join(all_errors))
 
         return self
-

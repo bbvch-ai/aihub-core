@@ -36,21 +36,8 @@ GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 6
 class AgentService:
     """
     Provides functionality to discover and retrieve agent information via NATS-based discovery events.
-
-    ### Why AgentService?
     `AgentService` acts as the business logic layer for agent operations,
     isolating NATS-based discovery requests from the HTTP layer.
-
-    ### Key Operations
-    - `discover_agents`: Broadcasts a DiscoveryRequestEvent and collects all AgentDiscoveryResponseEvents,
-      returning a list of discovered agents.
-    - `get_agent`: Sends a targeted discovery request to identify a specific agent.
-
-    ### Caching
-    - Entire agent lists are cached for 60 seconds to reduce NATS load.
-    - Individual agent details are also cached for 60 seconds.
-
-    If the agent or agent list isn't found in cache, a new NATS discovery request is performed.
     """
 
     @staticmethod

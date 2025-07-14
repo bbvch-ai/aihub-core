@@ -51,7 +51,6 @@ class OpenaiService:
     """
     A service layer that encapsulates the core operations for generative AI, mirroring OpenAI's API functionality.
 
-    ### Purpose
     OpenaiService provides the business logic for:
     - Retrieving and detailing available AI models.
     - Generating text embeddings.

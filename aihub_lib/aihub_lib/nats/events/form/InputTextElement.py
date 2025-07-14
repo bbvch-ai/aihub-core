@@ -14,8 +14,12 @@ class InputTextElement(PrimeVueElement):
     placeholder: Annotated[LocaleString | None, Field(description="Placeholder text")] = None
     prefix: Annotated[LocaleString | None, Field(description="Prefix text")] = None
     suffix: Annotated[LocaleString | None, Field(description="Suffix text")] = None
-    icon_prefix: Annotated[str | None, Field(description="Icon prefix", alias="iconPrefix", pattern=r"^pi pi-[a-z0-9-]+$")] = None
-    icon_suffix: Annotated[str | None, Field(description="Icon suffix", alias="iconSuffix", pattern=r"^pi pi-[a-z0-9-]+$")] = None
+    icon_prefix: Annotated[
+        str | None, Field(description="Icon prefix", alias="iconPrefix", pattern=r"^pi pi-[a-z0-9-]+$")
+    ] = None
+    icon_suffix: Annotated[
+        str | None, Field(description="Icon suffix", alias="iconSuffix", pattern=r"^pi pi-[a-z0-9-]+$")
+    ] = None
 
     def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
         self_copy = super().in_locale(t)

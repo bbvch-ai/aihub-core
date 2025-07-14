@@ -22,14 +22,20 @@ class HumanOnlyProcess(AgenticProcess):
             Human.In(
                 route="/input_a",
                 method="POST",
-                start_form=HumanAWork(
-                    input_text_a=InputTextElement(label=LocaleString(en="Input text A"))
-                ),
+                start_form=HumanAWork(input_text_a=InputTextElement(label=LocaleString(en="Input text A"))),
             ),
         ],
     ) -> Annotated[HumanBWorkRequest, Human.Out(users=[])]:
         print(f"[AgentOnlyProcess.start_with_output_from_agent_a] {work_from_agent_a.input_text_a}")
-        return HumanBWorkRequest(forms=[HumanBWork(input_text_b=InputTextElement(label=LocaleString(en=f"Please respond to {work_from_agent_a.input_text_a} with a single word:")))])
+        return HumanBWorkRequest(
+            forms=[
+                HumanBWork(
+                    input_text_b=InputTextElement(
+                        label=LocaleString(en=f"Please respond to {work_from_agent_a.input_text_a} with a single word:")
+                    )
+                )
+            ]
+        )
 
     @process_step()
     async def end_with_output_from_agent_b(

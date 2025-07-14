@@ -32,14 +32,10 @@ class EvaluationController(Controller):
     """
     Manages evaluation datasets and experiments, primarily interfacing with Arize Phoenix.
 
-    ### Why EvaluationController?
     This controller provides a structured way to handle operations related to LLM evaluations.
     It allows users to create, retrieve, and update evaluation datasets, as well as manage
     and run evaluation experiments against these datasets. It uses the `EvaluationService`
     to interact with the underlying evaluation framework (Arize Phoenix).
-
-    ### Authentication
-    Endpoints require authentication via the configured `auth` dependency.
     """
 
     name = LocaleString(en="Evaluation")

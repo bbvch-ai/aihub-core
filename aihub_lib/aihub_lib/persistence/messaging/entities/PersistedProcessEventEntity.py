@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 from bson import ObjectId
 from mongoengine import DictField, Document, ListField, StringField
 
@@ -24,7 +25,7 @@ class PersistedProcessEventEntity(Document):
     event_parents = ListField(StringField(), required=True)
 
     @classmethod
-    def persist_event(cls, event: "BaseEvent", topic: "ProcessTopic", db: str):
+    def persist_event(cls, event: BaseEvent, topic: ProcessTopic, db: str):
         persisted_entity = cls(
             id=ObjectId(),
             process_class=topic.process_class,
@@ -40,7 +41,9 @@ class PersistedProcessEventEntity(Document):
         persisted_entity.save()
 
     @classmethod
-    def get_open_human_work_requests(cls, process_class: str, process_id: str, process_walkthrough_id: str) -> list[PersistedProcessEventEntity]:
+    def get_open_human_work_requests(
+        cls, process_class: str, process_id: str, process_walkthrough_id: str
+    ) -> list[PersistedProcessEventEntity]:
         """
         Finds unanswered human work requests for a given process walkthrough.
 
@@ -93,11 +96,7 @@ class PersistedProcessEventEntity(Document):
             # Stage 3: Filter the results to only include work requests where the $lookup
             # found no corresponding work events. An empty 'corresponding_work_events'
             # array signifies an unanswered request.
-            {
-                "$match": {
-                    "corresponding_work_events": {"$size": 0}
-                }
-            },
+            {"$match": {"corresponding_work_events": {"$size": 0}}},
         ]
 
         # Execute the aggregation pipeline
@@ -116,11 +115,7 @@ class PersistedProcessEventEntity(Document):
 
     @classmethod
     def find_request_for_work_event(
-        cls,
-        process_class: str,
-        process_id: str,
-        process_walkthrough_id: str,
-        event_name: str
+        cls, process_class: str, process_id: str, process_walkthrough_id: str, event_name: str
     ) -> PersistedProcessEventEntity | None:
         """
         Finds the specific HumanWorkRequestEvent that corresponds to a given work event name
@@ -136,8 +131,7 @@ class PersistedProcessEventEntity(Document):
             process_id=process_id,
             process_walkthrough_id=process_walkthrough_id,
             event_parents="HumanWorkRequestEvent",
-
             # Use __raw__ to pass the nested query directly to MongoDB.
             # This bypasses MongoEngine's schema validation for this part of the query.
-            __raw__={"event_data.forms._event_name": event_name}
+            __raw__={"event_data.forms._event_name": event_name},
         ).first()

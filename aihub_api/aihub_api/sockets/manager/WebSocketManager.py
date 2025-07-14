@@ -5,7 +5,7 @@ from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics import AgentTopic
 from fastapi import WebSocket
 
-from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
+from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class WebSocketManager:
     await ws_manager.connect(websocket, user_id="user123")
 
     # Later, to send an event
-    event = WSServerAgentEvent(...)
+    event = ContextualizedAgentEvent(...)
     await ws_manager.send_event(event, user_id="user123")
 
     # On disconnection
@@ -91,7 +91,7 @@ class WebSocketManager:
         if user_id in self.active_connections:
             locale = self.user_preferred_locale.get(user_id)
             locale_handler = LocaleHandler(locale=locale)
-            external_event = WSServerAgentEvent(
+            contextualized_event = ContextualizedAgentEvent(
                 locale=locale,
                 agent_class=topic.agent_class,
                 agent_id=topic.agent_id,
@@ -105,7 +105,7 @@ class WebSocketManager:
                 event_display_name=locale_handler.extract(event.display_name),
                 event_display_description=locale_handler.extract(event.display_description),
             )
-            data = external_event.model_dump()
+            data = contextualized_event.model_dump()
             for ws in list(self.active_connections[user_id]):
                 try:
                     await ws.send_json(data)

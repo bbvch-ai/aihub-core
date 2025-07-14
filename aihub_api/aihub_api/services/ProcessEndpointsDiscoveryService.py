@@ -1,11 +1,6 @@
-import asyncio
 import logging
-import time
-from typing import Annotated, Any
+from typing import Annotated, override
 
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
-from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -14,72 +9,33 @@ from aihub_lib.nats.distributor.dependencies.use_external_process_event_distribu
 )
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import HumanInSpecs, ProgramInSpecs
-from fastapi import Body, Depends, FastAPI, Path, Security, HTTPException
+from fastapi import Body, Depends, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
+from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.process.ProcessService import ProcessService
+from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 
 logger = logging.getLogger(__name__)
 
 
-class ProcessEndpointsDiscoveryService:
-    def __init__(
-        self,
-        nc: NATS,
-        api_app: FastAPI,
-        process_controller: ProcessController,
-        locale_handler: LocaleHandler,
-        discovery_interval: int = 60,
-    ):
-        self.nc: NATS = nc
-        self.app: FastAPI = api_app
-        self.process_controller: ProcessController = process_controller
-        self.locale_handler: LocaleHandler = locale_handler
-        self.discovery_interval: int = discovery_interval
-        self.registered_processes: set[tuple[str, str]] = set()
-        self.running: bool = False
-        self.task: asyncio.Task | None = None
-
-    async def start(self):
-        if self.running:
-            logger.warning("Process discovery service is already running")
-            return
-
-        self.running = True
-        self.task = asyncio.create_task(self._discovery_loop())
-        logger.info("Process discovery service started")
-
-    async def stop(self):
-        if not self.running:
-            logger.warning("Process discovery service is not running")
-            return
-
-        self.running = False
-        if self.task:
-            self.task.cancel()
-            await asyncio.gather(self.task, return_exceptions=True)
-        logger.info("Process discovery service stopped")
-
-    async def _discovery_loop(self):
-        while self.running:
-            try:
-                logger.debug("Starting process discovery")
-                await self._discover_and_register_processes()
-            except Exception as e:
-                logger.exception(f"Error in process discovery: {e}")
-
-            await asyncio.sleep(self.discovery_interval)
-
-    async def _discover_and_register_processes(self):
+class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
+    @override
+    async def _discover_and_register(self):
+        """
+        Discovers processes and registers endpoints for retrieving and submitting forms to start / continue the process.
+        """
         processes: list[ProcessDTO] = await ProcessService.discover_processes(self.nc, self.locale_handler)
 
-        for registered_process_class, registered_process_id in list(self.registered_processes):
-            self._deregister_process_endpoints(registered_process_class, registered_process_id)
+        for registered_process_class, registered_process_id in list(self.registered_entities):
+            self._deregister_endpoints(registered_process_class, registered_process_id)
 
         self.app.openapi_schema = None
 
@@ -92,22 +48,8 @@ class ProcessEndpointsDiscoveryService:
             for process_input in process.program_inputs:
                 self._register_program_endpoint(process.process_class, process.process_id, process_input)
 
-            self.registered_processes.add(process_key)
+            self.registered_entities.add(process_key)
             logger.info(f"Registered endpoints for process: {process.process_class}.{process.process_id}")
-
-    def _get_process_endpoint_name(self, process_class: str, process_id: str) -> str:
-        return f"{self.process_controller.base_route}/{process_class}/{process_id}"
-
-    def _deregister_process_endpoints(self, process_class: str, process_id: str):
-        base_path = self._get_process_endpoint_name(process_class, process_id)
-
-        for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
-                self.app.routes.remove(route)
-                logger.info(f"Deregistered endpoint: {route.path}")
-
-        # Remove from registered processes
-        self.registered_processes.discard((process_class, process_id))
 
     def _register_human_endpoint(
         self,
@@ -115,7 +57,8 @@ class ProcessEndpointsDiscoveryService:
         process_id: str,
         human_input: HumanInSpecs,
     ):
-        base_path = self._get_process_endpoint_name(process_class, process_id)
+        """Register endpoints that allow humans to interact with a process by getting and submitting forms."""
+        base_path = self._get_endpoint_name(process_class, process_id)
 
         process_class_snake = snakecase(process_class)
         process_id_snake = snakecase(process_id)
@@ -147,7 +90,7 @@ class ProcessEndpointsDiscoveryService:
             endpoint=get_endpoint_creator(
                 process_class=process_class,
                 process_id=process_id,
-                process_controller=self.process_controller,
+                process_controller=self.controller,
                 input_specs=human_input,
             ),
             methods=["GET"],
@@ -163,7 +106,7 @@ class ProcessEndpointsDiscoveryService:
                 input_type=post_input_type,
                 process_class=process_class,
                 process_id=process_id,
-                process_controller=self.process_controller,
+                process_controller=self.controller,
                 input_specs=human_input,
             ),
             methods=[human_input.method],
@@ -178,11 +121,11 @@ class ProcessEndpointsDiscoveryService:
         process_id: str,
         program_input: ProgramInSpecs,
     ):
-        base_path = self._get_process_endpoint_name(process_class, process_id)
+        """Register endpoints that allow programs to interact with a process submitting data."""
+        base_path = self._get_endpoint_name(process_class, process_id)
 
         process_class_snake = snakecase(process_class)
         process_id_snake = snakecase(process_id)
-
 
         post_endpoint_name = (
             f"submit_form_for_{process_class_snake}_{process_id_snake}_{program_input.route.replace('/', '_')}"
@@ -203,7 +146,7 @@ class ProcessEndpointsDiscoveryService:
                 input_type=post_input_type,
                 process_class=process_class,
                 process_id=process_id,
-                process_controller=self.process_controller,
+                process_controller=self.controller,
                 input_specs=program_input,
             ),
             methods=[program_input.method],
@@ -219,6 +162,8 @@ class ProcessEndpointsDiscoveryService:
         process_controller: ProcessController,
         input_specs: HumanInSpecs,
     ):
+        """Creates an endpoint to retrieve a form for starting a process."""
+
         async def get_form(
             nc: Annotated[NATS, Depends(use_nats)],
             _: Annotated[
@@ -233,7 +178,14 @@ class ProcessEndpointsDiscoveryService:
                 process_id=process_id,
                 t=t,
             )
-            process_dto = next((dto for dto in process_human_input_dtos if dto.route == input_specs.route and dto.method == input_specs.method), None)
+            process_dto = next(
+                (
+                    dto
+                    for dto in process_human_input_dtos
+                    if dto.route == input_specs.route and dto.method == input_specs.method
+                ),
+                None,
+            )
 
             if not process_dto:
                 raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
@@ -249,6 +201,8 @@ class ProcessEndpointsDiscoveryService:
         process_controller: ProcessController,
         input_specs: HumanInSpecs,
     ):
+        """Create an endpoint to retrieve a form for continuing a process."""
+
         async def get_form(
             process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
             _: Annotated[
@@ -265,7 +219,14 @@ class ProcessEndpointsDiscoveryService:
                 process_walkthrough_id=process_walkthrough_id,
                 t=t,
             )
-            process_dto = next((dto for dto in process_human_input_dtos if dto.route == input_specs.route and dto.method == input_specs.method), None)
+            process_dto = next(
+                (
+                    dto
+                    for dto in process_human_input_dtos
+                    if dto.route == input_specs.route and dto.method == input_specs.method
+                ),
+                None,
+            )
 
             if not process_dto:
                 raise HTTPException(status_code=404, detail="Work request not found in this walkthrough")
@@ -282,6 +243,8 @@ class ProcessEndpointsDiscoveryService:
         process_controller: ProcessController,
         input_specs: HumanInSpecs | ProgramInSpecs,
     ):
+        """Create an endpoint to submit a form for starting a process."""
+
         async def send_event(
             work_event_input: Annotated[input_type, Body],
             external_process_event_distributor: Annotated[
@@ -316,6 +279,8 @@ class ProcessEndpointsDiscoveryService:
         process_controller: ProcessController,
         input_specs: HumanInSpecs | ProgramInSpecs,
     ):
+        """Create an endpoint to submit a form for continuing a process."""
+
         async def send_event(
             process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
             work_event_input: Annotated[input_type, Body],

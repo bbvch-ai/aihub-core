@@ -206,7 +206,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             AgentEndpointsDiscoveryService(
                 nc=self.nc,
                 api_app=self._api_app,
-                agent_controller=self._api_app.state.agent_controller,
+                controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,
             )._register_agent_endpoints(

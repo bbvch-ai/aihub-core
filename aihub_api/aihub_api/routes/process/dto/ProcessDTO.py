@@ -14,6 +14,14 @@ from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 
 
 class ProcessDTO(BaseModel):
+    """
+    An agentic process is a process in which humans, agents and programs interact with each other to achieve a
+    common goal.
+    To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
+    what kind of work to start / continue the process.
+    Hence, this object offers information about the inputs (work events) that these entities can contribute.
+    """
+
     process_class: Annotated[
         str, Field(description="The class or category of the process (e.g., a specific type of process).")
     ]

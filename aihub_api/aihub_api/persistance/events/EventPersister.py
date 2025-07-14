@@ -8,22 +8,10 @@ from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import
 class EventPersister:
     """
     A utility class for persisting events received from NATS/JetStream into a MongoDB database.
-
-    ### Why EventPersister?
     In an event-driven architecture, it's often necessary to retain a historical log of events for
     auditing, analytics, or debugging. `EventPersister` encapsulates the logic of converting raw
     event data and associated topic details into a stored entity, ensuring a clean separation of
     concerns between event handling and data persistence.
-
-    ### Features
-    - Converts `BaseEvent` and associated `AgentTopic` metadata into a `PersistedAgentEventEntity`.
-    - Assigns a unique MongoDB ObjectId, populates agent and run details, and stores a fully serializable
-      JSON snapshot of the event.
-
-    ### Usage
-    Integrated with event subscribers (e.g., JSSubscriber or NCSubscriber), the `persist_event` method
-    is called whenever a relevant event arrives, saving a permanent record of that event.
-
     """
 
     def __init__(self, db: str):
@@ -31,9 +19,9 @@ class EventPersister:
         self.db = db
 
     async def persist_agent_event(self, event: BaseEvent, topic: AgentTopic) -> None:
-        """Persist the given event along with its topic metadata into MongoDB."""
+        """Persist the given agent event along with its topic metadata into MongoDB."""
         PersistedAgentEventEntity.persist_event(event, topic, self.db)
 
     async def persist_process_event(self, event: BaseEvent, topic: ProcessTopic) -> None:
-        """Persist the given event along with its topic metadata into MongoDB."""
+        """Persist the given process event along with its topic metadata into MongoDB."""
         PersistedProcessEventEntity.persist_event(event, topic, self.db)

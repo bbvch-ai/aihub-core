@@ -1,11 +1,8 @@
 import asyncio
-from typing import Any
-
 import time
 from asyncio import sleep
+from typing import Any
 
-from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
-from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
@@ -26,6 +23,8 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
 DISCOVER_PROCESS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire process list for 60s
@@ -33,6 +32,15 @@ GET_PROCESS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual processes 
 
 
 class ProcessService:
+    """
+    The process service connects humans and programs to agentic processes, as well as offering methods to
+    retrieve the available processes and their current state.
+
+    Users mainly interact with an agentic process through forms. Hence, the service offers methods to retrieve
+    the formkit definitions of forms that the user can submit to either start a new process or continue
+    an existing one.
+    """
+
     @staticmethod
     async def get_process(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> ProcessDTO:
         """
@@ -197,7 +205,8 @@ class ProcessService:
         process_class: str,
         process_id: str,
         process_walkthrough_id: str | None = None,
-    ) -> bool:
+    ):
+        """Submits a piece of work from either a program or a human to a process."""
         external_event = ExternalProcessEvent(
             process_class=process_class,
             process_id=process_id,
@@ -205,10 +214,12 @@ class ProcessService:
             event=work_event,
         )
         await external_process_event_distributor.distribute_event(external_event, user)
-        return True
 
     @staticmethod
-    async def get_process_start_forms(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> list[ProcessHumanInputDto]:
+    async def get_process_start_forms(
+        nc: NATS, process_class: str, process_id: str, t: LocaleHandler
+    ) -> list[ProcessHumanInputDto]:
+        """Returns a list of formkit forms that the user can submit to start the process."""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
         process_human_input_dtos: list[ProcessHumanInputDto] = []
 
@@ -228,23 +239,37 @@ class ProcessService:
         return process_human_input_dtos
 
     @staticmethod
-    async def get_process_open_forms(nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler) -> list[ProcessHumanInputDto]:
+    async def get_process_open_forms(
+        nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
+    ) -> list[ProcessHumanInputDto]:
+        """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
         process_human_input_dtos: list[ProcessHumanInputDto] = []
 
-        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(process_class, process_id, process_walkthrough_id)
+        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(
+            process_class, process_id, process_walkthrough_id
+        )
 
         for persisted_event in persisted_events:
             for work_form in persisted_event["event_data"]["forms"]:
-                human_in = next((human_in for human_in in process.human_inputs if human_in.event_specs.event_name == work_form["_event_name"]), None)
+                human_in = next(
+                    (
+                        human_in
+                        for human_in in process.human_inputs
+                        if human_in.event_specs.event_name == work_form["_event_name"]
+                    ),
+                    None,
+                )
                 work_form_elements: list[dict] = []
 
                 for key, value in work_form.items():
                     if isinstance(value, dict) and value.get("is_formkit_element"):
-                        work_form_elements.append({
-                            "name": key,
-                            **value,
-                        })
+                        work_form_elements.append(
+                            {
+                                "name": key,
+                                **value,
+                            }
+                        )
 
                 process_human_input_dto = ProcessHumanInputDto(
                     name=t.extract(human_in.name),
@@ -253,7 +278,9 @@ class ProcessService:
                     method=human_in.method,
                     form=work_form_elements,
                 )
-                process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
+                process_human_input_dto.form = [
+                    form_element.in_locale(t) for form_element in process_human_input_dto.form
+                ]
                 process_human_input_dtos.append(process_human_input_dto)
 
         return process_human_input_dtos
@@ -270,8 +297,12 @@ class ProcessService:
         user: UserIdentity,
         t: LocaleHandler,
     ) -> SubmittedFormDTO:
+        """Submit an object satisfying a form to start a process"""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        human_in = next((human_in for human_in in process.human_inputs if human_in.route == route and human_in.method == method), None)
+        human_in = next(
+            (human_in for human_in in process.human_inputs if human_in.route == route and human_in.method == method),
+            None,
+        )
 
         if not human_in:
             raise ValueError(f"No human input found for route {route} and method {method}")
@@ -307,13 +338,23 @@ class ProcessService:
         user: UserIdentity,
         t: LocaleHandler,
     ) -> SubmittedFormDTO:
+        """Submit an object satisfying a form to continue a process walkthrough"""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(process_class, process_id, process_walkthrough_id)
+        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(
+            process_class, process_id, process_walkthrough_id
+        )
 
         human_in = None
         for persisted_event in persisted_events:
             for work_form in persisted_event["event_data"]["forms"]:
-                potential_human_in = next((human_in for human_in in process.human_inputs if human_in.event_specs.event_name == work_form["_event_name"]), None)
+                potential_human_in = next(
+                    (
+                        human_in
+                        for human_in in process.human_inputs
+                        if human_in.event_specs.event_name == work_form["_event_name"]
+                    ),
+                    None,
+                )
                 if potential_human_in:
                     human_in = potential_human_in
                     break
@@ -331,7 +372,6 @@ class ProcessService:
 
         # TODO: Catch if WorkEvent can not be created and safe partial object to DB
         event: WorkEvent = WorkEvent.deserialize_event(json_data)
-
 
         await ProcessService.send_event(
             external_process_event_distributor,

@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
-from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
@@ -12,6 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)

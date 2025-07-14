@@ -4,11 +4,12 @@ from bson import ObjectId
 from mongoengine import (
     BooleanField,
     DateTimeField,
+    DictField,
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
-    StringField, DictField,
+    StringField,
 )
 
 from aihub_lib.persistence.agents.AgentEntity import EventSpec

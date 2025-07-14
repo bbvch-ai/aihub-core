@@ -2,12 +2,11 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -19,6 +18,7 @@ from nats.aio.client import Client as NATS
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
+from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
@@ -121,7 +121,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
                 api_app=api_app,
-                agent_controller=api_app.state.agent_controller,
+                controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
@@ -133,7 +133,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             process_discovery_service = ProcessEndpointsDiscoveryService(
                 nc=nc,
                 api_app=api_app,
-                process_controller=api_app.state.process_controller,
+                controller=api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )

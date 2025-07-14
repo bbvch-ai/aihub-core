@@ -34,28 +34,14 @@ from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 from aihub_api.routes.user.UserService import UserService
-from aihub_api.sockets.events.server_to_user.WSServerAgentEvent import WSServerAgentEvent
+from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 
 logger = logging.getLogger(__name__)
 
 
 class ThreadService:
     """
-    A service layer that handles business logic for thread operations:
-    - Creating threads with specified users and agents.
-    - Retrieving threads by ID or by user.
-    - Adding or removing agents and users from existing threads.
-    - Converting internal ThreadEntity objects to ThreadDTO DTOs.
-
-    ### Why ThreadService?
-    Isolating thread logic here keeps controllers slim and focused on request/response handling.
-    ThreadService:
-    - Interacts with the persistence layer (ThreadEntity).
-    - Uses AgentService to fetch agent details for a thread.
-    - Uses UserService to fetch user data, ensuring all responses are enriched with user and agent info.
-
-    ### Caching and Performance
-    Currently, no caching is implemented here. If needed, caching logic can be added later.
+    A service layer that handles business logic for thread operations.
     """
 
     @staticmethod
@@ -132,7 +118,7 @@ class ThreadService:
     @staticmethod
     async def thread_as_message_history(thread_id: str) -> HistoryResponse:
         persisted_events = EventService.get_all_thread_display_events(thread_id)
-        ws_events = [WSServerAgentEvent.from_persisted_event(event) for event in persisted_events]
+        contextualized_events = [ContextualizedAgentEvent.from_persisted_event(event) for event in persisted_events]
 
         messages: list[ChatCompletionMessageParam] = []
 
@@ -144,8 +130,8 @@ class ThreadService:
 
         continue_chunk = False
 
-        for ws_event in ws_events:
-            event = ws_event.event
+        for contextualized_event in contextualized_events:
+            event = contextualized_event.event
 
             if is_user_event(event):
                 continue_chunk = False

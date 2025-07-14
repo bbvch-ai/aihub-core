@@ -25,7 +25,6 @@ class ThreadController(Controller):
     """
     A controller that manages thread-related endpoints.
 
-    ### Why ThreadController?
     Conversations or workflows are often organized into "threads"—units that group users and agents together.
     The `ThreadController` provides endpoints to:
     - List user-specific threads.

@@ -9395,7 +9395,7 @@ export const WSServerAgentEventSchema = {
     },
     type: 'object',
     required: ['event_display_name', 'event_display_description', 'agent_class', 'agent_id', 'thread_id', 'display_id', 'run_id', 'event_type', 'event_name', 'event_id', 'event'],
-    title: 'WSServerAgentEvent',
+    title: 'ContextualizedAgentEvent',
     description: `Represents an event sent from the server to a user's WebSocket connection, encapsulating
 details necessary to identify and display the event in a client application.
 

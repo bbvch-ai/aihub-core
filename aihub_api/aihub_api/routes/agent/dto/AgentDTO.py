@@ -40,12 +40,9 @@ class MinimalAgentDTO(BaseModel):
 class AgentDTO(MinimalAgentDTO):
     """
     A data transfer object for representing agent information in responses.
-
-    ### Why AgentDTO?
     This DTO standardizes how agent data is returned from the service layer to the controller,
     and subsequently to the API response. It helps maintain a clean separation between the internal
     event models and the publicly exposed fields in HTTP responses.
-
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
 
