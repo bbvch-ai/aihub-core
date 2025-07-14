@@ -8,7 +8,15 @@ from aihub_lib.nats.events import BaseEvent
 
 class EventSpecs(BaseModel):
     """
-    Defines a specification for a start event that an agent can handle.
+    Defines the schema of an event that can flow through NATs that is either produced or consumed by an agent
+    or agentic process.
+
+    Sometimes, we must communicate events to external consumers that do not have access to our internal Pydantic event
+    model. Hence, we must serialize the model schema, add the event name and parent event names, and provide
+    these information to an external consumer like an API endpoint or the frontend.
+
+    From this information, we can reconstruct the pydantic object and send the event back into NATs such that
+    it can be consumed by the agent as a native pydantic model again.
     """
 
     event_name: Annotated[

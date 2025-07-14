@@ -2,11 +2,9 @@ from typing import Annotated
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import (
-    AgentInSpecs,
-    HumanInSpecs,
-    ProgramInSpecs,
-)
+from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from pydantic import BaseModel, Field
 

@@ -7,6 +7,8 @@ from aihub_lib.nats.events import WorkEvent
 
 
 class ExternalProcessEvent(BaseModel):
+    """Holds a work event that should be sent to a process given by its process class and process id."""
+
     process_class: Annotated[
         str,
         Field(description="Process class associated with this Stop Event. "),

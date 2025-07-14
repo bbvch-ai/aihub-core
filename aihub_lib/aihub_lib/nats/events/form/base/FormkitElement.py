@@ -8,6 +8,12 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
 class FormkitElement(BaseModel, abc.ABC):
+    """
+    https://formkit.com/essentials/schema
+    Base class for all formkit elements. Instances of these formkit elements will be recognized when placed on
+    a Form-model and be converted into data structures that formkit can render in the frontend.
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     is_formkit_element: Annotated[

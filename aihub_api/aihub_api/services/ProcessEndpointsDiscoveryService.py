@@ -8,7 +8,8 @@ from aihub_lib.nats.distributor.dependencies.use_external_process_event_distribu
     use_external_process_event_distributor,
 )
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import HumanInSpecs, ProgramInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from fastapi import Body, Depends, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel

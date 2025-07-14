@@ -13,7 +13,6 @@ class AgentDiscoveryResponseEvent(BaseEvent):
     A response event sent after an agent discovery request, detailing an agent's class, ID, configuration,
     and the set of start events it can handle.
 
-    ### Why AgentDiscoveryResponseEvent?
     After a discovery request, consumers need to know:
     - Which agent instance is available (identified by `agent_class` and `agent_id`).
     - What configuration that agent operates under (e.g., model parameters, runtime settings).
@@ -22,7 +21,6 @@ class AgentDiscoveryResponseEvent(BaseEvent):
 
     By providing this structured information, the discovery response helps orchestrators and clients
     dynamically integrate with newly discovered agents without manual configuration or guesswork.
-
     """
 
     agent_class: Annotated[

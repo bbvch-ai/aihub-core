@@ -18,6 +18,7 @@ class ProcessNCSubscriber(NCSubscriber):
         handler: Callable[[DiscoveryRequestEvent, ProcessTopic], Awaitable[None]],
         call_id: str = "*",
     ):
+        """Subscribe to discovery request events for all processes"""
         subject = topic_manager.get_process_discovery_subject_request(call_id)
         return cls(
             nc=nc,
@@ -50,6 +51,7 @@ class ProcessNCSubscriber(NCSubscriber):
         topic_manager: ProcessTopicManager,
         handler: Callable[[ProcessEvent, ProcessTopic], Awaitable[None]],
     ):
+        """Subscribe to all events within a specific process"""
         subject = topic_manager.get_subject_for_all_events_in_process()
         return cls(
             nc=nc,
@@ -66,6 +68,7 @@ class ProcessNCSubscriber(NCSubscriber):
         handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
         event: type[BaseEvent],
     ):
+        """Subscribe to all events within a specific process instance"""
         subject = topic_manager.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id="*",
             event_type=ProcessTopicManager.WORK_REQUEST_EVENT,

@@ -15,7 +15,6 @@ class WebSocketManager:
     Manages active WebSocket connections between the server and users, allowing multiple
     concurrent connections per user and broadcasting events to all of a user's connections.
 
-    ### Why This Class?
     In a real-time application, a single user might connect from multiple tabs, browsers,
     or devices simultaneously. `WebSocketManager`:
     - Tracks all active connections for each user.

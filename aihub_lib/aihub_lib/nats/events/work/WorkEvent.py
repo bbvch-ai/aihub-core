@@ -11,6 +11,9 @@ class WorkEvent(ProcessEvent):
     A work event signals that a piece of work was successfully completed by some entity involved in the process.
     You should generally never inherit from this class directly but use a more specific child class such as
     AgentWorkEvent, HumanWorkEvent, ... etc. instead.
+    Work events are the driving forces of an agentic process: By submitting a work event, an entity signals
+    that it has completed a step in the workflow and the process dispatcher will drive the process
+    to the appropriate next step(s).
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.process_steps.work_event.name")

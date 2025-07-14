@@ -1,38 +1,12 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
+from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.processes.ProcessConfig import ProcessConfig
-
-
-class ProgramInSpecs(BaseModel):
-    route: Annotated[str, Field(description="The route of the work event.")]
-    method: Annotated[str, Field(description="The HTTP method of the work event.")]
-    is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
-    event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
-
-
-class HumanInSpecs(BaseModel):
-    name: Annotated[LocaleString, Field(description="The name of the work event.")]
-    description: Annotated[
-        LocaleString, Field(description="A description of the work event, providing details about its purpose.")
-    ]
-    route: Annotated[str, Field(description="The route of the work event.")]
-    method: Annotated[str, Field(description="The HTTP method of the work event.")]
-    is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
-    event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
-    form: Annotated[list[ALL_FORM_OPTIONS], Field(description="Formkit elements of the work event.")] = []
-
-
-class AgentInSpecs(BaseModel):
-    agent_class: Annotated[str, Field(description="The class or category of the agent.")]
-    agent_id: Annotated[str, Field(description="A unique identifier for the agent instance.")]
-    is_process_start: Annotated[bool, Field(description="Whether the work event is a process start event.")]
-    event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
 
 class ProcessDiscoveryResponseEvent(BaseEvent):
@@ -44,10 +18,10 @@ class ProcessDiscoveryResponseEvent(BaseEvent):
     After a discovery request, consumers need to know:
     - Which process instance is available (identified by `process_class` and `process_id`).
     - What configuration that process operates under.
-    - Which work events the process can receive via API.
+    - Which human / program & agent work events the process can receive via API
 
     By providing this structured information, the discovery response helps orchestrators and clients
-    dynamically integrate with newly discovered processs without manual configuration or guesswork.
+    dynamically integrate with newly discovered processes without manual configuration or guesswork.
     """
 
     process_class: Annotated[

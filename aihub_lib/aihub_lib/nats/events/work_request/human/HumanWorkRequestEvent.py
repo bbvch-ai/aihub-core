@@ -10,7 +10,48 @@ from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 
 class HumanWorkRequestEvent(WorkRequestEvent):
     """
-    WIP
+    When requesting work from a human, it is not sufficient to just define which user groups
+    must submit the work, we must also give the users forms that they can actually use to submit
+    said work.
+
+    Hence, when subclassing a HumanWorkRequestEvent, you usually simply define the work events
+    that we expect the user to submit.
+
+    ```python
+    class MyHumanWorkRequestEvent(HumanWorkRequestEvent):
+        option_a: ClassVar[type[HumanWorkOptionAEvent]] = HumanWorkOptionAEvent
+        option_b: ClassVar[type[HumanWorkOptionBEvent]] = HumanWorkOptionBEvent
+    ```
+
+    Here, the MyHumanWorkRequestEvent class defines that the user must submit either Option A or Option B.
+    Both of which will drive the underlaying agentic process forward. This can be compared to the different
+    stop event that an agent can return.
+    Think of it this way: An agentic process defines a step in which the human must review the work
+    done by agents so far. The human can choose to either accept or reject the work.
+    When accepting, the human must submit no data at all, just accept.
+    When rejecting, the human must submit a reason why they rejected the work.
+    Hence, to continue the process, the human must submit either of the two work events, and the
+    process will continue accordingly.
+
+    Now, in the agentic process step, when we request work by a human, we must specify the form that the
+    user must fill in in order to submit either of the work events.
+
+    We can do that easily as follows:
+
+    ```python
+    @process_step()
+    def my_step(self, ...) -> Annotated[MyWorkRequestEvent, Human.Out(...)]:
+        return MyWorkRequestEvent(
+            forms=[
+                MyWorkRequestEvent.option_a(),
+                MyWorkRequestEvent.option_b(reason=TextInputField(label="Reason for rejection"))),
+            ]
+        )
+    ```
+
+    Hence, when actually creating the work request, we must provide a form for all the work event options placed
+    on the work request event. The validator of the HumanWorkRequestEvent will ensure that the forms provided
+    exactly match all work event options placed on the work request event.
     """
 
     endpoint: Annotated[str | None, Field(description="Endpoint to which this work must be submitted")] = None
@@ -23,6 +64,7 @@ class HumanWorkRequestEvent(WorkRequestEvent):
 
     @model_validator(mode="after")
     def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":
+        """Ensures that the forms provided exactly match all work event options placed on the work request event."""
         cls = self.__class__
         forms = self.forms
         all_errors = []

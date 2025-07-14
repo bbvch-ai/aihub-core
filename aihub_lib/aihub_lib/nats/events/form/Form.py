@@ -10,6 +10,44 @@ from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 
 
 class Form(BaseModel):
+    """
+    This class can be used to transform a pydantic model into a list of formkit elements that can be rendered
+    as a full-fledged form in a frontend application.
+
+    The idea is simple: Define a pydantic model with keys and values, where the value types can either be
+    primitives or formkit elements. This class then offers convenience functionality to convert the model
+    holding both primitive and form elements to a pydantic model that only holds the primitives and can hence be
+    used to validate the submitted form.
+
+    It is easiest described by an example:
+
+    ```python
+    class MyForm(Form):
+        note: Annotated[str | InputTextElement, Field(description="Enter a note")]
+        terms: Annotated[bool | InputCheckboxElement, Field(description="Accept the terms")]
+
+    submission_model = MyForm.to_form_submission_model()
+
+    # Results in a pydantic model as follows:
+    class MyFormWithoutForms(BaseModel):
+        note: Annotated[str, Field(description="Enter a note")]
+        terms: Annotated[bool, Field(description="Accept the terms")]
+
+    # Also, create a formkit form from the model:
+    my_form = MyForm(note=InputTextField(label="Note"), terms=InputCheckboxField(label="Accept the terms"))
+    formkit_elements = my_form.to_formkit_form()
+    ```
+
+    # Results in a list of formkit elements that the frontend can render, like
+    # [InputTextField(label="Note", name="note"), InputCheckboxField(label="Accept the terms", name="terms")]
+    # Submitting that data will result in data like {"note": "My note", "terms": True}
+    # Which can then be validated by the submission_model
+
+    ```python
+    submission = submission_model(**formkit_data)
+    ```
+    """
+
     def to_formkit_form(self) -> list[FormkitElement]:
         """
         Generates a list of FormkitElement objects from the event's attributes.
@@ -44,9 +82,7 @@ class Form(BaseModel):
     def to_form_submission_model(
         cls,
     ) -> type[BaseModel]:
-        """
-        Creates a new Pydantic model by removing a specific type from all Union fields.
-        """
+        """Creates a new Pydantic model by removing a specific type from all Union fields."""
         new_fields = {}
 
         for field_name, field_info in cls.model_fields.items():

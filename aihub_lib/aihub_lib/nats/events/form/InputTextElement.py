@@ -8,9 +8,11 @@ from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 
 
 class InputTextElement(PrimeVueElement):
+    """https://formkit-primevue.netlify.app/inputs/InputText"""
+
     formkit: Annotated[Literal["primeInputText"], Field(description="PrimeVue InputText element.")] = "primeInputText"
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
-    readonly: Annotated[bool, Field(description="Whether the input is disabled")] = False
+    readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | None, Field(description="Placeholder text")] = None
     prefix: Annotated[LocaleString | None, Field(description="Prefix text")] = None
     suffix: Annotated[LocaleString | None, Field(description="Suffix text")] = None
