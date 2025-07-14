@@ -27,7 +27,7 @@ from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.user.UserController import UserController
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
 enable_logging()
 

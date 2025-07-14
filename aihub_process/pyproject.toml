@@ -38,10 +38,6 @@ develop = true
 path = "../aihub_agent"
 develop = true
 
-[tool.poetry.group.dev.dependencies.aihub_api]
-path = "../aihub_api"
-develop = true
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

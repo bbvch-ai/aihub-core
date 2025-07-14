@@ -205,7 +205,7 @@ class ProcessService:
         process_class: str,
         process_id: str,
         process_walkthrough_id: str | None = None,
-    ):
+    ) -> ExternalProcessEvent:
         """Submits a piece of work from either a program or a human to a process."""
         external_event = ExternalProcessEvent(
             process_class=process_class,
@@ -214,6 +214,7 @@ class ProcessService:
             event=work_event,
         )
         await external_process_event_distributor.distribute_event(external_event, user)
+        return external_event
 
     @staticmethod
     async def get_process_start_forms(
@@ -266,8 +267,8 @@ class ProcessService:
                     if isinstance(value, dict) and value.get("is_formkit_element"):
                         work_form_elements.append(
                             {
-                                "name": key,
                                 **value,
+                                "name": key,
                             }
                         )
 
@@ -316,14 +317,18 @@ class ProcessService:
         }
         event: WorkEvent = WorkEvent.deserialize_event(json_data)
 
-        await ProcessService.send_event(
+        external_event = await ProcessService.send_event(
             external_process_event_distributor,
             user,
             event,
             process_class,
             process_id,
         )
-        return SubmittedFormDTO()
+        return SubmittedFormDTO(
+            process_class=process_class,
+            process_id=process_id,
+            process_walkthrough_id=external_event.process_walkthrough_id
+        )
 
     @staticmethod
     async def submit_process_open_form(
@@ -373,7 +378,7 @@ class ProcessService:
         # TODO: Catch if WorkEvent can not be created and safe partial object to DB
         event: WorkEvent = WorkEvent.deserialize_event(json_data)
 
-        await ProcessService.send_event(
+        external_event = await ProcessService.send_event(
             external_process_event_distributor,
             user,
             event,
@@ -381,4 +386,8 @@ class ProcessService:
             process_id,
             process_walkthrough_id,
         )
-        return SubmittedFormDTO()
+        return SubmittedFormDTO(
+            process_class=process_class,
+            process_id=process_id,
+            process_walkthrough_id=external_event.process_walkthrough_id
+        )

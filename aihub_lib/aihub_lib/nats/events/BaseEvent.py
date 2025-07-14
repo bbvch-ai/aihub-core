@@ -16,8 +16,8 @@ from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classe
 logger = logging.getLogger(__name__)
 
 
-def serialize_chat_message_blocks(chat_message: ChatMessage) -> dict:
-    msg_dict = chat_message.model_dump()
+def serialize_chat_message_blocks(chat_message: ChatMessage, **kwargs: Any) -> dict:
+    msg_dict = chat_message.model_dump(**kwargs)
     for block in msg_dict["blocks"]:
         if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
             block["url"] = str(block["url"])
@@ -340,14 +340,16 @@ class BaseEvent(BaseModel):
         Serializes the event into a dictionary. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.
         """
+        kwargs["serialize_as_any"] = True
+
         data = super().model_dump(**kwargs)
         for field_name, value in data.items():
             if isinstance(value, ChatMessage):
-                data[field_name] = serialize_chat_message_blocks(value)
+                data[field_name] = serialize_chat_message_blocks(value, **kwargs)
             elif isinstance(value, BaseModel):
-                data[field_name] = value.model_dump()
-            elif isinstance(value, list):
-                data[field_name] = [self._item_dump(item) for item in value]
+                data[field_name] = value.model_dump(**kwargs)
+            elif isinstance(value, (list, tuple)):
+                data[field_name] = [self._item_dump(item, **kwargs) for item in value]
 
         if not self._unknown_data:
             return data
@@ -358,11 +360,11 @@ class BaseEvent(BaseModel):
         }
 
     @staticmethod
-    def _item_dump(item: Any):
+    def _item_dump(item: Any, **kwargs: Any):
         if isinstance(item, ChatMessage):
-            return serialize_chat_message_blocks(item)
+            return serialize_chat_message_blocks(item, **kwargs)
         elif isinstance(item, BaseModel):
-            return item.model_dump()
+            return item.model_dump(**kwargs)
         else:
             return item
 

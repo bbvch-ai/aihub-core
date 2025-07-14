@@ -115,6 +115,7 @@ class ProcessController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[ProcessHumanInputDto]:
             """Returns a list of formkit forms that the user can submit to start the process."""
+            # TODO: Filter for forms that the user has access to
             return await ProcessService.get_process_start_forms(nc, process_class, process_id, t)
 
         return self
@@ -134,6 +135,7 @@ class ProcessController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[ProcessHumanInputDto]:
             """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
+            # TODO: Filter for forms that the user has access to
             return await ProcessService.get_process_open_forms(nc, process_class, process_id, process_walkthrough_id, t)
 
         return self
@@ -158,6 +160,7 @@ class ProcessController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> SubmittedFormDTO:
             """Submit an object satisfying a form to start a process"""
+            # TODO: Check that user has access to form
             return await ProcessService.submit_process_start_form(
                 nc=nc,
                 process_class=process_class,
@@ -193,6 +196,7 @@ class ProcessController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> SubmittedFormDTO:
             """Submit an object satisfying a form to continue a process walkthrough"""
+            # TODO: Check that user has access to form
             return await ProcessService.submit_process_open_form(
                 nc=nc,
                 process_class=process_class,
