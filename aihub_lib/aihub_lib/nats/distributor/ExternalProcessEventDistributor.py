@@ -30,7 +30,7 @@ class ExternalProcessEventDistributor:
         self.nc_publisher = NCPublisher(nc)
         self.js_publisher = JSPublisher(js)
 
-    async def distribute_event(self, external_event: ExternalProcessEvent, user: UserIdentity | None = None):
+    async def distribute_event(self, external_event: ExternalProcessEvent, user: UserIdentity):
         """
         Entry point for distributing an external event (ExternalProcessEvent) to processes or other
         systems through NATs.
@@ -48,7 +48,7 @@ class ExternalProcessEventDistributor:
     async def _handle_work_event(
         self,
         external_event: ExternalProcessEvent,
-        user: UserIdentity | None = None,
+        user: UserIdentity,
     ):
         """Distributes a work event to the process walkthrough using JetStream"""
         event = external_event.event.model_copy(deep=True)
