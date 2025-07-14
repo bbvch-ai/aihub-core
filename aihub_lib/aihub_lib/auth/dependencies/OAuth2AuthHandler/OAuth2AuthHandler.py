@@ -43,7 +43,7 @@ class OAuth2AuthHandler(AuthHandler):
     - 422 Unprocessable Entity if token claims cannot be parsed into `UserIdentity`.
     """
 
-    _jwks_cache: TTLCache = TTLCache(maxsize=1, ttl=21600)
+    _jwks_cache: TTLCache = TTLCache(maxsize=100, ttl=21600)
     _rsa_key_cache: TTLCache = TTLCache(maxsize=10, ttl=21600)
 
     def __init__(self, identity_provider: AzureIdentityProvider):

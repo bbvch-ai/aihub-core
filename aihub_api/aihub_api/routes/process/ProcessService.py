@@ -27,7 +27,7 @@ from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputD
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
-DISCOVER_PROCESS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire process list for 60s
+DISCOVER_PROCESS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire process list for 60s
 GET_PROCESS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual processes for 60s
 
 
