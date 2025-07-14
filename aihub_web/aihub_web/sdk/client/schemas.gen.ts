@@ -6632,7 +6632,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752485033
+            default: 1752510389
         },
         owned_by: {
             type: 'string',
@@ -8162,8 +8162,25 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 } as const;
 
 export const SubmittedFormDTOSchema = {
-    properties: {},
+    properties: {
+        process_class: {
+            type: 'string',
+            title: 'Process Class',
+            description: 'The processes class identifier.'
+        },
+        process_id: {
+            type: 'string',
+            title: 'Process Id',
+            description: 'Unique identifier for the specific process instance.'
+        },
+        process_walkthrough_id: {
+            type: 'string',
+            title: 'Process Walkthrough Id',
+            description: 'Unique identifier for this specific process walk through.'
+        }
+    },
     type: 'object',
+    required: ['process_class', 'process_id', 'process_walkthrough_id'],
     title: 'SubmittedFormDTO',
     description: 'TODO: Define what information shall be returned on partial or sucessfull submittion of the form'
 } as const;

@@ -4,8 +4,9 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     BaseEvent,
     HumanWorkEvent,
+    ProcessStartEvent,
     ProgramWorkEvent,
-    WorkRequestEvent, ProcessStartEvent,
+    WorkRequestEvent,
 )
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -266,7 +267,9 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             [
                 HumanStartEvent,
                 HumanBWorkRequest(
-                    forms=[HumanBWork(payload=InputTextElement(label=LocaleString(en="This is some label for HumanBWork")))]
+                    forms=[
+                        HumanBWork(payload=InputTextElement(label=LocaleString(en="This is some label for HumanBWork")))
+                    ]
                 ),
             ],
             [HumanBWork, CustomProcessStopEvent(payload="Done")],

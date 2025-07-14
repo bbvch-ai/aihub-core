@@ -327,7 +327,7 @@ class ProcessService:
         return SubmittedFormDTO(
             process_class=process_class,
             process_id=process_id,
-            process_walkthrough_id=external_event.process_walkthrough_id
+            process_walkthrough_id=external_event.process_walkthrough_id,
         )
 
     @staticmethod
@@ -389,5 +389,5 @@ class ProcessService:
         return SubmittedFormDTO(
             process_class=process_class,
             process_id=process_id,
-            process_walkthrough_id=external_event.process_walkthrough_id
+            process_walkthrough_id=external_event.process_walkthrough_id,
         )

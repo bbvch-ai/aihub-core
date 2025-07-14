@@ -348,7 +348,7 @@ class BaseEvent(BaseModel):
                 data[field_name] = serialize_chat_message_blocks(value, **kwargs)
             elif isinstance(value, BaseModel):
                 data[field_name] = value.model_dump(**kwargs)
-            elif isinstance(value, (list, tuple)):
+            elif isinstance(value, list | tuple):
                 data[field_name] = [self._item_dump(item, **kwargs) for item in value]
 
         if not self._unknown_data:

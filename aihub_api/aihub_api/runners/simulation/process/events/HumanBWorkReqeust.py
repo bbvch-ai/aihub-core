@@ -1,8 +1,8 @@
 from typing import ClassVar
 
-from aihub_api.runners.simulation.process.events.HumanBWork import HumanBWork
 from aihub_lib.nats.events import HumanWorkRequestEvent
 
+from aihub_api.runners.simulation.process.events.HumanBWork import HumanBWork
 
 
 class HumanBWorkRequest(HumanWorkRequestEvent):

@@ -22,17 +22,19 @@ PROCESS_ID = "test_process_1"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def process_api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    controller = (ProcessController(auth=auth)
-                  .discover_processes()
-                  .get_processes()
-                  .get_process()
-                  .get_process_start_forms()
-                  .get_process_open_forms()
-                  .send_process_start_form()
-                  .send_process_open_form()
-                  )
-    runner = (SimulatedProcessApiTestRunner(process_class=PROCESS_CLASS, process_id=PROCESS_ID)
-              .with_simple_human_only_process_events())
+    controller = (
+        ProcessController(auth=auth)
+        .discover_processes()
+        .get_processes()
+        .get_process()
+        .get_process_start_forms()
+        .get_process_open_forms()
+        .send_process_start_form()
+        .send_process_open_form()
+    )
+    runner = SimulatedProcessApiTestRunner(
+        process_class=PROCESS_CLASS, process_id=PROCESS_ID
+    ).with_simple_human_only_process_events()
     runner.mount(controller)
     await runner.start_simulation()
     app = runner.get_app()
@@ -50,7 +52,9 @@ async def test_discover_processes(process_api_client):
 
     data = response.json()
     assert isinstance(data, list), "Response data should be a list"
-    found = any(process.get("process_class") == PROCESS_CLASS and process.get("process_id") == PROCESS_ID for process in data)
+    found = any(
+        process.get("process_class") == PROCESS_CLASS and process.get("process_id") == PROCESS_ID for process in data
+    )
     assert found, "Simulated process not found in discovered processes"
 
 
@@ -65,7 +69,6 @@ async def test_get_process(process_api_client):
     assert data.get("process_id") == PROCESS_ID
     for key in ("process_config", "human_inputs", "program_inputs", "agent_inputs"):
         assert key in data
-
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -84,17 +87,14 @@ async def test_walk_through_process_std_methods(process_api_client):
     assert len(data[0].get("form")) == 1
     assert data[0].get("form")[0].get("formkit") == "primeInputText"
     assert data[0].get("form")[0].get("name") == "payload"
-    assert data[0].get("form")[0].get("disabled") == False
+    assert not data[0].get("form")[0].get("disabled")
     assert data[0].get("form")[0].get("label") == "This is some label for HumanStartEvent"
 
     # Step 2: Send initial form
     response = await process_api_client.post(
         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/submit_start_form",
-        json={ "payload": "Initial Payload"},
-        params={
-            "submission_route": "/human_input_0",
-            "submission_method": "POST"
-        }
+        json={"payload": "Initial Payload"},
+        params={"submission_route": "/human_input_0", "submission_method": "POST"},
     )
     assert response.status_code == 200, f"Response: {response.text}"
 
@@ -121,18 +121,15 @@ async def test_walk_through_process_std_methods(process_api_client):
     assert len(data[0].get("form")) == 1
     assert data[0].get("form")[0].get("formkit") == "primeInputText"
     assert data[0].get("form")[0].get("name") == "payload"
-    assert data[0].get("form")[0].get("disabled") == False
+    assert not data[0].get("form")[0].get("disabled")
     assert data[0].get("form")[0].get("label") == "This is some label for HumanBWork"
     await asyncio.sleep(1)
 
     # Step 4: Post open form
     response = await process_api_client.post(
         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/submit_open_form",
-        json={ "payload": "Second Payload"},
-        params={
-            "submission_route": "/human_input_1",
-            "submission_method": "POST"
-        }
+        json={"payload": "Second Payload"},
+        params={"submission_route": "/human_input_1", "submission_method": "POST"},
     )
     assert response.status_code == 200, f"Response: {response.text}"
 
@@ -152,6 +149,7 @@ async def test_walk_through_process_std_methods(process_api_client):
     data = response.json()
     assert len(data) == 0
 
+
 @pytest.mark.asyncio(loop_scope="module")
 async def test_walk_through_process_dynamic_methods(process_api_client):
     """Play through simple human-only process using dynamically mounted endponts"""
@@ -167,13 +165,13 @@ async def test_walk_through_process_dynamic_methods(process_api_client):
     assert len(data.get("form")) == 1
     assert data.get("form")[0].get("formkit") == "primeInputText"
     assert data.get("form")[0].get("name") == "payload"
-    assert data.get("form")[0].get("disabled") == False
+    assert not data.get("form")[0].get("disabled")
     assert data.get("form")[0].get("label") == "This is some label for HumanStartEvent"
 
     # Step 2: Send initial form
     response = await process_api_client.post(
         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/human_input_0",
-        json={ "payload": "Initial Payload"},
+        json={"payload": "Initial Payload"},
     )
     assert response.status_code == 200, f"Response: {response.text}"
 
@@ -199,14 +197,14 @@ async def test_walk_through_process_dynamic_methods(process_api_client):
     assert len(data.get("form")) == 1
     assert data.get("form")[0].get("formkit") == "primeInputText"
     assert data.get("form")[0].get("name") == "payload"
-    assert data.get("form")[0].get("disabled") == False
+    assert not data.get("form")[0].get("disabled")
     assert data.get("form")[0].get("label") == "This is some label for HumanBWork"
     await asyncio.sleep(1)
 
     # Step 4: Post open form
     response = await process_api_client.post(
         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/human_input_1",
-        json={ "payload": "Second Payload"}
+        json={"payload": "Second Payload"},
     )
     assert response.status_code == 200, f"Response: {response.text}"
 

@@ -6281,7 +6281,21 @@ export type StopEventWritable = {
  * TODO: Define what information shall be returned on partial or sucessfull submittion of the form
  */
 export type SubmittedFormDto = {
-    [key: string]: unknown;
+    /**
+     * Process Class
+     * The processes class identifier.
+     */
+    process_class: string;
+    /**
+     * Process Id
+     * Unique identifier for the specific process instance.
+     */
+    process_id: string;
+    /**
+     * Process Walkthrough Id
+     * Unique identifier for this specific process walk through.
+     */
+    process_walkthrough_id: string;
 };
 
 /**

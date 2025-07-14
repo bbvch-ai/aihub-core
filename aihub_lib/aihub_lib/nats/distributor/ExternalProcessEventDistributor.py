@@ -40,7 +40,6 @@ class ExternalProcessEventDistributor:
             external_event.process_walkthrough_id = process_walkthrough_id
 
         if external_event.event.is_human_work_event or external_event.event.is_program_work_event:
-
             # TODO: For human inputs, validate that the user is allowed to submit the given work
             await self._handle_work_event(external_event, user)
         else:
