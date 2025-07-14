@@ -183,18 +183,18 @@ def ref_doc_metadata_table(ref_docs: list[RefDocDocument]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def sharepoint_file_table_row(sharepoint_file: MinimalSharePointFile) -> dict:
+def share_point_file_table_row(share_point_file: MinimalSharePointFile) -> dict:
     return {
-        "name": sharepoint_file.name,
-        "modified": sharepoint_file.modified,
-        "size": str(sharepoint_file.size),
-        "id": sharepoint_file.id,
-        "etag": sharepoint_file.etag or "",
-        "content_type": sharepoint_file.content_type or "",
+        "name": share_point_file.name,
+        "modified": share_point_file.modified,
+        "size": str(share_point_file.size),
+        "id": share_point_file.id,
+        "etag": share_point_file.etag or "",
+        "content_type": share_point_file.content_type or "",
     }
 
 
-def sharepoint_metadata_table(sharepoint_files: list[MinimalSharePointFile]):
+def share_point_metadata_table(share_point_files: list[MinimalSharePointFile]):
     columns = [
         TableColumn("name", "string"),
         TableColumn("modified", "string"),
@@ -203,6 +203,6 @@ def sharepoint_metadata_table(sharepoint_files: list[MinimalSharePointFile]):
         TableColumn("etag", "string"),
         TableColumn("content_type", "string"),
     ]
-    records = [TableRecord(sharepoint_file_table_row(sharepoint_file)) for sharepoint_file in sharepoint_files]
+    records = [TableRecord(share_point_file_table_row(share_point_file)) for share_point_file in share_point_files]
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=records, schema=table_schema)
