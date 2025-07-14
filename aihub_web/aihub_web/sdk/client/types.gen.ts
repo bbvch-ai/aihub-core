@@ -105,12 +105,9 @@ export type AgentConfigDto = {
 /**
  * AgentDTO
  * A data transfer object for representing agent information in responses.
- *
- * ### Why AgentDTO?
  * This DTO standardizes how agent data is returned from the service layer to the controller,
  * and subsequently to the API response. It helps maintain a clean separation between the internal
  * event models and the publicly exposed fields in HTTP responses.
- *
  * By using `AgentDTO`, the API can evolve independently from the internal event representations.
  */
 export type AgentDto = {
@@ -215,6 +212,10 @@ export type AgentEventWritable = {
 
 /**
  * AgentInSpecs
+ * Defines the specifications of a piece of work that can be submitted by an agent.
+ * It is limited to an exact agent by class and id and holds the event specs of the
+ * agents stop events, as these stop events are translated to work events and submitted
+ * to the agentic process as inputs.
  */
 export type AgentInSpecs = {
     /**
@@ -1529,6 +1530,148 @@ export type CompletionUsage = {
 };
 
 /**
+ * ContextualizedAgentEvent
+ * Wraps an agent event with context information like the agent's class, ID, and thread ID.
+ * This is necessary as the event payload itself is independent of the topic context through
+ * which the event was published.
+ * This class ensures that both the information from the topic context and the event itself is bundled
+ * together.
+ */
+export type ContextualizedAgentEventReadable = {
+    /**
+     * Locale
+     * The locale in which event name and description is returned.
+     */
+    locale?: string;
+    /**
+     * Event Display Name
+     * Display name for the event
+     */
+    event_display_name: string;
+    /**
+     * Event Display Description
+     * Display description for the event
+     */
+    event_display_description: string;
+    /**
+     * Agent Class
+     * The agent class responsible for this event.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier of the agent instance that produced the event.
+     */
+    agent_id: string;
+    /**
+     * Thread Id
+     * Thread identifier linking events to a particular conversation or workflow.
+     */
+    thread_id: string;
+    /**
+     * Display Id
+     * Display session ID, used to group events for the UI.
+     */
+    display_id: string;
+    /**
+     * Run Id
+     * Optional run ID if the event is associated with a particular run.
+     */
+    run_id: string;
+    /**
+     * Event Type
+     * Type of the event (default: 'display_event').
+     */
+    event_type: string;
+    /**
+     * Event Name
+     * Name of the event, indicating its subtype or category.
+     */
+    event_name: string;
+    /**
+     * Event Id
+     * Unique identifier of this event instance.
+     */
+    event_id: string;
+    /**
+     * Event
+     * Data of the event itself.
+     */
+    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable;
+};
+
+/**
+ * ContextualizedAgentEvent
+ * Wraps an agent event with context information like the agent's class, ID, and thread ID.
+ * This is necessary as the event payload itself is independent of the topic context through
+ * which the event was published.
+ * This class ensures that both the information from the topic context and the event itself is bundled
+ * together.
+ */
+export type ContextualizedAgentEventWritable = {
+    /**
+     * Locale
+     * The locale in which event name and description is returned.
+     */
+    locale?: string;
+    /**
+     * Event Display Name
+     * Display name for the event
+     */
+    event_display_name: string;
+    /**
+     * Event Display Description
+     * Display description for the event
+     */
+    event_display_description: string;
+    /**
+     * Agent Class
+     * The agent class responsible for this event.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier of the agent instance that produced the event.
+     */
+    agent_id: string;
+    /**
+     * Thread Id
+     * Thread identifier linking events to a particular conversation or workflow.
+     */
+    thread_id: string;
+    /**
+     * Display Id
+     * Display session ID, used to group events for the UI.
+     */
+    display_id: string;
+    /**
+     * Run Id
+     * Optional run ID if the event is associated with a particular run.
+     */
+    run_id: string;
+    /**
+     * Event Type
+     * Type of the event (default: 'display_event').
+     */
+    event_type: string;
+    /**
+     * Event Name
+     * Name of the event, indicating its subtype or category.
+     */
+    event_name: string;
+    /**
+     * Event Id
+     * Unique identifier of this event instance.
+     */
+    event_id: string;
+    /**
+     * Event
+     * Data of the event itself.
+     */
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable;
+};
+
+/**
  * ControlEvent
  * Represents a system-level or workflow-level signal, often used to coordinate steps,
  * indicate state changes, or trigger specific actions in the event-driven architecture.
@@ -2403,7 +2546,15 @@ export type EventPayloadField = {
 
 /**
  * EventSpecs
- * Defines a specification for a start event that an agent can handle.
+ * Defines the schema of an event that can flow through NATs that is either produced or consumed by an agent
+ * or agentic process.
+ *
+ * Sometimes, we must communicate events to external consumers that do not have access to our internal Pydantic event
+ * model. Hence, we must serialize the model schema, add the event name and parent event names, and provide
+ * these information to an external consumer like an API endpoint or the frontend.
+ *
+ * From this information, we can reconstruct the pydantic object and send the event back into NATs such that
+ * it can be consumed by the agent as a native pydantic model again.
  */
 export type EventSpecs = {
     /**
@@ -3005,6 +3156,15 @@ export type HealthResponse = {
 
 /**
  * HtmlElement
+ * https://formkit.com/essentials/schema#html-elements-el
+ * Flexible formkit element that can be rendered into pretty much any html element you like.
+ * This should NOT be used for inputs but only for displaying and structuring purposes, like
+ * displaying a title or a paragraph. It can also be styled - however, make sure to consider both
+ * light and dark mode when styling. You can use tailwind for styling, but it may break in production
+ * as dynamic tailwind classes might be stripped away when compiling the frontend.
+ *
+ * Example:
+ * title = HtmlElement(el="h1", children="My Title")
  */
 export type HtmlElement = {
     /**
@@ -3044,29 +3204,12 @@ export type HtmlElement = {
 };
 
 /**
- * HumanAWorkInput
- */
-export type HumanAWorkInput = {
-    /**
-     * Input Text A
-     * Input text A
-     */
-    input_text_a: string;
-};
-
-/**
- * HumanBWorkInput
- */
-export type HumanBWorkInput = {
-    /**
-     * Input Text B
-     * Input text B
-     */
-    input_text_b: string;
-};
-
-/**
  * HumanInSpecs
+ * Defines a piece of work that can be submitted by a human.
+ * It holds information about the form that the user must fill in in order to generate the exact
+ * data structure defined in the event specs of the work event.
+ * It also holds the route and http method that must be used to finally post that work event data
+ * to the API, which will forward it to the appropriate process.
  */
 export type HumanInSpecs = {
     /**
@@ -3683,6 +3826,7 @@ export type InputEventInfo = {
 
 /**
  * InputTextElement
+ * https://formkit-primevue.netlify.app/inputs/InputText
  */
 export type InputTextElement = {
     /**
@@ -3725,7 +3869,7 @@ export type InputTextElement = {
     disabled?: boolean;
     /**
      * Readonly
-     * Whether the input is disabled
+     * Whether the input is readonly
      */
     readonly?: boolean;
     /**
@@ -5092,6 +5236,11 @@ export type ProcessConfigDto = {
 
 /**
  * ProcessDTO
+ * An agentic process is a process in which humans, agents and programs interact with each other to achieve a
+ * common goal.
+ * To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
+ * what kind of work to start / continue the process.
+ * Hence, this object offers information about the inputs (work events) that these entities can contribute.
  */
 export type ProcessDto = {
     /**
@@ -5132,6 +5281,11 @@ export type ProcessDto = {
 
 /**
  * ProcessHumanInputDto
+ * Defines what and how a piece of work must be submitted by a user to a process.
+ * As humans usually submit their data by filling in forms in the frontend, this event holds
+ * a list of formkit form fields that can be used to generate a formkit form in the frontend.
+ * Submitting the form will lead to the required data structure that can be submitted
+ * to the <route> using the http-method <method>.
  */
 export type ProcessHumanInputDto = {
     /**
@@ -5163,6 +5317,11 @@ export type ProcessHumanInputDto = {
 
 /**
  * ProgramInSpecs
+ * Defines a piece of work that can be submitted by a program.
+ * It holds the information about the exact data that must be submitted as a work event
+ * in the event specs. It also holds the information about where that work event data
+ * must be submitted, aka to which route and using which http method.
+ * The API will then forward the data to the appropriate process.
  */
 export type ProgramInSpecs = {
     /**
@@ -6119,6 +6278,7 @@ export type StopEventWritable = {
 
 /**
  * SubmittedFormDTO
+ * TODO: Define what information shall be returned on partial or sucessfull submittion of the form
  */
 export type SubmittedFormDto = {
     [key: string]: unknown;
@@ -7129,170 +7289,6 @@ export type ValidationError = {
 };
 
 /**
- * ContextualizedAgentEvent
- * Represents an event sent from the server to a user's WebSocket connection, encapsulating
- * details necessary to identify and display the event in a client application.
- *
- * ### Why ContextualizedAgentEvent?
- * In a real-time system, events generated by agents need to be transmitted to clients over
- * WebSockets. A `ContextualizedAgentEvent` standardizes the structure of these messages, including:
- * - Agent identifiers and context (thread/display/run).
- * - Event type, name, and ID for classification.
- * - Payload (`event_data`) containing the actual event content.
- *
- * This consistency helps front-end clients parse and handle events uniformly, and aids in
- * debugging or logging outbound messages.
- *
- * ### Conversion from Persisted Events
- * The `from_persisted_event` method rebuilds a `ContextualizedAgentEvent` from a `PersistedAgentEventEntity`,
- * allowing previously stored events to be replayed or displayed to users.
- */
-export type WsServerAgentEventReadable = {
-    /**
-     * Locale
-     * The locale in which event name and description is returned.
-     */
-    locale?: string;
-    /**
-     * Event Display Name
-     * Display name for the event
-     */
-    event_display_name: string;
-    /**
-     * Event Display Description
-     * Display description for the event
-     */
-    event_display_description: string;
-    /**
-     * Agent Class
-     * The agent class responsible for this event.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier of the agent instance that produced the event.
-     */
-    agent_id: string;
-    /**
-     * Thread Id
-     * Thread identifier linking events to a particular conversation or workflow.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * Display session ID, used to group events for the UI.
-     */
-    display_id: string;
-    /**
-     * Run Id
-     * Optional run ID if the event is associated with a particular run.
-     */
-    run_id: string;
-    /**
-     * Event Type
-     * Type of the event (default: 'display_event').
-     */
-    event_type: string;
-    /**
-     * Event Name
-     * Name of the event, indicating its subtype or category.
-     */
-    event_name: string;
-    /**
-     * Event Id
-     * Unique identifier of this event instance.
-     */
-    event_id: string;
-    /**
-     * Event
-     * Data of the event itself.
-     */
-    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable;
-};
-
-/**
- * ContextualizedAgentEvent
- * Represents an event sent from the server to a user's WebSocket connection, encapsulating
- * details necessary to identify and display the event in a client application.
- *
- * ### Why ContextualizedAgentEvent?
- * In a real-time system, events generated by agents need to be transmitted to clients over
- * WebSockets. A `ContextualizedAgentEvent` standardizes the structure of these messages, including:
- * - Agent identifiers and context (thread/display/run).
- * - Event type, name, and ID for classification.
- * - Payload (`event_data`) containing the actual event content.
- *
- * This consistency helps front-end clients parse and handle events uniformly, and aids in
- * debugging or logging outbound messages.
- *
- * ### Conversion from Persisted Events
- * The `from_persisted_event` method rebuilds a `ContextualizedAgentEvent` from a `PersistedAgentEventEntity`,
- * allowing previously stored events to be replayed or displayed to users.
- */
-export type WsServerAgentEventWritable = {
-    /**
-     * Locale
-     * The locale in which event name and description is returned.
-     */
-    locale?: string;
-    /**
-     * Event Display Name
-     * Display name for the event
-     */
-    event_display_name: string;
-    /**
-     * Event Display Description
-     * Display description for the event
-     */
-    event_display_description: string;
-    /**
-     * Agent Class
-     * The agent class responsible for this event.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier of the agent instance that produced the event.
-     */
-    agent_id: string;
-    /**
-     * Thread Id
-     * Thread identifier linking events to a particular conversation or workflow.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * Display session ID, used to group events for the UI.
-     */
-    display_id: string;
-    /**
-     * Run Id
-     * Optional run ID if the event is associated with a particular run.
-     */
-    run_id: string;
-    /**
-     * Event Type
-     * Type of the event (default: 'display_event').
-     */
-    event_type: string;
-    /**
-     * Event Name
-     * Name of the event, indicating its subtype or category.
-     */
-    event_name: string;
-    /**
-     * Event Id
-     * Unique identifier of this event instance.
-     */
-    event_id: string;
-    /**
-     * Event
-     * Data of the event itself.
-     */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable;
-};
-
-/**
  * WorkflowGraph
  * Complete workflow graph representation.
  */
@@ -7573,7 +7569,7 @@ export type GetAgentEventsInThreadResponses = {
      * Response Get Agent Events In Thread Events Agents Threads  Thread Id  Get
      * Successful Response
      */
-    200: Array<WsServerAgentEventReadable>;
+    200: Array<ContextualizedAgentEventReadable>;
 };
 
 export type GetAgentEventsInThreadResponse = GetAgentEventsInThreadResponses[keyof GetAgentEventsInThreadResponses];
@@ -9084,107 +9080,6 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetData = {
-    body?: never;
-    path: {
-        /**
-         * Walkthrough ID
-         */
-        process_walkthrough_id: string;
-    };
-    query?: never;
-    url: '/processes/HumanOnlyProcess/agent_only_process/{process_walkthrough_id}/input_b';
-};
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetError = GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetErrors[keyof GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetErrors];
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponses = {
-    /**
-     * Successful Response
-     */
-    200: ProcessHumanInputDto;
-};
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponse = GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponses[keyof GetFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBGetResponses];
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostData = {
-    body: HumanBWorkInput;
-    path: {
-        /**
-         * Walkthrough ID
-         */
-        process_walkthrough_id: string;
-    };
-    query?: never;
-    url: '/processes/HumanOnlyProcess/agent_only_process/{process_walkthrough_id}/input_b';
-};
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostError = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostErrors[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostErrors];
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: SubmittedFormDto;
-};
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponse = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponses[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputBProcessesHumanOnlyProcessAgentOnlyProcessProcessWalkthroughIdInputBPostResponses];
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/processes/HumanOnlyProcess/agent_only_process/input_a';
-};
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponses = {
-    /**
-     * Successful Response
-     */
-    200: ProcessHumanInputDto;
-};
-
-export type GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponse = GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponses[keyof GetFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAGetResponses];
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostData = {
-    body: HumanAWorkInput;
-    path?: never;
-    query?: never;
-    url: '/processes/HumanOnlyProcess/agent_only_process/input_a';
-};
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostError = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostErrors[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostErrors];
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: SubmittedFormDto;
-};
-
-export type SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponse = SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponses[keyof SubmitFormForHumanOnlyProcessAgentOnlyProcessInputAProcessesHumanOnlyProcessAgentOnlyProcessInputAPostResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});
