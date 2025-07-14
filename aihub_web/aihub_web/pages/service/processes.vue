@@ -7,12 +7,12 @@
       <div
         class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
       >
-        <AgentCard
-          v-for="process in processes"
-          :key="process.process_id"
-          :process="process"
-          @click="() => toAgent(process)"
-        />
+        <!--        <ProcessCard -->
+        <!--          v-for="process in processes" -->
+        <!--          :key="process.process_id" -->
+        <!--          :process="process" -->
+        <!--          @click="() => toProcess(process)" -->
+        <!--        /> -->
       </div>
     </StructuralColumn>
 
@@ -31,7 +31,7 @@ const { t } = useI18n()
 
 const { processes, processesAreLoading } = useProcesses()
 
-const toAgent = (process: ProcessDto) => {
+const toProcess = (process: ProcessDto) => {
   router.push(localePath(`/service/processes/process-${process.process_id}-${process.process_class}/overview`))
 }
 </script>
