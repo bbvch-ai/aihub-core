@@ -8,16 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.217.0] - 2025-07-10 - Automated Agent API Integration and Event Inheritance
 
 ### Added
-- ✨ **Automated Agent API Endpoint Generation**: Introduced a new `AgentEndpointsDiscoveryService` that dynamically discovers agents and registers corresponding API endpoints for their start events. This significantly streamlines the integration of new agents with the API, eliminating the need for manual endpoint configuration.
+- ✨ **Automated Agent API Endpoint Generation**: Introduced a new `AgentDiscoveryService` that dynamically discovers agents and registers corresponding API endpoints for their start events. This significantly streamlines the integration of new agents with the API, eliminating the need for manual endpoint configuration.
 - 🦾 **Event Inheritance Tracking**: `EventSpecs` now include an `event_parents` field, providing a hierarchical view of event types. This new metadata enhances dynamic model generation and event handling capabilities.
 - 📄 **EventSpecs Creation Helper**: Added a convenient `EventSpecs.from_event_class` method to simplify and standardize the generation of event specifications from event classes.
 - 🔑 **Role Provisioning for API Tokens**: The `generate_api_token` script has been enhanced to automatically create specified roles if they do not already exist, improving the initial setup experience for new environments.
 
 ### Changed
 - ⚡️ **Flexible Agent Event Dispatch**: The `AgentService.send_event` method now universally accepts any `BaseEvent` as input, offering greater flexibility in initiating diverse agent interactions.
-- 🔄 **Dynamic Agent Endpoint Management**: Transitioned the agent event endpoint management from static, hardcoded definitions in `AgentController` to a dynamic, discovery-driven approach powered by the new `AgentEndpointsDiscoveryService`.
+- 🔄 **Dynamic Agent Endpoint Management**: Transitioned the agent event endpoint management from static, hardcoded definitions in `AgentController` to a dynamic, discovery-driven approach powered by the new `AgentDiscoveryService`.
 - 📚 **Event Model Creation Encapsulation**: Internal methods within `EventModelCreationService` have been refactored for improved code organization and clearer encapsulation.
-- 🏗️ **API State Access for Services**: The `ApiRunner` now stores the `AgentController` and API application instance directly in FastAPI's state, enabling seamless access for new services like `AgentEndpointsDiscoveryService`.
+- 🏗️ **API State Access for Services**: The `ApiRunner` now stores the `AgentController` and API application instance directly in FastAPI's state, enabling seamless access for new services like `AgentDiscoveryService`.
 - ⚠️ **Refined Unauthorized Access Handling**: Introduced a specific HTTP exception to provide clearer and more precise error responses when a user lacks authorization to view a particular thread.
 
 ### Refactor
@@ -1308,7 +1308,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 🔄 **Core Event Model Overhaul**: Refactored the fundamental `BaseEvent` model to use `_event_name` and `_parent_event_names` for more robust and flexible event identification and deserialization across microservices, improving cross-service communication.
 - 📢 **Test Runner API**: Updated the `AgentTestRunner` API (e.g., `get_events_of_class`, `has_event_of_class`) to provide more precise control over event class matching in tests, enabling stricter assertions.
-- 🌐 **WebSocket Event Payload Structure**: Modified the `ContextualizedAgentEvent` payload to use strongly-typed Pydantic models for the `event` field, enhancing data integrity and enabling the frontend to dynamically render diverse event types with full data.
+- 🌐 **WebSocket Event Payload Structure**: Modified the `WSServerEvent` payload to use strongly-typed Pydantic models for the `event` field, enhancing data integrity and enabling the frontend to dynamically render diverse event types with full data.
 - ⚙️ **Chat Service Output**: The chat service's `build_json_response_content` now returns a `ChatContent` object, which includes both the LLM's final response and any streamed reasoning content, providing richer output for conversational agents.
 - 💡 **ThoughtEvent Hierarchy**: `ThoughtEvent` now inherits from `ChunkEvent`, allowing internal reasoning to be streamed and displayed as partial content, aligning with the incremental nature of LLM processing.
 - 🔑 **Authentication Handler API**: Broadened the `AuthHandler` interface to include an `authenticate_token` method, enabling direct token validation for WebSocket connections and other non-HTTP contexts across all authentication strategies.

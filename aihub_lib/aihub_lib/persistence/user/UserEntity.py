@@ -43,6 +43,7 @@ class UserEntity(Document):
             {"fields": ["email"], "unique": True},
             {"fields": ["roles"]},
             {"fields": ["last_updated"]},
+            {"fields": ["name"]},
         ],
     }
     id = StringField(primary_key=True)

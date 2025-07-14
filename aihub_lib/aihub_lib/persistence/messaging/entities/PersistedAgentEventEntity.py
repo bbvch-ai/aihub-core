@@ -79,6 +79,8 @@ class PersistedAgentEventEntity(Document):
             {"fields": ["thread_id", "event_parents"]},
             {"fields": ["run_id"]},
             {"fields": ["event_data.created_at"]},
+            {"fields": ["display_id"]},
+            {"fields": ["thread_id", "event_type", "event_parents"]},
         ],
     }
     agent_class = StringField(required=True)

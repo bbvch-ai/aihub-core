@@ -71,7 +71,6 @@ class EndpointsDiscoveryService(abc.ABC):
         """Register endpoints for discovered entities."""
         ...
 
-    @abc.abstractmethod
     def _get_endpoint_name(self, entity_class: str, entity_id: str) -> str:
         """Returns the base path for the agent endpoints."""
         return f"{self.controller.base_route}/{entity_class}/{entity_id}"

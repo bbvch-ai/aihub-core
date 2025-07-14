@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, override
+from typing import Annotated
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -14,6 +14,7 @@ from fastapi import Body, Depends, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
+from typing_extensions import override
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale

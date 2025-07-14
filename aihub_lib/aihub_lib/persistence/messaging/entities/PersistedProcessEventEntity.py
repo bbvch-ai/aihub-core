@@ -14,6 +14,10 @@ class PersistedProcessEventEntity(Document):
     meta = {
         "collection": "process_events",
         "strict": False,
+        "indexes": [
+            {"fields": ["process_class", "process_id", "process_walkthrough_id", "event_parents"]},
+            {"fields": ["event_data.forms._event_name"]},
+        ],
     }
     process_class = StringField(required=True)
     process_id = StringField(required=True)
