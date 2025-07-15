@@ -1,11 +1,16 @@
-from typing import Annotated, Any, TYPE_CHECKING
+import json
+import logging
+from typing import Annotated, Any, TYPE_CHECKING, ClassVar
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr, ConfigDict, computed_field
+from typing_extensions import override
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.agents import AgentConfigEntity
+
+logger = logging.getLogger(__name__)
 
 
 class StepConfig(BaseModel):
@@ -52,6 +57,8 @@ class AgentConfig(BaseModel):
     ```
     """
 
+    _config_registry: ClassVar[dict[str, type["AgentConfig"]]] = {}
+
     agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
     agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
     name: Annotated[LocaleString, Field(description="The name of the agent.")]
@@ -86,6 +93,11 @@ class AgentConfig(BaseModel):
     # Private attributes to handle unknown config types
     _unknown_config_name: str | None = PrivateAttr(None)
     _unknown_data: dict[str, Any] | None = PrivateAttr(None)
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
+
+    def __str__(self):
+        return f"{self.config_name}({super().__str__()})"
 
     @classmethod
     def config_name_from_class(cls) -> str:
@@ -126,3 +138,78 @@ class AgentConfig(BaseModel):
             if isinstance(field_value, StepConfig):
                 step_configs[type(field_value)] = field_value
         return step_configs
+
+    @computed_field
+    @property
+    def _config_name(self) -> str:
+        return self._unknown_config_name or self.__class__.__name__
+
+    @property
+    def config_name(self) -> str:
+        return self._config_name
+
+    @override
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """
+        Serializes the config into a dictionary. If this config was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        data = super().model_dump(**kwargs)
+        if self._unknown_data is None:
+            return data
+
+        return {
+            **self._unknown_data,
+            **data,
+        }
+
+    @override
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """
+        Serializes the event into a JSON string. If this event was originally unknown,
+        merges the original data with the known fields so nothing is lost.
+        """
+        return json.dumps(self.model_dump(**kwargs), default=str)
+
+    @classmethod
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        """
+        Called when a new subclass is defined, registering it in the _event_registry.
+        This makes dynamic deserialization possible.
+        """
+        super().__pydantic_init_subclass__(**kwargs)
+        logger.debug(f"Registering Config {cls.__name__}")
+        if cls.__name__ in AgentConfig._config_registry:
+            raise ValueError(f"Duplication detected for Config {cls.__name__}")
+        AgentConfig._config_registry[cls.__name__] = cls
+
+    @classmethod
+    def deserialize_config(cls, data: bytes | str | dict[str, Any]) -> "AgentConfig":
+        """
+        Given raw config data, deserializes it into the specific AgentConfig type.
+        """
+        if isinstance(data, dict):
+            json_data = data.copy()
+        elif isinstance(data, str):
+            json_data = json.loads(data)
+        elif isinstance(data, bytes):
+            json_data = json.loads(data.decode())
+        else:
+            raise ValueError(f"Cannot deserialize data of type {type(data)}")
+
+        config_name = json_data.get("_config_name")
+
+        if config_name and isinstance(config_name, str):
+            config_class = cls._config_registry.get(config_name)
+            if config_class:
+                logger.debug(f"Deserializing {config_name} config")
+                return config_class(**json_data)
+
+        # If we get here, either:
+        # 1. The event type wasn't in our registry, or
+        # 2. The event type was null/invalid
+        logger.debug(f"Unknown config type: {config_name}")
+        event = cls(**json_data)
+        event._unknown_config_name = config_name
+        event._unknown_data = json_data
+        return event

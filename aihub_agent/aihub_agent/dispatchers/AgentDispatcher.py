@@ -2,9 +2,9 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, cast
+from typing import Annotated, cast, Any
 
-from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
@@ -320,15 +320,17 @@ class AgentDispatcher(BaseDispatcher):
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
 
         # Get dynamic configuration data from run context
-        agent_config: AgentConfig = await run_context.get("_agent_config", None)
-        if agent_config is None:
+        agent_config_dict: dict[str, Any] = await run_context.get("_agent_config", None)
+        if agent_config_dict is None:
             raise ValueError("AgentConfig must be set at this point. Something went wrong in the StartEvent handling.")
 
+        agent_config: AgentConfig = AgentConfig.deserialize_config(agent_config_dict)
+        step_configs: dict[type[StepConfig], StepConfig] = agent_config.get_step_configs()
         # Prepare arguments
         for param in step_signature.parameters.values():
             # Handle special configurations injected by agent_config.get_step_configs()
-            if self.step_configs.get(param.annotation):
-                events_and_kwargs.kwargs[param.name] = self.step_configs[param.annotation]
+            if step_configs.get(param.annotation):
+                events_and_kwargs.kwargs[param.name] = step_configs[param.annotation]
                 continue
 
             # Handle AgentConfig if requested - create instance from dynamic config data
