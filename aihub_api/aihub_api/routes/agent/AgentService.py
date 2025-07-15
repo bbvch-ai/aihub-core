@@ -250,6 +250,7 @@ class AgentService:
                     class_dto=agent,
                     agent_config=config_instance,
                 )
+                AgentEntity.create_or_update_from_dto(agent_dto)
                 configured_agents.append(agent_dto)
 
         if len(configured_agents) > 0:
@@ -298,7 +299,6 @@ class AgentService:
 
             if unique_key not in unique_agents_dict:
                 agent_dto = AgentClassDTO.from_discovery_event(response)
-                AgentEntity.create_or_update_from_dto(agent_dto)
                 unique_agents_dict[unique_key] = agent_dto
 
         agents = list(unique_agents_dict.values())
