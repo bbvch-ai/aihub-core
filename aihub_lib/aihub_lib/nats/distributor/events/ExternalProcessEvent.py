@@ -11,15 +11,15 @@ class ExternalProcessEvent(BaseModel):
 
     process_class: Annotated[
         str,
-        Field(description="Process class associated with this Stop Event. "),
+        Field(description="Process class associated with this Work Event. "),
     ]
     process_id: Annotated[
         str,
-        Field(description="Process ID associated with this Stop Event. "),
+        Field(description="Process ID associated with this Work Event. "),
     ]
     process_walkthrough_id: Annotated[
         str | None,
-        Field(description="Walkthrough ID associated with this Stop Event. "),
+        Field(description="Walkthrough ID associated with this Work Event. "),
     ] = None
     event: Annotated[WorkEvent, Field(description="The user-originated event.")]
 

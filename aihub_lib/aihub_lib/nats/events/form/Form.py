@@ -58,22 +58,16 @@ class Form(BaseModel):
         element's 'name'.
         """
         formkit_elements: list[FormkitElement] = []
-        # Iterate over the fields of the Pydantic model instance
         for field_name, field_info in self.model_fields.items():
             field_value = getattr(self, field_name)
 
-            # Check if the field's value is an instance of FormkitElement
             if isinstance(field_value, FormkitElement):
-                # If it's a PrimeVueElement, it requires a 'name'
                 if isinstance(field_value, PrimeVueElement):
-                    # Create a copy to avoid mutating the original object
                     element_copy = field_value.model_copy()
 
-                    # Set the name of the element to the field's name
                     element_copy.name = field_name
                     formkit_elements.append(element_copy)
                 else:
-                    # For other FormkitElements (e.g., HtmlElement), just append them
                     formkit_elements.append(field_value)
 
         return formkit_elements
@@ -89,11 +83,9 @@ class Form(BaseModel):
             current_annotation = field_info.annotation
             origin = get_origin(current_annotation)
 
-            # Directly check if the core type is a Union
             if origin in (Union, UnionType):
                 union_args = get_args(current_annotation)
 
-                # Filter out FormkitElement and its subclasses
                 if not any((isinstance(t, type) and issubclass(t, FormkitElement)) for t in union_args):
                     continue
 

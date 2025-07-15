@@ -57,7 +57,7 @@ class ProcessController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[ProcessDTO]:
             """
-            Retrieve a list of all processes, both online (discoverable) and offline (not discoverable).
+            Retrieve a list of all processes, both online (discoverable) and offline (not discoverable). Filters out processes the user cannot access.
             """
             processes = await ProcessService.get_processes(nc, t)
             return [
