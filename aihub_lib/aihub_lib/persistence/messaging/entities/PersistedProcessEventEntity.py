@@ -110,7 +110,6 @@ class PersistedProcessEventEntity(Document):
         if not unanswered_requests_data:
             return []
 
-        # Extract the IDs from the aggregation result
         unanswered_ids = [data["_id"] for data in unanswered_requests_data]
 
         # Perform a final query to retrieve the full MongoEngine Document objects.
