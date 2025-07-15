@@ -435,36 +435,22 @@ Pydantic's `BaseSettings` automatically:
 - Supports nested configuration objects and complex types
 
 ```python
-# Creating robust configuration models
 from typing import Annotated
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, validator
+from pydantic import Field
 
 class ServiceConfig(BaseSettings):
-    """Configuration for external service integration."""
-    
     endpoint: Annotated[str, Field(description="Service endpoint URL")]
     timeout: Annotated[int, Field(description="Request timeout", ge=1, le=300)] = 30
-    retries: Annotated[int, Field(description="Retry attempts", ge=0)] = 3
     api_key: Annotated[str, Field(description="API key for authentication")]
     
-    # Environment variable mapping and .env file support
     model_config = SettingsConfigDict(
-        env_file=".env",                    # Automatically loads .env file
-        env_file_encoding="utf-8",         # File encoding
-        env_prefix="SERVICE_",             # Prefix for environment variables
-        extra="ignore",                    # Ignore extra fields
-        case_sensitive=False,              # Case-insensitive env vars
+        env_file=".env",
+        env_prefix="SERVICE_",
     )
-    
-    @validator('endpoint')
-    def validate_endpoint(cls, v):
-        if not v.startswith(('http://', 'https://')):
-            raise ValueError('Endpoint must be a valid URL')
-        return v
 
-# Usage example - no need to manually load .env files
-config = ServiceConfig()  # Automatically loads from environment and .env file
+# Usage - automatically loads from environment and .env file
+config = ServiceConfig()
 ```
 
 ### Persistence Patterns
@@ -481,110 +467,18 @@ Entity classes use `@classmethod` methods to implement repository-like functiona
 - Maintains clean separation between data structure and access patterns
 
 ```python
-# Creating robust entity models with repository pattern
-from typing import Annotated
-from mongoengine import Document, StringField, DateTimeField, EmbeddedDocument, DoesNotExist, ListField
-from datetime import datetime, UTC
-from pydantic import Field
-
-class AuditInfo(EmbeddedDocument):
-    """Embedded document for audit information."""
-    created_at: datetime = DateTimeField(default=lambda: datetime.now(UTC))
-    created_by: str = StringField(required=True)
-    modified_at: datetime = DateTimeField(default=lambda: datetime.now(UTC))
-    modified_by: str = StringField(required=True)
+from mongoengine import Document, StringField, DoesNotExist
 
 class ResourceEntity(Document):
-    """Base entity with audit information and repository methods."""
+    name = StringField(required=True)
+    status = StringField(default="active")
     
-    name: Annotated[str, Field(description="Resource name")]
-    description: Annotated[str, Field(description="Resource description")]
-    status: Annotated[str, Field(description="Resource status")]
-    tags: list[str] = ListField(StringField(), default=list)
-    audit: AuditInfo = EmbeddedDocumentField(AuditInfo, required=True)
+    meta = {'collection': 'resources'}
     
-    meta = {
-        'collection': 'resources',
-        'indexes': [
-            'name',
-            'status',
-            'audit.created_at',
-            ('name', 'audit.created_by'),
-            'tags'
-        ]
-    }
-    
-    def save(self, *args, **kwargs):
-        # Update audit information on save
-        self.audit.modified_at = datetime.now(UTC)
-        return super().save(*args, **kwargs)
-    
-    # Repository methods using @classmethod
-    @classmethod
-    def create_resource(cls, name: str, description: str, created_by: str, 
-                       tags: list[str] = None) -> "ResourceEntity":
-        """Create a new resource with audit information."""
-        audit_info = AuditInfo(
-            created_by=created_by,
-            modified_by=created_by
-        )
-        resource = cls(
-            name=name,
-            description=description,
-            status="active",
-            tags=tags or [],
-            audit=audit_info
-        )
-        resource.save()
-        return resource
-    
+    # Repository methods using @classmethod   
     @classmethod
     def by_name(cls, name: str) -> "ResourceEntity":
-        """Find resource by name."""
         return cls.objects.get(name=name)
-    
-    @classmethod
-    def by_status(cls, status: str) -> list["ResourceEntity"]:
-        """Find all resources with given status."""
-        return cls.objects.filter(status=status)
-    
-    @classmethod
-    def by_tag(cls, tag: str) -> list["ResourceEntity"]:
-        """Find all resources with specific tag."""
-        return cls.objects.filter(tags__contains=tag)
-    
-    @classmethod
-    def ensure_resource_exists(cls, name: str, description: str, 
-                              created_by: str) -> "ResourceEntity":
-        """Get existing resource or create new one."""
-        try:
-            resource = cls.by_name(name)
-            # Update existing resource
-            resource.description = description
-            resource.audit.modified_by = created_by
-            resource.save()
-            return resource
-        except DoesNotExist:
-            return cls.create_resource(name, description, created_by)
-    
-    @classmethod
-    def get_paginated_resources(cls, skip: int = 0, limit: int = 20, 
-                               status: str = None) -> list["ResourceEntity"]:
-        """Get paginated list of resources with optional status filter."""
-        query = cls.objects
-        if status:
-            query = query.filter(status=status)
-        return query.order_by('name').skip(skip).limit(limit)
-    
-    @classmethod
-    def count_by_status(cls, status: str) -> int:
-        """Count resources by status."""
-        return cls.objects.filter(status=status).count()
-    
-    @classmethod
-    def search_by_name(cls, name_pattern: str) -> list["ResourceEntity"]:
-        """Search resources by name pattern."""
-        return cls.objects.filter(name__icontains=name_pattern)
 ```
 
 ### Internationalization Patterns
@@ -599,126 +493,6 @@ The AI-Hub provides comprehensive internationalization (i18n) support with a **m
 - **Fallback Chain**: Requested locale → German (`de`) → First available locale
 - **Translation Files**: YAML-based, organized by domain (e.g., `common.de.yml`, `errors.en.yml`)
 - **Dynamic Loading**: Translations loaded from multiple paths with automatic discovery
-
-**LocaleHandler Usage Patterns:**
-
-```python
-# Using LocaleHandler for internationalization
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-
-class InternationalizedService:
-    def __init__(self, locale_handler: LocaleHandler):
-        self.t = locale_handler
-    
-    async def get_welcome_message(self, user_name: str) -> str:
-        # Get localized string from translation files using key path
-        template = self.t('common.welcome_message')  # From common.{locale}.yml
-        return template.format(name=user_name)
-    
-    async def get_error_message(self, error_code: str) -> str:
-        # Dynamic key construction for error messages
-        key = f'errors.{error_code}'  # From errors.{locale}.yml
-        return self.t(key)
-    
-    async def get_complex_object(self) -> dict:
-        # Extract complex nested objects from translation files
-        return self.t_object('lib.evaluation.rubric')  # Returns parsed YAML object
-    
-    def process_user_content(self, content_dict: dict, user_locale: str = None) -> str:
-        # Extract localized content from dictionary with fallback
-        return self.t.extract(content_dict, user_locale)
-    
-    def switch_locale_temporarily(self, target_locale: str) -> str:
-        # Create temporary locale handler for specific language
-        temp_handler = self.t.in_locale(target_locale)
-        return temp_handler('common.greeting')
-
-# Using LocaleString for configuration and static content
-class LocalizedConfig:
-    # LocaleString provides compile-time multi-language support
-    name: LocaleString = LocaleString(
-        en="English Name",
-        de="Deutscher Name", 
-        fr="Nom français",
-        it="Nome italiano"
-    )
-    
-    # LocaleString with i18n path reference
-    description: LocaleString = LocaleString.from_i18n_path("config.service.description")
-    
-    def get_localized_name(self, locale_handler: LocaleHandler) -> str:
-        # Extract localized content using LocaleHandler
-        return locale_handler.extract(self.name)
-    
-    def get_all_translations(self) -> dict[str, str]:
-        # Get all available translations
-        return {
-            "en": self.name.en,
-            "de": self.name.de, 
-            "fr": self.name.fr,
-            "it": self.name.it
-        }
-
-# Advanced LocaleHandler usage
-class AdvancedInternationalization:
-    def __init__(self, user_locale: str = "de"):
-        # Initialize with custom locale and additional translation paths
-        custom_paths = ["/path/to/custom/translations"]
-        self.t = LocaleHandler(locale=user_locale, locale_paths=custom_paths)
-    
-    def process_multilingual_data(self, data: dict | LocaleString) -> str:
-        """Handle both dictionary and LocaleString formats."""
-        if isinstance(data, dict):
-            # Dictionary format: {"en": "Hello", "de": "Hallo", ...}
-            return self.t.extract_dict(data, self.t.locale)
-        elif isinstance(data, LocaleString):
-            # LocaleString object with attribute access
-            return self.t.extract_multi_locale(data, self.t.locale)
-        return str(data)
-    
-    def validate_locale_support(self, locale: str) -> bool:
-        """Check if locale is supported."""
-        return locale in LocaleHandler.LOCALE_WHITE_LIST
-    
-    def get_fallback_chain(self, locale: str) -> list[str]:
-        """Get the fallback chain for locale resolution."""
-        validated_locale = self.t.get_locale(locale)
-        fallbacks = [validated_locale]
-        
-        if validated_locale != LocaleHandler.DEFAULT_LOCALE:
-            fallbacks.append(LocaleHandler.DEFAULT_LOCALE)
-        
-        # Add other available locales as final fallback
-        for available_locale in LocaleHandler.LOCALE_WHITE_LIST:
-            if available_locale not in fallbacks:
-                fallbacks.append(available_locale)
-        
-        return fallbacks
-
-# Translation file structure example
-"""
-# translations/lib/common.de.yml
-common:
-  welcome_message: "Willkommen, {name}!"
-  greeting: "Hallo"
-  loading: "Wird geladen..."
-
-errors:
-  not_found: "Ressource nicht gefunden"
-  unauthorized: "Nicht berechtigt"
-
-# translations/lib/common.en.yml  
-common:
-  welcome_message: "Welcome, {name}!"
-  greeting: "Hello"
-  loading: "Loading..."
-
-errors:
-  not_found: "Resource not found"
-  unauthorized: "Unauthorized"
-"""
-```
 
 #### Translation File Management
 
