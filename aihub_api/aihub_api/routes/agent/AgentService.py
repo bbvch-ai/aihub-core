@@ -16,7 +16,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
-from aihub_lib.persistence.agents.AgentConfigInstanceEntity import AgentConfigInstanceEntity
+from aihub_lib.persistence.agents.AgentConfigEntity import AgentConfigEntity
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
@@ -125,7 +125,7 @@ class AgentService:
 
         agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
 
-        configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+        configs = AgentConfigEntity.find_for_class(agent_class)
         for config in configs:
             if config.agent_id == agent_id:
                 agent_config = AgentConfig.from_entity(config)
@@ -153,7 +153,7 @@ class AgentService:
 
         agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
 
-        configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+        configs = AgentConfigEntity.find_for_class(agent_class)
         agent_instances = []
         for config in configs:
             agent_config = AgentConfig.from_entity(config)
@@ -243,7 +243,7 @@ class AgentService:
         configured_agents = []
         for agent in online_agents:
             agent_class = agent.agent_class
-            configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+            configs = AgentConfigEntity.find_for_class(agent_class)
             for config in configs:
                 config_instance = AgentConfig.from_entity(config)
                 agent_dto = AgentDTO.from_class_and_config(
@@ -391,7 +391,7 @@ class AgentService:
         """
         Retrieve all configurations for a specific agent class.
         """
-        configs = AgentConfigInstanceEntity.find_for_class(agent_class)
+        configs = AgentConfigEntity.find_for_class(agent_class)
         return [AgentConfigInstanceDTO.from_entity(config) for config in configs]
 
     @staticmethod
@@ -400,9 +400,9 @@ class AgentService:
         Retrieve a specific configuration for an agent class.
         """
         try:
-            config = AgentConfigInstanceEntity.objects(agent_class=agent_class, config_id=config_id).get()
+            config = AgentConfigEntity.objects(agent_class=agent_class, config_id=config_id).get()
             return AgentConfigInstanceDTO.from_entity(config)
-        except AgentConfigInstanceEntity.DoesNotExist:
+        except AgentConfigEntity.DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Configuration {config_id} for agent {agent_class} not found")
 
     @staticmethod
@@ -413,14 +413,14 @@ class AgentService:
         Create a new configuration for an agent class.
         """
         # Check if config_id already exists
-        existing = AgentConfigInstanceEntity.objects(agent_class=agent_class, config_id=request.config_id).first()
+        existing = AgentConfigEntity.objects(agent_class=agent_class, config_id=request.config_id).first()
         if existing:
             raise HTTPException(
                 status_code=400, detail=f"Configuration {request.config_id} for agent {agent_class} already exists"
             )
 
         # Create new configuration
-        config = AgentConfigInstanceEntity(
+        config = AgentConfigEntity(
             agent_class=agent_class,
             config_id=request.config_id,
             config_name=request.config_name,
@@ -439,13 +439,13 @@ class AgentService:
         Update an existing configuration for an agent class.
         """
         try:
-            config = AgentConfigInstanceEntity.objects(agent_class=agent_class, config_id=config_id).get()
+            config = AgentConfigEntity.objects(agent_class=agent_class, config_id=config_id).get()
             config.config_name = request.config_name
             config.description = request.description
             config.config_data = request.config_data
             config.save()
             return AgentConfigInstanceDTO.from_entity(config)
-        except AgentConfigInstanceEntity.DoesNotExist:
+        except AgentConfigEntity.DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Configuration {config_id} for agent {agent_class} not found")
 
     @staticmethod
@@ -454,7 +454,7 @@ class AgentService:
         Delete a configuration for an agent class.
         """
         try:
-            config = AgentConfigInstanceEntity.objects(agent_class=agent_class, config_id=config_id).get()
+            config = AgentConfigEntity.objects(agent_class=agent_class, config_id=config_id).get()
             config.delete()
-        except AgentConfigInstanceEntity.DoesNotExist:
+        except AgentConfigEntity.DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Configuration {config_id} for agent {agent_class} not found")

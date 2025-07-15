@@ -6,7 +6,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleStringEntity
 
 
-class AgentConfigInstanceEntity(Document):
+class AgentConfigEntity(Document):
     """Stores a specific, named configuration for an agent class."""
 
     meta = {
@@ -35,7 +35,7 @@ class AgentConfigInstanceEntity(Document):
     updated_at = DateTimeField(default=datetime.now)
 
     @classmethod
-    def find_for_class(cls, agent_class: str) -> list["AgentConfigInstanceEntity"]:
+    def find_for_class(cls, agent_class: str) -> list["AgentConfigEntity"]:
         """Find all configurations for a specific agent class."""
         return cls.objects(agent_class=agent_class)
 
@@ -50,7 +50,7 @@ class AgentConfigInstanceEntity(Document):
         return super().save(*args, **kwargs)
 
     @classmethod
-    def from_agent_config(cls, agent_config: AgentConfig) -> "AgentConfigInstanceEntity":
+    def from_agent_config(cls, agent_config: AgentConfig) -> "AgentConfigEntity":
         """Create an instance entity from an AgentConfig."""
         return cls(
             agent_class=agent_config.agent_class,
@@ -64,7 +64,7 @@ class AgentConfigInstanceEntity(Document):
             config_data=agent_config.model_dump(),
         )
 
-    def update_from_agent_config(self, agent_config: AgentConfig) -> "AgentConfigInstanceEntity":
+    def update_from_agent_config(self, agent_config: AgentConfig) -> "AgentConfigEntity":
         """Update an existing instance entity from an AgentConfig."""
         self.agent_class = agent_config.agent_class
         self.agent_id = agent_config.agent_id

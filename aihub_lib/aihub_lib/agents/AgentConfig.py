@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 from aihub_lib.i18n.LocaleString import LocaleString
 
 if TYPE_CHECKING:
-    from aihub_lib.persistence.agents import AgentConfigInstanceEntity
+    from aihub_lib.persistence.agents import AgentConfigEntity
 
 
 class StepConfig(BaseModel):
@@ -101,7 +101,7 @@ class AgentConfig(BaseModel):
         return parent_type(**self._unknown_data)
 
     @classmethod
-    def from_entity(cls, entity: "AgentConfigInstanceEntity") -> "AgentConfig":
+    def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
         config = cls(
             agent_class=entity.agent_class,
             agent_id=entity.agent_id,

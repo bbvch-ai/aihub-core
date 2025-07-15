@@ -12,10 +12,11 @@ from mongoengine import (
     IntField,
     ListField,
     StringField,
+    ReferenceField,
 )
 
 from aihub_lib.i18n.LocaleString import LocaleStringEntity
-from aihub_lib.persistence.agents import AgentConfigInstanceEntity
+from aihub_lib.persistence.agents import AgentConfigEntity
 
 
 class EventPayloadField(EmbeddedDocument):
@@ -91,20 +92,11 @@ class EventSpec(EmbeddedDocument):
             event_parents=event_dto.event_parents,
         )
 
-
-class AgentConfigEntity(EmbeddedDocument):
-    agent_id = StringField(required=True)
-    name = EmbeddedDocumentField(LocaleStringEntity, required=True)
-    description = EmbeddedDocumentField(LocaleStringEntity, required=True)
-    system_prompt = EmbeddedDocumentField(LocaleStringEntity, required=True)
-    color = StringField(default="#10A37F")
-    voice = StringField(default="de-DE-ChristophNeural")
-    icon = StringField(default="meteor-icons:robot")
-
     @classmethod
     def from_agent_config(cls, agent_config):
         """Create an AgentConfigEntity from an AgentConfig."""
         return cls(
+            agent_class=agent_config.agent_class,
             agent_id=agent_config.agent_id,
             name=LocaleStringEntity.from_locale_string(agent_config.name),
             description=LocaleStringEntity.from_locale_string(agent_config.description),
@@ -123,7 +115,7 @@ class AgentEntity(Document):
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
-    agent_config = EmbeddedDocumentField(AgentConfigEntity, required=True)
+    agent_config = ReferenceField(AgentConfigEntity, required=True)
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
@@ -167,7 +159,13 @@ class AgentEntity(Document):
         # Check if an agent with the same agent_class and agent_id already exists
         existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
 
-        agent_config = AgentConfigEntity.from_agent_config(agent_dto.agent_config)
+        agent_config = AgentConfigEntity.find_for_class_and_id(
+            agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id
+        )
+        if not agent_config:
+            raise ValueError(
+                f"Agent config not found for agent class {agent_dto.agent_class} and ID {agent_dto.agent_id}"
+            )
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
         start_events = [EventSpec.from_dto(event) for event in agent_dto.start_events]

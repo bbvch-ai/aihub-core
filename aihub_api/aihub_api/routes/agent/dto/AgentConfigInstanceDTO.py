@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from aihub_lib.persistence.agents.AgentConfigInstanceEntity import AgentConfigInstanceEntity
+from aihub_lib.persistence.agents.AgentConfigEntity import AgentConfigEntity
 from pydantic import BaseModel, Field
 
 
@@ -38,7 +38,7 @@ class AgentConfigInstanceDTO(BaseModel):
     updated_at: Annotated[datetime, Field(description="When the configuration was last updated.")]
 
     @classmethod
-    def from_entity(cls, entity: AgentConfigInstanceEntity) -> "AgentConfigInstanceDTO":
+    def from_entity(cls, entity: AgentConfigEntity) -> "AgentConfigInstanceDTO":
         """Convert an AgentConfigInstanceEntity to a DTO."""
         return cls(
             agent_class=entity.agent_class,
