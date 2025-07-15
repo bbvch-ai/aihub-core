@@ -11,7 +11,7 @@ class ProcessDiscoveryTopic(DiscoveryTopic):
     Specialization of DiscoveryTopic for process-specific discovery subjects, including process_class and process_id.
 
     While DiscoveryTopic covers generic discovery patterns, some discovery calls specifically target an
-    process or a class of processes. AgentDiscoveryTopic provides a structured view of these more granular
+    process or a class of processes. ProcessDiscoveryTopic provides a structured view of these more granular
     queries or responses, allowing the system to quickly identify which process (by class and ID) is involved.
 
     """
