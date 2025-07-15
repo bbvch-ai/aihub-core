@@ -3,11 +3,15 @@ from os.path import abspath, dirname, isdir, join
 
 import nest_asyncio
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import \
+    DangerousDevelopmentOnlyAuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
+    DangerousDevelopmentOnlyIdentityProvider
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
@@ -47,24 +51,18 @@ nest_asyncio.apply()
 async def main():
     runner = ApiTestRunner()
 
-    frontend_dir = join(
-        dirname(abspath(__file__)), "..", "..", "..", "aihub_web", "aihub_web", ".playground", ".output", "public"
-    )
-    if isdir(join(frontend_dir, "_nuxt")):
-        runner.mount_frontend(frontend_dir)
-
-    auth = TokenAndOauth2Handler(
-        bearer_handlers=[
-            OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
-            TokenAuthHandler(identity_provider=TokenIdentityProvider()),
-        ],
-        oauth2_handlers=[
-            OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
-        ],
-    )
-    # auth = DangerousDevelopmentOnlyAuthHandler(
-    #     identity_provider=DangerousDevelopmentOnlyIdentityProvider()
+    # auth = TokenAndOauth2Handler(
+    #     bearer_handlers=[
+    #         OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
+    #         TokenAuthHandler(identity_provider=TokenIdentityProvider()),
+    #     ],
+    #     oauth2_handlers=[
+    #         OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
+    #     ],
     # )
+    auth = DangerousDevelopmentOnlyAuthHandler(
+        identity_provider=DangerousDevelopmentOnlyIdentityProvider()
+    )
 
     azure_openai_settings = DevelopmentOpenaiResourceSettings()
 

@@ -215,6 +215,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 start_events=self.start_events,
                 stop_events=self.stop_events,
             )
+        else:
+            logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
 
     async def run(self):
         await self.start_simulation()

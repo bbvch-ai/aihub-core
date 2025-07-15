@@ -50,10 +50,19 @@
         "--name",
         "redis-mcp-server",
         "-i",
-        "-e", "REDIS_HOST=localhost",
-        "-e", "REDIS_PORT=6379",
+        "--network=host",
+        "-e",
+        "REDIS_HOST=localhost",
+        "-e",
+        "REDIS_PORT=6379",
         "mcp-redis"
       ]
+    },
+    "aihub_api": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "disabled": false,
+      "autoApprove": []
     }
   }
 }

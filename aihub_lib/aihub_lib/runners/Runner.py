@@ -6,8 +6,10 @@ from contextlib import AbstractAsyncContextManager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.routing import APIRoute
+from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import FileResponse
+from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
@@ -64,14 +66,10 @@ class Runner(abc.ABC):
         self.debug = debug
 
         # Create the base and API apps
-        self._base_app = self._get_base_app()
         self._api_app = self._get_api_app()
-        self._api_app.state = self._base_app.state
 
         # Mount the API under the specified path
         self.api_path = api_path
-        self._base_app.mount(api_path, self._api_app)
-        self._base_app.state.api_app = self._api_app
 
         self.controllers: set[Controller] = set()
 
@@ -80,24 +78,15 @@ class Runner(abc.ABC):
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         pass
 
-    def get_app(self) -> FastAPI:
+    def get_app(self) -> Starlette:
         """
         Returns the main FastAPI application instance, which can be run using an ASGI server.
         """
-        return self._base_app
-
-    def _get_base_app(self) -> FastAPI:
-        """
-        Creates the base FastAPI application, responsible for app lifecycle management (lifespan),
-        possibly serving static files, and holding shared state.
-        """
-        return FastAPI(
-            title=self.title,
-            description=self.description,
-            version=ApiConfig().VERSION or ".dev",
-            lifespan=self.lifetime_manager,
-            debug=self.debug,
-            redirect_slashes=True,
+        return Starlette(
+              routes=[
+                    Mount(self.api_path, app=self._api_app),
+             ],
+             lifespan=self.lifetime_manager,
         )
 
     def _get_api_app(self) -> FastAPI:
@@ -128,34 +117,5 @@ class Runner(abc.ABC):
         for route in self._api_app.routes:
             if isinstance(route, APIRoute):
                 route.operation_id = route.name
-
-        return self
-
-    def mount_frontend(self, directory: str) -> "Runner":
-        """
-        Mount a static frontend (e.g., a React build directory) at the base "/" path of the app.
-        This allows serving the SPA directly from the same server that handles API requests.
-        """
-        self._base_app.mount("/_nuxt", StaticFiles(directory=os.path.join(directory, "_nuxt")), name="nuxt_assets")
-
-        # Mount _fonts folder if it exists
-        fonts_dir = os.path.join(directory, "_fonts")
-        if os.path.exists(fonts_dir) and os.path.isdir(fonts_dir):
-            self._base_app.mount("/_fonts", StaticFiles(directory=fonts_dir), name="fonts")
-
-        # Add a catch-all route for SPA navigation
-        @self._base_app.get("/{full_path:path}")
-        async def serve_spa(request: Request, full_path: str):
-            # Don't catch API routes
-            if full_path.startswith(self.api_path):
-                raise HTTPException(status_code=404, detail="Not Found - Route is API path")
-
-            # Try to serve specific files if they exist
-            requested_file = os.path.join(directory, full_path)
-            if os.path.exists(requested_file) and os.path.isfile(requested_file):
-                return FileResponse(requested_file)
-
-            # For all other routes, serve index.html to enable client-side routing
-            return FileResponse(os.path.join(directory, "index.html"))
 
         return self
