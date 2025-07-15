@@ -31,7 +31,7 @@ class EventSpecs(BaseModel):
         list[str],
         Field(
             description="A list of parent event names that this event is derived from, "
-                        "allowing for hierarchical event structures."
+            "allowing for hierarchical event structures."
         ),
     ]
 
