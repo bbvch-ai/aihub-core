@@ -1,6 +1,6 @@
 # AI-Hub Developer's Guide
 
-## Part 1: Foundational Knowledge
+## 1. Foundational Knowledge
 
 This section provides the high-level context needed to understand the project's architecture and terminology.
 
@@ -50,7 +50,7 @@ This glossary defines terms, concepts, and technologies that have a specific mea
 
 -----
 
-## Part 2: Project Governance & Git Workflow
+## 2. Project Governance & Git Workflow
 
 This section outlines the rules and processes that govern contributions, decision-making, and repository management.
 
@@ -108,7 +108,7 @@ The versioning of all packages and the creation of releases are fully automated 
 
 -----
 
-## Part 3: Local Development Setup
+## 3. Local Development Setup
 
 Follow these steps to prepare your local machine for development.
 
@@ -152,7 +152,7 @@ poetry shell
 
 -----
 
-## Part 4: The Core Development Cycle
+## 4. The Core Development Cycle
 
 This section walks through the step-by-step process for making and verifying code changes. This is the central loop of your day-to-day work.
 
@@ -260,7 +260,6 @@ Each scope, and the root directory, has a `Makefile` for common tasks. Run these
   * **`make pr-ready`**: **Run this before finalizing changes.** It runs formatting and linting (`ruff format` and `ruff check --fix`) to ensure code quality.
   * `make format`: Formats code.
   * `make lint`: Lints code.
-  * `make typecheck`: Runs MyPy.
   * `make test`: Runs local tests (`-k "not azure"`).
   * `make test-cov`: Runs tests and generates a coverage report.
 
