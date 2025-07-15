@@ -1,9 +1,11 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, TYPE_CHECKING
 
 from pydantic import BaseModel, Field, PrivateAttr
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.persistence.agents import AgentConfigInstanceEntity
+
+if TYPE_CHECKING:
+    from aihub_lib.persistence.agents import AgentConfigInstanceEntity
 
 
 class StepConfig(BaseModel):
@@ -50,6 +52,7 @@ class AgentConfig(BaseModel):
     ```
     """
 
+    agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
     agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
     name: Annotated[LocaleString, Field(description="The name of the agent.")]
     description: Annotated[LocaleString, Field(description="The description of the agent.")]
@@ -100,13 +103,14 @@ class AgentConfig(BaseModel):
     @classmethod
     def from_entity(cls, entity: "AgentConfigInstanceEntity") -> "AgentConfig":
         config = cls(
+            agent_class=entity.agent_class,
             agent_id=entity.agent_id,
-            name=LocaleString.from_entity(entity.name),
-            description=LocaleString.from_entity(entity.description),
+            name=entity.name.to_locale_string(),
+            description=entity.description.to_locale_string(),
             icon=entity.icon,
-            color=entity.color,
+            color=entity.color,  # Default color if not set
             voice=entity.voice,
-            system_prompt=LocaleString.from_entity(entity.system_prompt),
+            system_prompt=entity.system_prompt.to_locale_string(),
         )
         config._unknown_config_name = entity.agent_class
         config._unknown_data = entity.config_data

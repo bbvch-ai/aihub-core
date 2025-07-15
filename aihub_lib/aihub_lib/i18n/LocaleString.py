@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from mongoengine import EmbeddedDocument
+from mongoengine import EmbeddedDocument, StringField
 from pydantic import BaseModel, Field
 
 
@@ -24,18 +24,6 @@ class LocaleString(BaseModel):
             it=LocaleHandler("it")(path),
         )
 
-    @classmethod
-    def from_entity(cls, entity: "LocaleStringEntity") -> "LocaleString":
-        """
-        Converts a MongoEngine embedded document to a LocaleString instance.
-        """
-        return cls(
-            de=entity.de,
-            en=entity.en,
-            fr=entity.fr,
-            it=entity.it,
-        )
-
 
 class LocaleStringEntity(EmbeddedDocument):
     """
@@ -43,7 +31,29 @@ class LocaleStringEntity(EmbeddedDocument):
     This is used to store localized strings in MongoDB.
     """
 
-    de: str | None = None
-    en: str | None = None
-    fr: str | None = None
-    it: str | None = None
+    de = StringField(required=False, null=True, description="German translation")
+    en = StringField(required=False, null=True, description="English translation")
+    fr = StringField(required=False, null=True, description="French translation")
+    it = StringField(required=False, null=True, description="Italian translation")
+
+    @classmethod
+    def from_locale_string(cls, locale_string: LocaleString) -> "LocaleStringEntity":
+        """Create a LocaleStringEntity from a LocaleString."""
+        if locale_string is None:
+            return cls()
+
+        return cls(
+            de=locale_string.de,
+            en=locale_string.en,
+            fr=locale_string.fr,
+            it=locale_string.it,
+        )
+
+    def to_locale_string(self) -> LocaleString:
+        """Convert this entity to a LocaleString."""
+        return LocaleString(
+            de=self.de,
+            en=self.en,
+            fr=self.fr,
+            it=self.it,
+        )
