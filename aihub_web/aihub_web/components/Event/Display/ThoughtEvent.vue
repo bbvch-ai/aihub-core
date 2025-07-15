@@ -11,10 +11,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ThoughtEvent, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { ThoughtEvent, ThreadDto, WsServerAgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerEventReadable & { event: ThoughtEvent }
+  event: WsServerAgentEventReadable & { event: ThoughtEvent }
   thread: ThreadDto
 }>()
 </script>

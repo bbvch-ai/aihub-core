@@ -10,7 +10,6 @@ class AgentDiscoveryTopic(DiscoveryTopic):
     """
     Specialization of DiscoveryTopic for agent-specific discovery subjects, including agent_class and agent_id.
 
-    ### Why AgentDiscoveryTopic?
     While DiscoveryTopic covers generic discovery patterns, some discovery calls specifically target an
     agent or a class of agents. AgentDiscoveryTopic provides a structured view of these more granular
     queries or responses, allowing the system to quickly identify which agent (by class and ID) is involved.

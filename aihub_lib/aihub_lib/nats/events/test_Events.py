@@ -97,7 +97,7 @@ def simulate_cross_process_boundary(event: BaseEvent) -> BaseEvent:
 
     This helps test the preservation of event type hierarchy.
     """
-    serialized = json.dumps(event.model_dump())
+    serialized = event.model_dump_json(serialize_as_any=True)
     return BaseEvent.deserialize_event(serialized)
 
 
@@ -156,7 +156,7 @@ def test_serialization_to_dict(test_start_event):
 
 def test_serialization_to_json(test_start_event):
     """Test that events can be serialized to JSON."""
-    json_str = json.dumps(test_start_event.model_dump())
+    json_str = test_start_event.model_dump_json(serialize_as_any=True)
     data = json.loads(json_str)
     assert data["_event_name"] == "TestStartEvent"
     assert data["message"] == "Hello, world!"
@@ -164,7 +164,7 @@ def test_serialization_to_json(test_start_event):
 
 def test_deserialization_of_known_event(test_start_event):
     """Test that known events can be deserialized correctly."""
-    json_str = json.dumps(test_start_event.model_dump())
+    json_str = test_start_event.model_dump_json(serialize_as_any=True)
     deserialized = BaseEvent.deserialize_event(json_str)
     assert isinstance(deserialized, TestStartEvent)
     assert deserialized.message == "Hello, world!"
@@ -251,7 +251,7 @@ def test_aitl_response_properties(aitl_response_event):
 def test_aitl_workflow_serialization(aitl_request_event, aitl_response_event):
     """Test a complete AITL workflow with serialization between steps."""
     # Step 1: Agent sends request to worker
-    serialized_request = json.dumps(aitl_request_event.model_dump())
+    serialized_request = aitl_request_event.model_dump_json(serialize_as_any=True)
 
     # Step 2: Worker deserializes request
     worker_request = BaseEvent.deserialize_event(serialized_request)
@@ -259,7 +259,7 @@ def test_aitl_workflow_serialization(aitl_request_event, aitl_response_event):
     assert worker_request.start_event.is_start_event
 
     # Step 3: Worker sends response
-    serialized_response = json.dumps(aitl_response_event.model_dump())
+    serialized_response = aitl_response_event.model_dump_json(serialize_as_any=True)
 
     # Step 4: Agent deserializes response
     agent_response = BaseEvent.deserialize_event(serialized_response)
@@ -302,7 +302,7 @@ def test_extra_fields():
     assert event.extra_field == "This wasn't in the original class"
 
     # When re-serialized, the field should still be there
-    serialized = json.dumps(event.model_dump())
+    serialized = event.model_dump_json(serialize_as_any=True)
     deserialized_again = BaseEvent.deserialize_event(serialized)
     assert deserialized_again.model_dump()["extra_field"] == "This wasn't in the original class"
 
@@ -361,7 +361,7 @@ def test_aitl_without_worker_agent_class(aitl_response_event):
     without having the specific WorkerStopEvent class imported.
     """
     # First serialize the response with a specific stop event
-    serialized = json.dumps(aitl_response_event.model_dump())
+    serialized = aitl_response_event.model_dump_json(serialize_as_any=True)
 
     # Now remove TestStopEvent from the registry to simulate it not being available
     original_class = BaseEvent._event_registry.pop("TestStopEvent", None)

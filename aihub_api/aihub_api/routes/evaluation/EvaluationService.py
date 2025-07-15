@@ -52,16 +52,11 @@ class EvaluationService:
     """
     Handles business logic for interacting with Arize Phoenix for LLM evaluations.
 
-    ### Why EvaluationService?
     This service abstracts the complexities of interacting with the Phoenix client and its API.
     It separates the data transformation (Pandas DataFrames), HTTP requests, and experiment execution
     logic from the API controller, ensuring a clean and maintainable architecture. It provides
     methods for managing evaluation datasets and running/retrieving experiments.
     """
-
-    # --------------------------------------------------------------------------
-    # Phoenix Client and Configuration Helpers
-    # --------------------------------------------------------------------------
 
     @staticmethod
     def _get_phoenix_client() -> px.Client:
@@ -74,10 +69,6 @@ class EvaluationService:
         config = PhoenixConfig()
         headers = {"authorization": f"Bearer {config.PHOENIX_AUTH_TOKEN}"} if config.PHOENIX_AUTH_TOKEN else {}
         return config.PHOENIX_ENDPOINT, headers
-
-    # --------------------------------------------------------------------------
-    # Phoenix API Fetching Helpers
-    # --------------------------------------------------------------------------
 
     @staticmethod
     async def _fetch_datasets_from_phoenix() -> list[PhoenixDataset]:
@@ -136,10 +127,6 @@ class EvaluationService:
             response.raise_for_status()
             return response.json()
 
-    # --------------------------------------------------------------------------
-    # Data Preparation Helpers
-    # --------------------------------------------------------------------------
-
     @staticmethod
     def _prepare_dataframe_for_upload(items: list[DatasetItemCreate]) -> DataFrameCreationResult:
         """
@@ -163,10 +150,6 @@ class EvaluationService:
             if key not in df.columns:
                 df[key] = None
         return DataFrameCreationResult(dataframe=df, input_keys=input_keys, output_keys=output_keys)
-
-    # --------------------------------------------------------------------------
-    # Public Service Methods - Datasets
-    # --------------------------------------------------------------------------
 
     @staticmethod
     async def create_dataset(create_dto: DatasetCreate) -> Dataset:
@@ -274,10 +257,6 @@ class EvaluationService:
             for dataset in datasets
         ]
 
-    # --------------------------------------------------------------------------
-    # Public Service Methods - Experiments
-    # --------------------------------------------------------------------------
-
     @staticmethod
     async def get_experiments(t: LocaleHandler) -> list[MinimalExperiment]:
         """Retrieves a list of summary information for all experiments from Arize Phoenix."""
@@ -379,7 +358,7 @@ class EvaluationService:
     async def run_experiment_evaluation(
         create_dto: ExperimentCreate,
         nats_client: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         judge: ChatLLMConfig,
         authenticated_user: UserIdentity,
         t: LocaleHandler,
@@ -387,7 +366,7 @@ class EvaluationService:
         """Runs a new evaluation experiment using the PhoenixExperimentEvaluator."""
         evaluator = PhoenixExperimentEvaluator(
             nats_client=nats_client,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
             judge=judge,
             authenticated_user=authenticated_user,
             t=t,

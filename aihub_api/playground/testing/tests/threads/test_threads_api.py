@@ -22,7 +22,7 @@ from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
 from aihub_api.routes.thread.ThreadController import ThreadController
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
 enable_logging()
 

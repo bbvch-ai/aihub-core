@@ -12,7 +12,6 @@ from playground.agents.AgentB.AgentB import AgentB
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 
-# Adjust the path to your feature file if necessary
 scenarios("./features/agent_only_process.feature")
 
 

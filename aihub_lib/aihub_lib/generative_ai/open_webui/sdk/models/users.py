@@ -9,8 +9,8 @@ class UserUISettings(BaseModel):
     """
 
     params: Annotated[dict[str, Any], Field(description="UI parameters")] = {}
-    version: Annotated[str | None, Field(default=None, description="UI version")] = None
-    notifications: Annotated[dict[str, Any] | None, Field(default=None, description="Notification settings")] = None
+    version: Annotated[str | None, Field(description="UI version")] = None
+    notifications: Annotated[dict[str, Any] | None, Field(description="Notification settings")] = None
 
 
 class UserSettings(BaseModel):
@@ -52,10 +52,10 @@ class User(BaseModel):
     updated_at: Annotated[int, Field(description="Last update timestamp")]
     created_at: Annotated[int, Field(description="Creation timestamp")]
 
-    api_key: Annotated[str | None, Field(default=None, description="API key for authentication")] = None
+    api_key: Annotated[str | None, Field(description="API key for authentication")] = None
     settings: Annotated[UserSettings, Field(default_factory=UserSettings, description="User settings")] = UserSettings()
-    info: Annotated[dict[str, Any] | None, Field(default=None, description="Additional user information")] = None
-    oauth_sub: Annotated[str | None, Field(default=None, description="OAuth subject identifier")] = None
+    info: Annotated[dict[str, Any] | None, Field(description="Additional user information")] = None
+    oauth_sub: Annotated[str | None, Field(description="OAuth subject identifier")] = None
 
 
 class UserUpdateRequest(BaseModel):
@@ -64,7 +64,7 @@ class UserUpdateRequest(BaseModel):
     name: Annotated[str, Field(description="New display name")]
     email: Annotated[str, Field(description="New email address")]
     profile_image_url: Annotated[str, Field(description="New profile image URL")]
-    password: Annotated[str | None, Field(default=None, description="New password (optional)")] = None
+    password: Annotated[str | None, Field(description="New password (optional)")] = None
 
 
 class UserRoleUpdateRequest(BaseModel):
@@ -79,7 +79,7 @@ class UserResponse(BaseModel):
 
     name: Annotated[str, Field(description="User display name")]
     profile_image_url: Annotated[str, Field(description="Profile image URL")]
-    active: Annotated[bool | None, Field(default=None, description="Whether user is currently active")] = None
+    active: Annotated[bool | None, Field(description="Whether user is currently active")] = None
 
 
 class ApiKeyResponse(BaseModel):
@@ -92,39 +92,39 @@ class ApiKeyResponse(BaseModel):
 class WorkspacePermissions(BaseModel):
     """Permissions for workspace features."""
 
-    models: Annotated[bool, Field(default=False, description="Can access models")] = False
-    knowledge: Annotated[bool, Field(default=False, description="Can access knowledge base")] = False
-    prompts: Annotated[bool, Field(default=False, description="Can access prompts")] = False
-    tools: Annotated[bool, Field(default=False, description="Can access tools")] = False
+    models: Annotated[bool, Field(description="Can access models")] = False
+    knowledge: Annotated[bool, Field(description="Can access knowledge base")] = False
+    prompts: Annotated[bool, Field(description="Can access prompts")] = False
+    tools: Annotated[bool, Field(description="Can access tools")] = False
 
 
 class SharingPermissions(BaseModel):
     """Permissions for sharing content publicly."""
 
-    public_models: Annotated[bool, Field(default=True, description="Can share models publicly")] = True
-    public_knowledge: Annotated[bool, Field(default=True, description="Can share knowledge publicly")] = True
-    public_prompts: Annotated[bool, Field(default=True, description="Can share prompts publicly")] = True
-    public_tools: Annotated[bool, Field(default=True, description="Can share tools publicly")] = True
+    public_models: Annotated[bool, Field(description="Can share models publicly")] = True
+    public_knowledge: Annotated[bool, Field(description="Can share knowledge publicly")] = True
+    public_prompts: Annotated[bool, Field(description="Can share prompts publicly")] = True
+    public_tools: Annotated[bool, Field(description="Can share tools publicly")] = True
 
 
 class ChatPermissions(BaseModel):
     """Permissions for chat functionality."""
 
-    controls: Annotated[bool, Field(default=True, description="Can use chat controls")] = True
-    file_upload: Annotated[bool, Field(default=True, description="Can upload files in chat")] = True
-    delete: Annotated[bool, Field(default=True, description="Can delete chat messages")] = True
-    edit: Annotated[bool, Field(default=True, description="Can edit chat messages")] = True
-    temporary: Annotated[bool, Field(default=True, description="Can create temporary chats")] = True
-    temporary_enforced: Annotated[bool, Field(default=False, description="Must use temporary chats")] = False
+    controls: Annotated[bool, Field(description="Can use chat controls")] = True
+    file_upload: Annotated[bool, Field(description="Can upload files in chat")] = True
+    delete: Annotated[bool, Field(description="Can delete chat messages")] = True
+    edit: Annotated[bool, Field(description="Can edit chat messages")] = True
+    temporary: Annotated[bool, Field(description="Can create temporary chats")] = True
+    temporary_enforced: Annotated[bool, Field(description="Must use temporary chats")] = False
 
 
 class FeaturesPermissions(BaseModel):
     """Permissions for additional features."""
 
-    direct_tool_servers: Annotated[bool, Field(default=False, description="Can use direct tool servers")] = False
-    web_search: Annotated[bool, Field(default=True, description="Can use web search")] = True
-    image_generation: Annotated[bool, Field(default=True, description="Can use image generation")] = True
-    code_interpreter: Annotated[bool, Field(default=True, description="Can use code interpreter")] = True
+    direct_tool_servers: Annotated[bool, Field(description="Can use direct tool servers")] = False
+    web_search: Annotated[bool, Field(description="Can use web search")] = True
+    image_generation: Annotated[bool, Field(description="Can use image generation")] = True
+    code_interpreter: Annotated[bool, Field(description="Can use code interpreter")] = True
 
 
 class UserPermissions(BaseModel):

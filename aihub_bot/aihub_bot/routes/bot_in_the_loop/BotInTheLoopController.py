@@ -3,7 +3,9 @@ from typing import Annotated
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
@@ -35,8 +37,8 @@ class BotInTheLoopController(Controller):
             request: Request,
             _: Annotated[ActivityModel, Body],  # openapi request body
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             bot_in_the_loop_handler: Annotated[
                 BotInTheLoopHandler, Depends(BotInTheLoopHandler.use_bot_in_the_loop_handler)
@@ -46,7 +48,7 @@ class BotInTheLoopController(Controller):
             bot_in_the_loop_handler.path = path
             chat_bot: BotInTheLoopBot = BotInTheLoopBot(
                 nc=nc,
-                external_event_distributor=external_event_distributor,
+                external_agent_event_distributor=external_agent_event_distributor,
                 bot_in_the_loop_handler=bot_in_the_loop_handler,
             )
             adapter: CloudAdapter = RoutesService.get_adapter(path)

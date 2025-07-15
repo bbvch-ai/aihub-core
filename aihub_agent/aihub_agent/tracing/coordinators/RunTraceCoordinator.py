@@ -35,12 +35,10 @@ class RunTraceCoordinator:
     Coordinates the tracing of runs and steps using OpenTelemetry. It integrates with NATS and JetStream-based
     systems, starting and stopping spans corresponding to entire runs and individual workflow steps.
 
-    ### Why This Class?
     Observability is critical in complex, distributed AI workflows. The RunTraceCoordinator:
     - Starts a run-level trace on `StartEvent`.
     - Waits for a `StopEvent` or `ExceptionEvent` to conclude the run.
     - Instruments steps so their inputs/outputs are captured as child spans.
-
     This improves debugging, performance monitoring, and auditing by providing rich telemetry through OpenTelemetry.
 
     ### Key Features

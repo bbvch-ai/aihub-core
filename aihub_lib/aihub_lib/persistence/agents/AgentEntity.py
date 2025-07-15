@@ -111,7 +111,7 @@ class AgentEntity(Document):
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
-    network_graph = DictField(required=True)  # Store as a dictionary instead of embedded document
+    network_graph = DictField(required=True)
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
@@ -199,4 +199,4 @@ class AgentEntity(Document):
 
     @classmethod
     def get_agent(cls, agent_class: str, agent_id: str) -> "AgentEntity":
-        return cls.objects().get(agent_class=agent_class, agent_id=agent_id)
+        return cls.objects(agent_class=agent_class, agent_id=agent_id).first()
