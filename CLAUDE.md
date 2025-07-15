@@ -12,41 +12,16 @@ You are an AI coding assistant contributing to the **AI-Hub**, a platform design
 
 The project is a monorepo containing multiple Python packages ("scopes"). Placing code in the correct scope is critical.
 
-  * **aihub\_lib**: The foundational shared library. If code is used by more than one other service, it belongs here.
-      * **Key Abstractions**: `auth`, `persistence`, `generative_ai` (RAG, LLMs), `nats` (event definitions), `i18n`.
-  * **aihub\_agent**: Contains all agent logic and workflow definitions.
-      * **Key Abstractions**: `agents/` folder with different agent types, `workflow/` engine with `@step` decorators, `context/` for `RunContext` and `ThreadContext`.
-  * **aihub\_api**: The main user-facing REST API (FastAPI) and WebSocket gateway.
-      * **Key Abstractions**: `routes/` for controllers, `services/` for business logic, `sockets/` for real-time comms.
-  * **aihub\_process**: Orchestrates high-level business processes involving agents, humans, and programs.
-      * **Key Abstractions**: `agentic_processes/` for process definitions, `delegators/` to assign work.
-  * **aihub\_pipeline**: Data ingestion and processing pipelines using Dagster.
-      * **Key Abstractions**: `assets/` and `ops/` for pipeline logic, `resources/` for connections.
-  * **aihub\_web**: The Nuxt.js frontend application.
-      * **Key Abstractions**: `pages/`, `components/`, `composables/`.
-  * **aihub\_action**: Contains reusable GitHub Actions for CI/CD workflows.
-      * **Key Abstractions**: `lint_backend`, `test_backend`, `review_pr`.
-  * **aihub\_bot**: Provides the core logic for building and integrating chatbots with platforms like MS Teams.
-      * **Key Abstractions**: `botbuilder` integration, message handling, conversation state.
-  * **aihub\_doc**: Holds all project documentation.
-      * **Key Abstractions**: Architectural Decision Records (ADRs) in `arc42/decisions`, product pitches, and technical guides.
-  * **aihub\_iac**: Defines and manages cloud infrastructure as code.
-      * **Key Abstractions**: Pulumi stacks for deploying services like Azure resources.
-
-### Glossary of Terms
-
-This glossary defines terms, concepts, and technologies that have a specific meaning within the AI-Hub ecosystem.
-
-| Term | Definition |
-| :--- | :--- |
-| **AI Assistant** | A reactive, chat-based AI designed for context-aware support. Assistants are purpose-built for specific domains (e.g., Finance, HR) and integrate with enterprise data to answer questions or draft documents, always with human oversight. Represents "Stage 1" of the AI-Hub. |
-| **AI Agent** | An autonomous AI designed for proactive process automation. Agents are components in redesigned business processes, working alongside humans to execute tasks. They are "Stage 2" of the AI-Hub's evolution, moving from reactive support to collaborative automation. |
-| **Agents Transparency Frontend**| A specialized interface for monitoring and auditing the activities of AI agents. This transparency layer allows stakeholders to inspect agent decisions and review detailed logs, building trust and ensuring compliance. |
-| **Event** | The atomic unit of communication within our event-driven architecture. It is a Pydantic model representing a specific occurrence, such as `UserMessageEvent` or `ThoughtEvent`. |
-| **Run** | A single, traceable execution of an agent's workflow, beginning with a `StartEvent` and ending with a `StopEvent`. It has an ephemeral `RunContext` for its state. |
-| **Scopes** | The top-level folders within the `aihub-core` repository that represent a specific component or microservice (e.g., `aihub_agent`, `aihub_api`). Each scope is a self-contained Python package. |
-| **Thread** | A logical grouping of multiple **Runs** that form a continuous conversation. It maintains state across runs via the persistent `ThreadContext`, allowing for contextual follow-up interactions. |
-| **Workflow** | The fundamental design pattern for all AI Agents. A task is broken down into a series of structured, explicit `@step`-decorated methods. This ensures testability and transparency. |
+- `aihub\_lib`: The foundational shared library. If code is used by more than one other service, it belongs here.
+- `aihub\_agent`: Contains all agent logic and workflow definitions.
+- `aihub\_api`: The main user-facing REST API (FastAPI) and WebSocket gateway.
+- `aihub\_process`: Orchestrates high-level business processes involving agents, humans, and programs.
+- `aihub\_pipeline`: Data ingestion and processing pipelines using Dagster.
+- `aihub\_web`: The Nuxt.js frontend application.
+- `aihub\_action`: Contains reusable GitHub Actions for CI/CD workflows.
+- `aihub\_bot`: Provides the core logic for building and integrating chatbots with platforms like MS Teams.
+- `aihub\_doc`: Holds all project documentation.
+- `aihub\_iac`: Defines and manages cloud infrastructure as code.
 
 -----
 
@@ -66,24 +41,24 @@ Before you make any significant change, you **must** consult the existing ADRs i
 
 If your task requires a new "significant decision," you **must** document it by creating a new ADR file in `aihub_doc/arc42/decisions/`.
 
-  * **Naming Convention**: `YYYY_MM_DD_short-decision-summary.md`
-  * **Template**:
-    ```markdown
-    # Title of the Decision
-    A clear, concise title. Example: "Adopt Redis for Caching"
+- **Naming Convention**: `YYYY_MM_DD_short-decision-summary.md`
+- **Template**:
+  ```markdown
+  # Title of the Decision
+  A clear, concise title. Example: "Adopt Redis for Caching"
 
-    ## Context
-    Describe the problem or situation that necessitates this decision. What is the technical or business context?
+  ## Context
+  Describe the problem or situation that necessitates this decision. What is the technical or business context?
 
-    ## Decision Drivers
-    List the key forces influencing your decision as bullet points. These are the "whys".
+  ## Decision Drivers
+  List the key forces influencing your decision as bullet points. These are the "whys".
 
-    ## Decision
-    State your decision clearly and unambiguously. Describe exactly what you have chosen to do.
+  ## Decision
+  State your decision clearly and unambiguously. Describe exactly what you have chosen to do.
 
-    ## Consequences
-    Describe the results of your decision. List both positive outcomes and any potential negative trade-offs.
-    ```
+  ## Consequences
+  Describe the results of your decision. List both positive outcomes and any potential negative trade-offs.
+  ```
 
 ### Git Workflow (Branching & Conventional Commits)
 
@@ -95,16 +70,9 @@ All branches must follow this pattern: `type/short-description`. For example, `f
 
 We use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Your commit messages must follow this format: `<type>(<scope>): <subject>`
 
-  * **type**: Must be one of: `fix`, `feat`, `doc`, `test`, `chore`.
-  * **scope**: Must be one of the scopes defined in `semantic-pr.yml`.
-  * **subject**: A short, imperative-tense description of the change, starting with a capital letter.
-
-### Automated Versioning & Releases
-
-The versioning of all packages and the creation of releases are fully automated by a GitHub workflow.
-
-  * **Trigger**: Runs on every push to the `main` branch.
-  * **Action**: Automatically increments the minor version (e.g., `v0.21.0` becomes `v0.22.0`), updates all `pyproject.toml` files, and generates a changelog from Conventional Commit messages.
+-  **type**: Must be one of: `fix`, `feat`, `doc`, `test`, `chore`.
+-  **scope**: Must be one of the scopes defined in `semantic-pr.yml`.
+-  **subject**: A short, imperative-tense description of the change, starting with a capital letter.
 
 -----
 
@@ -116,10 +84,10 @@ Follow these steps to prepare your local machine for development.
 
 To run the full AI-Hub stack locally, use Docker Compose to start the required services. We provide several files for different configurations:
 
-  * `docker-compose.yml`: The base configuration for CPU-based environments.
-  * `docker-compose-gpu.yml`: Adds GPU support.
-  * `docker-compose-webui.yml`: Adds the OpenWebUI interface.
-  * `milvus-standalone-docker-compose.yml`: Provides a standalone Milvus instance.
+-  `docker-compose.yml`: The base configuration for CPU-based environments.
+-  `docker-compose-gpu.yml`: Adds GPU support.
+-  `docker-compose-webui.yml`: Adds the OpenWebUI interface.
+-  `milvus-standalone-docker-compose.yml`: Provides a standalone Milvus instance.
 
 Choose the command based on your hardware:
 
@@ -160,10 +128,10 @@ This section walks through the step-by-step process for making and verifying cod
 
 Before writing any code, internalize the task and its place in the project.
 
-  * **Analyze the Request**: What is the core task?
-  * **Review Project Documentation**: Consult `/aihub_doc` for architectural context and existing ADRs.
-  * **Check the `git diff`**: If on a feature branch, run `git diff main...` to see existing changes.
-  * **Explore the Filesystem**: Use `ls -R` and analyze key files like `pyproject.toml` to understand dependencies and patterns.
+-  **Analyze the Request**: What is the core task?
+-  **Review Project Documentation**: Consult `/aihub_doc` for architectural context and existing ADRs.
+-  **Check the `git diff`**: If on a feature branch, run `git diff main...` to see existing changes.
+-  **Explore the Filesystem**: Use `ls -R` and analyze key files like `pyproject.toml` to understand dependencies and patterns.
 
 ### Step B: Write & Document Code (Coding Standards)
 
@@ -171,9 +139,9 @@ Adherence to these standards is mandatory and enforced by CI.
 
 #### Formatting and Linting
 
-  * **Black**: Used for code formatting with a line length of **120 characters**.
-  * **Ruff**: Used for linting. We enforce the rules: `select = ["E", "F", "UP", "I"]` (Pyflakes errors/warnings, pyupgrade, isort).
-  * **MyPy**: Used for static type checking in `strict = true` mode.
+-  **Black**: Used for code formatting with a line length of **120 characters**.
+-  **Ruff**: Used for linting. We enforce the rules: `select = ["E", "F", "UP", "I"]` (Pyflakes errors/warnings, pyupgrade, isort).
+-  **MyPy**: Used for static type checking in `strict = true` mode.
 
 #### Docstrings
 
@@ -206,7 +174,8 @@ await sleep(1)
 
 #### Type Annotations
 
-Use strict, specific type hints for all variables, arguments, and return types, leveraging the `typing` module extensively.
+Use strict, specific type hints for all variables, arguments, and return types, leveraging the `typing` module extensively for `Annotated` or `Generic` but
+using `list[int]` instead of `typing.List[int]` or `int | None` instead of `typing.Optional[int]` or `typing.Union[int, None]`.
 
 **Good Example**:
 
@@ -226,14 +195,14 @@ async def discover_processes(
 
 ### Step C: Test Your Implementation (Testing Protocols)
 
-New functionality must be accompanied by new tests. Modified functionality must pass all existing relevant tests. Ensure the local Docker environment is running for integration tests.
+New functionality should be accompanied by new tests. Modified functionality must pass all existing relevant tests. Ensure the local Docker environment is running for integration tests.
 
 #### Pytest & Markers
 
 Standard unit and integration tests are written with `pytest`. We use markers to categorize tests.
 
-  * **Markers**: `azure`, `self_hosted`, `slow`, `integration`.
-  * **Running Local Tests**: To run tests locally without cloud dependencies, exclude the `azure` marker.
+-  **Markers**: `azure`, `self_hosted`, `slow`, `integration`.
+-  **Running Local Tests**: To run tests locally without cloud dependencies, exclude the `azure` marker.
     ```bash
     # From within an activated poetry shell (e.g., in aihub_lib)
     poetry run pytest -k "not azure"
@@ -241,27 +210,28 @@ Standard unit and integration tests are written with `pytest`. We use markers to
 
 #### Behavior-Driven Development with Pytest-BDD
 
-This is our primary testing method for agent and process **workflows**.
+This is our primary testing method for agent and process **workflows**. However, the underlying `python-bdd` library does not really support async testing. 
+It can be patched to some degree using `pytest-asyncio` but it remains clumsy. Hence, for truly async tests, we use `pytest` directly.
 
-  * **Structure**: A `.feature` file in `tests/features/` describes scenarios in Gherkin syntax. A corresponding `test_*.py` file implements the steps using `@given`, `@when`, and `@then` decorators.
-  * **Example Feature**:
-    ```gherkin
-    Feature: Simple Agent
-      Scenario: Test Simple Agent with a specific payload
-        Given a SimpleAgent runner
-        When the start event is sent with payload "Hello"
-        Then a StartEvent is present with payload "Hello"
-    ```
+- **Structure**: A `.feature` file in `tests/features/` describes scenarios in Gherkin syntax. A corresponding `test_*.py` file implements the steps using `@given`, `@when`, and `@then` decorators.
+- **Example Feature**:
+  ```gherkin
+  Feature: Simple Agent
+    Scenario: Test Simple Agent with a specific payload
+      Given a SimpleAgent runner
+      When the start event is sent with payload "Hello"
+      Then a StartEvent is present with payload "Hello"
+  ```
 
 ### Step D: Finalize with Makefile Commands
 
 Each scope, and the root directory, has a `Makefile` for common tasks. Run these from an activated Poetry shell.
 
-  * **`make pr-ready`**: **Run this before finalizing changes.** It runs formatting and linting (`ruff format` and `ruff check --fix`) to ensure code quality.
-  * `make format`: Formats code.
-  * `make lint`: Lints code.
-  * `make test`: Runs local tests (`-k "not azure"`).
-  * `make test-cov`: Runs tests and generates a coverage report.
+- **`make pr-ready`**: **Run this before finalizing changes.** It runs formatting and linting (`ruff format` and `ruff check --fix`) to ensure code quality.
+-  `make format`: Formats code.
+-  `make lint`: Lints code.
+-  `make test`: Runs local tests (`-k "not azure"`).
+-  `make test-cov`: Runs tests and generates a coverage report.
 
 The root-level `Makefile` can run these tasks across all scopes simultaneously.
 
@@ -272,7 +242,7 @@ This is the final, critical step. Before reporting a task complete, you **must**
 1.  **Review Your Work**: Recall the steps you took, problems you solved, and commands you ran.
 2.  **Read This Guide**: Re-read the relevant sections of this document.
 3.  **Compare & Reflect**: Ask yourself:
-      * Was any information **missing** that I had to discover on my own?
-      * Was any instruction **unclear** or could be improved with a better example?
-      * Was any information **wrong** or outdated compared to the codebase?
+    -  Was any information **missing** that I had to discover on my own?
+    -  Was any instruction **unclear** or could be improved with a better example?
+    -  Was any information **wrong** or outdated compared to the codebase?
 4.  **Take Action**: If you identified a gap or error, edit this document to correct it. If the guide is accurate, no change is needed. This ensures our documentation evolves with our code.

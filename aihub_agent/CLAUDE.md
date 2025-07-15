@@ -276,6 +276,29 @@ if __name__ == "__main__":
   * **Access**: `http://localhost:6006` (available when the Docker stack is running).
   * **Usage**: Run your agent via its `trigger.py` script, then open the Phoenix UI to find the execution trace. Click on steps to inspect inputs, outputs, and metadata.
 
+#### Phoenix MCP Server Integration
+
+The Phoenix MCP server is running alongside the development environment and provides programmatic access to trace data for debugging and monitoring agent executions. This integration allows you to query trace information directly from your development tools.
+
+**Key Concepts:**
+  * **Projects**: Each agent is its own project in Phoenix
+  * **Traces**: Each agent run is its own trace
+  * **Spans**: Each step within an agent run is its own span
+
+**Usage in Development:**
+  * Use the Phoenix MCP server to programmatically check if an agent run was successful
+  * Query trace data to analyze agent performance and behavior patterns
+  * Access span annotations and metadata for detailed debugging
+  * Retrieve experiment results and dataset information for evaluation
+
+**Common MCP Commands:**
+  * List all projects to see available agents
+  * Get spans from a specific project to analyze agent steps
+  * Retrieve span annotations to understand step outcomes
+  * Access experiment data for agent evaluation workflows
+
+This integration is particularly useful for automated testing, performance analysis, and building monitoring dashboards around agent behavior.
+
 #### Analyzing Event Flow with Logging
 
 Enable logging in your `trigger.py` script to see a detailed, real-time feed of events being produced and consumed by each step. This is invaluable for understanding why a workflow might be stalled or taking an unexpected path.
