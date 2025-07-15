@@ -14,6 +14,9 @@ from mongoengine import (
     StringField,
 )
 
+from aihub_lib.i18n.LocaleString import LocaleStringEntity
+from aihub_lib.persistence.agents import AgentConfigInstanceEntity
+
 
 class EventPayloadField(EmbeddedDocument):
     """Information about an event payload field."""
@@ -91,12 +94,25 @@ class EventSpec(EmbeddedDocument):
 
 class AgentConfigEntity(EmbeddedDocument):
     agent_id = StringField(required=True)
-    name = StringField(required=True)
-    description = StringField(required=True)
-    system_prompt = StringField(required=True)
+    name = EmbeddedDocumentField(LocaleStringEntity, required=True)
+    description = EmbeddedDocumentField(LocaleStringEntity, required=True)
+    system_prompt = EmbeddedDocumentField(LocaleStringEntity, required=True)
     color = StringField(default="#10A37F")
     voice = StringField(default="de-DE-ChristophNeural")
     icon = StringField(default="meteor-icons:robot")
+
+    @classmethod
+    def from_agent_config(cls, agent_config):
+        """Create an AgentConfigEntity from an AgentConfig."""
+        return cls(
+            agent_id=agent_config.agent_id,
+            name=LocaleStringEntity.from_locale_string(agent_config.name),
+            description=LocaleStringEntity.from_locale_string(agent_config.description),
+            system_prompt=LocaleStringEntity.from_locale_string(agent_config.system_prompt),
+            color=agent_config.color,
+            voice=agent_config.voice,
+            icon=agent_config.icon,
+        )
 
 
 class AgentEntity(Document):
@@ -151,15 +167,7 @@ class AgentEntity(Document):
         # Check if an agent with the same agent_class and agent_id already exists
         existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
 
-        agent_config = AgentConfigEntity(
-            agent_id=agent_dto.agent_config.agent_id,
-            name=agent_dto.agent_config.name,
-            description=agent_dto.agent_config.description,
-            system_prompt=agent_dto.agent_config.system_prompt,
-            color=agent_dto.agent_config.color,
-            voice=agent_dto.agent_config.voice,
-            icon=agent_dto.agent_config.icon,
-        )
+        agent_config = AgentConfigEntity.from_agent_config(agent_dto.agent_config)
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
         start_events = [EventSpec.from_dto(event) for event in agent_dto.start_events]
