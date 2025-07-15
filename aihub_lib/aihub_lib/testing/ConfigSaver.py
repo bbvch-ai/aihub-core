@@ -1,7 +1,8 @@
+from mongoengine import connect
+
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.agents.AgentConfigEntity import AgentConfigEntity
-from mongoengine import connect
 
 
 class ConfigSaver:

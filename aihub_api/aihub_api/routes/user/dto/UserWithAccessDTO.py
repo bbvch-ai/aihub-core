@@ -60,7 +60,7 @@ class UserWithAccessDTO(UserDTO):
             if agent_access == AccessLevel.ACCESS_DENIED:
                 continue
 
-            access.agents.append(UserAccess(name=agent.agent_config.name, level=agent_access))
+            access.agents.append(UserAccess(name=t.extract(agent.agent_config.name), level=agent_access))
 
         # TODO: Add processes
 

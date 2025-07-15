@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -30,6 +31,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.persistence.agents import AgentConfigEntity
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 
@@ -131,11 +133,19 @@ class ChatService:
             )
             display_id = event.request_event.topic.display_id
         else:
+            agent_config_entity = AgentConfigEntity.find_for_class_and_id(agent_class, agent_id)
+            if agent_config_entity is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Agent config not found for class {agent_class} and id {agent_id}",
+                )
+            agent_config = AgentConfig.from_entity(agent_config_entity)
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
+                agent_config=agent_config,
             )
 
         event = ExternalAgentEvent(

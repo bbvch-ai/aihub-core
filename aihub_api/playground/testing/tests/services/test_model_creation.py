@@ -6,9 +6,9 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.BaseEvent import BaseEvent
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentConfigSpecs, EventSpecs
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
-    EventSpecs,
 )
 from pydantic import BaseModel
 
@@ -580,6 +580,7 @@ class TestSchemaValidation:
             agent_id="test_agent",
             agent_config=AgentConfig(
                 agent_id="test_agent",
+                agent_class="TestAgent",
                 name=LocaleString(en="Test Agent"),
                 description=LocaleString(en="Test agent description"),
                 system_prompt=LocaleString(en="Test system prompt"),
@@ -588,6 +589,7 @@ class TestSchemaValidation:
             start_events=[event_specs],
             stop_events=[],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
         )
 
         # Serialize the event

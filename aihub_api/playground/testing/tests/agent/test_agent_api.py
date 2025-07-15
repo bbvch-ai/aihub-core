@@ -8,6 +8,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
@@ -19,6 +20,8 @@ from aihub_api.services.ModelCreationService import ModelCreationService
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
+
+enable_logging()
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")

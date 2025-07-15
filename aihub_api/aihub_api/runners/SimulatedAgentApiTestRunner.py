@@ -13,10 +13,15 @@ from aihub_lib.nats.events import (
     UserMessageEvent,
 )
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
-    AgentInstanceDiscoveryResponseEvent,
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
     EventSpecs,
 )
+from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
+    AgentInstanceDiscoveryResponseEvent,
+)
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.NatsConfig import NatsConfig
@@ -30,7 +35,8 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.nats.topics.discovery.agent.AgentInstanceDiscoveryTopic import AgentInstanceDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from aihub_lib.testing.ConfigSaver import ConfigSaver
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -102,6 +108,16 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.start_events: list[EventSpecs] = []
         self.stop_events: list[EventSpecs] = []
 
+        self.agent_config: AgentConfig = AgentConfig(
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
+            name=LocaleString(de="Test Agent"),
+            description=LocaleString(de="Test Agent Description"),
+            system_prompt=LocaleString(de="Test Agent System Prompt"),
+        )
+
+        ConfigSaver().save_config(self.agent_config)
+
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
         Handler for control events targeting this agent instance. If a StartEvent arrives,
@@ -116,26 +132,20 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             if not any(e.is_stop_event for e in self.simulated_events):
                 await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         logger.debug(f"Received discovery request for {self.agent_class} ({self.agent_id})")
-        subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
-        agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent(
+        subject = self.topic_manager.get_agent_class_discovery_subject_response(topic.call_id)
+        agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
-            agent_id=self.agent_id,
-            agent_config=AgentConfig(
-                agent_id=self.agent_id,
-                name=LocaleString(de="Test Agent"),
-                description=LocaleString(de="Test Agent Description"),
-                system_prompt=LocaleString(de="Test Agent System Prompt"),
-            ),
             is_conversational=True,
             start_events=self.start_events,
             stop_events=self.stop_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -188,7 +198,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         ]
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
@@ -217,6 +227,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 agent_id=self.agent_id,
                 start_events=self.start_events,
                 stop_events=self.stop_events,
+                config=self.agent_config,
             )
 
     async def run(self):

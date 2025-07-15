@@ -12,7 +12,7 @@ from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent impo
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
@@ -199,7 +199,7 @@ class AgentService:
             )
             agent_found_event.set()
 
-        topic_manager = AgentInstanceTopicManager(agent_class=agent_class)
+        topic_manager = AgentClassTopicManager(agent_class=agent_class)
         nc_publisher = NCPublisher(nc)
         nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
