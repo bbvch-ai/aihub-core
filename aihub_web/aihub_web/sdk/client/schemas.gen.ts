@@ -6632,7 +6632,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752510389
+            default: 1752581125
         },
         owned_by: {
             type: 'string',
@@ -7166,7 +7166,7 @@ export const ProcessDTOSchema = {
                 }
             ],
             title: 'Is Online',
-            description: 'Indicates whether the agent is online and reachable.'
+            description: 'Indicates whether the processis online and reachable.'
         }
     },
     type: 'object',
@@ -7179,7 +7179,7 @@ what kind of work to start / continue the process.
 Hence, this object offers information about the inputs (work events) that these entities can contribute.`
 } as const;
 
-export const ProcessHumanInputDtoSchema = {
+export const ProcessHumanInDtoSchema = {
     properties: {
         name: {
             type: 'string',
@@ -7219,7 +7219,7 @@ export const ProcessHumanInputDtoSchema = {
     },
     type: 'object',
     required: ['name', 'description', 'route', 'method', 'form'],
-    title: 'ProcessHumanInputDto',
+    title: 'ProcessHumanInDto',
     description: `Defines what and how a piece of work must be submitted by a user to a process.
 As humans usually submit their data by filling in forms in the frontend, this event holds
 a list of formkit form fields that can be used to generate a formkit form in the frontend.

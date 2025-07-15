@@ -5274,7 +5274,7 @@ export type ProcessDto = {
     agent_inputs: Array<AgentInSpecs>;
     /**
      * Is Online
-     * Indicates whether the agent is online and reachable.
+     * Indicates whether the processis online and reachable.
      */
     is_online?: boolean | null;
 };
@@ -5287,7 +5287,7 @@ export type ProcessDto = {
  * Submitting the form will lead to the required data structure that can be submitted
  * to the <route> using the http-method <method>.
  */
-export type ProcessHumanInputDto = {
+export type ProcessHumanInDto = {
     /**
      * Name
      * The name of the work event.
@@ -8070,7 +8070,7 @@ export type GetProcessStartFormsResponses = {
      * Response Get Process Start Forms Processes  Process Class   Process Id  Start Forms Get
      * Successful Response
      */
-    200: Array<ProcessHumanInputDto>;
+    200: Array<ProcessHumanInDto>;
 };
 
 export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof GetProcessStartFormsResponses];
@@ -8109,7 +8109,7 @@ export type GetProcessOpenFormsResponses = {
      * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
      * Successful Response
      */
-    200: Array<ProcessHumanInputDto>;
+    200: Array<ProcessHumanInDto>;
 };
 
 export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
