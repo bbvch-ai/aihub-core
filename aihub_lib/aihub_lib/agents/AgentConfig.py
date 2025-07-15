@@ -1,8 +1,8 @@
 import json
 import logging
-from typing import Annotated, Any, TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
-from pydantic import BaseModel, Field, PrivateAttr, ConfigDict, computed_field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 from typing_extensions import override
 
 from aihub_lib.i18n.LocaleString import LocaleString

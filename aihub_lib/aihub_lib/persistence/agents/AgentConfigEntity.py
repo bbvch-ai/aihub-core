@@ -41,7 +41,7 @@ class AgentConfigEntity(Document):
         return cls.objects(agent_class=agent_class)
 
     @classmethod
-    def find_for_class_and_id(cls, agent_class: str, agent_id: str) -> "AgentConfigInstanceEntity | None":
+    def find_for_class_and_id(cls, agent_class: str, agent_id: str) -> "AgentConfigEntity | None":
         """Find a specific configuration by agent class and ID."""
         return cls.objects(agent_class=agent_class, agent_id=agent_id).first()
 

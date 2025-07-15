@@ -2,9 +2,7 @@ from typing import Annotated
 
 from typing_extensions import override
 
-from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 
 class AgentInstanceTopicManager(AgentClassTopicManager):

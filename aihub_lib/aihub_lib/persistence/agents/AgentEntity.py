@@ -11,8 +11,8 @@ from mongoengine import (
     EmbeddedDocumentField,
     IntField,
     ListField,
-    StringField,
     ReferenceField,
+    StringField,
 )
 
 from aihub_lib.i18n.LocaleString import LocaleStringEntity

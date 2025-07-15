@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, cast, Any
+from typing import Annotated, Any, cast
 
 from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -13,7 +13,7 @@ from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent 
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics import Topic, PartialAgentTopic
+from aihub_lib.nats.topics import PartialAgentTopic, Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from bson import ObjectId
 from cachetools import TTLCache
@@ -345,7 +345,7 @@ class AgentDispatcher(BaseDispatcher):
                 events_and_kwargs.kwargs[param.name] = step_configs[param.annotation]
                 continue
 
-            # Handle AgentConfig if requested - create instance from dynamic config data
+            # Handle AgentConfig if requested
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
                 # Ensure the AgentConfig typing is consistent with the agent class
                 if not param.annotation == self.agent_config_type:

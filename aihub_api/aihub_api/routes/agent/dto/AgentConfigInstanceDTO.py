@@ -39,7 +39,7 @@ class AgentConfigInstanceDTO(BaseModel):
 
     @classmethod
     def from_entity(cls, entity: AgentConfigEntity) -> "AgentConfigInstanceDTO":
-        """Convert an AgentConfigInstanceEntity to a DTO."""
+        """Convert an AgentConfigEntity to a DTO."""
         return cls(
             agent_class=entity.agent_class,
             config_id=entity.config_id,
