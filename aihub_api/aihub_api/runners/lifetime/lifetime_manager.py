@@ -135,7 +135,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 api_app=api_app,
                 controller=api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,  # Check for new agents every 60 seconds
+                discovery_interval=60,  # Check for new processevery 60 seconds
             )
             await process_discovery_service.start()
             app.state.process_discovery_service = process_discovery_service
