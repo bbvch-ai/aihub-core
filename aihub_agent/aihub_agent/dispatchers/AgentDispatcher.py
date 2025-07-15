@@ -63,7 +63,6 @@ class AgentDispatcher(BaseDispatcher):
         self.agent = agent
         self.locale_handler = locale_handler
 
-        self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__name__)
         self.agent_config_type: type[AgentConfig] = agent.agent_config_type
         if self.agent_config_type is None:
             raise ValueError(f"Agent '{agent.__name__}' has no AgentConfig type.")
@@ -102,11 +101,18 @@ class AgentDispatcher(BaseDispatcher):
             partial_topic=topic,
             agent_id=agent_config.agent_id,
         )
+        tracer = RunTraceCoordinator(
+            nc=self.nc,
+            project_name=self.locale_handler.extract_multi_locale(
+                locale_data=agent_config.name,
+                locale="en",
+            ),
+        )
 
         if event.is_start_event:
             event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
-            telemetry_headers = self.tracer.trace_run_start(topic, event)
+            telemetry_headers = tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
 
             # Store any initial data from the StartEvent into run_context
@@ -141,7 +147,9 @@ class AgentDispatcher(BaseDispatcher):
             if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic, agent_config):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
                 asyncio.create_task(
-                    self.execute_step(event, step_method, events, run_context, thread_context, topic, agent_config)
+                    self.execute_step(
+                        event, step_method, events, run_context, thread_context, topic, agent_config, tracer
+                    )
                 )
 
     @override
@@ -205,6 +213,7 @@ class AgentDispatcher(BaseDispatcher):
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
         agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+        tracer: Annotated[RunTraceCoordinator, "Tracing coordinator for this run."],
     ):
         """
         Executes a step method:
@@ -252,13 +261,13 @@ class AgentDispatcher(BaseDispatcher):
         else:
             telemetry_headers = self._telemetry_header_cache[topic.run_id]
 
-        async with self.tracer.trace_step_start(
+        async with tracer.trace_step_start(
             telemetry_headers, topic, step_method, events_and_kwargs.kwargs
         ) as step_span:
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                await self.tracer.trace_step_error(step_span, e)
+                await tracer.trace_step_error(step_span, e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
@@ -271,7 +280,7 @@ class AgentDispatcher(BaseDispatcher):
                 if not isinstance(result, list):
                     result = [result]
 
-                await self.tracer.trace_step_stop(step_span, result)
+                await tracer.trace_step_stop(step_span, result)
 
                 for event in result:
                     if event.is_hitl_request_event:
