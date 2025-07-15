@@ -14,6 +14,7 @@ from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -56,7 +57,7 @@ class AgentRunner:
         self._stop_signal = asyncio.Event()
 
         self.agent_class = self.agent_type.__name__
-        self.topic_manager = AgentInstanceTopicManager(self.agent_class)
+        self.topic_manager = AgentClassTopicManager(self.agent_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
@@ -138,7 +139,7 @@ class AgentRunner:
         await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
-        self.control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
+        self.control_event_subscriber = AgentJSSubscriber.for_agent_class_control_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,

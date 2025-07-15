@@ -11,7 +11,7 @@ from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKw
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic, PartialAgentTopic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
@@ -56,7 +56,7 @@ class AgentDispatcher(BaseDispatcher):
             "JetStream context for persistent storage and event streams.",
         ],
         redis: Annotated[Redis, "Redis client for distributed storage."],
-        topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
+        topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
         super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
@@ -90,6 +90,20 @@ class AgentDispatcher(BaseDispatcher):
         thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if event.is_start_event:
+            await run_context.set("_agent_config", event.agent_config.model_dump_json())
+
+        # Get dynamic configuration data from run context
+        agent_config_dict: dict[str, Any] = await run_context.get("_agent_config", None)
+        if agent_config_dict is None:
+            raise ValueError("AgentConfig must be set at this point. Something went wrong in the StartEvent handling.")
+
+        agent_config: AgentConfig = AgentConfig.deserialize_config(agent_config_dict)
+        topic = AgentTopic.from_partial_topic(
+            partial_topic=topic,
+            agent_id=agent_config.agent_id,
+        )
+
+        if event.is_start_event:
             event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
             telemetry_headers = self.tracer.trace_run_start(topic, event)
@@ -100,8 +114,6 @@ class AgentDispatcher(BaseDispatcher):
             for key, value in event_data.items():
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
-
-            await run_context.set("_agent_config", event.agent_config.model_dump_json())
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
@@ -126,9 +138,11 @@ class AgentDispatcher(BaseDispatcher):
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
             )
-            if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
+            if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic, agent_config):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
-                asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
+                asyncio.create_task(
+                    self.execute_step(event, step_method, events, run_context, thread_context, topic, agent_config)
+                )
 
     @override
     async def is_step_ready(
@@ -139,6 +153,7 @@ class AgentDispatcher(BaseDispatcher):
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> bool:
         """
         Checks if a step can be run given the current state (events available, max executions, etc.).
@@ -170,7 +185,7 @@ class AgentDispatcher(BaseDispatcher):
 
         if precondition_fn:
             precondition_events_and_kwargs = await self._build_method_kwargs(
-                trigger_event, precondition_fn, events, run_context, thread_context, topic
+                trigger_event, precondition_fn, events, run_context, thread_context, topic, agent_config
             )
             is_ready = await precondition_fn(**precondition_events_and_kwargs.kwargs)
             if not is_ready:
@@ -189,6 +204,7 @@ class AgentDispatcher(BaseDispatcher):
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ):
         """
         Executes a step method:
@@ -213,6 +229,7 @@ class AgentDispatcher(BaseDispatcher):
             run_context,
             thread_context,
             topic,
+            agent_config,
         )
 
         # Ensure step is not executed twice with the exact same input events
@@ -315,16 +332,11 @@ class AgentDispatcher(BaseDispatcher):
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> EventsAndKwargs:
         step_signature = inspect.signature(method)
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
 
-        # Get dynamic configuration data from run context
-        agent_config_dict: dict[str, Any] = await run_context.get("_agent_config", None)
-        if agent_config_dict is None:
-            raise ValueError("AgentConfig must be set at this point. Something went wrong in the StartEvent handling.")
-
-        agent_config: AgentConfig = AgentConfig.deserialize_config(agent_config_dict)
         step_configs: dict[type[StepConfig], StepConfig] = agent_config.get_step_configs()
         # Prepare arguments
         for param in step_signature.parameters.values():
@@ -379,8 +391,9 @@ class AgentDispatcher(BaseDispatcher):
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
         Useful for publishing thread-scoped events.
         """
-        return AgentThreadTopicManager.from_agent_instance_topic_manager(
+        return AgentThreadTopicManager.from_agent_class_topic_manager(
             topic_manager=self.topic_manager,
+            agent_id=topic.agent_id,
             thread_id=topic.thread_id,
             display_id=topic.display_id,
             run_id=topic.run_id,
