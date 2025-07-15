@@ -74,6 +74,47 @@ We use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Y
 -  **scope**: Must be one of the scopes defined in `semantic-pr.yml`.
 -  **subject**: A short, imperative-tense description of the change, starting with a capital letter.
 
+### GitHub CLI Integration
+
+For all GitHub-related operations, use the GitHub CLI (`gh`) tool rather than the web interface. This ensures consistency and enables automation of common workflows.
+
+**Common GitHub Operations:**
+
+- **Creating Pull Requests**: Use `gh pr create` to create PRs with proper titles and descriptions
+- **Reviewing Pull Requests**: Use `gh pr review` to approve, request changes, or comment on PRs
+- **Checking PR Status**: Use `gh pr status` to see the current state of PRs
+- **Managing Issues**: Use `gh issue create`, `gh issue list`, and `gh issue close` for issue management
+- **Viewing PR Details**: Use `gh pr view` to see PR information including checks and comments
+- **Merging PRs**: Use `gh pr merge` to merge approved PRs
+
+**Examples:**
+
+```bash
+# Create a new PR
+gh pr create --title "feat(aihub): Add new workflow pattern" --body "Description of changes..."
+
+# Review a PR
+gh pr review 123 --approve --body "LGTM! Great work on the implementation."
+
+# Check PR status
+gh pr status
+
+# View PR details
+gh pr view 123
+
+# Merge a PR
+gh pr merge 123 --squash
+```
+
+**Best Practices:**
+
+- Always include meaningful PR titles following conventional commit format
+- Provide detailed PR descriptions explaining the changes and their purpose
+- Use `gh pr checks` to verify that all CI checks pass before merging
+- Leverage `gh pr diff` to review changes before submitting reviews
+
+This integration streamlines the development workflow and ensures all GitHub operations are tracked and consistent.
+
 -----
 
 ## 3. Local Development Setup
