@@ -13,7 +13,7 @@ from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent 
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.topics import Topic, PartialAgentTopic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from bson import ObjectId
 from cachetools import TTLCache
@@ -59,7 +59,7 @@ class AgentDispatcher(BaseDispatcher):
         topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, AgentTopic)
+        super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
         self.agent = agent
         self.locale_handler = locale_handler
 

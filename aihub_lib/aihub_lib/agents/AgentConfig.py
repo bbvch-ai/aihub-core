@@ -104,13 +104,9 @@ class AgentConfig(BaseModel):
         return cls.__name__
 
     def parent_config(self, parent_type: type["AgentConfig"]) -> "AgentConfig":
-        if self._unknown_data is None or self._unknown_config_name is None:
-            raise ValueError("Cannot retrieve parent config without unknown data or config name.")
-        if not parent_type.config_name_from_class() == self._unknown_config_name:
-            raise ValueError(
-                f"Cannot retrieve parent config of type {parent_type.__name__} from {self._unknown_config_name}"
-            )
-        return parent_type(**self._unknown_data)
+        if parent_type.config_name_from_class() != self._config_name:
+            raise ValueError(f"Cannot retrieve parent config of type {parent_type.__name__} from {self._config_name}")
+        return parent_type(**self.model_dump())
 
     @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
