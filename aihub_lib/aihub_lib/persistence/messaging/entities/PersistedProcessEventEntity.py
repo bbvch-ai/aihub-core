@@ -106,7 +106,6 @@ class PersistedProcessEventEntity(Document):
         # Execute the aggregation pipeline
         unanswered_requests_data = list(cls.objects.aggregate(pipeline))
 
-        # If no open requests are found, return an empty list
         if not unanswered_requests_data:
             return []
 
