@@ -9,7 +9,7 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class LLMWrappingAgent(Agent):
-    agent_config_type: LLMWrappingAgentConfig
+    agent_config_type: type[LLMWrappingAgentConfig] = LLMWrappingAgentConfig
 
     @step()
     async def start_step(

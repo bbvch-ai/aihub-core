@@ -63,10 +63,10 @@ class AgentDispatcher(BaseDispatcher):
         self.agent = agent
         self.locale_handler = locale_handler
 
-        self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__class__.__name__)
+        self.tracer = RunTraceCoordinator(self.nc, project_name=agent.__name__)
         self.agent_config_type: type[AgentConfig] = agent.agent_config_type
         if self.agent_config_type is None:
-            raise ValueError(f"Agent '{agent.__class__.__name__}' has no AgentConfig type.")
+            raise ValueError(f"Agent '{agent.__name__}' has no AgentConfig type.")
 
     @override
     async def handle_event(
