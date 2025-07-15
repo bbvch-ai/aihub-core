@@ -17,7 +17,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessService import ProcessService
 
@@ -113,7 +113,7 @@ class ProcessController(Controller):
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> list[ProcessHumanInputDto]:
+        ) -> list[ProcessHumanInDto]:
             """Returns a list of formkit forms that the user can submit to start the process."""
             # TODO: Filter for forms that the user has access to
             return await ProcessService.get_process_start_forms(nc, process_class, process_id, t)
@@ -133,7 +133,7 @@ class ProcessController(Controller):
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> list[ProcessHumanInputDto]:
+        ) -> list[ProcessHumanInDto]:
             """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
             # TODO: Filter for forms that the user has access to
             return await ProcessService.get_process_open_forms(nc, process_class, process_id, process_walkthrough_id, t)

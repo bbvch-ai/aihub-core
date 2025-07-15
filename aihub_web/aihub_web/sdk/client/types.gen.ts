@@ -5280,7 +5280,7 @@ export type ProcessDto = {
 };
 
 /**
- * ProcessHumanInputDto
+ * ProcessHumanInDto
  * Defines what and how a piece of work must be submitted by a user to a process.
  * As humans usually submit their data by filling in forms in the frontend, this event holds
  * a list of formkit form fields that can be used to generate a formkit form in the frontend.

@@ -19,7 +19,7 @@ from typing_extensions import override
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.process.ProcessService import ProcessService
@@ -173,7 +173,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> ProcessHumanInputDto:
+        ) -> ProcessHumanInDto:
             process_human_input_dtos = await ProcessService.get_process_start_forms(
                 nc=nc,
                 process_class=process_class,
@@ -213,7 +213,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ],
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> ProcessHumanInputDto:
+        ) -> ProcessHumanInDto:
             process_human_input_dtos = await ProcessService.get_process_open_forms(
                 nc=nc,
                 process_class=process_class,

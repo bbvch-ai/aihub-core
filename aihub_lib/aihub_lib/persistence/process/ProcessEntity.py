@@ -22,12 +22,12 @@ class ProgramInSpecsEntity(EmbeddedDocument):
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_dto(cls, process_in_dto) -> "ProgramInSpecsEntity":
+    def from_dto(cls, program_in_dto) -> "ProgramInSpecsEntity":
         return cls(
-            route=process_in_dto.route,
-            method=process_in_dto.method,
-            is_process_start=process_in_dto.is_process_start,
-            event_specs=EventSpec.from_dto(process_in_dto.event_specs),
+            route=program_in_dto.route,
+            method=program_in_dto.method,
+            is_process_start=program_in_dto.is_process_start,
+            event_specs=EventSpec.from_dto(program_in_dto.event_specs),
         )
 
 
@@ -60,12 +60,12 @@ class AgentInSpecsEntity(EmbeddedDocument):
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_dto(cls, process_in_dto) -> "AgentInSpecsEntity":
+    def from_dto(cls, agent_in_dto) -> "AgentInSpecsEntity":
         return cls(
-            agent_class=process_in_dto.agent_class,
-            agent_id=process_in_dto.agent_id,
-            is_process_start=process_in_dto.is_process_start,
-            event_specs=EventSpec.from_dto(process_in_dto.event_specs),
+            agent_class=agent_in_dto.agent_class,
+            agent_id=agent_in_dto.agent_id,
+            is_process_start=agent_in_dto.is_process_start,
+            event_specs=EventSpec.from_dto(agent_in_dto.event_specs),
         )
 
 

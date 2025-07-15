@@ -23,7 +23,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessHumanInputDto import ProcessHumanInputDto
+from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
@@ -219,16 +219,16 @@ class ProcessService:
     @staticmethod
     async def get_process_start_forms(
         nc: NATS, process_class: str, process_id: str, t: LocaleHandler
-    ) -> list[ProcessHumanInputDto]:
+    ) -> list[ProcessHumanInDto]:
         """Returns a list of formkit forms that the user can submit to start the process."""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        process_human_input_dtos: list[ProcessHumanInputDto] = []
+        process_human_input_dtos: list[ProcessHumanInDto] = []
 
         for human_input in process.human_inputs:
             if not human_input.is_process_start:
                 continue
 
-            process_human_input_dto = ProcessHumanInputDto(
+            process_human_input_dto = ProcessHumanInDto(
                 name=t.extract(human_input.name),
                 description=t.extract(human_input.description),
                 route=human_input.route,
@@ -242,10 +242,10 @@ class ProcessService:
     @staticmethod
     async def get_process_open_forms(
         nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
-    ) -> list[ProcessHumanInputDto]:
+    ) -> list[ProcessHumanInDto]:
         """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        process_human_input_dtos: list[ProcessHumanInputDto] = []
+        process_human_input_dtos: list[ProcessHumanInDto] = []
 
         persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(
             process_class, process_id, process_walkthrough_id
@@ -272,7 +272,7 @@ class ProcessService:
                             }
                         )
 
-                process_human_input_dto = ProcessHumanInputDto(
+                process_human_input_dto = ProcessHumanInDto(
                     name=t.extract(human_in.name),
                     description=t.extract(human_in.description),
                     route=human_in.route,
