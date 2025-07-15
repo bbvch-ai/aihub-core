@@ -101,7 +101,7 @@ class AgentDispatcher(BaseDispatcher):
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
-            await run_context.set("_agent_config", event.agent_config)
+            await run_context.set("_agent_config", event.agent_config.model_dump_json())
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")

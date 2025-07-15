@@ -124,7 +124,7 @@ class AgentConfig(BaseModel):
             voice=entity.voice,
             system_prompt=entity.system_prompt.to_locale_string(),
         )
-        config._unknown_config_name = entity.agent_class
+        config._unknown_config_name = entity.config_class
         config._unknown_data = entity.config_data
         return config
 

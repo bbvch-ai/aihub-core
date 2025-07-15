@@ -10,10 +10,11 @@ class AgentConfigEntity(Document):
     """Stores a specific, named configuration for an agent class."""
 
     meta = {
-        "collection": "agent_config_instances",
+        "collection": "agent_configs",
         "indexes": [{"fields": ("agent_class", "agent_id"), "unique": True}],
     }
 
+    config_class = StringField(required=True)
     agent_class = StringField(required=True)
     agent_id = StringField(required=True, description="Unique, URL-safe ID for the agent instance (e.g., 'agent_123').")
     name = EmbeddedDocumentField(
@@ -53,6 +54,7 @@ class AgentConfigEntity(Document):
     def from_agent_config(cls, agent_config: AgentConfig) -> "AgentConfigEntity":
         """Create an instance entity from an AgentConfig."""
         return cls(
+            config_class=agent_config.config_name_from_class(),
             agent_class=agent_config.agent_class,
             agent_id=agent_config.agent_id,
             name=LocaleStringEntity.from_locale_string(agent_config.name),
@@ -66,6 +68,7 @@ class AgentConfigEntity(Document):
 
     def update_from_agent_config(self, agent_config: AgentConfig) -> "AgentConfigEntity":
         """Update an existing instance entity from an AgentConfig."""
+        self.config_class = agent_config.config_name_from_class()
         self.agent_class = agent_config.agent_class
         self.agent_id = agent_config.agent_id
         self.name = LocaleStringEntity.from_locale_string(agent_config.name)
