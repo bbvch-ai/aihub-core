@@ -14,6 +14,46 @@
         "--baseUrl",
         "http://localhost:6006"
       ]
+    },
+    "mongodb": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "-e",
+        "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub",
+        "-e",
+        "MDB_MCP_READ_ONLY=true",
+        "mongodb/mongodb-mcp-server:latest"
+      ]
+    },
+    "milvus": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "python:3.11-slim",
+        "sh",
+        "-c",
+        "pip install uv && uv tool install --python python3.11 --from git+https://github.com/zilliztech/mcp-server-milvus.git mcp-server-milvus && uv tool run mcp-server-milvus --milvus-uri http://localhost:19530"
+      ]
+    },
+    "redis": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "--name",
+        "redis-mcp-server",
+        "-i",
+        "-e", "REDIS_HOST=localhost",
+        "-e", "REDIS_PORT=6379",
+        "mcp-redis"
+      ]
     }
   }
 }
