@@ -19,12 +19,12 @@ class BotInTheLoopBot(ActivityHandler):
     def __init__(
         self,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         bot_in_the_loop_handler: BotInTheLoopHandler,
     ):
         super().__init__()
         self.nc = nc
-        self.external_event_distributor = external_event_distributor
+        self.external_agent_event_distributor = external_agent_event_distributor
         self.bot_in_the_loop_handler = bot_in_the_loop_handler
 
     @override
@@ -74,7 +74,7 @@ class BotInTheLoopBot(ActivityHandler):
             )
 
         # Distribute the response event
-        await self.external_event_distributor.distribute_event(
+        await self.external_agent_event_distributor.distribute_event(
             external_event=ExternalAgentEvent(
                 event=BotInTheLoop.response(
                     response=turn_context.activity.text,

@@ -33,7 +33,7 @@ from nats.js import JetStreamContext
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.services.AgentDiscoveryService import AgentDiscoveryService
+from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 
 logger = logging.getLogger(__name__)
 
@@ -203,10 +203,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.js_publisher = JSPublisher(self.js)
 
         if hasattr(self._api_app.state, "agent_controller"):
-            AgentDiscoveryService(
+            AgentEndpointsDiscoveryService(
                 nc=self.nc,
                 api_app=self._api_app,
-                agent_controller=self._api_app.state.agent_controller,
+                controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,
             )._register_agent_endpoints(

@@ -12,25 +12,18 @@ logger = logging.getLogger(__name__)
 
 class WebSocketSender:
     """
-    Responsible for converting DisplayEvents into WSServerEvents and sending them to all users
+    Responsible for sending relevant DisplayEvents to all users
     associated with a given thread via their active WebSocket connections.
 
-    ### Why WebSocketSender?
     When an event occurs (e.g., chunks of data from an agent), the front-end connected via WebSockets
     needs to be updated in real time. This class:
     - Looks up the thread to find its associated users.
-    - Constructs a WSServerEvent from the DisplayEvent.
-    - Sends the WSServerEvent to each user's WebSocket connection(s).
+    - Constructs a ContextualizedAgentEvent from the DisplayEvent.
+    - Sends the ContextualizedAgentEvent to each user's WebSocket connection(s).
 
     This abstraction keeps the pipeline clean: the event handler receives a DisplayEvent, and
     WebSocketSender ensures it reaches every relevant user interface.
 
-    ### Flow
-    1. `send_event` is called with a DisplayEvent and its AgentTopic context.
-    2. The method retrieves the ThreadEntity and enumerates all users in that thread.
-    3. For each user, the event is turned into a WSServerEvent and sent via WebSocketManager.
-
-    ### Example
     Suppose a user interface is displaying messages from a conversation thread. When new text chunks
     or display events arrive, `WebSocketSender` ensures all connected clients in that thread see them
     immediately.
@@ -50,10 +43,10 @@ class WebSocketSender:
         """
         Given a DisplayEvent and its topic context:
         - Find the thread's users.
-        - Convert the event into a WSServerEvent.
+        - Convert the event into a ContextualizedAgentEvent.
         - Send the event to each user via WebSocketManager.
         """
         logger.debug(f"Sending event {event} to thread {topic.thread_id}")
         users = self.get_users_in_thread(topic.thread_id)
         for user in users:
-            await self.ws_manager.send_event(event, topic, user)
+            await self.ws_manager.send_agent_event(event, topic, user)

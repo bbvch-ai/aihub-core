@@ -170,15 +170,12 @@ export const AgentDTOSchema = {
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph', 'is_online'],
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph'],
     title: 'AgentDTO',
     description: `A data transfer object for representing agent information in responses.
-
-### Why AgentDTO?
 This DTO standardizes how agent data is returned from the service layer to the controller,
 and subsequently to the API response. It helps maintain a clean separation between the internal
 event models and the publicly exposed fields in HTTP responses.
-
 By using \`AgentDTO\`, the API can evolve independently from the internal event representations.`
 } as const;
 
@@ -236,6 +233,37 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['_event_name', '_parent_event_names'],
     title: 'AgentEvent'
+} as const;
+
+export const AgentInSpecsSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class or category of the agent.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'A unique identifier for the agent instance.'
+        },
+        is_process_start: {
+            type: 'boolean',
+            title: 'Is Process Start',
+            description: 'Whether the work event is a process start event.'
+        },
+        event_specs: {
+            '$ref': '#/components/schemas/EventSpecs',
+            description: 'The event specs of the work event.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'is_process_start', 'event_specs'],
+    title: 'AgentInSpecs',
+    description: `Defines the specifications of a piece of work that can be submitted by an agent.
+It is limited to an exact agent by class and id and holds the event specs of the
+agents stop events, as these stop events are translated to work events and submitted
+to the agentic process as inputs.`
 } as const;
 
 export const AgentInTheLoopExceptionEventSchema = {
@@ -581,57 +609,7 @@ export const AnnotationURLCitationSchema = {
     title: 'AnnotationURLCitation'
 } as const;
 
-export const AssistantChatMessage_InputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole',
-            default: 'user'
-        },
-        additional_kwargs: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class'
-        }
-    },
-    type: 'object',
-    required: ['agent_id', 'agent_class'],
-    title: 'AssistantChatMessage'
-} as const;
-
-export const AssistantChatMessage_OutputSchema = {
+export const AssistantChatMessageSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole',
@@ -2007,49 +1985,7 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessage_InputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole',
-            default: 'user'
-        },
-        additional_kwargs: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    title: 'ChatMessage',
-    description: 'Chat message.'
-} as const;
-
-export const ChatMessage_OutputSchema = {
+export const ChatMessageSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole',
@@ -2338,6 +2274,162 @@ export const CompletionUsageSchema = {
     title: 'CompletionUsage'
 } as const;
 
+export const ContextualizedAgentEventSchema = {
+    properties: {
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The locale in which event name and description is returned.',
+            default: 'de'
+        },
+        event_display_name: {
+            type: 'string',
+            title: 'Event Display Name',
+            description: 'Display name for the event'
+        },
+        event_display_description: {
+            type: 'string',
+            title: 'Event Display Description',
+            description: 'Display description for the event'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The agent class responsible for this event.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'Unique identifier of the agent instance that produced the event.'
+        },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id',
+            description: 'Thread identifier linking events to a particular conversation or workflow.'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id',
+            description: 'Display session ID, used to group events for the UI.'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'Optional run ID if the event is associated with a particular run.'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type',
+            description: "Type of the event (default: 'display_event')."
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event, indicating its subtype or category.'
+        },
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of this event instance.'
+        },
+        event: {
+            oneOf: [
+                {
+                    '$ref': '#/components/schemas/StartEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LimitChatHistoryEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/StandaloneQuestionCondenserEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LLMCostEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ChunkEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ThoughtEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RouterEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardRejectionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/SemanticEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ChainEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/EmbeddingEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LLMEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/LLMStopEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RerankerEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/RetrieverEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ToolEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/UserMessageEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ExceptionEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/StopEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/DisplayEvent'
+                }
+            ],
+            title: 'Event',
+            description: 'Data of the event itself.'
+        }
+    },
+    type: 'object',
+    required: ['event_display_name', 'event_display_description', 'agent_class', 'agent_id', 'thread_id', 'display_id', 'run_id', 'event_type', 'event_name', 'event_id', 'event'],
+    title: 'ContextualizedAgentEvent',
+    description: `Wraps an agent event with context information like the agent's class, ID, and thread ID.
+This is necessary as the event payload itself is independent of the topic context through
+which the event was published.
+This class ensures that both the information from the topic context and the event itself is bundled
+together.`
+} as const;
+
 export const ControlEventSchema = {
     properties: {
         event_id: {
@@ -2422,14 +2514,18 @@ export const CreateThreadRequestSchema = {
                 type: 'string'
             },
             type: 'array',
-            title: 'User Ids'
+            title: 'User Ids',
+            description: 'List of user IDs to be associated with the thread',
+            default: []
         },
         agents: {
             items: {
                 '$ref': '#/components/schemas/ThreadAgentDTO'
             },
             type: 'array',
-            title: 'Agents'
+            title: 'Agents',
+            description: 'List of agents to be associated with the thread',
+            default: []
         }
     },
     type: 'object',
@@ -2476,6 +2572,7 @@ export const CreateTokenResponseSchema = {
         name: {
             type: 'string',
             title: 'Name',
+            description: 'The name of the API token',
             example: 'My API Token'
         },
         expiry_date: {
@@ -2551,7 +2648,8 @@ export const DashboardDTOSchema = {
             },
             type: 'array',
             title: 'Children',
-            description: 'List of widgets (dashboard items) within the grid.'
+            description: 'List of widgets (dashboard items) within the grid.',
+            default: []
         }
     },
     type: 'object',
@@ -3509,12 +3607,28 @@ export const EventSpecsSchema = {
             type: 'object',
             title: 'Event Schema',
             description: "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow."
+        },
+        event_parents: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Event Parents',
+            description: 'A list of parent event names that this event is derived from, allowing for hierarchical event structures.'
         }
     },
     type: 'object',
-    required: ['event_name', 'event_schema'],
+    required: ['event_name', 'event_schema', 'event_parents'],
     title: 'EventSpecs',
-    description: 'Defines a specification for a start event that an agent can handle.'
+    description: `Defines the schema of an event that can flow through NATs that is either produced or consumed by an agent
+or agentic process.
+
+Sometimes, we must communicate events to external consumers that do not have access to our internal Pydantic event
+model. Hence, we must serialize the model schema, add the event name and parent event names, and provide
+these information to an external consumer like an API endpoint or the frontend.
+
+From this information, we can reconstruct the pydantic object and send the event back into NATs such that
+it can be consumed by the agent as a native pydantic model again.`
 } as const;
 
 export const EventTimeseriesSchema = {
@@ -4214,6 +4328,146 @@ export const HealthResponseSchema = {
     type: 'object',
     required: ['status', 'code'],
     title: 'HealthResponse'
+} as const;
+
+export const HtmlElementSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        '$el': {
+            type: 'string',
+            title: '$El',
+            description: 'HTML element tag name'
+        },
+        attrs: {
+            additionalProperties: {
+                anyOf: [
+                    {
+                        type: 'string'
+                    },
+                    {
+                        additionalProperties: true,
+                        type: 'object'
+                    }
+                ]
+            },
+            type: 'object',
+            title: 'Attrs',
+            description: 'HTML element attributes',
+            default: {}
+        },
+        children: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/LocaleString'
+                    },
+                    type: 'array'
+                },
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Children',
+            description: 'HTML element children'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['$el', 'children'],
+    title: 'HtmlElement',
+    description: `https://formkit.com/essentials/schema#html-elements-el
+Flexible formkit element that can be rendered into pretty much any html element you like.
+This should NOT be used for inputs but only for displaying and structuring purposes, like
+displaying a title or a paragraph. It can also be styled - however, make sure to consider both
+light and dark mode when styling. You can use tailwind for styling, but it may break in production
+as dynamic tailwind classes might be stripped away when compiling the frontend.
+
+Example:
+    title = HtmlElement(el="h1", children="My Title")`
+} as const;
+
+export const HumanInSpecsSchema = {
+    properties: {
+        name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The name of the work event.'
+        },
+        description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'A description of the work event, providing details about its purpose.'
+        },
+        route: {
+            type: 'string',
+            title: 'Route',
+            description: 'The route of the work event.'
+        },
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        is_process_start: {
+            type: 'boolean',
+            title: 'Is Process Start',
+            description: 'Whether the work event is a process start event.'
+        },
+        event_specs: {
+            '$ref': '#/components/schemas/EventSpecs',
+            description: 'The event specs of the work event.'
+        },
+        form: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputTextElement'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Form',
+            description: 'Formkit elements of the work event.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name', 'description', 'route', 'method', 'is_process_start', 'event_specs'],
+    title: 'HumanInSpecs',
+    description: `Defines a piece of work that can be submitted by a human.
+It holds information about the form that the user must fill in in order to generate the exact
+data structure defined in the event specs of the work event.
+It also holds the route and http method that must be used to finally post that work event data
+to the API, which will forward it to the appropriate process.`
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -5097,6 +5351,153 @@ export const InputEventInfoSchema = {
     description: 'Information about an input event for a step.'
 } as const;
 
+export const InputTextElementSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeInputText',
+            title: 'Formkit',
+            description: 'PrimeVue InputText element.',
+            default: 'primeInputText'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Help text of this field'
+        },
+        validation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validation',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Placeholder text'
+        },
+        prefix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Prefix text'
+        },
+        suffix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Suffix text'
+        },
+        iconPrefix: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconprefix',
+            description: 'Icon prefix'
+        },
+        iconSuffix: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconsuffix',
+            description: 'Icon suffix'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label'],
+    title: 'InputTextElement',
+    description: 'https://formkit-primevue.netlify.app/inputs/InputText'
+} as const;
+
 export const JSONSchemaSchema = {
     properties: {
         name: {
@@ -5680,205 +6081,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'LLMStopEvent'
 } as const;
 
-export const LLMStopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        input_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Messages',
-            description: 'List of messages sent to the LLM as input.'
-        },
-        output_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Messages',
-            description: 'List of messages received from the LLM as output.'
-        },
-        invocation_parameters: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Invocation Parameters',
-            description: 'Parameters used during the invocation of the LLM.'
-        },
-        chat_model_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Chat Model Name',
-            description: 'The name of the language model being utilized.'
-        },
-        provider: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Provider',
-            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
-        },
-        system: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'System',
-            description: 'The AI product as identified by the client or server.'
-        },
-        prompt_template: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template',
-            description: 'The prompt template as a Python f-string.'
-        },
-        prompt_template_variables: {
-            anyOf: [
-                {
-                    additionalProperties: {
-                        type: 'string'
-                    },
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template Variables',
-            description: 'A dictionary of input variables to the prompt template.'
-        },
-        prompt_template_version: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template Version',
-            description: 'The version of the prompt template being used.'
-        },
-        token_count_prompt: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Prompt',
-            description: 'The number of tokens in the prompt.'
-        },
-        token_count_completion: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Completion',
-            description: 'The number of tokens in the completion.'
-        },
-        token_count_total: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Total',
-            description: 'The total number of tokens, including both prompt and completion.'
-        },
-        tools: {
-            anyOf: [
-                {
-                    items: {
-                        additionalProperties: true,
-                        type: 'object'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tools',
-            description: 'List of tools that are advertised to the LLM to be able to call.'
-        }
-    },
-    type: 'object',
-    title: 'LLMStopEventOutput'
-} as const;
-
 export const LimitChatHistoryEventSchema = {
     properties: {
         event_id: {
@@ -5914,7 +6116,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage-Output'
+                '$ref': '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -6429,7 +6631,8 @@ export const ModelDetailsSchema = {
         created: {
             type: 'integer',
             title: 'Created',
-            description: 'The Unix timestamp of when the model was created.'
+            description: 'The Unix timestamp of when the model was created.',
+            default: 1752581125
         },
         owned_by: {
             type: 'string',
@@ -6883,6 +7086,179 @@ and which remain open (None).
   unknowns as flexible conditions.`
 } as const;
 
+export const ProcessConfigDTOSchema = {
+    properties: {
+        process_id: {
+            type: 'string',
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Process Id',
+            description: 'Used to uniquely identify this process instance.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the process.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'The description of the process.'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            description: 'The icon representing the agent.',
+            default: 'meteor-icons:robot'
+        }
+    },
+    type: 'object',
+    required: ['process_id', 'name', 'description'],
+    title: 'ProcessConfigDTO'
+} as const;
+
+export const ProcessDTOSchema = {
+    properties: {
+        process_class: {
+            type: 'string',
+            title: 'Process Class',
+            description: 'The class or category of the process (e.g., a specific type of process).'
+        },
+        process_id: {
+            type: 'string',
+            title: 'Process Id',
+            description: 'A unique identifier for the process instance.'
+        },
+        process_config: {
+            '$ref': '#/components/schemas/ProcessConfigDTO',
+            description: 'Configuration for the process instance.'
+        },
+        human_inputs: {
+            items: {
+                '$ref': '#/components/schemas/HumanInSpecs'
+            },
+            type: 'array',
+            title: 'Human Inputs',
+            description: 'List of human work events that the process can receive.'
+        },
+        program_inputs: {
+            items: {
+                '$ref': '#/components/schemas/ProgramInSpecs'
+            },
+            type: 'array',
+            title: 'Program Inputs',
+            description: 'List of program work events that the process can receive.'
+        },
+        agent_inputs: {
+            items: {
+                '$ref': '#/components/schemas/AgentInSpecs'
+            },
+            type: 'array',
+            title: 'Agent Inputs',
+            description: 'List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.'
+        },
+        is_online: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Online',
+            description: 'Indicates whether the processis online and reachable.'
+        }
+    },
+    type: 'object',
+    required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs', 'agent_inputs'],
+    title: 'ProcessDTO',
+    description: `An agentic process is a process in which humans, agents and programs interact with each other to achieve a
+common goal.
+To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
+what kind of work to start / continue the process.
+Hence, this object offers information about the inputs (work events) that these entities can contribute.`
+} as const;
+
+export const ProcessHumanInDtoSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the work event.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'A description of the work event, providing details about its purpose.'
+        },
+        route: {
+            type: 'string',
+            title: 'Route',
+            description: 'The route of the work event.'
+        },
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        form: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputTextElement'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Form',
+            description: 'Formkit fields to render the UI'
+        }
+    },
+    type: 'object',
+    required: ['name', 'description', 'route', 'method', 'form'],
+    title: 'ProcessHumanInDto',
+    description: `Defines what and how a piece of work must be submitted by a user to a process.
+As humans usually submit their data by filling in forms in the frontend, this event holds
+a list of formkit form fields that can be used to generate a formkit form in the frontend.
+Submitting the form will lead to the required data structure that can be submitted
+to the <route> using the http-method <method>.`
+} as const;
+
+export const ProgramInSpecsSchema = {
+    properties: {
+        route: {
+            type: 'string',
+            title: 'Route',
+            description: 'The route of the work event.'
+        },
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        is_process_start: {
+            type: 'boolean',
+            title: 'Is Process Start',
+            description: 'Whether the work event is a process start event.'
+        },
+        event_specs: {
+            '$ref': '#/components/schemas/EventSpecs',
+            description: 'The event specs of the work event.'
+        }
+    },
+    type: 'object',
+    required: ['route', 'method', 'is_process_start', 'event_specs'],
+    title: 'ProgramInSpecs',
+    description: `Defines a piece of work that can be submitted by a program.
+It holds the information about the exact data that must be submitted as a work event
+in the event specs. It also holds the information about where that work event data
+must be submitted, aka to which route and using which http method.
+The API will then forward the data to the appropriate process.`
+} as const;
+
 export const PromptTokensDetailsSchema = {
     properties: {
         audio_tokens: {
@@ -7159,6 +7535,7 @@ export const RevokeTokenResponseSchema = {
         detail: {
             type: 'string',
             title: 'Detail',
+            description: 'Status message about the token revocation',
             example: 'Token revoked successfully.'
         }
     },
@@ -7619,7 +7996,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            '$ref': '#/components/schemas/ChatMessage-Output',
+            '$ref': '#/components/schemas/ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -7782,6 +8159,30 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 ### Use Cases
 - Signaling that a response is ready, and no more actions are needed.
 - Informing the user interface that the conversation or task has concluded.`
+} as const;
+
+export const SubmittedFormDTOSchema = {
+    properties: {
+        process_class: {
+            type: 'string',
+            title: 'Process Class',
+            description: 'The processes class identifier.'
+        },
+        process_id: {
+            type: 'string',
+            title: 'Process Id',
+            description: 'Unique identifier for the specific process instance.'
+        },
+        process_walkthrough_id: {
+            type: 'string',
+            title: 'Process Walkthrough Id',
+            description: 'Unique identifier for this specific process walk through.'
+        }
+    },
+    type: 'object',
+    required: ['process_class', 'process_id', 'process_walkthrough_id'],
+    title: 'SubmittedFormDTO',
+    description: 'TODO: Define what information shall be returned on partial or sucessfull submittion of the form'
 } as const;
 
 export const SuiteDTOSchema = {
@@ -8212,6 +8613,7 @@ export const TokenResponseSchema = {
         name: {
             type: 'string',
             title: 'Name',
+            description: 'The name of the API token',
             example: 'My API Token'
         },
         expiry_date: {
@@ -8613,11 +9015,11 @@ export const UserAccessSchema = {
         name: {
             type: 'string',
             title: 'Name',
-            description: 'Name of the service'
+            description: 'Name of the service/agent/process to which user has access to'
         },
         level: {
             '$ref': '#/components/schemas/AccessLevel',
-            description: 'Name of the service'
+            description: 'Users access level to service/agent/process'
         }
     },
     type: 'object',
@@ -8625,53 +9027,7 @@ export const UserAccessSchema = {
     title: 'UserAccess'
 } as const;
 
-export const UserChatMessage_InputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole',
-            default: 'user'
-        },
-        additional_kwargs: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        user_id: {
-            type: 'string',
-            title: 'User Id'
-        }
-    },
-    type: 'object',
-    required: ['user_id'],
-    title: 'UserChatMessage'
-} as const;
-
-export const UserChatMessage_OutputSchema = {
+export const UserChatMessageSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole',
@@ -8756,7 +9112,8 @@ export const UserDTOSchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'List of roles assigned to the user'
+            description: 'List of roles assigned to the user',
+            default: []
         },
         favorite_modules: {
             items: {
@@ -8764,7 +9121,8 @@ export const UserDTOSchema = {
             },
             type: 'array',
             title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite'
+            description: 'List of favorite modules from aihub suite',
+            default: []
         },
         dashboard: {
             anyOf: [
@@ -8873,19 +9231,20 @@ export const UserMessageEventSchema = {
             items: {
                 anyOf: [
                     {
-                        '$ref': '#/components/schemas/ChatMessage-Output'
+                        '$ref': '#/components/schemas/ChatMessage'
                     },
                     {
-                        '$ref': '#/components/schemas/UserChatMessage-Output'
+                        '$ref': '#/components/schemas/UserChatMessage'
                     },
                     {
-                        '$ref': '#/components/schemas/AssistantChatMessage-Output'
+                        '$ref': '#/components/schemas/AssistantChatMessage'
                     }
                 ]
             },
             type: 'array',
             title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.',
+            default: []
         },
         files: {
             anyOf: [
@@ -8945,46 +9304,6 @@ In an agent workflow, you might have:
 
 This flexible design allows mixing and matching start events to adapt how and when workflows
 are triggered, depending on the source of the event.`
-} as const;
-
-export const UserMessageEventInputSchema = {
-    properties: {
-        messages: {
-            items: {
-                anyOf: [
-                    {
-                        '$ref': '#/components/schemas/ChatMessage-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/UserChatMessage-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AssistantChatMessage-Input'
-                    }
-                ]
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        }
-    },
-    type: 'object',
-    title: 'UserMessageEventInput'
 } as const;
 
 export const UserUploadedFileSchema = {
@@ -9052,7 +9371,8 @@ export const UserWithAccessDTOSchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'List of roles assigned to the user'
+            description: 'List of roles assigned to the user',
+            default: []
         },
         favorite_modules: {
             items: {
@@ -9060,7 +9380,8 @@ export const UserWithAccessDTOSchema = {
             },
             type: 'array',
             title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite'
+            description: 'List of favorite modules from aihub suite',
+            default: []
         },
         dashboard: {
             anyOf: [
@@ -9111,188 +9432,6 @@ export const ValidationErrorSchema = {
     type: 'object',
     required: ['loc', 'msg', 'type'],
     title: 'ValidationError'
-} as const;
-
-export const WSServerEventSchema = {
-    properties: {
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale in which event name and description is returned.',
-            default: 'de'
-        },
-        event_display_name: {
-            type: 'string',
-            title: 'Event Display Name',
-            description: 'Display name for the event'
-        },
-        event_display_description: {
-            type: 'string',
-            title: 'Event Display Description',
-            description: 'Display description for the event'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The agent class responsible for this event.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'Unique identifier of the agent instance that produced the event.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'Thread identifier linking events to a particular conversation or workflow.'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id',
-            description: 'Display session ID, used to group events for the UI.'
-        },
-        run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Run Id',
-            description: 'Optional run ID if the event is associated with a particular run.'
-        },
-        event_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Type',
-            description: "Type of the event (default: 'display_event').",
-            default: 'display_event'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event, indicating its subtype or category.'
-        },
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of this event instance.'
-        },
-        event: {
-            oneOf: [
-                {
-                    '$ref': '#/components/schemas/StartEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentInTheLoopExceptionEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/HumanInTheLoopResponseEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/LimitChatHistoryEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/StandaloneQuestionCondenserEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/LLMCostEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/ChunkEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/ThoughtEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/GuardEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/RouterEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/GuardRejectionEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/SemanticEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/ChainEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/EmbeddingEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/LLMEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/LLMStopEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/RerankerEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/RetrieverEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/ToolEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/UserMessageEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/ExceptionEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/StopEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/DisplayEvent'
-                }
-            ],
-            title: 'Event',
-            description: 'Data of the event itself.'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'thread_id', 'display_id', 'event_name', 'event_id', 'event'],
-    title: 'WSServerEvent',
-    description: `Represents an event sent from the server to a user's WebSocket connection, encapsulating
-details necessary to identify and display the event in a client application.
-
-### Why WSServerEvent?
-In a real-time system, events generated by agents need to be transmitted to clients over
-WebSockets. A \`WSServerEvent\` standardizes the structure of these messages, including:
-- Agent identifiers and context (thread/display/run).
-- Event type, name, and ID for classification.
-- Payload (\`event_data\`) containing the actual event content.
-
-This consistency helps front-end clients parse and handle events uniformly, and aids in
-debugging or logging outbound messages.
-
-### Conversion from Persisted Events
-The \`from_persisted_event\` method rebuilds a \`WSServerEvent\` from a \`PersistedAgentEventEntity\`,
-allowing previously stored events to be replayed or displayed to users.`
 } as const;
 
 export const WorkflowGraphSchema = {

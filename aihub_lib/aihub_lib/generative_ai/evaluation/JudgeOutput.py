@@ -13,5 +13,5 @@ class JudgeOutput(BaseModel):
     reasoning: Annotated[str, Field(description="A brief explanation for the assigned score.")]
     error: Annotated[
         bool | None,
-        Field(description="Flag indicating if the judge encountered an issue evaluating.", default=False),
+        Field(description="Flag indicating if the judge encountered an issue evaluating."),
     ] = False
