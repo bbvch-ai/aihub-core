@@ -31,6 +31,7 @@ class FewShotAgent(Agent):
     - Generate responses using an LLM based on the context (Few Shot Examples).
     ...
     """
+    agent_config_type: type[FewShotAgentConfig] = FewShotAgentConfig
 
     @step()
     async def limit_chat_history_step(

@@ -77,6 +77,7 @@ def build_rag_agent_config(
     """
     return RAGAgentConfig(
         agent_id="rag_agent",
+        agent_class=RAGAgent.__name__,
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         system_prompt=LocaleString(
@@ -226,7 +227,10 @@ async def _(agent_runner: AgentTestRunner, query: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content=query, role=MessageRole.USER)], user=fake_user(), locale="en"
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
+                user=fake_user(),
+                locale="en",
+                agent_config=agent_runner.agent_config,
             ),
         )
 
@@ -310,7 +314,10 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                locale=locale, user=fake_user(), messages=[ChatMessage(content=query, role=MessageRole.USER)]
+                locale=locale,
+                user=fake_user(),
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
+                agent_config=agent_runner.agent_config,
             ),
         )
 

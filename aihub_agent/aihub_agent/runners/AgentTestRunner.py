@@ -3,12 +3,14 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentInstanceDiscoveryResponseEvent, BaseEvent, InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
@@ -44,6 +46,7 @@ class AgentTestRunner(AgentRunner):
     def __init__(
         self,
         agent_type: type[Agent],
+        agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
@@ -52,6 +55,8 @@ class AgentTestRunner(AgentRunner):
             agent_type=agent_type,
             locale_paths=locale_paths,
         )
+        self.topic_manager = AgentInstanceTopicManager(agent_class=self.agent_class, agent_id=agent_config.agent_id)
+        self.agent_config = agent_config
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
         self.topic: PartialAgentTopic | None = None

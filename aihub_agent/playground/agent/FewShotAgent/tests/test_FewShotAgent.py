@@ -123,6 +123,7 @@ def _(agent_config_data, azure_llm_config):
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
+        agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
         system_prompt=LocaleString(en="You're an agent..."),
@@ -160,6 +161,7 @@ def _(agent_config_data, self_hosted_llm_config):
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
+        agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
         system_prompt=LocaleString(en="You're an agent..."),
@@ -188,7 +190,10 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                locale="en", user=fake_user(), messages=[ChatMessage(content=query, role=MessageRole.USER)]
+                locale="en",
+                user=fake_user(),
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
+                agent_config=agent_runner.agent_config
             ),
         )
 
