@@ -8,7 +8,15 @@ from pydantic import BaseModel, ConfigDict, create_model
 class ModelCreationService:
     _input_suffix = "Input"
     _output_suffix = "Output"
-    _input_excluded_fields = {"event_id", "created_at", "user", "locale", "display_name", "display_description"}
+    _input_excluded_fields = {
+        "event_id",
+        "created_at",
+        "user",
+        "locale",
+        "display_name",
+        "display_description",
+        "agent_config",
+    }
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(
         arbitrary_types_allowed=False,

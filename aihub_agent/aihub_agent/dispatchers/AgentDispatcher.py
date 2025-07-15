@@ -86,7 +86,7 @@ class AgentDispatcher(BaseDispatcher):
         await super().handle_event(event, topic)
 
         # Retrieve contexts (run and thread)
-        run_context = RunContext(self.redis, topic.threadWhat_id, topic.run_id)
+        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
         thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if event.is_start_event:
