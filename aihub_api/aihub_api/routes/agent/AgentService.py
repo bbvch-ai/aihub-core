@@ -24,6 +24,7 @@ from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
+
 from aihub_api.routes.agent.dto.AgentDTO import AgentClassDTO, AgentDTO, MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService

@@ -2,9 +2,6 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
-from llama_index.vector_stores.milvus import MilvusVectorStore
-
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
@@ -39,6 +36,8 @@ from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig

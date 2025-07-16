@@ -1,21 +1,20 @@
 from typing import Annotated, Literal
 
-from llama_index.core.vector_stores import SimpleVectorStore
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
-from llama_index.vector_stores.milvus import MilvusVectorStore
-
 from aihub_lib.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pydantic import Field
-
-from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
 )
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
+from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
+from pydantic import Field
+
+from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 
 
 class RetrieveStepConfig(StepConfig):

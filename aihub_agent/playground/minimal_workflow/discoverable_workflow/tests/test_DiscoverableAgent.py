@@ -1,5 +1,4 @@
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.asyncio_utils.bdd import async_test
