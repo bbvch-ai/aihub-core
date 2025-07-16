@@ -1,5 +1,6 @@
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import InstanceDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from bson import ObjectId
@@ -34,8 +35,8 @@ async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run():
         call_id = str(ObjectId())
         await agent_runner.nc_publisher.publish_event(
-            event=InstanceDiscoveryRequestEvent(),
-            subject=AgentTopicManager().get_agent_instance_discovery_subject_request(call_id=call_id),
+            event=ClassDiscoveryRequestEvent(),
+            subject=AgentTopicManager().get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
 
