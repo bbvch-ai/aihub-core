@@ -24,6 +24,7 @@ def _(loop_max: int):
         agent_type=BoundedLoopAgent,
         agent_config=BoundedLoopAgentConfig(
             agent_id="bounded_iterative_loop_agent",
+            agent_class=BoundedLoopAgent.__name__,
             name=LocaleString(en="Bounded Iterative Agent"),
             description=LocaleString(en="This is an agent that loops"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -39,7 +40,9 @@ async def _(agent_runner: AgentTestRunner):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=fake_user(),
+                agent_config=agent_runner.agent_config,
             ),
         )
 

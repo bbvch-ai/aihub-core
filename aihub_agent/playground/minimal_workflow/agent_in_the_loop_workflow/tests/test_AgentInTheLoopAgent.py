@@ -34,6 +34,7 @@ scenarios("./features/agent_in_the_loop_agent.feature")
 def orchestrator_config():
     return OrchestratorAgentConfig(
         agent_id="orchestrator_agent",
+        agent_class=OrchestratorAgent.__name__,
         name=LocaleString(en="Orchestrator Agent"),
         description=LocaleString(en="This is an orchestrator agent"),
         system_prompt=LocaleString(en="You are an orchestrator agent"),
@@ -44,6 +45,7 @@ def orchestrator_config():
 def worker_config():
     return WorkerAgentConfig(
         agent_id="worker_agent",
+        agent_class=WorkerAgent.__name__,
         name=LocaleString(en="Worker Agent"),
         description=LocaleString(en="This is a worker agent"),
         system_prompt=LocaleString(en="You are a worker agent"),
@@ -88,7 +90,9 @@ async def send_start_to_orchestrator(
         async with orchestrator_runner.test_run() as topic:
             await orchestrator_runner.send_event_from_topic(
                 start_event=UserMessageEvent(
-                    messages=[ChatMessage(content=message, role=MessageRole.USER)], user=fake_user()
+                    messages=[ChatMessage(content=message, role=MessageRole.USER)],
+                    user=fake_user(),
+                    agent_config=orchestrator_runner.agent_config,
                 ),
                 topic=topic,
             )

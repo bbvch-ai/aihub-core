@@ -84,7 +84,7 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
             event_id="*",
         )
 
-    def get_subject_for_specific_event_in_agent_instance(
+    def get_subject_for_specific_event_in_agent_class(
         self,
         agent_id: Annotated[str, "Specific agent ID within this agent class"],
         thread_id: Annotated[str, "Thread ID within this agent instance"],
@@ -132,7 +132,7 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
 
     def get_subject_for_all_control_events_within_agent_class(self) -> str:
         """Returns a subject pattern matching all control events within this agent instance."""
-        return self.get_subject_for_specific_event_in_agent_instance(
+        return self.get_subject_for_specific_event_in_agent_class(
             agent_id="*",
             thread_id="*",
             display_id="*",

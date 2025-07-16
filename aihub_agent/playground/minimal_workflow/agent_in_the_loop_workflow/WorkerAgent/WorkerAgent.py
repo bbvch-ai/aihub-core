@@ -6,9 +6,12 @@ from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.E
     ExtractNumberEvent,
 )
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.WorkerStopEvent import WorkerStopEvent
+from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgentConfig import WorkerAgentConfig
 
 
 class WorkerAgent(Agent):
+    agent_config_type: type[WorkerAgentConfig] = WorkerAgentConfig
+
     @step()
     async def start_step(self, event: UserMessageEvent) -> ExtractNumberEvent:
         print("[WorkerAgent.start_step]", event)
