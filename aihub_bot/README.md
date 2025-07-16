@@ -1,3 +1,8 @@
+---
+title: "AI-Hub Bot Integration"
+index: 4
+---
+
 # AI-Hub Bot Developer's Guide
 
 ## 1. Foundational Knowledge of Bot Development

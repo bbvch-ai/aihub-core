@@ -1,3 +1,8 @@
+---
+title: "AI-Hub Frontend"
+index: 6
+---
+
 # AI-Hub Web Frontend Developer's Guide
 
 ## 1. Foundational Knowledge of Web Frontend Development

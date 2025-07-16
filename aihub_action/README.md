@@ -1,3 +1,8 @@
+---
+title: "Github Actions"
+index: 7
+---
+
 # AI Hub Actions - Reusable Actions for CI/CD (GitHub workflows)
 
 These actions are a collection of modular GitHub Actions designed to automate and standardize CI/CD workflows across customer repositories. 

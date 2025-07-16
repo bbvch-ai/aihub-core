@@ -1,10 +1,15 @@
+---
+title: Development Setup
+index: 0
+---
+
 # Developer Setup Guide
 
 This guide provides detailed, step-by-step instructions for setting up the AI-Hub development environment. It is designed to walk you through installing the necessary tools, configuring your IDE (specifically JetBrains PyCharm and WebStorm), and getting the codebase up and running locally.
 
 -----
 
-## 1. Install Required & Recommended Tools
+## Install Required & Recommended Tools
 
 Before you begin, you need to install several tools. Follow the instructions for your operating system.
 
@@ -62,9 +67,9 @@ Before you begin, you need to install several tools. Follow the instructions for
 
 -----
 
-## 2. Set Up the Codebase
+## Set Up the Codebase
 
-### 2.1. Clone Repositories
+### Clone Repositories
 
 First, clone the necessary repositories into a local directory.
 
@@ -77,7 +82,7 @@ First, clone the necessary repositories into a local directory.
     git clone https://github.com/bbvch-ai/aihub-bbv
     ```
 
-### 2.2. Set Up Backend Services (PyCharm)
+### Set Up Backend Services (PyCharm)
 
 The `aihub-core` repository is a monorepo containing multiple independent microservices (e.g., `aihub_api`, `aihub_agents`). The following steps explain the recommended way to set up the project in PyCharm for a smooth development experience.
 
@@ -112,12 +117,12 @@ The `aihub-core` repository is a monorepo containing multiple independent micros
       - Go to **File \> Settings \> Project: aihub-core \> Project Dependencies**.
       - For each microservice project (`aihub_api`, `aihub_bot`, `aihub_agent`, `aihub_pipeline`), check the box for `aihub_lib` to mark it as a dependency.
 
-### 2.3. Set Up Frontend Services
+### Set Up Frontend Services
 
   - Navigate to the `aihub_web` folder.
   - Follow the specific instructions in the `README.md` file located inside that directory to set up the frontend.
 
-### 2.4. Configure Environment Variables
+### Configure Environment Variables
 
   - The project requires `.env` files for configuration, which contain sensitive keys and settings.
   - You must request the necessary `.env` files from a team member.
@@ -125,9 +130,9 @@ The `aihub-core` repository is a monorepo containing multiple independent micros
 
 -----
 
-## 3. First Steps: Running the Application
+## First Steps: Running the Application
 
-### 3.1. Start the Infrastructure with Docker
+### Start the Infrastructure with Docker
 
 1.  Make sure Docker Desktop is running.
 2.  Navigate to the root of the `aihub_agent` directory in your terminal.
@@ -141,17 +146,17 @@ The `aihub-core` repository is a monorepo containing multiple independent micros
     ```
 5.  Alternatively, PyCharm's Docker integration allows you to simply click the green play button next to the services in your `docker-compose.yml` file.
 
-### 3.2. Explore the Playground
+### Explore the Playground
 
   - Once the services are running, explore the `playground` directories within each microservice. These contain scripts and notebooks for testing and experimenting with the code in a sandbox environment. This is a great way to understand how different components work.
 
 -----
 
-## 4. IDE Configuration and Plugins (Recommended)
+## IDE Configuration and Plugins (Recommended)
 
 To optimize your development workflow, we recommend installing the following plugins and enabling specific settings in your JetBrains IDE.
 
-### 4.1. Useful PyCharm Plugins & Settings
+### Useful PyCharm Plugins & Settings
 
   - **Plugins**:
 
@@ -171,7 +176,7 @@ To optimize your development workflow, we recommend installing the following plu
         1.  In the Commit tool window, click the settings (gear) icon.
         2.  Under **Commit Checks**, enable `Reformat code` and `Perform SonarQube for IDE analysis`.
 
-### 4.2. Useful WebStorm Plugins
+### Useful WebStorm Plugins
 
   - [GitHub Copilot](https://plugins.jetbrains.com/plugin/17718-github-copilot)
   - [SonarLint](https://www.sonarsource.com/products/sonarlint/features/jetbrains/)

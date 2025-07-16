@@ -1,3 +1,8 @@
+---
+title: "Infrastructure"
+index: 8
+---
+
 # AIHub Infrastructure as Code (IaC)
 
 This repository contains the Infrastructure as Code implementation for the AIHub platform, 

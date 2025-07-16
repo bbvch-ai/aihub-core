@@ -1,3 +1,8 @@
+---
+title: "AI-Hub Agents"
+index: 1
+---
+
 # AI-Hub Agent Developer's Guide
 
 ## 1. Foundational Knowledge of Agent Development

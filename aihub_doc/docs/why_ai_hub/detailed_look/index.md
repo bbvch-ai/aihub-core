@@ -1,6 +1,11 @@
-# 1. Introduction
+---
+title: Detailed Intro
+index: 1
+---
 
-## 1.1 What is the AI-Hub?
+# Introduction
+
+## What is the AI-Hub?
 
 > tldr; The AI-Hub is much more than just a code repository; it is a dynamic, multi-tiered platform that encapsulates best practices, standardizes core functionalities, and delivers a scalable suite of AI solutions—from basic language model access to custom-developed autonomous agents. As you progress through later sections—for instance, exploring the reasoning behind AI agents in Section 1.2 or the guiding workflow principles in Section 2—you’ll understand how these core ideas form the bedrock of the entire AI-Hub ecosystem.
 
@@ -27,7 +32,7 @@ The AI-Hub ensures that all tiers—whether interacting with basic language mode
 
 ### Overview
 
-At its core, the AI-Hub is a **platform of platforms**—a cohesive ecosystem that empowers bbv and its clients to rapidly conceptualize, prototype, and implement AI-driven solutions across a spectrum of complexity. Whether you’re beginning with basic language model access or scaling up to custom-developed assistants and autonomous agents, the AI-Hub provides the standardized, robust backbone needed to meet modern enterprise challenges. Future sections—such as [Section 2: Core Concepts and Philosophy](2_core_concepts_and_philosophy.md) and [Section 4: Architectural Overview](4_architectural_overview.md)—will delve into the underlying architectures, workflows, and event-driven systems that support this vision.
+At its core, the AI-Hub is a **platform of platforms**—a cohesive ecosystem that empowers bbv and its clients to rapidly conceptualize, prototype, and implement AI-driven solutions across a spectrum of complexity. Whether you’re beginning with basic language model access or scaling up to custom-developed assistants and autonomous agents, the AI-Hub provides the standardized, robust backbone needed to meet modern enterprise challenges. Future sections—such as [Section 2: Core Concepts and Philosophy](../philosophy/index.md) and [Section 4: Architectural Overview](../../../4_architectural_overview.md)—will delve into the underlying architectures, workflows, and event-driven systems that support this vision.
 
 **In essence, the AI-Hub is positioned as:**
 - A **foundation** for rapidly building and scaling AI solutions.
@@ -80,7 +85,7 @@ flowchart TD
 - **End-Users & Business Processes (G):** Ultimately, all layers of the AI-Hub serve to enhance productivity and decision-making across the organization.
 
 
-## 1.2 Why LLM Access, Assistants, and Agents?
+## Why LLM Access, Assistants, and Agents?
 
 > tldr; In today’s evolving AI landscape, organizations begin with direct access to powerful Large Language Models (LLMs) that enable rich conversational interactions. Building on this foundation, reactive AI assistants provide context-aware, transparent support for day-to-day tasks, and fully autonomous AI agents take a proactive role in automating complex business processes. Together, these layers unlock unprecedented efficiency and adaptability, bridging the gap between traditional software and human-like reasoning.
 
@@ -95,11 +100,11 @@ Building on the foundation of LLM access, AI assistants introduce a layer of tai
 **AI Agents:**  
 Taking automation to the next level, AI agents represent a shift from reactive support to proactive process automation. Unlike assistants that respond to user prompts, agents are engineered to autonomously engage with business processes. They analyze workflows, determine necessary actions, and execute tasks with minimal human intervention. Despite their autonomy, these agents are equipped with comprehensive logging and transparency modules that allow organizations to monitor, control, and audit their actions—ensuring that the drive toward automation never comes at the expense of oversight and compliance.
 
-Whereas Section [1.1](#11-what-is-the-ai-hub) introduced the overall vision of the AI-Hub, this section zooms in on the spectrum of AI-driven capabilities—from the foundational LLM access, through context-rich assistants, to fully autonomous agents. Understanding why each layer is necessary—and how they build upon one another—sets the stage for the detailed technical discussions that follow in [Section 5: Agents in Detail](5_agents_in_detail.md) and [Section 2: Core Concepts and Philosophy](2_core_concepts_and_philosophy.md).
+Whereas Section [1.1](#11-what-is-the-ai-hub) introduced the overall vision of the AI-Hub, this section zooms in on the spectrum of AI-driven capabilities—from the foundational LLM access, through context-rich assistants, to fully autonomous agents. Understanding why each layer is necessary—and how they build upon one another—sets the stage for the detailed technical discussions that follow in [Section 5: Agents in Detail](../../../5_agents_in_detail.md) and [Section 2: Core Concepts and Philosophy](../philosophy/index.md).
 
 In essence, the evolution from LLM access to assistants and ultimately to autonomous agents represents a strategic journey toward creating AI solutions that are increasingly adaptive, efficient, and deeply integrated into enterprise workflows.
 
-## 1.2.1 LLM Access: Empowering Discovery Through Direct AI Interaction
+## LLM Access: Empowering Discovery Through Direct AI Interaction
 
 #### Overview
 
@@ -137,7 +142,7 @@ By starting with direct LLM access, organizations empower their workforce to:
 This foundational step is a low-cost, versatile, and secure way for employees to get acquainted with the transformative power of AI.
 
 
-### 1.2.2 Assitant Package: Context-Aware Support
+### Assitant Package: Context-Aware Support
 
 #### The Concept of AI Assistants
 
@@ -183,7 +188,7 @@ Integrated with collaboration tools such as Microsoft Teams or Slack, AI assista
 - **Transparency and Trust:**  
   With comprehensive logging and traceability features, AI assistants ensure that every interaction is documented, fostering accountability and enabling organizations to continuously refine their AI solutions.
 
-### 1.2.3 Agent Package: Collaborative Process Automation
+### Agent Package: Collaborative Process Automation
 
 The Agent Package is the culmination of the AI-Hub’s evolution—where automation is reimagined as a true collaboration between humans and AI agents. In this tier, every process is modeled around human expertise first, with AI agents joining in as equal partners. The goal is not to remove humans from the process but to enhance the workflow by integrating agents that can support, and in some cases, take over routine tasks—all while keeping human oversight central.
 
@@ -252,7 +257,7 @@ For tasks such as candidate screening in recruitment, AI agents can pre-process 
   AI agents continuously monitor operational data to detect and respond to process deviations in real time. This proactive approach enhances operational resilience, allowing organizations to quickly adapt to unexpected challenges.
 
 
-## 1.3 High-Level Architecture
+## High-Level Architecture
 
 > tldr; The AI-Hub is a multi-layered platform that unifies AI agents, a robust API, data pipelines, and several specialized frontends into a coherent ecosystem. In addition to its core components (agents, API, and pipelines), the AI-Hub now includes a Bots module (powered by the Microsoft Azure Bot Framework) for seamless integration with communication channels like Slack, Teams, and email; a dedicated Chat UI for intuitive user interactions; an Agents Transparency Frontend for detailed monitoring and traceability; and a Process Panel for modeling and managing workflows that involve both humans and agents. This architecture underpins a flexible, scalable, and transparent AI solution.
 

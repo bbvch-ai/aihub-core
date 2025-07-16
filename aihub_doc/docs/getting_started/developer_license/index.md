@@ -1,6 +1,11 @@
-# 10. Extensibility and Licensing
+---
+title: Developer License
+index: 3
+---
 
-## 10.1 The AI Hub Developer License
+# Extensibility and Licensing
+
+## The AI Hub Developer License
 
 > tldr; The AI-Hub Developer License transforms the platform from a bbv-delivered solution into a strategic asset that clients can own, adapt, and evolve independently. By granting access to the core code and pairing it with training, support, and a flexible architecture, clients can build internal AI expertise, respond quickly to changing market conditions, and maintain the confidence that their private data and custom logic remain under their control.
 > 

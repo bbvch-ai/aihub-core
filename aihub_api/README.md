@@ -1,3 +1,8 @@
+---
+title: "AI-Hub API"
+index: 2
+---
+
 # AI-Hub API Developer's Guide
 
 ## 1. Foundational Knowledge of API Development

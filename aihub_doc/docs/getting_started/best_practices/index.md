@@ -1,6 +1,11 @@
-# 11. Best Practices and Guidelines
+---
+title: Best Practices
+index: 2
+---
 
-## 11.1 Workflow Design
+# Best Practices and Guidelines
+
+## Workflow Design
 
 > tldr; Effective workflow design balances the need for control and transparency with the desire for autonomy and flexibility. By starting with rigid, well-defined steps and gradually relaxing constraints as trust and understanding grow, teams can evolve their agents into powerful, intelligent assistants that operate reliably, explainably, and efficiently. This approach ensures that the AI-Hub continues delivering value as complexity scales and requirements shift.
 
@@ -62,7 +67,7 @@ Designing workflows for AI agents is both an art and a science. On one hand, you
 - **Periodic Reviews:**  
   Regularly review workflows with stakeholders. Confirm that the current level of autonomy meets business needs and that the traceability remains sufficient for audits and compliance.
 
-## 11.2 Data Handling and Security
+## Data Handling and Security
 
 > tldr; Data handling and security measures in the AI-Hub ensure that sensitive information is processed within a controlled, compliant environment. By combining privacy controls, encryption, proper access management, and robust guardrails against hallucinations, the platform delivers trustworthy, auditable, and correct outputs. These safeguards are not just technical enhancements; they form the foundation of a system that clients and users can rely on for accurate, secure, and value-driven results.
 
@@ -104,7 +109,7 @@ As AI agents increasingly work with sensitive business data—proprietary docume
    By grounding answers in retrieved documents, the agent reduces hallucinations. When answering user queries, steps like `RetrieverEvent` and `RerankerEvent` ensure the final LLM call is contextually anchored. If the agent cannot find a relevant document, it admits it rather than fabricating details.
 
 3. **Approved Tools and Steps Only:**
-   Agents operate within a defined workflow (see [Section 2.1](2_core_concepts_and_philosophy.md#21-ai-agents-as-workflows)). They only use approved steps and tools, preventing them from executing actions outside their defined scope. Over time, as trust grows, more tools can be introduced, but initial constraints protect against unpredictable behavior.
+   Agents operate within a defined workflow (see [Section 2.1](../../why_ai_hub/philosophy/index.md#21-ai-agents-as-workflows)). They only use approved steps and tools, preventing them from executing actions outside their defined scope. Over time, as trust grows, more tools can be introduced, but initial constraints protect against unpredictable behavior.
 
 4. **Human-in-the-Loop (HITL) Checks:**
    For especially critical tasks, HITL steps can require a human’s approval before proceeding (see [Section 5.2](5_agents_in_detail.md#52-context-handling)). If the agent suggests a sensitive action—like sending an external email or approving a financial transaction—a HITL step ensures a human reviews and confirms the action first.

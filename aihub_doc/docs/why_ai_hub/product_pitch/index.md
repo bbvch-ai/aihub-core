@@ -1,8 +1,13 @@
-# 0 The AI-Hub – Product Pitch
+---
+title: Product Pitch
+index: 0
+---
+
+# The AI-Hub – Product Pitch
 
 > tldr; The AI-Hub connects people, enterprise data, and processes through specialized AI assistants and agents that integrate into existing work environments, focusing on specific expertise domains while maintaining human oversight.
 
-## 0.1 The Vision: A New Form of Enterprise Organization
+## The Vision: A New Form of Enterprise Organization
 
 > tldr; The AI-Hub brings specialized AI capabilities directly to where work happens, creating an ecosystem of expert assistants rather than one-size-fits-all solutions.
 
@@ -10,7 +15,7 @@ In today's business world, organizations face the challenge of effectively utili
 
 Imagine your organization having a rich ecosystem of specialized AI assistants, each with deep expertise in specific domains – financial analysis, project tracking, code review, compliance monitoring – all available exactly where daily work takes place. These focused assistants don't try to do everything; they do one thing exceptionally well, whether analyzing documents, summarizing reports, accelerating processes, or interpreting complex relationships in their domain of expertise. The AI-Hub makes this vision a reality.
 
-## 0.2 Core Concept: The AI-Hub as a Hub for Intelligent Collaboration
+## Core Concept: The AI-Hub as a Hub for Intelligent Collaboration
 
 > tldr; The AI-Hub integrates domain-specific intelligence into existing workflows rather than forcing employees to adopt new interfaces.
 
@@ -24,19 +29,19 @@ Instead of forcing employees to switch to special applications or portals for AI
 
 The AI-Hub acts as a central orchestration layer, establishing all necessary connections: between specialized AI assistants and people, between assistants and enterprise data, and between various systems and processes.
 
-## 0.3 The Two Evolution Stages of the AI-Hub: From Assistance to Autonomy
+## The Two Evolution Stages of the AI-Hub: From Assistance to Autonomy
 
 > tldr; The AI-Hub evolves from specialized assistants integrated into workflows to purpose-built agents that participate in redesigned business processes, each focusing on specific expertise domains.
 
 The AI-Hub is designed as an evolutionary platform that can grow with the needs of the organization. This evolution can be divided into two main stages:
 
-## 0.3.1 Stage 1: Reactive AI Assistants – Specialized Support for Specific Needs
+## Stage 1: Reactive AI Assistants – Specialized Support for Specific Needs
 
 > tldr; Purpose-built AI assistants provide domain-specific support across work environments, each focusing on clear areas of expertise while maintaining transparent access to enterprise systems.
 
 In the first stage, the AI-Hub enables seamless integration of specialized AI assistants into daily work activities. Rather than creating generic "do-everything" assistants, the AI-Hub promotes a ecosystem of focused experts, each designed for specific types of tasks or knowledge domains.
 
-![Stage 1](./media/stage1.png)
+![Stage 1](../../../media/stage1.png)
 
 **Domain-Specific Expertise:** Each AI assistant is purpose-built for a specific function:
 - Finance assistants focus exclusively on financial data, analysis, and reporting
@@ -94,13 +99,13 @@ In this realistic scenario:
 
 This interaction pattern demonstrates how specialized AI assistants integrate into existing workflows, providing deep expertise in specific domains without overstepping their boundaries.
 
-### 0.3.2 Stage 2: Autonomous AI Agents – Rethinking Enterprise Processes
+### Stage 2: Autonomous AI Agents – Rethinking Enterprise Processes
 
 > tldr; Stage 2 reimagines business processes as a collaboration between humans, specialized AI agents, and automation tools, with each component handling tasks best suited to its capabilities while maintaining human oversight.
 
 The second evolutionary stage of the AI-Hub goes far beyond reactive assistance. Here, enterprise processes are fundamentally rethought: as a dynamic interplay between humans, purpose-built AI agents, and traditional process automation tools.
 
-![Stage 2](./media/stage2.png)
+![Stage 2](../../../media/stage2.png)
 
 
 **Process Reconceptualization:** The decisive paradigm shift is that we don't simply digitize or automate processes, but fundamentally redesign them:
@@ -143,13 +148,13 @@ A scenario example: The HR application process is redesigned through the AI-Hub:
 
 In this process, each component handles the tasks for which it is best suited: automation tools for simple, rule-based steps; specialized AI agents for domain-specific intelligent analysis; humans for qualitative assessments and final decisions. No single agent attempts to handle the entire process – instead, multiple purpose-built agents collaborate while respecting clear boundaries.
 
-## 0.4 The Architecture of the AI-Hub: Integration, Intelligence, and Transparency
+## The Architecture of the AI-Hub: Integration, Intelligence, and Transparency
 
 > tldr; The AI-Hub architecture consists of five interconnected layers handling communication, intelligence orchestration, data integration, governance, and process design, creating a secure framework for specialized AI components.
 
 To fulfill its function as a central hub, the AI-Hub has a thoughtful architecture with several key components that work together seamlessly:
 
-### 0.4.1 Communication and Interaction Layer
+### Communication and Interaction Layer
 
 > tldr; This layer brings specialized AI capabilities to existing work environments, routing queries to appropriate assistants while capturing essential context.
 
@@ -173,7 +178,7 @@ This layer forms the bridge between people and the AI-Hub:
 
 The communication layer ensures that interaction with specialized assistants is as natural and smooth as possible, without additional learning effort for users.
 
-### 0.4.2 Intelligence and Reasoning Layer
+### Intelligence and Reasoning Layer
 
 > tldr; This layer orchestrates specialized assistants and agents, ensuring each operates within its defined expertise boundaries while enabling secure inter-assistant collaboration.
 
@@ -195,7 +200,7 @@ The heart of the AI-Hub is the intelligence layer, responsible for understanding
 
 The intelligence layer combines the strengths of modern AI with structured workflows to enable both specialized assistance and reliable process automation, all while maintaining clear boundaries of expertise and authority.
 
-### 0.4.3 Data Integration and Knowledge Layer
+### Data Integration and Knowledge Layer
 
 > tldr; This layer provides controlled access to enterprise data sources, ensuring each assistant can access only relevant information while maintaining comprehensive security.
 
@@ -221,7 +226,7 @@ This layer connects the AI-Hub with the collective knowledge and data of the org
 
 Through the knowledge layer, each specialized assistant becomes an expert in its domain without compromising security or enabling inappropriate access to information.
 
-### 0.4.4 Governance and Transparency Layer
+### Governance and Transparency Layer
 
 > tldr; This layer ensures complete accountability through comprehensive logging, visualization of decision paths, and control mechanisms for all assistant and agent activities.
 
@@ -241,7 +246,7 @@ This essential component ensures control, traceability, and trust:
 
 This layer is crucial for the trustworthy adoption of the AI-Hub, as it ensures that every AI component always acts transparently, controllably, and in accordance with company policies.
 
-### 0.4.5 Process Design and Monitoring
+### Process Design and Monitoring
 
 > tldr; This component enables the creation, monitoring, and adaptation of hybrid workflows combining specialized AI capabilities with human expertise.
 
@@ -255,7 +260,7 @@ This component enables the design and monitoring of hybrid human-AI processes:
 
 This component bridges traditional process management and AI-supported automation by providing a holistic view of hybrid workflows while maintaining clear boundaries between different specialized AI components.
 
-## 0.5 Benefits of the AI-Hub: Transformation at Multiple Levels
+## Benefits of the AI-Hub: Transformation at Multiple Levels
 
 > tldr; The AI-Hub delivers targeted benefits across the organization through specialized AI capabilities that complement human expertise rather than attempting to replace it.
 
@@ -279,7 +284,7 @@ The described architecture of the AI-Hub brings significant benefits for organiz
 - **Continuous Optimization:** Learning processes that continuously improve within their expertise boundaries
 - **Sustainable Growth:** Scaling through addition of specialized capabilities without exponential complexity increases
 
-## 0.6 Security and Compliance: Trust as a Fundamental Principle
+## Security and Compliance: Trust as a Fundamental Principle
 
 > tldr; Security and compliance are core design principles, with specialized assistants operating under strict access controls and comprehensive auditing.
 
@@ -291,7 +296,7 @@ The AI-Hub was developed from the ground up with security and compliance as cent
 - **Comprehensive Audit Trail:** Complete documentation of all activities for compliance and traceability
 - **Risk Graduation:** Multi-layered controls depending on the sensitivity of data and processes
 
-## 0.7 Conclusion: The AI-Hub as a Pioneer for the Intelligent Organization
+## Conclusion: The AI-Hub as a Pioneer for the Intelligent Organization
 
 > tldr; The AI-Hub creates a hybrid organization where humans collaborate with specialized AI assistants and agents, each contributing their unique strengths while maintaining clear boundaries.
 

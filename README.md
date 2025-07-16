@@ -1,3 +1,8 @@
+---
+title: "Developer Documentation"
+index: 2
+---
+
 # AI-Hub Developer Guide
 
 ## 1. Introduction

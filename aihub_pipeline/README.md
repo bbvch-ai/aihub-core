@@ -1,4 +1,9 @@
- # AI-Hub Pipeline Developer's Guide
+---
+title: "AI-Hub Pipelines"
+index: 3
+---
+
+# AI-Hub Pipeline Developer's Guide
 
 ## 1. Foundational Knowledge of Pipeline Development
 

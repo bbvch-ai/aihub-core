@@ -1,0 +1,25 @@
+---
+# https://vitepress.dev/reference/default-theme-home-page
+layout: home
+
+hero:
+  name: "Swiss AI-Hub"
+  text: Building the future
+  tagline: Connecting humans, data, and AI. Swiss AI-Hub embeds intelligent assistants directly into your workflows, turning your company's knowledge into its most powerful asset. Made in Switzerland.
+  actions:
+    - theme: brand
+      text: Business Intro
+      link: /docs/why_ai_hub
+    - theme: alt
+      text: Developer Intro
+      link: /aihub
+
+features:
+  - title: Base Tier
+    details: Secure access to LLMs in our beautiful chat interface or directly in Slack, Teams or Mail!
+  - title: Assistant Tier
+    details: Smart assistants that go well beyond simple LLMs, tailored to your needs that know your business!
+  - title: Agentic Process Automation Tier
+    details: Re-Imagine your business processes as a collaboration between agents, humans and programs!
+---
+
