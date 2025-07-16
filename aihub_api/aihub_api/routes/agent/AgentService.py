@@ -24,12 +24,6 @@ from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
-
-from aihub_api.routes.agent.dto.AgentConfigInstanceDTO import (
-    AgentConfigInstanceDTO,
-    CreateAgentConfigInstanceRequest,
-    UpdateAgentConfigInstanceRequest,
-)
 from aihub_api.routes.agent.dto.AgentDTO import AgentClassDTO, AgentDTO, MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
@@ -385,76 +379,3 @@ class AgentService:
         """
         DISCOVER_AGENTS_CACHE.clear()
         GET_AGENT_INSTANCE_CACHE.clear()
-
-    @staticmethod
-    async def get_agent_configs(agent_class: str, t: LocaleHandler) -> list[AgentConfigInstanceDTO]:
-        """
-        Retrieve all configurations for a specific agent class.
-        """
-        configs = AgentConfigEntity.find_for_class(agent_class)
-        return [AgentConfigInstanceDTO.from_entity(config) for config in configs]
-
-    @staticmethod
-    async def get_agent_config(agent_class: str, config_id: str, t: LocaleHandler) -> AgentConfigInstanceDTO:
-        """
-        Retrieve a specific configuration for an agent class.
-        """
-        try:
-            config = AgentConfigEntity.objects(agent_class=agent_class, config_id=config_id).get()
-            return AgentConfigInstanceDTO.from_entity(config)
-        except AgentConfigEntity.DoesNotExist:
-            raise HTTPException(status_code=404, detail=f"Configuration {config_id} for agent {agent_class} not found")
-
-    @staticmethod
-    async def create_agent_config(
-        agent_class: str, request: CreateAgentConfigInstanceRequest, t: LocaleHandler
-    ) -> AgentConfigInstanceDTO:
-        """
-        Create a new configuration for an agent class.
-        """
-        # Check if config_id already exists
-        existing = AgentConfigEntity.objects(agent_class=agent_class, config_id=request.config_id).first()
-        if existing:
-            raise HTTPException(
-                status_code=400, detail=f"Configuration {request.config_id} for agent {agent_class} already exists"
-            )
-
-        # Create new configuration
-        config = AgentConfigEntity(
-            agent_class=agent_class,
-            config_id=request.config_id,
-            config_name=request.config_name,
-            description=request.description,
-            config_data=request.config_data,
-        )
-        config.save()
-
-        return AgentConfigInstanceDTO.from_entity(config)
-
-    @staticmethod
-    async def update_agent_config(
-        agent_class: str, config_id: str, request: UpdateAgentConfigInstanceRequest, t: LocaleHandler
-    ) -> AgentConfigInstanceDTO:
-        """
-        Update an existing configuration for an agent class.
-        """
-        try:
-            config = AgentConfigEntity.objects(agent_class=agent_class, config_id=config_id).get()
-            config.config_name = request.config_name
-            config.description = request.description
-            config.config_data = request.config_data
-            config.save()
-            return AgentConfigInstanceDTO.from_entity(config)
-        except AgentConfigEntity.DoesNotExist:
-            raise HTTPException(status_code=404, detail=f"Configuration {config_id} for agent {agent_class} not found")
-
-    @staticmethod
-    async def delete_agent_config(agent_class: str, config_id: str, t: LocaleHandler) -> None:
-        """
-        Delete a configuration for an agent class.
-        """
-        try:
-            config = AgentConfigEntity.objects(agent_class=agent_class, config_id=config_id).get()
-            config.delete()
-        except AgentConfigEntity.DoesNotExist:
-            raise HTTPException(status_code=404, detail=f"Configuration {config_id} for agent {agent_class} not found")

@@ -53,7 +53,6 @@ class ModelCreationService:
     @staticmethod
     def create_agent_config_model(agent_config_specs: AgentConfigSpecs) -> type[BaseModel]:
         schema = copy.deepcopy(agent_config_specs.agent_config_schema)
-        schema["title"] = agent_config_specs.agent_config_name
         return SchemaConverter.build(schema)
 
     @staticmethod

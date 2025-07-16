@@ -96,10 +96,6 @@ class AgentConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     @classmethod
-    def config_name_from_class(cls) -> str:
-        return cls.__name__
-
-    @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
         config = cls(
             agent_class=entity.agent_class,
@@ -111,7 +107,6 @@ class AgentConfig(BaseModel):
             voice=entity.voice,
             system_prompt=entity.system_prompt.to_locale_string(),
         )
-        config._unknown_config_name = entity.config_class
         config._unknown_data = entity.config_data
         return config
 
