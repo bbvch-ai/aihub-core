@@ -26,7 +26,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     VERSION,
 )
 
-_headers_in_order = [H1, H2, H3, H4, H5, H6]
+_ordered_headers = [H1, H2, H3, H4, H5, H6]
 
 
 def sanitize_metadata_value(value: str) -> str:
@@ -72,7 +72,7 @@ def combine_nodes_in_order(
         doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n"
 
         context_blocks.append(TextBlock(text=doc_header))
-        last_headings = [None] * len(_headers_in_order)
+        last_headings = [None] * len(_ordered_headers)
         sorted_nodes = sorted(nodes, key=lambda x: (x.section_start_line or 0, x.type == NODE_TYPE_CONTENT))
 
         for n in sorted_nodes:
@@ -80,7 +80,11 @@ def combine_nodes_in_order(
             for i, heading in enumerate(current_headings):
                 if heading and heading != last_headings[i]:
                     context_blocks.append(
-                        TextBlock(text=(f"<{_headers_in_order[i]}>{html.escape(heading)}</{_headers_in_order[i]}>\n"))
+                        TextBlock(
+                            text=(
+                                f"<{_ordered_headers[i]}>{html.escape(heading, quote=False)}</{_ordered_headers[i]}>\n"
+                            )
+                        )
                     )
                     last_headings[i] = heading
                     for j in range(i + 1, len(last_headings)):
@@ -97,7 +101,7 @@ def combine_nodes_in_order(
                 context_blocks.append(ImageBlock(url=image_url))
             else:
                 tag = n.type if n.type else NODE_TYPE_CONTENT
-                context_blocks.append(TextBlock(text=(f"<{tag}>{html.escape(content)}</{tag}>\n")))
+                context_blocks.append(TextBlock(text=(f"<{tag}>{html.escape(content, quote=False)}</{tag}>\n")))
 
         context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n\n---\n"))
 

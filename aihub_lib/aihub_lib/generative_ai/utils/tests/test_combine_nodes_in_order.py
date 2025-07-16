@@ -115,7 +115,6 @@ def _(datatable):
             for index, column in enumerate(headers)
             if row[index] and column in metadata_fields
         }
-        print(metadata)
 
         text = row[headers.index("text")]
         score = None
@@ -156,5 +155,4 @@ def _(the_result, docstring):
     assert isinstance(the_result, ChatMessage)
     expected = "\n".join(line.rstrip() for line in docstring.strip().splitlines())
     actual = "\n".join(line.rstrip() for line in the_result.blocks[0].text.strip().splitlines())
-    print(actual)
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"

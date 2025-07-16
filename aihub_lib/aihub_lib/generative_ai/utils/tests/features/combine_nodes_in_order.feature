@@ -177,3 +177,94 @@ Feature: Combine nodes in order
 
       ---
       """
+
+  @slow
+  Scenario: Handles special characters, whitespace, and empty content
+    Given a locale handler
+    And no context prompt
+    And the following context nodes:
+      | document_id | source | namespace | document_title | type    | h1                            | h2 | created_at | updated_at | inserted_at | section_start_line | text                          |
+      | doc3        | doc3   | edge_case | Special Chars  | content | <HTML> & 'Tags'               |    | 1709292000 | 1709292000 | 1709292000  | 1                  | This content has an & ampersand. |
+      | doc3        | doc3   | edge_case | Special Chars  | content |    Whitespace Heading         |    | 1709292000 | 1709292000 | 1709292000  | 5                  | Some more text.               |
+      | doc3        | doc3   | edge_case | Special Chars  | content |    Whitespace Heading         |    | 1709292000 | 1709292000 | 1709292000  | 10                 |                               |
+    When the combine_nodes_in_order function is called
+    Then it should return:
+      """
+      You are provided with additional context information in the form of structured documents. Each document follows a
+      consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
+      essential details that should be utilized to accurately understand and respond to the user’s query.
+
+      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      within these documents provides crucial insights relevant to the given context.
+
+      Below are the relevant documents:
+
+      <context_documents>
+      <REFERENCE_DOCUMENT source='doc3' document_title='Special Chars' language='de' version='1' created_at='2024-03-01T11:20:00Z' updated_at='2024-03-01T11:20:00Z' inserted_at='2024-03-01T11:20:00Z'>
+
+      <h1>&lt;HTML&gt; &amp; 'Tags'</h1>
+
+      <content>This content has an &amp; ampersand.</content>
+
+      <h1>Whitespace Heading</h1>
+
+      <content>Some more text.</content>
+
+      <content></content>
+
+      </REFERENCE_DOCUMENT>
+
+      ---
+
+      </context_documents>
+
+      Instruction: Using the information from the provided documents, generate a detailed and well-structured response
+      to the user’s question.
+      """
+
+  @slow
+  Scenario: Handles skipped heading levels and missing node position
+    Given a locale handler
+    And no context prompt
+    And the following context nodes:
+      | document_id | source | namespace | document_title | type    | h1          | h2 | h3          | created_at | updated_at | inserted_at | section_start_line | text                |
+      | doc4        | doc4   | edge_case | Skipped Levels | summary |             |    |             | 1709292100 | 1709292100 | 1709292100  |                    | Summary with no position. |
+      | doc4        | doc4   | edge_case | Skipped Levels | content |             |    |             | 1709292100 | 1709292100 | 1709292100  |                    | Content with no position. |
+      | doc4        | doc4   | edge_case | Skipped Levels | content | Section 1   |    |             | 1709292100 | 1709292100 | 1709292100  | 10                 | Content for S1.     |
+      | doc4        | doc4   | edge_case | Skipped Levels | content | Section 1   |    | Sub-sub 1.1 | 1709292100 | 1709292100 | 1709292100  | 20                 | Content for S1.1.1. |
+    When the combine_nodes_in_order function is called
+    Then it should return:
+      """
+      You are provided with additional context information in the form of structured documents. Each document follows a
+      consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
+      essential details that should be utilized to accurately understand and respond to the user’s query.
+
+      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      within these documents provides crucial insights relevant to the given context.
+
+      Below are the relevant documents:
+
+      <context_documents>
+      <REFERENCE_DOCUMENT source='doc4' document_title='Skipped Levels' language='de' version='1' created_at='2024-03-01T11:21:40Z' updated_at='2024-03-01T11:21:40Z' inserted_at='2024-03-01T11:21:40Z'>
+
+      <summary>Summary with no position.</summary>
+
+      <content>Content with no position.</content>
+
+      <h1>Section 1</h1>
+
+      <content>Content for S1.</content>
+
+      <h3>Sub-sub 1.1</h3>
+
+      <content>Content for S1.1.1.</content>
+
+      </REFERENCE_DOCUMENT>
+
+      ---
+
+      </context_documents>
+
+      Instruction: Using the information from the provided documents, generate a detailed and well-structured response
+      to the user’s question.
+      """
