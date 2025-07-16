@@ -1,6 +1,5 @@
 import html
 from collections import defaultdict
-from datetime import UTC, datetime
 
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
@@ -21,12 +20,13 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NODE_CONTENT_TYPE_FIGURE,
+    NODE_TYPE_CONTENT,
     SOURCE,
     UPDATED_AT,
     VERSION,
 )
 
-_headers_in_order = [H6, H5, H4, H3, H2, H1]
+_headers_in_order = [H1, H2, H3, H4, H5, H6]
 
 
 def sanitize_metadata_value(value: str) -> str:
@@ -35,16 +35,6 @@ def sanitize_metadata_value(value: str) -> str:
     sanitized_value = value.replace("'", "").strip()
     sanitized_value = html.escape(sanitized_value)
     return sanitized_value
-
-
-def format_unix_timestamp(timestamp: int | None) -> str | None:
-    if timestamp is None or timestamp <= 0:
-        return None
-    try:
-        dt = datetime.fromtimestamp(timestamp, tz=UTC)
-        return dt.strftime("%d.%m.%Y")
-    except (ValueError, OverflowError):
-        return None
 
 
 def combine_nodes_in_order(
@@ -60,6 +50,9 @@ def combine_nodes_in_order(
 
     context_blocks: list[ImageBlock | TextBlock] = []
     for key, nodes in nodes_per_document.items():
+        if not nodes:
+            continue
+
         node: IngestedNode = nodes[0]
 
         metadata_fields = {
@@ -76,12 +69,25 @@ def combine_nodes_in_order(
 
         metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
 
-        doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n\n"
+        doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n"
 
         context_blocks.append(TextBlock(text=doc_header))
-        sorted_nodes = sorted(nodes, key=lambda x: x.section_start_line or 1)
+        last_headings = [None] * len(_headers_in_order)
+        sorted_nodes = sorted(nodes, key=lambda x: (x.section_start_line or 0, x.type == NODE_TYPE_CONTENT))
 
         for n in sorted_nodes:
+            current_headings = [n.h1, n.h2, n.h3, n.h4, n.h5, n.h6]
+            for i, heading in enumerate(current_headings):
+                if heading and heading != last_headings[i]:
+                    context_blocks.append(
+                        TextBlock(text=(f"<{_headers_in_order[i]}>{html.escape(heading)}</{_headers_in_order[i]}>\n"))
+                    )
+                    last_headings[i] = heading
+                    for j in range(i + 1, len(last_headings)):
+                        last_headings[j] = None
+                elif not heading:
+                    last_headings[i] = None
+
             content = n.content
 
             if n.content_type == NODE_CONTENT_TYPE_FIGURE:
@@ -90,7 +96,8 @@ def combine_nodes_in_order(
                 image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
                 context_blocks.append(ImageBlock(url=image_url))
             else:
-                context_blocks.append(TextBlock(text=(f"{content}\n\n")))
+                tag = n.type if n.type else NODE_TYPE_CONTENT
+                context_blocks.append(TextBlock(text=(f"<{tag}>{html.escape(content)}</{tag}>\n")))
 
         context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n\n---\n"))
 

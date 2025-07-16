@@ -11,6 +11,12 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
     DOCUMENT_TITLE,
+    H1,
+    H2,
+    H3,
+    H4,
+    H5,
+    H6,
     HEADING_LEVEL,
     INSERTED_AT,
     LANGUAGE,
@@ -45,14 +51,15 @@ def no_context_prompt():
 @pytest.fixture
 def custom_prompt():
     return LocaleString(
-        en="Custom prompt: {% for block in context_blocks %}"
-        "{% if block.block_type == 'text' %}"
-        "{{ block.text }}"
-        "{% endif %}"
-        "{% if block.block_type == 'image' %}"
-        "{{ block.path | image}}"
-        "{% endif %}"
-        "{% endfor %}"
+        en="""Custom prompt: {% for block in context_blocks %}
+{% if block.block_type == 'text' %}
+{{ block.text }}
+{% endif %}
+{% if block.block_type == 'image' %}
+{{ block.url.__str__() | image}}
+{% endif %}
+{% endfor %}
+        """
     )
 
 
@@ -89,6 +96,12 @@ def _(datatable):
         SECTION_START_LINE,
         SECTION_END_LINE,
         HEADING_LEVEL,
+        H1,
+        H2,
+        H3,
+        H4,
+        H5,
+        H6,
     ]
 
     for row in datatable[1:]:
@@ -105,7 +118,11 @@ def _(datatable):
         print(metadata)
 
         text = row[headers.index("text")]
-        score = float(row[headers.index("score")])
+        score = None
+        if "score" in headers:
+            score_index = headers.index("score")
+            if len(row) > score_index and row[score_index]:
+                score = float(row[score_index])
         id_ = f"{metadata.get(SOURCE, 'missing')}-{metadata.get(SECTION_START_LINE, 0)}"
         context_nodes.append(
             IngestedNode.from_llama_index_node_with_score(
@@ -139,5 +156,5 @@ def _(the_result, docstring):
     assert isinstance(the_result, ChatMessage)
     expected = "\n".join(line.rstrip() for line in docstring.strip().splitlines())
     actual = "\n".join(line.rstrip() for line in the_result.blocks[0].text.strip().splitlines())
-
+    print(actual)
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"
