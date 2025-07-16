@@ -20,6 +20,7 @@ async def main():
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
+            agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a configured agent"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -31,7 +32,9 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                agent_config=runner.agent_config,
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=fake_user(),
             ),
         )
 

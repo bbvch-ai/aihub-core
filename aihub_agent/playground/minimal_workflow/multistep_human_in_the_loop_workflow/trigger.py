@@ -26,6 +26,7 @@ async def main():
         agent_type=MultistepHumanInTheLoopAgent,
         agent_config=MultistepHumanInTheLoopAgentConfig(
             agent_id="multistep_human_in_the_loop_agent",
+            agent_class=MultistepHumanInTheLoopAgent.__name__,
             name=LocaleString(en="Multistep Human in the Loop Agent"),
             description=LocaleString(en="This is an agent with the Human in the Loop over multiple steps"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -33,7 +34,14 @@ async def main():
     )
 
     async with runner.test_run() as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=UserMessageEvent(messages=[], user=fake_user()))
+        await runner.send_event_from_topic(
+            topic=topic,
+            start_event=UserMessageEvent(
+                agent_config=runner.agent_config,
+                messages=[],
+                user=fake_user(),
+            ),
+        )
         await sleep(1)
 
         first_request_event = FirstStepHumanInTheLoop.request(question="Shall I continue?", topic=PartialAgentTopic())

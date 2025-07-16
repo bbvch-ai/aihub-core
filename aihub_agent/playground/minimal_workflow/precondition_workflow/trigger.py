@@ -16,6 +16,7 @@ async def main():
         agent_type=PreconditionAgent,
         agent_config=PreconditionAgentConfig(
             agent_id="precondition_agent",
+            agent_class=PreconditionAgent.__name__,
             name=LocaleString(en="Agent with preconditions"),
             description=LocaleString(en="This is an agent that has preconditions"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -23,7 +24,7 @@ async def main():
         ),
     )
     async with runner.test_run(delay_before_stop=5) as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=StartEvent())
+        await runner.send_event_from_topic(topic=topic, start_event=StartEvent(agent_config=runner.agent_config))
 
 
 if __name__ == "__main__":

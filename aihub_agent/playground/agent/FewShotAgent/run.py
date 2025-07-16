@@ -18,9 +18,9 @@ enable_logging()
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=FewShotAgent,
         agent_config=FewShotAgentConfig(
             agent_id="rag_agent",
+            agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
             system_prompt=LocaleString(

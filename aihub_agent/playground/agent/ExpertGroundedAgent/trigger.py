@@ -22,6 +22,7 @@ async def main():
         agent_type=ExpertGroundedAgent,
         agent_config=ExpertGroundedAgentConfig(
             agent_id="grounded_agent",
+            agent_class=ExpertGroundedAgent.__name__,
             name=LocaleString(en="Grounded Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -40,6 +41,7 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
+                agent_config=runner.agent_config,
                 messages=[
                     ChatMessage(
                         content="Philipp Kronenberg started working at bbv 10 years ago "

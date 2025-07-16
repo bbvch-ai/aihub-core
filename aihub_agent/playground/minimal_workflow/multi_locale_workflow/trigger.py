@@ -23,6 +23,7 @@ async def main():
         agent_type=MultiLocaleAgent,
         agent_config=MultiLocaleAgentConfig(
             agent_id="multi_locale_agent",
+            agent_class=MultiLocaleAgent.__name__,
             name=LocaleString(en="Multi Locale Agent"),
             description=LocaleString(en="This is an agent that knows multiple languages"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -34,7 +35,10 @@ async def main():
     async with runner.test_run(delay_before_stop=1) as topic:
         await runner.send_event_from_topic(
             start_event=UserMessageEvent(
-                locale="en", messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                agent_config=runner.agent_config,
+                locale="en",
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=fake_user(),
             ),
             topic=topic,
         )

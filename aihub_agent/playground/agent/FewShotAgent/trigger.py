@@ -19,9 +19,9 @@ enable_logging()
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=FewShotAgent,
         agent_config=FewShotAgentConfig(
             agent_id="few_shot_agent",
+            agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent can transfer movie titles into emojis"),
             system_prompt=LocaleString(
@@ -61,6 +61,7 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=StartEvent(
+                agent_config=runner.agent_config,
                 locale="en",
                 messages=[
                     ChatMessage(

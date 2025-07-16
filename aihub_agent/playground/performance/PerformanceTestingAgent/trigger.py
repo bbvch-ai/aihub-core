@@ -16,6 +16,7 @@ async def main():
         agent_type=PerformanceTestingAgent,
         agent_config=PerformanceTestingAgentConfig(
             agent_id="performance_testing_agent",
+            agent_class=PerformanceTestingAgent.__name__,
             name=LocaleString(en="Performance Testing Agent"),
             description=LocaleString(en=""),
             system_prompt=LocaleString(en=""),
@@ -27,7 +28,7 @@ async def main():
     async with runner.test_run(delay_before_stop=1) as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(),
+            start_event=StartEvent(agent_config=runner.agent_config),
         )
 
 

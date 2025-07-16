@@ -19,6 +19,7 @@ async def main():
         agent_type=ExpertAskingAgent,
         agent_config=ExpertAskingAgentConfig(
             agent_id="expert_agent",
+            agent_class=ExpertAskingAgent.__name__,
             name=LocaleString(en="Expert Asking Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             system_prompt=LocaleString(en="You are an agent"),

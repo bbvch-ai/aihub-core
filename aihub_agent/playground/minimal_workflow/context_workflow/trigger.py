@@ -19,6 +19,7 @@ async def main():
         agent_type=ContextAgent,
         agent_config=ContextAgentConfig(
             agent_id="context_agent",
+            agent_class=ContextAgent.__name__,
             name=LocaleString(en="Context Agent"),
             description=LocaleString(en="This is an agent that accesses the run and thread context"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -28,7 +29,10 @@ async def main():
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=CustomStartEvent(payload="This is some payload"),
+            start_event=CustomStartEvent(
+                agent_config=runner.agent_config,
+                payload="This is some payload",
+            ),
         )
 
 

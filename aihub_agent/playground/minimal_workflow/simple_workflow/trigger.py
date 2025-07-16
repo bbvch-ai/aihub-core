@@ -20,6 +20,7 @@ async def main():
         agent_type=SimpleAgent,
         agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
+            agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -30,7 +31,9 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                agent_config=runner.agent_config,
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=fake_user(),
             ),
         )
 

@@ -18,6 +18,7 @@ async def main():
         agent_type=OptionalAgent,
         agent_config=OptionalAgentConfig(
             agent_id="optional_agent",
+            agent_class=OptionalAgent.__name__,
             name=LocaleString(en="Optional Agent"),
             description=LocaleString(en="This is an agent with optional input"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -25,7 +26,7 @@ async def main():
     )
 
     async with runner.test_run() as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=StartEvent())
+        await runner.send_event_from_topic(topic=topic, start_event=StartEvent(agent_config=runner.agent_config))
 
 
 if __name__ == "__main__":

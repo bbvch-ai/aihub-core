@@ -20,6 +20,7 @@ async def main():
         agent_type=ConditionalAgent,
         agent_config=ConditionalAgentConfig(
             agent_id="conditional_agent",
+            agent_class=ConditionalAgent.__name__,
             name=LocaleString(en="Conditional Agent"),
             description=LocaleString(en="This is an agent with conditions"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -28,7 +29,7 @@ async def main():
     async with runner.test_run() as topic:
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=StartEvent(),
+            start_event=StartEvent(agent_config=runner.agent_config),
         )
 
 
