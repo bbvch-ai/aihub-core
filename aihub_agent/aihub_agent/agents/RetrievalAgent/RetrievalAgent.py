@@ -42,7 +42,7 @@ class RetrievalAgent(Agent):
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
 
-        vector_store = retrieve_step_config.vector_store.to_vector_store()
+        vector_store = retrieve_step_config.vector_store.to_llama_index()
 
         nodes = retrieve_nodes(
             message=event.question,

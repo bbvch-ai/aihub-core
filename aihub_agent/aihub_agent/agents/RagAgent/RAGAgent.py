@@ -145,7 +145,7 @@ class RAGAgent(Agent):
         else:
             query = event.new_query
 
-        vector_store = retrieve_step_config.vector_store.to_vector_store()
+        vector_store = retrieve_step_config.vector_store.to_llama_index()
 
         nodes = retrieve_nodes(
             message=query,

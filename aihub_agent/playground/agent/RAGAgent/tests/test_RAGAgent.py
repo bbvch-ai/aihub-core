@@ -170,7 +170,7 @@ def self_hosted_agent_config(event_loop):
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
-        embedding_vector_dimension=768,
+        dimensions=768,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 

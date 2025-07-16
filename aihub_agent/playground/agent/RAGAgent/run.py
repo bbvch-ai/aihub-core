@@ -7,7 +7,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
     AzureOpenAIEmbeddingConfig,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -50,10 +50,10 @@ async def main():
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content"],
-                vector_store=create_milvus_vector_store(
+                vector_store=MilvusVectorStoreConfig(
                     uri="http://localhost:19530",
                     collection_name="test",
-                    embedding_vector_dimension=3072,
+                    dimensions=3072,
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(num_nodes=10, mode=ModeOptions.BOTH),
             ),

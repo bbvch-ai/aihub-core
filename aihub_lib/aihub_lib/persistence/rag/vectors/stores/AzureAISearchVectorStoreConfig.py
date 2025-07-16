@@ -1,12 +1,13 @@
 from typing import Annotated
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from aihub_lib.persistence.rag.vectors.stores import AzureAISearchVectorStoreFactory
+from aihub_lib.persistence.rag.vectors.stores.BasePydanticVectorStoreConfig import BasePydanticVectorStoreConfig
 
 
-class AzureAISearchVectorStoreConfig(BaseModel):
+class AzureAISearchVectorStoreConfig(BasePydanticVectorStoreConfig):
     vector_store_name: Annotated[str, Field(description="Azure AI Search vector store name")]
     metadata_fields: Annotated[
         list[str] | None, Field(description="List of metadata fields to be indexed in the vector store")
@@ -15,9 +16,8 @@ class AzureAISearchVectorStoreConfig(BaseModel):
     semantic_configuration_name: Annotated[
         str, Field(description="Name of the semantic configuration for the vector store")
     ] = "mySemanticConfig"
-    dimensions: Annotated[int, Field(description="Dimensions of the embeddings in the vector store")] = 3072
 
-    def to_vector_store(self) -> BasePydanticVectorStore:
+    def to_llama_index(self) -> BasePydanticVectorStore:
         return AzureAISearchVectorStoreFactory.create_azure_ai_search_vector_store(
             vector_store_name=self.vector_store_name,
             metadata_fields=self.metadata_fields,
