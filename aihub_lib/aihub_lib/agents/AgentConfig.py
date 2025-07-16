@@ -90,23 +90,14 @@ class AgentConfig(BaseModel):
         ),
     ]
 
-    # Private attributes to handle unknown config types
-    _unknown_config_name: str | None = PrivateAttr(None)
+    # Private attribute to handle config subclasses
     _unknown_data: dict[str, Any] | None = PrivateAttr(None)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
-    def __str__(self):
-        return f"{self.config_name}({super().__str__()})"
-
     @classmethod
     def config_name_from_class(cls) -> str:
         return cls.__name__
-
-    def parent_config(self, parent_type: type["AgentConfig"]) -> "AgentConfig":
-        if parent_type.config_name_from_class() != self._config_name:
-            raise ValueError(f"Cannot retrieve parent config of type {parent_type.__name__} from {self._config_name}")
-        return parent_type(**self.model_dump())
 
     @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
@@ -135,15 +126,6 @@ class AgentConfig(BaseModel):
                 step_configs[type(field_value)] = field_value
         return step_configs
 
-    @computed_field
-    @property
-    def _config_name(self) -> str:
-        return self._unknown_config_name or self.__class__.__name__
-
-    @property
-    def config_name(self) -> str:
-        return self._config_name
-
     @override
     def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """
@@ -166,46 +148,3 @@ class AgentConfig(BaseModel):
         merges the original data with the known fields so nothing is lost.
         """
         return json.dumps(self.model_dump(**kwargs), default=str)
-
-    @classmethod
-    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
-        """
-        Called when a new subclass is defined, registering it in the _event_registry.
-        This makes dynamic deserialization possible.
-        """
-        super().__pydantic_init_subclass__(**kwargs)
-        logger.debug(f"Registering Config {cls.__name__}")
-        if cls.__name__ in AgentConfig._config_registry:
-            raise ValueError(f"Duplication detected for Config {cls.__name__}")
-        AgentConfig._config_registry[cls.__name__] = cls
-
-    @classmethod
-    def deserialize_config(cls, data: bytes | str | dict[str, Any]) -> "AgentConfig":
-        """
-        Given raw config data, deserializes it into the specific AgentConfig type.
-        """
-        if isinstance(data, dict):
-            json_data = data.copy()
-        elif isinstance(data, str):
-            json_data = json.loads(data)
-        elif isinstance(data, bytes):
-            json_data = json.loads(data.decode())
-        else:
-            raise ValueError(f"Cannot deserialize data of type {type(data)}")
-
-        config_name = json_data.get("_config_name")
-
-        if config_name and isinstance(config_name, str):
-            config_class = cls._config_registry.get(config_name)
-            if config_class:
-                logger.debug(f"Deserializing {config_name} config")
-                return config_class(**json_data)
-
-        # If we get here, either:
-        # 1. The event type wasn't in our registry, or
-        # 2. The event type was null/invalid
-        logger.debug(f"Unknown config type: {config_name}")
-        event = cls(**json_data)
-        event._unknown_config_name = config_name
-        event._unknown_data = json_data
-        return event

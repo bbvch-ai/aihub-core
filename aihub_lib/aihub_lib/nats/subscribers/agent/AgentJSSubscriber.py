@@ -3,6 +3,7 @@ from collections.abc import Awaitable, Callable
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent, ControlEvent
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
@@ -43,6 +44,7 @@ class AgentJSSubscriber(JSSubscriber):
         handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        agent_config_type: type[AgentConfig] = AgentConfig,
     ):
         """Subscribe to all control events for a specific agent class."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_class()
@@ -57,6 +59,7 @@ class AgentJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
+            agent_config_type=agent_config_type,
         )
 
     @classmethod

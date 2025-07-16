@@ -89,14 +89,14 @@ class AgentDispatcher(BaseDispatcher):
         thread_context = ThreadContext(self.redis, topic.thread_id)
 
         if event.is_start_event:
-            await run_context.set("_agent_config", event.agent_config.model_dump_json())
+            await run_context.set("_agent_config", event.agent_config.model_dump())
 
         # Get dynamic configuration data from run context
-        agent_config_dict: dict[str, Any] = await run_context.get("_agent_config", None)
+        agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
         if agent_config_dict is None:
             raise ValueError("AgentConfig must be set at this point. Something went wrong in the StartEvent handling.")
 
-        agent_config: AgentConfig = AgentConfig.deserialize_config(agent_config_dict)
+        agent_config: AgentConfig = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentTopic.from_partial_topic(
             partial_topic=topic,
             agent_id=agent_config.agent_id,
@@ -362,9 +362,7 @@ class AgentDispatcher(BaseDispatcher):
                         f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
                         f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
                     )
-                # Create a new instance of the specific AgentConfig class with dynamic data
-                dynamic_config = agent_config.parent_config(param.annotation)
-                events_and_kwargs.kwargs[param.name] = dynamic_config
+                events_and_kwargs.kwargs[param.name] = agent_config
                 logger.debug(
                     f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
                 )

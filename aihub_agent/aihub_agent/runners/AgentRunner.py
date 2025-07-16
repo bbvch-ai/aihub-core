@@ -145,6 +145,7 @@ class AgentRunner:
             handler=self.dispatcher.handle_event,
             js=self.js,
             queue_group=f"agent_runner_{self.agent_class}",
+            agent_config_type=self.agent_config_type,
         )
         await self.control_event_subscriber.start()
 

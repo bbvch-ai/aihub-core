@@ -231,7 +231,9 @@ class BaseEvent(BaseModel):
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict[str, Any]) -> "BaseEvent":
+    def deserialize_event(
+        cls, data: bytes | str | dict[str, Any], agent_config_type: type[AgentConfig] = AgentConfig
+    ) -> "BaseEvent":
         """
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.
@@ -256,7 +258,7 @@ class BaseEvent(BaseModel):
                     for item in value
                 ]
             elif isinstance(value, dict) and "_config_name" in value:
-                json_data[key] = AgentConfig.deserialize_config(value)
+                json_data[key] = agent_config_type.model_validate(value)
 
         # Get event type and parent classes
         event_name: str = json_data.get("_event_name")
