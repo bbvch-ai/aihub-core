@@ -19,6 +19,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
 )
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 
 DEFAULT_DOCUMENTS: list[Document] = [
     Document(
@@ -65,11 +66,13 @@ DEFAULT_DOCUMENTS: list[Document] = [
 
 def fill_collection(
     embed_model: SelfHostedEmbeddingConfig,
-    vector_store: MilvusVectorStore,
+    vector_store: MilvusVectorStoreConfig,
     doc_store: MongoDocumentStore,
     nodes: list[TextNode] | None = None,
 ):
     embeddings, _ = embed_model.to_llama_index(model_parameter=None)
+
+    vector_store = vector_store.to_vector_store()
 
     pipeline: IngestionPipeline = IngestionPipeline(
         transformations=[embeddings],

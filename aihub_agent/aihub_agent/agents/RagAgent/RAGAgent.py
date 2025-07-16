@@ -145,6 +145,8 @@ class RAGAgent(Agent):
         else:
             query = event.new_query
 
+        vector_store = retrieve_step_config.vector_store.to_vector_store()
+
         nodes = retrieve_nodes(
             message=query,
             retrieve_k=retrieve_step_config.retrieve_k,
@@ -152,18 +154,18 @@ class RAGAgent(Agent):
             index_namespaces=retrieve_step_config.index_namespaces,
             query_mode=retrieve_step_config.query_mode,
             node_types=retrieve_step_config.node_types,
-            vector_store=retrieve_step_config.vector_store,
+            vector_store=vector_store,
         )
         if retrieve_step_config.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(
-                vector_store=retrieve_step_config.vector_store,
+                vector_store=vector_store,
                 nodes=nodes,
                 num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
             )
         if retrieve_step_config.retrieve_summaries:
             nodes = retrieve_parent_summary_nodes(
-                vector_store=retrieve_step_config.vector_store,
+                vector_store=vector_store,
                 nodes=nodes,
                 max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
             )

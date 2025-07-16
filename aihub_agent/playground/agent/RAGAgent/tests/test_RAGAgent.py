@@ -27,7 +27,9 @@ from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryE
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
+from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
@@ -123,7 +125,7 @@ def azure_agent_config():
         embedding_tokens_costs_per_thousand=0.0,
         default_parameter=AzureOpenAIEmbeddingParameter(),
     )
-    vector_store: AzureAISearchVectorStore = create_azure_ai_search_vector_store(
+    vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
         semantic_configuration_name="mySemanticConfig",
@@ -169,7 +171,7 @@ def self_hosted_agent_config(event_loop):
             truncate_text=False,
         ),
     )
-    vector_store: MilvusVectorStore = create_milvus_vector_store(
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
         embedding_vector_dimension=768,
