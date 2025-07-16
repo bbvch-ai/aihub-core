@@ -66,11 +66,11 @@ Now, we turn our attention to each major component of the AI-Hub, exploring thei
 **Flexibility and Control:**
 - The event-driven design and strict definition of allowed steps ensure that agents remain transparent and controllable. As trust grows, constraints can be relaxed, enabling more autonomous decision-making over time.
 
-### Pipelines (Dexter)
+### Pipelines (Dagster)
 
 **Data Ingestion and Preparation:**
 - Before an agent can reason intelligently about a domain, the underlying data—documents, regulations, training materials—must be accessible in a structured, searchable form.
-- Pipelines, often built using tools like [Dexter (Dagster)](https://dagster.io/) (a data orchestration framework), handle these ingestion and transformation tasks. They periodically fetch data from sources (like an Azure Data Lake or a company’s document repository), parse it, convert it into embeddings, and store it in vector databases.
+- Pipelines, often built using tools like [Dagster (Dagster)](https://dagster.io/) (a data orchestration framework), handle these ingestion and transformation tasks. They periodically fetch data from sources (like an Azure Data Lake or a company’s document repository), parse it, convert it into embeddings, and store it in vector databases.
 
 **Key Functions of Pipelines:**
 1. **Document Processing:**  

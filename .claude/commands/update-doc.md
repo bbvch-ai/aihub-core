@@ -1,0 +1,2 @@
+In this project, we follow a "README.md"-first documentation strategy. This means that we have README.md files at different levels:
+- `/README.md`: Contains documentation that holds true for the whole 
