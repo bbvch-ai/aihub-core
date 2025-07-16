@@ -55,20 +55,36 @@ class BearerToken(Document):
         return token_obj
 
     @classmethod
-    def create_new_token(cls, name: str, expiry_date: datetime, user_oid: str) -> "BearerToken":
+    def create_new_token(
+        cls, name: str, expiry_date: datetime, user_oid: str, custom_token: str = None
+    ) -> "BearerToken":
         """
         Creates a new API token. The token is generated using the document's ID
-        and a secure, random string.
+        and a secure, random string, or uses the provided custom token.
         """
-        # Generate a secure random part for the token
-        random_part = secrets.token_urlsafe(128)[:128]
-        token_obj = cls(
-            name=name,
-            expiry_date=expiry_date,
-            user_oid=user_oid,
-        )
-        token_obj.save()
-        token_value = f"{str(token_obj.id)}.{random_part}"
-        token_obj.token = token_value
-        token_obj.save()
-        return token_obj
+        if custom_token:
+            # Validate the custom token format
+            match = cls.TOKEN_REGEX.match(custom_token)
+            if not match:
+                raise ValueError("Invalid custom token format")
+
+            # Extract the object ID from the custom token
+            oid = match.group("oid")
+
+            # Create the token object with the specified ID
+            token_obj = cls(id=ObjectId(oid), name=name, expiry_date=expiry_date, user_oid=user_oid, token=custom_token)
+            token_obj.save()
+            return token_obj
+        else:
+            # Generate a secure random part for the token
+            random_part = secrets.token_urlsafe(128)[:128]
+            token_obj = cls(
+                name=name,
+                expiry_date=expiry_date,
+                user_oid=user_oid,
+            )
+            token_obj.save()
+            token_value = f"{str(token_obj.id)}.{random_part}"
+            token_obj.token = token_value
+            token_obj.save()
+            return token_obj

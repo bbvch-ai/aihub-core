@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 from datetime import UTC, datetime, timedelta
 
@@ -56,6 +57,11 @@ def get_azure_cli_user_info():
         return None, None, None
 
 
+# Parse command line arguments
+parser = argparse.ArgumentParser(description="Generate API token")
+parser.add_argument("--token", type=str, help="Custom token string to use instead of generating a new one")
+args = parser.parse_args()
+
 cli_user_oid, cli_user_name, cli_user_preferred_username = get_azure_cli_user_info()
 
 if not all([cli_user_oid, cli_user_name, cli_user_preferred_username]):
@@ -84,7 +90,7 @@ UserEntity.ensure_user_exists(
     roles=user.roles,
 )
 
-token = TokenService.create_token(token_name, expiry, user)
+token = TokenService.create_token(token_name, expiry, user, args.token)
 
 if RoleEntity.get_role_by_name(roles[0]) is None:
     role = RoleEntity(
