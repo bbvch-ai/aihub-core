@@ -36,7 +36,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
-from aihub_lib.testing.ConfigSaver import ConfigSaver
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -115,8 +114,6 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             description=LocaleString(de="Test Agent Description"),
             system_prompt=LocaleString(de="Test Agent System Prompt"),
         )
-
-        ConfigSaver().save_config(self.agent_config)
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
