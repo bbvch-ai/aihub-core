@@ -8,9 +8,14 @@ from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.Fir
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
     SecondStepHumanInTheLoop,
 )
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgentConfig import (
+    MultistepHumanInTheLoopAgentConfig,
+)
 
 
 class MultistepHumanInTheLoopAgent(Agent):
+    agent_config_type: type[MultistepHumanInTheLoopAgentConfig] = MultistepHumanInTheLoopAgentConfig
+
     @step()
     async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
         print("[MultistepHumanInTheLoopAgent.start_step]")

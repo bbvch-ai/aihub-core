@@ -9,6 +9,8 @@ from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig impo
 
 
 class LlamaIndexAgent(Agent):
+    agent_config_type: type[LlamaIndexAgentConfig] = LlamaIndexAgentConfig
+
     @step()
     async def start_step(
         self,

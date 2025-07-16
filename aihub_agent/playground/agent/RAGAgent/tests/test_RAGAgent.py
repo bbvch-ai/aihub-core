@@ -2,6 +2,9 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
+
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
@@ -121,7 +124,7 @@ def azure_agent_config():
         embedding_tokens_costs_per_thousand=0.0,
         default_parameter=AzureOpenAIEmbeddingParameter(),
     )
-    vector_store = create_azure_ai_search_vector_store(
+    vector_store: AzureAISearchVectorStore = create_azure_ai_search_vector_store(
         # needed for embedding field
         vector_store_name="development",
         semantic_configuration_name="mySemanticConfig",
@@ -167,7 +170,7 @@ def self_hosted_agent_config(event_loop):
             truncate_text=False,
         ),
     )
-    vector_store = create_milvus_vector_store(
+    vector_store: MilvusVectorStore = create_milvus_vector_store(
         uri="http://localhost",
         collection_name="development",
         embedding_vector_dimension=768,

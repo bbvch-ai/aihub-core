@@ -20,6 +20,7 @@ def _():
         agent_type=ContextAgent,
         agent_config=ContextAgentConfig(
             agent_id="context_agent",
+            agent_class=ContextAgent.__name__,
             name=LocaleString(en="Context Agent"),
             description=LocaleString(en="This is an agent that accesses the run and thread context"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -33,12 +34,18 @@ async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
     thread_id = str(ObjectId())
     async with test_runner.test_run(thread_id=thread_id) as topic:
         await test_runner.send_event_from_topic(
-            start_event=CustomStartEvent(payload=payload1),
+            start_event=CustomStartEvent(
+                payload=payload1,
+                agent_config=test_runner.agent_config,
+            ),
             topic=topic,
         )
     async with test_runner.test_run(thread_id=thread_id) as topic:
         await test_runner.send_event_from_topic(
-            start_event=CustomStartEvent(payload=payload2),
+            start_event=CustomStartEvent(
+                payload=payload2,
+                agent_config=test_runner.agent_config,
+            ),
             topic=topic,
         )
 

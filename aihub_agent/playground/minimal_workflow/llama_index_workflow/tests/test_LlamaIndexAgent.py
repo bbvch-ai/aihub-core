@@ -22,6 +22,7 @@ def _():
         agent_type=LlamaIndexAgent,
         agent_config=LlamaIndexAgentConfig(
             agent_id="llama_index_agent",
+            agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -47,7 +48,9 @@ async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run(delay_before_stop=5) as topic:
         await agent_runner.send_event_from_topic(
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content=payload, role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content=payload, role=MessageRole.USER)],
+                user=fake_user(),
+                agent_config=agent_runner.agent_config,
             ),
             topic=topic,
         )

@@ -20,6 +20,7 @@ def _():
         agent_type=DisplayingAgent,
         agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
+            agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),
             description=LocaleString(en="This is an agent that displays events"),
             system_prompt=LocaleString(en="You are an agent that displays events."),
@@ -32,7 +33,7 @@ def _():
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(),
+            start_event=StartEvent(agent_config=agent_runner.agent_config),
             topic=topic,
         )
 

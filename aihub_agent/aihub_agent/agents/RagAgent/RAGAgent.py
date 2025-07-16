@@ -47,6 +47,8 @@ class RAGAgent(Agent):
 
     """
 
+    agent_config_type: type[RAGAgentConfig] = RAGAgentConfig
+
     @step(
         name=LocaleString(en="Limit Chat History"),
         description=LocaleString(en="Truncates incoming chat messages to fit within the configured token limit"),

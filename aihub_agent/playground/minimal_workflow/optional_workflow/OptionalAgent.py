@@ -8,9 +8,12 @@ from playground.minimal_workflow.optional_workflow.events.EventOptionalA import 
 from playground.minimal_workflow.optional_workflow.events.EventOptionalB import EventOptionalB
 from playground.minimal_workflow.optional_workflow.events.EventOptionalC import EventOptionalC
 from playground.minimal_workflow.optional_workflow.events.EventOptionalD import EventOptionalD
+from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import OptionalAgentConfig
 
 
 class OptionalAgent(Agent):
+    agent_config_type: type[OptionalAgentConfig] = OptionalAgentConfig
+
     @step()
     async def start_step(self, event: StartEvent) -> list[EventOptionalA | EventOptionalB]:
         if random.random() > 0.5:

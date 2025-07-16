@@ -26,6 +26,7 @@ def _():
         agent_type=HumanInTheLoopAgent,
         agent_config=HumanInTheLoopAgentConfig(
             agent_id="human_in_the_loop_agent",
+            agent_class=HumanInTheLoopAgent.__name__,
             name=LocaleString(en="Human In The Loop Agent"),
             description=LocaleString(en="This is a very human in the loop agent"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -42,7 +43,9 @@ def _():
 async def _(agent_runner: AgentTestRunner, response: str):
     async with agent_runner.test_run() as topic:
         # Send StartEvent
-        await agent_runner.send_event_from_topic(start_event=StartEvent(), topic=topic)
+        await agent_runner.send_event_from_topic(
+            start_event=StartEvent(agent_config=agent_runner.agent_config), topic=topic
+        )
         # Get the HumanInTheLoopRequestEvent and send the corresponding response
         hil_request_event = await agent_runner.wait_for_event(HumanInTheLoopRequestEvent)
         await agent_runner.send_event_from_topic(

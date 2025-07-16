@@ -56,6 +56,7 @@ def build_retrieval_agent_config(
     """
     return RetrievalAgentConfig(
         agent_id="retrieval_agent",
+        agent_class=RetrievalAgent.__name__,
         name=LocaleString(en="Retrieval Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         system_prompt=LocaleString(
@@ -136,7 +137,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=40) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=QuestionStartEvent(question=query, locale="en"),
+            start_event=QuestionStartEvent(question=query, locale="en", agent_config=agent_runner.agent_config),
         )
 
 

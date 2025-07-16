@@ -13,6 +13,8 @@ async def ensure_enough_events(parallel_events: list[ParallelEvent], config: Pre
 
 
 class PreconditionAgent(Agent):
+    agent_config_type: type[PreconditionAgentConfig] = PreconditionAgentConfig
+
     @step()
     async def start_step(self, _: StartEvent, config: PreconditionAgentConfig) -> list[ParallelEvent]:
         return [ParallelEvent(payload=str(i)) for i in range(config.number_of_events)]

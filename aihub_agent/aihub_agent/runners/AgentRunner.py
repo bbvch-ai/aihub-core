@@ -52,6 +52,7 @@ class AgentRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type
+        self.agent_config_type = agent_type.agent_config_type
         self.running = False
         self._stop_signal = asyncio.Event()
 
@@ -90,7 +91,7 @@ class AgentRunner:
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config_class(self.agent_type.agent_config_type)
+        agent_config_specs = AgentConfigSpecs.from_agent_config_class(self.agent_config_type)
 
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,

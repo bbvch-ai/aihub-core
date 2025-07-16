@@ -3,9 +3,12 @@ from aihub_lib.nats.events import StopEvent, UserMessageEvent
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.simple_workflow.events.SimpleEventA import SimpleEventA
+from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
 
 
 class SimpleAgent(Agent):
+    agent_config_type: type[SimpleAgentConfig] = SimpleAgentConfig
+
     @step()
     async def start_step(self, event: UserMessageEvent) -> SimpleEventA:
         print("[SimpleAgent.start_step]", event)

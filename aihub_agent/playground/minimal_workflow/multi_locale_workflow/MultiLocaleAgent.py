@@ -8,6 +8,8 @@ from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig im
 
 
 class MultiLocaleAgent(Agent):
+    agent_config_type: type[MultiLocaleAgentConfig] = MultiLocaleAgentConfig
+
     @step()
     async def start_step(
         self, event: UserMessageEvent, t: LocaleHandler, agent_config: MultiLocaleAgentConfig

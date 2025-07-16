@@ -20,6 +20,7 @@ def _():
         agent_type=FanOutAgent,
         agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
+            agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),
             description=LocaleString(en="This agent demonstrates fan-out processing"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -32,7 +33,7 @@ def _():
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(),
+            start_event=StartEvent(agent_config=agent_runner.agent_config),
             topic=topic,
         )
 

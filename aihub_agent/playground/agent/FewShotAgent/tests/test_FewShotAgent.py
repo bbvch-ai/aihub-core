@@ -193,7 +193,7 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
                 locale="en",
                 user=fake_user(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                agent_config=agent_runner.agent_config
+                agent_config=agent_runner.agent_config,
             ),
         )
 

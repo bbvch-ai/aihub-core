@@ -17,6 +17,7 @@ def _(number_of_events):
         agent_type=PreconditionAgent,
         agent_config=PreconditionAgentConfig(
             agent_id="precondition_agent",
+            agent_class=PreconditionAgent.__name__,
             name=LocaleString(en="Agent with preconditions"),
             description=LocaleString(en="This is an agent that has preconditions"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -30,7 +31,7 @@ def _(number_of_events):
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(),
+            start_event=StartEvent(agent_config=agent_runner.agent_config),
             topic=topic,
         )
 

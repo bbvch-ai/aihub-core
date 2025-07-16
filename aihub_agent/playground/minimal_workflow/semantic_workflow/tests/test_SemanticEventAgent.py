@@ -16,6 +16,7 @@ def _():
         agent_type=SemanticEventAgent,
         agent_config=SemanticEventAgentConfig(
             agent_id="semantic_event_agent",
+            agent_class=SemanticEventAgent.__name__,
             name=LocaleString(en="Semantic Event Agent"),
             description=LocaleString(en="This is an agent with semantic events"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -27,7 +28,9 @@ def _():
 @async_test
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
-        await agent_runner.send_event_from_topic(topic=topic, start_event=StartEvent())
+        await agent_runner.send_event_from_topic(
+            topic=topic, start_event=StartEvent(agent_config=agent_runner.agent_config)
+        )
 
 
 @then("a StartEvent is present")

@@ -23,6 +23,7 @@ def _(start_step_value: str, agent_value: str):
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
+            agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a very configured agent"),
             system_prompt=LocaleString(en="You are an agent"),
@@ -37,7 +38,7 @@ def _(start_step_value: str, agent_value: str):
 async def _(agent_runner: AgentTestRunner):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=StartEvent(),
+            start_event=StartEvent(agent_config=agent_runner.agent_config),
             topic=topic,
         )
 

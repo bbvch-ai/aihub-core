@@ -22,6 +22,8 @@ class RetrievalAgent(Agent):
     when we have for example different data sources and each source has its own retrieval agent.
     """
 
+    agent_config_type: type[RetrieveStepConfig] = RetrieveStepConfig
+
     @step(
         name=LocaleString(en="Retrieve nodes"),
         description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),

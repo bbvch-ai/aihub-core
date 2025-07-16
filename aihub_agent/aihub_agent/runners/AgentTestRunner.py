@@ -5,8 +5,10 @@ from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_lib.nats.events import AgentInstanceDiscoveryResponseEvent, BaseEvent, InstanceDiscoveryRequestEvent
+from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -119,19 +121,17 @@ class AgentTestRunner(AgentRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
+        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = (
-            AgentNCSubscriber.for_agent_instance_discovery_response_events(
-                nc=self.nc,
-                topic_manager=AgentTopicManager(),
-                handler=self.observe_event,
-            )
+        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
+            nc=self.nc,
+            topic_manager=AgentTopicManager(),
+            handler=self.observe_event,
         )
         await self.observe_discovery_response_event_subscriber.start()
 
@@ -174,15 +174,13 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_discovery_request_event(self) -> bool:
         """Check if a DiscoveryRequestEvent was observed."""
-        return any(isinstance(event.event, InstanceDiscoveryRequestEvent) for event in self.observed_events)
+        return any(isinstance(event.event, ClassDiscoveryRequestEvent) for event in self.observed_events)
 
     @property
     def has_own_agent_discovery_response_event(self) -> bool:
-        """Check if an AgentDiscoveryResponseEvent with the agent's class and ID was observed."""
+        """Check if an AgentDiscoveryResponseEvent with the agent's class was observed."""
         return any(
-            isinstance(event.event, AgentInstanceDiscoveryResponseEvent)
-            and event.event.agent_class == self.agent_class
-            and event.event.agent_id == self.agent_config.agent_id
+            isinstance(event.event, AgentClassDiscoveryResponseEvent) and event.event.agent_class == self.agent_class
             for event in self.observed_events
         )
 
