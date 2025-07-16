@@ -8,24 +8,12 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
-from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
-from llama_index.vector_stores.milvus import MilvusVectorStore
 from pydantic import Field
 
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-
-
-def discriminate_vector_store(
-    value: dict | SimpleVectorStore | MilvusVectorStore | AzureAISearchVectorStore,
-) -> str:
-    if isinstance(value, dict):
-        return value.get("class_name")
-    else:
-        return value.class_name()
 
 
 class RetrieveStepConfig(StepConfig):
