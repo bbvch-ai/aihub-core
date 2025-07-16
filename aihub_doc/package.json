@@ -1,0 +1,19 @@
+{
+  "name": "aihub_doc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:sync": "find ../ -name \"README.md\" -not -path \"../aihub_doc/*\" -exec sh -c 'path=\"${1#../}\"; mkdir -p \"$(dirname \"$path\")\"; cp \"$1\" \"${path%README.md}index.md\"' _ {} \\;",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "vitepress": "2.0.0-alpha.8"
+  }
+}
