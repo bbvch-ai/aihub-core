@@ -1,7 +1,7 @@
 services:
   postgres:
     image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
-    container_name: postgres
+    container_name: webui-postgres
     environment:
       POSTGRES_USER: webui
       POSTGRES_PASSWORD: webui_password
@@ -25,6 +25,7 @@ services:
 
   openwebui:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    container_name: webui-openwebui
     network_mode: "host"
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
