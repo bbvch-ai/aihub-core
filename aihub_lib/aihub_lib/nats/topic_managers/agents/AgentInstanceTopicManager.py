@@ -167,23 +167,3 @@ class AgentInstanceTopicManager(AgentClassTopicManager):
             event_name="*",
             event_id="*",
         )
-
-    def get_subject_for_all_control_events_in_agent(self) -> str:
-        """Returns a subject pattern matching all control events from all agents."""
-        return self.get_subject_for_specific_event_in_agent(
-            agent_class=self.agent_class,
-            agent_id=self.agent_id,
-            thread_id="*",
-            display_id="*",
-            run_id="*",
-            event_type=self.CONTROL_EVENT,
-            event_name="*",
-            event_id="*",
-        )
-
-    def get_stream(self) -> tuple[str, str]:
-        return self._get_stream_name_for_all_events(), self.get_subject_for_all_events_in_agent()
-
-    def _get_stream_name_for_all_events(self) -> str:
-        """Returns the stream name used for all agent events."""
-        return f"{self.AGENT_TOPIC}_{self.agent_class}_{self.agent_id}_stream"
