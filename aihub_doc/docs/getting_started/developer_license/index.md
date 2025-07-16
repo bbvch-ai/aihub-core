@@ -25,7 +25,7 @@ As the AI-Hub grows and matures, it becomes increasingly valuable as a foundatio
 - Over time, as their internal AI capabilities mature, clients can extend the AI-Hub with their own libraries, tooling, or domain-specific logic.
 
 **Modular and Extensible Architecture:**
-- The Developer License ensures that clients benefit from the AI-Hub’s layered approach (see [Section 7.2](7_frontend.md#72-technology-stack)), enabling them to override or extend functionalities without losing the ability to merge upstream updates.
+- The Developer License ensures that clients benefit from the AI-Hub’s layered approach, as there is a dedicated section in this documentation that talks more about it, enabling them to override or extend functionalities without losing the ability to merge upstream updates.
 - As bbv continues to improve the AI-Hub’s core, clients can pull in these updates to stay current with new best practices, improvements, or efficiency gains.
 
 ### Support and Training from bbv
@@ -96,5 +96,3 @@ When extending the AI-Hub with new components or models, the guiding principle i
 - **Keep Changes Modular:** Avoid mixing unrelated changes in one pull request. Focus on one new feature at a time.
 - **Adhere to Quality Standards:** New code should pass all linting, testing, and quality gates.
 - **Share Knowledge:** Document new components thoroughly, so other team members or clients can benefit from them.
-
-

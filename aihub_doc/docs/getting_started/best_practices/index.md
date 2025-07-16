@@ -17,13 +17,13 @@ Designing workflows for AI agents is both an art and a science. On one hand, you
 - **Single Responsibility per Step:**  
   Each step in an agent’s workflow should accomplish one logical task—such as document retrieval, classification, LLM querying, or verification. Avoid conflating multiple actions in a single step, which could make debugging and testing more difficult.
 - **Typed Input/Output Events:**  
-  Consistently use typed events with clear schemas, as described in [Section 5.1](5_agents_in_detail.md#51-defining-agents-and-steps). Typed events not only guide the dispatcher logic but also provide immediate clarity on what data is flowing at each stage.
+  Consistently use typed events with clear schemas, as there is a dedicated section in this documentation that talks more about it. Typed events not only guide the dispatcher logic but also provide immediate clarity on what data is flowing at each stage.
 - **Minimal Dependencies Between Steps:**  
   If step A outputs data needed by step C, consider whether step B must pass it along, or if you can store it in RunContext or ThreadContext instead. Reducing event payload complexity makes the workflow easier to maintain.
 
 **Agent Composition and Specialization:**
 - **Multiple Agents for Complex Tasks:**  
-  Instead of making one agent do everything, compose multiple specialized agents—one focusing on retrieval (RAG), another on rules, another on final answer generation. As explained in [Section 5.5](5_agents_in_detail.md#55-multi-agent-coordination), this modular approach enhances clarity and scalability.
+  Instead of making one agent do everything, compose multiple specialized agents—one focusing on retrieval (RAG), another on rules, another on final answer generation. as there is a dedicated section in this documentation that talks more about it, this modular approach enhances clarity and scalability.
 - **Documenting Agent Responsibilities:**  
   Include a high-level description (in code comments or documentation) detailing each agent’s purpose, the steps it performs, and the expected event flow. This helps new developers quickly understand the workflow design.
 
@@ -31,7 +31,7 @@ Designing workflows for AI agents is both an art and a science. On one hand, you
 
 **Event-Driven Transparency:**
 - **Use Semantic Events for Domain Data:**  
-  Semantic events, as discussed in [Section 5.1](5_agents_in_detail.md#51-defining-agents-and-steps), enrich the workflow with meaningful domain information. They make it clear why the agent took certain decisions, improving explainability.
+  Semantic events, as there is a dedicated section in this documentation that talks more about it, enrich the workflow with meaningful domain information. They make it clear why the agent took certain decisions, improving explainability.
 - **Traces and Logs:**  
   Combine OpenTelemetry traces with event logs to reconstruct decision-making paths. Proper logging at each step helps auditors and developers follow the reasoning chain, identify bottlenecks, and justify outputs.
 
@@ -55,7 +55,7 @@ Designing workflows for AI agents is both an art and a science. On one hand, you
 - **Reduced Context Restrictions:**  
   Agents initially might have strict constraints on how much or what data they can access. Over time, broaden their accessible data sources and let them handle more ambiguous queries.
 - **Performance Monitoring:**  
-  Carefully monitor the agent’s performance after granting more autonomy. If performance deteriorates or hallucinations increase, consider rolling back some freedom until further refinements are made.
+  Carefully monitor the agent’s performance aftergranting more autonomy. If performance deteriorates or hallucinations increase, consider rolling back some freedom until further refinements are made.
 
 ### Strategy for Trust Building
 
@@ -109,10 +109,10 @@ As AI agents increasingly work with sensitive business data—proprietary docume
    By grounding answers in retrieved documents, the agent reduces hallucinations. When answering user queries, steps like `RetrieverEvent` and `RerankerEvent` ensure the final LLM call is contextually anchored. If the agent cannot find a relevant document, it admits it rather than fabricating details.
 
 3. **Approved Tools and Steps Only:**
-   Agents operate within a defined workflow (see [Section 2.1](../../why_ai_hub/philosophy/index.md#21-ai-agents-as-workflows)). They only use approved steps and tools, preventing them from executing actions outside their defined scope. Over time, as trust grows, more tools can be introduced, but initial constraints protect against unpredictable behavior.
+   Agents operate within a defined workflow (there is a dedicated section in this documentation that talks more about it). They only use approved steps and tools, preventing them from executing actions outside their defined scope. Over time, as trust grows, more tools can be introduced, but initial constraints protect against unpredictable behavior.
 
 4. **Human-in-the-Loop (HITL) Checks:**
-   For especially critical tasks, HITL steps can require a human’s approval before proceeding (see [Section 5.2](5_agents_in_detail.md#52-context-handling)). If the agent suggests a sensitive action—like sending an external email or approving a financial transaction—a HITL step ensures a human reviews and confirms the action first.
+   For especially critical tasks, HITL steps can require a human’s approval before proceeding (there is a dedicated section in this documentation that talks more about it). If the agent suggests a sensitive action—like sending an external email or approving a financial transaction—a HITL step ensures a human reviews and confirms the action first.
 
 **Detecting Hallucinations and Inaccuracies:**
 - **Verification Steps:**
@@ -129,4 +129,3 @@ As AI agents increasingly work with sensitive business data—proprietary docume
   
 - **Logging and Alerts:**
   Centralized logging can trigger alerts if unusual patterns emerge—like a sudden increase in “no answer” responses or repeated access to documents that should be off-limits. This proactive approach to monitoring enhances security and trustworthiness.
-

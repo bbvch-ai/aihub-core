@@ -9,7 +9,7 @@ index: 2
 
 > tldr; By framing AI agents as structured workflows, the AI-Hub empowers developers and enterprises to harness the benefits of AI reasoning without relinquishing oversight. This structured approach preserves testability, traceability, and compliance, allowing for an incremental journey from tightly controlled, step-by-step logic toward increasingly autonomous and intelligent solutions.
 
-In the [Introduction](../detailed_look/index.md), we explored why AI agents are essential to bridging the gap between traditional software solutions and more intelligent, adaptive systems. Now, we turn our attention to a fundamental principle that guides how these agents are conceptualized and implemented within the AI-Hub: **treating AI agents as structured workflows.**
+In there is a dedicated section in this documentation that talks more about it, we explored why AI agents are essential to bridging the gap between traditional software solutions and more intelligent, adaptive systems. Now, we turn our attention to a fundamental principle that guides how these agents are conceptualized and implemented within the AI-Hub: **treating AI agents as structured workflows.**
 
 Rather than building agents as monolithic, open-ended entities that attempt to solve problems with minimal guidance, the AI-Hub encourages the design of agents as **step-by-step workflows.** Each workflow is composed of clearly defined steps and transitions, combining the strengths of algorithmic determinism with the flexibility and intelligence of AI-driven reasoning. This approach allows us to maintain transparency, ensure quality, and carefully balance the agent’s autonomy.
 
@@ -29,7 +29,7 @@ Rather than building agents as monolithic, open-ended entities that attempt to s
 **Incremental Autonomy:**
 - Instead of setting the agent loose in an open world, the workflow ensures that it moves from one well-understood step to the next. Over time, certain steps can become more flexible—allowing the agent to choose the best path out of several alternatives—without losing the safety net of a predefined structure.
 
-For a more detailed technical dive into how these workflows are defined and implemented, refer to the upcoming [Agents in Detail (Section 5)](../../../5_agents_in_detail.md).
+For a more detailed technical dive into how these workflows are defined and implemented, refer to there is a dedicated section in this documentation that talks more about it.
 
 ### Balancing Control and Intelligence
 
@@ -57,7 +57,7 @@ The AI-Hub’s philosophy is not to replace human intelligence or override estab
 > These real-world scenarios ground the theoretical principles described in previous sections. They provide a tangible view of how workflows, controlled autonomy, and step-by-step reasoning translate into practical solutions that save time, reduce complexity, and improve organizational agility.
 
 
-Throughout the earlier sections—[1.1 (What is the AI-Hub)](../detailed_look/index.md#11-what-is-the-ai-hub) and [1.2 (Why AI Agents)](../detailed_look/index.md#12-why-ai-agents)—we established the conceptual reasons for employing AI agents and introduced the idea of structuring them as workflows ([2.1](index.md#21-ai-agents-as-workflows)). To further solidify these concepts, it is useful to explore concrete examples where multiple agents come together to solve business problems and go beyond simple chatbot interactions.
+Throughout the earlier sections—there is a dedicated section in this documentation that talks more about it and there is a dedicated section in this documentation that talks more about it—we established the conceptual reasons for employing AI agents and introduced the idea of structuring them as workflows (there is a dedicated section in this documentation that talks more about it). To further solidify these concepts, it is useful to explore concrete examples where multiple agents come together to solve business problems and go beyond simple chatbot interactions.
 
 In this section, we highlight two illustrative scenarios: one involving **the FMH (Swiss Medical Association) and their tariff support tasks**, and another showcasing how agents can autonomously handle **regulatory updates in a private bank**. These examples underscore the practicality and adaptability of the AI-Hub’s approach, demonstrating that AI agents can tackle domain-specific challenges and autonomously take action when triggered by external events.
 
@@ -104,4 +104,4 @@ While the FMH example primarily shows agents responding to user queries, AI agen
 
 **Key Takeaways:**
 - This scenario goes beyond simple Q&A. The agent autonomously acts upon triggers (newsletters, website checks), initiating updates and producing actionable outputs without waiting for a human request.
-- Over time, trust can be built, allowing the agent greater autonomy—perhaps even automating routine updates. This expansion of autonomy aligns with the philosophy discussed in [Section 2.1](index.md#21-ai-agents-as-workflows).
+- Over time, trust can be built, allowing the agent greater autonomy—perhaps even automating routine updates. This expansion of autonomy aligns with the philosophy discussed in there is a dedicated section in this documentation that talks more about it.
