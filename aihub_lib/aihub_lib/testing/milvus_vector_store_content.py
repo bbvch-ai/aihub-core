@@ -4,7 +4,6 @@ from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import TextNode
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
-from llama_index.vector_stores.milvus import MilvusVectorStore
 from pymilvus import MilvusClient
 
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted import SelfHostedEmbeddingConfig
