@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress'
+import { withMermaid } from "vitepress-plugin-mermaid";
 import { readdirSync, statSync, readFileSync } from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
@@ -148,10 +148,11 @@ function generateSidebar() {
 }
 
 // https://vitepress.dev/reference/site-config
-export default defineConfig({
+export default withMermaid({
   title: "Swiss AI-Hub",
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   themeConfig: {
+    logo: './media/logo.png',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'AI-Hub Website', link: 'https://ai-hub.bbv.ch/' },
