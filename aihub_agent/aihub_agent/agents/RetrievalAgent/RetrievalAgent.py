@@ -1,3 +1,4 @@
+from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
@@ -22,7 +23,7 @@ class RetrievalAgent(Agent):
     when we have for example different data sources and each source has its own retrieval agent.
     """
 
-    agent_config_type: type[RetrieveStepConfig] = RetrieveStepConfig
+    agent_config_type: type[RetrievalAgentConfig] = RetrievalAgentConfig
 
     @step(
         name=LocaleString(en="Retrieve nodes"),

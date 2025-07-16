@@ -1,3 +1,4 @@
+import enum
 import json
 import logging
 import os
@@ -372,4 +373,11 @@ class BaseEvent(BaseModel):
         Serializes the event into a JSON string. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.
         """
-        return json.dumps(self.model_dump(**kwargs), default=str)
+        return json.dumps(self.model_dump(**kwargs), default=self.default_serializer)
+
+    @staticmethod
+    def default_serializer(obj: Any) -> str:
+        if isinstance(obj, enum.Enum):
+            return str(obj.value)
+        else:
+            return str(obj)

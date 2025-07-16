@@ -12,9 +12,18 @@ from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
-from pydantic import Field
+from pydantic import Field, Discriminator, Tag
 
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
+
+
+def discriminate_vector_store(
+    value: dict | SimpleVectorStore | MilvusVectorStore | AzureAISearchVectorStore,
+) -> str:
+    if isinstance(value, dict):
+        return value.get("class_name")
+    else:
+        return value.class_name()
 
 
 class RetrieveStepConfig(StepConfig):
@@ -36,8 +45,10 @@ class RetrieveStepConfig(StepConfig):
         Field(description="The types of nodes to retrieve (options: 'summary' or 'content').", min_length=1),
     ]
     vector_store: Annotated[
-        SimpleVectorStore | MilvusVectorStore | AzureAISearchVectorStore,
-        Field(description="The vector store to retrieve from."),
+        Annotated[SimpleVectorStore, Tag(SimpleVectorStore.class_name())]
+        | Annotated[MilvusVectorStore, Tag(MilvusVectorStore.class_name())]
+        | Annotated[AzureAISearchVectorStore, Tag(AzureAISearchVectorStore.class_name())],
+        Field(description="The vector store to retrieve from.", discriminator=Discriminator(discriminate_vector_store)),
     ]
     retrieve_prev_next: Annotated[
         RetrievePrevNextConfig | None,
@@ -47,7 +58,7 @@ class RetrieveStepConfig(StepConfig):
         ),
     ] = None
     retrieve_summaries: Annotated[
-        RetrieveSummariesConfig,
+        RetrieveSummariesConfig | None,
         Field(
             description="Configurations for retrieving the parent summaries, max number of summary levels",
         ),

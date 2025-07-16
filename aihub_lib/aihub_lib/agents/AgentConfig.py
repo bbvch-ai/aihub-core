@@ -57,8 +57,6 @@ class AgentConfig(BaseModel):
     ```
     """
 
-    _config_registry: ClassVar[dict[str, type["AgentConfig"]]] = {}
-
     agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
     agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
     name: Annotated[LocaleString, Field(description="The name of the agent.")]
@@ -90,24 +88,22 @@ class AgentConfig(BaseModel):
         ),
     ]
 
-    # Private attribute to handle config subclasses
-    _unknown_data: dict[str, Any] | None = PrivateAttr(None)
-
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
-        config = cls(
-            agent_class=entity.agent_class,
-            agent_id=entity.agent_id,
-            name=entity.name.to_locale_string(),
-            description=entity.description.to_locale_string(),
-            icon=entity.icon,
-            color=entity.color,  # Default color if not set
-            voice=entity.voice,
-            system_prompt=entity.system_prompt.to_locale_string(),
-        )
-        config._unknown_data = entity.config_data
+        data = {
+            "agent_class": entity.agent_class,
+            "agent_id": entity.agent_id,
+            "name": entity.name.to_locale_string(),
+            "description": entity.description.to_locale_string(),
+            "icon": entity.icon,
+            "color": entity.color or "#10A37F",  # Default color if not set
+            "voice": entity.voice or "de-DE-ChristophNeural",  # Default voice if not set
+            "system_prompt": entity.system_prompt.to_locale_string(),
+            **entity.config_data,
+        }
+        config = cls(**data)
         return config
 
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
@@ -120,26 +116,3 @@ class AgentConfig(BaseModel):
             if isinstance(field_value, StepConfig):
                 step_configs[type(field_value)] = field_value
         return step_configs
-
-    @override
-    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
-        """
-        Serializes the config into a dictionary. If this config was originally unknown,
-        merges the original data with the known fields so nothing is lost.
-        """
-        data = super().model_dump(**kwargs)
-        if self._unknown_data is None:
-            return data
-
-        return {
-            **self._unknown_data,
-            **data,
-        }
-
-    @override
-    def model_dump_json(self, **kwargs: Any) -> str:
-        """
-        Serializes the event into a JSON string. If this event was originally unknown,
-        merges the original data with the known fields so nothing is lost.
-        """
-        return json.dumps(self.model_dump(**kwargs), default=str)
