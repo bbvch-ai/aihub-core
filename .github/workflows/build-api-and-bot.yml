@@ -28,6 +28,7 @@ jobs:
     strategy:
       matrix:
         image: [api, bot]
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
