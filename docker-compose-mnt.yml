@@ -47,8 +47,8 @@ services:
   mongo:
     image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
     ports:
