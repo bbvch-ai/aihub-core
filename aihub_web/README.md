@@ -5,15 +5,45 @@ index: 6
 
 # AI-Hub Web Frontend Developer's Guide
 
-## 1. Foundational Knowledge of Web Frontend Development
-
-This section covers the foundational architecture, patterns, and terminology you need to know before building frontend components.
-
-### Introduction to `aihub_web`
 
 You are contributing to the **aihub_web** scope, which contains the main web frontend application within the AI-Hub platform. This scope implements the user interface that connects users to AI agents, processes, and system management capabilities through an intuitive, modern web application built with Nuxt 3.
 
-### Project Structure
+## The Stack
+
+Our frontend is built on a modern, type-safe, and efficient technology stack. Below is a breakdown of the core frameworks, libraries, and tools we use.
+
+### Core Framework
+* **[Nuxt 3](https://nuxt.com/)**: The core application framework, built on top of Vue 3.
+* **[Vue 3](https://vuejs.org/)**: The progressive JavaScript framework for building user interfaces.
+
+### UI & Styling
+* **[PrimeVue](https://primevue.org/)**: Our primary component library for rich UI components.
+* **[Tailwind CSS](https://tailwindcss.com/)**: A utility-first CSS framework for rapid styling.
+* **Icons**:
+    * **[PrimeIcons](https://primevue.org/icons/)**: The default icon library for PrimeVue.
+    * **[@nuxt/icon](https://github.com/nuxt/icon)**: Leveraging the extensive **[Iconify](https://iconify.design/)** collection for a wide variety of icons.
+
+### State Management
+* **[Pinia Colada](https://pinia-colada.esm.dev/)**: Used to map API state directly to reactive Vue state, avoiding the need for a global Pinia store.
+
+### Backend Communication
+* **REST API**: We consume our backend via a RESTful API.
+    * **[Hey API](https://heyapi.dev/)**: Used to auto-generate a type-safe TypeScript SDK for our API.
+* **[Socket.IO](https://socket.io/)**: For establishing real-time, bi-directional communication with the backend.
+
+### Utilities
+* **[VueUse](https://vueuse.org/)**: A collection of essential Composition API utilities.
+* **[lodash](https://lodash.com/)**: For advanced utility functions. We install sub-packages individually (e.g., `lodash.clonedeep`) to keep the bundle size small.
+* **[date-fns](https://date-fns.org/)**: A modern and lightweight library for date manipulation.
+
+### Data Visualization
+* **[ApexCharts](https://apexcharts.com/)**: Our charting library for creating interactive data visualizations.
+
+### Code Quality
+* **[TypeScript](https://www.typescriptlang.org/)**: Our entire codebase is written in TypeScript, ensuring type safety.
+* **[ESLint](https://eslint.org/)**: We enforce a strict linting configuration to maintain high code quality and consistency.
+
+## Project Structure
 
 The `aihub_web` scope is organized as follows:
 
@@ -55,82 +85,329 @@ aihub_web/
 └── eslint.config.js           # ESLint configuration
 ```
 
-### Glossary of Web Frontend Terms
+## The Component Architecture
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_web` scope, building upon the core AI-Hub terminology.
+The frontend follows a component-based architecture with clear separation of concerns between pages, components and composables.
 
-| Term | Definition |
-| :--- | :--- |
-| **Composable** | Vue 3 composition functions that encapsulate and reuse stateful logic. In aihub_web, composables manage API calls, state, and business logic using Pinia-Colada patterns. |
-| **Pinia-Colada** | Advanced state management library that provides reactive queries, mutations, and caching for Vue applications. Used extensively for API state management in aihub_web. |
-| **PrimeVue** | Comprehensive UI component library providing rich, accessible components. Forms the foundation of aihub_web's user interface with custom theming. |
-| **Nuxt Layer** | Nuxt 3 architectural pattern that allows sharing configuration, components, and composables. aihub_web is structured as a reusable layer. |
-| **SPA Mode** | Single Page Application mode where the entire app runs client-side with no server-side rendering. Enables rich interactivity and real-time updates. |
-| **API Proxy** | Development-time proxy configuration that routes API calls from the frontend to the backend service, enabling seamless local development. |
-| **Socket.io Integration** | Real-time bidirectional communication system that enables live updates for chat, agent events, and system notifications. |
-| **Vue Flow** | Workflow visualization library used for displaying agent workflows and process diagrams with interactive node-based interfaces. |
-| **ApexCharts** | Charting library integration for displaying analytics, cost tracking, and performance metrics in dashboard components. |
-| **File-based Routing** | Nuxt 3 feature that automatically generates routes based on the file structure in the `pages/` directory. |
-| **Auto-imports** | Nuxt 3 feature that automatically imports composables, components, and utilities without explicit import statements. |
-| **Middleware** | Functions that run before rendering pages, used for authentication, authorization, and route protection. |
-| **Locale Handler** | Internationalization system supporting English, German, French, and Italian with automatic locale detection and switching. |
-| **Generated SDK** | TypeScript client automatically generated from the API's OpenAPI specification, providing type-safe API interactions. |
-| **Theme System** | Custom PrimeVue theme configuration that provides consistent styling and dark mode support across the application. |
-| **Event Display Components** | Specialized components for rendering different types of AI-Hub events (LLM events, chunk events, exception events) with rich formatting. |
-| **Thread Management** | User interface for managing conversation threads between users and AI agents, including chat history and participant management. |
-| **Agent Dashboard** | Administrative interface for monitoring agent performance, managing configurations, and viewing agent-specific analytics. |
-| **Process Visualization** | Interactive workflow diagrams that show the flow of agentic processes with real-time status updates. |
-| **Evaluation Interface** | User interface for managing datasets, experiments, and AI model evaluations with results visualization. |
-| **Cost Tracking** | Dashboard components for monitoring and analyzing AI model usage costs with detailed breakdowns and trends. |
-
-### The Component Architecture
-
-The frontend follows a component-based architecture with clear separation of concerns:
-
-```vue
-<!-- Domain-specific components organized by feature -->
+::: code-group
+```vue [pages/service/agents.vue]
 <template>
-  <div class="agent-card">
-    <AgentAvatar :agent="agent" />
-    <AgentInfo :agent="agent" />
-    <AgentActions :agent="agent" @start="startAgent" />
+  <StructuralScreen>
+    <StructuralColumn
+      :title="t('agent.title')"
+      :loading="agentsAreLoading"
+    >
+      <div
+        class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
+      >
+        <AgentCard
+          v-for="agent in agents"
+          :key="agent.agent_id"
+          :agent="agent"
+          @click="() => toAgent(agent)"
+        />
+      </div>
+    </StructuralColumn>
+
+    <NuxtPage />
+  </StructuralScreen>
+</template>
+
+<script setup lang="ts">
+import type { AgentDto } from '@core/sdk/client'
+
+import { useLocalePath } from '#i18n'
+
+const router = useRouter()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const { agents, agentsAreLoading } = useAgents()
+
+const toAgent = (agent: AgentDto) => {
+  router.push(localePath(`/service/agents/agent-${agent.agent_id}-${agent.agent_class}/overview`))
+}
+</script>
+```
+
+```vue [components/Agent/Card.vue]
+<template>
+  <div
+    class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
+    :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
+  >
+    <div class="flex items-center justify-between gap-4">
+      ...
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// TypeScript everywhere with strict typing
-interface Props {
-  agent: AgentDto
-}
+import type { AgentDto } from '@core/sdk/client'
 
-const props = defineProps<Props>()
-const { startAgent } = useAgent()
+const props = defineProps<{
+  agent: AgentDto
+}>()
+
+const route = useRoute()
+const { t } = useI18n()
+
+const isActive = computed(() => {
+  return route.params.agent_id === props.agent.agent_id && route.params.agent_class === props.agent.agent_class
+})
 </script>
+
 ```
 
-**Key Principles:**
-- **Domain-Driven Organization**: Components grouped by business domain (Agent, Chat, Process, etc.)
-- **Composition API**: Modern Vue 3 patterns with `<script setup>` syntax
-- **TypeScript Integration**: Full type safety from API to components
-- **Reactive State Management**: Pinia-Colada for efficient API state handling
+```ts [composables/agent/useAgents.ts]
+import { type AgentDto, getAgents } from '@core/sdk/client'
+import { useQuery } from '@pinia/colada'
+import { minutesToMilliseconds } from 'date-fns'
 
-### State Management with Pinia-Colada
-
-The application uses Pinia-Colada for sophisticated state management:
-
-```typescript
-// Composables encapsulate API calls and state
 export const useAgents = defineQuery(() => {
   const { data: agents, isPending: agentsAreLoading } = useQuery<AgentDto[]>({
     key: () => ['agents'],
     staleTime: minutesToMilliseconds(5),
+    enabled: true,
     query: async () => {
-      return await getAgents({ composable: '$fetch' })
+      return await getAgents({
+        composable: '$fetch',
+      })
     },
   })
-  return { agents, agentsAreLoading }
+  return {
+    agents,
+    agentsAreLoading,
+  }
+})
+
+```
+
+:::
+
+
+
+**Key Principles:**
+- **Service-Driven:** For each API service endpoint (like `agent`, `user`, `process`, `role`, ...), there is a frontend service
+- **Pages:** For each service, there is a page that is called exactly the same as the service.
+- **Components:** For each service, there is a component folder containing the vue components for said service
+- **Composable:** To interact with the service, for each endpoint, there is a composable wrapping that endpoint into state using pinia-colada
+
+## Client SDK generation
+
+We use `hey-api` to automatically generate a client side SDK from our API endpoints. This allows us to use our API
+endpoints like functions and have full typing. 
+
+You can import types from `@core/sdk/client`
+
+```ts{1,3,7}
+import Avatar from 'primevue/avatar'
+
+import type { AgentDto, MinimalAgentDto } from '@core/sdk/client'
+
+withDefaults(defineProps<{
+  size?: 'normal' | 'large'
+  agent: AgentDto | MinimalAgentDto
+}>(), {
+  size: 'large',
 })
 ```
+
+Similarly, you can import the endpoints from `@core/sdk/client`
+
+```ts{1,3-9}
+import { type AgentDto, getAgent } from '@core/sdk/client'
+
+await getAgent({
+  composable: '$fetch',
+  path: {
+    agent_id: route.params.agent_id as string,
+    agent_class: route.params.agent_class as string,
+  },
+})
+```
+
+
+## State Management with Pinia-Colada
+
+We use pinia-colda for mapping api operations to states: GET map to query, PUT, PATCH, POST and DELETE map to mutation.
+We use keys to auto-invalidate queries when new data is posted.
+
+### Getting State
+
+Using the client SDK and pinia-colada, we can define a role like a state. Instead of explicitly **calling** the API
+or the client sdk function, we **define** the state that the composable should hold, and let pinia-colada handle
+the fetching logic for us. 
+
+In the example below, we fetch a role based on its ID. As the ID is conveniently part of the route, the composable
+automatically **depends** on the reactive route parameter. 
+
+Hence, when the browser route changes, the `route.params.role_id` changes as well, triggering pinia-colada
+to re-fetch the role and update the state, taking care of caching and refreshing.
+
+::: code-group
+
+```ts [useRole.ts]
+import { getRole, type RoleResponse } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
+import { useRoute } from 'vue-router'
+
+export default defineQuery(() => {
+  const route = useRoute()
+
+  const {
+    data: role,
+    isPending: roleIsLoading,
+  } = useQuery<RoleResponse>({
+    key: () => ['roles', route.params.role_id as string],
+    staleTime: minutesToMilliseconds(5),
+    enabled: true,
+    query: async () => {
+      return await getRole({
+        composable: '$fetch',
+        path: {
+          role_id: route.params.role_id as string,
+        },
+      })
+    },
+  })
+  return {
+    role,
+    roleIsLoading,
+  }
+})
+```
+
+```vue{33} [role.vue]
+<template>
+  <StructuralScreen>
+    <StructuralColumn
+      :title="t('role.title')"
+      :loading="rolesAreLoading"
+    >
+      <div class="flex flex-col gap-2">
+        <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
+          <RoleCard
+            v-for="role in roles"
+            :key="role.id"
+            :role="role"
+            @click="() => toRole(role)"
+          />
+        </div>
+      </div>
+    </StructuralColumn>
+    <NuxtPage />
+  </StructuralScreen>
+</template>
+
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+import type { RoleResponse } from '@core/sdk/client'
+
+import { useLocalePath } from '#i18n'
+
+const router = useRouter()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const { roles, rolesAreLoading } = useRoles()
+
+const createModalOpen = ref(false)
+
+const toRole = (role: RoleResponse) => {
+  router.push(localePath(`/service/roles/${role.id}`))
+}
+</script>
+```
+:::
+
+### Mutating State
+
+When we want to update data, things are a bit different. We use pinia-colada to define a mutation for us that uses
+the client sdk to post a role update to our api. 
+
+Now, here comes the magic: In this mutation, we invalidate query keys. As the roles have updated, we invalidate
+the `roles` key. This triggers pinia-colada to automatiaclly refetch our `useRole` composable from before, giving us
+instant state update. 
+
+However, we can even go one step forward: As an update in the rules might have the consequence that the logged-in user
+might now have access to a new service, we **also** invalidate the suite key, triggering pinia-colada to re-fetch
+these composables as well! 
+
+And the best part? We don't have to do anything, as the vue refs holdings these objects will change automatically and
+vue will re-render the UI accordingly. 
+
+::: code-group
+
+```ts [useUpdateRole.ts]
+import { updateRole, type UpdateRoleRequest } from '@core/sdk/client'
+
+export const useUpdateRole = defineMutation(() => {
+  const queryCache = useQueryCache()
+
+  const { mutateAsync: updateRoleMutation } = useMutation({
+    mutation: async ({ roleId, updatedRole }: { roleId: string, updatedRole: UpdateRoleRequest }) => {
+      await updateRole({
+        composable: '$fetch',
+        path: {
+          role_id: roleId,
+        },
+        body: updatedRole,
+      })
+      queryCache.invalidateQueries({ key: ['roles'] })
+      queryCache.invalidateQueries({ key: ['suite'] })
+    },
+  })
+  return {
+    updateRole: updateRoleMutation,
+  }
+})
+```
+
+```vue{28,31,35} [role.vue]
+<template>
+  <StructuralColumn
+    :title="role?.name"
+    close-route="/service/roles"
+    :loading="roleIsLoading"
+    size="small"
+  >
+    <div class="flex flex-col gap-12">
+      <div class="flex flex-col gap-3">
+        <h2 class="text-xl">
+          {{ t('role.edit') }}
+        </h2>
+        <RoleEdit
+          v-model="role"
+        />
+        <Button
+          type="button"
+          :label="t('role.save_button')"
+          icon="pi pi-save"
+          @click="saveRole"
+        />
+      </div>
+    </div>
+  </StructuralColumn>
+</template>
+
+<script setup lang="ts">
+import { useUpdateRole } from '@core/composables/role/useUpdateRole'
+import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
+
+const { updateRole } = useUpdateRole()
+...
+
+const saveRole = async () => {
+  await updateRole({ roleId: role.value.id, updatedRole: clonedRole.value })
+  toast.add({ severity: 'success', summary: t('role.role_saved.summary'), detail: t('role.role_saved.detail'), life: 3000 })
+}
+</script>
+```
+
+:::
+
 
 **Key Features:**
 - **Reactive Queries**: Automatic caching and invalidation
@@ -140,7 +417,7 @@ export const useAgents = defineQuery(() => {
 
 ---
 
-## 2. The Step-by-Step Development Workflow
+## The Step-by-Step Development Workflow
 
 This section provides a practical, step-by-step guide to building, testing, and debugging frontend components.
 
@@ -167,195 +444,250 @@ The frontend development server includes hot module replacement, API proxy, and 
 ```bash
 # Start development server (port 8182)
 pnpm dev
-
-# Alternative: with specific port
-pnpm dev --port 3000
 ```
 
 **Access Points:**
-- **Frontend Application**: `http://localhost:8182`
+- **Frontend Application**: `http://localhost:3000`
 - **API Proxy**: Automatically routes `/api/v1` to `http://localhost:8000`
 - **Hot Reload**: Automatic reloading on file changes
 
-### Step 2: Create Components and Composables
+### Step 2: Create Composables
 
-Follow this pattern for building new features:
+If you have created a new API-Endpoint, re-generate the client sdk:
 
-1. **Create the Composable**: Define the data layer and business logic.
-   ```typescript
-   // composables/my-feature/useMyFeature.ts
-   import { getMyFeatureData, type MyFeatureDto } from '@core/sdk/client'
-   import { useQuery } from '@pinia/colada'
-   
-   export const useMyFeature = defineQuery(() => {
-     const { data: features, isPending: isLoading } = useQuery<MyFeatureDto[]>({
-       key: () => ['my-feature'],
-       staleTime: minutesToMilliseconds(5),
-       query: async () => {
-         return await getMyFeatureData({ composable: '$fetch' })
-       },
-     })
-   
-     return { features, isLoading }
-   })
-   ```
+```bash
+pnpm generate-sdk
+```
 
-2. **Create the Component**: Build the UI component.
-   ```vue
-   <!-- components/MyFeature/Card.vue -->
-   <template>
-     <Card class="my-feature-card">
-       <template #header>
-         <div class="flex items-center gap-2">
-           <Icon name="my-feature" />
-           <h3>{{ feature.name }}</h3>
-         </div>
-       </template>
-       <template #content>
-         <p>{{ feature.description }}</p>
-         <MyFeatureActions :feature="feature" />
-       </template>
-     </Card>
-   </template>
-   
-   <script setup lang="ts">
-   import type { MyFeatureDto } from '@core/sdk/client'
-   
-   interface Props {
-     feature: MyFeatureDto
-   }
-   
-   const props = defineProps<Props>()
-   </script>
-   ```
+Wrap your API endpoints in composables like documented above. 
 
-3. **Create the Page**: Integrate components into a page.
-   ```vue
-   <!-- pages/service/my-feature.vue -->
-   <template>
-     <div class="my-feature-page">
-       <h1>{{ t('myFeature.title') }}</h1>
-       <div v-if="isLoading" class="loading">
-         <ProgressSpinner />
-       </div>
-       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-         <MyFeatureCard
-           v-for="feature in features"
-           :key="feature.id"
-           :feature="feature"
-         />
-       </div>
-     </div>
-   </template>
-   
-   <script setup lang="ts">
-   const { t } = useI18n()
-   const { features, isLoading } = useMyFeature()
-   
-   definePageMeta({
-     middleware: 'auth',
-     layout: 'default',
-   })
-   </script>
-   ```
+### Step 3: Create Page
 
-### Step 3: Add Internationalization
+Now, start with the service page. In the `pages` directory,
+each service has its dediacted page. 
 
-All user-facing text must support the four required languages:
+Usually, the root page like `/agents.vue` fetching all agents using a composable like `useAgents()`, where
+nested pages like `/agents/agent-[agent_id]-[agent_class].vue` use a composable like `useAgent()` to fetch a specific
+instance of an agent. 
 
-```yaml
-# i18n/locales/en.yaml
+If an agent then has multiple sub-pages that show different information, like the agents threads, a visualization of
+its workflow, etc. these are different pages as well.
+
+```
+pages
+├── agents
+│    ├── agent-[agent_id]-[agent_class]
+│    │    ├── chat.vue
+│    │    ├── overview.vue
+│    │    ├── threads.vue
+│    │    └── workflow.vue
+│    └── agent-[agent_id]-[agent_class].vue
+└── agents.vue
+```
+
+::: code-group
+
+```vue [agents.vue]
+<template>
+  <StructuralScreen>
+    <StructuralColumn
+      :title="t('agent.title')"
+      :loading="agentsAreLoading"
+    >
+      <div
+        class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
+      >
+        <AgentCard
+          v-for="agent in agents"
+          :key="agent.agent_id"
+          :agent="agent"
+          @click="() => toAgent(agent)"
+        />
+      </div>
+    </StructuralColumn>
+
+    <NuxtPage />
+  </StructuralScreen>
+</template>
+
+<script setup lang="ts">
+import type { AgentDto } from '@core/sdk/client'
+
+import { useLocalePath } from '#i18n'
+
+const router = useRouter()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const { agents, agentsAreLoading } = useAgents()
+
+const toAgent = (agent: AgentDto) => {
+  router.push(localePath(`/service/agents/agent-${agent.agent_id}-${agent.agent_class}/overview`))
+}
+</script>
+```
+
+```vue [/agents/agent-[agent_id]-[agent_class].vue]
+<template>
+  <div class="flex flex-col gap-2">
+    <SelectButton
+      v-if="navItems"
+      :model-value="activeNavItem"
+      :options="navItems"
+      data-key="key"
+      option-label="name"
+      size="small"
+      @update:model-value="toNavItem"
+    />
+    <NuxtPage />
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { NavItem } from '@core/types/NavItem'
+
+const router = useRouter()
+const route = useRoute()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const { agent } = useAgent()
+
+const subPath = (path: string) => {
+  return `/service/agents/agent-${route.params.agent_id}-${route.params.agent_class}/${path}`
+}
+
+const isActive = (path: string) => {
+  return () => {
+    const localizedPath = localePath(subPath(path))
+    return route.path.startsWith(localizedPath)
+  }
+}
+
+const navItems = computed<NavItem[]>(() => {
+  const items: NavItem[] = [
+    { name: t('agent.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
+    { name: t('agent.navigation.workflow'), key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
+    { name: t('agent.navigation.threads'), key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
+  ]
+  if (agent.value?.is_conversational) {
+    items.push({ name: t('agent.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
+    )
+  }
+  return items
+})
+
+const toNavItem = (navItem: NavItem) => {
+  router.push(localePath(navItem.path))
+}
+
+const activeNavItem = computed<NavItem | undefined>(() => {
+  return navItems.value?.filter(navItem => navItem.isActive())[0]
+})
+</script>
+```
+
+```vue [/agents/agent-[agent_id]-[agent_class]/overview.vue]
+<template>
+  <StructuralColumn
+    :title="agent?.agent_config.name"
+    close-route="/service/agents"
+    :loading="agentIsLoading"
+    size="large"
+  >
+    <div class="flex flex-col gap-12">
+      <span class="mb-4 block text-sm text-surface-500 dark:text-surface-400">
+        {{ agent.agent_config.description }}
+      </span>
+      <Panel
+        class="panel pt-5"
+      >
+        ...
+      </Panel>
+    </div>
+  </StructuralColumn>
+</template>
+
+<script setup lang="ts">
+const { agent, agentIsLoading } = useAgent()
+</script>
+```
+
+:::
+
+There are a few interesting things to note here. First, all pages fetch their own data, hence, they are all completely
+independent of each other, simply re-using composables like `useAgent` as we let pinia-colada handle caching for us.
+
+Second, you see multiple uses of `StructuralColumn` - that is simply a component that dominates our design system. 
+It intelligently waits to display any content before the data has finished loading, giving you the security that
+you can freely use data like `agent` within the template without having to wait until it is loaded.
+
+Third, you may have noticed that `/agents/agent-[agent_id]-[agent_class].vue` does not do anything - it is just a 
+`router`, giving the user the option to click on either *overview*, *workflow*, *threads* or *chat*. That is a common
+pattern as well.
+
+### Step 4: Create Components
+
+Now that you have the page, start extracting fitting sections as re-usable components. 
+
+- **Do** check our components to see whather we have a component that already fulfils your needs
+- **Do** re-use components or make them more flexible with additional props if you need to
+- **Do** copy-paste components if you need something that is similar by design, but is a completely different domain / service
+- **Do** check the primevue page regularly and find components that fit your needs
+- **Do** find inspiration in their component library or their [PrimeBlocks](https://primeblocks.org/) website
+
+---
+
+- **Don't** build low-level components like buttons. Instead, use the ones offered by PrimeVue. 
+- **Don't** write inline css, use tailwind
+- **Don't** like custom css classes, use tailwind
+- **Don't** overabstract components - we don't want to build a super complex data table ourselves. If we have one table for service X and a duplicate for service Y, that's fine.
+
+### Step 5: Add Internationalization
+
+All user components must be transalted into at least **german**, **english**, **french** and **italian**. 
+We have dedicated locale yaml files for these languages.
+
+::: code-group
+
+```vue [myComponent.vue]
+<template>
+  <h1>{{ t('myFeature.title') }}</h1>
+  <p>{{ t('myFeature.description') }}</p>
+  <button>{{ t('myFeature.actions.create') }}</button>
+</template>
+<script setup lang="ts">
+const { t } = useI18n()
+</script>
+```
+
+```yaml [en.yaml]
 myFeature:
   title: "My Feature"
   description: "Feature description"
   actions:
     create: "Create"
-    edit: "Edit"
-    delete: "Delete"
-  
-# i18n/locales/de.yaml
+```
+
+```yaml [de.yaml]
 myFeature:
   title: "Mein Feature"
   description: "Feature-Beschreibung"
   actions:
     create: "Erstellen"
-    edit: "Bearbeiten"
-    delete: "Löschen"
 ```
 
-### Step 4: API Integration
+:::
 
-The frontend uses a generated SDK that provides type-safe API interactions:
+We usually structure the i18n files by service as well. 
 
-```typescript
-// Generated SDK usage
-import { 
-  getMyFeatureData, 
-  createMyFeature, 
-  updateMyFeature,
-  type MyFeatureDto,
-  type CreateMyFeatureRequest 
-} from '@core/sdk/client'
-
-// Query example
-const { data } = await getMyFeatureData({ composable: '$fetch' })
-
-// Mutation example
-const newFeature = await createMyFeature({
-  composable: '$fetch',
-  body: { name: 'New Feature', description: 'Description' }
-})
-```
-
-**SDK Regeneration:**
-```bash
-# Regenerate SDK when API changes
-pnpm generate-sdk
-```
-
-### Step 5: Testing and Debugging
-
-#### Development Tools
-
-- **Vue DevTools**: Browser extension for component inspection
-- **Network Tab**: Monitor API calls and responses
-- **Console Logging**: Use `console.log()` for debugging composables
-
-#### Common Debugging Patterns
-
-```typescript
-// Debug composable state
-export const useMyFeature = defineQuery(() => {
-  const query = useQuery<MyFeatureDto[]>({
-    key: () => ['my-feature'],
-    query: async () => {
-      console.log('Fetching my feature data...')
-      const data = await getMyFeatureData({ composable: '$fetch' })
-      console.log('Received data:', data)
-      return data
-    },
-  })
-  
-  // Debug reactive state
-  watchEffect(() => {
-    console.log('Query state:', query.asyncStatus.value)
-    console.log('Data:', query.data.value)
-  })
-  
-  return query
-})
-```
 
 ### Step 6: Ensure Code Quality
 
 Before committing your changes, use the provided npm scripts:
 
 ```bash
-# Lint and fix code issues
 pnpm lint
-
-# Build for production
-pnpm build
 ```
 
 **Code Quality Standards:**
@@ -366,227 +698,31 @@ pnpm build
 
 ---
 
-## 3. Frontend Design Patterns and Best Practices
 
-This section covers established patterns and best practices for building robust frontend components.
+## Glossary of Web Frontend Terms
 
-### Component Organization Patterns
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_web` scope, building upon the core AI-Hub terminology.
 
-#### Domain-Driven Component Structure
-
-Components are organized by business domain rather than technical concerns:
-
-```
-components/
-├── Agent/              # Agent management components
-│   ├── Avatar.vue      # Agent avatar display
-│   ├── Card.vue        # Agent card layout
-│   └── List.vue        # Agent list container
-├── Chat/               # Chat interface components
-│   ├── Message.vue     # Individual message component
-│   ├── Thread.vue      # Thread display
-│   └── SourceNodes.vue # Source citations
-└── Process/            # Process management components
-    ├── Form.vue        # Process configuration form
-    └── Visualization.vue # Process workflow diagram
-```
-
-#### Reusable Component Patterns
-
-```vue
-<!-- Base component with slot patterns -->
-<template>
-  <Card class="base-card">
-    <template #header>
-      <slot name="header" />
-    </template>
-    <template #content>
-      <slot />
-    </template>
-    <template #footer>
-      <slot name="footer" />
-    </template>
-  </Card>
-</template>
-
-<!-- Composition with multiple components -->
-<template>
-  <AgentCard>
-    <template #header>
-      <AgentAvatar :agent="agent" />
-      <AgentStatus :agent="agent" />
-    </template>
-    <AgentMetrics :agent="agent" />
-    <template #footer>
-      <AgentActions :agent="agent" />
-    </template>
-  </AgentCard>
-</template>
-```
-
-### State Management Patterns
-
-#### Query Patterns with Pinia-Colada
-
-```typescript
-// Basic query pattern
-export const useBasicQuery = defineQuery(() => {
-  return useQuery({
-    key: () => ['basic-data'],
-    query: async () => await fetchData(),
-  })
-})
-
-// Parameterized query pattern
-export const useParameterizedQuery = defineQuery((id: string) => {
-  return useQuery({
-    key: () => ['data', id],
-    query: async () => await fetchDataById(id),
-  })
-})
-
-// Paginated query pattern
-export const usePaginatedQuery = defineQuery(() => {
-  const currentPage = ref(1)
-  const pageSize = ref(10)
-  
-  const query = useQuery({
-    key: () => ['paginated-data', { page: currentPage.value, size: pageSize.value }],
-    query: async () => await fetchPaginatedData({
-      page: currentPage.value,
-      size: pageSize.value,
-    }),
-    placeholderData: previousData => previousData,
-  })
-  
-  return { ...query, currentPage, pageSize }
-})
-```
-
-#### Mutation Patterns
-
-```typescript
-// Basic mutation pattern
-export const useCreateMutation = () => {
-  return useMutation({
-    mutation: async (data: CreateRequest) => await createData(data),
-    onSuccess: () => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['data'] })
-    },
-  })
-}
-
-// Optimistic update pattern
-export const useOptimisticMutation = () => {
-  return useMutation({
-    mutation: async (data: UpdateRequest) => await updateData(data),
-    onMutate: async (data) => {
-      // Optimistically update the UI
-      const previousData = queryClient.getQueryData(['data', data.id])
-      queryClient.setQueryData(['data', data.id], { ...previousData, ...data })
-      return { previousData }
-    },
-    onError: (error, variables, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['data', variables.id], context.previousData)
-    },
-  })
-}
-```
-
-### Real-time Communication Patterns
-
-#### Socket.io Integration
-
-```typescript
-// Socket connection composable
-export const useSocket = () => {
-  const socket = ref<Socket | null>(null)
-  
-  const connect = () => {
-    socket.value = io('/api/v1', {
-      auth: { token: await getToken() },
-    })
-    
-    socket.value.on('connect', () => {
-      console.log('Connected to socket')
-    })
-    
-    socket.value.on('disconnect', () => {
-      console.log('Disconnected from socket')
-    })
-  }
-  
-  const disconnect = () => {
-    socket.value?.disconnect()
-    socket.value = null
-  }
-  
-  return { socket, connect, disconnect }
-}
-
-// Real-time event handling
-export const useRealTimeEvents = (threadId: string) => {
-  const { socket } = useSocket()
-  const events = ref<Event[]>([])
-  
-  const subscribeToThread = () => {
-    socket.value?.emit('join_thread', threadId)
-    socket.value?.on('thread_event', (event: Event) => {
-      events.value.push(event)
-    })
-  }
-  
-  const unsubscribeFromThread = () => {
-    socket.value?.emit('leave_thread', threadId)
-    socket.value?.off('thread_event')
-  }
-  
-  return { events, subscribeToThread, unsubscribeFromThread }
-}
-```
-
-### UI Component Patterns
-
-#### Event Display Components
-
-```vue
-<!-- Dynamic event component rendering -->
-<template>
-  <div class="event-display">
-    <component 
-      :is="getEventComponent(event)"
-      :event="event"
-      :key="event.id"
-    />
-  </div>
-</template>
-
-<script setup lang="ts">
-import type { Event } from '@core/sdk/client'
-
-interface Props {
-  event: Event
-}
-
-const props = defineProps<Props>()
-
-// Dynamic component mapping
-const getEventComponent = (event: Event) => {
-  const eventType = event._parent_event_names?.[0]
-  
-  switch (eventType) {
-    case 'ChunkEvent':
-      return resolveComponent('EventDisplayChunkEvent')
-    case 'LLMEvent':
-      return resolveComponent('EventDisplayLLMEvent')
-    case 'ExceptionEvent':
-      return resolveComponent('EventDisplayExceptionEvent')
-    default:
-      return resolveComponent('EventDisplayUnknownEvent')
-  }
-}
-</script>
-```
-
+| Term | Definition |
+| :--- | :--- |
+| **Composable** | Vue 3 composition functions that encapsulate and reuse stateful logic. In aihub_web, composables manage API calls, state, and business logic using Pinia-Colada patterns. |
+| **Pinia-Colada** | Advanced state management library that provides reactive queries, mutations, and caching for Vue applications. Used extensively for API state management in aihub_web. |
+| **PrimeVue** | Comprehensive UI component library providing rich, accessible components. Forms the foundation of aihub_web's user interface with custom theming. |
+| **Nuxt Layer** | Nuxt 3 architectural pattern that allows sharing configuration, components, and composables. aihub_web is structured as a reusable layer. |
+| **SPA Mode** | Single Page Application mode where the entire app runs client-side with no server-side rendering. Enables rich interactivity and real-time updates. |
+| **API Proxy** | Development-time proxy configuration that routes API calls from the frontend to the backend service, enabling seamless local development. |
+| **Socket.io Integration** | Real-time bidirectional communication system that enables live updates for chat, agent events, and system notifications. |
+| **Vue Flow** | Workflow visualization library used for displaying agent workflows and process diagrams with interactive node-based interfaces. |
+| **ApexCharts** | Charting library integration for displaying analytics, cost tracking, and performance metrics in dashboard components. |
+| **File-based Routing** | Nuxt 3 feature that automatically generates routes based on the file structure in the `pages/` directory. |
+| **Auto-imports** | Nuxt 3 feature that automatically imports composables, components, and utilities without explicit import statements. |
+| **Middleware** | Functions that run before rendering pages, used for authentication, authorization, and route protection. |
+| **Locale Handler** | Internationalization system supporting English, German, French, and Italian with automatic locale detection and switching. |
+| **Generated SDK** | TypeScript client automatically generated from the API's OpenAPI specification, providing type-safe API interactions. |
+| **Theme System** | Custom PrimeVue theme configuration that provides consistent styling and dark mode support across the application. |
+| **Event Display Components** | Specialized components for rendering different types of AI-Hub events (LLM events, chunk events, exception events) with rich formatting. |
+| **Thread Management** | User interface for managing conversation threads between users and AI agents, including chat history and participant management. |
+| **Agent Dashboard** | Administrative interface for monitoring agent performance, managing configurations, and viewing agent-specific analytics. |
+| **Process Visualization** | Interactive workflow diagrams that show the flow of agentic processes with real-time status updates. |
+| **Evaluation Interface** | User interface for managing datasets, experiments, and AI model evaluations with results visualization. |
+| **Cost Tracking** | Dashboard components for monitoring and analyzing AI model usage costs with detailed breakdowns and trends. |
