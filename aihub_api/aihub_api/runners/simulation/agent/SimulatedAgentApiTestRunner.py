@@ -116,8 +116,6 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             system_prompt=LocaleString(de="Test Agent System Prompt"),
         )
 
-        ConfigSaver().save_config(self.agent_config)
-
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
         Handler for control events targeting this agent instance. If a StartEvent arrives,
@@ -146,6 +144,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             stop_events=self.stop_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
+            default_agent_config=self.agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
