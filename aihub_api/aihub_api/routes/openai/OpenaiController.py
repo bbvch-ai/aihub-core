@@ -13,7 +13,9 @@ from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import Az
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, File, Form, Security, UploadFile
@@ -42,14 +44,13 @@ class OpenaiController(Controller):
     A controller that fully emulates the OpenAI API, enabling AI Hub to serve as a drop-in replacement
     for OpenAI's endpoints.
 
-    ### Why OpenaiController?
     The OpenaiController is designed to mirror the exact API interface provided by OpenAI,
     so that customers can seamlessly switch from OpenAI's services to AI Hub without modifying their client code.
     Every endpoint that OpenAI offers—ranging from model management, chat completions, embeddings, image generation,
     to audio processing (both speech-to-text and text-to-speech)—is implemented here with the same
     request/response structure expected by the OpenAI Python and JavaScript SDKs.
 
-    ### Key Intentions
+    It offers:
     - **API Compatibility**: Provide identical endpoints and interfaces as OpenAI, allowing customers to replace
       OpenAI endpoints with AI Hub's endpoints without changes to their integration.
     - **Unified Access**: Centralize access to various generative AI capabilities (LLM chat, embeddings,
@@ -233,8 +234,8 @@ class OpenaiController(Controller):
         async def chat_completion_with_assistants(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -248,7 +249,7 @@ class OpenaiController(Controller):
                     raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
             return await OpenaiService.chat_completion_with_assistants(
-                self.chat_models, model_name, completion_request, user, nc, external_event_distributor, t
+                self.chat_models, model_name, completion_request, user, nc, external_agent_event_distributor, t
             )
 
         return self

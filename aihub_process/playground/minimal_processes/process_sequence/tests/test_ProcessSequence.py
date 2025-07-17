@@ -21,6 +21,7 @@ def agent_a_runner_fixture():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A for Sequence"),
             description=LocaleString(en="Test Agent A"),
             system_prompt=LocaleString(en="You are Agent A"),
@@ -64,7 +65,7 @@ async def agent_a_started_for_sequence(
         async with initial_process_runner.test_run():
             async with agent_a_runner.test_run() as topic_a:
                 await agent_a_runner.send_event_from_topic(
-                    start_event=AgentAStartEvent(payload=payload),
+                    start_event=AgentAStartEvent(agent_config=agent_a_runner.agent_config, payload=payload),
                     topic=topic_a,
                 )
 

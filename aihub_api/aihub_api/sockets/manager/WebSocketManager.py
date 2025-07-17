@@ -5,7 +5,7 @@ from aihub_lib.nats.events import DisplayEvent
 from aihub_lib.nats.topics import AgentTopic
 from fastapi import WebSocket
 
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,6 @@ class WebSocketManager:
     Manages active WebSocket connections between the server and users, allowing multiple
     concurrent connections per user and broadcasting events to all of a user's connections.
 
-    ### Why This Class?
     In a real-time application, a single user might connect from multiple tabs, browsers,
     or devices simultaneously. `WebSocketManager`:
     - Tracks all active connections for each user.
@@ -44,7 +43,7 @@ class WebSocketManager:
     await ws_manager.connect(websocket, user_id="user123")
 
     # Later, to send an event
-    event = WSServerEvent(...)
+    event = ContextualizedAgentEvent(...)
     await ws_manager.send_event(event, user_id="user123")
 
     # On disconnection
@@ -80,7 +79,7 @@ class WebSocketManager:
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
 
-    async def send_event(self, event: DisplayEvent, topic: AgentTopic, user_id: str) -> None:
+    async def send_agent_event(self, event: DisplayEvent, topic: AgentTopic, user_id: str) -> None:
         """
         Send a JSON-serialized version of the given event to all active connections of the specified user.
 
@@ -91,7 +90,7 @@ class WebSocketManager:
         if user_id in self.active_connections:
             locale = self.user_preferred_locale.get(user_id)
             locale_handler = LocaleHandler(locale=locale)
-            external_event = WSServerEvent(
+            contextualized_event = ContextualizedAgentEvent(
                 locale=locale,
                 agent_class=topic.agent_class,
                 agent_id=topic.agent_id,
@@ -105,7 +104,7 @@ class WebSocketManager:
                 event_display_name=locale_handler.extract(event.display_name),
                 event_display_description=locale_handler.extract(event.display_description),
             )
-            data = external_event.model_dump()
+            data = contextualized_event.model_dump()
             for ws in list(self.active_connections[user_id]):
                 try:
                     await ws.send_json(data)

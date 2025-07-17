@@ -3,4 +3,4 @@ from aihub_lib.nats.events.work.agent.AgentWorkEvent import AgentWorkEvent
 
 
 class AnalyzedCV(AgentWorkEvent[BaseEvent]):
-    pass
+    cv_name: str

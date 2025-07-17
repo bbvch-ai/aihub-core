@@ -98,11 +98,11 @@ import { format } from 'date-fns'
 import type {
   DisplayStatistics,
   ThreadDto,
-  WsServerEventReadable,
+  WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: WsServerEventReadable[]
+  events: WsServerAgentEventReadable[]
   thread: ThreadDto
 }>()
 

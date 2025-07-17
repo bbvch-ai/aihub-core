@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
@@ -11,6 +11,9 @@ class WorkEvent(ProcessEvent):
     A work event signals that a piece of work was successfully completed by some entity involved in the process.
     You should generally never inherit from this class directly but use a more specific child class such as
     AgentWorkEvent, HumanWorkEvent, ... etc. instead.
+    Work events are the driving forces of an agentic process: By submitting a work event, an entity signals
+    that it has completed a step in the workflow and the process dispatcher will drive the process
+    to the appropriate next step(s).
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.process_steps.work_event.name")
@@ -22,3 +25,20 @@ class WorkEvent(ProcessEvent):
     display_description: Annotated[
         LocaleString | None, Field(description="Display description for the process step")
     ] = None
+
+    @model_validator(mode="after")
+    def set_default_values(self) -> "WorkEvent":
+        """Set default values from class if instance values are None."""
+        if not self.display_name:
+            self.display_name = self.__class__._display_name
+        if not self.display_description:
+            self.display_description = self.__class__._display_description
+        return self
+
+    @classmethod
+    def display_name_from_class(cls) -> LocaleString:
+        return cls._display_name
+
+    @classmethod
+    def display_description_from_class(cls) -> LocaleString:
+        return cls._display_description

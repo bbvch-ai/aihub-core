@@ -12,7 +12,6 @@ from playground.agents.AgentB.AgentB import AgentB
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 
-# Adjust the path to your feature file if necessary
 scenarios("./features/agent_only_process.feature")
 
 
@@ -22,6 +21,7 @@ def agent_a_runner_fixture():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for AgentOnlyProcess"),
             system_prompt=LocaleString(en="You are Agent A"),
@@ -35,6 +35,7 @@ def agent_b_runner_fixture():
         agent_type=AgentB,
         agent_config=AgentConfig(
             agent_id="agent_b",
+            agent_class=AgentB.__name__,
             name=LocaleString(en="Agent B"),
             description=LocaleString(en="Test Agent B for AgentOnlyProcess"),
             system_prompt=LocaleString(en="You are Agent B"),
@@ -64,7 +65,7 @@ async def agent_a_started_with_payload(
             async with agent_a_runner.test_run() as topic_a:
                 # Send the initial event to AgentA
                 await agent_a_runner.send_event_from_topic(
-                    start_event=AgentAStartEvent(payload=payload),
+                    start_event=AgentAStartEvent(agent_config=agent_a_runner.agent_config, payload=payload),
                     topic=topic_a,
                 )
 

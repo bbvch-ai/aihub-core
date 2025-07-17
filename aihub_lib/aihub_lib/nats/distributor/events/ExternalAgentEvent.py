@@ -57,17 +57,11 @@ class ExternalAgentEvent(BaseModel):
         else:
             raise ValueError(f"Cannot deserialize data of type {type(data)}")
 
-        thread_id = json_data.get("thread_id")
-        display_id = json_data.get("display_id", str(ObjectId()))
-
-        if not thread_id:
-            raise ValueError("thread_id is required")
-
         event_json_data = json_data.get("event")
         event = ControlEvent.deserialize_event(event_json_data)
 
         return cls(
-            thread_id=thread_id,
-            display_id=display_id,
+            thread_id=json_data.get("thread_id"),
+            display_id=json_data.get("display_id", str(ObjectId())),
             event=event,
         )

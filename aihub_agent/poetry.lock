@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.217.0"
+version = "v0.222.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -78,8 +78,8 @@ llama-index-llms-google-genai = "^0.1.7"
 llama-index-llms-openai-like = "^0.3.4"
 llama-index-readers-file = "^0.4.1"
 llama-index-storage-docstore-mongodb = "^0.3.0"
-llama-index-vector-stores-azureaisearch = "^0.3.9"
-llama-index-vector-stores-milvus = "^0.8.6"
+llama-index-vector-stores-azureaisearch = "^0.3.0"
+llama-index-vector-stores-milvus = "^0.7.3"
 mongoengine = "^0.29.1"
 nats-py = "^2.9.0"
 networkx = "^3.4.2"
@@ -2849,35 +2849,35 @@ llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-azureaisearch"
-version = "0.3.9"
+version = "0.3.7"
 description = "llama-index vector_stores azureaisearch integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_vector_stores_azureaisearch-0.3.9-py3-none-any.whl", hash = "sha256:84a40de1761c72a63088d8e62b3bddfb27ee4ca3265cf17ed16bbe3562cd5d16"},
-    {file = "llama_index_vector_stores_azureaisearch-0.3.9.tar.gz", hash = "sha256:e35e4719e3041083cf1dafb2fbdec41f61a2550dac347fcbcc09dac416056367"},
+    {file = "llama_index_vector_stores_azureaisearch-0.3.7-py3-none-any.whl", hash = "sha256:7e52ab843f9d3567faa7f6fd52638c3572c3a39b54b86661305be265cfa99bed"},
+    {file = "llama_index_vector_stores_azureaisearch-0.3.7.tar.gz", hash = "sha256:aba94137799e2098b488738b7ea20677eabc7162be273b69248b2be698b1f05a"},
 ]
 
 [package.dependencies]
-azure-search-documents = ">=11.5.1,<12"
-llama-index-core = ">=0.12.0,<0.13"
+azure-search-documents = ">=11.5.1,<12.0.0"
+llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-milvus"
-version = "0.8.6"
+version = "0.7.3"
 description = "llama-index vector_stores milvus integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_vector_stores_milvus-0.8.6-py3-none-any.whl", hash = "sha256:d769b360c3952a01e7fb42907a015beb900fdbb41d3790f4b02b1837effb857c"},
-    {file = "llama_index_vector_stores_milvus-0.8.6.tar.gz", hash = "sha256:f9644d4c525c57541a8aecaba39be5ff3a433102c12aa01fd3c4dd347ca6022f"},
+    {file = "llama_index_vector_stores_milvus-0.7.3-py3-none-any.whl", hash = "sha256:911dd2b7ecef659fb2e860949806b2cc05977f24185b620d6bf2bcf114727db7"},
+    {file = "llama_index_vector_stores_milvus-0.7.3.tar.gz", hash = "sha256:bd0131862150c6f7800c98d72dd71dd0dc1df3de9f1d1b9ac9005a7f03940b52"},
 ]
 
 [package.dependencies]
-llama-index-core = ">=0.12.0,<0.13"
-pymilvus = ">=2.5.10,<3"
+llama-index-core = ">=0.12.0,<0.13.0"
+pymilvus = ">=2.5.2,<3.0.0"
 
 [[package]]
 name = "mako"
@@ -4615,14 +4615,14 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pymilvus"
-version = "2.5.12"
+version = "2.5.8"
 description = "Python Sdk for Milvus"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "pymilvus-2.5.12-py3-none-any.whl", hash = "sha256:ef77a4a0076469a30b05f0bb23b5a058acfbdca83d82af9574ca651764017f44"},
-    {file = "pymilvus-2.5.12.tar.gz", hash = "sha256:79ec7dc0616c2484f77abe98bca8deafb613645b5703c492b51961afd4f985d8"},
+    {file = "pymilvus-2.5.8-py3-none-any.whl", hash = "sha256:6f33c9e78c041373df6a94724c90ca83448fd231aa33d6298a7a84ed2a5a0236"},
+    {file = "pymilvus-2.5.8.tar.gz", hash = "sha256:48923e7efeebcc366d32b644772796f60484e0ca1a5afc1606d21a10ed98133c"},
 ]
 
 [package.dependencies]

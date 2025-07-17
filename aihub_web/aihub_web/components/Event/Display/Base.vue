@@ -59,10 +59,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { AgentDto, ThreadDto, WsServerAgentEventReadable } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  event: WsServerEventReadable
+  event: WsServerAgentEventReadable
   thread: ThreadDto
   icon: string
   isExternal?: boolean

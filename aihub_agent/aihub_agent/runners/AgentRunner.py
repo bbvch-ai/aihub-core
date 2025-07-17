@@ -1,21 +1,19 @@
 import asyncio
 import logging
 
-from aihub_lib.nats.events import StartEvent, UserMessageEvent
+from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
     AgentConfigSpecs,
-    EventSpecs,
 )
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
@@ -194,26 +192,3 @@ class AgentRunner:
             await self._stop_signal.wait()
         except KeyboardInterrupt:
             await self.stop()
-
-    async def send_event(
-        self,
-        start_event: StartEvent,
-        thread_id: str,
-        display_id: str,
-        run_id: str,
-    ):
-        """
-        Sends an initial event (like a StartEvent) to initiate a run.
-        This allows external code to trigger a new run by injecting a start event.
-        """
-        publisher = JSPublisher(self.js)
-        thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
-            self.topic_manager,
-            thread_id,
-            display_id,
-            run_id,
-        )
-        subject = thread_topic_manager.get_subject_for_control_event_in_thread(
-            start_event.event_name, event_id=start_event.event_id
-        )
-        await publisher.publish_event(start_event, subject)

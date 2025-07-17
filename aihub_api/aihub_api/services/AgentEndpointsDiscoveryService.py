@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import time
 from functools import reduce
@@ -10,13 +9,15 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, InstanceDiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import EventSpecs
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
 )
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -27,18 +28,20 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
+from typing_extensions import override
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
 
 logger = logging.getLogger(__name__)
 
 
-class AgentDiscoveryService:
+class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     """
     This service ensures that new agents in the system are automatically registered.
     This ensures that the API and the Agents are decoupled.
@@ -48,18 +51,12 @@ class AgentDiscoveryService:
         self,
         nc: NATS,
         api_app: FastAPI,
-        agent_controller: AgentController,
+        controller: AgentController,
         locale_handler: LocaleHandler,
         discovery_interval: int = 60,
     ):
-        self.nc: NATS = nc
-        self.app: FastAPI = api_app
-        self.agent_controller: AgentController = agent_controller
-        self.locale_handler: LocaleHandler = locale_handler
-        self.discovery_interval: int = discovery_interval
-        self.registered_agents: set[tuple[str, str]] = set()
-        self.running: bool = False
-        self.task: asyncio.Task | None = None
+        super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
+        self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
 
         self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
@@ -93,13 +90,12 @@ class AgentDiscoveryService:
             agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent.from_agent_dto(agent)
             await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
+    @override
     async def start(self):
-        if self.running:
-            logger.warning("Agent discovery service is already running")
+        started = await super().start()
+        if not started:
+            logger.debug("Agent discovery service already running")
             return
-
-        self.running = True
-        self.task = asyncio.create_task(self._discovery_loop())
 
         self.discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             nc=self.nc,
@@ -109,38 +105,28 @@ class AgentDiscoveryService:
         await self.discovery_event_subscriber.start()
         logger.info("Agent discovery service started")
 
+    @override
     async def stop(self):
-        if not self.running:
-            logger.warning("Agent discovery service is not running")
+        stopped = await super().stop()
+        if not stopped:
+            logger.debug("Agent discovery service already stopped")
             return
 
-        self.running = False
         await self.discovery_event_subscriber.stop()
-        if self.task:
-            self.task.cancel()
-            await asyncio.gather(self.task, return_exceptions=True)
         logger.info("Agent discovery service stopped")
 
-    async def _discovery_loop(self):
-        while self.running:
-            try:
-                logger.debug("Starting agent discovery")
-                await self._discover_and_register_agents()
-            except Exception as e:
-                logger.exception(f"Error in agent discovery: {e}")
-
-            await asyncio.sleep(self.discovery_interval)
-
-    async def _discover_and_register_agents(self):
-        configured_agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc)
+    @override
+    async def _discover_and_register(self):
+        """Discovers agents and registers endpoints that accept their starting events"""
+        agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc)
 
         # Deregister old endpoints
-        for registered_agent_class, registered_agent_id in list(self.registered_agents):
-            self._deregister_agent_endpoints(registered_agent_class, registered_agent_id)
+        for registered_agent_class, registered_agent_id in list(self.registered_entities):
+            self._deregister_endpoints(registered_agent_class, registered_agent_id)
         self.app.openapi_schema = None
 
         # Register new endpoints for configured agents
-        for agent in configured_agents:
+        for agent in agents:
             agent_key = (agent.agent_class, agent.agent_id)
 
             self._register_agent_endpoints(
@@ -151,25 +137,8 @@ class AgentDiscoveryService:
                 config=agent.agent_config,
             )
 
-            self.registered_agents.add(agent_key)
+            self.registered_entities.add(agent_key)
             logger.info(f"Registered endpoints for configured agent: {agent.agent_class}.{agent.agent_id}")
-
-    def _get_agent_endpoint_names(self, agent_class: str, agent_id: str) -> tuple[str, str, str]:
-        agent_class_name = snakecase(agent_class)
-        agent_id_snake = snakecase(agent_id)
-        base_path = f"{self.agent_controller.base_route}/{agent_class_name}/{agent_id_snake}"
-        return agent_class_name, agent_id_snake, base_path
-
-    def _deregister_agent_endpoints(self, agent_class: str, agent_id: str):
-        _, _, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
-
-        for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
-                self.app.routes.remove(route)
-                logger.info(f"Deregistered endpoint: {route.path}")
-
-        # Remove from registered agents
-        self.registered_agents.discard((agent_class, agent_id))
 
     def _register_agent_endpoints(
         self,
@@ -179,7 +148,10 @@ class AgentDiscoveryService:
         stop_events: list[EventSpecs],
         config: AgentConfig,
     ):
-        agent_class_name, agent_id_snake, base_path = self._get_agent_endpoint_names(agent_class, agent_id)
+        """Registers endpoints for sending events to an agent"""
+        base_path = self._get_endpoint_base_path(agent_class, agent_id)
+        agent_class_snake = snakecase(agent_class)
+        agent_id_snake = snakecase(agent_id)
 
         stop_event_output_types = [
             ModelCreationService.create_output_model_from_event_specs(stop_event) for stop_event in stop_events
@@ -193,7 +165,7 @@ class AgentDiscoveryService:
         for start_event_specs in start_events:
             start_event_name = snakecase(start_event_specs.event_name)
 
-            endpoint_name = f"send_{start_event_name}_to_{agent_class_name}_{agent_id_snake}"
+            endpoint_name = f"send_{start_event_name}_to_{agent_class_snake}_{agent_id_snake}"
             path = f"{base_path}/{start_event_name}"
 
             start_event_input_type = ModelCreationService.create_input_model_from_event_specs(start_event_specs)
@@ -206,7 +178,7 @@ class AgentDiscoveryService:
                     start_event_parents=start_event_specs.event_parents,
                     agent_class=agent_class,
                     agent_id=agent_id,
-                    agent_controller=self.agent_controller,
+                    agent_controller=self.controller,
                     agent_config=config,
                 ),
                 methods=["POST"],
@@ -226,11 +198,13 @@ class AgentDiscoveryService:
         agent_controller: AgentController,
         agent_config: AgentConfig,
     ):
+        """Creates a FastAPI endpoint that sends a StartEvent to an agent"""
+
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[input_type, Body],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             user: Annotated[
                 UserIdentity,
@@ -266,7 +240,7 @@ class AgentDiscoveryService:
 
             stop_event = await AgentService.send_event(
                 nc,
-                external_event_distributor,
+                external_agent_event_distributor,
                 user,
                 event,
                 agent_class,

@@ -5,16 +5,20 @@ from contextlib import asynccontextmanager
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
-from aihub_api.services.AgentDiscoveryService import AgentDiscoveryService
+from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
+from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
@@ -43,7 +47,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
        Initializes a `WebSocketManager`, `WebSocketSender`, and `ExternalAgentEventDistributor`.
        Then subscribes to display events via `NCSubscriber` and sends them to connected websockets.
     5. **App State Initialization:**
-       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_event_distributor`)
+       Stores references to these resources (`nc`, `js`, `ws_manager`, `ws_sender`, `external_agent_event_distributor`)
        in `app.state`, making them accessible throughout the app.
     6. **Cleanup on Exit:**
        On shutdown, it stops the subscribers and closes the NATS connection.
@@ -74,57 +78,82 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
         js = nc.jetstream()
 
-        topic_manager = AgentTopicManager()
-
-        # Persist all agent events
+        # Persist all events
         persister = EventPersister("default")
-        persist_subscriber = AgentNCSubscriber.for_all_agent_events(
-            nc=nc, topic_manager=topic_manager, handler=persister.persist_event
+
+        agent_topic_manager = AgentTopicManager()
+        agent_event_persist_subscriber = AgentNCSubscriber.for_all_agent_events(
+            nc=nc, topic_manager=agent_topic_manager, handler=persister.persist_agent_event
         )
-        await persist_subscriber.start()
+        await agent_event_persist_subscriber.start()
+
+        process_topic_manager = ProcessTopicManager()
+        process_event_persist_subscriber = ProcessNCSubscriber.for_all_process_events(
+            nc=nc, topic_manager=process_topic_manager, handler=persister.persist_process_event
+        )
+        await process_event_persist_subscriber.start()
 
         # Setup WebSocket event flow
         ws_manager = WebSocketManager()
         ws_sender = WebSocketSender(ws_manager=ws_manager)
         ws_subscriber = AgentNCSubscriber.for_all_agents_display_events(
             nc=nc,
-            topic_manager=topic_manager,
+            topic_manager=agent_topic_manager,
             handler=ws_sender.send_event,
         )
         await ws_subscriber.start()
 
-        external_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_agent_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_process_event_distributor = ExternalProcessEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
-        app.state.external_event_distributor = external_event_distributor
+        app.state.external_agent_event_distributor = external_agent_event_distributor
+        app.state.external_process_event_distributor = external_process_event_distributor
+
+        api_app = app.state.api_app
 
         # Create and start the agent discovery service
-        api_app = app.state.api_app
         if hasattr(api_app.state, "agent_controller"):
-            agent_discovery_service = AgentDiscoveryService(
+            agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
                 api_app=api_app,
-                agent_controller=api_app.state.agent_controller,
+                controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
             app.state.agent_discovery_service = agent_discovery_service
 
+        # Create and start the process discovery service
+        if hasattr(api_app.state, "process_controller"):
+            process_discovery_service = ProcessEndpointsDiscoveryService(
+                nc=nc,
+                api_app=api_app,
+                controller=api_app.state.process_controller,
+                locale_handler=ApiLocaleHandler(),
+                discovery_interval=60,  # Check for new process every 60 seconds
+            )
+            await process_discovery_service.start()
+            app.state.process_discovery_service = process_discovery_service
+
         # Yield control back to FastAPI to start serving requests
         yield
 
         # Shutdown: stop subscribers
-        await persist_subscriber.stop()
+        await agent_event_persist_subscriber.stop()
+        await process_event_persist_subscriber.stop()
         await ws_subscriber.stop()
 
+        # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
-            # Stop the discovery service
             await app.state.agent_discovery_service.stop()
+
+        if hasattr(app.state, "process_discovery_service"):
+            await app.state.process_discovery_service.stop()
 
         disconnect()
 

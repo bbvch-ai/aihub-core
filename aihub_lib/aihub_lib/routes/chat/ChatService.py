@@ -171,7 +171,7 @@ class ChatService:
         agent_id: str,
         messages: list[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
@@ -233,7 +233,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await external_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(external_event, user)
 
         return resources
 
@@ -244,7 +244,7 @@ class ChatService:
         agent_id: str,
         messages: list[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
@@ -265,7 +265,7 @@ class ChatService:
             locale=locale,
         )
         return await ChatService.start_json_event_interaction(
-            user, agent_class, agent_id, external_event, topic_manager, nc, external_event_distributor
+            user, agent_class, agent_id, external_event, topic_manager, nc, external_agent_event_distributor
         )
 
     @staticmethod
@@ -276,7 +276,7 @@ class ChatService:
         external_event: ExternalAgentEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
     ):
         stop_signal = asyncio.Event()
         chunk_events: list[ChunkEvent] = []
@@ -326,7 +326,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await external_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(external_event, user)
 
         return resources
 

@@ -36,12 +36,13 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from aihub_lib.testing.ConfigSaver import ConfigSaver
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.services.AgentDiscoveryService import AgentDiscoveryService
+from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             description=LocaleString(de="Test Agent Description"),
             system_prompt=LocaleString(de="Test Agent System Prompt"),
         )
+
+        ConfigSaver().save_config(self.agent_config)
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
@@ -213,10 +216,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.js_publisher = JSPublisher(self.js)
 
         if hasattr(self._api_app.state, "agent_controller"):
-            AgentDiscoveryService(
+            AgentEndpointsDiscoveryService(
                 nc=self.nc,
                 api_app=self._api_app,
-                agent_controller=self._api_app.state.agent_controller,
+                controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,
             )._register_agent_endpoints(

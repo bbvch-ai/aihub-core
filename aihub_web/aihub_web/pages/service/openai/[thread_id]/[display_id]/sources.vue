@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import type { WsServerEventReadable, RetrieverEvent, IngestedNode } from '@core/sdk/client'
+import type { WsServerAgentEventReadable, RetrieverEvent, IngestedNode } from '@core/sdk/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,8 +62,8 @@ const closeSources = () => {
   router.push(localeRoute('/service/openai'))
 }
 
-const retrieveEvents = computed<WsServerEventReadable[]>(() => {
-  return threadEvents.value?.filter((event: WsServerEventReadable) => {
+const retrieveEvents = computed<WsServerAgentEventReadable[]>(() => {
+  return threadEvents.value?.filter((event: WsServerAgentEventReadable) => {
     return event.display_id === route.params.display_id && event.event.nodes
   })
 })
@@ -77,7 +77,7 @@ type DocumentInfo = {
 
 const documentMap = computed<Record<string, DocumentInfo>>(() => {
   const docs: Record<string, DocumentInfo> = {}
-  retrieveEvents.value?.forEach((event: WsServerEventReadable & { event: RetrieverEvent }) => {
+  retrieveEvents.value?.forEach((event: WsServerAgentEventReadable & { event: RetrieverEvent }) => {
     (event.event.nodes ?? []).forEach((node: IngestedNode) => {
       if (!(node.document_id in docs)) {
         docs[node.document_id] = {

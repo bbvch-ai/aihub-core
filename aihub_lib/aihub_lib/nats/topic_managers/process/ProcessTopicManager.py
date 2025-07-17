@@ -9,7 +9,7 @@ class ProcessTopicManager(TopicManager):
     WORK_REQUEST_EVENT = "work_request"
     WORK_EVENT = "work"
 
-    def get_process_instance_discovery_subject_request(
+    def get_process_discovery_subject_request(
         self,
         call_id: Annotated[str, "Unique identifier linking request and response"],
         process_class: Annotated[str, "Process class filter or '*'"] = "*",
@@ -18,15 +18,7 @@ class ProcessTopicManager(TopicManager):
         """Returns a subject for requesting process discovery information."""
         return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.request.{call_id}"
 
-    def get_process_class_discovery_subject_request(
-        self,
-        call_id: Annotated[str, "Unique identifier linking request and response"],
-        process_class: Annotated[str, "Process class filter or '*'"] = "*",
-    ) -> str:
-        """Returns a subject for requesting process discovery information for a specific process class."""
-        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.*.request.{call_id}"
-
-    def get_process_instance_discovery_subject_response(
+    def get_process_discovery_subject_response(
         self,
         call_id: Annotated[str, "Unique identifier linking request and response"],
         process_class: Annotated[str, "Process class filter or '*'"] = "*",
@@ -34,14 +26,6 @@ class ProcessTopicManager(TopicManager):
     ) -> str:
         """Returns a subject for receiving process discovery information."""
         return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.response.{call_id}"
-
-    def get_process_class_discovery_subject_response(
-        self,
-        call_id: Annotated[str, "Unique identifier linking request and response"],
-        process_class: Annotated[str, "Process class filter or '*'"] = "*",
-    ) -> str:
-        """Returns a subject for receiving process discovery information for a specific process class."""
-        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.*.response.{call_id}"
 
     def get_subject_for_specific_event_in_process(
         self,
@@ -59,7 +43,7 @@ class ProcessTopicManager(TopicManager):
         )
 
     def get_subject_for_all_events_in_process(self) -> str:
-        """Returns a subject pattern matching all events from all processs."""
+        """Returns a subject pattern matching all events from all processes."""
         return self.get_subject_for_specific_event_in_process(
             process_class="*",
             process_id="*",
@@ -70,7 +54,7 @@ class ProcessTopicManager(TopicManager):
         )
 
     def get_subject_for_all_work_request_events_in_process(self) -> str:
-        """Returns a subject pattern matching all control events from all processs."""
+        """Returns a subject pattern matching all control events from all processes."""
         return self.get_subject_for_specific_event_in_process(
             process_class="*",
             process_id="*",
@@ -81,7 +65,7 @@ class ProcessTopicManager(TopicManager):
         )
 
     def get_subject_for_all_work_events_in_process(self) -> str:
-        """Returns a subject pattern matching all control events from all processs."""
+        """Returns a subject pattern matching all control events from all processes."""
         return self.get_subject_for_specific_event_in_process(
             process_class="*",
             process_id="*",

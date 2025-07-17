@@ -70,12 +70,10 @@ class KnowledgeModel(BaseModel):
     name: Annotated[str, Field(description="Name of the knowledge base")]
     description: Annotated[str, Field(description="Description of the knowledge base")]
 
-    data: Annotated[KnowledgeData | None, Field(default=None, description="File IDs and other data")] = None
-    meta: Annotated[dict[str, Any] | None, Field(default=None, description="Metadata about the knowledge base")] = None
+    data: Annotated[KnowledgeData | None, Field(description="File IDs and other data")] = None
+    meta: Annotated[dict[str, Any] | None, Field(description="Metadata about the knowledge base")] = None
 
-    access_control: Annotated[
-        KnowledgeAccessControl | None, Field(default=None, description="Access control settings")
-    ] = None
+    access_control: Annotated[KnowledgeAccessControl | None, Field(description="Access control settings")] = None
 
     created_at: Annotated[int, Field(description="Creation timestamp (epoch)")]
     updated_at: Annotated[int, Field(description="Last update timestamp (epoch)")]
@@ -84,23 +82,19 @@ class KnowledgeModel(BaseModel):
 class KnowledgeUserModel(KnowledgeModel):
     """Knowledge base with owner user information."""
 
-    user: Annotated[UserResponse | None, Field(default=None, description="User who owns the knowledge base")] = None
+    user: Annotated[UserResponse | None, Field(description="User who owns the knowledge base")] = None
 
 
 class KnowledgeResponse(KnowledgeModel):
     """Knowledge base with associated files metadata."""
 
-    files: Annotated[
-        list[FileMetadataResponse] | None, Field(default=None, description="Associated files metadata")
-    ] = None
+    files: Annotated[list[FileMetadataResponse] | None, Field(description="Associated files metadata")] = None
 
 
 class KnowledgeUserResponse(KnowledgeUserModel):
     """Knowledge base with both owner information and files metadata."""
 
-    files: Annotated[
-        list[FileMetadataResponse] | None, Field(default=None, description="Associated files metadata")
-    ] = None
+    files: Annotated[list[FileMetadataResponse] | None, Field(description="Associated files metadata")] = None
 
 
 class KnowledgeFilesResponse(KnowledgeResponse):
@@ -114,12 +108,10 @@ class KnowledgeForm(BaseModel):
 
     name: Annotated[str, Field(description="Name of the knowledge base")]
     description: Annotated[str, Field(description="Description of the knowledge base")]
-    data: Annotated[
-        KnowledgeData | dict[str, Any] | None, Field(default=None, description="File IDs and other data")
-    ] = None
+    data: Annotated[KnowledgeData | dict[str, Any] | None, Field(description="File IDs and other data")] = None
     access_control: Annotated[
         KnowledgeAccessControl | dict[str, Any] | None,
-        Field(default=None, description="Access control settings"),
+        Field(description="Access control settings"),
     ] = None
 
 

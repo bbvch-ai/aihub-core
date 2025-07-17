@@ -30,7 +30,7 @@ from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
-DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
+DISCOVER_AGENTS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire agent list for 60s
 GET_AGENT_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
 GET_AGENT_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache agent classes for 60s
 
@@ -38,21 +38,8 @@ GET_AGENT_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache agent classes for
 class AgentService:
     """
     Provides functionality to discover and retrieve agent information via NATS-based discovery events.
-
-    ### Why AgentService?
     `AgentService` acts as the business logic layer for agent operations,
     isolating NATS-based discovery requests from the HTTP layer.
-
-    ### Key Operations
-    - `discover_agents`: Broadcasts a DiscoveryRequestEvent and collects all AgentDiscoveryResponseEvents,
-      returning a list of discovered agents.
-    - `get_agent`: Sends a targeted discovery request to identify a specific agent.
-
-    ### Caching
-    - Entire agent lists are cached for 60 seconds to reduce NATS load.
-    - Individual agent details are also cached for 60 seconds.
-
-    If the agent or agent list isn't found in cache, a new NATS discovery request is performed.
     """
 
     @staticmethod
@@ -73,7 +60,7 @@ class AgentService:
             agent = AgentEntity.get_agent(agent_class, agent_id)
             if agent is None:
                 raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
-            return AgentDTO.from_entity(agent, t)
+            return AgentDTO.from_entity(agent, t, is_online=False)
 
     @staticmethod
     async def get_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
@@ -82,7 +69,7 @@ class AgentService:
         that are saved in the database.
         """
         discovered_agents = await AgentService.discover_agent_instances(nc)
-        saved_agents = [AgentDTO.from_entity(agent, t) for agent in AgentEntity.get_agents()]
+        saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
 
         all_agents = discovered_agents.copy()
         for saved_agent in saved_agents:
@@ -306,7 +293,7 @@ class AgentService:
     @staticmethod
     async def send_event(
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         user: UserIdentity,
         start_event: BaseEvent,
         agent_class: str,
@@ -343,7 +330,7 @@ class AgentService:
             external_event=external_event,
             topic_manager=topic_manager,
             nc=nc,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
         )
 
         await resources.stop_signal.wait()

@@ -614,10 +614,10 @@ class TestSchemaValidation:
             list_of_nested=[],
         )
 
-        # Serialize the event to a dictionary (like AgentDiscoveryService does)
+        # Serialize the event to a dictionary (like AgentEndpointsDiscoveryService does)
         serialized_data = original_event.model_dump()
 
-        # Deserialize using BaseEvent.deserialize_event with dict (like AgentDiscoveryService)
+        # Deserialize using BaseEvent.deserialize_event with dict (like AgentEndpointsDiscoveryService)
         deserialized_event = BaseEvent.deserialize_event(serialized_data)
 
         # Verify the deserialized event preserves the event_parents field
@@ -634,7 +634,8 @@ class TestSchemaValidation:
 
     def test_unknown_event_deserialization_preserves_event_parents(self):
         """Test that unknown event deserialization preserves the event_parents field"""
-        # Create a dictionary representing an unknown event type with event_parents (like AgentDiscoveryService)
+        # Create a dictionary representing an unknown event type with event_parents
+        # (like AgentEndpointsDiscoveryService)
         unknown_event_data = {
             "_event_name": "UnknownTestEvent",
             "event_id": "test_id_123",
@@ -644,7 +645,7 @@ class TestSchemaValidation:
             "test_field": "test_value",
         }
 
-        # Deserialize using BaseEvent.deserialize_event with dict (like AgentDiscoveryService)
+        # Deserialize using BaseEvent.deserialize_event with dict (like AgentEndpointsDiscoveryService)
         deserialized_event = BaseEvent.deserialize_event(unknown_event_data)
 
         # Verify the deserialized event preserves the event_parents field
@@ -688,7 +689,7 @@ class TestSchemaValidation:
 
         input_instance = input_model(**input_data)
 
-        # Step 5: Convert back to full event data (simulate AgentDiscoveryService pattern)
+        # Step 5: Convert back to full event data (simulate AgentEndpointsDiscoveryService pattern)
         full_event_data = {
             "event_id": "chain_test_id",
             "created_at": 1234567890,

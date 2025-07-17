@@ -21,6 +21,7 @@ def agent_a_runner_fixture():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for FanOutProcess"),
             system_prompt=LocaleString(en="You are Agent A"),
@@ -34,6 +35,7 @@ def agent_b_runner_fixture():
         agent_type=AgentB,
         agent_config=AgentConfig(
             agent_id="agent_b",
+            agent_class=AgentB.__name__,
             name=LocaleString(en="Agent B"),
             description=LocaleString(en="Test Agent B for FanOutProcess"),
             system_prompt=LocaleString(en="You are Agent B"),
@@ -62,7 +64,7 @@ async def agent_a_started_with_payload(
         async with agent_b_runner.test_run():
             async with agent_a_runner.test_run() as topic_a:
                 await agent_a_runner.send_event_from_topic(
-                    start_event=AgentAStartEvent(payload=payload),
+                    start_event=AgentAStartEvent(agent_config=agent_a_runner.agent_config, payload=payload),
                     topic=topic_a,
                 )
 

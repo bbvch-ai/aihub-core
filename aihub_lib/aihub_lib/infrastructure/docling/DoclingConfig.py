@@ -31,12 +31,10 @@ class DoclingConfig(BaseSettings):
     DOCLING_TO_FORMATS: Annotated[list[str], Field(description="Output formats")] = ["md", "json"]
     DOCLING_IMAGE_EXPORT_MODE: Annotated[
         str,
-        Field(
-            default="embedded", description="Images should be embedded in Markdown or referenced or placeholder is used"
-        ),
-    ]
-    DOCLING_DO_OCR: Annotated[bool, Field(default=True, description="Whether to perform OCR")]
-    DOCLING_FORCE_OCR: Annotated[bool, Field(default=True, description="Whether to force OCR")]
+        Field(description="Images should be embedded in Markdown or referenced or placeholder is used"),
+    ] = "embedded"
+    DOCLING_DO_OCR: Annotated[bool, Field(description="Whether to perform OCR")] = True
+    DOCLING_FORCE_OCR: Annotated[bool, Field(description="Whether to force OCR")] = True
     DOCLING_OCR_ENGINE: Annotated[str, Field(default="easyocr", description="OCR engine to use")]
     DOCLING_PDF_BACKEND: Annotated[str, Field(default="dlparse_v4", description="PDF parsing backend")]
     DOCLING_TABLE_MODE: Annotated[

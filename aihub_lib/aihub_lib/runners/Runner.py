@@ -148,7 +148,7 @@ class Runner(abc.ABC):
         async def serve_spa(request: Request, full_path: str):
             # Don't catch API routes
             if full_path.startswith(self.api_path):
-                raise HTTPException(status_code=404, detail="Not Found")
+                raise HTTPException(status_code=404, detail="Not Found - Route is API path")
 
             # Try to serve specific files if they exist
             requested_file = os.path.join(directory, full_path)
