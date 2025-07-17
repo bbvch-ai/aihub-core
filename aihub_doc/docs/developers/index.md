@@ -1,5 +1,5 @@
 ---
-title: Getting Started
+title: For Techies
 index: 1
 ---
 

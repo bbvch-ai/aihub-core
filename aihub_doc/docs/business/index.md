@@ -1,5 +1,5 @@
 ---
-title: Why
+title: For Business
 index: 0
 ---
 

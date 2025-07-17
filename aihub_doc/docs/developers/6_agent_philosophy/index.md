@@ -1,9 +1,9 @@
 ---
-title: Philosophy
-index: 2
+title: Agent Philosophy
+index: 6
 ---
 
-# Core Concepts and Philosophy
+# Agent Philosophy
 
 ## AI Agents as Workflows
 
