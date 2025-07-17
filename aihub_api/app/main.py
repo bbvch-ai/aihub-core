@@ -23,7 +23,7 @@ from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import Az
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
-from build.ApiRunnerSettings import ApiRunnerSettings
+from app.ApiRunnerSettings import ApiRunnerSettings
 
 enable_logging()
 

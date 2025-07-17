@@ -23,7 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'push'
     strategy:
       matrix:
         image: [api, bot]
@@ -56,7 +57,7 @@ jobs:
           github_repository_owner: ${{ github.repository_owner }}
           github_event_repository_name: ${{ github.event.repository.name }}
           context: .
-          file: ./${{ matrix.image }}/Dockerfile
+          file: ./aihub_${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Clean up SSH keys
