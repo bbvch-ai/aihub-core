@@ -35,8 +35,6 @@ class Agent(DispatchableWorkflow):
     makes the agent inflexible to participate in other types of interactions.
     """
 
-    agent_config_type: type[AgentConfig] = None
-
     STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"

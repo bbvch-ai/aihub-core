@@ -50,6 +50,7 @@ class AgentDispatcher(BaseDispatcher):
     def __init__(
         self,
         agent: Annotated[type[Agent], "The agent class defining steps and logic."],
+        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
@@ -61,6 +62,7 @@ class AgentDispatcher(BaseDispatcher):
     ):
         super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
         self.agent = agent
+        self.agent_config = agent_config
         self.locale_handler = locale_handler
 
         self.agent_config_type: type[AgentConfig] = agent.agent_config_type
@@ -87,24 +89,32 @@ class AgentDispatcher(BaseDispatcher):
         # Retrieve contexts (run and thread)
         run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
         thread_context = ThreadContext(self.redis, topic.thread_id)
+        run_agent_config: AgentConfig | None = None
 
         if event.is_start_event:
-            await run_context.set("_agent_config", event.agent_config.model_dump())
+            if event.agent_config is None:
+                run_agent_config = self.agent_config
+            else:
+                run_agent_config = event.agent_config
+            await run_context.set("_agent_config", run_agent_config.model_dump())
 
-        # Get dynamic configuration data from run context
-        agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
-        if agent_config_dict is None:
-            raise ValueError("AgentConfig must be set at this point. Something went wrong in the StartEvent handling.")
+        if run_agent_config is None:
+            # Get dynamic configuration data from run context
+            agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
+            if agent_config_dict is None:
+                raise ValueError(
+                    "AgentConfig must be set at this point. Something went wrong in the StartEvent handling."
+                )
 
-        agent_config: AgentConfig = self.agent_config_type.model_validate(agent_config_dict)
+            run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentTopic.from_partial_topic(
             partial_topic=topic,
-            agent_id=agent_config.agent_id,
+            agent_id=run_agent_config.agent_id,
         )
         tracer = RunTraceCoordinator(
             nc=self.nc,
             project_name=self.locale_handler.extract_multi_locale(
-                locale_data=agent_config.name,
+                locale_data=run_agent_config.name,
                 locale="en",
             ),
         )
@@ -144,11 +154,13 @@ class AgentDispatcher(BaseDispatcher):
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
             )
-            if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic, agent_config):
+            if await self.is_step_ready(
+                event, step_method, events, run_context, thread_context, topic, run_agent_config
+            ):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
                 asyncio.create_task(
                     self.execute_step(
-                        event, step_method, events, run_context, thread_context, topic, agent_config, tracer
+                        event, step_method, events, run_context, thread_context, topic, run_agent_config, tracer
                     )
                 )
 

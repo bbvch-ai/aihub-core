@@ -56,10 +56,10 @@ class AgentTestRunner(AgentRunner):
             servers=[NatsConfig().NATS_ENDPOINT],
             redis_url=RedisConfig().REDIS_URL,
             agent_type=agent_type,
+            agent_config=agent_config,
             locale_paths=locale_paths,
         )
         self.topic_manager = AgentInstanceTopicManager(agent_class=self.agent_class, agent_id=agent_config.agent_id)
-        self.agent_config = agent_config
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
         self.topic: PartialAgentTopic | None = None

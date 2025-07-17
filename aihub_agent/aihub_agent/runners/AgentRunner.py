@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
@@ -40,6 +41,7 @@ class AgentRunner:
         servers: list[str],
         redis_url: str,
         agent_type: type[Agent],
+        agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         if not isinstance(agent_type, type):
@@ -50,7 +52,8 @@ class AgentRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type
-        self.agent_config_type = agent_type.agent_config_type
+        self.agent_config = agent_config
+        self.agent_config_type = agent_config.__class__
         self.running = False
         self._stop_signal = asyncio.Event()
 
@@ -122,6 +125,7 @@ class AgentRunner:
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
             self.agent_type,
+            self.agent_config,
             self.nc,
             self.js,
             self.redis,
