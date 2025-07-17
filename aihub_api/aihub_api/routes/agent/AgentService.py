@@ -99,12 +99,6 @@ class AgentService:
         if cache_key in GET_AGENT_INSTANCE_CACHE:
             return GET_AGENT_INSTANCE_CACHE[cache_key]
 
-        agent_dto: AgentDTO | None = None
-
-        if agent_dto is not None:
-            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
-            return agent_dto
-
         agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
 
         configs = AgentConfigEntity.find_for_class(agent_class)
@@ -115,8 +109,14 @@ class AgentService:
                     class_dto=agent_class_dto,
                     agent_config=agent_config,
                 )
+                GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
+                return agent_dto
 
-        if agent_dto is not None:
+        if agent_class_dto.default_agent_config.agent_id == agent_id:
+            agent_dto = AgentDTO.from_class_and_config(
+                class_dto=agent_class_dto,
+                agent_config=agent_class_dto.default_agent_config,
+            )
             GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
             return agent_dto
 
@@ -142,6 +142,15 @@ class AgentService:
             agent_dto = AgentDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_config,
+            )
+            agent_instances.append(agent_dto)
+
+        db_agent_ids = {config.agent_id for config in configs}
+
+        if agent_class_dto.default_agent_config.agent_id not in db_agent_ids:
+            agent_dto = AgentDTO.from_class_and_config(
+                class_dto=agent_class_dto,
+                agent_config=agent_class_dto.default_agent_config,
             )
             agent_instances.append(agent_dto)
 
@@ -178,6 +187,7 @@ class AgentService:
                 stop_events=event.stop_events,
                 network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
                 is_online=True,
+                default_agent_config=event.default_agent_config,
             )
             agent_found_event.set()
 
@@ -231,6 +241,16 @@ class AgentService:
                 agent_dto = AgentDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=config_instance,
+                )
+                AgentEntity.create_or_update_from_dto(agent_dto)
+                configured_agents.append(agent_dto)
+
+            # Step 3: Check if default agent config is present in database
+            db_agent_ids = {configured_agent.agent_id for configured_agent in configured_agents}
+            if agent.default_agent_config.agent_id not in db_agent_ids:
+                agent_dto = AgentDTO.from_class_and_config(
+                    class_dto=agent,
+                    agent_config=agent.default_agent_config,
                 )
                 AgentEntity.create_or_update_from_dto(agent_dto)
                 configured_agents.append(agent_dto)

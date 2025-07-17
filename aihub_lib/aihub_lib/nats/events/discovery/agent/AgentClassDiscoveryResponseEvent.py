@@ -2,6 +2,7 @@ from typing import Annotated
 
 from pydantic import Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
@@ -54,5 +55,12 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
         WorkflowGraph,
         Field(
             description="A network graph of the agent, showing how different components are connected and interact.",
+        ),
+    ]
+    default_agent_config: Annotated[
+        AgentConfig,
+        Field(
+            description="The default agent configuration for this agent class. "
+            "This is the configuration that will be used if no specific configuration is provided.",
         ),
     ]

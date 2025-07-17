@@ -101,6 +101,7 @@ class AgentRunner:
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             network_graph=network_graph.to_pydantic(),
+            default_agent_config=self.agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 

@@ -44,6 +44,13 @@ class AgentClassDTO(BaseModel):
     is_online: Annotated[
         bool | None, Field(description="Indicates whether the agent class is online and reachable.")
     ] = None
+    default_agent_config: Annotated[
+        AgentConfig,
+        Field(
+            description="The default agent configuration for this agent class. "
+            "This is the configuration that will be used if no specific configuration is provided.",
+        ),
+    ]
 
     @classmethod
     def from_discovery_event(
@@ -59,6 +66,7 @@ class AgentClassDTO(BaseModel):
             stop_events=event.stop_events,
             network_graph=event.network_graph,
             is_online=True,
+            default_agent_config=event.default_agent_config,
         )
 
 
