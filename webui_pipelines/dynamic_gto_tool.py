@@ -1,16 +1,20 @@
 """
 title: LCDM Hub GTO Ingestion Tool
 author: Noah Hermann
+description: Validates GTO instances and saves them to the LCDM hub.
 version: 0.1.0
 """
 
 import hashlib
 import json
+import logging
 from datetime import datetime
-from typing import Optional, Callable, Any, List, Dict, Type
+from typing import Optional, Callable, Any, List, Dict, Type, Tuple
 
 import requests
 from pydantic import BaseModel, Field, create_model, ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 class Tools:
@@ -34,7 +38,17 @@ class Tools:
         instances_data: List[Dict],
         __event_emitter__: Optional[Callable[[dict], Any]] = None,
     ) -> str:
-        """Validates and ingests GTO instances into the LCDM Hub."""
+        """
+        Validates and ingests GTO instances into the LCDM Hub.
+
+        Args:
+            gto_id (str): The GTO type identifier.
+            instances_data (List[Dict]): List of GTO instances to validate and ingest.
+
+        Returns:
+            str: Result message indicating success or failure.
+        """
+        logger.error(f"Instances: \n\n{instances_data}")
 
         if not self.valves.LCDM_HUB_TOKEN:
             error_msg = "Das LCDM Hub Token ist nicht konfiguriert. Bitte hinterlegen Sie ihn in den Einstellungen."
@@ -60,11 +74,16 @@ class Tools:
                     }
                 )
 
-            gto_schema = await self._fetch_gto_schema(gto_id)
+            gto_schema, gto_name = await self._fetch_gto_information(gto_id)
             if not gto_schema:
                 error_msg = f"GTO Schema für '{gto_id}' nicht gefunden."
                 if __event_emitter__:
-                    await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {"description": error_msg, "done": True},
+                        }
+                    )
                 return f"Error: {error_msg}"
 
             if __event_emitter__:
@@ -106,7 +125,13 @@ class Tools:
                 error_msg = f"Validierungsfehler gefunden:\n" + "\n".join(validation_errors)
                 if __event_emitter__:
                     await __event_emitter__(
-                        {"type": "status", "data": {"description": "Validierung fehlgeschlagen", "done": True}}
+                        {
+                            "type": "status",
+                            "data": {
+                                "description": "Validierung fehlgeschlagen",
+                                "done": True,
+                            },
+                        }
                     )
                 return f"Validation Error: {error_msg}"
 
@@ -121,7 +146,7 @@ class Tools:
                     }
                 )
 
-            hub_data = self._transform_to_hub_format(validated_instances, gto_schema, gto_id)
+            hub_data = self._transform_to_hub_format(validated_instances, gto_schema, gto_id, gto_name)
 
             # Step 5: Save to LCDM Hub
             if __event_emitter__:
@@ -134,7 +159,7 @@ class Tools:
                         },
                     }
                 )
-
+            logger.error(f"Hub data: {hub_data}")
             result = await self._save_to_hub(hub_data, gto_id)
 
             if result.startswith("Success"):
@@ -162,7 +187,7 @@ class Tools:
                 await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Error: {error_msg}"
 
-    async def _fetch_gto_schema(self, gto_id: str) -> Optional[Dict]:
+    async def _fetch_gto_information(self, gto_id: str) -> Optional[Tuple[Dict, str]]:
         """Fetches GTO schema from the LCDM Hub API."""
         try:
             headers = {
@@ -182,7 +207,11 @@ class Tools:
 
             names = response.text
             names_list = eval(names)
-            if gto_id not in [key for key, _ in names_list]:
+            for key, name in names_list:
+                if key == gto_id:
+                    gto_name = name
+                    break
+            else:
                 return None
 
             schema_response = requests.get(
@@ -192,7 +221,7 @@ class Tools:
             )
 
             if schema_response.status_code == 200:
-                return schema_response.json()
+                return schema_response.json(), gto_name
 
             return None
 
@@ -207,14 +236,14 @@ class Tools:
 
         for attr_key, attr_def in attribute_definitions.items():
             field_name = attr_def.get("key", attr_key)
-            data_type = attr_def.get("dataType", "string")
+            data_type = attr_def.get("dataType", "String")
             is_mandatory = attr_def.get("mandatory", False)
 
-            if data_type == "int" or attr_def.get("valueType") == "int":
+            if data_type == "Integer" or attr_def.get("valueType") == "Integer":
                 python_type = int
-            elif data_type == "float" or attr_def.get("valueType") == "float":
+            elif data_type == "Float" or attr_def.get("valueType") == "Float":
                 python_type = float
-            elif data_type == "bool" or attr_def.get("valueType") == "bool":
+            elif data_type == "Boolean" or attr_def.get("valueType") == "Boolean":
                 python_type = bool
             else:
                 python_type = str
@@ -230,15 +259,19 @@ class Tools:
         DynamicGTOModel = create_model("DynamicGTOModel", **fields)
         return DynamicGTOModel
 
-    def _generate_unique_obj_id(self, instance_data: Dict, gto_type: str) -> str:
+    def _generate_unique_obj_id(self, instance_data: Dict, gto_id: str) -> str:
         """Generates a unique objId based on GTO data."""
         # Create a hash from the instance data and timestamp
-        data_string = json.dumps(instance_data, sort_keys=True) + gto_type + str(datetime.now().timestamp())
+        data_string = json.dumps(instance_data, sort_keys=True) + str(gto_id) + str(datetime.now().timestamp())
         hash_object = hashlib.md5(data_string.encode())
         return hash_object.hexdigest()[:8].upper()
 
     def _transform_to_hub_format(
-        self, validated_instances: List[BaseModel], gto_schema: Dict, gto_type: str
+        self,
+        validated_instances: List[BaseModel],
+        gto_schema: Dict,
+        gto_id: str,
+        gto_name: str,
     ) -> List[Dict]:
         """Transforms validated instances to LCDM Hub format."""
         hub_data = []
@@ -247,7 +280,7 @@ class Tools:
 
         for instance in validated_instances:
             instance_dict = instance.model_dump()
-            obj_id = self._generate_unique_obj_id(instance_dict, gto_type)
+            obj_id = self._generate_unique_obj_id(instance_dict, gto_id)
 
             # Create hub entry for each attribute
             for attr_key, attr_def in attribute_definitions.items():
@@ -256,12 +289,12 @@ class Tools:
 
                 hub_entry = {
                     "id": 0,
-                    "gtoTyp": gto_type,
+                    "gtoTyp": gto_name,
                     "objId": obj_id,
                     "keyId": field_name,
-                    "sourceValue": str(source_value) if source_value is not None else "",
+                    "sourceValue": (source_value if source_value is not None else ""),
                     "targetValue": "",
-                    "manualValue": "",
+                    "manualValue": (source_value if source_value is not None else ""),
                     "gtoId": gto_id,
                     "manuallyModified": False,
                     "released": False,
@@ -289,15 +322,13 @@ class Tools:
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             }
-
-            # Assuming there's an endpoint for batch saving GTO instances
-            # You may need to adjust this endpoint based on your actual API
             response = requests.post(
                 f"{self.valves.LCDM_HUB_BASE_URL}{gto_id}/aihub-data",
-                json=hub_data,
+                data=json.dumps(hub_data, ensure_ascii=False),
                 headers=headers,
                 timeout=self.valves.timeout_seconds,
             )
+            logger.error(f"Data json: \n\n{json.dumps(hub_data, ensure_ascii=False)}")
 
             if response.status_code in [200, 201]:
                 return f"Success: Daten erfolgreich gespeichert."
