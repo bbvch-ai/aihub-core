@@ -36,7 +36,6 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
-from aihub_lib.testing.ConfigSaver import ConfigSaver
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 

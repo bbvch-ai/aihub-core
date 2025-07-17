@@ -575,21 +575,23 @@ class TestSchemaValidation:
         assert event_specs.event_parents == test_event_instance._parent_event_names
 
     def test_agent_discovery_response_event_serialization(self, event_specs):
+        agent_config = AgentConfig(
+            agent_id="test_agent",
+            agent_class="TestAgent",
+            name=LocaleString(en="Test Agent"),
+            description=LocaleString(en="Test agent description"),
+            system_prompt=LocaleString(en="Test system prompt"),
+        )
         discovery_event = AgentInstanceDiscoveryResponseEvent(
             agent_class="TestAgent",
             agent_id="test_agent",
-            agent_config=AgentConfig(
-                agent_id="test_agent",
-                agent_class="TestAgent",
-                name=LocaleString(en="Test Agent"),
-                description=LocaleString(en="Test agent description"),
-                system_prompt=LocaleString(en="Test system prompt"),
-            ),
+            agent_config=agent_config,
             is_conversational=False,
             start_events=[event_specs],
             stop_events=[],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
+            default_agent_config=agent_config,
         )
 
         # Serialize the event
