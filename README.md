@@ -1,13 +1,13 @@
 ---
-title: "Developer Documentation"
+title: "Dev Documentation"
 index: 2
 ---
 
 # AI-Hub Developer Guide
 
-## 1. Introduction
+## Introduction
 
-### 1.1. What is AI-Hub?
+### What is AI-Hub?
 
 The AI-Hub is a foundational software framework designed to be a central platform that serves as a bridge between people, enterprise knowledge, and digital processes. Instead of forcing employees to switch to special applications for AI support, the AI-Hub's core principle is to bring focused, specialized intelligence directly into familiar work environments like Microsoft Teams or Slack. It enables the creation of a rich ecosystem of specialized AI assistants, each with deep expertise in a specific domain.
 

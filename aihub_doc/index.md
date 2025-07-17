@@ -9,10 +9,10 @@ hero:
   actions:
     - theme: brand
       text: Business Intro
-      link: /docs/why_ai_hub
+      link: /docs/business
     - theme: alt
       text: Developer Intro
-      link: /aihub
+      link: /docs/developers
 
 features:
   - title: Base Tier
