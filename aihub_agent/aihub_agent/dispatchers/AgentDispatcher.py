@@ -65,9 +65,7 @@ class AgentDispatcher(BaseDispatcher):
         self.agent_config = agent_config
         self.locale_handler = locale_handler
 
-        self.agent_config_type: type[AgentConfig] = agent.agent_config_type
-        if self.agent_config_type is None:
-            raise ValueError(f"Agent '{agent.__name__}' has no AgentConfig type.")
+        self.agent_config_type: type[AgentConfig] = self.agent_config.__class__
 
     @override
     async def handle_event(

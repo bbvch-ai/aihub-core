@@ -62,7 +62,7 @@ def agent_config() -> AgentConfig:
 
 @pytest.fixture
 def test_start_event(agent_config: AgentConfig):
-    return TestStartEvent(message="Hello, world!", agent_config=agent_config)
+    return TestStartEvent(message="Hello, world!")
 
 
 @pytest.fixture
@@ -407,7 +407,7 @@ def test_aitl_without_worker_agent_class(aitl_response_event):
 def test_user_message_event_round_trip(agent_config: AgentConfig):
     """Test that a UserMessageEvent survives a round trip serialization."""
     # Create a user message
-    user_msg = UserMessageEvent(message="Hello agent!", user=fake_user(), agent_config=agent_config)
+    user_msg = UserMessageEvent(message="Hello agent!", user=fake_user())
 
     # Simulate crossing process boundary
     remote_msg = simulate_cross_process_boundary(user_msg)

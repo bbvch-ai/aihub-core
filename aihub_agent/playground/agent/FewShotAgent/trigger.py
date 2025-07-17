@@ -61,7 +61,6 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=StartEvent(
-                agent_config=runner.agent_config,
                 locale="en",
                 messages=[
                     ChatMessage(

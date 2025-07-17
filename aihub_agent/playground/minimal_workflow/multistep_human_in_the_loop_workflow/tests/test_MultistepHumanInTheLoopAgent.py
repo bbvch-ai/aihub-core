@@ -41,9 +41,7 @@ async def agent_runner():
 @pytest.mark.asyncio
 async def test_multistep_human_in_the_loop_workflow(agent_runner: AgentTestRunner):
     # Start the agent
-    await agent_runner.send_event_from_topic(
-        start_event=StartEvent(agent_config=agent_runner.agent_config), topic=agent_runner.topic
-    )
+    await agent_runner.send_event_from_topic(start_event=StartEvent(), topic=agent_runner.topic)
 
     # Wait for the first step
     event = await agent_runner.wait_for_event(FirstStepHumanInTheLoopRequestEvent)

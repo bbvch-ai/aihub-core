@@ -38,7 +38,7 @@ async def _(value: float, agent_runner: AgentTestRunner):
     with patch("random.random", return_value=value):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(
-                start_event=StartEvent(agent_config=agent_runner.agent_config),
+                start_event=StartEvent(),
                 topic=topic,
             )
 

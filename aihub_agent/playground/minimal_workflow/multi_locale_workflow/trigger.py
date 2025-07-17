@@ -35,7 +35,6 @@ async def main():
     async with runner.test_run(delay_before_stop=1) as topic:
         await runner.send_event_from_topic(
             start_event=UserMessageEvent(
-                agent_config=runner.agent_config,
                 locale="en",
                 messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
                 user=fake_user(),

@@ -11,8 +11,6 @@ from playground.minimal_workflow.configured_workflow.events.EventConfiguredB imp
 
 
 class ConfiguredAgent(Agent):
-    agent_config_type: type[ConfiguredAgentConfig] = ConfiguredAgentConfig
-
     @step()
     async def start_step(self, event: StartEvent, start_config: StartStepConfig) -> EventConfiguredA:
         print(f"[ConfiguredAgent.start_step] Step config value: '{start_config.some_step_value}'")

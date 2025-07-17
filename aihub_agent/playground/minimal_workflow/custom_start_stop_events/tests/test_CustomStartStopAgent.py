@@ -37,7 +37,6 @@ async def _(agent_runner: AgentTestRunner, payload: str):
         await agent_runner.send_event_from_topic(
             start_event=MyCustomStartEvent(
                 payload=PydanticPayload(payload=payload),
-                agent_config=agent_runner.agent_config,
             ),
             topic=topic,
         )

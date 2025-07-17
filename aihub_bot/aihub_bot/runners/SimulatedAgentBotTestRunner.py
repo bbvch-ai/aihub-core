@@ -1,12 +1,15 @@
 import logging
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
-    EventSpecs,
 )
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
@@ -24,6 +27,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_bot.runners.BotTestRunner import BotTestRunner
+from aihub_lib.testing.ConfigSaver import ConfigSaver
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +91,16 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
+        self.agent_config: AgentConfig = AgentConfig(
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
+            name=LocaleString(de="Test Agent"),
+            description=LocaleString(de="Test Agent Description"),
+            system_prompt=LocaleString(de="Test Agent System Prompt"),
+        )
+
+        ConfigSaver().save_config(self.agent_config)
+
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
         Handler for control events targeting this agent instance. If a StartEvent arrives,
@@ -108,18 +122,13 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
         start_events = [EventSpecs.from_event_class(StartEvent)]
         stop_events = [EventSpecs.from_event_class(StopEvent)]
-        agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent(
+        agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
-            agent_id=self.agent_id,
-            agent_config=AgentConfig(
-                agent_id=self.agent_id,
-                name=LocaleString(de="Test Agent"),
-                description=LocaleString(de="Test Agent Description"),
-                system_prompt=LocaleString(de="Test Agent System Prompt"),
-            ),
             is_conversational=True,
             start_events=start_events,
             stop_events=stop_events,
+            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 

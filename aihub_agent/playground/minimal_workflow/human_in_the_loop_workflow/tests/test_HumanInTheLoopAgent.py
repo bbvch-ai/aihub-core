@@ -43,9 +43,7 @@ def _():
 async def _(agent_runner: AgentTestRunner, response: str):
     async with agent_runner.test_run() as topic:
         # Send StartEvent
-        await agent_runner.send_event_from_topic(
-            start_event=StartEvent(agent_config=agent_runner.agent_config), topic=topic
-        )
+        await agent_runner.send_event_from_topic(start_event=StartEvent(), topic=topic)
         # Get the HumanInTheLoopRequestEvent and send the corresponding response
         hil_request_event = await agent_runner.wait_for_event(HumanInTheLoopRequestEvent)
         await agent_runner.send_event_from_topic(

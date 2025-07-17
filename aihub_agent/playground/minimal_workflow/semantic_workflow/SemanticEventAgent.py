@@ -5,12 +5,9 @@ from aihub_lib.testing.milvus_vector_store_content import DEFAULT_DOCUMENTS
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import SemanticEventAgentConfig
 
 
 class SemanticEventAgent(Agent):
-    agent_config_type: type[SemanticEventAgentConfig] = SemanticEventAgentConfig
-
     @step()
     async def retriever_step(self, event: StartEvent) -> RetrieverEvent:
         return RetrieverEvent(

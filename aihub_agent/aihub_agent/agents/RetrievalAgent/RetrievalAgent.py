@@ -9,7 +9,6 @@ from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
 from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.workflow.decorators.step import step
@@ -22,8 +21,6 @@ class RetrievalAgent(Agent):
     This can be useful if we want to separate the retrieval process from the generation process,
     when we have for example different data sources and each source has its own retrieval agent.
     """
-
-    agent_config_type: type[RetrievalAgentConfig] = RetrievalAgentConfig
 
     @step(
         name=LocaleString(en="Retrieve nodes"),

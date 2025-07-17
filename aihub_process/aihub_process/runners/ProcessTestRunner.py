@@ -13,8 +13,8 @@ from aihub_lib.nats.events import (
     WorkEvent,
 )
 from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber

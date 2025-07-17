@@ -6,14 +6,9 @@ from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (
     OrchestrationResultEvent,
 )
-from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgentConfig import (
-    OrchestratorAgentConfig,
-)
 
 
 class OrchestratorAgent(Agent):
-    agent_config_type: type[OrchestratorAgentConfig] = OrchestratorAgentConfig
-
     @step()
     async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
         print("[OrchestratorAgent.start_step]", event)

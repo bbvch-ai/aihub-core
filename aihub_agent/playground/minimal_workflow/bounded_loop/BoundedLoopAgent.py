@@ -10,8 +10,6 @@ from playground.minimal_workflow.bounded_loop.events.DecisionEvent import Decisi
 
 
 class BoundedLoopAgent(Agent):
-    agent_config_type: type[BoundedLoopAgentConfig] = BoundedLoopAgentConfig
-
     @step()
     async def start_step(self, event: UserMessageEvent, run_context: RunContext) -> BeginEvent:
         print("[SimpleAgent.start_step]")

@@ -32,8 +32,6 @@ class FewShotAgent(Agent):
     ...
     """
 
-    agent_config_type: type[FewShotAgentConfig] = FewShotAgentConfig
-
     @step()
     async def limit_chat_history_step(
         self,

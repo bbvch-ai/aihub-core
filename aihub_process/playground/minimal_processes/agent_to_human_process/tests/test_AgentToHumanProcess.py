@@ -57,7 +57,7 @@ async def agent_starts_and_human_responds(
     async with process_runner.test_run():
         async with agent_a_runner.test_run() as topic_a:
             await agent_a_runner.send_event_from_topic(
-                start_event=AgentAStartEvent(agent_config=agent_a_runner.agent_config, payload=agent_payload),
+                start_event=AgentAStartEvent(payload=agent_payload),
                 topic=topic_a,
             )
 

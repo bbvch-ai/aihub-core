@@ -40,7 +40,6 @@ async def _(agent_runner: AgentTestRunner, locale: str):
                 locale=locale,
                 messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
                 user=fake_user(),
-                agent_config=agent_runner.agent_config,
             ),
             topic=topic,
         )

@@ -4,7 +4,6 @@ from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.workflow.decorators.step import step
-from playground.minimal_workflow.context_workflow.ContextAgentConfig import ContextAgentConfig
 from playground.minimal_workflow.context_workflow.events.ContextEvent import ContextEvent
 from playground.minimal_workflow.context_workflow.events.CustomStartEvent import (
     CustomStartEvent,
@@ -12,8 +11,6 @@ from playground.minimal_workflow.context_workflow.events.CustomStartEvent import
 
 
 class ContextAgent(Agent):
-    agent_config_type: type[ContextAgentConfig] = ContextAgentConfig
-
     @step()
     async def start_step(
         self,

@@ -36,7 +36,6 @@ async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
         await test_runner.send_event_from_topic(
             start_event=CustomStartEvent(
                 payload=payload1,
-                agent_config=test_runner.agent_config,
             ),
             topic=topic,
         )
@@ -44,7 +43,6 @@ async def _(test_runner: AgentTestRunner, payload1: str, payload2: str):
         await test_runner.send_event_from_topic(
             start_event=CustomStartEvent(
                 payload=payload2,
-                agent_config=test_runner.agent_config,
             ),
             topic=topic,
         )

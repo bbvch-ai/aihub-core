@@ -230,7 +230,6 @@ async def _(agent_runner: AgentTestRunner, query: str):
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
                 user=fake_user(),
                 locale="en",
-                agent_config=agent_runner.agent_config,
             ),
         )
 
@@ -317,7 +316,6 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
                 locale=locale,
                 user=fake_user(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                agent_config=agent_runner.agent_config,
             ),
         )
 

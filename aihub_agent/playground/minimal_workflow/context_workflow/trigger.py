@@ -30,7 +30,6 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=CustomStartEvent(
-                agent_config=runner.agent_config,
                 payload="This is some payload",
             ),
         )

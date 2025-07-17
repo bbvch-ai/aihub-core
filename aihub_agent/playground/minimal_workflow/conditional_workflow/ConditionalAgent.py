@@ -4,14 +4,11 @@ from aihub_lib.nats.events import StartEvent, StopEvent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from playground.minimal_workflow.conditional_workflow.ConditionalAgentConfig import ConditionalAgentConfig
 from playground.minimal_workflow.conditional_workflow.events.AboveThresholdEvent import AboveThresholdEvent
 from playground.minimal_workflow.conditional_workflow.events.BelowThresholdEvent import BelowThresholdEvent
 
 
 class ConditionalAgent(Agent):
-    agent_config_type: type[ConditionalAgentConfig] = ConditionalAgentConfig
-
     @step()
     async def start_step(self, event: StartEvent) -> AboveThresholdEvent | BelowThresholdEvent:
         if random.random() > 0.5:

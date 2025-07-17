@@ -35,7 +35,6 @@ async def _(agent_runner: AgentTestRunner, payload: str):
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=payload, role=MessageRole.USER)],
                 user=fake_user(),
-                agent_config=agent_runner.agent_config,
             ),
             topic=topic,
         )

@@ -65,7 +65,7 @@ async def agent_a_started_for_sequence(
         async with initial_process_runner.test_run():
             async with agent_a_runner.test_run() as topic_a:
                 await agent_a_runner.send_event_from_topic(
-                    start_event=AgentAStartEvent(agent_config=agent_a_runner.agent_config, payload=payload),
+                    start_event=AgentAStartEvent(payload=payload),
                     topic=topic_a,
                 )
 

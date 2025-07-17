@@ -45,8 +45,6 @@ async def main():
             await orchestrator_runner.send_event_from_topic(
                 topic=topic,
                 start_event=UserMessageEvent(
-                    # TODO: HOW DO WE PASS THE AGENT CONFIG TO THE WORKER AGENT?
-                    agent_config=orchestrator_runner.agent_config,
                     messages=[ChatMessage(content="128", role=MessageRole.USER)],
                     user=fake_user(),
                 ),

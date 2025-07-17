@@ -92,7 +92,6 @@ async def send_start_to_orchestrator(
                 start_event=UserMessageEvent(
                     messages=[ChatMessage(content=message, role=MessageRole.USER)],
                     user=fake_user(),
-                    agent_config=orchestrator_runner.agent_config,
                 ),
                 topic=topic,
             )

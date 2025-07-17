@@ -1,6 +1,5 @@
 import functools
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow

@@ -65,7 +65,7 @@ async def agent_a_started_with_payload(
             async with agent_a_runner.test_run() as topic_a:
                 # Send the initial event to AgentA
                 await agent_a_runner.send_event_from_topic(
-                    start_event=AgentAStartEvent(agent_config=agent_a_runner.agent_config, payload=payload),
+                    start_event=AgentAStartEvent(payload=payload),
                     topic=topic_a,
                 )
 

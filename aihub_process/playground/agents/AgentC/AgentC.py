@@ -1,14 +1,11 @@
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from aihub_lib.agents.AgentConfig import AgentConfig
 
 from playground.agents.AgentC.events.AgentCStartEvent import AgentCStartEvent
 from playground.agents.AgentC.events.AgentCStopEvent import AgentCStopEvent
 
 
 class AgentC(Agent):
-    agent_config_type: type[AgentConfig] = AgentConfig
-
     @step()
     async def step(self, event: AgentCStartEvent) -> AgentCStopEvent:
         print("[AgentB.step]", event)

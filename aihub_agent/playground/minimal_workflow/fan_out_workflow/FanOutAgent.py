@@ -5,14 +5,11 @@ from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
-from playground.minimal_workflow.fan_out_workflow.FanOutAgentConfig import FanOutAgentConfig
 
 N = 5
 
 
 class FanOutAgent(Agent):
-    agent_config_type: type[FanOutAgentConfig] = FanOutAgentConfig
-
     @step()
     async def start_step(self, _: StartEvent) -> list[FanOutA]:
         print("[start_step]")
