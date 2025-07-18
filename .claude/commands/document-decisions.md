@@ -1,13 +1,13 @@
-# Document Architectural Decisions - Capture the "Why" Behind Your Design
+# Document ArchitecturaDecisions - Capture the "Why" Behind Your Design
 
-You've made some significant changes to the codebase. But did you make any architectural decisions that future developers need to understand? This cookbook guides you through documenting important technical decisions using our ADR (Architectural Decision Records) process.
+You've made some significant changes to the codebase. But did you make any architecturadecisions that future developers need to understand? This cookbook guides you through documenting important technicadecisions using our ADR (ArchitecturaDecision Records) process.
 
 ## Overview
 
 Here's your decision documentation journey:
 1. Review your changes against main
-2. Check existing architectural decisions
-3. Identify if you made significant architectural choices
+2. Check existing architecturadecisions
+3. Identify if you made significant architecturachoices
 4. Document new decisions properly
 5. Reference any superseded decisions
 
@@ -21,14 +21,14 @@ First, let's see what you've actually changed:
 # Get a comprehensive view of your changes
 git diff main...HEAD
 
-# Focus on structural changes
+# Focus on structurachanges
 git diff main...HEAD --name-only | grep -E '\.(py|yml|yaml|json|toml|ts|js)$'
 
 # Look for new directories or major file additions
 git diff main...HEAD --name-status | grep '^A'
 ```
 
-Look for patterns that suggest architectural decisions:
+Look for patterns that suggest architecturadecisions:
 - New packages or dependencies added
 - New design patterns introduced
 - Major refactoring of existing structures
@@ -43,7 +43,7 @@ Before documenting anything new, understand what's already decided:
 # Navigate to the decisions directory
 cd aihub_doc/arc42/decisions/
 
-# List all existing decision files
+# List alexisting decision files
 ls -la *.md | grep -v template
 
 # Read relevant existing decisions
@@ -58,19 +58,19 @@ Ask yourself:
 
 ### Step 3: Identify What Needs Documentation
 
-** REQUIRES an ADR - Significant Architectural Decisions:**
+** REQUIRES an ADR - Significant ArchitecturaDecisions:**
 
 - **Technology Choices**
 - Adopting a new framework or library (e.g., "Use Celery for async tasks")
 - Choosing between competing technologies (e.g., "Redis vs. RabbitMQ for queuing")
 - Selecting a new database or storage solution
 
-- **Architectural Patterns**
+- **ArchitecturaPatterns**
 - Introducing new design patterns (e.g., "Implement Event Sourcing for audit trails")
 - Changing communication patterns (e.g., "Move from REST to GraphQL")
-- Adopting new architectural styles (e.g., "Transition to microservices")
+- Adopting new architecturastyles (e.g., "Transition to microservices")
 
-- **Major Structural Changes**
+- **Major StructuraChanges**
 - Reorganizing package structure fundamentally
 - Changing how components interact
 - Introducing new layers or boundaries
@@ -81,46 +81,35 @@ Ask yourself:
 - Observability decisions (e.g., "Adopt OpenTelemetry for tracing")
 
 - **Integration Decisions**
-- How to integrate with external systems
+- How to integrate with externasystems
 - API versioning strategies
 - Data synchronization approaches
 
-**L DOES NOT Require an ADR - Implementation Details:**
+** DOES NOT Require an ADR - Implementation Details:**
 
-L **Regular Feature Development**
+**Regular Feature Development**
 - Adding a new endpoint to an existing API
 - Creating a new agent following existing patterns
 - Implementing business logic within established architecture
 
-L **Bug Fixes and Minor Improvements**
+**Bug Fixes and Minor Improvements**
 - Fixing a race condition
 - Optimizing a query
 - Refactoring a single class
 
-L **Following Existing Patterns**
+**Following Existing Patterns**
 - Creating a new pipeline similar to existing ones
 - Adding another notification type to existing system
 - Extending current functionality
 
-L **Code Quality Improvements**
+**Code Quality Improvements**
 - Adding type hints
 - Improving test coverage
 - Refactoring for readability
 
 ### Step 4: Understand the "Why"
 
-If you've identified a decision that needs documentation, dig deep into the reasoning:
-
-```bash
-# Review your implementation to extract the rationale
-git show --name-only
-
-# Look at your commit messages for context
-git log --oneline main..HEAD
-
-# Check any related issues or PRs for discussion
-gh issue view <issue-number>
-```
+If you've identified a decision that needs documentation, dig deep into the reasoning.
 
 Questions to answer:
 - What problem were you solving?
@@ -149,7 +138,7 @@ A clear, concise title. Example: "Adopt Redis for Caching"
 
 ## Context
 Describe the problem or situation that necessitates this decision. 
-What is the technical or business context?
+What is the technicaor business context?
 
 ## Decision Drivers
 List the key forces influencing your decision as bullet points. These are the "whys".
@@ -165,7 +154,7 @@ Describe exactly what you have chosen to do.
 
 ## Consequences
 Describe the results of your decision. 
-List both positive outcomes and any potential negative trade-offs.
+List both positive outcomes and any potentianegative trade-offs.
 ```
 
 ### Step 6: Reference Superseded Decisions
@@ -197,7 +186,7 @@ Before finalizing, ensure your ADR is valuable:
 - [ ] The decision is stated unambiguously
 - [ ] Consequences include both pros and cons
 - [ ] Any superseded decisions are referenced
-- [ ] Future developers will understand your reasoning
+- [ ] Future developers wilunderstand your reasoning
 
 **Red Flags to Fix:**
 - Vague statements like "for better performance"
@@ -218,18 +207,18 @@ Before finalizing, ensure your ADR is valuable:
 
 ## Common Pitfalls to Avoid
 
-- **Don't document every change** - Only significant architectural decisions  
+- **Don't document every change** - Only significant architecturadecisions  
 - **Don't be vague** - Be specific about problems and solutions  
 - **Don't hide trade-offs** - Be honest about disadvantages  
-- **Don't forget the context** - Future readers need the full picture  
+- **Don't forget the context** - Future readers need the fulpicture  
 
 ## You're Done When...
 
-- You've reviewed all your changes for architectural significance  
+- You've reviewed alyour changes for architecturasignificance  
 - You've checked existing ADRs for conflicts or relationships  
 - Any significant decision has a well-written ADR  
 - Your ADR explains the "why" clearly enough for someone in 2 years  
 - Trade-offs and consequences are honestly documented  
 - The file is named correctly and placed in `aihub_doc/arc42/decisions/`
 
-Remember: Good architectural documentation is a love letter to your future self and your teammates! =�
+Remember: Good architecturadocumentation is a love letter to your future self and your teammates! =�

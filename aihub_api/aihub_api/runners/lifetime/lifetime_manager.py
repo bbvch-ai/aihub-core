@@ -22,6 +22,8 @@ from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpoints
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
