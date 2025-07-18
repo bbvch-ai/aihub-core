@@ -270,8 +270,6 @@ aihub_lib/nats/events/
 ```
 
 ::: details Event Type Categories
-Click to expand detailed information about each event type category.
-:::
 
 **1. Control Events** (`ControlEvent`)
 Control events are system-level signals that influence workflow execution. **Only ControlEvent types can drive workflow steps and control system flow.**
@@ -340,6 +338,7 @@ Key characteristics:
 - Request/response patterns that pause and resume workflows
 - Helper classes with `invoke()` methods for easy integration
 - Examples: `HumanInTheLoop`, `AgentInTheLoop`, `BotInTheLoop`
+:::
 
 ::: tip Event Architecture Principles
 
@@ -350,6 +349,7 @@ Key characteristics:
 5. **Observability**: Semantic events provide rich tracing integration
 6. **Internationalization**: Display events support multi-language interfaces
 7. **Resilience**: Unknown event fallback preserves system functionality
+:::
 
 ### 🧪 Step 3: Write Comprehensive Tests
 

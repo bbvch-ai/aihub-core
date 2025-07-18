@@ -6,6 +6,9 @@
 
 echo "🔄 Syncing README files..."
 
+# First, remove the aihub folder
+rm -rf aihub
+
 # Find all 'README.md' files in the parent directory (../),
 # while excluding 'node_modules' and the current 'aihub_doc' directory.
 # The output of find is piped to the while loop.
