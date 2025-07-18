@@ -22,6 +22,7 @@ Our architecture embodies this philosophy by providing a complete, production-re
 
 The Swiss AI-Hub is architected as a symphony of interconnected components, each playing a vital role in creating intelligent, collaborative workflows. Rather than a monolithic system, we've designed a modular ecosystem where each layer serves a specific purpose while harmoniously working together.
 
+
 ::: tip Architecture Philosophy
 Our architecture follows the principle of **separation of concerns** with **clear interfaces** between components. This design enables independent development, testing, and scaling of each layer while maintaining system cohesion.
 :::
@@ -138,6 +139,7 @@ Agents and processes don't need to know about each other or the API. They simply
 
 NATS is the electrical impulse system that makes everything work:
 
+
 **🔍 Discovery Events**: When the API needs to find agents, it sends a discovery event into NATS. Available agents respond, creating a dynamic registry.
 
 **🎯 Work Delegation**: The API translates user requests into NATS events that the right agents receive automatically.
@@ -148,9 +150,53 @@ NATS is the electrical impulse system that makes everything work:
 
 **⚖️ Automatic Load Balancing**: Deploy multiple instances of the same agent, and NATS automatically distributes work between them.
 
-## :arrows_counterclockwise: A Complete Intelligence Journey
+## :arrows_counterclockwise: Intelligence in Action: Two Core Patterns
+
+The AI-Hub supports two fundamental interaction patterns that showcase the power of the event-driven architecture.
+
+### 💬 Pattern 1: Direct User-Agent Communication
 
 Let's trace a real user interaction from start to finish:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Web UI
+    participant A as API
+    participant N as NATS
+    participant Ag as Agent
+    participant V as Vector Store
+    participant P as Pipeline
+    participant D as Data Lake
+    
+    Note over P,D: 1. Knowledge Preparation
+    P-->>D: Watch for changes
+    D->>P: New document detected
+    P->>V: Process & store embeddings
+    
+    Note over U,A: 2-4. User Interaction
+    U->>W: Ask question
+    W->>A: WebSocket request
+    A->>N: Discovery event
+    N->>Ag: Who can handle this?
+    Ag->>N: I can handle it
+    A->>N: Delegate work
+    N->>Ag: User question
+    
+    Note over Ag,V: 5-6. Agent Processing
+    Ag->>V: Query knowledge
+    V-->>Ag: Relevant data
+    Ag->>N: Workflow step 1
+    N->>A: Workflow step 1
+    A->>W: Stream step 1
+    Ag->>N: Workflow step 2
+    N->>A: Workflow step 2
+    A->>W: Stream step 2
+    Ag->>N: Final response
+    N->>A: Final response
+    A->>W: Stream final response
+    W->>U: Real-time updates
+```
 
 **📁 Step 1: Knowledge Preparation**
 An admin uploads a document to the data lake. The Data Pipeline automatically detects this change, processes the document with AI, and ingests it into the vector store. No coordination needed—pure reactive processing.
@@ -172,6 +218,84 @@ As the agent works through its workflow—reasoning, retrieving, generating—ea
 
 **🎉 Step 7: Live Observability**
 The user sees the agent's thinking process in real-time. Later, they can navigate to the observability interface to inspect every step, every piece of data used, and how the agent reached its conclusion.
+
+### 🔄 Pattern 2: Agentic Process Orchestration
+
+Now let's see how the AI-Hub orchestrates complex workflows involving multiple entities. Here's a CV reviewing process triggered by incoming emails:
+
+```mermaid
+sequenceDiagram
+    participant E as Email Program
+    participant API as API
+    participant N as NATS
+    participant P as Agentic Process
+    participant A as CV Agent
+    participant W as Web UI
+    participant H as HR Person
+    
+    Note over E,API: Process Trigger
+    E->>API: POST /process/cv-review (webhook)
+    API->>N: Email received event
+    N->>P: New email at talent@company.ch
+    P->>N: Process started event
+    N->>API: Process started
+    API->>W: Live process update
+    
+    Note over P,A: Step 1: Agent Analysis
+    P->>N: CV review request
+    N->>A: Analyze CV from email
+    A->>N: Analysis step 1
+    N->>API: Stream agent work
+    API->>W: Live agent progress
+    A->>N: Analysis step 2
+    N->>API: Stream agent work
+    API->>W: Live agent progress
+    A->>N: CV assessment complete
+    N->>P: CV assessment result
+    P->>N: Agent step completed
+    N->>API: Process step update
+    API->>W: Step 1 completed
+    
+    Note over P,H: Step 2: Human Decision
+    P->>N: HR review request
+    N->>API: Human work needed
+    API->>W: Generate dynamic form
+    W->>H: Notification: Action required
+    H->>W: Navigate to process
+    W->>H: Show: Email + Agent assessment + Decision form
+    H->>W: Submit decision (Accept/Reject)
+    W->>API: Form submission
+    API->>N: Human decision
+    N->>P: Human work completed
+    P->>N: Process completed
+    N->>API: Final process update
+    API->>W: Process finished
+```
+
+**📧 Step 1: Email Trigger**
+An email arrives at talent@company.ch. The email program sends a POST request to the API's dynamically generated webhook endpoint `/process/cv-review`. The API translates this HTTP request into a NATS event that triggers the agentic process.
+
+**🤖 Step 2: Agent Analysis**
+The process transforms the email into a CV review request and delegates it to the CV Agent via NATS. The agent analyzes the CV, with each workflow step streaming live through NATS to the API, then to the Web UI.
+
+**📊 Step 3: Process Transformation**
+The process receives the agent's assessment via NATS and transforms it into a human-readable format with a decision form.
+
+**👥 Step 4: Human Review**
+The HR person receives a notification in the AI-Hub interface. They navigate to the process view and see:
+- **Step 1**: The original email from the candidate
+- **Step 2**: The agent's technical assessment with reasoning  
+- **Step 3**: A dynamic form asking for Accept/Reject decision
+
+**✅ Step 5: Decision & Completion**
+The HR person submits their decision through the Web UI. The API receives this form submission and translates it into a NATS event for the process orchestrator. The process marks the workflow as complete, and all participants can see the final result.
+
+**👁️ Live Observability Throughout**
+At every moment, the Web UI shows live updates:
+- Process progress and current step
+- Agent workflow steps as they happen
+- Human participants and their required actions
+- Complete audit trail of all decisions and reasoning
 
 ::: details Process-Driven Workflows - The Next Level
 **Taking Humans Out of the Loop**
