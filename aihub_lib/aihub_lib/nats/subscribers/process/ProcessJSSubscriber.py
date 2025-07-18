@@ -7,6 +7,7 @@ from aihub_lib.nats.events import BaseEvent, ControlEvent, WorkEvent, WorkReques
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 
 class ProcessJSSubscriber(JSSubscriber):
@@ -18,6 +19,7 @@ class ProcessJSSubscriber(JSSubscriber):
         handler: Callable[[WorkEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        config_type: type[ProcessConfig] = ProcessConfig,
     ):
         """Subscribe to all work events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_events_within_process_instance()
@@ -32,6 +34,7 @@ class ProcessJSSubscriber(JSSubscriber):
             event_cls=WorkEvent,
             handler=handler,
             js=js,
+            config_type=config_type,
         )
 
     @classmethod
@@ -42,6 +45,7 @@ class ProcessJSSubscriber(JSSubscriber):
         handler: Callable[[WorkRequestEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        config_type: type[ProcessConfig] = ProcessConfig,
     ):
         """Subscribe to all work request events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_request_events_within_process_instance()
@@ -56,6 +60,7 @@ class ProcessJSSubscriber(JSSubscriber):
             event_cls=WorkRequestEvent,
             handler=handler,
             js=js,
+            config_type=config_type,
         )
 
     @classmethod
@@ -66,6 +71,7 @@ class ProcessJSSubscriber(JSSubscriber):
         handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        config_type: type[ProcessConfig] = ProcessConfig,
     ):
         """Subscribe to all events within a specific process instance."""
         subject = topic_manager.get_subject_for_everything_within_process_instance()
@@ -80,4 +86,5 @@ class ProcessJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
+            config_type=config_type,
         )
