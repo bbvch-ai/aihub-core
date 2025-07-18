@@ -1,6 +1,7 @@
 """
 title: LCDM Hub GTO Manager
 author: Noah Hermann
+description: Validates a GTO schemas and saves it to the LCDM hub. Is used when the user wants to save a GTO schema.
 version: 0.1.0
 """
 
