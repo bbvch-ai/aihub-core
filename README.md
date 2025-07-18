@@ -3,10 +3,6 @@ title: "Dev Documentation"
 index: 2
 ---
 
-Of course. Here is the updated "Introduction" for your `README.md`, reflecting the latest documentation and strategic vision.
-
-***
-
 # AI-Hub Developer Guide
 
 ## :rocket: Introduction
