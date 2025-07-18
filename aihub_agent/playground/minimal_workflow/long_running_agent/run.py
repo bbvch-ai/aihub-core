@@ -13,7 +13,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=LongRunningAgent,
-        agent_config=LongRunningAgentConfig(
+        default_agent_config=LongRunningAgentConfig(
             agent_id="long_running",
             agent_class=LongRunningAgent.__name__,
             name=LocaleString(en="Long Running Agent"),

@@ -32,7 +32,7 @@ def process_runner_fixture():
 def agent_a_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentA,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_a",
             agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),

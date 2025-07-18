@@ -13,7 +13,7 @@ from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import Boun
 async def main():
     runner = AgentTestRunner(
         agent_type=BoundedLoopAgent,
-        agent_config=BoundedLoopAgentConfig(
+        default_agent_config=BoundedLoopAgentConfig(
             agent_id="bounded_iterative_loop_agent",
             agent_class=BoundedLoopAgent.__name__,
             name=LocaleString(en="Bounded Iterative Agent"),

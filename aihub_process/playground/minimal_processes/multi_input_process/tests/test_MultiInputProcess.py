@@ -20,7 +20,7 @@ scenarios("./features/multi_input_process.feature")
 def agent_a_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentA,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_a",
             agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
@@ -34,7 +34,7 @@ def agent_a_runner_fixture():
 def agent_b_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentB,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_b",
             agent_class=AgentB.__name__,
             name=LocaleString(en="Agent B"),
@@ -48,7 +48,7 @@ def agent_b_runner_fixture():
 def agent_c_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentC,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_c",
             agent_class=AgentC.__name__,
             name=LocaleString(en="Agent C"),

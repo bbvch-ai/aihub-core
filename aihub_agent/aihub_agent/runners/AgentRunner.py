@@ -41,7 +41,7 @@ class AgentRunner:
         servers: list[str],
         redis_url: str,
         agent_type: type[Agent],
-        agent_config: AgentConfig,
+        default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         if not isinstance(agent_type, type):
@@ -52,8 +52,8 @@ class AgentRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type
-        self.agent_config = agent_config
-        self.agent_config_type = agent_config.__class__
+        self.default_agent_config = default_agent_config
+        self.agent_config_type = default_agent_config.__class__
         self.running = False
         self._stop_signal = asyncio.Event()
         self._loop_task: asyncio.Task | None = None
@@ -102,7 +102,7 @@ class AgentRunner:
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             network_graph=network_graph.to_pydantic(),
-            default_agent_config=self.agent_config,
+            default_agent_config=self.default_agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -127,7 +127,7 @@ class AgentRunner:
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
             self.agent_type,
-            self.agent_config,
+            self.default_agent_config,
             self.nc,
             self.js,
             self.redis,

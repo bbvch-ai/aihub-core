@@ -142,7 +142,7 @@ def _(agent_config_data, azure_llm_config):
         ),
     )
 
-    return AgentTestRunner(agent_type=FewShotAgent, agent_config=config)
+    return AgentTestRunner(agent_type=FewShotAgent, default_agent_config=config)
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")
@@ -180,7 +180,7 @@ def _(agent_config_data, self_hosted_llm_config):
         ),
     )
 
-    return AgentTestRunner(agent_type=FewShotAgent, agent_config=config)
+    return AgentTestRunner(agent_type=FewShotAgent, default_agent_config=config)
 
 
 @when(parsers.parse('the start event is sent with a user query "{query}"'))

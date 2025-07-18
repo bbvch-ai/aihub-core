@@ -198,14 +198,14 @@ def _(azure_agent_config):
     """
     return AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=azure_agent_config,
+        default_agent_config=azure_agent_config,
     )
 
 
 @given(parsers.parse('check_context_sufficiency set to "{flag}" and max_hops to "{max_hops:d}"'))
 def _(flag: bool, max_hops: int, agent_runner: AgentTestRunner):
-    agent_runner.agent_config.check_context_sufficiency = flag
-    agent_runner.agent_config.max_hops = max_hops
+    agent_runner.default_agent_config.check_context_sufficiency = flag
+    agent_runner.default_agent_config.max_hops = max_hops
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")
@@ -216,7 +216,7 @@ def _(self_hosted_agent_config):
     """
     return AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=self_hosted_agent_config,
+        default_agent_config=self_hosted_agent_config,
     )
 
 
@@ -302,7 +302,7 @@ def _(agent_runner: AgentTestRunner, datatable):
         examples.append(
             FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2]))
         )
-    agent_runner.agent_config.few_shot_guard_examples = examples
+    agent_runner.default_agent_config.few_shot_guard_examples = examples
     return agent_runner
 
 

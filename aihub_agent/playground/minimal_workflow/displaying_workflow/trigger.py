@@ -16,7 +16,7 @@ from playground.minimal_workflow.displaying_workflow.DisplayingAgentConfig impor
 async def main():
     runner = AgentTestRunner(
         agent_type=DisplayingAgent,
-        agent_config=DisplayingAgentConfig(
+        default_agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
             agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),

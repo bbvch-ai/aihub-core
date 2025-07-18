@@ -20,7 +20,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=DiscoverableAgent,
-        agent_config=DiscoverableAgentConfig(
+        default_agent_config=DiscoverableAgentConfig(
             agent_id="discoverable_agent",
             agent_class=DiscoverableAgent.__name__,
             name=LocaleString(en="Discoverable Agent"),

@@ -19,7 +19,7 @@ from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentC
 async def main():
     runner = AgentTestRunner(
         agent_type=HumanInTheLoopAgent,
-        agent_config=HumanInTheLoopAgentConfig(
+        default_agent_config=HumanInTheLoopAgentConfig(
             agent_id="human_in_the_loop_agent",
             agent_class=HumanInTheLoopAgent.__name__,
             name=LocaleString(en="Human in the Loop Agent"),

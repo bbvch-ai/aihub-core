@@ -22,7 +22,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=LLMWrappingAgent,
-        agent_config=LLMWrappingAgentConfig(
+        default_agent_config=LLMWrappingAgentConfig(
             agent_id="dev_agent",
             agent_class=LLMWrappingAgent.__name__,
             name=LocaleString(en="Dev Agent"),

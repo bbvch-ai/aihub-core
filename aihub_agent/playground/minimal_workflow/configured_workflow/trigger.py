@@ -18,7 +18,7 @@ from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig impor
 async def main():
     runner = AgentTestRunner(
         agent_type=ConfiguredAgent,
-        agent_config=ConfiguredAgentConfig(
+        default_agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
             agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),

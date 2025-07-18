@@ -18,7 +18,7 @@ enable_logging()
 
 async def main():
     runner = AgentTestRunner(
-        agent_config=FewShotAgentConfig(
+        default_agent_config=FewShotAgentConfig(
             agent_id="rag_agent",
             agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),

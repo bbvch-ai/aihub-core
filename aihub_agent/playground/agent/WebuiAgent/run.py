@@ -14,7 +14,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=WebuiAgent,
-        agent_config=WebuiAgentConfig(
+        default_agent_config=WebuiAgentConfig(
             agent_id="deepseek",
             agent_class=WebuiAgent.__name__,
             name=LocaleString(en="Webui Agent"),

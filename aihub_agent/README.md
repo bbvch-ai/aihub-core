@@ -304,7 +304,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 async def main():
     runner = AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=RAGAgentConfig(
+        default_agent_config=RAGAgentConfig(
             agent_id="rag_agent",
             name="RAG Agent",
             description="Agent for frontend development",
@@ -441,7 +441,7 @@ scenarios("./features/simple_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=SimpleAgent,
-        agent_config=SimpleAgentConfig(
+        default_agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
             name="Simple Agent",
             description="A minimal agent demo",

@@ -20,7 +20,7 @@ scenarios("./features/llama_index_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=LlamaIndexAgent,
-        agent_config=LlamaIndexAgentConfig(
+        default_agent_config=LlamaIndexAgentConfig(
             agent_id="llama_index_agent",
             agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),

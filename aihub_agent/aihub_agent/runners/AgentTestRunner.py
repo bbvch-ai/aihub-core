@@ -49,17 +49,19 @@ class AgentTestRunner(AgentRunner):
     def __init__(
         self,
         agent_type: type[Agent],
-        agent_config: AgentConfig,
+        default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
             redis_url=RedisConfig().REDIS_URL,
             agent_type=agent_type,
-            agent_config=agent_config,
+            default_agent_config=default_agent_config,
             locale_paths=locale_paths,
         )
-        self.topic_manager = AgentInstanceTopicManager(agent_class=self.agent_class, agent_id=agent_config.agent_id)
+        self.topic_manager = AgentInstanceTopicManager(
+            agent_class=self.agent_class, agent_id=default_agent_config.agent_id
+        )
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
         self.topic: PartialAgentTopic | None = None
@@ -161,7 +163,7 @@ class AgentTestRunner(AgentRunner):
 
         self.topic = PartialAgentTopic(
             agent_class=self.agent_class,
-            agent_id=self.agent_config.agent_id,
+            agent_id=self.default_agent_config.agent_id,
             run_id=run_id,
             thread_id=thread_id,
             display_id=display_id,

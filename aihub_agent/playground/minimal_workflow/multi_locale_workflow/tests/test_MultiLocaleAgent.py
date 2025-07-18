@@ -19,7 +19,7 @@ scenarios("./features/multi_locale_agent.feature")
 def _(locale_path: str):
     return AgentTestRunner(
         agent_type=MultiLocaleAgent,
-        agent_config=MultiLocaleAgentConfig(
+        default_agent_config=MultiLocaleAgentConfig(
             agent_id="simple_agent",
             agent_class=MultiLocaleAgent.__name__,
             name=LocaleString(en="Simple Agent"),

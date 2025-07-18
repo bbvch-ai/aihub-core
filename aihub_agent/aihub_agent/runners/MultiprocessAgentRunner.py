@@ -109,7 +109,7 @@ class MultiprocessAgentRunner:
                 servers=servers,
                 redis_url=redis_url,
                 agent_type=agent_type,
-                agent_config=agent_config.model_copy(deep=True),
+                default_agent_config=agent_config.model_copy(deep=True),
                 locale_paths=locale_paths,
             )
 

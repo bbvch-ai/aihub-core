@@ -22,7 +22,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=RAGAgentConfig(
+        default_agent_config=RAGAgentConfig(
             agent_id="dev_agent",
             agent_class=RAGAgent.__name__,
             name=LocaleString(en="RAG Agent"),

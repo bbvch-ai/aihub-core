@@ -127,7 +127,7 @@ def _(self_hosted_agent_config):
     """
     return AgentTestRunner(
         agent_type=RetrievalAgent,
-        agent_config=self_hosted_agent_config,
+        default_agent_config=self_hosted_agent_config,
     )
 
 

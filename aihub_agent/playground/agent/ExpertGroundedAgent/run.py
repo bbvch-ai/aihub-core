@@ -17,7 +17,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=ExpertGroundedAgent,
-        agent_config=ExpertGroundedAgentConfig(
+        default_agent_config=ExpertGroundedAgentConfig(
             agent_id="grounded_agent",
             agent_class=ExpertGroundedAgent.__name__,
             name=LocaleString(en="Grounded Agent"),

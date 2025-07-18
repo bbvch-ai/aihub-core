@@ -18,7 +18,7 @@ scenarios("features/context_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=ContextAgent,
-        agent_config=ContextAgentConfig(
+        default_agent_config=ContextAgentConfig(
             agent_id="context_agent",
             agent_class=ContextAgent.__name__,
             name=LocaleString(en="Context Agent"),

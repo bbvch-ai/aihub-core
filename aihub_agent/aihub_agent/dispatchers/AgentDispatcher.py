@@ -50,7 +50,7 @@ class AgentDispatcher(BaseDispatcher):
     def __init__(
         self,
         agent: Annotated[type[Agent], "The agent class defining steps and logic."],
-        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
+        default_agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
@@ -62,10 +62,10 @@ class AgentDispatcher(BaseDispatcher):
     ):
         super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
         self.agent = agent
-        self.agent_config = agent_config
+        self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler
 
-        self.agent_config_type: type[AgentConfig] = self.agent_config.__class__
+        self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
 
     @override
     async def handle_event(
@@ -90,7 +90,7 @@ class AgentDispatcher(BaseDispatcher):
         run_agent_config: AgentConfig | None = None
 
         if event.is_start_event:
-            run_agent_config = event.agent_config or self.agent_config
+            run_agent_config = event.agent_config or self.default_agent_config
             await run_context.set("_agent_config", run_agent_config.model_dump())
 
         if run_agent_config is None:

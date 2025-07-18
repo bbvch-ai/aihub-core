@@ -20,7 +20,7 @@ enable_logging()
 async def main():
     orchestrator_runner = AgentTestRunner(
         agent_type=OrchestratorAgent,
-        agent_config=OrchestratorAgentConfig(
+        default_agent_config=OrchestratorAgentConfig(
             agent_id="orchestrator_agent",
             agent_class=OrchestratorAgent.__name__,
             name=LocaleString(en="Orchestrator Agent"),
@@ -31,7 +31,7 @@ async def main():
 
     worker_runner = AgentTestRunner(
         agent_type=WorkerAgent,
-        agent_config=WorkerAgentConfig(
+        default_agent_config=WorkerAgentConfig(
             agent_id="worker_agent",
             agent_class=WorkerAgent.__name__,
             name=LocaleString(en="Worker Agent"),
