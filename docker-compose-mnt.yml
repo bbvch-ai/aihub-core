@@ -1,3 +1,14 @@
+# This docker-compos file requires the following environment variables to be set:
+# - MODEL_SUI_URL: The base URL for a language model API (here bound to region SUI)
+# - MODEL_SUI_API_KEY: Respective API key for the SUI model
+# - MODEL_EUR_URL: The base URL for a language model API (here bound to region EUR or SWE)
+# - MODEL_EUR_API_KEY: Respective API key for the EUR model
+
+# Additionally, you can set the following environment variables, if they are not set default values are used
+# - VOLUME_ROOT: The root directory for volumes (default: ./local-volumes)
+# - MONGO_USERNAME: The MongoDB root username (default: admin)
+# - MONGO_PASSWORD: The MongoDB root password (default: admin)
+
 services:
 
   phoenix:

@@ -34,6 +34,7 @@ COPY aihub_lib ./aihub_lib
 RUN poetry install
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
+WORKDIR /app/aihub_bot
 
 
 # Runtime stage
