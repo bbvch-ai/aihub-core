@@ -34,34 +34,6 @@ aihub_agent/
     └── minimal_workflow/       # Self-contained examples of every core pattern - ESSENTIAL
 ```
 
-### 📖 Glossary of Agent-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_agent` scope, building upon the core AI-Hub terminology.
-
-| Term | Definition |
-| :--- | :--- |
-| **Agent** | A **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal. Agents are autonomous AI components designed for proactive process automation, working alongside humans to execute tasks. |
-| **Agent Configuration** | A Pydantic model inheriting from `AgentConfig` that defines agent settings, parameters, and behavior. Uses `Annotated` fields with `Field()` for validation and documentation. |
-| **Agent Test Runner** | A specialized testing framework (`AgentTestRunner`) that provides a sandboxed environment to execute agents and inspect resulting events. Essential for BDD testing with pytest-bdd. |
-| **Agent-in-the-Loop** | A pattern where one agent (orchestrator) invokes another agent (worker) and waits for its result. Enables complex workflows by composing smaller, specialized agents. |
-| **Context** | State management system with two types: `RunContext` (ephemeral, single-run) and `ThreadContext` (persistent, cross-run). Used for maintaining state within and across agent executions. |
-| **Dispatchable Workflow** | The base class for all agents. Provides the infrastructure for event-driven step execution, event routing, and workflow orchestration. |
-| **Event** | The atomic unit of communication in agent workflows. Pydantic models representing specific occurrences (e.g., `UserMessageEvent`, `StopEvent`, custom domain events). |
-| **Event Flow** | The sequence of events produced and consumed by agent steps. Visible in logs and Phoenix traces, crucial for debugging agent workflows. |
-| **Fan-Out** | A workflow pattern where a single step returns a list of events processed in parallel by downstream steps. Used for batch processing and concurrent operations. |
-| **Human-in-the-Loop** | A pattern where the workflow pauses to request input from a human user, emitting a request event and waiting for a response before continuing. |
-| **Phoenix Tracing** | A web-based debugging tool available at `http://localhost:6006` that provides step-by-step visualization of agent execution, event flow, and performance analysis. |
-| **Playground** | The `/playground` directory containing self-contained examples of every agent pattern. Essential for learning and reference, organized into `agent/` (production examples) and `minimal_workflow/` (pattern examples). |
-| **Precondition** | A function decorated with `@precondition()` that must return `True` for a step to execute. Used for synchronizing parallel workflow branches and ensuring data availability. |
-| **Run** | A single, traceable execution of an agent's workflow, beginning with a `StartEvent` and ending with a `StopEvent`. Has an ephemeral `RunContext` for state management. |
-| **Run Context** | Short-lived storage for ephemeral data within a single agent run. Isolated between runs, ideal for intermediate calculations and temporary caching. Expires after 30 days. |
-| **Step** | A method decorated with `@step()` that represents a single operation in an agent workflow. Steps consume events as input and produce events as output, enabling clear workflow composition. |
-| **Step Metadata** | Rich information attached to steps via the `@step()` decorator, including localized names, descriptions, and icons for UI integration and monitoring. |
-| **Thread** | A logical grouping of multiple runs that form a continuous conversation. Maintains state across runs via persistent `ThreadContext` for contextual follow-up interactions. |
-| **Thread Context** | Persistent storage for state across multiple agent runs within the same conversation thread. Maintains conversational history and user preferences with 30-day TTL. |
-| **Trigger Script** | A Python script (`trigger.py`) that programmatically starts an agent, sends it a specific event, and terminates. Essential for focused debugging and testing specific scenarios. |
-| **Workflow** | The fundamental design pattern for agents. A task broken down into a series of structured, explicit `@step`-decorated methods ensuring testability and transparency. |
-
 ### 🤖 The Agent: A Dispatchable Workflow
 
 ::: info Core Concept
@@ -651,3 +623,32 @@ python run.py
 * `/aihub_agent/runners/AgentTestRunner.py`: The foundation for all agent testing.
 * `/aihub_agent/context/`: The context management system.
 :::
+
+
+### 📖 Glossary of Agent-Specific Terms
+
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_agent` scope, building upon the core AI-Hub terminology.
+
+| Term | Definition |
+| :--- | :--- |
+| **Agent** | A **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal. Agents are autonomous AI components designed for proactive process automation, working alongside humans to execute tasks. |
+| **Agent Configuration** | A Pydantic model inheriting from `AgentConfig` that defines agent settings, parameters, and behavior. Uses `Annotated` fields with `Field()` for validation and documentation. |
+| **Agent Test Runner** | A specialized testing framework (`AgentTestRunner`) that provides a sandboxed environment to execute agents and inspect resulting events. Essential for BDD testing with pytest-bdd. |
+| **Agent-in-the-Loop** | A pattern where one agent (orchestrator) invokes another agent (worker) and waits for its result. Enables complex workflows by composing smaller, specialized agents. |
+| **Context** | State management system with two types: `RunContext` (ephemeral, single-run) and `ThreadContext` (persistent, cross-run). Used for maintaining state within and across agent executions. |
+| **Dispatchable Workflow** | The base class for all agents. Provides the infrastructure for event-driven step execution, event routing, and workflow orchestration. |
+| **Event** | The atomic unit of communication in agent workflows. Pydantic models representing specific occurrences (e.g., `UserMessageEvent`, `StopEvent`, custom domain events). |
+| **Event Flow** | The sequence of events produced and consumed by agent steps. Visible in logs and Phoenix traces, crucial for debugging agent workflows. |
+| **Fan-Out** | A workflow pattern where a single step returns a list of events processed in parallel by downstream steps. Used for batch processing and concurrent operations. |
+| **Human-in-the-Loop** | A pattern where the workflow pauses to request input from a human user, emitting a request event and waiting for a response before continuing. |
+| **Phoenix Tracing** | A web-based debugging tool available at `http://localhost:6006` that provides step-by-step visualization of agent execution, event flow, and performance analysis. |
+| **Playground** | The `/playground` directory containing self-contained examples of every agent pattern. Essential for learning and reference, organized into `agent/` (production examples) and `minimal_workflow/` (pattern examples). |
+| **Precondition** | A function decorated with `@precondition()` that must return `True` for a step to execute. Used for synchronizing parallel workflow branches and ensuring data availability. |
+| **Run** | A single, traceable execution of an agent's workflow, beginning with a `StartEvent` and ending with a `StopEvent`. Has an ephemeral `RunContext` for state management. |
+| **Run Context** | Short-lived storage for ephemeral data within a single agent run. Isolated between runs, ideal for intermediate calculations and temporary caching. Expires after 30 days. |
+| **Step** | A method decorated with `@step()` that represents a single operation in an agent workflow. Steps consume events as input and produce events as output, enabling clear workflow composition. |
+| **Step Metadata** | Rich information attached to steps via the `@step()` decorator, including localized names, descriptions, and icons for UI integration and monitoring. |
+| **Thread** | A logical grouping of multiple runs that form a continuous conversation. Maintains state across runs via persistent `ThreadContext` for contextual follow-up interactions. |
+| **Thread Context** | Persistent storage for state across multiple agent runs within the same conversation thread. Maintains conversational history and user preferences with 30-day TTL. |
+| **Trigger Script** | A Python script (`trigger.py`) that programmatically starts an agent, sends it a specific event, and terminates. Essential for focused debugging and testing specific scenarios. |
+| **Workflow** | The fundamental design pattern for agents. A task broken down into a series of structured, explicit `@step`-decorated methods ensuring testability and transparency. |
