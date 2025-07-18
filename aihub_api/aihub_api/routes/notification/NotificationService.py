@@ -1,19 +1,22 @@
 import math
+
+from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
 from mongoengine import DoesNotExist
 
 from aihub_api.routes.notification.dto.NotificationDTO import (
     NotificationDTO,
     PaginatedNotificationsResponse,
-    UpdateNotificationRequest
+    UpdateNotificationRequest,
 )
-from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
 
 
 class NotificationService:
     """Service layer for handling notification-related business logic."""
 
     @staticmethod
-    def get_notifications_for_user(user_id: str, page: int, page_size: int, **filters) -> PaginatedNotificationsResponse:
+    def get_notifications_for_user(
+        user_id: str, page: int, page_size: int, **filters
+    ) -> PaginatedNotificationsResponse:
         """Retrieves a paginated list of notifications with optional filters."""
         entities, total = NotificationEntity.get_for_user(user_id=user_id, page=page, page_size=page_size, **filters)
         dtos = [NotificationDTO.from_entity(entity) for entity in entities]

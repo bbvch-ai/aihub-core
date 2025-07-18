@@ -1,18 +1,19 @@
+from typing import Annotated
+
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.routes.Controller import Controller
 from fastapi import HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
 from pydantic import BaseModel
-from typing import Annotated
 
-from aihub_api.routes.notification.NotificationService import NotificationService
 from aihub_api.routes.notification.dto.NotificationDTO import (
     NotificationDTO,
     PaginatedNotificationsResponse,
     UpdateNotificationRequest,
 )
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.routes.Controller import Controller
+from aihub_api.routes.notification.NotificationService import NotificationService
 
 
 class BulkUpdateResponse(BaseModel):
@@ -43,6 +44,7 @@ class NotificationController(Controller):
             """Retrieves a paginated list of notifications with optional filters."""
             filters = {"types": types, "severities": severities, "read": read, "done": done}
             return NotificationService.get_notifications_for_user(user.id, page, page_size, **filters)
+
         return self
 
     def update_notification(self, route: str = "/{notification_id}") -> "NotificationController":
@@ -57,6 +59,7 @@ class NotificationController(Controller):
                 return NotificationService.update_notification(notification_id, user.id, updates)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Notification not found.")
+
         return self
 
     def mark_all_as_read(self, route: str = "/read-all") -> "NotificationController":
@@ -65,6 +68,7 @@ class NotificationController(Controller):
             """Marks all of the user's unread notifications as read."""
             count = NotificationService.mark_all_as_read(user.id)
             return BulkUpdateResponse(modified_count=count)
+
         return self
 
     def mark_all_as_done(self, route: str = "/done-all") -> "NotificationController":
@@ -73,4 +77,5 @@ class NotificationController(Controller):
             """Marks all of the user's incomplete notifications as done."""
             count = NotificationService.mark_all_as_done(user.id)
             return BulkUpdateResponse(modified_count=count)
+
         return self

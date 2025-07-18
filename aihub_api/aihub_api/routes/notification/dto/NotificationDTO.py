@@ -1,9 +1,9 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, StringConstraints
 from typing import Annotated, Literal
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
+from pydantic import BaseModel, Field, StringConstraints
 
 NotificationTypeAPI = Literal["success", "info", "warning", "danger"]
 
@@ -14,6 +14,7 @@ NotificationLink = Annotated[str, StringConstraints(pattern=r"^/.*$")]
 
 class UpdateNotificationRequest(BaseModel):
     """Request model for partially updating a notification."""
+
     read: Annotated[bool | None, Field(description="The new 'read' status of the notification.")] = None
     done: Annotated[bool | None, Field(description="The new 'done' status for the notification's task.")] = None
 
@@ -23,14 +24,23 @@ class NotificationDTO(BaseModel):
 
     id: Annotated[str, Field(description="The unique identifier of the notification.")]
     user_id: Annotated[str, Field(description="The unique identifier of the user associated with the notification.")]
-    notification_group_id: Annotated[str | None, Field(description="The identifier of the notification group this notification belongs to.")] = None
+    notification_group_id: Annotated[
+        str | None, Field(description="The identifier of the notification group this notification belongs to.")
+    ] = None
     title: Annotated[LocaleString, Field(description="The internationalized title of the notification.")]
     message: Annotated[LocaleString, Field(description="The internationalized content of the notification.")]
     read: Annotated[bool, Field(description="Indicates if the notification has been read by the user.")]
-    done: Annotated[bool, Field(description="Indicates if the task associated with the notification has been completed.")]
-    type: Annotated[NotificationTypeAPI, Field(description="Categorizes the notification for visual representation (e.g., icon and color).")]
+    done: Annotated[
+        bool, Field(description="Indicates if the task associated with the notification has been completed.")
+    ]
+    type: Annotated[
+        NotificationTypeAPI,
+        Field(description="Categorizes the notification for visual representation (e.g., icon and color)."),
+    ]
     severity: Annotated[NotificationSeverityAPI, Field(description="The priority level of the notification.")]
-    link: Annotated[NotificationLink | None, Field(description="An optional internal link to navigate to the relevant resource.")] = None
+    link: Annotated[
+        NotificationLink | None, Field(description="An optional internal link to navigate to the relevant resource.")
+    ] = None
     created_at: Annotated[datetime, Field(description="The timestamp when the notification was created.")]
 
     @classmethod
@@ -53,8 +63,11 @@ class NotificationDTO(BaseModel):
 
 class PaginatedNotificationsResponse(BaseModel):
     """A paginated response container for notifications."""
+
     total: Annotated[int, Field(description="The total number of notifications matching the filter criteria.")]
     page: Annotated[int, Field(description="The current page number (1-indexed).")]
     page_size: Annotated[int, Field(description="The number of notifications requested per page.")]
     total_pages: Annotated[int, Field(description="The total number of pages available based on the page size.")]
-    notifications: Annotated[list[NotificationDTO], Field(description="The list of notifications for the current page.")]
+    notifications: Annotated[
+        list[NotificationDTO], Field(description="The list of notifications for the current page.")
+    ]
