@@ -305,7 +305,8 @@ def test_extra_fields(agent_config: AgentConfig):
         "extra_field": "This wasn't in the original class",
     }
 
-    event = BaseEvent.deserialize_event(extra_data)
+    event = BaseEvent.deserialize_event(extra_data, config_type=agent_config.__class__)
+    assert event.extra_field == "This wasn't in the original class"
 
     # The field should be accessible in the model dump
     data = event.model_dump()
@@ -317,7 +318,7 @@ def test_extra_fields(agent_config: AgentConfig):
 
     # When re-serialized, the field should still be there
     serialized = event.model_dump_json(serialize_as_any=True)
-    deserialized_again = BaseEvent.deserialize_event(serialized)
+    deserialized_again = BaseEvent.deserialize_event(serialized, config_type=agent_config.__class__)
     assert deserialized_again.model_dump()["extra_field"] == "This wasn't in the original class"
 
 
@@ -337,7 +338,7 @@ def test_corrupted_parent_event_names(agent_config: AgentConfig):
     }
 
     # Should still deserialize, but parent class info might be incorrect
-    event = BaseEvent.deserialize_event(corrupted_data)
+    event = BaseEvent.deserialize_event(corrupted_data, config_type=agent_config.__class__)
     assert event.message == "Hello"
     # Type checking should fall back to class-based hierarchy
     assert isinstance(event._parent_event_names, list)
