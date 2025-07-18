@@ -90,10 +90,7 @@ class AgentDispatcher(BaseDispatcher):
         run_agent_config: AgentConfig | None = None
 
         if event.is_start_event:
-            if event.agent_config is None:
-                run_agent_config = self.agent_config
-            else:
-                run_agent_config = event.agent_config
+            run_agent_config = event.agent_config or self.agent_config
             await run_context.set("_agent_config", run_agent_config.model_dump())
 
         if run_agent_config is None:
