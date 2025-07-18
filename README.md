@@ -250,6 +250,76 @@ Wait for all services to become healthy (you can check with `docker ps`) before 
 The project requires environment variables for configuration. You will need to request the `.env` files from the team and place them in the root directories of the relevant backend and frontend projects.
 :::
 
+### :robot: AI Coding Assistant Integration (MCP)
+
+The AI-Hub provides enhanced integration with AI coding assistants through the Model Context Protocol (MCP). This integration allows AI tools like Claude Code, Gemini CLI, and other assistants to interact directly with your development environment.
+
+::: info MCP Benefits
+MCP integration provides AI coding assistants with:
+- **Real-time observation** of running services and their state
+- **Direct access** to development databases for debugging
+- **API interaction** capabilities for testing and validation
+- **Observability integration** with Phoenix tracing and monitoring
+:::
+
+#### :gear: MCP Configuration
+
+The MCP integration is configured through the `.mcp.json` file in the project root. This file defines three key MCP servers:
+
+1. **Phoenix MCP Server**: Provides access to AI observability and tracing data
+2. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
+3. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+
+::: details :wrench: MCP Server Configuration
+The `.mcp.json` file contains the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "phoenix": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "--network=host", "node:22-alpine", "npx", "-y", "@arizeai/phoenix-mcp@latest", "--baseUrl", "http://localhost:6006"]
+    },
+    "mongodb": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "--network=host", "-e", "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub", "-e", "MDB_MCP_READ_ONLY=true", "mongodb/mongodb-mcp-server:latest"]
+    },
+    "aihub_api": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+:::
+
+#### :rocket: Using MCP Integration
+
+Once your development environment is running, AI coding assistants that support MCP can automatically discover and use these integrations:
+
+- **Query agent execution traces** through Phoenix MCP
+- **Inspect database state** through MongoDB MCP (read-only)
+- **Test API endpoints** through AI-Hub API MCP
+- **Debug complex issues** with full development context
+
+::: tip AI Assistant Setup
+Ensure your AI coding assistant (Claude Code, Gemini CLI, etc.) is configured to use the `.mcp.json` file. Most modern AI assistants will automatically detect and use this configuration when present in the project root.
+:::
+
+### :hammer_and_wrench: Development Tools & Slash Commands
+
+The AI-Hub includes several slash commands (located in `.claude/commands/`) that streamline common development workflows:
+
+- **`/create-pr`**: Pre-pull request validation and preparation
+- **`/update-doc`**: Documentation synchronization and updates
+- **`/document-decisions`**: ADR creation and management
+- **`/implement-feedback-from-pr`**: Systematic PR feedback implementation
+
+::: info AI Assistant Context Files
+Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respective README files. These provide AI assistants with proper context about each component's purpose and architecture.
+:::
 
 ## :clipboard: Project Governance & Work Management
 
