@@ -4,7 +4,7 @@ You've made some significant changes to the codebase. But did you make any archi
 
 ## Overview
 
-Here's your decision documentation journey:
+Here's your explenatio documentation journey:
 1. Review your changes against main
 2. Check existing architecture decisions
 3. Identify if you made significant architecture choices

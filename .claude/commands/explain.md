@@ -77,7 +77,7 @@ If you find gaps in documentation, create the missing README files
 ### When to NOT create a new README:
 - When the folder contains only very few files or just one file
 - When the code is so easy to read that the developer should just read it themselves 
-- When the docstrings are so good that there is simply not much of value to add
+- When the docstrings are so good that there is simply little of value to add
 
 #### README Creation Process:
 
