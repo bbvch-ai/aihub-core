@@ -3,18 +3,36 @@
 # - MODEL_SUI_API_KEY: Respective API key for the SUI model
 # - MODEL_EUR_URL: The base URL for a language model API (here bound to region EUR or SWE)
 # - MODEL_EUR_API_KEY: Respective API key for the EUR model
-
-# Additionally, you can set the following environment variables, if they are not set default values are used
-# - VOLUME_ROOT: The root directory for volumes (default: ./local-volumes)
-# - MONGO_USERNAME: The MongoDB root username (default: admin)
-# - MONGO_PASSWORD: The MongoDB root password (default: admin)
-# - MINIO_ACCESS_KEY: The MinIO access key (default: minioadmin)
-# - MINIO_SECRET_KEY: The MinIO secret key (default: minioadmin)
-# - POSTGRES_USER: The Postgres user (default: webui)
-# - POSTGRES_PASSWORD: The Postgres password (default: webui_password)
-# - POSTGRES_DB: The Postgres database name (default: webui)
+# - MINIO_ACCESS_KEY: The MinIO access key
+# - MINIO_SECRET_KEY: The MinIO secret key
+# - POSTGRES_USER: The Postgres user
+# - POSTGRES_PASSWORD: The Postgres password
+# - MONGO_USERNAME: The MongoDB root username
+# - MONGO_PASSWORD: The MongoDB root password
 
 services:
+  # === MinIO Stack (self-hosted S3-compatible) ===
+  # <editor-fold desc="Minio Stack">
+  minio:
+    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2023-03-20t20-16-18z
+    restart: always
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+  # </editor-fold>
+
   # === Milvus Stack ===
   # <editor-fold desc="Milvus Stack">
   milvus-etcd:
@@ -26,31 +44,10 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - ./milvus.yaml:/milvus/configs/milvus.yaml
-      - /DATAFILES/volumes/etcd:/etcd
+      - ${VOLUME_ROOT:-./local-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "2"
-
-  milvus-minio:
-    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2023-03-20t20-16-18z
-    restart: always
-    environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-    ports:
-      - "9001:9001"
-      - "9000:9000"
-    volumes:
-      - ./milvus.yaml:/milvus/configs/milvus.yaml
-      - /DATAFILES/volumes/minio:/minio_data
-    command: minio server /minio_data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
     logging:
       options:
         max-size: "10m"
@@ -64,9 +61,9 @@ services:
       - seccomp:unconfined
     environment:
       ETCD_ENDPOINTS: milvus-etcd:2379
-      MINIO_ADDRESS: milvus-minio:9000
+      MINIO_ADDRESS: minio:9000
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/milvus-data
+      - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
@@ -79,12 +76,14 @@ services:
       - "9091:9091"
     depends_on:
       - "milvus-etcd"
-      - "milvus-minio"
+      - "minio"
     logging:
       options:
         max-size: "10m"
         max-file: "2"
 
+
+  # TODO: only use in dev , delete from latest
   attu:
     image: zilliz/attu:v2.5.6
     restart: always
@@ -104,15 +103,16 @@ services:
   # <editor-fold desc="Postgres Stack">
   postgres:
     image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
-    container_name: webui-postgres
+    container_name: postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-webui}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-webui_password}
-      POSTGRES_DB: ${POSTGRES_DB:-webui}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix
     ports:
       - "5432:5432"
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
+      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U webui" ]
@@ -131,8 +131,11 @@ services:
   # <editor-fold desc="OpenWebUI Stack">
   openwebui:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
-    container_name: webui-openwebui
-    network_mode: "host"
+    restart: always
+    depends_on:
+      - "postgres"
+      - "redis"
+    container_name: openwebui
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
     environment:
@@ -164,22 +167,16 @@ services:
 
       ENABLE_WEBSOCKET_SUPPORT: true
       WEBSOCKET_MANAGER: "redis"
-      WEBSOCKET_REDIS_URL: "redis://localhost:6379/1"
+      WEBSOCKET_REDIS_URL: "redis://redis:6379/1"
       WEB_CONCURRENCY: 4
 
-      DATABASE_URL: "postgresql://webui:webui_password@localhost:5432/webui"
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/openwebui"
 
-      OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
-      RAG_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
-      AUDIO_STT_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
-      AUDIO_TTS_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
-      IMAGES_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
-
-      OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
-      RAG_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
-      AUDIO_STT_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
-      AUDIO_TTS_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
-      IMAGES_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
+      OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
 
       ENABLE_IMAGE_GENERATION: true
       IMAGE_GENERATION_ENGINE: "openai"
@@ -225,10 +222,10 @@ services:
       WEBUI_URL: "http://localhost:8080"
 
       ENABLE_OAUTH_SIGNUP: true
-      OAUTH_CLIENT_ID: "3dc76991-ddd7-4c2d-9cf9-ac2146f33d23"
-      OAUTH_CLIENT_SECRET: "Ygj8Q~~ZiHb19RIUIH4.21ezYjBwzv9GxIu_Ubjm"
-      OPENID_PROVIDER_URL: "https://login.microsoftonline.com/279985bd-2077-4d9d-9797-42238cfc06e2/v2.0/.well-known/openid-configuration"
-      OAUTH_PROVIDER_NAME: "azure"
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OPENID_PROVIDER_URL: ${OPENID_PROVIDER_URL}
+      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
 
       ENABLE_DIRECT_CONNECTIONS: false
   # </editor-fold>
@@ -237,17 +234,18 @@ services:
   # <editor-fold desc="Phoenix Stack">
   phoenix:
     image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
-    volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/phoenix-data:/data
+    restart: always
+    depends_on:
+      - "postgres"
     ports:
       - "6006:6006"
       - "4317:4317"
-    restart: always
-    healthcheck:
-      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:6006/healthz')" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    environment:
+      PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
   # </editor-fold">
 
   # === Nats & Redis Stack ===
@@ -286,30 +284,32 @@ services:
 
   mongo:
     image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin}
-    volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
+    restart: always
     ports:
       - "27017:27017"
-    restart: always
+    command: >
+      --quiet
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   api:
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
     restart: always
     depends_on:
-      - mongo
-      - nats
+      - "mongo"
+      - "nats"
     environment:
       NATS_ENDPOINT: nats://nats:4222
-      COSMOS_CONNECTION_STRING: "mongodb://mongo_root:your_mongo_root_password@mongo:27017"
+      COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: "WARNING"
       MODEL_SUI_URL: ${MODEL_SUI_URL}
@@ -323,6 +323,9 @@ services:
         max-size: "10m"
         max-file: "2"
 
+  # TODO: only use in dev , delete from latest
+  # === CPU LLMs Stack ===
+  # <editor-fold desc="CPU LLMs Stack">
   llama.cpp:
     image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
     platform: linux/amd64
@@ -354,3 +357,4 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+  # </editor-fold>
