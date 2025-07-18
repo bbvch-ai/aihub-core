@@ -1,13 +1,12 @@
 ---
 title: Development Setup
-index: 0
+index: 3
 ---
 
 # Developer Setup Guide
 
 This guide provides detailed, step-by-step instructions for setting up the AI-Hub development environment. It is designed to walk you through installing the necessary tools, configuring your IDE (specifically JetBrains PyCharm and WebStorm), and getting the codebase up and running locally.
 
------
 
 ## 🛠️ Install Required & Recommended Tools
 
@@ -19,7 +18,6 @@ Before you begin, you need to install several tools. Follow the instructions for
 
       - Download from the [JetBrains Toolbox website](https://www.jetbrains.com/toolbox-app/).
       - Install PyCharm for backend development and WebStorm for frontend development.
-      - *bbv employees*: You can request a JetBrains license via [YouTrack](https://youtrack.bbv.ch/newIssue?project=issues).
 
   - **Git**: The version control system for our project.
 
@@ -67,7 +65,6 @@ Before you begin, you need to install several tools. Follow the instructions for
       - **Postman**: For testing our APIs. [Download here](https://www.postman.com/).
       - **Bot Framework Emulator**: For testing chatbots. [Download here](https://github.com/microsoft/BotFramework-Emulator).
 
------
 
 ## 💻 Set Up the Codebase
 
@@ -75,14 +72,11 @@ Before you begin, you need to install several tools. Follow the instructions for
 
 First, clone the necessary repositories into a local directory.
 
-  - **aihub-core**: The core services and libraries for the AI-Hub.
-    ```bash
-    git clone https://github.com/bbvch-ai/aihub-core
-    ```
-  - **aihub-bbv**: The customer repository for bbv (for bbv employees only).
-    ```bash
-    git clone https://github.com/bbvch-ai/aihub-bbv
-    ```
+**aihub-core**: The core services and libraries for the AI-Hub.
+```bash
+git clone https://github.com/bbvch-ai/aihub-core
+```
+
 
 ### 🐍 Set Up Backend Services (PyCharm)
 
@@ -130,7 +124,6 @@ The `aihub-core` repository is a monorepo containing multiple independent micros
   - You must request the necessary `.env` files from a team member.
   - Place the received `.env` files in the root directories of the corresponding backend and frontend projects.
 
------
 
 ## 🚀 First Steps: Running the Application
 
@@ -152,7 +145,6 @@ The `aihub-core` repository is a monorepo containing multiple independent micros
 
   - Once the services are running, explore the `playground` directories within each microservice. These contain scripts and notebooks for testing and experimenting with the code in a sandbox environment. This is a great way to understand how different components work.
 
------
 
 ## ⚙️ IDE Configuration and Plugins (Recommended)
 

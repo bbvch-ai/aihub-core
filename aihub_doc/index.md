@@ -8,11 +8,14 @@ hero:
   tagline: Connecting humans, data, and AI. Swiss AI-Hub embeds intelligent assistants directly into your workflows, turning your company's knowledge into its most powerful asset. Made in Switzerland.
   actions:
     - theme: brand
+      text: Feature List
+      link: /docs/3_features
+    - theme: alt
       text: Business Intro
-      link: /docs/business
+      link: /docs/1_business
     - theme: alt
       text: Developer Intro
-      link: /docs/developers
+      link: /docs/2_developers
 
 features:
   - title: Base Tier

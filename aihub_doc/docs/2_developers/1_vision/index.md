@@ -3,9 +3,9 @@ title: Vision
 index: 1
 ---
 
-## :telescope: The Swiss AI-Hub: A Technical Vision
+# :telescope: The Swiss AI-Hub: A Technical Vision
 
-### :question: Why Build Another AI Platform?
+## :question: Why Build Another AI Platform?
 
 ::: info :thought_balloon: The Challenge
 The world of AI is saturated with powerful open-source tools—agentic frameworks like LangChain, orchestration systems like LangGraph, and libraries for every conceivable task. So, why build the Swiss AI-Hub?
@@ -17,7 +17,7 @@ The answer is simple: most of these tools are **frameworks or libraries, not pla
 The Swiss AI-Hub is our answer to a critical need we identified in the Swiss market: the need for a sovereign, trustworthy, and collaborative **enterprise AI platform**. Our vision is not to create yet another agent framework, but to build the definitive, production-grade ecosystem for Swiss companies to succeed with AI.
 :::
 
-### :switzerland: Our Foundational Principles: The "Swiss Way"
+## :switzerland: Our Foundational Principles: The "Swiss Way"
 
 ::: warning :shield: Non-Negotiable Principles
 Our entire architecture is built on a set of non-negotiable principles that reflect the values of the companies we serve.
@@ -27,7 +27,7 @@ Our entire architecture is built on a set of non-negotiable principles that refl
 * **Radical Transparency and Auditability:** We believe trust is earned through transparency. Our "AI Agents as Workflows" philosophy ensures that agent behavior is not a black box. Every step is traceable and can be visualized in our observability tools like Phoenix. This auditability is crucial for gaining the trust of employees, managers, and regulators alike.
 :::
 
-### :building_construction: More Than a Framework – A Maintained Enterprise Platform
+## :building_construction: More Than a Framework – A Maintained Enterprise Platform
 
 ::: tip :balance_scale: Library vs Platform
 The distinction between a library and a platform is central to our vision. A library helps you solve a problem; a platform provides the entire environment to solve problems at scale, reliably, and over the long term.
@@ -41,11 +41,10 @@ The AI-Hub is a full-stack solution. It comprises multiple, distinct scopes that
 We are building for the long run. Our codebase is clean, scalable, and designed to be easy to maintain. We enforce this through rigorous, automated code conventions, including strict static type checking (`mypy`), linting (`ruff`), and formatting (`black`). Every pull request is a testament to our commitment to professional software engineering.
 :::
 
-### :handshake: A Vision for a Collaborative and Future-Proof Ecosystem
+## :switzerland: A Vision for a Collaborative and Future-Proof Ecosystem
 
-::: info :switzerland: Swiss Market Vision
 Our ambition extends beyond our own development team. We aim to foster a collaborative ecosystem that benefits the entire Swiss market.
-:::
+
 
 ::: details :open_hands: An Open, Collaborative Standard
 The AI-Hub is open code because we want it to become a standard. Our `aihub-core` repository provides the reusable foundation, while customer-specific logic is built in separate repositories. This model allows many companies to build upon a shared, stable core, with everyone profiting from the work of others.
@@ -59,7 +58,7 @@ The platform is architected for flexibility. The containerized nature of our ser
 The AI landscape moves at an incredible pace. Our modular architecture is designed to be flexible enough to support emerging protocols and standards, like agent-to-agent communication. We are not building a static product; we are building a platform that evolves.
 :::
 
-### :rocket: Empowering the Next Wave of Builders
+## :rocket: Empowering the Next Wave of Builders
 
 ::: tip :bulb: Democratizing AI Development
 Finally, our vision is to democratize enterprise AI development in Switzerland.
