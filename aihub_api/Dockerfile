@@ -34,11 +34,6 @@ COPY aihub_lib ./aihub_lib
 RUN poetry install
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
-# Set the working directory
-WORKDIR /app/aihub_api
-
-RUN poetry install --no-root && \
-    rm -rf $POETRY_CACHE_DIR
 
 
 # Runtime stage

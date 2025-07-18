@@ -1,4 +1,5 @@
 services:
+
   phoenix:
     image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
     volumes:
@@ -60,6 +61,28 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  api:
+    image: ghcr.io/bbvch-ai/aihub-core/api:latest
+    restart: always
+    depends_on:
+      - mongo
+      - nats
+    environment:
+      NATS_ENDPOINT: nats://nats:4222
+      COSMOS_CONNECTION_STRING: "mongodb://mongo_root:your_mongo_root_password@mongo:27017"
+      NUM_WORKERS: 1
+      LOG_LEVEL: "WARNING"
+      MODEL_SUI_URL: ${MODEL_SUI_URL}
+      MODEL_SUI_API_KEY: ${MODEL_SUI_API_KEY}
+      MODEL_EUR_URL: ${MODEL_EUR_URL}
+      MODEL_EUR_API_KEY: ${MODEL_EUR_API_KEY}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   llama.cpp:
     image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
