@@ -27,6 +27,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
@@ -57,7 +58,8 @@ class AgentService:
         otherwise, use saved information from the database.
         """
         try:
-            return await AgentService.discover_agent_instance(nc, agent_class, agent_id)
+            discovered_agent = await AgentService.discover_agent_instance(nc, agent_class, agent_id)
+            return AgentDTO.from_instance(discovered_agent, is_online=True, t=t)
         except HTTPException:
             agent = AgentEntity.get_agent(agent_class, agent_id)
             if agent is None:
@@ -73,7 +75,9 @@ class AgentService:
         discovered_agents = await AgentService.discover_agent_instances(nc)
         saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
 
-        all_agents = discovered_agents.copy()
+        all_agents = [
+            AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents
+        ]
         for saved_agent in saved_agents:
             was_discovered = (
                 len(
@@ -91,7 +95,7 @@ class AgentService:
         return all_agents
 
     @staticmethod
-    async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str) -> AgentDTO:
+    async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str) -> AgentInstanceDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -107,7 +111,7 @@ class AgentService:
         for config in configs:
             if config.agent_id == agent_id:
                 agent_config = AgentConfig.from_entity(config)
-                agent_dto = AgentDTO.from_class_and_config(
+                agent_dto = AgentInstanceDTO.from_class_and_config(
                     class_dto=agent_class_dto,
                     agent_config=agent_config,
                 )
@@ -115,7 +119,7 @@ class AgentService:
                 return agent_dto
 
         if agent_class_dto.default_agent_config.agent_id == agent_id:
-            agent_dto = AgentDTO.from_class_and_config(
+            agent_dto = AgentInstanceDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_class_dto.default_agent_config,
             )
@@ -125,7 +129,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
-    async def discover_agent_instances_by_class(nc: NATS, agent_class: str) -> list[AgentDTO]:
+    async def discover_agent_instances_by_class(nc: NATS, agent_class: str) -> list[AgentInstanceDTO]:
         """
         Retrieves all instances of a specific agent class. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for responses.
@@ -141,7 +145,7 @@ class AgentService:
         agent_instances = []
         for config in configs:
             agent_config = AgentConfig.from_entity(config)
-            agent_dto = AgentDTO.from_class_and_config(
+            agent_dto = AgentInstanceDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_config,
             )
@@ -150,7 +154,7 @@ class AgentService:
         db_agent_ids = {config.agent_id for config in configs}
 
         if agent_class_dto.default_agent_config.agent_id not in db_agent_ids:
-            agent_dto = AgentDTO.from_class_and_config(
+            agent_dto = AgentInstanceDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_class_dto.default_agent_config,
             )
@@ -220,7 +224,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
     @staticmethod
-    async def discover_agent_instances(nc: NATS) -> list[AgentDTO]:
+    async def discover_agent_instances(nc: NATS) -> list[AgentInstanceDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -240,7 +244,7 @@ class AgentService:
             configs = AgentConfigEntityDocument.find_for_class(agent_class)
             for config in configs:
                 config_instance = AgentConfig.from_entity(config)
-                agent_dto = AgentDTO.from_class_and_config(
+                agent_dto = AgentInstanceDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=config_instance,
                 )
@@ -253,7 +257,7 @@ class AgentService:
             # Step 3: Check if default agent config is present in database
             db_agent_ids = {configured_agent.agent_id for configured_agent in configured_agents}
             if agent.default_agent_config.agent_id not in db_agent_ids:
-                agent_dto = AgentDTO.from_class_and_config(
+                agent_dto = AgentInstanceDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=agent.default_agent_config,
                 )

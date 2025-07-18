@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
@@ -8,10 +7,9 @@ from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
-from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
-
-logger = logging.getLogger(__name__)
 
 
 class AgentDTO(MinimalAgentDTO):
@@ -40,8 +38,25 @@ class AgentDTO(MinimalAgentDTO):
     is_online: Annotated[bool | None, Field(description="Indicates whether the agent is online and reachable.")] = None
 
     @classmethod
+    def from_instance(cls, instance: AgentInstanceDTO, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
+        """Creates an AgentDTO from an AgentInstanceDTO."""
+        return cls(
+            agent_class=instance.agent_class,
+            agent_id=instance.agent_id,
+            agent_config=AgentConfigDTO.from_agent_config(instance.agent_config or instance.default_agent_config, t),
+            is_conversational=instance.is_conversational,
+            start_events=instance.start_events,
+            stop_events=instance.stop_events,
+            network_graph=instance.network_graph,
+            is_online=is_online,
+        )
+
+    @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
+        agent_config = AgentConfig.from_entity(entity.agent_config or entity.default_agent_config)
+        agent_config_dto = AgentConfigDTO.from_agent_config(agent_config, t)
+
         start_events = [
             EventSpecs(
                 event_name=event.event_name,
@@ -62,32 +77,13 @@ class AgentDTO(MinimalAgentDTO):
 
         network_graph = WorkflowGraph.model_validate(entity.network_graph)
 
-        agent_config = entity.agent_config
-        if agent_config is None:
-            logger.debug(f"Agent {entity.agent_id} has no specific agent_config, using default_agent_config.")
-            agent_config = entity.default_agent_config
-
         return cls(
             agent_class=entity.agent_class,
             agent_id=entity.agent_id,
-            agent_config=AgentConfig.from_entity(agent_config),
+            agent_config=agent_config_dto,
             is_conversational=entity.is_conversational,
             start_events=start_events,
             stop_events=stop_events,
             network_graph=network_graph,
             is_online=is_online,
-        )
-
-    @classmethod
-    def from_class_and_config(cls, class_dto: AgentClassDTO, agent_config: AgentConfig) -> "AgentDTO":
-        """Creates an AgentDTO from an AgentClassDTO and an AgentConfig."""
-        return cls(
-            agent_class=class_dto.agent_class,
-            agent_id=agent_config.agent_id,
-            agent_config=agent_config,
-            is_conversational=class_dto.is_conversational,
-            start_events=class_dto.start_events,
-            stop_events=class_dto.stop_events,
-            network_graph=class_dto.network_graph,
-            is_online=class_dto.is_online,
         )

@@ -13,7 +13,6 @@ TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class AbstractSubscriber(Generic[TEvent], abc.ABC):
-
     def __init__(
         self,
         nc: NATS,
