@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from mongoengine import DateTimeField, Document
 
@@ -18,8 +18,8 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
         "indexes": [{"fields": ("agent_class", "agent_id"), "unique": True}],
     }
 
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField(default=datetime.now)
+    created_at = DateTimeField(default=lambda: datetime.now(UTC))
+    updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
     @classmethod
     def find_for_class(cls, agent_class: str) -> list["AgentConfigEntityDocument"]:
@@ -33,5 +33,5 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
 
     def save(self, *args, **kwargs):
         """Override save to update the updated_at timestamp."""
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(UTC)
         return super().save(*args, **kwargs)
