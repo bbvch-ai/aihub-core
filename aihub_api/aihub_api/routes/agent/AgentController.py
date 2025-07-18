@@ -94,7 +94,7 @@ class AgentController(Controller):
             """
             agents = await AgentService.discover_agent_instances(nc)
             return [
-                agent
+                AgentDTO.from_instance(agent, t, is_online=True)
                 for agent in agents
                 if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
             ]

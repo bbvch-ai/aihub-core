@@ -26,8 +26,8 @@ from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
 from aihub_api.agents.AgentClass import AgentClass
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.agents.AgentInstance import AgentInstance
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService

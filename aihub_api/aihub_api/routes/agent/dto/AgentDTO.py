@@ -7,8 +7,8 @@ from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
-from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.agents.AgentInstance import AgentInstance
+from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 
 
