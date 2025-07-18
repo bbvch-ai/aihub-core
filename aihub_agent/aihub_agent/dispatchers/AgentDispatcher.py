@@ -359,49 +359,55 @@ class AgentDispatcher(BaseDispatcher):
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
         step_configs: dict[type[StepConfig], StepConfig] = agent_config.get_step_configs()
 
-        # Prepare arguments
         for param in step_signature.parameters.values():
-            # Handle special configurations injected by agent_config.get_step_configs()
-            if step_configs.get(param.annotation):
-                events_and_kwargs.kwargs[param.name] = step_configs[param.annotation]
-                continue
-
-            # Handle AgentConfig if requested
-            if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-                # Ensure the AgentConfig typing is consistent with the agent class
-                if param.annotation != self.agent_config_type:
-                    raise ValueError(
-                        f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
-                        f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
-                    )
-                events_and_kwargs.kwargs[param.name] = agent_config
-                logger.debug(
-                    f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
-                )
-                continue
-
-            # Handle RunContext / ThreadContext
-            if param.annotation == RunContext:
-                events_and_kwargs.kwargs[param.name] = run_context
-                continue
-            if param.annotation == ThreadContext:
-                events_and_kwargs.kwargs[param.name] = thread_context
-                continue
-
-            # Handle EventDisplayer
-            if param.annotation == EventDisplayer:
-                events_and_kwargs.kwargs[param.name] = EventDisplayer(
-                    self.js_publisher,
-                    topic_manager=self.get_topic_manager_for_thread(topic),
-                )
-                continue
-
-            # Handle LocaleHandler
-            if param.annotation in [LocaleHandler, AgentLocaleHandler]:
-                locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
-                events_and_kwargs.kwargs[param.name] = self.locale_handler.in_locale(locale)
+            param_value = await self._get_parameter_value(
+                param, step_configs, agent_config, run_context, thread_context, topic
+            )
+            if param_value is not None:
+                events_and_kwargs.kwargs[param.name] = param_value
 
         return events_and_kwargs
+
+    async def _get_parameter_value(
+        self,
+        param: inspect.Parameter,
+        step_configs: dict[type[StepConfig], StepConfig],
+        agent_config: AgentConfig,
+        run_context: RunContext,
+        thread_context: ThreadContext,
+        topic: AgentTopic,
+    ):
+        if step_configs.get(param.annotation):
+            return step_configs[param.annotation]
+
+        if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
+            if param.annotation != self.agent_config_type:
+                raise ValueError(
+                    f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
+                    f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
+                )
+            logger.debug(
+                f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+            )
+            return agent_config
+
+        if param.annotation == RunContext:
+            return run_context
+
+        if param.annotation == ThreadContext:
+            return thread_context
+
+        if param.annotation == EventDisplayer:
+            return EventDisplayer(
+                self.js_publisher,
+                topic_manager=self.get_topic_manager_for_thread(topic),
+            )
+
+        if param.annotation in [LocaleHandler, AgentLocaleHandler]:
+            locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
+            return self.locale_handler.in_locale(locale)
+
+        return None
 
     def get_topic_manager_for_thread(
         self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
