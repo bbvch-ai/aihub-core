@@ -1,4 +1,4 @@
-from dagster import AssetIn, AssetKey, AutomationCondition, Output, graph_asset
+from dagster import AssetIn, AssetKey, Output, graph_asset
 
 from aihub_pipeline.ops.document.add_metadata_to_ref_docs import add_metadata_to_ref_docs
 from aihub_pipeline.ops.document.delete_removed_ref_docs_from_docstore import delete_removed_ref_docs_from_docstore
@@ -19,7 +19,6 @@ def removed_documents_factory(key: AssetKey, data_lake_key: str | AssetKey) -> g
         key=key,
         group_name=group_name_from_asset_key(key),
         ins={"data_lake_files": AssetIn(key=data_lake_key)},
-        automation_condition=AutomationCondition.eager(),
         description="Removes documents from the Doc Store that are no longer present in the Data Lake",
     )
     def removed_documents(

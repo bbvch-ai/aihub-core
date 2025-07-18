@@ -1,3 +1,5 @@
+from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
+
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -6,8 +8,6 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
     AzureOpenAIEmbeddingConfig,
     AzureOpenAIEmbeddingParameter,
 )
-from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
-
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
@@ -18,6 +18,7 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.removed_documents
 )
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
 from aihub_pipeline.executors.factory import default_process_executor
+from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from aihub_pipeline.resources.factory import (
     azure_data_lake_resources,
     default_io_manager_azure_datalake_resources,
@@ -28,6 +29,7 @@ from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelReso
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
 
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -54,6 +56,17 @@ assets = [
         SUMMARY_NODES_KEY, document_key=DOCUMENT_KEY, nodes_key=NODES_KEY, partitions=document_partitions
     ),
 ]
+
+job = observe_source_job(
+    observable_asset=observable_asset,
+    namespace_name=NAMESPACE_NAME,
+)
+
+remove_job = materialize_asset_job(
+    namespace_name=NAMESPACE_NAME,
+    job_name="remove_documents",
+    asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
+)
 
 
 defs = Definitions(
@@ -97,4 +110,6 @@ defs = Definitions(
     },
     sensors=[default_automation_sensor(assets)],
     executor=default_process_executor(),
+    jobs=[job, remove_job],
+    schedules=[daily_schedule_at(job, hour=0, minute=0), daily_schedule_at(remove_job, hour=1, minute=0)],
 )
