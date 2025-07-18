@@ -591,7 +591,7 @@ class TestAgentServiceUnit:
         """Test clear_cache clears all caches."""
         # Clear caches first to ensure clean state
         AgentService.clear_cache()
-        
+
         # Add some items to caches
         DISCOVER_AGENTS_CACHE["test"] = "value"
         GET_AGENT_INSTANCE_CACHE["test"] = "value"

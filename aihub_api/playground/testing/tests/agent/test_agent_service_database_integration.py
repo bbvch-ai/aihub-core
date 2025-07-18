@@ -382,7 +382,7 @@ class TestAgentServiceDatabaseIntegration:
     async def test_discover_agent_instances_by_class_only_default_config(
         self, mock_nats, sample_agent_class, sample_default_config
     ):
-        """Test that AgentService.discover_agent_instances_by_class returns only default config when no DB configs exist."""
+        """Test that discover_agent_instances_by_class returns only default config when no DB configs exist."""
         # Clear any existing cache
         GET_AGENT_INSTANCE_CACHE.clear()
 
