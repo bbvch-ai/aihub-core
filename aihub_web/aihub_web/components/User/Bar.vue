@@ -1,5 +1,8 @@
 <template>
   <div class="flex flex-row items-center gap-5 pr-3">
+
+    <NotificationNotifications/>
+
     <Button
       :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
       variant="text"
@@ -8,7 +11,6 @@
       @click="toggleDarkMode()"
     />
 
-    <NotificationNotifications/>
     <div
       v-if="myUserIsLoading"
       class="flex flex-row gap-2"

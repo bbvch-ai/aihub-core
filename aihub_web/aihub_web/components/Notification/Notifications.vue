@@ -1,17 +1,17 @@
 <template>
   <div class="relative">
-    <OverlayBadge
-      :value="notifications.length"
-      size="small"
-    >
-      <Button
-        icon="pi pi-bell"
-        text
-        rounded
+    <div class="relative inline-flex cursor-pointer" @click="togglePanel">
+      <i
+        class="pi pi-bell p-2"
         aria-label="Notifications"
-        @click="togglePanel"
       />
-    </OverlayBadge>
+      <Badge
+        v-if="notifications && unreadCount > 0"
+        :value="unreadCount"
+        class="absolute right-0 top-0 flex -translate-y-1/2 translate-x-1/2"
+      />
+    </div>
+
 
     <OverlayPanel ref="op" :pt="{ content: { class: 'p-0' } }" @hide="isPanelOpen = false">
       <DataView :value="notifications" :loading="isLoading" scrollHeight="70vh">
@@ -45,12 +45,25 @@
           </div>
         </template>
 
+        <template #footer>
+          <div v-if="notifications && notifications.length > 0"
+               class="text-center dark:border-surface-700">
+            <Button
+              :label="t('notification.view_all')"
+              link
+              @click="viewAll"
+            />
+          </div>
+        </template>
+
         <template #empty>
           <div class="flex flex-col items-center justify-center p-8 text-center text-surface-500">
             <i class="pi pi-bell p-4 text-4xl text-surface-400"/>
             <p>{{ t('notification.no_notifications') }}</p>
           </div>
         </template>
+
+
       </DataView>
     </OverlayPanel>
   </div>
@@ -63,6 +76,8 @@ import {type NotificationDto} from '@core/sdk/client'
 
 const {t} = useI18n()
 const op = ref()
+const router = useRouter()
+const localeRoute = useLocaleRoute()
 const isPanelOpen = ref(false)
 
 const {notifications, isLoading, refetch: fetchNotifications} = useNotifications()
@@ -85,6 +100,11 @@ const notificationIcon = (type: NotificationDto['type']) => {
   }
 }
 
+const unreadCount = computed(() => {
+  if (!notifications.value) return 0
+  return notifications.value.filter(n => !n.read).length
+})
+
 const togglePanel = (event: Event) => {
   op.value.toggle(event)
   isPanelOpen.value = !isPanelOpen.value
@@ -103,4 +123,10 @@ const handleNotificationClick = (notification: NotificationDto) => {
     })
   }
 }
+
+const viewAll = () => {
+  op.value.hide()
+  router.push(localeRoute('/notifications'))
+}
+
 </script>
