@@ -1,18 +1,17 @@
-from datetime import datetime
-
-from mongoengine import DateTimeField, DictField, Document, EmbeddedDocumentField, StringField
+from mongoengine import DictField, EmbeddedDocumentField, StringField
+from mongoengine.base import BaseDocument
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleStringEntity
 
 
-class AgentConfigEntity(Document):
-    """Stores a specific, named configuration for an agent class."""
-
-    meta = {
-        "collection": "agent_configs",
-        "indexes": [{"fields": ("agent_class", "agent_id"), "unique": True}],
-    }
+class AgentConfigEntity(BaseDocument):
+    """
+    This is the base class for storing an agent configuration.
+    Never use this class directly; instead, use the `AgentConfigEntityDocument` or `AgentConfigEntityEmbeddedDocument`
+    subclasses for persistence in MongoDB.
+    This class is only used to define the common fields and methods for agent configs.
+    """
 
     agent_class = StringField(required=True)
     agent_id = StringField(required=True, description="Unique, URL-safe ID for the agent instance (e.g., 'agent_123').")
@@ -31,23 +30,6 @@ class AgentConfigEntity(Document):
         description="The system prompt that guides the agent's behavior and responses.",
     )
     config_data = DictField(required=True, description="The configuration data matching the Pydantic model.")
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField(default=datetime.now)
-
-    @classmethod
-    def find_for_class(cls, agent_class: str) -> list["AgentConfigEntity"]:
-        """Find all configurations for a specific agent class."""
-        return cls.objects(agent_class=agent_class)
-
-    @classmethod
-    def find_for_class_and_id(cls, agent_class: str, agent_id: str) -> "AgentConfigEntity | None":
-        """Find a specific configuration by agent class and ID."""
-        return cls.objects(agent_class=agent_class, agent_id=agent_id).first()
-
-    def save(self, *args, **kwargs):
-        """Override save to update the updated_at timestamp."""
-        self.updated_at = datetime.now()
-        return super().save(*args, **kwargs)
 
     @classmethod
     def from_agent_config(cls, agent_config: AgentConfig) -> "AgentConfigEntity":

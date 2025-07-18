@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
@@ -10,6 +11,8 @@ from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent impo
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 class AgentClassDTO(BaseModel):
@@ -89,10 +92,15 @@ class MinimalAgentDTO(BaseModel):
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler) -> "MinimalAgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
+        agent_config = entity.agent_config
+        if agent_config is None:
+            logger.debug(f"Agent {entity.agent_id} has no specific agent_config, using default_agent_config.")
+            agent_config = entity.default_agent_config
+
         return cls(
             agent_class=entity.agent_class,
             agent_id=entity.agent_id,
-            agent_config=AgentConfig.from_entity(entity.agent_config),
+            agent_config=AgentConfig.from_entity(agent_config),
             is_conversational=entity.is_conversational,
         )
 
@@ -145,10 +153,15 @@ class AgentDTO(MinimalAgentDTO):
 
         network_graph = WorkflowGraph.model_validate(entity.network_graph)
 
+        agent_config = entity.agent_config
+        if agent_config is None:
+            logger.debug(f"Agent {entity.agent_id} has no specific agent_config, using default_agent_config.")
+            agent_config = entity.default_agent_config
+
         return cls(
             agent_class=entity.agent_class,
             agent_id=entity.agent_id,
-            agent_config=AgentConfig.from_entity(entity.agent_config),
+            agent_config=AgentConfig.from_entity(agent_config),
             is_conversational=entity.is_conversational,
             start_events=start_events,
             stop_events=stop_events,

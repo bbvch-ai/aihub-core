@@ -31,7 +31,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
-from aihub_lib.persistence.agents import AgentConfigEntity
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 
@@ -133,7 +133,7 @@ class ChatService:
             )
             display_id = event.request_event.topic.display_id
         else:
-            agent_config_entity = AgentConfigEntity.find_for_class_and_id(agent_class, agent_id)
+            agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if agent_config_entity is None:
                 logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
                 agent_config = None

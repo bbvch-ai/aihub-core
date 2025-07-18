@@ -16,7 +16,7 @@ from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentCla
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
-from aihub_lib.persistence.agents.AgentConfigEntity import AgentConfigEntity
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
@@ -101,7 +101,7 @@ class AgentService:
 
         agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
 
-        configs = AgentConfigEntity.find_for_class(agent_class)
+        configs = AgentConfigEntityDocument.find_for_class(agent_class)
         for config in configs:
             if config.agent_id == agent_id:
                 agent_config = AgentConfig.from_entity(config)
@@ -135,7 +135,7 @@ class AgentService:
 
         agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
 
-        configs = AgentConfigEntity.find_for_class(agent_class)
+        configs = AgentConfigEntityDocument.find_for_class(agent_class)
         agent_instances = []
         for config in configs:
             agent_config = AgentConfig.from_entity(config)
@@ -235,14 +235,17 @@ class AgentService:
         configured_agents = []
         for agent in online_agents:
             agent_class = agent.agent_class
-            configs = AgentConfigEntity.find_for_class(agent_class)
+            configs = AgentConfigEntityDocument.find_for_class(agent_class)
             for config in configs:
                 config_instance = AgentConfig.from_entity(config)
                 agent_dto = AgentDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=config_instance,
                 )
-                AgentEntity.create_or_update_from_dto(agent_dto)
+                AgentEntity.create_or_update_from_dto(
+                    agent_dto=agent_dto,
+                    default_agent_config=agent.default_agent_config,
+                )
                 configured_agents.append(agent_dto)
 
             # Step 3: Check if default agent config is present in database
@@ -252,7 +255,10 @@ class AgentService:
                     class_dto=agent,
                     agent_config=agent.default_agent_config,
                 )
-                AgentEntity.create_or_update_from_dto(agent_dto)
+                AgentEntity.create_or_update_from_dto(
+                    agent_dto=agent_dto,
+                    default_agent_config=agent.default_agent_config,
+                )
                 configured_agents.append(agent_dto)
 
         if len(configured_agents) > 0:
