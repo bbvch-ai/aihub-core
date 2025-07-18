@@ -381,4 +381,4 @@ class BaseEvent(BaseModel):
         Serializes the event into a JSON string. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.
         """
-        return json.dumps(self.model_dump(**kwargs))
+        return json.dumps(self.model_dump(**kwargs), default=str)
