@@ -170,10 +170,8 @@ class AgentRunner:
         self._stop_signal.set()
 
         if self._loop_task is not None:
-            try:
-                await self._loop_task
-            except asyncio.CancelledError:
-                pass
+            await self._loop_task
+
         else:
             logger.exception(f"Loop task was not running for {self.agent_class}.")
 
