@@ -90,7 +90,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
-        self.agent_config: AgentConfig = AgentConfig(
+        self.default_agent_config: AgentConfig = AgentConfig(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             name=LocaleString(de="Test Agent"),
@@ -125,7 +125,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             stop_events=stop_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
-            default_agent_config=self.agent_config,
+            default_agent_config=self.default_agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
