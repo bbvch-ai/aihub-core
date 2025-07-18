@@ -2,7 +2,7 @@ from mongoengine import DictField, EmbeddedDocumentField, StringField
 from mongoengine.base import BaseDocument
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleStringEntity
+from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
 class AgentConfigEntity(BaseDocument):
