@@ -28,14 +28,14 @@ WORKDIR /app
 
 # Copy only the dependency files first
 COPY Makefile switch_dependencies.py pyproject.toml ./
-COPY aihub_api ./aihub_api
+COPY aihub_bot ./aihub_bot
 COPY aihub_lib ./aihub_lib
 
 RUN poetry install
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
 # Set the working directory
-WORKDIR /app/aihub_api
+WORKDIR /app/aihub_bot
 
 RUN poetry install --no-root && \
     rm -rf $POETRY_CACHE_DIR
@@ -46,7 +46,7 @@ FROM python:3.11-slim AS runtime
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    VIRTUAL_ENV=/app/aihub_api/.venv \
+    VIRTUAL_ENV=/app/aihub_bot/.venv \
     POETRY_VERSION=2.1.1 \
     POETRY_HOME="/opt/poetry" \
     POETRY_NO_INTERACTION=1 \
@@ -100,7 +100,7 @@ USER $USERNAME
 # Expose port 8000
 EXPOSE 8000
 
-WORKDIR /app/aihub_api
+WORKDIR /app/aihub_bot
 
 # Start the server using Makefile
 ENTRYPOINT ["make", "run-prod"]

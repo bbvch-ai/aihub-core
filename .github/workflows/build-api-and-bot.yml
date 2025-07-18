@@ -10,8 +10,6 @@ on:
           description: 'Docker image release version'
           required: true
           default: "manual"
-  push:
-    branches: [ feat/mnt-vol-in-compose ]
 
 
 permissions:
@@ -23,8 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-      github.event_name == 'push'
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     strategy:
       matrix:
         image: [api, bot]
@@ -60,7 +57,3 @@ jobs:
           context: .
           file: ./aihub_${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Clean up SSH keys
-        run: |
-          rm -rf ~/.ssh
