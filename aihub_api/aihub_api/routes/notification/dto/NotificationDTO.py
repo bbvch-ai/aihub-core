@@ -22,6 +22,8 @@ class NotificationDTO(BaseModel):
     """Data Transfer Object for a notification."""
 
     id: Annotated[str, Field(description="The unique identifier of the notification.")]
+    user_id: Annotated[str, Field(description="The unique identifier of the user associated with the notification.")]
+    notification_group_id: Annotated[str | None, Field(description="The identifier of the notification group this notification belongs to.")] = None
     title: Annotated[LocaleString, Field(description="The internationalized title of the notification.")]
     message: Annotated[LocaleString, Field(description="The internationalized content of the notification.")]
     read: Annotated[bool, Field(description="Indicates if the notification has been read by the user.")]
@@ -36,8 +38,10 @@ class NotificationDTO(BaseModel):
         """Creates a NotificationDTO from a NotificationEntity."""
         return cls(
             id=str(entity.id),
-            title=entity.title,
-            message=entity.message,
+            user_id=entity.user_id,
+            notification_group_id=entity.notification_group_id,
+            title=entity.title.to_mongo().to_dict(),
+            message=entity.message.to_mongo().to_dict(),
             read=entity.read,
             done=entity.done,
             type=entity.type,

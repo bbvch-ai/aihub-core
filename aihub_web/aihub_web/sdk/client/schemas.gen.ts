@@ -6644,7 +6644,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752766241
+            default: 1752846752
         },
         owned_by: {
             type: 'string',
@@ -6877,6 +6877,23 @@ export const NotificationDTOSchema = {
             title: 'Id',
             description: 'The unique identifier of the notification.'
         },
+        user_id: {
+            type: 'string',
+            title: 'User Id',
+            description: 'The unique identifier of the user associated with the notification.'
+        },
+        notification_group_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notification Group Id',
+            description: 'The identifier of the notification group this notification belongs to.'
+        },
         title: {
             '$ref': '#/components/schemas/LocaleString',
             description: 'The internationalized title of the notification.'
@@ -6928,7 +6945,7 @@ export const NotificationDTOSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'title', 'message', 'read', 'done', 'type', 'severity', 'created_at'],
+    required: ['id', 'user_id', 'title', 'message', 'read', 'done', 'type', 'severity', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
 } as const;

@@ -19,11 +19,11 @@ class NotificationEntity(Document):
 
     meta = {
         "collection": "notifications",
-        "indexes": [{"fields": ["notification_id", "user_id"], "unique": True}],
+        "indexes": [{"fields": ["user_id"]}],
     }
 
-    notification_id = StringField(required=True)
     user_id = StringField(required=True)
+    notification_group_id = StringField(default=None)
     title = EmbeddedDocumentField(LocaleStringEntity)
     message = EmbeddedDocumentField(LocaleStringEntity)
     read = BooleanField(default=False)

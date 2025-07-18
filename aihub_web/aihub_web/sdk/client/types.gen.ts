@@ -5073,6 +5073,16 @@ export type NotificationDto = {
      */
     id: string;
     /**
+     * User Id
+     * The unique identifier of the user associated with the notification.
+     */
+    user_id: string;
+    /**
+     * Notification Group Id
+     * The identifier of the notification group this notification belongs to.
+     */
+    notification_group_id?: string | null;
+    /**
      * The internationalized title of the notification.
      */
     title: LocaleString;
